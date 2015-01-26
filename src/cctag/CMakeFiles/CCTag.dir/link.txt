@@ -1,0 +1,2 @@
+/usr/bin/ar cr libCCTag.a  CMakeFiles/CCTag.dir/geometry/Ellipse.cpp.o CMakeFiles/CCTag.dir/Candidate.cpp.o CMakeFiles/CCTag.dir/CCTag.cpp.o CMakeFiles/CCTag.dir/types.cpp.o CMakeFiles/CCTag.dir/CCTagFlowComponent.cpp.o CMakeFiles/CCTag.dir/EdgePoint.cpp.o CMakeFiles/CCTag.dir/dataSerialization.cpp.o CMakeFiles/CCTag.dir/ellipse.cpp.o
+/usr/bin/ranlib libCCTag.a

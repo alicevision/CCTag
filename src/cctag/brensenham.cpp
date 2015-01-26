@@ -1,0 +1,605 @@
+#include "EdgePoint.hpp"
+#include "brensenham.hpp"
+
+#include <cctag/toolbox/gilTools.hpp>
+
+#include <boost/gil/image_view.hpp>
+#include <boost/gil/gil_all.hpp>
+#include <boost/multi_array.hpp>
+#include <boost/math/special_functions/sign.hpp>
+
+#include <cmath>
+
+namespace rom {
+namespace vision {
+
+void bresenham( const boost::gil::gray8_view_t & sView, const rom::Point2dN<int>& p, const rom::Point2dN<float>& dir, const std::size_t nmax )
+{
+	rom::Point2dN<int> pStart = p;
+	float e        = 0.0f;
+	float dx       = dir.x();
+	float dy       = dir.y();
+
+	float adx = std::abs( dx );
+	float ady = std::abs( dy );
+
+	std::size_t n = 0;
+
+	boost::gil::fill_black( sView );
+
+	if( ady > adx )
+	{
+		float a   = adx / ady;                          //#
+		int stp_x = boost::math::sign( dx );
+		int stp_y = boost::math::sign( dy );
+
+		int x = p.x();
+		int y = p.y();
+		*sView.xy_at( x, y ) = *sView.xy_at( x, y ) + 50;
+
+		n = n + 1;
+		e = e + a;
+		y = y + stp_y;                                  //#
+
+		if( e >= 0.5f )
+		{
+			x = x + stp_x;                              //#
+			e = e - 1.0f;
+		}
+
+		n = n + 1;
+		e = e + a;
+		y = y + stp_y;                                  //#
+		if( e >= 0.5f )
+		{
+			x = x + stp_x;                              //#
+			e = e - 1.0f;
+		}
+		if( x >= 0 && x < sView.width() &&
+		    y >= 0 && y < sView.height() )
+		{
+			*sView.xy_at( x, y ) = *sView.xy_at( x, y ) + 50;
+		}
+		else
+		{
+			return;
+		}
+
+		while( n <= nmax )
+		{
+			n = n + 1;
+			e = e + a;
+			y = y + stp_y;                              //#
+			if( e >= 0.5f )
+			{
+				x = x + stp_x;                          //#
+				e = e - 1.0f;
+			}
+
+			if( x >= 0 && x < sView.width() &&
+			    y >= 0 && y < sView.height() )
+			{
+				*sView.xy_at( x, y ) = *sView.xy_at( x, y ) + 50;
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	else
+	{
+		float a   = ady / adx;
+		int stp_x = boost::math::sign( dx );
+		int stp_y = boost::math::sign( dy );
+
+		int x = p.x();
+		int y = p.y();
+
+		n = n + 1;
+		e = e + a;
+		x = x + stp_x;
+
+		if( e >= 0.5f )
+		{
+			y = y + stp_y;
+			e = e - 1.0f;
+		}
+
+		n = n + 1;
+		e = e + a;
+		x = x + stp_x;
+		if( e >= 0.5f )
+		{
+			y = y + stp_y;
+			e = e - 1;
+		}
+
+		if( x >= 0 && x < sView.width() &&
+			y >= 0 && y < sView.height() )
+		{
+			*sView.xy_at( x, y ) = *sView.xy_at( x, y ) + 50;
+		}
+		else
+		{
+			return;
+		}
+
+		while( n <= nmax )
+		{
+			n = n + 1;
+			e = e + a;
+			x = x + stp_x;
+			if( e >= 0.5f )
+			{
+				y = y + stp_y;
+				e = e - 1.0f;
+			}
+
+			if( x >= 0 && x < sView.width() &&
+				y >= 0 && y < sView.height() )
+			{
+				*sView.xy_at( x, y ) = *sView.xy_at( x, y ) + 50;
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+}
+
+EdgePoint* bresenham( const boost::multi_array<EdgePoint*, 2> & canny, const EdgePoint& p, const int dir, const std::size_t nmax )
+{
+	EdgePoint* ret = NULL;
+	float e        = 0.0f;
+	float dx       = dir * p._grad.x();
+	float dy       = dir * p._grad.y();
+
+	float adx = std::abs( dx );
+	float ady = std::abs( dy );
+
+	std::size_t n = 0;
+
+	if( ady > adx )
+	{
+		float a   = adx / ady;                          //#
+		int stp_x = boost::math::sign( dx );
+		int stp_y = boost::math::sign( dy );
+
+		int x = p.x();
+		int y = p.y();
+
+		n = n + 1;
+		e = e + a;
+		y = y + stp_y;                                  //#
+
+		if( e >= 0.5f )
+		{
+			x = x + stp_x;                              //#
+			e = e - 1.0f;
+		}
+
+		// Partie commenté dû à la différence de réponse du détecteur de contour
+		/*if ( x >= 0 && x < canny.shape()[0] &&
+		     y >= 0 && y < canny.shape()[1] )
+		   {
+		    ret = canny[x][y];
+		    if ( ret )
+		    {
+		        return ret;
+		    }
+		   }
+		   else
+		   {
+		    return NULL;
+		   }*/
+		n = n + 1;
+		e = e + a;
+		y = y + stp_y;                                  //#
+		if( e >= 0.5f )
+		{
+			x = x + stp_x;                              //#
+			e = e - 1.0f;
+		}
+		if( x >= 0 && x < canny.shape()[0] &&
+		    y >= 0 && y < canny.shape()[1] )
+		{
+			ret = canny[x][y];
+			if( ret )
+			{
+				return ret;
+			}
+		}
+		else
+		{
+			return NULL;
+		}
+
+		while( n <= nmax )
+		{
+			n = n + 1;
+			e = e + a;
+			y = y + stp_y;                              //#
+			if( e >= 0.5f )
+			{
+				x = x + stp_x;                          //#
+				e = e - 1.0f;
+			}
+
+			if( x >= 0 && x < canny.shape()[0] &&
+			    y >= 0 && y < canny.shape()[1] )
+			{
+				ret = canny[x][y];
+				if( ret )
+				{
+					return ret;
+				}
+				else
+				{
+					if( x >= 0 && x < canny.shape()[0] &&
+					    ( y - stp_y ) >= 0 && ( y - stp_y ) < canny.shape()[1] )
+					{
+						ret = canny[x][y - stp_y];              //#
+						if( ret )
+						{
+							return ret;
+						}
+					}
+					else
+					{
+						return NULL;
+					}
+				}
+			}
+			else
+			{
+				return NULL;
+			}
+		}
+	}
+	else
+	{
+		float a   = ady / adx;
+		int stp_x = boost::math::sign( dx );
+		int stp_y = boost::math::sign( dy );
+
+		int x = p.x();
+		int y = p.y();
+
+		n = n + 1;
+		e = e + a;
+		x = x + stp_x;
+
+		if( e >= 0.5f )
+		{
+			y = y + stp_y;
+			e = e - 1.0f;
+		}
+
+		// Partie commenté dû à la différence de réponse du détecteur de contour
+		/*if ( x >= 0 && x < canny.shape()[0] &&
+		     y >= 0 && y < canny.shape()[1] )
+		   {
+		    ret = canny[x][y];
+		    if ( ret )
+		    {
+		        return ret;
+		    }
+		   }
+		   else
+		   {
+		    return NULL;
+		   }*/
+		n = n + 1;
+		e = e + a;
+		x = x + stp_x;
+		if( e >= 0.5f )
+		{
+			y = y + stp_y;
+			e = e - 1;
+		}
+		if( x >= 0 && x < canny.shape()[0] &&
+		    y >= 0 && y < canny.shape()[1] )
+		{
+			ret = canny[x][y];
+			if( ret )
+			{
+				return ret;
+			}
+		}
+		else
+		{
+			return NULL;
+		}
+
+		while( n <= nmax )
+		{
+			n = n + 1;
+			e = e + a;
+			x = x + stp_x;
+			if( e >= 0.5f )
+			{
+				y = y + stp_y;
+				e = e - 1.0f;
+			}
+
+			if( x >= 0 && x < canny.shape()[0] &&
+			    y >= 0 && y < canny.shape()[1] )
+			{
+				ret = canny[x][y];
+				if( ret )
+				{
+					return ret;
+				}
+				else
+				{
+					if( ( x - stp_x ) >= 0 && ( x - stp_x ) < canny.shape()[0] &&
+					    y >= 0 && y < canny.shape()[1] )
+					{
+						ret = canny[x - stp_x][y];
+						if( ret )
+						{
+							return ret;
+						}
+					}
+					else
+					{
+						return NULL;
+					}
+				}
+			}
+			else
+			{
+				return NULL;
+			}
+		}
+	}
+	return NULL;
+}
+
+void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, int & stpX, int & stpY)
+{
+	float a = std::abs(dy/dx);
+	stpX = boost::math::sign<int>(dx);
+	stpY = boost::math::sign<int>(dy);
+	e += a;
+	x += stpX;
+	if (e>=0.5)
+	{
+		y += stpY;
+		e -= 1;
+	}
+	return;
+}
+
+EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & canny, const EdgePoint& p, int dir, const std::size_t nmax, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX, const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY, int thrGradient)
+{
+	/*for( int x = 0 ; x < cannyGradX.width(); ++x )
+	{
+		for( int y = 0 ; y < cannyGradX.height(); ++y )
+		{
+			boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type::xy_locator loc = cannyGradX.xy_at(x,y);
+
+			boost::gil::rgb32f_pixel_t pix;
+			color_convert( *loc, pix );
+			double r = get_color(pix, boost::gil::red_t());
+			double g = get_color(pix, boost::gil::green_t());
+			double b = get_color(pix, boost::gil::blue_t());
+
+			//boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type::xy_locator loc = cannyGradX.xy_at(0,0);
+		    //if (r != 12.0)
+
+			int toto = (*loc)[0];
+
+			ROM_COUT_DEBUG( "( " << r << ", " << g << ", " << b << " )");
+			//ROM_COUT_DEBUG( (*loc)[0] );
+			ROM_COUT_DEBUG(toto);
+			ROM_COUT_DEBUG((*(cannyGradX.xy_at(x,y)))[0]);
+		}
+	}*/
+
+	EdgePoint* ret = NULL;
+	float e        = 0.0f;
+	float dx       = dir * (*(cannyGradX.xy_at(p.x(),p.y())))[0];
+	float dy       = dir * (*(cannyGradY.xy_at(p.x(),p.y())))[0];
+
+	float dx2 = 0;
+	float dy2 = 0;
+
+	float dxRef = dx;
+	float dyRef = dy;
+
+	//ROM_COUT_DEBUG("p._grad.x() : " << p._grad.x() );
+	//ROM_COUT_DEBUG("p._grad.y() : " << p._grad.y() );
+
+	//ROM_COUT_DEBUG("cannyGradX : " << (*(cannyGradX.xy_at(p.x(),p.y())))[0] );
+	//ROM_COUT_DEBUG("cannyGradY : " << (*(cannyGradY.xy_at(p.x(),p.y())))[0] );
+
+	float adx = std::abs( dx );
+	float ady = std::abs( dy );
+
+	std::size_t n = 0;
+
+	int stpX = 0;
+	int stpY = 0;
+
+	int x = p.x();
+	int y = p.y();
+
+	if( ady > adx )
+	{
+
+		updateXY(dy,dx,y,x,e,stpY,stpX);
+		n = n+1;
+
+		///
+		/*
+		if( x >= 0 && x < canny.shape()[0] &&
+		    y >= 0 && y < canny.shape()[1] )
+		{
+			ret = canny[x][y];
+			if( ret )
+			{
+				return ret;
+			}
+		}
+		else
+		{
+			return NULL;
+		}
+		*/ ///
+
+		if ( dx*dx+dy*dy > thrGradient )
+		{
+			dx2 = (*(cannyGradX.xy_at(p.x(),p.y())))[0];
+			dy2 = (*(cannyGradY.xy_at(p.x(),p.y())))[0];
+			dir = boost::math::sign<float>( dx2*dxRef+dy2*dyRef );
+			dx = dir*dx2;
+			dy = dir*dy2;
+		}
+
+	    updateXY(dy,dx,y,x,e,stpY,stpX);
+		n = n+1;
+
+		if( x >= 0 && x < canny.shape()[0] &&
+		    y >= 0 && y < canny.shape()[1] )
+		{
+			ret = canny[x][y];
+			if( ret )
+			{
+				return ret;
+			}
+		}
+		else
+		{
+			return NULL;
+		}
+
+		while( n <= nmax)
+		{
+
+			updateXY(dy,dx,y,x,e, stpY,stpX);
+			n = n+1;
+
+			if( x >= 0 && x < canny.shape()[0] &&
+			    y >= 0 && y < canny.shape()[1] )
+			{
+				ret = canny[x][y];
+				if( ret )
+				{
+					return ret;
+				}
+				else
+				{
+					if( x >= 0 && x < canny.shape()[0] &&
+					    ( y - stpY ) >= 0 && ( y - stpY ) < canny.shape()[1] )
+					{
+						ret = canny[x][y - stpY];              //#
+						if( ret )
+						{
+							return ret;
+						}
+					}
+					else
+					{
+						return NULL;
+					}
+				}
+			}
+			else
+			{
+				return NULL;
+			}
+		}
+	}
+	else
+	{
+		updateXY(dx,dy,x,y,e,stpX,stpY);
+		n = n+1;
+
+		///
+		/*
+		if( x >= 0 && x < canny.shape()[0] &&
+		    y >= 0 && y < canny.shape()[1] )
+		{
+			ret = canny[x][y];
+			if( ret )
+			{
+				return ret;
+			}
+		}
+		else
+		{
+			return NULL;
+		}*/
+		///
+
+		if ( dx*dx+dy*dy > thrGradient )
+		{
+			dx2 = (*(cannyGradX.xy_at(p.x(),p.y())))[0];
+			dy2 = (*(cannyGradY.xy_at(p.x(),p.y())))[0];
+			dir = boost::math::sign<float>( dx2*dxRef+dy2*dyRef );
+			dx = dir*dx2;
+			dy = dir*dy2;
+		}
+
+	    updateXY(dx,dy,x,y,e,stpX,stpY);
+		n = n+1;
+
+		if( x >= 0 && x < canny.shape()[0] &&
+		    y >= 0 && y < canny.shape()[1] )
+		{
+			ret = canny[x][y];
+			if( ret )
+			{
+				return ret;
+			}
+		}
+		else
+		{
+			return NULL;
+		}
+
+		while( n <= nmax)
+		{
+
+			updateXY(dx,dy,x,y,e,stpX,stpY);
+			n = n+1;
+
+			if( x >= 0 && x < canny.shape()[0] &&
+			    y >= 0 && y < canny.shape()[1] )
+			{
+				ret = canny[x][y];
+				if( ret )
+				{
+					return ret;
+				}
+				else
+				{
+					if( ( x - stpX ) >= 0 && ( x - stpX ) < canny.shape()[0] &&
+					    y >= 0 && y < canny.shape()[1] )
+					{
+						ret = canny[x - stpX][y];
+						if( ret )
+						{
+							return ret;
+						}
+					}
+					else
+					{
+						return NULL;
+					}
+				}
+			}
+			else
+			{
+				return NULL;
+			}
+		}
+	}
+	return NULL;
+}
+
+}
+}
