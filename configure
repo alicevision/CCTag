@@ -1,0 +1,22 @@
+#! /bin/bash
+
+USAGE="
+Usage: ./`basename $0` [-h] [CMAKE_ARGS]
+See: cmake -h
+
+Example:
+./configure -DCMAKE_INSTALL_PREFIX=\$PWD/install -DCMAKE_PREFIX_PATH=\"/custom/external/libs/path;/other/path\" -DCMAKE_BUILD_TYPE=DEBUG
+
+
+"
+
+case $1 in
+ -h) echo "$USAGE"; exit 0 ;;
+  h) echo "$USAGE"; exit 0 ;;
+help) echo "$USAGE"; exit 0 ;;
+esac
+
+(mkdir -p build &&
+cd build && 
+cmake .. "$@")
+
