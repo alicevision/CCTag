@@ -2,6 +2,9 @@
 #include "fileDebug.hpp"
 
 //#include <boost/gil/extension/io/jpeg_io.hpp>
+
+// griff: define int_p_NULL against a bug in boost-gil-numeric 1.0.0
+#define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 
 namespace rom {
