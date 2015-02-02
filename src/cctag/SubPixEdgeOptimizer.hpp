@@ -5,6 +5,7 @@
 #include <cctag/global.hpp>
 
 #include <OPT++_config.h>
+#include <newmat.h>
 #include <OptLBFGS.h>
 #include <NLF.h>
 #include <OptQNewton.h>

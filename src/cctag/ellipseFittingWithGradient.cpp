@@ -37,7 +37,7 @@ namespace geometry {
 /*----------------------------------------------------------------------------*/
 /** Error or exception handling: print error message and exit.
  */
-void error( char *msg )
+void error( const char *msg )
 {
   fprintf( stderr,"%s\n", msg );
   exit(EXIT_FAILURE);

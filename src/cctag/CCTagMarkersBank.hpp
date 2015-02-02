@@ -44,7 +44,7 @@ private:
         bool r = phrase_parse( first, last,
             //  Begin grammar
             (
-                *( ( (uint_[ ref( n ) = _1 ] >> '/' >> uint_[ ref( n ) = ref( n ) / _1 ]) | double_[ ref( n ) = _1 ] )[ push_back( ref(rr), ref( n ) ) ] )
+                *( ( (uint_[ boost::phoenix::ref( n ) = _1 ] >> '/' >> uint_[ boost::phoenix::ref( n ) = boost::phoenix::ref( n ) / _1 ]) | double_[ boost::phoenix::ref( n ) = _1 ] )[ push_back( boost::phoenix::ref(rr), boost::phoenix::ref( n ) ) ] )
             )
             ,
             //  End grammar
