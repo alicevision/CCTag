@@ -474,13 +474,14 @@ namespace rom {
 
                     int n = 0;
                     if ((i == maxLength) || (stop == CONVEXITY_LOST)) {
-                        if (convexEdgeSegment.size() > windowSizeOnInnerEllipticSegment)
+                        if (convexEdgeSegment.size() > windowSizeOnInnerEllipticSegment) {
                             BOOST_FOREACH(EdgePoint * collectedP, convexEdgeSegment) {
-                            if (n == convexEdgeSegment.size() - windowSizeOnInnerEllipticSegment) {
-                                break;
-                            } else {
-                                collectedP->_processedIn = true;
-                                ++n;
+                                if (n == convexEdgeSegment.size() - windowSizeOnInnerEllipticSegment) {
+                                    break;
+                                } else {
+                                    collectedP->_processedIn = true;
+                                    ++n;
+                                }
                             }
                         }
                     } else if (stop == EDGE_NOT_FOUND) {

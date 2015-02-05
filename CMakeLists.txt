@@ -6,6 +6,9 @@ project( CCTag )
 # set the path where we can find the findXXX.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
+# avoid the cmake policy warning about @rpath in MacOSX
+cmake_policy(SET CMP0042 NEW)
+
 # FIND BoostNumericBindings
 find_package(BoostNumericBindings REQUIRED)
 include_directories(${BoostNumericBindings_INCLUDE_DIRS})
@@ -44,7 +47,7 @@ add_definitions(${OPTPP_DEFINITIONS})
 # FIND CERES
 find_package(Ceres REQUIRED)
 include_directories(${Ceres_INCLUDE_DIR})
-link_directories(${Ceres_LIB_DIR})
+# link_directories(${Ceres_LIB_DIR}) this variable is not created by Cmake file
 add_definitions(${Ceres_DEFINITIONS})
 
 # FIND Eigen
@@ -66,7 +69,9 @@ find_package(JPEG REQUIRED)
 find_package(Glog REQUIRED)
 
 # FIND GOMP
-find_package(Gomp REQUIRED)
+# find_package(Gomp REQUIRED)
+# griff: We don't have to find libgomp. Just pass the right flags to gcc
+find_package(OpenMP REQUIRED)
 
 # FIND GSL
 find_package(GSL REQUIRED)

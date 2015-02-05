@@ -23,6 +23,7 @@ SET(_ceres_SEARCH_DIRS
   /opt/local # DarwinPorts
   /opt/csw # Blastwave
   /opt/lib/ceres
+  /opt/local/ceres # addition for manual compile
 )
 
 FIND_PATH(Ceres_INCLUDE_DIR
@@ -33,6 +34,13 @@ FIND_PATH(Ceres_INCLUDE_DIR
   PATH_SUFFIXES
     include
 )
+
+IF(Ceres_INCLUDE_DIR)
+  MESSAGE( STATUS "Ceres include path found as ${Ceres_INCLUDE_DIR}" )
+ELSE(Ceres_INCLUDE_DIR)
+  MESSAGE( FATAL_ERROR "Ceres include path not found" )
+ENDIF(Ceres_INCLUDE_DIR)
+
 # TODO: Is Ceres_CONFIG_INCLUDE_DIR really needed? Or is it by default when the installation is correct?
 FIND_PATH(Ceres_CONFIG_INCLUDE_DIR
   NAMES
@@ -40,11 +48,19 @@ FIND_PATH(Ceres_CONFIG_INCLUDE_DIR
   HINTS
     ${_ceres_SEARCH_DIRS}
   PATH_SUFFIXES
-    config
+    config include
 )
-set(Ceres_INCLUDE_DIR ${Ceres_INCLUDE_DIR} ${Ceres_CONFIG_INCLUDE_DIR})
+IF(Ceres_CONFIG_INCLUDE_DIR)
+  MESSAGE( STATUS "Ceres config file found at ${Ceres_CONFIG_INCLUDE_DIR}")
+  IF(NOT Ceres_INCLUDE_DIR STREQUAL Ceres_CONFIG_INCLUDE_DIR)
+    SET(Ceres_INCLUDE_DIR ${Ceres_INCLUDE_DIR} ${Ceres_CONFIG_INCLUDE_DIR})
+  ENDIF(NOT Ceres_INCLUDE_DIR STREQUAL Ceres_CONFIG_INCLUDE_DIR)
+ELSE(Ceres_CONFIG_INCLUDE_DIR)
+  MESSAGE( FATAL_ERROR "Ceres config file ceres/internal/config.h not found" )
+ENDIF(Ceres_CONFIG_INCLUDE_DIR)
 
-message( WARNING "est-ce que tu m'entends he ho - dixit TRAGEDY ${Ceres_INCLUDE_DIR}")
+
+# message( WARNING "est-ce que tu m'entends he ho - dixit TRAGEDY ${Ceres_INCLUDE_DIR}")
 FIND_LIBRARY(Ceres_LIBRARY
   NAMES
     ceres
@@ -53,6 +69,12 @@ FIND_LIBRARY(Ceres_LIBRARY
   PATH_SUFFIXES
     lib64 lib
   )
+
+IF(Ceres_LIBRARY)
+  MESSAGE( STATUS "Ceres library found at ${Ceres_LIBRARY}" )
+ELSE(Ceres_LIBRARY)
+  MESSAGE( FATAL_ERROR "Ceres library not found" )
+ENDIF(Ceres_LIBRARY)
 
 # handle the QUIETLY and REQUIRED arguments and set Ceres_FOUND to TRUE if
 # all listed variables are TRUE
