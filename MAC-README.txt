@@ -26,6 +26,33 @@ Step 3:
  The following alternative failed:
  - call
    sudo port install -s opencv configure.cxx_stdlib="libstdc++"
+ I have to try the following alternative:
+ cmake -DCMAKE_INSTALL_PREFIX=/opt/local \
+       -DCMAKE_CXX_FLAGS="-stdlib=libstdc++" \
+       -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++" \
+       ..
+
+Step 3b
+  - install eigen
+ cmake -DCMAKE_INSTALL_PREFIX=/opt/local \
+       -DCMAKE_CXX_FLAGS="-stdlib=libstdc++" \
+       -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++" \
+       ..
+
+Step 3c
+  - install libjpeg and libpng
+  sudo port install -s jpeg
+  sudo port install -s libpng
+
+Step 3c
+  - install glog
+  LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local
+  make
+  sudo make install
+
+Step 3d
+  - install gsl
+  LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local
 
 Step 4
  - install boost
