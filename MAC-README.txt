@@ -65,7 +65,22 @@ Step 6
  CXXFLAGS="-stdlib=libstdc++" LDFLAGS="-stdlib=libstdc++" ./configure --prefix=/opt/local
  make
  sudo make install
+ sudo cp include/OPT++_config.h /opt/local/include/
 
+Step 7
+ - compile CCTag
+ ccmake -DCMAKE_CXX_COMPILER=/usr/bin/clang \
+        -DCMAKE_C_COMPILER=/usr/bin/clang \
+	-DCMAKE_INSTALL_PREFIX=/opt/local \
+	-DCMAKE_CXX_FLAGS="-stdlib=libstdc++" \
+	-DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++ -lstdc++" \
+	-DOpenMP_CXX_FLAGS="-fopenmp" \
+	-DOpenMP_C_FLAGS="-fopenmp" \
+	..
+ In the files src/CMakeFiles/CCTag.dir/link.txt and src/CMakeFiles/detection.dir/link.txt 
+ get rid of the -L-Wl,/Developer/ bug and add -lstdc++ if it is missing
+ - After compiling, we still have trouble finding shared libraries in /opt/local/lib
+ - Using DYLD_LIBRARY_PATH seems to be a bad idea.
 
 | Here's how I compiled OpenCV 2.4.8 on OSX Mavericks 10.9.1 using Xcode 5.0.2 and CUDA 5.5:
 | 
