@@ -16,9 +16,9 @@ Step 2:
  - add CUDA to the path
    export PATH=$PATH:/Developer/NVIDIA/CUDA-6.5/bin
    export CUDA_HOST_COMPILER=/usr/bin/clang
-   export CUDA_NVCC_FLAGS="$(CUDA_NVCC_FLAGS) -Xcompiler -stdlib=libstdc++; -Xlinker -stdlib=libstdc++"
-   export CMAKE_CXX_FLAGS="$(CMAKE_CXX_FLAGS) -stdlib=libstdc++"
-   export CMAKE_EXE_LINKER_FLAGS="$(CMAKE_EXE_LINKER_FLAGS) -stdlib=libstdc++"
+   export CUDA_NVCC_FLAGS="$CUDA_NVCC_FLAGS -Xcompiler -stdlib=libstdc++; -Xlinker -stdlib=libstdc++"
+   export CMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS -stdlib=libstdc++"
+   export CMAKE_EXE_LINKER_FLAGS="$CMAKE_EXE_LINKER_FLAGS -stdlib=libstdc++"
 
 Step 3
  - install very simple libraries
