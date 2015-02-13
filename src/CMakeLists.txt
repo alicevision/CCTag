@@ -12,12 +12,13 @@ FILE(
 
 set(CCTagDetect_cpp ./cctag/detection/main.cpp)
 
-add_library( CCTag SHARED ${CCTag_cpp})
+# add_library( CCTag SHARED ${CCTag_cpp})
+add_library( CCTag STATIC ${CCTag_cpp})
 target_link_libraries( CCTag PUBLIC
     ${OpenCV_LIBS}
     ${Boost_LIBRARIES}
     ${OPTPP_LIBRARIES}
-    ${Ceres_LIBRARY}
+    ${Ceres_LIBRARIES}
     ${Eigen_LIBRARIES}
     ${PNG_LIBRARIES}
     ${JPEG_LIBRARIES}
