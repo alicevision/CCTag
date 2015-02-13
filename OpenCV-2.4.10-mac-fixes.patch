@@ -48,12 +48,13 @@
  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${OPENCV_LIB_INSTALL_PATH}")
  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 +else(NOT APPLE)
-+  # TURE: path re-writing for paths listed in a dylib.
-+  #       For some weird reason, it re-writes from @rpath/ (a good idea) to lib/,
-+  #       which is plain stupid.
-+  # FALSE: path re-writing for paths listed in a dylib.
-+  #        It re-writes absolute BUILD path to lib/,
-+  #        which is just as stupid.
++  #
++  #
++  #
++  #
++  # TRUE: path re-writing for paths listed in a dylib.
++  #       unless build path and install path are identical
++  # FALSE: no path re-writing for paths listed in a dylib.
 +  set(CMAKE_MACOSX_RPATH TRUE)
 +
 +  # Setting this path is a good thing: the absolute path is included as LC_RPATH
@@ -65,7 +66,6 @@
 +  # TRUE: the absolute path to CUDA is included (good idea)
 +  # FALSE: only the own install path is include as an rpath (less good idea)
 +  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-+  # set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 +
 +  # TRUE: Build with install rpath, don't re-write at install time (maybe?)
 +  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
