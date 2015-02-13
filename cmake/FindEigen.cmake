@@ -87,24 +87,30 @@ ENDMACRO(Eigen_REPORT_NOT_FOUND)
 #
 # TODO: Add standard Windows search locations for Eigen.
 LIST(APPEND Eigen_CHECK_INCLUDE_DIRS
-  /usr/local/include/eigen3
-  /usr/local/homebrew/include/eigen3 # Mac OS X
-  /opt/local/var/macports/software/eigen3 # Mac OS X.
-  /opt/local/include/eigen3
-  /usr/include/eigen3)
+  /usr/local/include
+  /usr/local/homebrew/include # Mac OS X
+  /opt/local/var/macports/software # Mac OS X.
+  /opt/local/include
+  /usr/include)
 
 # Search supplied hint directories first if supplied.
 FIND_PATH(Eigen_INCLUDE_DIR
   NAMES Eigen/Core
   PATHS ${Eigen_INCLUDE_DIR_HINTS}
-  ${Eigen_CHECK_INCLUDE_DIRS})
-IF (NOT Eigen_INCLUDE_DIR OR
-    NOT EXISTS ${Eigen_INCLUDE_DIR})
-  Eigen_REPORT_NOT_FOUND(
-    "Could not find eigen3 include directory, set Eigen_INCLUDE_DIR to "
-    "path to eigen3 include directory, e.g. /usr/local/include/eigen3.")
-ENDIF (NOT Eigen_INCLUDE_DIR OR
-       NOT EXISTS ${Eigen_INCLUDE_DIR})
+  HINTS ${Eigen_CHECK_INCLUDE_DIRS}
+  PATH_SUFFIXES "eigen3"
+  )
+IF (NOT Eigen_INCLUDE_DIR OR NOT EXISTS ${Eigen_INCLUDE_DIR})
+  FIND_PATH(Eigen_INCLUDE_DIR
+            NAMES Eigen/Core
+	    PATH_SUFFIXES "eigen3"
+	    )
+  IF (NOT Eigen_INCLUDE_DIR)
+    Eigen_REPORT_NOT_FOUND(
+      "Could not find eigen3 include directory, set Eigen_INCLUDE_DIR to "
+      "path to eigen3 include directory, e.g. /usr/local/include/eigen3.")
+  ENDIF (NOT Eigen_INCLUDE_DIR)
+ENDIF (NOT Eigen_INCLUDE_DIR OR NOT EXISTS ${Eigen_INCLUDE_DIR})
 
 # Mark internally as found, then verify. Eigen_REPORT_NOT_FOUND() unsets
 # if called.
