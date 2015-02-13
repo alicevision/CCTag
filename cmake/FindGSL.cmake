@@ -84,7 +84,10 @@ ELSE(WIN32)
 
     IF (GSL_CONFIG)
       # set CXXFLAGS to be fed into CXX_FLAGS by the user:
-      SET(GSL_CXX_FLAGS "`${GSL_CONFIG} --cflags`")
+      EXEC_PROGRAM(${GSL_CONFIG}
+        ARGS --cflags
+        OUTPUT_VARIABLE _local_gsl_cxx_flags)
+      SET(GSL_CXX_FLAGS ${_local_gsl_cxx_flags}/include CACHE STRING INTERNAL)
 
       # set INCLUDE_DIRS to prefix+include
       EXEC_PROGRAM(${GSL_CONFIG}
@@ -132,9 +135,11 @@ ELSE(WIN32)
   	  #MESSAGE(STATUS "Using GSL from ${GSL_PREFIX}")
 
     ELSE(GSL_CONFIG)
-      MESSAGE("FindGSL.cmake: gsl-config not found. Please set it manually. GSL_CONFIG=${GSL_CONFIG}")
+      MESSAGE(FATAL_ERROR "FindGSL.cmake: gsl-config not found. Please set it manually. GSL_CONFIG=${GSL_CONFIG}")
     ENDIF(GSL_CONFIG)
 
+  ELSE(UNIX)
+    MESSAGE(FATAL_ERROR "Missing case: NOT WIN32 and NOT UNIX")
   ENDIF(UNIX)
 ENDIF(WIN32)
 
