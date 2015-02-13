@@ -16,22 +16,36 @@ Step 2:
  - add CUDA to the path
    export PATH=$PATH:/Developer/NVIDIA/CUDA-6.5/bin
    export CUDA_HOST_COMPILER=/usr/bin/clang
-   export CUDA_NVCC_FLAGS="$CUDA_NVCC_FLAGS -Xcompiler -stdlib=libstdc++; -Xlinker -stdlib=libstdc++"
-   export CMAKE_CXX_FLAGS="$CMAKE_CXX_FLAGS -stdlib=libstdc++"
-   export CMAKE_EXE_LINKER_FLAGS="$CMAKE_EXE_LINKER_FLAGS -stdlib=libstdc++"
+   export CUDA_NVCC_FLAGS="$(CUDA_NVCC_FLAGS) -Xcompiler -stdlib=libstdc++; -Xlinker -stdlib=libstdc++"
+   export CMAKE_CXX_FLAGS="$(CMAKE_CXX_FLAGS) -stdlib=libstdc++"
+   export CMAKE_EXE_LINKER_FLAGS="$(CMAKE_EXE_LINKER_FLAGS) -stdlib=libstdc++"
 
 Step 3
  - install very simple libraries
  - glog
+   mkdir BUILD
+   cd BUILD
    LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
    make
    sudo make install
  - gsl
+   mkdir BUILD
+   cd BUILD
    LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
+   make
+   sudo make install
  - jpeg6a
+   mkdir BUILD
+   cd BUILD
    LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
+   make
+   sudo make install
  - libpng
+   mkdir BUILD
+   cd BUILD
    LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
+   make
+   sudo make install
  - SuiteSparse
    cd SuiteSparse/SuiteSparse_config
    edit SuiteSparse_config_Mac.mk
@@ -83,10 +97,6 @@ Step 4
              linkflags="-stdlib=libstdc++" \
 	     install --prefix=/opt/local/stdcxx
 
-   Note: It is possible to re-write RPATH requirements for installed libraries. Helps but insufficient.
-   	for i in /opt/local/stdcxx/lib/libboost* ; do \
-       		install_name_tool -add_rpath /opt/local/stdcxx/lib $i \
-   	done
    Note: online recommendation to add -std=c++11 to the cxxflags leads to lots of
          errors with boost_1_57_0 and clang 6.0 on Mavericks, so I dropped it
 
@@ -115,20 +125,28 @@ Step 6
    CPPFLAGS="-I/opt/local/stdcxx/include" LDFLAGS="-L/opt/local/stdcxx/lib" CXXFLAGS="-stdlib=libstdc++" LDFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
    make
    sudo make install
-   sudo cp include/OPT++_config.h /opt/local/include/
+   sudo cp include/OPT++_config.h /opt/local/stdcxx/include/
 
 Step 7:
  - opencv version 2.x.x
+   (1) OpenCV CMake files screw up RPATH on Mac with cmake 3
+   patch -p1 << ../CCTag/OpenCV-2.4.10-mac-fixes.patch
+
+   (2) call cmake and build
    cmake -DCMAKE_INSTALL_PREFIX=/opt/local/stdcxx \
          -DCMAKE_CXX_FLAGS="-stdlib=libstdc++" \
          -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++" \
          -DCMAKE_INCLUDE_PATH="/opt/local/stdcxx/include" \
          -DCMAKE_LIBRARY_PATH="/opt/local/stdcxx/lib" \
          -DCUDA_ARCH_BIN="2.0 2.1(2.0) 3.0 3.5" \
-	 -DBUILD_SHARED_LIBS=OFF \
+	 -DBUILD_JPEG=OFF \
+	 -DBUILD_ZLIB=OFF \
+	 -DBUILD_PNG=OFF \
+	 -DBUILD_SHARED_LIBS=ON \
+	 -DWITH_OPENCL=OFF \
          ..
    Note: Opencv compiles its own libpng and libjpeg if they don't exist in MacPorts
-   versions. That is probably a good thing.
+   versions. That is a bad thing because CCTag will have version collisions.
 
 Step 8
  - compile CCTag

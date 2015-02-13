@@ -1,0 +1,128 @@
+--- opencv-2.4.10/CMakeLists.txt	2014-10-01 01:33:36.000000000 +0200
++++ opencv-2.4.10-patched/CMakeLists.txt	2015-02-13 10:54:50.000000000 +0100
+@@ -47,6 +47,39 @@
+   cmake_policy(SET CMP0022 OLD)
+ endif()
+ 
++# BEGIN griff 12feb2015
++if(POLICY CMP0015)
++  # link_directories() OLD was copying paths verbatim, NEW prefixes them
++  # OpenCV uses link_directories to refer to other packages, so OLD is needed
++  cmake_policy(SET CMP0015 OLD)
++endif()
++
++if(POLICY CMP0022)
++  # Earlier, it was possible to refer directly to install path objects via
++  # LOCATION. This is now disallowed. We switch to old policy because there
++  # is too much code here to fix it.
++  cmake_policy(SET CMP0026 OLD)
++endif()
++
++if(POLICY CMP0038)
++  # We want to allow a target to link to itself in target_link_libraries.
++  # This is a probable error, but OpenCV files are all like that.
++  cmake_policy(SET CMP0038 OLD)
++endif(POLICY CMP0038)
++
++if(POLICY CMP0042)
++  # The new policy is to set Mac linking to @rpath by default
++  cmake_policy(SET CMP0042 NEW)
++endif()
++
++if(POLICY CMP0045)
++  # The old policy is set the result of get_target_property() to NOTFOUND is
++  # the argument is non-existing. Used a lot by OpenCV.
++  cmake_policy(SET CMP0045 OLD)
++endif()
++# END griff 12feb2015
++
++
+ # must go before the project command
+ set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Configs" FORCE)
+ if(DEFINED CMAKE_BUILD_TYPE AND CMAKE_VERSION VERSION_GREATER "2.8")
+@@ -332,8 +365,41 @@
+   endif()
+ endif()
+ 
++if(NOT APPLE)
+ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${OPENCV_LIB_INSTALL_PATH}")
+ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
++else(NOT APPLE)
++  # TURE: path re-writing for paths listed in a dylib.
++  #       For some weird reason, it re-writes from @rpath/ (a good idea) to lib/,
++  #       which is plain stupid.
++  # FALSE: path re-writing for paths listed in a dylib.
++  #        It re-writes absolute BUILD path to lib/,
++  #        which is just as stupid.
++  set(CMAKE_MACOSX_RPATH TRUE)
++
++  # Setting this path is a good thing: the absolute path is included as LC_RPATH
++  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${OPENCV_LIB_INSTALL_PATH}")
++  # An alternative approach, should be working as well. Reqires that the an
++  # LC_RPATH is added to the executable linking the dylib.
++  # set(CMAKE_INSTALL_RPATH "@rpath/${OPENCV_LIB_INSTALL_PATH}")
++
++  # TRUE: the absolute path to CUDA is included (good idea)
++  # FALSE: only the own install path is include as an rpath (less good idea)
++  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
++  # set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
++
++  # TRUE: Build with install rpath, don't re-write at install time (maybe?)
++  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
++
++  # TRUE: avoid adding an RPATH in build and install step (bad idea)
++  set(CMAKE_SKIP_RPATH FALSE)
++
++  # TRUE: avoid adding an RPATH in build step (bad idea)
++  set(CMAKE_SKIP_BUILD_RPATH FALSE)
++
++  # TRUE: avoid adding an RPATH in install step (bad idea)
++  set(CMAKE_SKIP_INSTALL_RPATH FALSE)
++endif(NOT APPLE)
+ 
+ if(INSTALL_TO_MANGLED_PATHS)
+   set(OPENCV_INCLUDE_INSTALL_PATH ${OPENCV_INCLUDE_INSTALL_PATH}/opencv-${OPENCV_VERSION})
+--- opencv-2.4.10/cmake/OpenCVModule.cmake	2014-10-01 01:33:36.000000000 +0200
++++ opencv-2.4.10-patched/cmake/OpenCVModule.cmake	2015-02-13 10:47:09.000000000 +0100
+@@ -590,7 +590,7 @@
+     ARCHIVE_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH}
+     LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH}
+     RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+-    INSTALL_NAME_DIR lib
++    INSTALL_NAME_DIR @rpath
+   )
+ 
+   # For dynamic link numbering convenions
+--- opencv-2.4.10/cmake/FindCUDA.cmake	2014-10-01 01:33:36.000000000 +0200
++++ opencv-2.4.10-patched/cmake/FindCUDA.cmake	2015-02-13 11:12:28.000000000 +0100
+@@ -853,18 +853,18 @@
+ else()
+   set(CUDA_LIBRARIES ${CUDA_CUDART_LIBRARY})
+ endif()
+-if(APPLE)
+-  # We need to add the path to cudart to the linker using rpath, since the
+-  # library name for the cuda libraries is prepended with @rpath.
+-  if(CUDA_BUILD_EMULATION AND CUDA_CUDARTEMU_LIBRARY)
+-    get_filename_component(_cuda_path_to_cudart "${CUDA_CUDARTEMU_LIBRARY}" PATH)
+-  else()
+-    get_filename_component(_cuda_path_to_cudart "${CUDA_CUDART_LIBRARY}" PATH)
+-  endif()
+-  if(_cuda_path_to_cudart)
+-    list(APPEND CUDA_LIBRARIES -Wl,-rpath "-Wl,${_cuda_path_to_cudart}")
+-  endif()
+-endif()
++# if(APPLE)
++#   # We need to add the path to cudart to the linker using rpath, since the
++#   # library name for the cuda libraries is prepended with @rpath.
++#   if(CUDA_BUILD_EMULATION AND CUDA_CUDARTEMU_LIBRARY)
++#     get_filename_component(_cuda_path_to_cudart "${CUDA_CUDARTEMU_LIBRARY}" PATH)
++#   else()
++#     get_filename_component(_cuda_path_to_cudart "${CUDA_CUDART_LIBRARY}" PATH)
++#   endif()
++#   if(_cuda_path_to_cudart)
++#     list(APPEND CUDA_LIBRARIES -Wl,-rpath "-Wl,${_cuda_path_to_cudart}")
++#   endif()
++# endif()
+ 
+ # 1.1 toolkit on linux doesn't appear to have a separate library on
+ # some platforms.
