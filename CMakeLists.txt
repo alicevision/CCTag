@@ -6,14 +6,15 @@ project( CCTag )
 # set the path where we can find the findXXX.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
+set(CMAKE_BUILD_TYPE Debug) # Debug, Release
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DGRIFF_DEBUG")
+set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   -DGRIFF_DEBUG")
+if(APPLE)
+  set(CMAKE_CXX_FLAGS       "${CMAKE_CXX_FLAGS}       -Wno-c++11-extensions")
+endif(APPLE)
+
 # avoid the cmake policy warning about @rpath in MacOSX
 cmake_policy(SET CMP0042 NEW)
-
-# how to treat relative paths in link_directories()
-# cmake_policy(SET CMP0015 NEW)
-# griff - after reading MacOSX RPATH trouble caused by link_directories, I've removed it completely.
-#         cmake docs claim that find_library and find_package return absolute paths anyway, making
-#         link_directories redundant
 
 if(APPLE)
   SET(CMAKE_MACOSX_RPATH TRUE) # initialize the MACOSX_RPATH property on all targets
