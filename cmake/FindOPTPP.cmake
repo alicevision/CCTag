@@ -46,7 +46,7 @@ if(NOT OPTPP_INCLUDE_DIRS)
       MESSAGE( STATUS "opt++ header files found at ${OPTPP_INCLUDE_DIRS}" )
     ELSE(OPTPP_INCLUDE_DIRS)
       MESSAGE( FATAL_ERROR "opt++ header files not found" )
-    ENDIF(NOT OPTPP_INCLUDE_DIRS)
+    ENDIF(OPTPP_INCLUDE_DIRS)
   endif()
 endif()
 
@@ -95,7 +95,13 @@ find_path(OPTPP_NEWMAT_INCLUDE_DIRS
 IF(OPTPP_NEWMAT_INCLUDE_DIRS)
   MESSAGE(STATUS "newmat include dirs found at ${OPTPP_NEWMAT_INCLUDE_DIRS}")
 ELSE(OPTPP_NEWMAT_INCLUDE_DIRS)
-  MESSAGE(FATAL_ERROR "newmat include dirs not found")
+  FIND_PATH( OPTPP_NEWMAT_INCLUDE_DIRS
+             NAMES include.h
+             PATH_SUFFIXES "include" "include/newmat11" "include/newmat" "newmat11" "newmat"
+	     DOC ${OPTPP_INCLUDE_DOC})
+  IF(NOT OPTPP_NEWMAT_INCLUDE_DIRS)
+    MESSAGE( WARNING "newmat include dirs not found")
+  ENDIF(NOT OPTPP_NEWMAT_INCLUDE_DIRS)
 ENDIF(OPTPP_NEWMAT_INCLUDE_DIRS)
 
 find_library(OPTPP_NEWMAT_DEBUG_LIBRARY

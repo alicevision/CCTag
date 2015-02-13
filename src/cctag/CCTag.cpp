@@ -93,7 +93,6 @@ namespace rom {
                 ar & BOOST_SERIALIZATION_NVP(_id);
                 ar & BOOST_SERIALIZATION_NVP(_pyramidLevel);
                 ar & BOOST_SERIALIZATION_NVP(_scale);
-                ROM_COUT_VAR(_status);
                 ar & BOOST_SERIALIZATION_NVP(_status);
                 serializeEllipse(ar, _outerEllipse);
                 serializeEllipse(ar, _rescaledOuterEllipse);

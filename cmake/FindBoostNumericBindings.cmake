@@ -98,6 +98,18 @@ else ()
       PATH_SUFFIXES boost-numeric-bindings
       DOC           "Root include directory of boost-numeric-bindings."
   )
+  if (NOT BoostNumericBindings_INCLUDE_DIR)
+    message (WARNING "Could not find boost numerics in ENV C_INCLUDE_PATH ENV CXX_INCLUDE_PATH")
+    find_path (
+      BoostNumericBindings_INCLUDE_DIR
+      NAMES         boost/numeric/bindings/atlas/cblas.hpp
+      PATH_SUFFIXES "include" "include/boost-numeric-bindings"
+      DOC           "Root include directory of boost-numeric-bindings."
+    )
+    if (NOT BoostNumericBindings_INCLUDE_DIR)
+      message (FATAL_ERROR "Could not find boost numerics")
+    endif (NOT BoostNumericBindings_INCLUDE_DIR)
+  endif (NOT BoostNumericBindings_INCLUDE_DIR)
 
 endif ()
 

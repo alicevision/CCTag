@@ -6,7 +6,10 @@ This approach is inspired by user Marco's comment on
 http://stackoverflow.com/questions/19626854/opencv-cuda-osx-maverick
 
 Step 1:
- - uninstall gcc/g++ and gcc_select from MacPorts
+ - uninstall everything you have form MacPorts
+   sudo port uninstall installed
+ - re-install gmake and cmake
+   sudo port install gmake cmake
 
 Step 2:
  - install the latest version of CUDA, 6.5
@@ -17,60 +20,144 @@ Step 2:
    export CMAKE_CXX_FLAGS="$(CMAKE_CXX_FLAGS) -stdlib=libstdc++"
    export CMAKE_EXE_LINKER_FLAGS="$(CMAKE_EXE_LINKER_FLAGS) -stdlib=libstdc++"
 
-Step 3:
- - Goal: install OpenCV such that it links libstdc++ instead of libc++
- - create BUILD directory, cd into it, call "cmake .."
- - switch to advanced mode using "t"
- - add -stdlib=libstdc++ in both CMAKE_CXX_FLAGS and CMAKE_EXE_LINKER_FLAGS
- - change PREFIX to /opt/local
- The following alternative failed:
- - call
-   sudo port install -s opencv configure.cxx_stdlib="libstdc++"
+Step 3
+ - install very simple libraries
+ - glog
+   mkdir BUILD
+   cd BUILD
+   LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
+   make
+   sudo make install
+ - gsl
+   mkdir BUILD
+   cd BUILD
+   LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
+   make
+   sudo make install
+ - jpeg6a
+   mkdir BUILD
+   cd BUILD
+   LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
+   make
+   sudo make install
+ - libpng
+   mkdir BUILD
+   cd BUILD
+   LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
+   make
+   sudo make install
+ - SuiteSparse
+   cd SuiteSparse/SuiteSparse_config
+   edit SuiteSparse_config_Mac.mk
+     LIB = -lm                       ==>  LIB = -lm -stdlib=libstdc++
+     <null>                          ==> CC = clang
+     <null>			     ==> CXX = clang
+     CFLAGS =                        ==>  CFLAGS = -stdlib=libstdc++
+     # MAKE = gmake                  ==> MAKE = gmake
+     # CHOLMOD_CONFIG = -DNPARTITION ==> CHOLMOD_CONFIG = -DNPARTITION
+     INSTALL_LIB = /usr/local/lib    ==> INSTALL_LIB = /opt/local/stdcxx/lib
+     INSTALL_INCLUDE = /usr/local/include ==> INSTALL_INCLUDE = /opt/local/stdcxx/include
+   mv SuiteSparse_config_Mac.mk SuiteSparse_config.mk
+   cd ..
+   make
+   sudo make install
+ - eigen
+   cmake -DCMAKE_INSTALL_PREFIX=/opt/local/stdcxx \
+         -DCMAKE_CXX_FLAGS="-stdlib=libstdc++" \
+         -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++" \
+	 -DCMAKE_INCLUDE_PATH="/opt/local/stdcxx/include" \
+	 -DCMAKE_LIBRARY_PATH="/opt/local/stdcxx/lib" \
+         ..
 
 Step 4
- - install boost
- - call
-   ./bootstrap.sh cxxflags="-stdlib=libstdc++"
-   ./b2 cxxflags="-stdlib=libstdc++" linkflags="-stdlib=libstdc++"
-   sudo ./b2 cxxflags="-stdlib=libstdc++" linkflags="-stdlib=libstdc++" install --prefix=/opt/local
- - Note: online recommendation to add -std=c++11 to the cxxflags leads to lots of
+ - boost
+   (1) configure step
+   ./bootstrap.sh cxxflags="-stdlib=libstdc++" \
+                  --prefix=/opt/local/stdcxx \
+                  --without-libraries=python \
+                  --without-libraries=mpi
+
+   (2) post-configure patch, may fix the RPATH defect
+   sed -e 's|-install_name \"|&/opt/local/stdcxx/lib/|' tools/build/src/tools/darwin.jam > darwin.jam-2
+   mv darwin.jam-2 tools/build/src/tools/darwin.jam
+
+   Note: MacPorts create a user-config.jam file as follows:
+   	 echo "using darwin : : ${configure.cxx} : <cxxflags>\"${configure.cxxflags} ${cxx_stdlibflags}\" ${compileflags} <linkflags>\"${configure.ldflags} ${cxx_stdlibflags}\" : ;" > user-config.jam
+	 I believe these are covered by the command line flags below.
+	 If it is required, add -user-config=user-config.jam as flag below after --layout.
+
+   (3) compile and install
+   sudo ./b2 --layout=tagged \
+             toolset=darwin \
+	     variant=release \
+	     link=static,shared \
+	     runtime-link=shared \
+	     threading=single,multi \
+             cxxflags="-stdlib=libstdc++" \
+             linkflags="-stdlib=libstdc++" \
+	     install --prefix=/opt/local/stdcxx
+
+   Note: online recommendation to add -std=c++11 to the cxxflags leads to lots of
          errors with boost_1_57_0 and clang 6.0 on Mavericks, so I dropped it
+
  - add boost-gil-numeric
-   sudo cp -r numeric /opt/local/include/boost/gil/extension/
+   sudo cp -r numeric /opt/local/stdcxx/include/boost/gil/extension/
+ - add boost-numeric-bindings
+   git clone http://git.tiker.net/trees/boost-numeric-bindings.git
+   ./configure --prefix=/opt/local/stdcxx
+   sudo make install
 
 Step 5
- - install Ceres
- - make sure the cmake cache is empty
+ - Ceres
  - call
-   ccmake -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
+    cmake -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
           -DCMAKE_C_COMPILER=/usr/bin/gcc \
-	  -DCMAKE_INSTALL_PREFIX=/opt/local \
+	  -DCMAKE_INSTALL_PREFIX=/opt/local/stdcxx \
 	  -DCMAKE_CXX_FLAGS="-stdlib=libstdc++" \
 	  -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++" \
+	  -DCMAKE_INCLUDE_PATH="/opt/local/stdcxx/include" \
+	  -DCMAKE_LIBRARY_PATH="/opt/local/stdcxx/lib" \
 	  ..
- // - call ccmake, configure, go to advanced mode (t)
- // - set CMAKE_INSTALL_PREFIX /opt/local
- // - set CMAKE_CXX_FLAGS -stdlib=libstdc++
- // - set CMAKE_EXE_LINKER_FLAGS -stdlib=libstdc++
- // - set CMAKE_CXX_COMPILER /usr/bin/g++
- // - set CMAKE_C_COMPILER /usr/bin/gcc
- Note: make sure that this g++ is actually the gcc frontend for llvm 6.0
-       i.e. that it is call compatible with the clang used for boost
- Note: g++ is needed because it has --with-gxx-include-dir=/usr/include/c++/4.2.1
-       which gives it unordered_map and shared_ptr
- Note: I had to remove google::SetUsageMessage from an example
 
 Step 6
- - install optpp-2.4
- CXXFLAGS="-stdlib=libstdc++" LDFLAGS="-stdlib=libstdc++" ./configure --prefix=/opt/local
- make
- sudo make install
+ - optpp-2.4
+   mkdir BUILD; cd BUILD
+   CPPFLAGS="-I/opt/local/stdcxx/include" LDFLAGS="-L/opt/local/stdcxx/lib" CXXFLAGS="-stdlib=libstdc++" LDFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
+   make
+   sudo make install
+   sudo cp include/OPT++_config.h /opt/local/stdcxx/include/
 
+Step 7:
+ - opencv version 2.x.x
+   (1) OpenCV CMake files screw up RPATH on Mac with cmake 3
+   patch -p1 << ../CCTag/OpenCV-2.4.10-mac-fixes.patch
 
-| Here's how I compiled OpenCV 2.4.8 on OSX Mavericks 10.9.1 using Xcode 5.0.2 and CUDA 5.5:
-| 
-| open CMake to set the project, and to the basic configuration
-| in latest Xcode (I think >= 5) there's no more the gcc compiler, deprecated in favor of clang, so go to the CUDA options of the CMAKE project and change CUDA_HOST_COMPILER to use "/usr/bin/clang". Luckily CUDA 5.5 supports clang and not only gcc
-| Apparently CUDA 5.5 supports only the older libstdc++ library and not the more modern libc++, so update CUDA_NVCC_FLAGS to tell mvcc to pass tell the nativa compilar to use this older library. Add "-Xcompiler -stdlib=libstdc++; -Xlinker -stdlib=libstdc++"
-| Tell also the C++ compiler that compiles the rest of the library to use libstdc++: show the advanced options of CMAKE and go to CMAKE to add "-stdlib=libstdc++" to both CMAKE_CXX_FLAGS and CMAKE_EXE_LINKER_FLAGS
+   (2) call cmake and build
+   cmake -DCMAKE_INSTALL_PREFIX=/opt/local/stdcxx \
+         -DCMAKE_CXX_FLAGS="-stdlib=libstdc++" \
+         -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++" \
+         -DCMAKE_INCLUDE_PATH="/opt/local/stdcxx/include" \
+         -DCMAKE_LIBRARY_PATH="/opt/local/stdcxx/lib" \
+         -DCUDA_ARCH_BIN="2.0 2.1(2.0) 3.0 3.5" \
+	 -DBUILD_JPEG=OFF \
+	 -DBUILD_ZLIB=OFF \
+	 -DBUILD_PNG=OFF \
+	 -DBUILD_SHARED_LIBS=ON \
+	 -DWITH_OPENCL=OFF \
+         ..
+   Note: Opencv compiles its own libpng and libjpeg if they don't exist in MacPorts
+   versions. That is a bad thing because CCTag will have version collisions.
+
+Step 8
+ - compile CCTag
+   cmake \
+	 -DOpenCV_DIR=/opt/local/stdcxx/share/OpenCV \
+         -DCMAKE_INSTALL_PREFIX=/opt/local/stdcxx \
+         -DCMAKE_CXX_FLAGS="-stdlib=libstdc++" \
+         -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++ -lstdc++" \
+         -DCMAKE_INCLUDE_PATH="/opt/local/stdcxx/include" \
+         -DCMAKE_LIBRARY_PATH="/opt/local/stdcxx/lib" \
+         -DOpenMP_CXX_FLAGS="-fopenmp" \
+         -DOpenMP_C_FLAGS="-fopenmp" \
+         ..
 

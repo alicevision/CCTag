@@ -173,6 +173,12 @@ bool orazioDistanceRobust( std::vector<std::list<double> > & vScore, const Radiu
 	{
 		return false;
 	}
+#ifdef GRIFF_DEBUG
+    if( rrBank.size() == 0 )
+    {
+        return false;
+    }
+#endif // GRIFF_DEBUG
 
 	BOOST_FOREACH( const rom::ImageCut & cut, cuts )
 	{
@@ -233,6 +239,9 @@ bool orazioDistanceRobust( std::vector<std::list<double> > & vScore, const Radiu
 		//double idVMax = -1.0;
 		//std::ssize_t iMax = -1;
 
+#ifdef GRIFF_DEBUG
+        assert( rrBank.size() > 0 );
+#endif // GRIFF_DEBUG
 		// Loop on isig, compute and sum for each abscissa the distance between isig (collected signal) and digit (first generated profile)
 		for( std::size_t idc = 0; idc < rrBank.size(); ++idc )
 		{
@@ -276,6 +285,9 @@ bool orazioDistanceRobust( std::vector<std::list<double> > & vScore, const Radiu
 
 		}
 
+#ifdef GRIFF_DEBUG
+        assert( sortedId.size() > 0 );
+#endif // GRIFF_DEBUG
 		int k = 0;
 		BOOST_REVERSE_FOREACH( const MapT::const_iterator::value_type & v, sortedId )
 		{
@@ -287,6 +299,12 @@ bool orazioDistanceRobust( std::vector<std::list<double> > & vScore, const Radiu
 			++k;
 		}
 
+#ifdef GRIFF_DEBUG
+        assert( idSet.size() > 0 );
+        MarkerID _debug_m = idSet.front().first;
+        assert( _debug_m > 0 );
+        assert( vScore.size() > _debug_m );
+#endif // GRIFF_DEBUG
 		vScore[idSet.front().first].push_back(idSet.front().second);
 	}
 
@@ -974,6 +992,10 @@ int identify(
 			}
 		}else{
 			idFinal = orazioDistanceRobust( vScore, radiusRatios, fsig, startOffset, minIdentProba, sizeIds);
+#ifdef GRIFF_DEBUG
+            if( idFinal )
+            {
+#endif // GRIFF_DEBUG
 
 				int maxSize = 0;
 				int i = 0;
@@ -989,6 +1011,10 @@ int identify(
 				}
 
 				double score = 0;
+#ifdef GRIFF_DEBUG
+                assert( vScore.size() > 0 );
+                assert( vScore.size() > iMax );
+#endif // GRIFF_DEBUG
 				BOOST_FOREACH(const double & proba, vScore[iMax]){
 					score += proba;
 				}
@@ -1006,6 +1032,9 @@ int identify(
 				cctag.setRadiusRatios( radiusRatios[iMax] );
 
 				idFinal = (score > minIdentProba);
+#ifdef GRIFF_DEBUG
+            }
+#endif // GRIFF_DEBUG
 		}
 
 		boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
