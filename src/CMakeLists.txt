@@ -23,15 +23,17 @@ target_link_libraries( CCTag PUBLIC
     ${PNG_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${Eigen_LIBRARIES}
-    ${Gomp_LIBRARIES}
     ${GLOG_LIBRARIES}
     ${GSL_LIBRARIES}
-    ${LAPACK_LIBRARIES})
+    ${LAPACK_LIBRARIES}
+    pthread
+    dl
+    gomp )
 
 target_include_directories( CCTag PUBLIC .)
 
 add_executable( detection ${CCTagDetect_cpp})
-target_link_libraries( detection CCTag)
+target_link_libraries( detection CCTag )
 
 install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 install(FILES ${CCTag_hpp} DESTINATION include/cctag)
