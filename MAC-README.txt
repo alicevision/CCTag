@@ -34,7 +34,7 @@ Step 3
    LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
    make
    sudo make install
- - jpeg6a
+ - jpeg9a
    mkdir BUILD
    cd BUILD
    LDFLAGS="-stdlib=libstdc++" CXXFLAGS="-stdlib=libstdc++" ../configure --prefix=/opt/local/stdcxx
