@@ -50,15 +50,14 @@ namespace numerical {
 		typedef typename MatA::value_type T;
 		namespace lapack = boost::numeric::bindings::lapack;
 		namespace ublas = boost::numeric::ublas;
-		using namespace ublas;
 
-		matrix<T, column_major> wa = a;
-		matrix<T, column_major> wv( a.size1(), a.size2() );
+		ublas::matrix<T, ublas::column_major> wa = a;
+		ublas::matrix<T, ublas::column_major> wv( a.size1(), a.size2() );
 		ublas::vector< T > dc( a.size1() );
 		v.resize( a.size1(), a.size2() );
 		v.resize( a.size1(), a.size2() );
 
-		int ierr = lapack::geev( wa, dc, (matrix<T,column_major>*)(NULL), &wv, lapack::optimal_workspace() );
+		int ierr = lapack::geev( wa, dc, (ublas::matrix<T,ublas::column_major>*)(NULL), &wv, lapack::optimal_workspace() );
 
 		if ( ierr < 0 )
 		{
@@ -119,12 +118,11 @@ namespace numerical {
 		typedef typename MatA::value_type T;
 		namespace lapack = boost::numeric::bindings::lapack;
 		namespace ublas = boost::numeric::ublas;
-		using namespace ublas;
 
-		matrix<T, column_major> wa = a;
-		matrix<T, column_major> wb = b;
-		matrix<T, column_major> wvl( a.size1(), a.size2() );
-		matrix<T, column_major> wvr( a.size1(), a.size2() );
+		ublas::matrix< T, ublas::column_major > wa = a;
+		ublas::matrix< T, ublas::column_major > wb = b;
+		ublas::matrix< T, ublas::column_major > wvl( a.size1(), a.size2() );
+		ublas::matrix< T, ublas::column_major> wvr( a.size1(), a.size2() );
 		ublas::vector< T > alphar( a.size1() );
 		ublas::vector< T > alphai( a.size1() );
 		ublas::vector< T > beta( a.size1() );
@@ -157,12 +155,11 @@ namespace numerical {
 		typedef typename MatA::value_type T;
 		namespace lapack = boost::numeric::bindings::lapack;
 		namespace ublas = boost::numeric::ublas;
-		using namespace ublas;
 
-		matrix<T, column_major> wa = a;
+		ublas::matrix<T, ublas::column_major> wa = a;
 		ublas::vector< std::complex<T> > dc( a.size1() );
 
-		matrix<T, boost::numeric::ublas::column_major> vl( a.size1(), a.size2() ), vr( a.size1(), a.size2() );
+		ublas::matrix<T, boost::numeric::ublas::column_major> vl( a.size1(), a.size2() ), vr( a.size1(), a.size2() );
 
 		int ierr = lapack::geev( wa, dc, &vl, &vr, lapack::optimal_workspace() );
 		if ( ierr < 0 )

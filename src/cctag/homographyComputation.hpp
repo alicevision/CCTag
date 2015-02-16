@@ -34,7 +34,6 @@ template<class M>
 inline boost::numeric::ublas::vector<typename M::value_type> unit( const M & m )
 {
 	namespace ublas = boost::numeric::ublas;
-	using namespace ublas;
 
 	typedef typename M::value_type T;
 	ublas::vector<T> vec( m.size1() );
@@ -75,11 +74,10 @@ template<class T>
 boost::numeric::ublas::matrix<T> null( const boost::numeric::ublas::matrix<T> & a )
 {
 	namespace ublas = boost::numeric::ublas;
-	using namespace ublas;
 
 	size_t m = a.size1(), n = a.size2();
-	matrix<T> u,v,z;
-	matrix<T> s;
+	ublas::matrix<T> u,v,z;
+	ublas::matrix<T> s;
 	rom::numerical::svd( a, u, v, s );
 	ublas::vector<T> sd( s.size1() );
 	T smax = 0;
@@ -105,7 +103,7 @@ boost::numeric::ublas::matrix<T> null( const boost::numeric::ublas::matrix<T> & 
 			r += sd( k );
 		}
 	}
-	return matrix_range< matrix<T> > ( v, range( 0, v.size1() ), range( int ( std::ceil( r ) ), v.size2() ) );
+	return ublas::matrix_range< ublas::matrix<T> > ( v, ublas::range( 0, v.size1() ), ublas::range( int ( std::ceil( r ) ), v.size2() ) );
 }
 
 /**
@@ -161,11 +159,10 @@ template<class MatA>
 void signature( const MatA & x, std::size_t & s1, std::size_t & s2, const double epsilon = 10e-8 )
 {
 	namespace ublas = boost::numeric::ublas;
-	using namespace ublas;
 
 	typedef typename MatA::value_type T;
-	matrix<T> xn = x / rom::numerical::norm2( x );
-	diagonal_matrix<T> d;
+	ublas::matrix<T> xn = x / rom::numerical::norm2( x );
+	ublas::diagonal_matrix<T> d;
 	rom::numerical::eigd( xn, d );
 	ublas::vector<T> dg = unit( d );
 	typename ublas::vector<T>::iterator it;
