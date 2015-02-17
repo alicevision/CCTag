@@ -80,16 +80,23 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
     }
 
     BOOST_FOREACH(EdgePoint & p, points) {
-        float lastDist, dist, totalDistance;
-        float cosDiffTheta; // Gradient angle differences
+        float lastDist, dist, totalDistance; // scalar to compute the distance ratio
+        float cosDiffTheta; // difference in subsequent gradients orientation
         std::size_t i = 1;
+        
+        // Alternate from the edge point found in the direction opposed to the gradient
+        // direction.
         EdgePoint* current = p._before;
+        // Here current contains the edge point lying on the 2nd ellipse (from outer to inner)
         EdgePoint* choosen = NULL;
 
+        // To save all sub-segments length
         std::vector<float> vDist; ///
         vDist.reserve(params._numCrowns * 2 - 1);
         int flagDist = 1;
 
+        // Length of the reconstructed field line approximation between the two
+        // extremities.
         totalDistance = 0.0;
 
         if (current) {
@@ -97,20 +104,29 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             if (cosDiffTheta >= params._angleVoting) {
                 lastDist = rom::numerical::distancePoints2D(p, *current);
                 vDist.push_back(lastDist);
+                
+                // Add the sub-segment length to the total distance.
                 totalDistance += lastDist;
 
+                // Iterate over all crowns
                 while (i < params._numCrowns) {
                     choosen = NULL;
+                    
+                    // First in the gradient direction
                     EdgePoint* target = current->_after;
+                    // No edge point was found in that direction
                     if (!target) {
                         break;
                     }
+                    
+                    // Check the difference of two consecutive angles
                     cosDiffTheta = -inner_prod(subrange(target->_grad, 0, 2), subrange(current->_grad, 0, 2));
                     if (cosDiffTheta >= params._angleVoting) {
                         dist = rom::numerical::distancePoints2D(*target, *current);
                         vDist.push_back(dist);
                         totalDistance += dist;
 
+                        // Check the distance ratio
                         if (vDist.size() > 1) {
                             for (int iDist = 0; iDist < vDist.size(); ++iDist) {
                                 for (int jDist = iDist + 1; jDist < vDist.size(); ++jDist) {
@@ -123,6 +139,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                         {
                             lastDist = dist;
                             current = target;
+                            // Second in the opposite gradient direction
                             target = current->_before;
                             if (!target) {
                                 break;
