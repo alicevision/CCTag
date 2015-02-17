@@ -51,7 +51,48 @@ namespace rom {
     namespace vision {
         namespace marker {
             namespace cctag {
+          
+void constructFlowComponentFromSeed( EdgePoint * seed, const EdgePointsImage& edgesMap, WinnerMap & winners, std::list<Candidate> & vCandidateLoopOne, const cctag::Parameters & params)
+{
+     // Check if the seed has already been processed, i.e. belongs to an already
+     // reconstructed flow component.
+     if (!seed->_processedIn) {
 
+         Candidate candidate;
+
+         candidate._seed = seed;
+         std::list<EdgePoint*> & convexEdgeSegment = candidate._convexEdgeSegment;
+
+         // Convex edge linking from the seed in both directions. The linking 
+         // is performed until the convexity is lost.
+         edgeLinking(edgesMap, convexEdgeSegment, seed, winners, params._windowSizeOnInnerEllipticSegment, params._averageVoteMin);
+
+         // Compute the average number of received points.
+         int nReceivedVote = 0;
+         int nVotedPoints = 0;
+
+         BOOST_FOREACH(EdgePoint * p, convexEdgeSegment) {
+             nReceivedVote += winners[p].size();
+             if (winners[p].size() > 0){
+                 ++nVotedPoints;
+             }
+         }
+
+         // All flow components will be next sorted based on this characteristic (scalar)
+         candidate._averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
+
+         if (vCandidateLoopOne.size() > 0) {
+             std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
+             while ( ((*it)._averageReceivedVote > candidate._averageReceivedVote) && ( it != vCandidateLoopOne.end() ) ) {
+                 ++it;
+             }
+             vCandidateLoopOne.insert(it, candidate);
+         } else {
+             vCandidateLoopOne.push_back(candidate);
+         }
+     }
+ }
+                
 void cctagDetectionFromEdges(
                         CCTag::List& markers,
                         std::vector<EdgePoint>& points,
@@ -67,47 +108,18 @@ void cctagDetectionFromEdges(
     POP_ENTER;
     using namespace boost::gil;
     boost::timer t;
+    
     // Get vote winners
     WinnerMap winners;
     std::vector<EdgePoint*> seeds;
 
-
     // Voting procedure applied on every edge points. 
     vote(points, seeds, edgesMap, winners, cannyGradX, cannyGradY, params);
 
-    ///////////////////////////////////////// WRITING VOTE /////////////////////////
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
-    {
-        POP_INFO << "running optional 'voting' block" << std::endl;
-        std::size_t mx = 0;
-        boost::gil::gray8_image_t vimg(sourceView.dimensions());
-        boost::gil::gray8_view_t votevw(view(vimg));
+    // Call for debug only. Write the vote result as an image.
+    createImageForVoteResultDebug(sourceView, winners);
 
-        // Zero filling
-        boost::gil::fill_black(votevw);
-
-        for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr) {
-            EdgePoint* winner = itr->first;
-            std::list<EdgePoint*> v = itr->second;
-            if (mx < v.size()) {
-                mx = v.size();
-            }
-        }
-
-        for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr) {
-                            EdgePoint* winner = itr->first;
-                            std::list<EdgePoint*> v = itr->second;
-                            *votevw.xy_at(winner->x(), winner->y()) = (unsigned char) ((v.size() * 10.0));
-        }
-
-        std::stringstream outFilenameVote;
-        outFilenameVote << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
-        CCTagVisualDebug::instance().initBackgroundImage(color_converted_view<rgb8_pixel_t>(votevw));
-        CCTagVisualDebug::instance().newSession(outFilenameVote.str());
-
-    }
-#endif
-
+    // Set some timers
     boost::timer t3;
     boost::posix_time::ptime tstart0(boost::posix_time::microsec_clock::local_time());
 
@@ -130,47 +142,20 @@ void cctagDetectionFromEdges(
         POP_INFO << "sorting empty edge point vector?" << std::endl;
     }
 #endif // GRIFF_DEBUG
+    // Sort the seeds based on the number of received votes.
     std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
 
     const std::size_t nSeedsToProcess = std::min(seeds.size(), params._maximumNbSeeds);
 
     std::list<Candidate> vCandidateLoopOne;
 
-    //BOOST_FOREACH(EdgePoint* pmax, candidates)
+    // Process all the nSeedsToProcess-first seeds.
+    // In the following loop, a seed will lead to a flow component if it lies
+    // on the inner ellipse of a CCTag.
+    // The edge points lying on the inner ellipse and their voters (lying on the outer ellipse
+    // will be collected and constitute the initial data of a flow component.
     for (int iSeed = 0; iSeed < nSeedsToProcess; ++iSeed) {
-
-        EdgePoint* seed = seeds[iSeed];
-
-        if (!seed->_processedIn) {
-
-            Candidate candidate;
-
-            candidate._seed = seed;
-            std::list<EdgePoint*> & convexEdgeSegment = candidate._convexEdgeSegment;
-            edgeLinking(edgesMap, convexEdgeSegment, seed, winners, params._windowSizeOnInnerEllipticSegment, params._averageVoteMin);
-
-            // Compute the average number of received points.
-            int nReceivedVote = 0;
-            int nVotedPoints = 0;
-
-            BOOST_FOREACH(EdgePoint * p, convexEdgeSegment) {
-                nReceivedVote += winners[p].size();
-                if (winners[p].size() > 0){
-                    ++nVotedPoints;
-                }
-            }
-            candidate._averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
-
-            if (vCandidateLoopOne.size() > 0) {
-                std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
-                while ( ((*it)._averageReceivedVote > candidate._averageReceivedVote) && ( it != vCandidateLoopOne.end() ) ) {
-                    ++it;
-                }
-                vCandidateLoopOne.insert(it, candidate);
-            } else {
-                vCandidateLoopOne.push_back(candidate);
-            }
-        }
+        constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
     }
 
     const std::size_t nCandidatesLoopOneToProcess = std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
@@ -178,37 +163,23 @@ void cctagDetectionFromEdges(
     std::vector<Candidate> vCandidateLoopTwo;
     vCandidateLoopTwo.reserve(nCandidatesLoopOneToProcess);
 
-                    //BOOST_FOREACH(EdgePoint* pmax, candidates)
-
     std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
     std::size_t iCandidate = 0;
-                    
+    
+    // Second main loop:
+    // From the flow components selected in the first loop, the outer ellipse will
+    // be here entirely recovered.
+    // The GPU implementation should stop at this point.
+    
     while (iCandidate < nCandidatesLoopOneToProcess) {
-                        
-                        //for (int iCandidate = 0; iCandidate < nCandidatesLoopOneToProcess; ++iCandidate)
-                        
+        
         Candidate & candidate = *it;
 
         try {
             try {
-
-
+                
                 int xG = -1;
                 int yG = -1;
-
-                                //                                std::list<EdgePoint*> convexEdgeSegment;
-                                //
-                                //                                {
-                                //                                    boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
-                                //
-                                //                                    edgeLinking(edgesMap, convexEdgeSegment, seed, winners, params._windowSizeOnInnerEllipticSegment, params._averageVoteMin);
-                                //
-                                //                                    boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
-                                //                                    boost::posix_time::time_duration d = tstop - tstart;
-                                //                                    const double spendTime = d.total_milliseconds();
-                                //                                    //ROM_TCOUT( "edgeLinking timer: " << spendTime );
-                                //                                }
-
 
                 std::list<EdgePoint*> childrens;
 
@@ -218,7 +189,6 @@ void cctagDetectionFromEdges(
                     boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
                     boost::posix_time::time_duration d = tstop - tstart;
                     const double spendTime = d.total_milliseconds();
-                                    //ROM_TCOUT( "childrenOf timer: " << spendTime );
                 }
 
                 if (childrens.size() < params._minPointsSegmentCandidate) {
@@ -235,7 +205,7 @@ void cctagDetectionFromEdges(
                 std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
 
                 {
-                    ROM_COUT_DEBUG("Before oulierRemoval!");
+                    ROM_COUT_DEBUG("Before oulierRemoval");
 
                     boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
                     outlierRemoval(childrens, filteredChildrens, SmFinal, params._threshRobustEstimationOfOuterEllipse, cctag::kWeight);
@@ -243,14 +213,6 @@ void cctagDetectionFromEdges(
                     boost::posix_time::time_duration d = tstop - tstart;
                     const double spendTime = d.total_milliseconds();
                 }
-
-                if ((candidate._seed->x() == xG) && (candidate._seed->y() == yG)) {
-                    coutVPoint(filteredChildrens);
-                    ROM_PAUSE
-                }
-
-                                // New criterion -- to be tunned todo@Lilian -- tres important pour l'optimisation - learning
-
 
                 if (filteredChildrens.size() < 5) //todo@lilian see the case in outlierRemoval where filteredChildrens.size()==0
                 {
@@ -308,7 +270,7 @@ void cctagDetectionFromEdges(
 
                 {
                     boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
-                                    //ellipseGrowing(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse, params._ellipseGrowingEllipticHullWidth, nSegmentOut, nLabel, goodInit);
+
                     ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse, params._ellipseGrowingEllipticHullWidth, nSegmentOut, nLabel, goodInit);
 
                     candidate._nLabel = nLabel;
@@ -318,29 +280,11 @@ void cctagDetectionFromEdges(
                     const double spendTime = d.total_milliseconds();
                 }
 
-                if ((candidate._seed->x() == xG) && (candidate._seed->y() == yG)) {
-                    coutVPoint(outerEllipsePoints);
-                    ROM_COUT_DEBUG("after eg");
-                    ROM_PAUSE
-                }
-
-                                // {
-
-                                    //boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-                                    //outlierRemoval( outerEllipsePoints, SmFinal, threshRobustEstimationOfOuterEllipse);
-                                    //boost::posix_time::ptime tstop( boost::posix_time::microsec_clock::local_time() );
-                                    //boost::posix_time::time_duration d = tstop - tstart;
-                                    //const double spendTime = d.total_milliseconds();
-                                // }
-
-
-                                // New test -- to be tunned todo@Lilian
                 std::vector<double> vDistFinal;
                 vDistFinal.clear();
                 vDistFinal.reserve(outerEllipsePoints.size());
 
-                                // Rajouter une inline function pour les egdePoints*, des pbs d'heritage, c'est le bordel pour les fonctions distancePointEllipse.
-
+                // Clean point (egdePoints*) to ellipse distance with inheritance -- the current solution is dirty --
                 double distMax = 0;
 
                 BOOST_FOREACH(EdgePoint * p, outerEllipsePoints) {
@@ -353,12 +297,9 @@ void cctagDetectionFromEdges(
 
                 }
 
-                                // todo@Lilian : sort => need to be replace by nInf
+                // todo@Lilian : sort => need to be replace by nInf
                 SmFinal = numerical::medianRef(vDistFinal);
 
-                                //const double thrMedianDistanceEllipse = 3;
-
-                                //ROM_COUT_VAR( SmFinal );
                 if (SmFinal > params._thrMedianDistanceEllipse) {
                     ROM_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing");
                     ++it;
@@ -404,8 +345,6 @@ void cctagDetectionFromEdges(
             } catch (cv::Exception& e) {
                 ROM_COUT(" Opencv : exception levee !!  ");
                 const char* err_msg = e.what();
-                                //std::cout << "exception caught: " << err_msg << std::endl;
-                                // Ellipse fitting don't pass.
             }
         } catch (...) {
             ROM_COUT(" Exception levee, loop 1 !");
@@ -416,15 +355,12 @@ void cctagDetectionFromEdges(
 
     }
 
-    /// Debug
-    ROM_COUT_DEBUG("__________________________ Liste des germes ___________________________________");
-
     ROM_COUT_VAR(vCandidateLoopTwo.size());
 
+    ROM_COUT_DEBUG("__________________________ List of seeds ___________________________________");
     BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo) {
         ROM_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
     }
-
 
     boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
     boost::posix_time::time_duration d1 = tstop1 - tstart0;
@@ -446,7 +382,7 @@ void cctagDetectionFromEdges(
 #endif
 #endif
 
-        // recopie Hyper couteux, trouver une autre solution !! todo@Lilian
+        // Does a copies -- todo@Lilian: find another solution
 
         std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
         rom::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
@@ -584,11 +520,6 @@ void cctagDetectionFromEdges(
             vDistFinal.clear();
             vDistFinal.reserve(outerEllipsePoints.size());
 
-                            // todo@Lilian
-                            // Rajouter une inline function pour les egdePoints*,
-                            // des pbs d'heritage, c'est le bordel pour les fonctions
-                            // distancePointEllipse.
-
             double resSquare = 0;
             double distMax = 0;
 
@@ -643,15 +574,6 @@ void cctagDetectionFromEdges(
 #endif                          
 #endif
 
-            bool displayPushedMarker = false;
-
-            if (displayPushedMarker) {
-                ROM_COUT_VAR_DEBUG(outerEllipse);
-                ROM_COUT_VAR_DEBUG(quality);
-                coutVPoint(outerEllipsePoints);
-                                //std::cin.ignore().get();
-            }
-                            //
             ROM_COUT_DEBUG("------------------------------Added marker------------------------------");
         } catch (...) {
             CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RAISED_EXCEPTION);
@@ -671,6 +593,43 @@ void cctagDetectionFromEdges(
 
     ROM_COUT_DEBUG("Markers creation time: " << t3.elapsed());
     POP_LEAVE;
+}
+
+
+void createImageForVoteResultDebug(const boost::gil::gray8_view_t & sourceView, const WinnerMap & winners)
+{
+    #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+    {
+        
+        POP_INFO << "running optional 'voting' block" << std::endl;
+        std::size_t mx = 0;
+        boost::gil::gray8_image_t vimg(sourceView.dimensions());
+        boost::gil::gray8_view_t votevw(view(vimg));
+
+        // Zero filling
+        boost::gil::fill_black(votevw);
+
+        for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr) {
+            EdgePoint* winner = itr->first;
+            std::list<EdgePoint*> v = itr->second;
+            if (mx < v.size()) {
+                mx = v.size();
+            }
+        }
+
+        for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr) {
+                            EdgePoint* winner = itr->first;
+                            std::list<EdgePoint*> v = itr->second;
+                            *votevw.xy_at(winner->x(), winner->y()) = (unsigned char) ((v.size() * 10.0));
+        }
+
+        std::stringstream outFilenameVote;
+        outFilenameVote << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
+        CCTagVisualDebug::instance().initBackgroundImage(boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>(votevw));
+        CCTagVisualDebug::instance().newSession(outFilenameVote.str());
+
+    }
+#endif
 }
 
             } // namespace cctag
@@ -789,6 +748,7 @@ void cctagDetection(CCTag::List& markers, const FrameId frame, const boost::gil:
 
     POP_LEAVE;
 }
+
         } // namespace marker
     } // namespace vision
 } // namespace rom

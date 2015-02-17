@@ -7,7 +7,6 @@
 #include "params.hpp"
 
 #include <cctag/frame.hpp>
-//#include <rom/engine/RomConfig.hpp>
 
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/serialization.hpp>
@@ -20,27 +19,21 @@
 #include <vector>
 
 namespace rom {
-namespace vision {
+    namespace vision {
 class EdgePoint;
 class EdgePointImage;
-}  // namespace vision
+    }  // namespace vision
 }  // namespace rom
 
 
 namespace rom {
-namespace vision {
-namespace marker {
+    namespace vision {
+        namespace marker {
 
 void cctagDetection( CCTag::List& markers, const FrameId frame, const boost::gil::rgb8_view_t& svw, const cctag::Parameters & params, const bool bDisplayEllipses = true );
 
-namespace cctag {
-//template<class GradView>
-//void cctagDetectionFromEdges(
-//		CCTag::Vector& markers,
-//		std::vector<EdgePoint>& points,
-//		const boost::gil::gray8_view_t& sourceView, const GradView & cannyGradX, const GradView & cannyGradY,
-//		const EdgePointsImage& edgesMap, const CCTagMarkersBank& bank,
-//		const FrameId frame, const std::size_t searchDistance, const double thrVotingAngle, const double thrVotingRatio, const std::size_t numCrowns );
+            namespace cctag {
+
 void cctagDetectionFromEdges(
 		CCTag::List& markers,
 		std::vector<EdgePoint>& points,
@@ -53,11 +46,12 @@ void cctagDetectionFromEdges(
                 double scale,
 		const cctag::Parameters & params);
 
-}
+void createImageForVoteResultDebug(const boost::gil::gray8_view_t & sourceView, const WinnerMap & winners);
 
-}
-}
-}
+            }  // namespace cctag
+        }  // namespace marker
+    }  // namespace vision
+}  // namespace rom
 
 #endif
 
