@@ -11,9 +11,9 @@
 
 //#include <rom/engine/RomConfig.hpp>
 
-#define NO_WEIGHT 0;
-#define INV_GRAD_WEIGHT 1;
-#define INV_SQRT_GRAD_WEIGHT 2;
+#define NO_WEIGHT 0
+#define INV_GRAD_WEIGHT 1
+#define INV_SQRT_GRAD_WEIGHT 2
 
 namespace rom {
 namespace vision {
@@ -80,97 +80,101 @@ static const std::size_t kWeight = INV_GRAD_WEIGHT;
 
 struct Parameters
 {
-	friend class boost::serialization::access;
-	Parameters()
-	: _cctagBankFilename("TODO")
-	, _cannyThrLow( cctag::kDefaultCannyThrLow )
-	, _cannyThrHigh( cctag::kDefaultCannyThrHigh )
-	, _distSearch( cctag::kDefaultDistSearch )
-	, _angleVoting( cctag::kDefaultAngleVoting )
-	, _ratioVoting( cctag::kDefaultRatioVoting )
-        , _averageVoteMin( cctag::kDefaultAverageVoteMin )
-        , _thrMedianDistanceEllipse( cctag::kDefaultThrMedianDistanceEllipse )
-        , _maximumNbSeeds( cctag::kDefaultMaximumNbSeeds ) 
-        , _maximumNbCandidatesLoopTwo( cctag::kDefaultMaximumNbCandidatesLoopTwo )
-	, _numCrowns( cctag::kDefaultNumCrowns )
-	, _minPointsSegmentCandidate( cctag::kDefaultMinPointsSegmentCandidate )
-	, _minVotesToSelectCandidate( cctag::kDefaultMinVotesToSelectCandidate )
-	, _threshRobustEstimationOfOuterEllipse( cctag::kDefaultThreshRobustEstimationOfOuterEllipse )
-	, _ellipseGrowingEllipticHullWidth( cctag::kDefaultEllipseGrowingEllipticHullWidth )
-	, _windowSizeOnInnerEllipticSegment( cctag::kDefaultWindowSizeOnInnerEllipticSegment )
-	, _numberOfMultiresLayers( cctag::kDefaultNumberOfMultiresLayers )
-	, _numberOfProcessedMultiresLayers( cctag::kDefaultNumberOfProcessedMultiresLayers )
-	, _numCutsInIdentStep( cctag::kDefaultNumCutsInIdentStep )
-	, _numSamplesOuterEdgePointsRefinement( cctag::kDefaultNumSamplesOuterEdgePointsRefinement )
-	, _cutsSelectionTrials( cctag::kDefaultCutsSelectionTrials )
-	, _sampleCutLength( cctag::kDefaultSampleCutLength )
-	, _minIdentProba( cctag::kDefaultMinIdentProba )
-	, _useLMDif( cctag::kDefaultUseLMDif )
-        , _searchForAnotherSegment( cctag::kDefaultSearchForAnotherSegment )
-        , _writeOutput( cctag::kDefaultWriteOutput )
-	{
-            _nCircles = 2*_numCrowns;
-        }
+    friend class boost::serialization::access;
+    Parameters()
+    : _cctagBankFilename("TODO")
+    , _cannyThrLow( cctag::kDefaultCannyThrLow )
+    , _cannyThrHigh( cctag::kDefaultCannyThrHigh )
+    , _distSearch( cctag::kDefaultDistSearch )
+    , _angleVoting( cctag::kDefaultAngleVoting )
+    , _ratioVoting( cctag::kDefaultRatioVoting )
+    , _averageVoteMin( cctag::kDefaultAverageVoteMin )
+    , _thrMedianDistanceEllipse( cctag::kDefaultThrMedianDistanceEllipse )
+    , _maximumNbSeeds( cctag::kDefaultMaximumNbSeeds ) 
+    , _maximumNbCandidatesLoopTwo( cctag::kDefaultMaximumNbCandidatesLoopTwo )
+    , _numCrowns( cctag::kDefaultNumCrowns )
+    , _minPointsSegmentCandidate( cctag::kDefaultMinPointsSegmentCandidate )
+    , _minVotesToSelectCandidate( cctag::kDefaultMinVotesToSelectCandidate )
+    , _threshRobustEstimationOfOuterEllipse( cctag::kDefaultThreshRobustEstimationOfOuterEllipse )
+    , _ellipseGrowingEllipticHullWidth( cctag::kDefaultEllipseGrowingEllipticHullWidth )
+    , _windowSizeOnInnerEllipticSegment( cctag::kDefaultWindowSizeOnInnerEllipticSegment )
+    , _numberOfMultiresLayers( cctag::kDefaultNumberOfMultiresLayers )
+    , _numberOfProcessedMultiresLayers( cctag::kDefaultNumberOfProcessedMultiresLayers )
+    , _numCutsInIdentStep( cctag::kDefaultNumCutsInIdentStep )
+    , _numSamplesOuterEdgePointsRefinement( cctag::kDefaultNumSamplesOuterEdgePointsRefinement )
+    , _cutsSelectionTrials( cctag::kDefaultCutsSelectionTrials )
+    , _sampleCutLength( cctag::kDefaultSampleCutLength )
+    , _minIdentProba( cctag::kDefaultMinIdentProba )
+    , _useLMDif( cctag::kDefaultUseLMDif )
+    , _searchForAnotherSegment( cctag::kDefaultSearchForAnotherSegment )
+    , _writeOutput( cctag::kDefaultWriteOutput )
+    {
+        _nCircles = 2*_numCrowns;
+    }
 
-	std::string _cctagBankFilename;
-	float _cannyThrLow;
-	float _cannyThrHigh;
-	std::size_t _distSearch;
-	float _angleVoting;
-	float _ratioVoting;
-        float _averageVoteMin;
-        double _thrMedianDistanceEllipse;
-        std::size_t _maximumNbSeeds;
-        std::size_t _maximumNbCandidatesLoopTwo;
-	std::size_t _numCrowns;
-        std::size_t _nCircles;
-	std::size_t _minPointsSegmentCandidate;
-	std::size_t _minVotesToSelectCandidate;
-	double _threshRobustEstimationOfOuterEllipse;
-	double _ellipseGrowingEllipticHullWidth;
-	std::size_t _windowSizeOnInnerEllipticSegment;
-	std::size_t _numberOfMultiresLayers;
-	std::size_t _numberOfProcessedMultiresLayers;
-	std::size_t _numCutsInIdentStep;
-	std::size_t _numSamplesOuterEdgePointsRefinement;
-	std::size_t _cutsSelectionTrials;
-	std::size_t _sampleCutLength;
-	double _minIdentProba;
-	bool _useLMDif;
-        bool _searchForAnotherSegment;
-        bool _writeOutput;
+    std::string _cctagBankFilename;
+    float _cannyThrLow;
+    float _cannyThrHigh;
+    std::size_t _distSearch; // maximum distance (in pixels) of research from one edge points
+                             // to another one. maximum length of a arc segment composing the polygonal line.
+    float _angleVoting; // maximum angle between of gradient directions of two consecutive
+                        // edge points.
+    float _ratioVoting; // maximum distance ratio between of gradient directions of two consecutive
+                        // edge points.
+    float _averageVoteMin;
+    double _thrMedianDistanceEllipse;
+    std::size_t _maximumNbSeeds;
+    std::size_t _maximumNbCandidatesLoopTwo;
+    std::size_t _numCrowns;
+    std::size_t _nCircles;
+    std::size_t _minPointsSegmentCandidate;
+    std::size_t _minVotesToSelectCandidate; // minimum number of received votes to select an edge 
+                                            // point as a new seed.
+    double _threshRobustEstimationOfOuterEllipse;
+    double _ellipseGrowingEllipticHullWidth;
+    std::size_t _windowSizeOnInnerEllipticSegment;
+    std::size_t _numberOfMultiresLayers;
+    std::size_t _numberOfProcessedMultiresLayers;
+    std::size_t _numCutsInIdentStep;
+    std::size_t _numSamplesOuterEdgePointsRefinement;
+    std::size_t _cutsSelectionTrials;
+    std::size_t _sampleCutLength;
+    double _minIdentProba;
+    bool _useLMDif;
+    bool _searchForAnotherSegment;
+    bool _writeOutput;
 
-	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version)
-	{
-		ar & BOOST_SERIALIZATION_NVP( _cctagBankFilename );
-		ar & BOOST_SERIALIZATION_NVP( _cannyThrLow );
-		ar & BOOST_SERIALIZATION_NVP( _cannyThrHigh );
-		ar & BOOST_SERIALIZATION_NVP( _distSearch );
-		ar & BOOST_SERIALIZATION_NVP( _angleVoting );
-		ar & BOOST_SERIALIZATION_NVP( _ratioVoting );
-                ar & BOOST_SERIALIZATION_NVP( _averageVoteMin);
-                ar & BOOST_SERIALIZATION_NVP( _thrMedianDistanceEllipse);
-                ar & BOOST_SERIALIZATION_NVP( _maximumNbSeeds);
-                ar & BOOST_SERIALIZATION_NVP( _maximumNbCandidatesLoopTwo);
-		ar & BOOST_SERIALIZATION_NVP( _numCrowns );
-		ar & BOOST_SERIALIZATION_NVP( _minPointsSegmentCandidate );
-		ar & BOOST_SERIALIZATION_NVP( _minVotesToSelectCandidate );
-		ar & BOOST_SERIALIZATION_NVP( _threshRobustEstimationOfOuterEllipse );
-		ar & BOOST_SERIALIZATION_NVP( _ellipseGrowingEllipticHullWidth );
-		ar & BOOST_SERIALIZATION_NVP( _windowSizeOnInnerEllipticSegment );
-		ar & BOOST_SERIALIZATION_NVP( _numberOfMultiresLayers );
-		ar & BOOST_SERIALIZATION_NVP( _numberOfProcessedMultiresLayers );
-		ar & BOOST_SERIALIZATION_NVP( _numCutsInIdentStep );
-		ar & BOOST_SERIALIZATION_NVP( _numSamplesOuterEdgePointsRefinement );
-		ar & BOOST_SERIALIZATION_NVP( _cutsSelectionTrials );
-		ar & BOOST_SERIALIZATION_NVP( _sampleCutLength );
-		ar & BOOST_SERIALIZATION_NVP( _minIdentProba );
-		ar & BOOST_SERIALIZATION_NVP( _useLMDif );
-                ar & BOOST_SERIALIZATION_NVP( _searchForAnotherSegment );
-                ar & BOOST_SERIALIZATION_NVP( _writeOutput );
-                _nCircles = 2*_numCrowns;
-	}
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+        ar & BOOST_SERIALIZATION_NVP( _cctagBankFilename );
+        ar & BOOST_SERIALIZATION_NVP( _cannyThrLow );
+        ar & BOOST_SERIALIZATION_NVP( _cannyThrHigh );
+        ar & BOOST_SERIALIZATION_NVP( _distSearch );
+        ar & BOOST_SERIALIZATION_NVP( _angleVoting );
+        ar & BOOST_SERIALIZATION_NVP( _ratioVoting );
+        ar & BOOST_SERIALIZATION_NVP( _averageVoteMin);
+        ar & BOOST_SERIALIZATION_NVP( _thrMedianDistanceEllipse);
+        ar & BOOST_SERIALIZATION_NVP( _maximumNbSeeds);
+        ar & BOOST_SERIALIZATION_NVP( _maximumNbCandidatesLoopTwo);
+        ar & BOOST_SERIALIZATION_NVP( _numCrowns );
+        ar & BOOST_SERIALIZATION_NVP( _minPointsSegmentCandidate );
+        ar & BOOST_SERIALIZATION_NVP( _minVotesToSelectCandidate );
+        ar & BOOST_SERIALIZATION_NVP( _threshRobustEstimationOfOuterEllipse );
+        ar & BOOST_SERIALIZATION_NVP( _ellipseGrowingEllipticHullWidth );
+        ar & BOOST_SERIALIZATION_NVP( _windowSizeOnInnerEllipticSegment );
+        ar & BOOST_SERIALIZATION_NVP( _numberOfMultiresLayers );
+        ar & BOOST_SERIALIZATION_NVP( _numberOfProcessedMultiresLayers );
+        ar & BOOST_SERIALIZATION_NVP( _numCutsInIdentStep );
+        ar & BOOST_SERIALIZATION_NVP( _numSamplesOuterEdgePointsRefinement );
+        ar & BOOST_SERIALIZATION_NVP( _cutsSelectionTrials );
+        ar & BOOST_SERIALIZATION_NVP( _sampleCutLength );
+        ar & BOOST_SERIALIZATION_NVP( _minIdentProba );
+        ar & BOOST_SERIALIZATION_NVP( _useLMDif );
+        ar & BOOST_SERIALIZATION_NVP( _searchForAnotherSegment );
+        ar & BOOST_SERIALIZATION_NVP( _writeOutput );
+        _nCircles = 2*_numCrowns;
+    }
 };
 
 }

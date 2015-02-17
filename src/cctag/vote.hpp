@@ -1,6 +1,7 @@
 #ifndef _ROM_VISION_CCTAG_VOTE_HPP_
 #define _ROM_VISION_CCTAG_VOTE_HPP_
 
+#include "params.hpp"
 #include "EdgePoint.hpp"
 #include "types.hpp"
 #include "Candidate.hpp"
@@ -15,9 +16,9 @@
 
 
 namespace rom {
-namespace vision {
-namespace marker {
-namespace cctag {
+    namespace vision {
+        namespace marker {
+            namespace cctag {
 
 
 /* Brief: Voting procedure. For every edge points, construct the 1st order approximation 
@@ -30,18 +31,14 @@ namespace cctag {
  * as an edge point belonging on an inner elliptical arc of a cctag.
  * edgesMap: map of all the edge points
  * winners: map associating all seeds to their voters
- * maxSearchDistance: maximum distance (in pixels) of research from one edge points
- * to another one. maximum length of a arc segment composing the polygonal line.
- * maxVotingAngle: maximum angle between of gradient directions of two consecutive
- * edge points.
- * maxVotingAngle: maximum distance ratio between of gradient directions of two consecutive
- * edge points.
- * minVotesToSelectCandidate: minimum number of received votes to select an edge 
- * point as a new seed.
  * cannyGradX: X derivative of the gray image
  * cannyGradY: Y derivative of the gray image
  */
- void vote( std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds, const EdgePointsImage & edgesMap, WinnerMap& winners, const std::size_t searchDistance, const double thrVotingAngle, const double thrVotingRatio, const std::size_t numCrowns, const std::size_t minVotesToSelectCandidate, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX, const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY );
+void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
+        const EdgePointsImage & edgesMap, WinnerMap& winners,
+        const boost::gil::kth_channel_view_type<1,boost::gil::rgb32f_view_t>::type & cannyGradX,
+        const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
+        const cctag::Parameters & params);
  
 /** @brief Retrieve all connected edges.
  * @param[out] convexEdgeSegment

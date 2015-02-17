@@ -73,7 +73,7 @@ void cctagDetectionFromEdges(
 
 
     // Voting procedure applied on every edge points. 
-    vote(points, seeds, edgesMap, winners, params._distSearch, params._angleVoting, params._ratioVoting, params._numCrowns, params._minVotesToSelectCandidate, cannyGradX, cannyGradY);
+    vote(points, seeds, edgesMap, winners, cannyGradX, cannyGradY, params);
 
     ///////////////////////////////////////// WRITING VOTE /////////////////////////
 #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)

@@ -44,10 +44,6 @@ namespace rom {
         namespace marker {
             namespace cctag {
 
-#define NO_WEIGHT 0
-#define INV_GRADIENT_WEIGHT 1
-#define INV_SQRT_GRADIENT_WEIGHT 2
-
 /* Brief: Voting procedure. For every edge points, construct the 1st order approximation 
  * of the field line passing through it which consists in a polygonal line whose
  * extremities are two edge points.
@@ -58,37 +54,28 @@ namespace rom {
  * as an edge point belonging on an inner elliptical arc of a cctag.
  * edgesMap: map of all the edge points
  * winners: map associating all seeds to their voters
- * maxSearchDistance: maximum distance (in pixels) of research from one edge points
- * to another one. maximum length of a arc segment composing the polygonal line.
- * maxVotingAngle: maximum angle between of gradient directions of two consecutive
- * edge points.
- * maxVotingAngle: maximum distance ratio between of gradient directions of two consecutive
- * edge points.
- * minVotesToSelectCandidate: minimum number of received votes to select an edge 
- * point as a new seed.
  * cannyGradX: X derivative of the gray image
  * cannyGradY: Y derivative of the gray image
  */
 void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
-        const EdgePointsImage & edgesMap, WinnerMap& winners, const std::size_t maxSearchDistance,
-        const double maxVotingAngle, const double maxVotingRatio, const std::size_t numCrowns,
-        const std::size_t minVotesToSelectCandidate, const boost::gil::kth_channel_view_type<1,
-        boost::gil::rgb32f_view_t>::type & cannyGradX, const boost::gil::kth_channel_view_type<2,
-        boost::gil::rgb32f_view_t>::type & cannyGradY)
+        const EdgePointsImage & edgesMap, WinnerMap& winners,
+        const boost::gil::kth_channel_view_type<1,boost::gil::rgb32f_view_t>::type & cannyGradX,
+        const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
+        const cctag::Parameters & params)
 {
-    // todo@Lilian: add thrGradient to the paramrter file
+    // todo@Lilian: add thrGradient to the parameter file
     int thrGradient = 50;
     int thrGradient2 = thrGradient*thrGradient;
 
     BOOST_FOREACH(EdgePoint & p, points) {
-        p._before = gradientDirectionDescent(edgesMap, p, -1, maxSearchDistance, cannyGradX, cannyGradY, thrGradient2);
-        p._after = gradientDirectionDescent(edgesMap, p, 1, maxSearchDistance, cannyGradX, cannyGradY, thrGradient2);
+        p._before = gradientDirectionDescent(edgesMap, p, -1, params._distSearch, cannyGradX, cannyGradY, thrGradient2);
+        p._after = gradientDirectionDescent(edgesMap, p, 1, params._distSearch, cannyGradX, cannyGradY, thrGradient2);
     }
     // Vote
     seeds.reserve(points.size() / 2);
 
     // todo@Lilian: remove thrVotingAngle from the paramter file
-    if (maxVotingAngle != 0) {
+    if (params._angleVoting != 0) {
         BOOST_THROW_EXCEPTION(rom::exception::Bug() << rom::exception::user() + "thrVotingAngle must be equal to 0 or edge points gradients have to be normalized");
     }
 
@@ -100,26 +87,26 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         EdgePoint* choosen = NULL;
 
         std::vector<float> vDist; ///
-        vDist.reserve(numCrowns * 2 - 1);
+        vDist.reserve(params._numCrowns * 2 - 1);
         int flagDist = 1;
 
         totalDistance = 0.0;
 
         if (current) {
             cosDiffTheta = -inner_prod(subrange(p._grad, 0, 2), subrange(current->_grad, 0, 2));
-            if (cosDiffTheta >= maxVotingAngle) {
+            if (cosDiffTheta >= params._angleVoting) {
                 lastDist = rom::numerical::distancePoints2D(p, *current);
                 vDist.push_back(lastDist);
                 totalDistance += lastDist;
 
-                while (i < numCrowns) {
+                while (i < params._numCrowns) {
                     choosen = NULL;
                     EdgePoint* target = current->_after;
                     if (!target) {
                         break;
                     }
                     cosDiffTheta = -inner_prod(subrange(target->_grad, 0, 2), subrange(current->_grad, 0, 2));
-                    if (cosDiffTheta >= maxVotingAngle) {
+                    if (cosDiffTheta >= params._angleVoting) {
                         dist = rom::numerical::distancePoints2D(*target, *current);
                         vDist.push_back(dist);
                         totalDistance += dist;
@@ -127,11 +114,10 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                         if (vDist.size() > 1) {
                             for (int iDist = 0; iDist < vDist.size(); ++iDist) {
                                 for (int jDist = iDist + 1; jDist < vDist.size(); ++jDist) {
-                                    flagDist = (vDist[iDist] <= vDist[jDist] * maxVotingRatio) && (vDist[jDist] <= vDist[iDist] * maxVotingRatio) && flagDist;
+                                    flagDist = (vDist[iDist] <= vDist[jDist] * params._ratioVoting) && (vDist[jDist] <= vDist[iDist] * params._ratioVoting) && flagDist;
                                 }
                             }
                         }
-
 
                         if (flagDist)
                         {
@@ -142,14 +128,14 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                                 break;
                             }
                             cosDiffTheta = -inner_prod(subrange(target->_grad, 0, 2), subrange(current->_grad, 0, 2));
-                            if (cosDiffTheta >= maxVotingAngle) {
+                            if (cosDiffTheta >= params._angleVoting) {
                                 dist = rom::numerical::distancePoints2D(*target, *current);
                                 vDist.push_back(dist);
                                 totalDistance += dist;
 
                                 for (int iDist = 0; iDist < vDist.size(); ++iDist) {
                                     for (int jDist = iDist + 1; jDist < vDist.size(); ++jDist) {
-                                        flagDist = (vDist[iDist] <= vDist[jDist] * maxVotingRatio) && (vDist[jDist] <= vDist[iDist] * maxVotingRatio) && flagDist;
+                                        flagDist = (vDist[iDist] <= vDist[jDist] * params._ratioVoting) && (vDist[jDist] <= vDist[iDist] * params._ratioVoting) && flagDist;
                                     }
                                 }
 
@@ -187,7 +173,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
             // If choosen has a number of votes greater than one of
             // the edge points, then update max.
-            if (winners[choosen].size() >= minVotesToSelectCandidate) {
+            if (winners[choosen].size() >= params._minVotesToSelectCandidate) {
                 if (choosen->_isMax == -1) {
                     seeds.push_back(choosen);
                 }
@@ -419,14 +405,14 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 // TODO chaque point doit être x/w y/w 1: note eloi: utilise la methode cartesian() de Point2dN
                 pts.push_back(*(*it));
 
-                if (weightedType == INV_GRADIENT_WEIGHT) {
+                if (weightedType == INV_GRAD_WEIGHT) {
                     weights.push_back(255 / ((*it)->_normGrad)); //  0.003921= 1/255
                 }
             }
 
             std::size_t cnt = 0;
 
-            while (cnt < 70)//50  ////////////
+            while (cnt < 70)
             {
                 // Random subset of 5 points from pts
                 const std::vector<int> perm = rom::numerical::randperm< std::vector<int> >(n);
@@ -524,52 +510,35 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             //ROM_COUT_VAR(qm);
 
             BOOST_FOREACH(EdgePoint * e, childrens) {
-                //for( std::list<EdgePoint*>::iterator it = childrens.begin() ; it != childrens.end() ; )
-                //{
-                //ROM_COUT_VAR(numerical::distancePointEllipse( *p, qm, f )*1/std::sqrt((p->_normGrad)));
-                //ROM_COUT_VAR(numerical::distancePointEllipse( *p, qm, f )*1/(p->_normGrad));
 
                 double distFinal;
 
                 if (weightedType == NO_WEIGHT) {
                     distFinal = numerical::distancePointEllipse(*e, qm, f);
-                } else if (weightedType == INV_GRADIENT_WEIGHT) {
+                } else if (weightedType == INV_GRAD_WEIGHT) {
                     distFinal = numerical::distancePointEllipse(*e, qm, f)*255 / (e->_normGrad);
                 }
-                // todo@Lilian -- 1/grad, 1/sqrt(grad), 1 ??
-                //if( distFinal > threshold * Sm ) // 25.0 // 10.0
-                //{
-                //	it = childrens.erase(it);
-                //}else{
+ 
                 if (distFinal < threshold * Sm) {
 
                     filteredChildrens.push_back(e);
                     vDistFinal.push_back(distFinal);
-                    //++it;
                 }
-
-                // l2.insert(l2.end(),l1.begin(),l1.end());
-
             }
+            
             SmFinal = numerical::medianRef(vDistFinal);
-            //ROM_COUT(qm);
         }
     }
 
     bool isAnotherSegment(numerical::geometry::Ellipse & outerEllipse, std::vector<EdgePoint*>& outerEllipsePoints, const std::vector<EdgePoint*>& filteredChildrens, const Candidate & anotherCandidate, std::vector< std::vector< Point2dN<double> > >& cctagPoints, std::size_t numCircles, double thrMedianDistanceEllipse) {
-        //ROM_COUT("Search for another segment");
 
         using namespace boost::numeric::ublas;
 
         const std::vector<EdgePoint*> & anotherOuterEllipsePoints = anotherCandidate._outerEllipsePoints;
-        //const std::list<EdgePoint*> & anotherFilteredChildrens = anotherCandidate._filteredChildrens;
 
         numerical::geometry::Ellipse qm;
         double Sm = 10000000000000.0;
         const double f = 1.0;
-
-        // Create matrix containing homogeneous coordinates of filteredChildrens
-        //std::vector<double> weights;
 
         std::vector<bounded_vector<double, 3> > pts;
         pts.reserve(outerEllipsePoints.size());
@@ -595,23 +564,13 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         std::size_t cnt = 0;
 
         double S1m, S2m;
-        //S1m = S2m = 1e13;
 
-        //ROM_COUT_VAR(S1m);
-        //ROM_COUT_VAR(S2m);
-
-        //std::cin.ignore().get();
-
-        while (cnt < 100)//50  ////////////
+        while (cnt < 100)
         {
-            //ROM_COUT_VAR(S1m);
-            //ROM_COUT_VAR(S2m);
-
             // Random subset of 5 points from pts
             const std::vector<int> perm = rom::numerical::randperm< std::vector<int> >(outerEllipsePoints.size());
 
             std::vector<rom::Point2dN< double > > points;
-
 
             std::vector<int>::const_iterator it = perm.begin();
             for (std::size_t i = 0; i < 4; ++i) {
@@ -619,11 +578,6 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 ++it;
             }
 
-            //	const std::size_t iEp = int(boost::math::round( std::max(double((std::rand()-1)), 0.0)/double(RAND_MAX)*double(anotherOuterEllipsePoints.size())-0.5+std::numeric_limits<double>::epsilon() ));
-
-            //points.push_back(Point2dN<double>(double(ePt->x()), double(ePt->y())));
-
-            //}else{
             const std::vector<int> anotherPerm = rom::numerical::randperm< std::vector<int> >(anotherOuterEllipsePoints.size());
 
             it = anotherPerm.begin();
@@ -636,8 +590,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             rom::numerical::geometry::fitEllipse(points, eToto);
 
             try {
-
-
+                
                 numerical::geometry::Ellipse q(eToto.matrix());
 
                 // Provisoire, cas dégénéré : l'ellipse est 2 droite, cas ou 3 ou 4 points sont alignés sur les 5
@@ -655,7 +608,6 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 //% distance between pts and Q : (xa'Qxa)²/||PkQxa||² with Pk = diag(1,1,0)
                 std::vector<double> dist;
                 numerical::distancePointEllipse(dist, pts, q, f);
-                //ROM_COUT_VAR(dist.size());
 
                 //for(int iDist=0 ; iDist < dist.size() ; ++iDist)
                 //{
@@ -663,22 +615,14 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 //}
 
                 const double S1 = numerical::medianRef(dist);
-                //ROM_COUT_VAR_DEBUG(q.matrix());
-                //ROM_COUT_VAR_DEBUG( S1 );
 
                 std::vector<double> anotherDist;
-                //ROM_COUT_VAR(anotherPts.size());
+
                 numerical::distancePointEllipse(anotherDist, anotherPts, q, f);
-                //ROM_COUT_VAR(anotherDist.size());
 
                 const double S2 = numerical::medianRef(anotherDist);
-                //ROM_COUT_VAR_DEBUG( S1 );
 
                 const double S = S1 + S2;
-
-                //ROM_COUT_VAR(S);
-                //ROM_COUT_VAR(S1);
-                //ROM_COUT_VAR(S2);
 
                 if (S < Sm) {
                     cnt = 0;
@@ -709,10 +653,8 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
             outerEllipsePointsTemp.insert(outerEllipsePointsTemp.end(), anotherOuterEllipsePoints.begin(), anotherOuterEllipsePoints.end());
             ROM_COUT_VAR_DEBUG(outerEllipsePointsTemp.size());
+            
             // Compute the new ellipse which fits oulierEllipsePoints
-
-            //ROM_COUT("Before ellipse fitting");
-            //ROM_COUT_VAR(outerEllipse);
             numerical::ellipseFitting(outerEllipseTemp, outerEllipsePointsTemp);
 
             double quality = (double) outerEllipsePointsTemp.size() / (double) rasterizeEllipsePerimeter(outerEllipseTemp);
