@@ -120,12 +120,14 @@ template<class View>
 void createMultiResolutionImage( PyramidImage<View>& multires, const View& srcImg, const std::size_t nbLevels );
 
 
-}
-}
-}
-}
+} // namespace cctag
 
-#include "multiresolution.tcc"
+void clearDetectedMarkers( const std::map<std::size_t, CCTag::List> & pyramidMarkers, const boost::gil::rgb32f_view_t & cannyRGB, const std::size_t curLevel );
+
+} // namespace marker
+} // namespace vision
+} // namespace rom
+
 
 #endif
 

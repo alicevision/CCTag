@@ -3,10 +3,7 @@
 namespace rom {
 namespace vision {
 namespace marker {
-namespace cctag {
 
-}
-}
-}
-}
-
+} // namespace marker
+} // namespace vision
+} // namespace rom

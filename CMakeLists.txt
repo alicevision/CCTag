@@ -91,7 +91,7 @@ find_package(JPEG REQUIRED)
 find_package(Glog REQUIRED)
 
 # FIND GOMP
-# find_package(Gomp REQUIRED)
+find_package(Gomp REQUIRED)
 # griff: We don't have to find libgomp. Just pass the right flags to gcc
 find_package(OpenMP REQUIRED)
 

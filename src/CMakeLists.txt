@@ -28,7 +28,7 @@ target_link_libraries( CCTag PUBLIC
     ${LAPACK_LIBRARIES}
     pthread
     dl
-    gomp )
+    ${GOMP_LIBRARIES} )
 
 target_include_directories( CCTag PUBLIC .)
 

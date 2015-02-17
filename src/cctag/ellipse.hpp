@@ -15,8 +15,6 @@
 #include <cstddef>
 #include <vector>
 
-#include "ellipse.tcc"
-
 namespace rom {
 namespace vision {
 namespace marker {

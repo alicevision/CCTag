@@ -112,8 +112,8 @@ inline double medianRef( V & v )
 }
 
 
-}
-}
+} // namespace numerical
+} // namespace rom
 
 #endif
 

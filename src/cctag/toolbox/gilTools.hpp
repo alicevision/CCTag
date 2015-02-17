@@ -1,4 +1,3 @@
-
 /**
  * @brief Bunch of adobe GIL tools.
  *
@@ -192,8 +191,8 @@ void fill_white( View& v )
 }
 
 
-}
-}
+} // namespace gil
+} // namespace boost
 
 #endif
 

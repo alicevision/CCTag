@@ -25,4 +25,9 @@
 #define ROM_COUT_FATALERROR_DEBUG(... )
 #define ROM_COUT_EXCEPTION_DEBUG(... )
 
+#define POP_INFO  std::cerr << __FILE__ << ":" << __LINE__ << " INFO: "
+#define POP_ERROR std::cerr << __FILE__ << ":" << __LINE__ << " ERROR: "
+#define POP_ENTER std::cerr << __FILE__ << ":" << __LINE__ << " entering " << __func__ << std::endl
+#define POP_LEAVE std::cerr << __FILE__ << ":" << __LINE__ << " leaving " << __func__ << std::endl
+
 #endif

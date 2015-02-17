@@ -31,8 +31,7 @@ namespace rom {
 namespace vision {
 namespace marker {
 
-template<class SView>
-void cctagDetection( CCTag::List& markers, const FrameId frame, const SView& svw, const cctag::Parameters & params, const bool bDisplayEllipses = true );
+void cctagDetection( CCTag::List& markers, const FrameId frame, const boost::gil::rgb8_view_t& svw, const cctag::Parameters & params, const bool bDisplayEllipses = true );
 
 namespace cctag {
 //template<class GradView>
@@ -59,8 +58,6 @@ void cctagDetectionFromEdges(
 }
 }
 }
-
-#include "detection.tcc"
 
 #endif
 

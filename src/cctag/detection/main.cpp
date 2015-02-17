@@ -15,6 +15,7 @@
 //#include <rom/engine/processing/OMMarkerDetection.hpp>
 
 #include <cctag/progBase/exceptions.hpp>
+#include <cctag/progBase/MemoryPool.hpp>
 #include <cctag/detection.hpp>
 
 #include <boost/filesystem/convenience.hpp>
@@ -22,6 +23,7 @@
 #include <boost/progress.hpp>
 #include <boost/gil/gil_all.hpp>
 #include <boost/gil/image.hpp>
+#include <boost/gil/extension/io/jpeg_io.hpp>
 #include <boost/exception/all.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/archive/xml_oarchive.hpp>
@@ -47,7 +49,9 @@ namespace bfs = boost::filesystem;
 
 static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(rom::FrameId frame, rgb8_view_t& view, const std::string & paramsFilename = "") {
+void detection(rom::FrameId frame, rgb8_view_t& view, const std::string & paramsFilename = "")
+{
+    POP_ENTER;
     // Process markers detection
     boost::timer t;
     boost::ptr_list<marker::CCTag> markers;
@@ -92,13 +96,15 @@ void detection(rom::FrameId frame, rgb8_view_t& view, const std::string & params
 
     ROM_TCOUT("Detected: " << markers.size() << " markers.");
     ROM_TCOUT("CCDetection global time: " << t.elapsed());
+    POP_LEAVE;
 }
 
 /*************************************************************/
 /*                    Main entry                             */
 
 /*************************************************************/
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     try {
         if (argc <= 1) {
             BOOST_THROW_EXCEPTION(rom::exception::Bug() << rom::exception::user() + kUsageString);
@@ -137,13 +143,13 @@ int main(int argc, char** argv) {
             rgb8_image_t image;
             rgb8_view_t svw;
             if (ext == ".png") {
-                image = rgb8_image_t(png_read_dimensions(filename.c_str()));
+                image = rgb8_image_t(boost::gil::png_read_dimensions(filename.c_str()));
                 svw = rgb8_view_t(view(image));
-                png_read_and_convert_view(filename.c_str(), svw);
+                boost::gil::png_read_and_convert_view(filename.c_str(), svw);
             } else {
-                image = rgb8_image_t(jpeg_read_dimensions(filename.c_str()));
+                image = rgb8_image_t(boost::gil::jpeg_read_dimensions(filename.c_str()));
                 svw = rgb8_view_t(view(image));
-                jpeg_read_and_convert_view(filename.c_str(), svw);
+                boost::gil::jpeg_read_and_convert_view(filename.c_str(), svw);
             }
 
             // Increase image size.
@@ -183,6 +189,8 @@ int main(int argc, char** argv) {
             if (!bfs::exists(resultFolderName.str())) {
                 bfs::create_directory(resultFolderName.str());
             }
+            POP_INFO << "using result folder " << resultFolderName.str() << std::endl;
+            POP_INFO << "looking at image " << myPath.stem().string() << std::endl;
 
             CCTagVisualDebug::instance().initBackgroundImage(svw);
             CCTagVisualDebug::instance().initPath(resultFolderName.str());
@@ -225,12 +233,14 @@ int main(int argc, char** argv) {
                     rgb8_view_t sourceView(view(image));
                     png_read_and_convert_view(fileInFolder.c_str(), sourceView);
 
+                    POP_INFO << "writing input image to " << inFilename.str() << std::endl;
                     png_write_view(inFilename.str(), sourceView);
 
                     CCTagVisualDebug::instance().initBackgroundImage(sourceView);
 
                     detection(frame, sourceView, paramsFilename);
 
+                    POP_INFO << "writing ouput image to " << outFilename.str() << std::endl;
                     png_write_view(outFilename.str(), sourceView);
 
                     ++frame;

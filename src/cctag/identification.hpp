@@ -224,8 +224,8 @@ int identify(
 	const double minIdentProba,
 	const bool useLmDif );
 
-}
-}
-}
+} // namespace marker
+} // namespace vision
+} // namespace rom
 
 #endif

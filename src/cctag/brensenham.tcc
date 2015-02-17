@@ -1,5 +1,0 @@
-namespace rom {
-namespace vision {
-
-}
-}

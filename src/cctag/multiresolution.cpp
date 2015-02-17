@@ -2,6 +2,7 @@
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 #include <boost/gil/image_view_factory.hpp>
+#include <limits>
 
 #include "multiresolution.hpp"
 #include "visualDebug.hpp"
@@ -11,6 +12,10 @@
 #include "ellipse.hpp"
 
 #include <cctag/geometry/ellipseFromPoints.hpp>
+#include <cctag/toolbox.hpp>
+#include <cctag/image.hpp>
+#include <cctag/canny.hpp>
+#include <cctag/detection.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
 
@@ -157,7 +162,9 @@ namespace rom {
                 }
             }
 
-            void cctagMultiresDetection(CCTag::List& markers, const boost::gil::gray8_view_t& srcImg, const boost::gil::rgb32f_view_t & cannyRGB, const FrameId frame, const cctag::Parameters & params) {
+void cctagMultiresDetection(CCTag::List& markers, const boost::gil::gray8_view_t& srcImg, const boost::gil::rgb32f_view_t & cannyRGB, const FrameId frame, const cctag::Parameters & params)
+{
+    POP_ENTER;
                 bool doUpdate = true;
 
                 using namespace boost::gil;
@@ -198,7 +205,8 @@ namespace rom {
                 //ROM_COUT("Nombre de niveau calculÃÂÃÂÃÂÃÂ©s" <<  nbProcessLevels );
                 //ROM_COUT("Nombre de niveau - calculÃÂÃÂÃÂÃÂ©s" <<  nbLevels-nbProcessLevels );
 
-                for (std::size_t i = params._numberOfMultiresLayers; i > max(params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers, 1); --i) {
+                BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
+                for (std::size_t i = params._numberOfMultiresLayers; i > std::max<size_t>(params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers, 1); --i) {
 
                     ROM_COUT(":::::::::::::::::::::::::::::::::::: Multiresolution level " << i - 1 << " ::::::::::::::::::::::::::::::::::::");
 
@@ -332,7 +340,8 @@ namespace rom {
                     }
                 }
 
-                for (std::size_t i = params._numberOfMultiresLayers - 1; i >= max(params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers, 1); --i) {
+                BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
+                for (std::size_t i = params._numberOfMultiresLayers - 1; i >= std::max<size_t>(params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers, 1); --i) {
                     CCTag::List & markersList = pyramidMarkers[i];
 
                     BOOST_FOREACH(const CCTag & marker, markersList) {
@@ -447,7 +456,42 @@ namespace rom {
                     CCTagFileDebug::instance().outputMarkerInfos(marker);
                 }
 
-            }
-        }
-    }
+    POP_LEAVE;
 }
+
+void clearDetectedMarkers( const std::map<std::size_t, CCTag::List> & pyramidMarkers, const boost::gil::rgb32f_view_t & cannyRGB, const std::size_t curLevel )
+{
+	using namespace boost::gil;
+	typedef rgb32f_pixel_t Pixel;
+	Pixel pixelZero; terry::numeric::pixel_zeros_t<Pixel>()( pixelZero );
+	typedef std::map<std::size_t, CCTag::List> LeveledMarkersT;
+
+	BOOST_FOREACH( const LeveledMarkersT::const_iterator::value_type & v, pyramidMarkers )
+	{
+		const std::size_t level = v.first;
+		const double factor = std::pow( 2.0, (double)(curLevel - level) );
+		const CCTag::List & markers = v.second;
+		BOOST_FOREACH( const CCTag & tag, markers )
+		{
+			BOOST_FOREACH( const rom::numerical::geometry::Ellipse & ellipse, tag.ellipses() )
+			{
+				rom::numerical::geometry::Ellipse ellipseScaled = ellipse;
+				// Scale center
+				Point2dN<double> c = ellipseScaled.center();
+				c.setX( c.x() * factor );
+				c.setY( c.y() * factor );
+				ellipseScaled.setCenter( c );
+				// Scale demi axes
+				ellipseScaled.setA( ellipseScaled.a() * factor );
+				ellipseScaled.setB( ellipseScaled.b() * factor );
+				// Erase ellipses
+				fillEllipse( cannyRGB, ellipseScaled, pixelZero );
+			}
+		}
+	}
+}
+
+        } // namespace marker
+    } // namespace vision
+} // namespace rom
+

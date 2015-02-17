@@ -101,7 +101,7 @@ void fill_black( View& v )
 }
 
 
-}
+} // namespace terry
 
 #endif
 

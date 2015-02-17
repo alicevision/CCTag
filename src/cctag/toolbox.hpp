@@ -18,8 +18,6 @@ class Ellipse;
 }
 }
 
-//#include "toolbox.tcc"
-
 namespace rom {
 namespace numerical {
 

@@ -36,8 +36,8 @@ namespace rom {
 namespace vision {
 namespace marker {
 
-template<class SView>
-void cctagDetection( CCTagFake::List& markers, const FrameId frame, const SView& svw, const cctag::Parameters & params, const bool bDisplayEllipses = true ){
+void cctagDetection( CCTagFake::List& markers, const FrameId frame, const rgb8_view_t& svw, const cctag::Parameters & params, const bool bDisplayEllipses = true )
+{
     
 }
 
@@ -63,11 +63,10 @@ void cctagDetectionFromEdges(
     
 }
 
-}
-
-}
-}
-}
+} // namespace cctag
+} // namespace marker
+} // namespace vision
+} // namespace rom
 
 #endif
 

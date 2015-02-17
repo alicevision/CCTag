@@ -26,9 +26,7 @@ void bresenham( const boost::gil::gray8_view_t & sView, const rom::Point2dN<int>
 
 EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & canny, const EdgePoint& p, const int dir, const std::size_t nmax, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradY, int thrGradient);
 
-}
-}
-
-#include "brensenham.tcc"
+} // namespace vision
+} // namespace rom
 
 #endif
