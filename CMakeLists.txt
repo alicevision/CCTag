@@ -45,6 +45,14 @@ else(Boost_FOUND)
   message( FATAL_ERROR "Boost not found" )
 endif(Boost_FOUND)
 
+find_package(CUDA 6.5)
+if(CUDA_FOUND)
+  include_directories(${CUDA_INCLUDE_DIRS})
+else(CUDA_FOUND)
+  message( STATUS "Failed to find CUDA" )
+endif(CUDA_FOUND)
+
+
 # FIND UBLAS
 find_package(UBlas REQUIRED)
 include_directories(${UBlas_INCLUDE_DIRS})
