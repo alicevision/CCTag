@@ -20,18 +20,28 @@ namespace marker {
 namespace cctag {
 
 
-/** @brief Point voting
- * @param svw source image view
- * @param winners resulting voting winners
+/* Brief: Voting procedure. For every edge points, construct the 1st order approximation 
+ * of the field line passing through it which consists in a polygonal line whose
+ * extremities are two edge points.
+ * Input:
+ * points: set of edge points to be processed, i.e. considered as the 1st extremity
+ * of the constructed field line passing through it.
+ * seeds: edge points having received enough votes to be considered as a seed, i.e.
+ * as an edge point belonging on an inner elliptical arc of a cctag.
+ * edgesMap: map of all the edge points
+ * winners: map associating all seeds to their voters
+ * maxSearchDistance: maximum distance (in pixels) of research from one edge points
+ * to another one. maximum length of a arc segment composing the polygonal line.
+ * maxVotingAngle: maximum angle between of gradient directions of two consecutive
+ * edge points.
+ * maxVotingAngle: maximum distance ratio between of gradient directions of two consecutive
+ * edge points.
+ * minVotesToSelectCandidate: minimum number of received votes to select an edge 
+ * point as a new seed.
+ * cannyGradX: X derivative of the gray image
+ * cannyGradY: Y derivative of the gray image
  */
-//void vote( std::vector<EdgePoint> & points, std::vector<EdgePoint*> & candidates, const EdgePointsImage & edgesMap, WinnerMap& winners, const std::size_t searchDistance, const double thrVotingAngle, const double thrVotingRatio, const std::size_t numCrowns, const std::size_t minVotesToSelectCandidate );
-
-
-/** @brief Point voting considering direction of the gradient for each point, v.2 of the previous vote function.
- * @param
- */
-
- void vote( std::vector<EdgePoint> & points, std::vector<EdgePoint*> & candidates, const EdgePointsImage & edgesMap, WinnerMap& winners, const std::size_t searchDistance, const double thrVotingAngle, const double thrVotingRatio, const std::size_t numCrowns, const std::size_t minVotesToSelectCandidate, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX, const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY );
+ void vote( std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds, const EdgePointsImage & edgesMap, WinnerMap& winners, const std::size_t searchDistance, const double thrVotingAngle, const double thrVotingRatio, const std::size_t numCrowns, const std::size_t minVotesToSelectCandidate, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX, const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY );
  
 /** @brief Retrieve all connected edges.
  * @param[out] convexEdgeSegment

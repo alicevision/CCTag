@@ -72,7 +72,7 @@ void cctagDetectionFromEdges(
     std::vector<EdgePoint*> seeds;
 
 
-    // Version 2 of the vote algorithm, using gradient direction in each point.
+    // Voting procedure applied on every edge points. 
     vote(points, seeds, edgesMap, winners, params._distSearch, params._angleVoting, params._ratioVoting, params._numCrowns, params._minVotesToSelectCandidate, cannyGradX, cannyGradY);
 
     ///////////////////////////////////////// WRITING VOTE /////////////////////////
