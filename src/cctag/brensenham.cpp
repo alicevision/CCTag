@@ -373,232 +373,170 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
 	return;
 }
 
-EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & canny, const EdgePoint& p, int dir, const std::size_t nmax, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX, const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY, int thrGradient)
+EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & canny, 
+        const EdgePoint& p, int dir, const std::size_t nmax, 
+        const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX, 
+        const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY, 
+        int thrGradient)
 {
-	/*for( int x = 0 ; x < cannyGradX.width(); ++x )
-	{
-		for( int y = 0 ; y < cannyGradX.height(); ++y )
-		{
-			boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type::xy_locator loc = cannyGradX.xy_at(x,y);
+    EdgePoint* ret = NULL;
+    float e        = 0.0f;
+    float dx       = dir * (*(cannyGradX.xy_at(p.x(),p.y())))[0];
+    float dy       = dir * (*(cannyGradY.xy_at(p.x(),p.y())))[0];
 
-			boost::gil::rgb32f_pixel_t pix;
-			color_convert( *loc, pix );
-			double r = get_color(pix, boost::gil::red_t());
-			double g = get_color(pix, boost::gil::green_t());
-			double b = get_color(pix, boost::gil::blue_t());
+    float dx2 = 0;
+    float dy2 = 0;
 
-			//boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type::xy_locator loc = cannyGradX.xy_at(0,0);
-		    //if (r != 12.0)
+    float dxRef = dx;
+    float dyRef = dy;
 
-			int toto = (*loc)[0];
+    float adx = std::abs( dx );
+    float ady = std::abs( dy );
 
-			ROM_COUT_DEBUG( "( " << r << ", " << g << ", " << b << " )");
-			//ROM_COUT_DEBUG( (*loc)[0] );
-			ROM_COUT_DEBUG(toto);
-			ROM_COUT_DEBUG((*(cannyGradX.xy_at(x,y)))[0]);
-		}
-	}*/
+    std::size_t n = 0;
 
-	EdgePoint* ret = NULL;
-	float e        = 0.0f;
-	float dx       = dir * (*(cannyGradX.xy_at(p.x(),p.y())))[0];
-	float dy       = dir * (*(cannyGradY.xy_at(p.x(),p.y())))[0];
+    int stpX = 0;
+    int stpY = 0;
 
-	float dx2 = 0;
-	float dy2 = 0;
+    int x = p.x();
+    int y = p.y();
 
-	float dxRef = dx;
-	float dyRef = dy;
+    if( ady > adx )
+    {
 
-	//ROM_COUT_DEBUG("p._grad.x() : " << p._grad.x() );
-	//ROM_COUT_DEBUG("p._grad.y() : " << p._grad.y() );
+        updateXY(dy,dx,y,x,e,stpY,stpX);
+        n = n+1;
 
-	//ROM_COUT_DEBUG("cannyGradX : " << (*(cannyGradX.xy_at(p.x(),p.y())))[0] );
-	//ROM_COUT_DEBUG("cannyGradY : " << (*(cannyGradY.xy_at(p.x(),p.y())))[0] );
+        if ( dx*dx+dy*dy > thrGradient )
+        {
+            dx2 = (*(cannyGradX.xy_at(p.x(),p.y())))[0];
+            dy2 = (*(cannyGradY.xy_at(p.x(),p.y())))[0];
+            dir = boost::math::sign<float>( dx2*dxRef+dy2*dyRef );
+            dx = dir*dx2;
+            dy = dir*dy2;
+        }
 
-	float adx = std::abs( dx );
-	float ady = std::abs( dy );
+        updateXY(dy,dx,y,x,e,stpY,stpX);
+        n = n+1;
 
-	std::size_t n = 0;
+        if( x >= 0 && x < canny.shape()[0] &&
+            y >= 0 && y < canny.shape()[1] )
+        {
+            ret = canny[x][y];
+            if( ret )
+            {
+                    return ret;
+            }
+        }
+        else
+        {
+                return NULL;
+        }
 
-	int stpX = 0;
-	int stpY = 0;
+        while( n <= nmax)
+        {
+            updateXY(dy,dx,y,x,e, stpY,stpX);
+            n = n+1;
 
-	int x = p.x();
-	int y = p.y();
+            if( x >= 0 && x < canny.shape()[0] &&
+                y >= 0 && y < canny.shape()[1] )
+            {
+                ret = canny[x][y];
+                if( ret )
+                {
+                    return ret;
+                }
+                else
+                {
+                    if( x >= 0 && x < canny.shape()[0] &&
+                        ( y - stpY ) >= 0 && ( y - stpY ) < canny.shape()[1] )
+                    {
+                        ret = canny[x][y - stpY];              //#
+                        if( ret )
+                        {
+                                return ret;
+                        }
+                    }
+                    else
+                    {
+                            return NULL;
+                    }
+                }
+            }
+            else
+            {
+                    return NULL;
+            }
+        }
+    }
+    else
+    {
+        updateXY(dx,dy,x,y,e,stpX,stpY);
+        n = n+1;
 
-	if( ady > adx )
-	{
+        if ( dx*dx+dy*dy > thrGradient )
+        {
+            dx2 = (*(cannyGradX.xy_at(p.x(),p.y())))[0];
+            dy2 = (*(cannyGradY.xy_at(p.x(),p.y())))[0];
+            dir = boost::math::sign<float>( dx2*dxRef+dy2*dyRef );
+            dx = dir*dx2;
+            dy = dir*dy2;
+        }
 
-		updateXY(dy,dx,y,x,e,stpY,stpX);
-		n = n+1;
+        updateXY(dx,dy,x,y,e,stpX,stpY);
+        n = n+1;
 
-		///
-		/*
-		if( x >= 0 && x < canny.shape()[0] &&
-		    y >= 0 && y < canny.shape()[1] )
-		{
-			ret = canny[x][y];
-			if( ret )
-			{
-				return ret;
-			}
-		}
-		else
-		{
-			return NULL;
-		}
-		*/ ///
+        if( x >= 0 && x < canny.shape()[0] &&
+            y >= 0 && y < canny.shape()[1] )
+        {
+            ret = canny[x][y];
+            if( ret )
+            {
+                return ret;
+            }
+        }
+        else
+        {
+            return NULL;
+        }
 
-		if ( dx*dx+dy*dy > thrGradient )
-		{
-			dx2 = (*(cannyGradX.xy_at(p.x(),p.y())))[0];
-			dy2 = (*(cannyGradY.xy_at(p.x(),p.y())))[0];
-			dir = boost::math::sign<float>( dx2*dxRef+dy2*dyRef );
-			dx = dir*dx2;
-			dy = dir*dy2;
-		}
+        while( n <= nmax)
+        {
+            updateXY(dx,dy,x,y,e,stpX,stpY);
+            n = n+1;
 
-	    updateXY(dy,dx,y,x,e,stpY,stpX);
-		n = n+1;
-
-		if( x >= 0 && x < canny.shape()[0] &&
-		    y >= 0 && y < canny.shape()[1] )
-		{
-			ret = canny[x][y];
-			if( ret )
-			{
-				return ret;
-			}
-		}
-		else
-		{
-			return NULL;
-		}
-
-		while( n <= nmax)
-		{
-
-			updateXY(dy,dx,y,x,e, stpY,stpX);
-			n = n+1;
-
-			if( x >= 0 && x < canny.shape()[0] &&
-			    y >= 0 && y < canny.shape()[1] )
-			{
-				ret = canny[x][y];
-				if( ret )
-				{
-					return ret;
-				}
-				else
-				{
-					if( x >= 0 && x < canny.shape()[0] &&
-					    ( y - stpY ) >= 0 && ( y - stpY ) < canny.shape()[1] )
-					{
-						ret = canny[x][y - stpY];              //#
-						if( ret )
-						{
-							return ret;
-						}
-					}
-					else
-					{
-						return NULL;
-					}
-				}
-			}
-			else
-			{
-				return NULL;
-			}
-		}
-	}
-	else
-	{
-		updateXY(dx,dy,x,y,e,stpX,stpY);
-		n = n+1;
-
-		///
-		/*
-		if( x >= 0 && x < canny.shape()[0] &&
-		    y >= 0 && y < canny.shape()[1] )
-		{
-			ret = canny[x][y];
-			if( ret )
-			{
-				return ret;
-			}
-		}
-		else
-		{
-			return NULL;
-		}*/
-		///
-
-		if ( dx*dx+dy*dy > thrGradient )
-		{
-			dx2 = (*(cannyGradX.xy_at(p.x(),p.y())))[0];
-			dy2 = (*(cannyGradY.xy_at(p.x(),p.y())))[0];
-			dir = boost::math::sign<float>( dx2*dxRef+dy2*dyRef );
-			dx = dir*dx2;
-			dy = dir*dy2;
-		}
-
-	    updateXY(dx,dy,x,y,e,stpX,stpY);
-		n = n+1;
-
-		if( x >= 0 && x < canny.shape()[0] &&
-		    y >= 0 && y < canny.shape()[1] )
-		{
-			ret = canny[x][y];
-			if( ret )
-			{
-				return ret;
-			}
-		}
-		else
-		{
-			return NULL;
-		}
-
-		while( n <= nmax)
-		{
-
-			updateXY(dx,dy,x,y,e,stpX,stpY);
-			n = n+1;
-
-			if( x >= 0 && x < canny.shape()[0] &&
-			    y >= 0 && y < canny.shape()[1] )
-			{
-				ret = canny[x][y];
-				if( ret )
-				{
-					return ret;
-				}
-				else
-				{
-					if( ( x - stpX ) >= 0 && ( x - stpX ) < canny.shape()[0] &&
-					    y >= 0 && y < canny.shape()[1] )
-					{
-						ret = canny[x - stpX][y];
-						if( ret )
-						{
-							return ret;
-						}
-					}
-					else
-					{
-						return NULL;
-					}
-				}
-			}
-			else
-			{
-				return NULL;
-			}
-		}
-	}
-	return NULL;
+            if( x >= 0 && x < canny.shape()[0] &&
+                y >= 0 && y < canny.shape()[1] )
+            {
+                ret = canny[x][y];
+                if( ret )
+                {
+                    return ret;
+                }
+                else
+                {
+                    if( ( x - stpX ) >= 0 && ( x - stpX ) < canny.shape()[0] &&
+                        y >= 0 && y < canny.shape()[1] )
+                    {
+                        ret = canny[x - stpX][y];
+                        if( ret )
+                        {
+                                return ret;
+                        }
+                    }
+                    else
+                    {
+                        return NULL;
+                    }
+                }
+            }
+            else
+            {
+                return NULL;
+            }
+        }
+    }
+    return NULL;
 }
 
 }
