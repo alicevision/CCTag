@@ -6,6 +6,7 @@
 	<_cannyThrLow>0.01</_cannyThrLow>
 	<_cannyThrHigh>0.04</_cannyThrHigh>
 	<_distSearch>30</_distSearch>
+    <_thrGradientMagInVote>2500</_thrGradientMagInVote>
 	<_angleVoting>0.0</_angleVoting>
 	<_ratioVoting>4</_ratioVoting>
     <_averageVoteMin>0.0</_averageVoteMin>

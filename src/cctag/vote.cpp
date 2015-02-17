@@ -63,20 +63,17 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
         const cctag::Parameters & params)
 {
-    // todo@Lilian: add thrGradient to the parameter file
-    int thrGradient = 50;
-    int thrGradient2 = thrGradient*thrGradient;
-
     BOOST_FOREACH(EdgePoint & p, points) {
-        p._before = gradientDirectionDescent(edgesMap, p, -1, params._distSearch, cannyGradX, cannyGradY, thrGradient2);
-        p._after = gradientDirectionDescent(edgesMap, p, 1, params._distSearch, cannyGradX, cannyGradY, thrGradient2);
+        p._before = gradientDirectionDescent(edgesMap, p, -1, params._distSearch, cannyGradX, cannyGradY, params._thrGradientMagInVote);
+        p._after = gradientDirectionDescent(edgesMap, p, 1, params._distSearch, cannyGradX, cannyGradY, params._thrGradientMagInVote);
     }
     // Vote
     seeds.reserve(points.size() / 2);
 
     // todo@Lilian: remove thrVotingAngle from the paramter file
     if (params._angleVoting != 0) {
-        BOOST_THROW_EXCEPTION(rom::exception::Bug() << rom::exception::user() + "thrVotingAngle must be equal to 0 or edge points gradients have to be normalized");
+        BOOST_THROW_EXCEPTION(rom::exception::Bug() << rom::exception::user() + 
+                "thrVotingAngle must be equal to 0 or edge points gradients have to be normalized");
     }
 
     BOOST_FOREACH(EdgePoint & p, points) {

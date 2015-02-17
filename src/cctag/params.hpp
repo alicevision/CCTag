@@ -9,43 +9,41 @@
 #include <cstddef>
 #include <string>
 
-//#include <rom/engine/RomConfig.hpp>
-
 #define NO_WEIGHT 0
 #define INV_GRAD_WEIGHT 1
 #define INV_SQRT_GRAD_WEIGHT 2
 
 namespace rom {
-namespace vision {
-namespace marker {
-namespace cctag {
+    namespace vision {
+        namespace marker {
+            namespace cctag {
 
+static const std::string kDefaultCCTagBankFilename( "param3.xml" );
 static const std::size_t kDefaultDistSearch = 30;
-static const std::size_t kDefaultNumCrowns  = 3; // TODO to delete ~= _numCircles/2
+static const std::size_t kDefaultNumCrowns  = 3;
 static const std::size_t kDefaultNumCircles = 6;
-static const float kDefaultAngleVoting        = 0.f;//std::cos( boost::math::constants::pi<float>() / 3.0 );
-static const float kDefaultRatioVoting        = 4.f;//3.f;     // @todo: check 2 as default
+static const int kDefaultThrGradientMagInVote = 2500;
+static const float kDefaultAngleVoting        = 0.f;
+static const float kDefaultRatioVoting        = 4.f;
 static const float kDefaultAverageVoteMin        = 1.2f;
-static const double kDefaultThrMedianDistanceEllipse = 3.0; //Default for 4 crowns.
+static const double kDefaultThrMedianDistanceEllipse = 3.0;
 static const std::size_t kDefaultMaximumNbSeeds = 40;
 static const std::size_t kDefaultMaximumNbCandidatesLoopTwo = 40;
-//static const float kDefaultCannyThrLow      =  0.025f; // Canny low threshold
-//static const float kDefaultCannyThrHigh     =  0.1f; // Canny high threshold
-static const float kDefaultCannyThrLow      =  0.2f ; // Canny low threshold
-static const float kDefaultCannyThrHigh     =  0.4f ; // Canny high threshold
-static const std::size_t kDefaultMinPointsSegmentCandidate =  15; // Minimal number of points on the outer ellipse to select an inner segment candidate
-static const std::size_t kDefaultMinVotesToSelectCandidate =  4;  // Minimal number of received votes to select a candidate point
-static const double kDefaultThreshRobustEstimationOfOuterEllipse =  40.0;  // LMeDs threshold on robust estimation of the outer ellipse
-static const double kDefaultEllipseGrowingEllipticHullWidth =  3.0;  // Width of elliptic hull in ellipse growing
-static const std::size_t kDefaultWindowSizeOnInnerEllipticSegment =  20;  // Window size on the inner elliptic segment
-static const std::size_t kDefaultNumberOfMultiresLayers = 3;  // Number of multiresolution layers
-static const std::size_t kDefaultNumberOfProcessedMultiresLayers = 3;  // Number of processed layers in multiresolution
-static const std::size_t kDefaultNumCutsInIdentStep = 12;  // Number of cuts in the identification step
-static const std::size_t kDefaultNumSamplesOuterEdgePointsRefinement = 10;  // Number of sample for the outer edge points refinement in identification
-static const std::size_t kDefaultCutsSelectionTrials = 2000;  // Number of trials in cuts selection
-static const std::size_t kDefaultSampleCutLength = 100;  // Sample cut length
-static const double kDefaultMinIdentProba = 1e-14;  // Minimal probability of identification
-static const bool kDefaultUseLMDif = false;  // Use old method
+static const float kDefaultCannyThrLow      =  0.2f ;
+static const float kDefaultCannyThrHigh     =  0.4f ;
+static const std::size_t kDefaultMinPointsSegmentCandidate =  15;
+static const std::size_t kDefaultMinVotesToSelectCandidate =  4;
+static const double kDefaultThreshRobustEstimationOfOuterEllipse =  40.0;
+static const double kDefaultEllipseGrowingEllipticHullWidth =  3.0;
+static const std::size_t kDefaultWindowSizeOnInnerEllipticSegment =  20;
+static const std::size_t kDefaultNumberOfMultiresLayers = 3;
+static const std::size_t kDefaultNumberOfProcessedMultiresLayers = 3;
+static const std::size_t kDefaultNumCutsInIdentStep = 12;
+static const std::size_t kDefaultNumSamplesOuterEdgePointsRefinement = 10;
+static const std::size_t kDefaultCutsSelectionTrials = 2000;
+static const std::size_t kDefaultSampleCutLength = 100;
+static const double kDefaultMinIdentProba = 1e-14;
+static const bool kDefaultUseLMDif = false;
 static const bool kDefaultSearchForAnotherSegment = true;
 static const bool kDefaultWriteOutput = false;
 
@@ -53,6 +51,7 @@ static const std::string kParamCCTagBankFilename( "kParamCCTagBankFilename" );
 static const std::string kParamCannyThrLow( "kParamCannyThrLow" );
 static const std::string kParamCannyThrHigh( "kParamCannyThrHigh" );
 static const std::string kParamDistSearch( "kParamDistSearch" );
+static const std::string kThrGradientMagInVote("kThrGradientMagInVote");
 static const std::string kParamAngleVoting( "kParamAngleVoting" );
 static const std::string kParamRatioVoting( "kParamRatioVoting" );
 static const std::string kParamAverageVoteMin( "kParamAverageVoteMin" );
@@ -82,10 +81,11 @@ struct Parameters
 {
     friend class boost::serialization::access;
     Parameters()
-    : _cctagBankFilename("TODO")
+    : _cctagBankFilename( cctag::kDefaultCCTagBankFilename )
     , _cannyThrLow( cctag::kDefaultCannyThrLow )
     , _cannyThrHigh( cctag::kDefaultCannyThrHigh )
     , _distSearch( cctag::kDefaultDistSearch )
+    , _thrGradientMagInVote( cctag::kDefaultThrGradientMagInVote )
     , _angleVoting( cctag::kDefaultAngleVoting )
     , _ratioVoting( cctag::kDefaultRatioVoting )
     , _averageVoteMin( cctag::kDefaultAverageVoteMin )
@@ -112,36 +112,43 @@ struct Parameters
         _nCircles = 2*_numCrowns;
     }
 
-    std::string _cctagBankFilename;
-    float _cannyThrLow;
-    float _cannyThrHigh;
+    std::string _cctagBankFilename; // path of the cctag bank containing the radius radio
+                                    // of the CCTag library
+    float _cannyThrLow; // canny low threshold
+    float _cannyThrHigh; // canny high threshold
     std::size_t _distSearch; // maximum distance (in pixels) of research from one edge points
                              // to another one. maximum length of a arc segment composing the polygonal line.
+    int _thrGradientMagInVote; // during the voting procedure, the gradient direction 
+                           // is followed as long as the gradient magnitude is
+                           // greater than this threshold
     float _angleVoting; // maximum angle between of gradient directions of two consecutive
                         // edge points.
     float _ratioVoting; // maximum distance ratio between of gradient directions of two consecutive
                         // edge points.
     float _averageVoteMin;
     double _thrMedianDistanceEllipse;
-    std::size_t _maximumNbSeeds;
+    std::size_t _maximumNbSeeds; // number of seeds to process as potential candidates
     std::size_t _maximumNbCandidatesLoopTwo;
-    std::size_t _numCrowns;
-    std::size_t _nCircles;
-    std::size_t _minPointsSegmentCandidate;
+    std::size_t _numCrowns; // number of crowns
+    std::size_t _nCircles; // number of circles
+    std::size_t _minPointsSegmentCandidate; // minimal number of points on the outer ellipse to select an inner segment candidate
     std::size_t _minVotesToSelectCandidate; // minimum number of received votes to select an edge 
                                             // point as a new seed.
-    double _threshRobustEstimationOfOuterEllipse;
-    double _ellipseGrowingEllipticHullWidth;
-    std::size_t _windowSizeOnInnerEllipticSegment;
-    std::size_t _numberOfMultiresLayers;
-    std::size_t _numberOfProcessedMultiresLayers;
-    std::size_t _numCutsInIdentStep;
-    std::size_t _numSamplesOuterEdgePointsRefinement;
-    std::size_t _cutsSelectionTrials;
-    std::size_t _sampleCutLength;
-    double _minIdentProba;
+    double _threshRobustEstimationOfOuterEllipse; // LMeDs threshold on robust estimation of the outer ellipse
+    double _ellipseGrowingEllipticHullWidth; // width of elliptic hull in ellipse growing
+    std::size_t _windowSizeOnInnerEllipticSegment; // window size on the inner elliptic segment
+    std::size_t _numberOfMultiresLayers; // number of multi-resolution layers
+    std::size_t _numberOfProcessedMultiresLayers; // number of processed layers in multi-resolution
+    std::size_t _numCutsInIdentStep; // number of cuts in the identification step
+    std::size_t _numSamplesOuterEdgePointsRefinement; // number of sample for the outer edge points refinement in identification
+    std::size_t _cutsSelectionTrials; // number of trials in cuts selection
+    std::size_t _sampleCutLength; // sample cut length
+    double _minIdentProba; // minimal probability of delivered by the identification algorithm
+                           // to consider a candidate as a CCTag
     bool _useLMDif;
-    bool _searchForAnotherSegment;
+    bool _searchForAnotherSegment; // is CCTag can be made of many flow components (2). 
+                                   // This implies an assembling step which may be time
+                                   // time consuming.
     bool _writeOutput;
 
     template<class Archive>
@@ -151,6 +158,7 @@ struct Parameters
         ar & BOOST_SERIALIZATION_NVP( _cannyThrLow );
         ar & BOOST_SERIALIZATION_NVP( _cannyThrHigh );
         ar & BOOST_SERIALIZATION_NVP( _distSearch );
+        ar & BOOST_SERIALIZATION_NVP( _thrGradientMagInVote );
         ar & BOOST_SERIALIZATION_NVP( _angleVoting );
         ar & BOOST_SERIALIZATION_NVP( _ratioVoting );
         ar & BOOST_SERIALIZATION_NVP( _averageVoteMin);
@@ -177,9 +185,9 @@ struct Parameters
     }
 };
 
-}
-}
-}
+            }
+        }
+    }
 }
 
 #endif
