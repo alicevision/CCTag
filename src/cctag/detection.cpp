@@ -47,659 +47,730 @@
 #include <list>
 #include <utility>
 
-namespace rom {
-    namespace vision {
-        namespace marker {
-            namespace cctag {
-          
-void constructFlowComponentFromSeed( EdgePoint * seed, const EdgePointsImage& edgesMap,
-        WinnerMap & winners, std::list<Candidate> & vCandidateLoopOne,
-        const cctag::Parameters & params)
+namespace rom
 {
-     // Check if the seed has already been processed, i.e. belongs to an already
-     // reconstructed flow component.
-     if (!seed->_processedIn) {
-
-         Candidate candidate;
-
-         candidate._seed = seed;
-         std::list<EdgePoint*> & convexEdgeSegment = candidate._convexEdgeSegment;
-
-         // Convex edge linking from the seed in both directions. The linking 
-         // is performed until the convexity is lost.
-         edgeLinking(edgesMap, convexEdgeSegment, seed, winners, params._windowSizeOnInnerEllipticSegment, params._averageVoteMin);
-
-         // Compute the average number of received points.
-         int nReceivedVote = 0;
-         int nVotedPoints = 0;
-
-         BOOST_FOREACH(EdgePoint * p, convexEdgeSegment) {
-             nReceivedVote += winners[p].size();
-             if (winners[p].size() > 0){
-                 ++nVotedPoints;
-             }
-         }
-
-         // All flow components will be next sorted based on this characteristic (scalar)
-         candidate._averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
-
-         if (vCandidateLoopOne.size() > 0) {
-             std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
-             while ( ((*it)._averageReceivedVote > candidate._averageReceivedVote) && ( it != vCandidateLoopOne.end() ) ) {
-                 ++it;
-             }
-             vCandidateLoopOne.insert(it, candidate);
-         } else {
-             vCandidateLoopOne.push_back(candidate);
-         }
-     }
- }
-
-void completeFlowComponent(Candidate & candidate, WinnerMap & winners, std::vector<EdgePoint> & points, 
-        const EdgePointsImage& edgesMap, std::vector<Candidate> & vCandidateLoopTwo, 
-        std::size_t & nSegmentOut, const cctag::Parameters & params)
+namespace vision
 {
-    try {
-    try {
-
-        int xG = -1;
-        int yG = -1;
-
-        std::list<EdgePoint*> childrens;
-
-        childrensOf(candidate._convexEdgeSegment, winners, childrens);
-
-        if (childrens.size() < params._minPointsSegmentCandidate) {
-            ROM_COUT_DEBUG(" childrens.size() < minPointsSegmentCandidate ");
-            return;
-        }
-
-        candidate._score = childrens.size();
-
-        double SmFinal = 1e+10;
-
-        std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
-
-        outlierRemoval(childrens, filteredChildrens, SmFinal, params._threshRobustEstimationOfOuterEllipse, cctag::kWeight);
-
-        if (filteredChildrens.size() < 5) //todo@lilian see the case in outlierRemoval where filteredChildrens.size()==0
-        {
-            ROM_COUT_DEBUG(" filteredChildrens.size() < 5 ");
-            return;
-        }
-
-        std::size_t nLabel = -1;
-
-        {
-            std::size_t nSegmentCommon = -1;
-
-            BOOST_FOREACH(EdgePoint * p, filteredChildrens) {
-                if (p->_nSegmentOut != -1) {
-                    nSegmentCommon = p->_nSegmentOut;
-                    break;
-                }
-            }
-
-            if (nSegmentCommon == -1) {
-                nLabel = nSegmentOut;
-                ++nSegmentOut;
-            } else {
-                nLabel = nSegmentCommon;
-            }
-
-            BOOST_FOREACH(EdgePoint * p, filteredChildrens) {
-                p->_nSegmentOut = nLabel;
-            }
-        }
-
-        std::vector<EdgePoint*> & outerEllipsePoints = candidate._outerEllipsePoints;
-        rom::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
-
-        bool goodInit = false;
-
-        goodInit = ellipseGrowingInit(points, filteredChildrens, outerEllipse);
-
-        ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
-                params._ellipseGrowingEllipticHullWidth, nSegmentOut, nLabel, goodInit);
-
-        candidate._nLabel = nLabel;
-
-        std::vector<double> vDistFinal;
-        vDistFinal.clear();
-        vDistFinal.reserve(outerEllipsePoints.size());
-
-        // Clean point (egdePoints*) to ellipse distance with inheritance -- the current solution is dirty --
-        double distMax = 0;
-
-        BOOST_FOREACH(EdgePoint * p, outerEllipsePoints) {
-            double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
-            vDistFinal.push_back(distFinal);
-
-            if (distFinal > distMax) {
-                distMax = distFinal;
-            }
-
-        }
-
-        // todo@Lilian : sort => need to be replace by nInf
-        SmFinal = numerical::medianRef(vDistFinal);
-
-        if (SmFinal > params._thrMedianDistanceEllipse) {
-            ROM_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing");
-            return;
-        }
-
-        double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
-        if (quality > 1.1)
-        {
-            ROM_COUT_DEBUG("Quality too high!");
-            return;
-        }
-
-        double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
-        if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20))
-        {
-            ROM_COUT_DEBUG("Too high ratio between semi-axes!");
-            return;
-        }
-
-        vCandidateLoopTwo.push_back(candidate);
-
-#ifdef CCTAG_STAT_DEBUG
-        // Add childrens to output the filtering results (from outlierRemoval)
-        vCandidateLoopTwo.back().setChildrens(childrens);
-
-        // Write all selectedFlowComponent
-        CCTagFlowComponent flowComponent(outerEllipsePoints, childrens, filteredChildrens, 
-                outerEllipse, candidate._convexEdgeSegment, *(candidate._seed), params._nCircles);
-        CCTagFileDebug::instance().outputFlowComponentInfos(flowComponent);
-#endif
-
-    } catch (cv::Exception& e) {
-        ROM_COUT_DEBUG( "OpenCV exception" );
-        const char* err_msg = e.what();
-        }
-    } catch (...) {
-        ROM_COUT_DEBUG( "Exception raised in the second main loop." );
-    }
-}
-
-                
-void cctagDetectionFromEdges(
-                        CCTag::List& markers,
-                        std::vector<EdgePoint>& points,
-                        const boost::gil::gray8_view_t & sourceView,
-                        const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX,
-                        const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
-                        const EdgePointsImage& edgesMap,
-                        const FrameId frame,
-                        int pyramidLevel,
-                        double scale,
-                        const cctag::Parameters & params)
+namespace marker
 {
-    POP_ENTER;
-    using namespace boost::gil;
-    
-    // Get vote winners
-    WinnerMap winners;
-    std::vector<EdgePoint*> seeds;
+namespace cctag
+{
 
-    // Voting procedure applied on every edge points. 
-    vote(points, seeds, edgesMap, winners, cannyGradX, cannyGradY, params);
+void constructFlowComponentFromSeed( EdgePoint * seed,
+                                     const EdgePointsImage& edgesMap,
+                                     WinnerMap & winners, 
+                                     std::list<Candidate> & vCandidateLoopOne,
+                                     const cctag::Parameters & params)
+{
+  // Check if the seed has already been processed, i.e. belongs to an already
+  // reconstructed flow component.
+  if (!seed->_processedIn)
+  {
 
-    // Call for debug only. Write the vote result as an image.
-    createImageForVoteResultDebug(sourceView, winners);
+    Candidate candidate;
 
-    // Set some timers
-    boost::timer t3;
-    boost::posix_time::ptime tstart0(boost::posix_time::microsec_clock::local_time());
+    candidate._seed = seed;
+    std::list<EdgePoint*> & convexEdgeSegment = candidate._convexEdgeSegment;
 
-    std::size_t nSegmentOut = 0;
+    // Convex edge linking from the seed in both directions. The linking
+    // is performed until the convexity is lost.
+    edgeLinking(edgesMap, convexEdgeSegment, seed, winners, 
+            params._windowSizeOnInnerEllipticSegment, params._averageVoteMin);
 
-#ifdef CCTAG_STAT_DEBUG
-    std::stringstream outFlowComponents;
-    outFlowComponents << "flowComponentsLevel" << pyramidLevel << ".txt";
-    CCTagFileDebug::instance().newSession(outFlowComponents.str());
-#endif
+    // Compute the average number of received points.
+    int nReceivedVote = 0;
+    int nVotedPoints = 0;
 
-    // sort candidates.
-#ifdef GRIFF_DEBUG
-    if( seeds.size() > 0 )
+    BOOST_FOREACH(EdgePoint * p, convexEdgeSegment)
     {
-        POP_INFO << "'optional' voting block is not really optional? " << seeds.size() << " seeds" << std::endl;
+      nReceivedVote += winners[p].size();
+      if (winners[p].size() > 0)
+      {
+        ++nVotedPoints;
+      }
+    }
+
+    // All flow components will be next sorted based on this characteristic (scalar)
+    candidate._averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
+
+    if (vCandidateLoopOne.size() > 0)
+    {
+      std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
+      while ( ((*it)._averageReceivedVote > candidate._averageReceivedVote) 
+              && ( it != vCandidateLoopOne.end() ) )
+      {
+        ++it;
+      }
+      vCandidateLoopOne.insert(it, candidate);
     }
     else
     {
-        POP_INFO << "sorting empty edge point vector?" << std::endl;
+      vCandidateLoopOne.push_back(candidate);
     }
-#endif // GRIFF_DEBUG
-    // Sort the seeds based on the number of received votes.
-    std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
+  }
+}
 
-    const std::size_t nSeedsToProcess = std::min(seeds.size(), params._maximumNbSeeds);
+void completeFlowComponent(Candidate & candidate, WinnerMap & winners,
+                           std::vector<EdgePoint> & points,
+                           const EdgePointsImage& edgesMap,
+                           std::vector<Candidate> & vCandidateLoopTwo,
+                           std::size_t & nSegmentOut,
+                           const cctag::Parameters & params)
+{
+  try
+  {
+    try
+    {
 
-    std::list<Candidate> vCandidateLoopOne;
+      int xG = -1;
+      int yG = -1;
 
-    // Process all the nSeedsToProcess-first seeds.
-    // In the following loop, a seed will lead to a flow component if it lies
-    // on the inner ellipse of a CCTag.
-    // The edge points lying on the inner ellipse and their voters (lying on the outer ellipse
-    // will be collected and constitute the initial data of a flow component.
-    for (int iSeed = 0; iSeed < nSeedsToProcess; ++iSeed) {
-        constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
-    }
+      std::list<EdgePoint*> childrens;
 
-    const std::size_t nCandidatesLoopOneToProcess = std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
+      childrensOf(candidate._convexEdgeSegment, winners, childrens);
 
-    std::vector<Candidate> vCandidateLoopTwo;
-    vCandidateLoopTwo.reserve(nCandidatesLoopOneToProcess);
+      if (childrens.size() < params._minPointsSegmentCandidate)
+      {
+        ROM_COUT_DEBUG(" childrens.size() < minPointsSegmentCandidate ");
+        return;
+      }
 
-    std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
-    std::size_t iCandidate = 0;
-    
-    // Second main loop:
-    // From the flow components selected in the first loop, the outer ellipse will
-    // be here entirely recovered.
-    // The GPU implementation should stop at this point.
-    
-    while (iCandidate < nCandidatesLoopOneToProcess) {
-        completeFlowComponent(*it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, params);
-        ++it;
-        ++iCandidate;
-    }
+      candidate._score = childrens.size();
 
-    ROM_COUT_VAR_DEBUG(vCandidateLoopTwo.size());
-    ROM_COUT_DEBUG("__________________________ List of seeds ___________________________________");
-    BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo) {
-        ROM_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
-    }
+      double SmFinal = 1e+10;
 
-    boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
-    boost::posix_time::time_duration d1 = tstop1 - tstart0;
-    const double spendTime1 = d1.total_milliseconds();
-    ROM_COUT(" ============ TIME FOR THE 1ST LOOP ============= " << spendTime1 << " ms");
+      std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
 
-#if defined CCTAG_STAT_DEBUG && defined DEBUG
-    std::stringstream outFlowComponentsAssembling;
-    outFlowComponentsAssembling << "flowComponentsAssemblingLevel" << pyramidLevel << ".txt";
-    CCTagFileDebug::instance().newSession(outFlowComponentsAssembling.str());
-    CCTagFileDebug::instance().initFlowComponentsIndex(2);
-#endif
+      outlierRemoval(childrens, filteredChildrens, SmFinal, 
+              params._threshRobustEstimationOfOuterEllipse, cctag::kWeight);
 
-    BOOST_FOREACH(const Candidate & candidate, vCandidateLoopTwo) {
-#ifdef CCTAG_STAT_DEBUG
-        std::vector<Candidate> componentCandidates;
-#ifdef DEBUG
-        CCTagFileDebug::instance().resetFlowComponent();
-#endif
-#endif
+      // todo@lilian see the case in outlierRemoval
+      // where filteredChildrens.size()==0
+      if (filteredChildrens.size() < 5)
+      {
+        ROM_COUT_DEBUG(" filteredChildrens.size() < 5 ");
+        return;
+      }
 
-        // Does a copies -- todo@Lilian: find another solution
+      std::size_t nLabel = -1;
 
-        std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
-        rom::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
-        std::vector<EdgePoint*> filteredChildrens = candidate._filteredChildrens;
+      {
+        std::size_t nSegmentCommon = -1;
 
-        std::vector< std::vector< Point2dN<double> > > cctagPoints;
-
-        try {
-            // SEARCH FOR ANOTHER SEGMENT
-            double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
-
-            // if the quality is greater than 1/3
-            if (params._searchForAnotherSegment) {
-
-                boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
-
-                if ((quality > 0.25) && (quality < 0.7)) { //extraInfos
-
-                    ROM_COUT_DEBUG("================= Look for another segment ==================");
-
-                    int score = -1;
-                    int iMax = 0;
-                    int i = 0;
-
-                    double ratioExpension = 2.5;
-                    numerical::geometry::Cercle circularResearchArea(Point2dN<double>(candidate._seed->x(), candidate._seed->y()), candidate._seed->_flowLength * ratioExpension);
-
-                    // Search for another segment
-
-                    BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo) {
-                        if (&candidate != &anotherCandidate) {
-                            if (candidate._nLabel != anotherCandidate._nLabel) {
-                                if ((anotherCandidate._seed->_flowLength / candidate._seed->_flowLength > 0.666) && (anotherCandidate._seed->_flowLength / candidate._seed->_flowLength < 1.5)) {
-                                    if (isInEllipse(circularResearchArea, rom::Point2dN<double>(double(anotherCandidate._seed->x()), double(anotherCandidate._seed->y())))) {
-                                        if (anotherCandidate._score > score) {
-                                            score = anotherCandidate._score;
-                                            iMax = i;
-                                        }
-                                    } else {
-                                        CCTagFileDebug::instance().setResearchArea(circularResearchArea);
-                                        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(NOT_IN_RESEARCH_AREA);
-                                    }
-                                } else {
-                                    CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(FLOW_LENGTH);
-                                }
-                            } else {
-                                CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(SAME_LABEL);
-                            }
-                        }
-                        ++i;
-#if defined CCTAG_STAT_DEBUG && defined DEBUG
-                        if (i < vCandidateLoopTwo.size()) {
-                            CCTagFileDebug::instance().incrementFlowComponentIndex(1);
-                        }
-#endif
-                    }
-
-                    ROM_COUT_VAR_DEBUG(iMax);
-                    ROM_COUT_VAR_DEBUG(*(vCandidateLoopTwo[iMax])._seed);
-
-                    if (score > 0) {
-
-                        const Candidate & selectedCandidate = vCandidateLoopTwo[iMax];
-
-                        ROM_COUT_VAR_DEBUG(selectedCandidate._outerEllipse);
-
-                        if (isAnotherSegment(outerEllipse, outerEllipsePoints, selectedCandidate._filteredChildrens, selectedCandidate, cctagPoints, params._numCrowns * 2, params._thrMedianDistanceEllipse)) {
-
-                            quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
-
-#ifdef CCTAG_STAT_DEBUG
-                            componentCandidates.push_back(selectedCandidate);
-                            // Assembling succeed !
-#endif                                      
-                            CCTagFileDebug::instance().setFlowComponentAssemblingState(true, iMax);
-                        }
-                    }
-                }
-
-                boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
-                boost::posix_time::time_duration d = tstop - tstart;
-                const double spendTime = d.total_milliseconds();
-            }
-
-            // Init cctag points  // Add intermediary points - required ? todo@Lilian
-            if (!addCandidateFlowtoCCTag(candidate._filteredChildrens, candidate._outerEllipsePoints, outerEllipse, cctagPoints, params._numCrowns * 2)) {
-                ROM_COUT_DEBUG("Points outside the outer ellipse OR CCTag not valid : bad gradient orientations");
-                CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTSOUTSIDE_OR_BADGRADORIENT);
-                CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-                continue;
-            } else {
-#ifdef CCTAG_STAT_DEBUG
-                componentCandidates.push_back(candidate);
-#endif                          
-                ROM_COUT_DEBUG("Points inside the outer ellipse and good gradient orientations");
-            }
-            // Create ellipse with its real size from original image.
-            rom::numerical::geometry::Ellipse rescaleEllipse(outerEllipse.center(), outerEllipse.a() * scale, outerEllipse.b() * scale, outerEllipse.angle());
-            int realPixelPerimeter = rasterizeEllipsePerimeter(rescaleEllipse);
-
-            double realSizeOuterEllipsePoints = quality*realPixelPerimeter;
-
-            // Naive reject condition todo@Lilian
-            /*if ( ( ( quality <= 0.35 ) && ( realSizeOuterEllipsePoints >= 300.0 ) ) ||//0.35
-                     ( ( quality <= 0.45 ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||//0.45
-                     ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||//0.50
-                     ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||//0.5
-                     ( ( quality <= 0.96 ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||//0.96
-                     ( realSizeOuterEllipsePoints < 50.0  ) )
-            {
-                    ROM_COUT_DEBUG( "Not enough outer ellipse points : realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality );
-                    continue;
-            }*/
-
-            // TOTO 2nd outlier removal on the outer ellipse points
-            /* {
-               std::vector<EdgePoint*> childrens2;
-               outlierRemoval(childrens, childrens2);
-               } */
-
-            rom::Point2dN<double> markerCenter;
-            rom::numerical::BoundedMatrix3x3d markerHomography;
-
-            const double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
-
-            if (ratioSemiAxes > 8.0 || ratioSemiAxes < 0.125) {
-                CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RATIO_SEMIAXIS);
-                CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-                ROM_COUT_DEBUG("Too high ratio between semi-axes!");
-                continue;
-            }
-
-            std::vector<double> vDistFinal;
-            vDistFinal.clear();
-            vDistFinal.reserve(outerEllipsePoints.size());
-
-            double resSquare = 0;
-            double distMax = 0;
-
-            BOOST_FOREACH(EdgePoint * p, outerEllipsePoints) {
-                double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
-                resSquare += distFinal; //*distFinal;
-
-                if (distFinal > distMax) {
-                    distMax = distFinal;
-                }
-            }
-
-            resSquare = sqrt(resSquare);
-            resSquare /= outerEllipsePoints.size();
-
-
-            numerical::geometry::Ellipse qIn, qOut;
-            computeHull(outerEllipse, 3.6, qIn, qOut);
-
-            bool isValid = true;
-
-            BOOST_FOREACH(const EdgePoint * p, outerEllipsePoints) {
-                if (!isInHull(qIn, qOut, p)) {
-                    isValid = false;
-                    break;
-                }
-            }
-            if (!isValid) {
-                CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTS_OUTSIDE_ELLHULL);
-                CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-
-                ROM_COUT_DEBUG("Distance max to high!");
-                continue;
-            }
-
-            std::vector< Point2dN<int> > vPoint;
-
-            double quality2 = 0;
-
-            BOOST_FOREACH(const EdgePoint* p, outerEllipsePoints) {
-                quality2 += p->_normGrad;
-            }
-
-            quality2 *= scale;
-
-            markers.push_back(new CCTag(-1, outerEllipse.center(), cctagPoints, outerEllipse, markerHomography, pyramidLevel, scale, quality2));
-#ifdef CCTAG_STAT_DEBUG
-            markers.back().setFlowComponents(componentCandidates);
-#ifdef DEBUG 
-            CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PASS_ALLTESTS);
-            CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-#endif                          
-#endif
-
-            ROM_COUT_DEBUG("------------------------------Added marker------------------------------");
-        } catch (...) {
-            CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RAISED_EXCEPTION);
-            CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-            // Ellipse fitting don't pass.
-            ROM_COUT_CURRENT_EXCEPTION;
-            ROM_COUT_DEBUG("Exception levee !");
+        BOOST_FOREACH(EdgePoint * p, filteredChildrens)
+        {
+          if (p->_nSegmentOut != -1)
+          {
+            nSegmentCommon = p->_nSegmentOut;
+            break;
+          }
         }
+
+        if (nSegmentCommon == -1)
+        {
+          nLabel = nSegmentOut;
+          ++nSegmentOut;
+        }
+        else
+        {
+          nLabel = nSegmentCommon;
+        }
+
+        BOOST_FOREACH(EdgePoint * p, filteredChildrens)
+        {
+          p->_nSegmentOut = nLabel;
+        }
+      }
+
+      std::vector<EdgePoint*> & outerEllipsePoints = candidate._outerEllipsePoints;
+      rom::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
+
+      bool goodInit = false;
+
+      goodInit = ellipseGrowingInit(points, filteredChildrens, outerEllipse);
+
+      ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
+                      params._ellipseGrowingEllipticHullWidth, nSegmentOut, 
+                      nLabel, goodInit);
+
+      candidate._nLabel = nLabel;
+
+      std::vector<double> vDistFinal;
+      vDistFinal.clear();
+      vDistFinal.reserve(outerEllipsePoints.size());
+
+      // Clean point (egdePoints*) to ellipse distance with inheritance 
+      // -- the current solution is dirty --
+      double distMax = 0;
+
+      BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
+      {
+        double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
+        vDistFinal.push_back(distFinal);
+
+        if (distFinal > distMax)
+        {
+          distMax = distFinal;
+        }
+      }
+
+      // todo@Lilian : sort => need to be replace by nInf
+      SmFinal = numerical::medianRef(vDistFinal);
+
+      if (SmFinal > params._thrMedianDistanceEllipse)
+      {
+        ROM_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing");
+        return;
+      }
+
+      double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
+      if (quality > 1.1)
+      {
+        ROM_COUT_DEBUG("Quality too high!");
+        return;
+      }
+
+      double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
+      if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20))
+      {
+        ROM_COUT_DEBUG("Too high ratio between semi-axes!");
+        return;
+      }
+
+      vCandidateLoopTwo.push_back(candidate);
+
+#ifdef CCTAG_STAT_DEBUG
+      // Add childrens to output the filtering results (from outlierRemoval)
+      vCandidateLoopTwo.back().setChildrens(childrens);
+
+      // Write all selectedFlowComponent
+      CCTagFlowComponent flowComponent(outerEllipsePoints, childrens, filteredChildrens,
+                                       outerEllipse, candidate._convexEdgeSegment,
+                                      *(candidate._seed), params._nCircles);
+      CCTagFileDebug::instance().outputFlowComponentInfos(flowComponent);
+#endif
+
     }
+    catch (cv::Exception& e)
+    {
+      ROM_COUT_DEBUG( "OpenCV exception" );
+      const char* err_msg = e.what();
+    }
+  }
+  catch (...)
+  {
+    ROM_COUT_DEBUG( "Exception raised in the second main loop." );
+  }
+}
 
-    boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
-    boost::posix_time::time_duration d2 = tstop2 - tstop1;
-    const double spendTime2 = d2.total_milliseconds();
-    ROM_COUT(" ============ TIME FOR THE 1ST LOOP ============= " << spendTime2 << " ms");
 
-                    //	markers.sort();
+void cctagDetectionFromEdges(
+  CCTag::List& markers,
+  std::vector<EdgePoint>& points,
+  const boost::gil::gray8_view_t & sourceView,
+  const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX,
+  const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
+  const EdgePointsImage& edgesMap,
+  const FrameId frame,
+  int pyramidLevel,
+  double scale,
+  const cctag::Parameters & params)
+{
+  POP_ENTER;
+  using namespace boost::gil;
 
-    ROM_COUT_DEBUG("Markers creation time: " << t3.elapsed());
-    POP_LEAVE;
+  // Get vote winners
+  WinnerMap winners;
+  std::vector<EdgePoint*> seeds;
+
+  // Voting procedure applied on every edge points.
+  vote(points, seeds, edgesMap, winners, cannyGradX, cannyGradY, params);
+
+  // Call for debug only. Write the vote result as an image.
+  createImageForVoteResultDebug(sourceView, winners);
+
+  // Set some timers
+  boost::timer t3;
+  boost::posix_time::ptime tstart0(boost::posix_time::microsec_clock::local_time());
+
+  std::size_t nSegmentOut = 0;
+
+#ifdef CCTAG_STAT_DEBUG
+  std::stringstream outFlowComponents;
+  outFlowComponents << "flowComponentsLevel" << pyramidLevel << ".txt";
+  CCTagFileDebug::instance().newSession(outFlowComponents.str());
+#endif
+
+  // sort candidates.
+#ifdef GRIFF_DEBUG
+  if( seeds.size() > 0 )
+  {
+    POP_INFO << "'optional' voting block is not really optional? " << seeds.size() << " seeds" << std::endl;
+  }
+  else
+  {
+    POP_INFO << "sorting empty edge point vector?" << std::endl;
+  }
+#endif // GRIFF_DEBUG
+  // Sort the seeds based on the number of received votes.
+  std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
+
+  const std::size_t nSeedsToProcess = std::min(seeds.size(), params._maximumNbSeeds);
+
+  std::list<Candidate> vCandidateLoopOne;
+
+  // Process all the nSeedsToProcess-first seeds.
+  // In the following loop, a seed will lead to a flow component if it lies
+  // on the inner ellipse of a CCTag.
+  // The edge points lying on the inner ellipse and their voters (lying on the outer ellipse
+  // will be collected and constitute the initial data of a flow component.
+  for (int iSeed = 0; iSeed < nSeedsToProcess; ++iSeed)
+  {
+    constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
+  }
+
+  const std::size_t nCandidatesLoopOneToProcess = std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
+
+  std::vector<Candidate> vCandidateLoopTwo;
+  vCandidateLoopTwo.reserve(nCandidatesLoopOneToProcess);
+
+  std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
+  std::size_t iCandidate = 0;
+
+  // Second main loop:
+  // From the flow components selected in the first loop, the outer ellipse will
+  // be here entirely recovered.
+  // The GPU implementation should stop at this point.
+
+  while (iCandidate < nCandidatesLoopOneToProcess)
+  {
+    completeFlowComponent(*it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, params);
+    ++it;
+    ++iCandidate;
+  }
+
+  ROM_COUT_VAR_DEBUG(vCandidateLoopTwo.size());
+  ROM_COUT_DEBUG("================= List of seeds =================");
+  BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
+  {
+    ROM_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
+  }
+
+  boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::time_duration d1 = tstop1 - tstart0;
+  const double spendTime1 = d1.total_milliseconds();
+  ROM_COUT(" ============ TIME FOR THE 1ST LOOP ============= " << spendTime1 << " ms");
+
+#if defined CCTAG_STAT_DEBUG && defined DEBUG
+  std::stringstream outFlowComponentsAssembling;
+  outFlowComponentsAssembling << "flowComponentsAssemblingLevel" << pyramidLevel << ".txt";
+  CCTagFileDebug::instance().newSession(outFlowComponentsAssembling.str());
+  CCTagFileDebug::instance().initFlowComponentsIndex(2);
+#endif
+
+  BOOST_FOREACH(const Candidate & candidate, vCandidateLoopTwo)
+  {
+#ifdef CCTAG_STAT_DEBUG
+    std::vector<Candidate> componentCandidates;
+#ifdef DEBUG
+    CCTagFileDebug::instance().resetFlowComponent();
+#endif
+#endif
+
+    // Does a copies -- todo@Lilian: find another solution
+
+    std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
+    rom::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
+    std::vector<EdgePoint*> filteredChildrens = candidate._filteredChildrens;
+
+    std::vector< std::vector< Point2dN<double> > > cctagPoints;
+
+    try
+    {
+      double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
+
+      if (params._searchForAnotherSegment)
+      {
+        // Search for another segment
+        boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
+
+        if ((quality > 0.25) && (quality < 0.7))
+        {
+
+          ROM_COUT_DEBUG("================= Look for another segment ==================");
+
+          int score = -1;
+          int iMax = 0;
+          int i = 0;
+
+          double ratioExpension = 2.5;
+          numerical::geometry::Cercle circularResearchArea(
+                 Point2dN<double>( candidate._seed->x(), candidate._seed->y() ),
+                 candidate._seed->_flowLength * ratioExpension);
+
+          // Search for another segment
+
+          BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
+          {
+            if (&candidate != &anotherCandidate)
+            {
+              if (candidate._nLabel != anotherCandidate._nLabel)
+              {
+                if ((anotherCandidate._seed->_flowLength / candidate._seed->_flowLength > 0.666)
+                        && (anotherCandidate._seed->_flowLength / candidate._seed->_flowLength < 1.5))
+                {
+                  if (isInEllipse(circularResearchArea, 
+                          rom::Point2dN<double>(double(anotherCandidate._seed->x()), double(anotherCandidate._seed->y()))))
+                  {
+                    if (anotherCandidate._score > score)
+                    {
+                      score = anotherCandidate._score;
+                      iMax = i;
+                    }
+                  }
+                  else
+                  {
+                    CCTagFileDebug::instance().setResearchArea(circularResearchArea);
+                    CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(NOT_IN_RESEARCH_AREA);
+                  }
+                }
+                else
+                {
+                  CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(FLOW_LENGTH);
+                }
+              }
+              else
+              {
+                CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(SAME_LABEL);
+              }
+            }
+            ++i;
+#if defined CCTAG_STAT_DEBUG && defined DEBUG
+            if (i < vCandidateLoopTwo.size())
+            {
+              CCTagFileDebug::instance().incrementFlowComponentIndex(1);
+            }
+#endif
+          }
+
+          ROM_COUT_VAR_DEBUG(iMax);
+          ROM_COUT_VAR_DEBUG(*(vCandidateLoopTwo[iMax])._seed);
+
+          if (score > 0)
+          {
+
+            const Candidate & selectedCandidate = vCandidateLoopTwo[iMax];
+            ROM_COUT_VAR_DEBUG(selectedCandidate._outerEllipse);
+
+            if (isAnotherSegment(outerEllipse, outerEllipsePoints, 
+                    selectedCandidate._filteredChildrens, selectedCandidate,
+                    cctagPoints, params._numCrowns * 2, params._thrMedianDistanceEllipse))
+            {
+
+              quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
+
+#ifdef CCTAG_STAT_DEBUG
+              componentCandidates.push_back(selectedCandidate);
+              // Assembling succeed !
+#endif
+              CCTagFileDebug::instance().setFlowComponentAssemblingState(true, iMax);
+            }
+          }
+        }
+
+        boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
+        boost::posix_time::time_duration d = tstop - tstart;
+        const double spendTime = d.total_milliseconds();
+      }
+
+      // Init cctag points  // Add intermediary points - required ? todo@Lilian
+      if (!addCandidateFlowtoCCTag(candidate._filteredChildrens, 
+              candidate._outerEllipsePoints, outerEllipse,
+              cctagPoints, params._numCrowns * 2))
+      {
+        ROM_COUT_DEBUG("Points outside the outer ellipse OR CCTag not valid : bad gradient orientations");
+        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTSOUTSIDE_OR_BADGRADORIENT);
+        CCTagFileDebug::instance().incrementFlowComponentIndex(0);
+        continue;
+      }
+      else
+      {
+#ifdef CCTAG_STAT_DEBUG
+        componentCandidates.push_back(candidate);
+#endif
+        ROM_COUT_DEBUG("Points inside the outer ellipse and good gradient orientations");
+      }
+      // Create ellipse with its real size from original image.
+      rom::numerical::geometry::Ellipse rescaleEllipse(outerEllipse.center(), outerEllipse.a() * scale, outerEllipse.b() * scale, outerEllipse.angle());
+      
+      int realPixelPerimeter = rasterizeEllipsePerimeter(rescaleEllipse);
+
+      double realSizeOuterEllipsePoints = quality*realPixelPerimeter;
+
+      // Naive reject condition todo@Lilian
+      /*if ( ( ( quality <= 0.35 ) && ( realSizeOuterEllipsePoints >= 300.0 ) ) ||//0.35
+               ( ( quality <= 0.45 ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||//0.45
+               ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||//0.50
+               ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||//0.5
+               ( ( quality <= 0.96 ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||//0.96
+               ( realSizeOuterEllipsePoints < 50.0  ) )
+      {
+              ROM_COUT_DEBUG( "Not enough outer ellipse points : realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality );
+              continue;
+      }*/
+
+      // TOTO 2nd outlier removal on the outer ellipse points
+      /* {
+         std::vector<EdgePoint*> childrens2;
+         outlierRemoval(childrens, childrens2);
+         } */
+
+      rom::Point2dN<double> markerCenter;
+      rom::numerical::BoundedMatrix3x3d markerHomography;
+
+      const double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
+
+      if (ratioSemiAxes > 8.0 || ratioSemiAxes < 0.125)
+      {
+        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RATIO_SEMIAXIS);
+        CCTagFileDebug::instance().incrementFlowComponentIndex(0);
+        ROM_COUT_DEBUG("Too high ratio between semi-axes!");
+        continue;
+      }
+
+      std::vector<double> vDistFinal;
+      vDistFinal.clear();
+      vDistFinal.reserve(outerEllipsePoints.size());
+
+      double resSquare = 0;
+      double distMax = 0;
+
+      BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
+      {
+        double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
+        resSquare += distFinal; //*distFinal;
+
+        if (distFinal > distMax)
+        {
+          distMax = distFinal;
+        }
+      }
+
+      resSquare = sqrt(resSquare);
+      resSquare /= outerEllipsePoints.size();
+
+
+      numerical::geometry::Ellipse qIn, qOut;
+      computeHull(outerEllipse, 3.6, qIn, qOut);
+
+      bool isValid = true;
+
+      BOOST_FOREACH(const EdgePoint * p, outerEllipsePoints)
+      {
+        if (!isInHull(qIn, qOut, p))
+        {
+          isValid = false;
+          break;
+        }
+      }
+      if (!isValid)
+      {
+        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTS_OUTSIDE_ELLHULL);
+        CCTagFileDebug::instance().incrementFlowComponentIndex(0);
+
+        ROM_COUT_DEBUG("Distance max to high!");
+        continue;
+      }
+
+      std::vector< Point2dN<int> > vPoint;
+
+      double quality2 = 0;
+
+      BOOST_FOREACH(const EdgePoint* p, outerEllipsePoints)
+      {
+        quality2 += p->_normGrad;
+      }
+
+      quality2 *= scale;
+
+      markers.push_back(new CCTag(-1, outerEllipse.center(), cctagPoints,
+              outerEllipse, markerHomography, pyramidLevel, scale, quality2));
+#ifdef CCTAG_STAT_DEBUG
+      markers.back().setFlowComponents(componentCandidates);
+#ifdef DEBUG
+      CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PASS_ALLTESTS);
+      CCTagFileDebug::instance().incrementFlowComponentIndex(0);
+#endif
+#endif
+
+      ROM_COUT_DEBUG("------------------------------Added marker------------------------------");
+    }
+    catch (...)
+    {
+      CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RAISED_EXCEPTION);
+      CCTagFileDebug::instance().incrementFlowComponentIndex(0);
+      // Ellipse fitting don't pass.
+      ROM_COUT_CURRENT_EXCEPTION;
+      ROM_COUT_DEBUG("Exception levee !");
+    }
+  }
+
+  boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::time_duration d2 = tstop2 - tstop1;
+  const double spendTime2 = d2.total_milliseconds();
+  ROM_COUT(" ============ TIME FOR THE 1ST LOOP ============= " << spendTime2 << " ms");
+
+  //	markers.sort();
+
+  ROM_COUT_DEBUG("Markers creation time: " << t3.elapsed());
+  POP_LEAVE;
 }
 
 
 void createImageForVoteResultDebug(const boost::gil::gray8_view_t & sourceView, const WinnerMap & winners)
 {
-    #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+  {
+
+    POP_INFO << "running optional 'voting' block" << std::endl;
+    std::size_t mx = 0;
+    boost::gil::gray8_image_t vimg(sourceView.dimensions());
+    boost::gil::gray8_view_t votevw(view(vimg));
+
+    // Zero filling
+    boost::gil::fill_black(votevw);
+
+    for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
     {
-        
-        POP_INFO << "running optional 'voting' block" << std::endl;
-        std::size_t mx = 0;
-        boost::gil::gray8_image_t vimg(sourceView.dimensions());
-        boost::gil::gray8_view_t votevw(view(vimg));
-
-        // Zero filling
-        boost::gil::fill_black(votevw);
-
-        for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr) {
-            EdgePoint* winner = itr->first;
-            std::list<EdgePoint*> v = itr->second;
-            if (mx < v.size()) {
-                mx = v.size();
-            }
-        }
-
-        for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr) {
-                            EdgePoint* winner = itr->first;
-                            std::list<EdgePoint*> v = itr->second;
-                            *votevw.xy_at(winner->x(), winner->y()) = (unsigned char) ((v.size() * 10.0));
-        }
-
-        std::stringstream outFilenameVote;
-        outFilenameVote << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
-        CCTagVisualDebug::instance().initBackgroundImage(boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>(votevw));
-        CCTagVisualDebug::instance().newSession(outFilenameVote.str());
-
+      EdgePoint* winner = itr->first;
+      std::list<EdgePoint*> v = itr->second;
+      if (mx < v.size())
+      {
+        mx = v.size();
+      }
     }
+
+    for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
+    {
+      EdgePoint* winner = itr->first;
+      std::list<EdgePoint*> v = itr->second;
+      *votevw.xy_at(winner->x(), winner->y()) = (unsigned char) ((v.size() * 10.0));
+    }
+
+    std::stringstream outFilenameVote;
+    outFilenameVote << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
+    CCTagVisualDebug::instance().initBackgroundImage(boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>(votevw));
+    CCTagVisualDebug::instance().newSession(outFilenameVote.str());
+
+  }
 #endif
 }
 
-            } // namespace cctag
+} // namespace cctag
 
-void cctagDetection(CCTag::List& markers, const FrameId frame, const boost::gil::rgb8_view_t& srcView, const cctag::Parameters & params, const bool bDisplayEllipses)
+void cctagDetection(CCTag::List& markers,
+        const FrameId frame, 
+        const boost::gil::rgb8_view_t& srcView,
+        const cctag::Parameters & params,
+        const bool bDisplayEllipses)
 {
-    POP_ENTER;
-                using namespace cctag;
-                using namespace boost::numeric::ublas;
-                using namespace boost::gil;
-                //	using namespace rom::img;
+  POP_ENTER;
+  using namespace cctag;
+  using namespace boost::numeric::ublas;
+  using namespace boost::gil;
+  //	using namespace rom::img;
 
-                std::srand(1);
+  std::srand(1);
 
-                static const CCTagMarkersBank bank(params._cctagBankFilename);
+  static const CCTagMarkersBank bank(params._cctagBankFilename);
 
-                boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
 
-                // Grayscale transform
-                gray8_image_t grayImg;
-                gray8_view_t graySrc = rom::img::toGray(srcView, grayImg);
+  // Grayscale transform
+  gray8_image_t grayImg;
+  gray8_view_t graySrc = rom::img::toGray(srcView, grayImg);
 
-                // Compute canny
-                typedef kth_channel_view_type<0, rgb32f_view_t>::type CannyView;
-                typedef kth_channel_view_type<1, rgb32f_view_t>::type GradXView;
-                typedef kth_channel_view_type<2, rgb32f_view_t>::type GradYView;
+  // Compute canny
+  typedef kth_channel_view_type<0, rgb32f_view_t>::type CannyView;
+  typedef kth_channel_view_type<1, rgb32f_view_t>::type GradXView;
+  typedef kth_channel_view_type<2, rgb32f_view_t>::type GradYView;
 
-                rgb32f_image_t cannyRGBImg(graySrc.width(), graySrc.height());
-                rgb32f_view_t cannyRGB(view(cannyRGBImg));
-                CannyView cannyView;
-                GradXView cannyGradX;
-                GradYView cannyGradY;
+  rgb32f_image_t cannyRGBImg(graySrc.width(), graySrc.height());
+  rgb32f_view_t cannyRGB(view(cannyRGBImg));
+  CannyView cannyView;
+  GradXView cannyGradX;
+  GradYView cannyGradY;
 
-                cannyView = kth_channel_view<0>(cannyRGB);
-                // x gradient
-                cannyGradX = kth_channel_view<1>(cannyRGB);
-                // y gradient
-                cannyGradY = kth_channel_view<2>(cannyRGB);
+  cannyView = kth_channel_view<0>(cannyRGB);
+  // x gradient
+  cannyGradX = kth_channel_view<1>(cannyRGB);
+  // y gradient
+  cannyGradY = kth_channel_view<2>(cannyRGB);
 
-                cctag::cannyCv(graySrc, cannyRGB, cannyView, cannyGradX, cannyGradY, params._cannyThrLow, params._cannyThrHigh);
+  cctag::cannyCv(graySrc, cannyRGB, cannyView, cannyGradX, cannyGradY, params._cannyThrLow, params._cannyThrHigh);
 
-                cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
+  cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
 
-                boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
 
-                boost::posix_time::time_duration d = tstop - tstart;
-                const double spendTime = d.total_milliseconds();
-                ROM_COUT("Etape de detection" << spendTime);
+  boost::posix_time::time_duration d = tstop - tstart;
+  const double spendTime = d.total_milliseconds();
+  ROM_COUT("Detection step: " << spendTime);
 
-                ////////// Identification pass
-                // To decomment -- enable cuts selection, homography computation and identification
-                if (1) {
-                    ROM_COUT_DEBUG("Before identify!");
-                    CCTag::List::iterator it = markers.begin();
-                    while (it != markers.end()) {
-                        CCTag & cctag = *it;
+  // Identification step
+  // To decomment -- enable cuts selection, homography computation and identification
+  if (1)
+  {
+    CCTag::List::iterator it = markers.begin();
+    while (it != markers.end())
+    {
+      CCTag & cctag = *it;
 
-                        //tstart( boost::posix_time::microsec_clock::local_time() );
-                        const int detected = rom::vision::marker::identify(cctag, bank.getMarkers(), graySrc, cannyGradX, cannyGradY, params._numCrowns, params._numCutsInIdentStep, params._numSamplesOuterEdgePointsRefinement, params._cutsSelectionTrials, params._sampleCutLength, params._minIdentProba, params._useLMDif);
+      //tstart( boost::posix_time::microsec_clock::local_time() );
+      const int detected = rom::vision::marker::identify(cctag, bank.getMarkers(), graySrc, cannyGradX, cannyGradY, params._numCrowns, params._numCutsInIdentStep, params._numSamplesOuterEdgePointsRefinement, params._cutsSelectionTrials, params._sampleCutLength, params._minIdentProba, params._useLMDif);
 
-                        cctag.setStatus(detected);
+      cctag.setStatus(detected);
 
-                        //if ( detected < 0 )
-                        //{
-                        //	// Erase marker we were unable to indentify
-                        //	it = markers.erase( it );
-                        //}
-                        //else
-                        //{
-                        try {
-                            std::vector<rom::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
+      try
+      {
+        std::vector<rom::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
 
-                            bounded_matrix<double, 3, 3> mInvH;
-                            rom::numerical::invert(cctag.homography(), mInvH);
+        bounded_matrix<double, 3, 3> mInvH;
+        rom::numerical::invert(cctag.homography(), mInvH);
 
-                            BOOST_FOREACH(double radiusRatio, cctag.radiusRatios()) {
-                                //ROM_COUT_VAR_DEBUG(radiusRatio);
-                                rom::numerical::geometry::Cercle circle(1.0 / radiusRatio);
-                                ellipses.push_back(rom::numerical::geometry::Ellipse(prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
-                            }
+        BOOST_FOREACH(double radiusRatio, cctag.radiusRatios())
+        {
+          rom::numerical::geometry::Cercle circle(1.0 / radiusRatio);
+          ellipses.push_back(rom::numerical::geometry::Ellipse(prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
+        }
 
-                            // Push the outer ellipse
-                            ellipses.push_back(cctag.rescaledOuterEllipse());
+        // Push the outer ellipse
+        ellipses.push_back(cctag.rescaledOuterEllipse());
 
-                            //ROM_COUT_VAR_DEBUG( cctag.ellipses().size() );
+        ROM_COUT_VAR_DEBUG(cctag.id());
+        ++it;
+      }
+      catch (...)
+      {
+        // Impossible to construct Ellipse from computed homographies => conics are not ellipses!
+        //it = markers.erase( it );
+      }
+    }
+  }
 
-                            ROM_COUT_VAR_DEBUG(cctag.id());
-                            ++it;
-                        } catch (...) {
-                            // Impossible to construct Ellipse from computed homographies => conics are not ellipses!
-                            //it = markers.erase( it );
-                        }
-                        //}
-                    }
-                }
+  markers.sort();
 
-                markers.sort();
+  CCTagVisualDebug::instance().writeIdentificationView(markers);
+  CCTagFileDebug::instance().newSession("identification.txt");
 
-                CCTagVisualDebug::instance().writeIdentificationView(markers);
+  BOOST_FOREACH(const CCTag & marker, markers)
+  {
+    CCTagFileDebug::instance().outputMarkerInfos(marker);
+  }
 
-                CCTagFileDebug::instance().newSession("identification.txt");
-
-                BOOST_FOREACH(const CCTag & marker, markers) {
-                    CCTagFileDebug::instance().outputMarkerInfos(marker);
-                }
-
-                //CCTagVisualDebug::instance().initBackgroundImage(srcView);
-                //CCTagVisualDebug::instance().newSession("Identification");
-                //
-                //BOOST_FOREACH(const CCTag & marker, markers) {
-                //    CCTagVisualDebug::instance().drawMarker(marker, false);
-                //    CCTagVisualDebug::instance().drawInfos(marker, false);
-                //}
-
-                //CCTagVisualDebug::instance().outPutAllSessions();
-
-    POP_LEAVE;
+  POP_LEAVE;
 }
 
-        } // namespace marker
-    } // namespace vision
+} // namespace marker
+} // namespace vision
 } // namespace rom
