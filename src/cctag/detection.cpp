@@ -52,7 +52,9 @@ namespace rom {
         namespace marker {
             namespace cctag {
           
-void constructFlowComponentFromSeed( EdgePoint * seed, const EdgePointsImage& edgesMap, WinnerMap & winners, std::list<Candidate> & vCandidateLoopOne, const cctag::Parameters & params)
+void constructFlowComponentFromSeed( EdgePoint * seed, const EdgePointsImage& edgesMap,
+        WinnerMap & winners, std::list<Candidate> & vCandidateLoopOne,
+        const cctag::Parameters & params)
 {
      // Check if the seed has already been processed, i.e. belongs to an already
      // reconstructed flow component.
@@ -92,6 +94,136 @@ void constructFlowComponentFromSeed( EdgePoint * seed, const EdgePointsImage& ed
          }
      }
  }
+
+void completeFlowComponent(Candidate & candidate, WinnerMap & winners, std::vector<EdgePoint> & points, 
+        const EdgePointsImage& edgesMap, std::vector<Candidate> & vCandidateLoopTwo, 
+        std::size_t & nSegmentOut, const cctag::Parameters & params)
+{
+    try {
+    try {
+
+        int xG = -1;
+        int yG = -1;
+
+        std::list<EdgePoint*> childrens;
+
+        childrensOf(candidate._convexEdgeSegment, winners, childrens);
+
+        if (childrens.size() < params._minPointsSegmentCandidate) {
+            ROM_COUT_DEBUG(" childrens.size() < minPointsSegmentCandidate ");
+            return;
+        }
+
+        candidate._score = childrens.size();
+
+        double SmFinal = 1e+10;
+
+        std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
+
+        outlierRemoval(childrens, filteredChildrens, SmFinal, params._threshRobustEstimationOfOuterEllipse, cctag::kWeight);
+
+        if (filteredChildrens.size() < 5) //todo@lilian see the case in outlierRemoval where filteredChildrens.size()==0
+        {
+            ROM_COUT_DEBUG(" filteredChildrens.size() < 5 ");
+            return;
+        }
+
+        std::size_t nLabel = -1;
+
+        {
+            std::size_t nSegmentCommon = -1;
+
+            BOOST_FOREACH(EdgePoint * p, filteredChildrens) {
+                if (p->_nSegmentOut != -1) {
+                    nSegmentCommon = p->_nSegmentOut;
+                    break;
+                }
+            }
+
+            if (nSegmentCommon == -1) {
+                nLabel = nSegmentOut;
+                ++nSegmentOut;
+            } else {
+                nLabel = nSegmentCommon;
+            }
+
+            BOOST_FOREACH(EdgePoint * p, filteredChildrens) {
+                p->_nSegmentOut = nLabel;
+            }
+        }
+
+        std::vector<EdgePoint*> & outerEllipsePoints = candidate._outerEllipsePoints;
+        rom::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
+
+        bool goodInit = false;
+
+        goodInit = ellipseGrowingInit(points, filteredChildrens, outerEllipse);
+
+        ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
+                params._ellipseGrowingEllipticHullWidth, nSegmentOut, nLabel, goodInit);
+
+        candidate._nLabel = nLabel;
+
+        std::vector<double> vDistFinal;
+        vDistFinal.clear();
+        vDistFinal.reserve(outerEllipsePoints.size());
+
+        // Clean point (egdePoints*) to ellipse distance with inheritance -- the current solution is dirty --
+        double distMax = 0;
+
+        BOOST_FOREACH(EdgePoint * p, outerEllipsePoints) {
+            double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
+            vDistFinal.push_back(distFinal);
+
+            if (distFinal > distMax) {
+                distMax = distFinal;
+            }
+
+        }
+
+        // todo@Lilian : sort => need to be replace by nInf
+        SmFinal = numerical::medianRef(vDistFinal);
+
+        if (SmFinal > params._thrMedianDistanceEllipse) {
+            ROM_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing");
+            return;
+        }
+
+        double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
+        if (quality > 1.1)
+        {
+            ROM_COUT_DEBUG("Quality too high!");
+            return;
+        }
+
+        double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
+        if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20))
+        {
+            ROM_COUT_DEBUG("Too high ratio between semi-axes!");
+            return;
+        }
+
+        vCandidateLoopTwo.push_back(candidate);
+
+#ifdef CCTAG_STAT_DEBUG
+        // Add childrens to output the filtering results (from outlierRemoval)
+        vCandidateLoopTwo.back().setChildrens(childrens);
+
+        // Write all selectedFlowComponent
+        CCTagFlowComponent flowComponent(outerEllipsePoints, childrens, filteredChildrens, 
+                outerEllipse, candidate._convexEdgeSegment, *(candidate._seed), params._nCircles);
+        CCTagFileDebug::instance().outputFlowComponentInfos(flowComponent);
+#endif
+
+    } catch (cv::Exception& e) {
+        ROM_COUT_DEBUG( "OpenCV exception" );
+        const char* err_msg = e.what();
+        }
+    } catch (...) {
+        ROM_COUT_DEBUG( "Exception raised in the second main loop." );
+    }
+}
+
                 
 void cctagDetectionFromEdges(
                         CCTag::List& markers,
@@ -107,7 +239,6 @@ void cctagDetectionFromEdges(
 {
     POP_ENTER;
     using namespace boost::gil;
-    boost::timer t;
     
     // Get vote winners
     WinnerMap winners;
@@ -172,191 +303,12 @@ void cctagDetectionFromEdges(
     // The GPU implementation should stop at this point.
     
     while (iCandidate < nCandidatesLoopOneToProcess) {
-        
-        Candidate & candidate = *it;
-
-        try {
-            try {
-                
-                int xG = -1;
-                int yG = -1;
-
-                std::list<EdgePoint*> childrens;
-
-                {
-                    boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
-                    childrensOf(candidate._convexEdgeSegment, winners, childrens);
-                    boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
-                    boost::posix_time::time_duration d = tstop - tstart;
-                    const double spendTime = d.total_milliseconds();
-                }
-
-                if (childrens.size() < params._minPointsSegmentCandidate) {
-                    ROM_COUT_DEBUG(" childrens.size() < minPointsSegmentCandidate ");
-                    ++it;
-                    ++iCandidate;
-                    continue;
-                }
-
-                candidate._score = childrens.size();
-
-                double SmFinal = 1e+10;
-
-                std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
-
-                {
-                    ROM_COUT_DEBUG("Before oulierRemoval");
-
-                    boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
-                    outlierRemoval(childrens, filteredChildrens, SmFinal, params._threshRobustEstimationOfOuterEllipse, cctag::kWeight);
-                    boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
-                    boost::posix_time::time_duration d = tstop - tstart;
-                    const double spendTime = d.total_milliseconds();
-                }
-
-                if (filteredChildrens.size() < 5) //todo@lilian see the case in outlierRemoval where filteredChildrens.size()==0
-                {
-                    ROM_COUT_DEBUG(" filteredChildrens.size() < 5 ");
-                    ++it;
-                    ++iCandidate;
-                    continue;
-                }
-
-                std::size_t nLabel = -1;
-
-                {
-                    std::size_t nSegmentCommon = -1;
-
-                    BOOST_FOREACH(EdgePoint * p, filteredChildrens) {
-                        if (p->_nSegmentOut != -1) {
-                            nSegmentCommon = p->_nSegmentOut;
-                            break;
-                        }
-                    }
-
-                    if (nSegmentCommon == -1) {
-                        nLabel = nSegmentOut;
-                        ++nSegmentOut;
-                    } else {
-                        nLabel = nSegmentCommon;
-                    }
-
-                    BOOST_FOREACH(EdgePoint * p, filteredChildrens) {
-                        p->_nSegmentOut = nLabel;
-                    }
-                }
-
-
-                std::vector<EdgePoint*> & outerEllipsePoints = candidate._outerEllipsePoints;
-                rom::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
-
-                bool goodInit = false;
-
-                {
-                    boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
-                    goodInit = ellipseGrowingInit(points, filteredChildrens, outerEllipse);
-
-                    boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
-                    boost::posix_time::time_duration d = tstop - tstart;
-                    const double spendTime = d.total_milliseconds();
-                }
-
-                if ((candidate._seed->x() == xG) && (candidate._seed->y() == yG)) {
-                    ROM_COUT("after egInit");
-                    ROM_PAUSE
-                }
-
-                t.restart();
-
-                {
-                    boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
-
-                    ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse, params._ellipseGrowingEllipticHullWidth, nSegmentOut, nLabel, goodInit);
-
-                    candidate._nLabel = nLabel;
-
-                    boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
-                    boost::posix_time::time_duration d = tstop - tstart;
-                    const double spendTime = d.total_milliseconds();
-                }
-
-                std::vector<double> vDistFinal;
-                vDistFinal.clear();
-                vDistFinal.reserve(outerEllipsePoints.size());
-
-                // Clean point (egdePoints*) to ellipse distance with inheritance -- the current solution is dirty --
-                double distMax = 0;
-
-                BOOST_FOREACH(EdgePoint * p, outerEllipsePoints) {
-                    double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
-                    vDistFinal.push_back(distFinal);
-
-                    if (distFinal > distMax) {
-                        distMax = distFinal;
-                    }
-
-                }
-
-                // todo@Lilian : sort => need to be replace by nInf
-                SmFinal = numerical::medianRef(vDistFinal);
-
-                if (SmFinal > params._thrMedianDistanceEllipse) {
-                    ROM_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing");
-                    ++it;
-                    ++iCandidate;
-                    continue;
-                }
-
-                double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
-                if (quality > 1.1)//0.4 5.0 0.2
-                {
-                    ROM_COUT_DEBUG("Quality too high!");
-                    ++it;
-                    ++iCandidate;
-                    continue;
-                }
-
-
-                double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
-                if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20)) //0.4 5.0 0.2
-                {
-                    ROM_COUT_DEBUG("Too high ratio between semi-axes!");
-                    ++it;
-                    ++iCandidate;
-                    continue;
-                }
-
-                if ((candidate._seed->x() == xG) && (candidate._seed->y() == yG)) {
-                    ROM_COUT("end");
-                    ROM_PAUSE
-                }
-
-                vCandidateLoopTwo.push_back(candidate);
-
-#ifdef CCTAG_STAT_DEBUG
-                // Add childrens to output the filtering results (from outlierRemoval)
-                vCandidateLoopTwo.back().setChildrens(childrens);
-
-                // Write all selectedFlowComponent
-                CCTagFlowComponent flowComponent(outerEllipsePoints, childrens, filteredChildrens, outerEllipse, candidate._convexEdgeSegment, *(candidate._seed), params._nCircles);
-                CCTagFileDebug::instance().outputFlowComponentInfos(flowComponent);
-#endif
-
-            } catch (cv::Exception& e) {
-                ROM_COUT(" Opencv : exception levee !!  ");
-                const char* err_msg = e.what();
-            }
-        } catch (...) {
-            ROM_COUT(" Exception levee, loop 1 !");
-        }
-
+        completeFlowComponent(*it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, params);
         ++it;
         ++iCandidate;
-
     }
 
-    ROM_COUT_VAR(vCandidateLoopTwo.size());
-
+    ROM_COUT_VAR_DEBUG(vCandidateLoopTwo.size());
     ROM_COUT_DEBUG("__________________________ List of seeds ___________________________________");
     BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo) {
         ROM_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
@@ -391,7 +343,6 @@ void cctagDetectionFromEdges(
         std::vector< std::vector< Point2dN<double> > > cctagPoints;
 
         try {
-
             // SEARCH FOR ANOTHER SEGMENT
             double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
 
@@ -486,23 +437,23 @@ void cctagDetectionFromEdges(
 
             double realSizeOuterEllipsePoints = quality*realPixelPerimeter;
 
-                            // Naive reject condition todo@Lilian
-                            /*if ( ( ( quality <= 0.35 ) && ( realSizeOuterEllipsePoints >= 300.0 ) ) ||//0.35
-                                     ( ( quality <= 0.45 ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||//0.45
-                                     ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||//0.50
-                                     ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||//0.5
-                                     ( ( quality <= 0.96 ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||//0.96
-                                     ( realSizeOuterEllipsePoints < 50.0  ) )
-                            {
-                                    ROM_COUT_DEBUG( "Not enough outer ellipse points : realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality );
-                                    continue;
-                            }*/
+            // Naive reject condition todo@Lilian
+            /*if ( ( ( quality <= 0.35 ) && ( realSizeOuterEllipsePoints >= 300.0 ) ) ||//0.35
+                     ( ( quality <= 0.45 ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||//0.45
+                     ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||//0.50
+                     ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||//0.5
+                     ( ( quality <= 0.96 ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||//0.96
+                     ( realSizeOuterEllipsePoints < 50.0  ) )
+            {
+                    ROM_COUT_DEBUG( "Not enough outer ellipse points : realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality );
+                    continue;
+            }*/
 
-                            // TOTO 2nd outlier removal on the outer ellipse points
-                            /* {
-                               std::vector<EdgePoint*> childrens2;
-                               outlierRemoval(childrens, childrens2);
-                               } */
+            // TOTO 2nd outlier removal on the outer ellipse points
+            /* {
+               std::vector<EdgePoint*> childrens2;
+               outlierRemoval(childrens, childrens2);
+               } */
 
             rom::Point2dN<double> markerCenter;
             rom::numerical::BoundedMatrix3x3d markerHomography;
