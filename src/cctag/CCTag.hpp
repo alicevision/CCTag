@@ -244,7 +244,7 @@ namespace rom {
                 void condition(const rom::numerical::BoundedMatrix3x3d & mT, const rom::numerical::BoundedMatrix3x3d & mInvT);
 
                 bool equal(const CCTag& marker) const {
-                    return cctag::isSameEllipses(_rescaledOuterEllipse, marker.rescaledOuterEllipse());
+                    return cctag::isOverlappingEllipses(_rescaledOuterEllipse, marker.rescaledOuterEllipse());
                 }
                 
                 
