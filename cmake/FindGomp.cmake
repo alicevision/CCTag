@@ -7,6 +7,7 @@ if(APPLE)
 else(APPLE)
   # set(Gomp_LIBRARIES "/usr/lib/gcc/x86_64-linux-gnu/4.7/libgomp.so")
   set(Gomp_LIBRARIES "gomp" )
+  message( STATUS "Linux: using OMP library gomp" )
 endif(APPLE)
 
 

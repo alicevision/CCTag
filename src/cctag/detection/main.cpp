@@ -1,18 +1,9 @@
-
 #define png_infopp_NULL (png_infopp)NULL
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 
-
 #include <cctag/fileDebug.hpp>
 #include <cctag/visualDebug.hpp>
-
-//#include <rom/engine/RomConfig.hpp>
-//#include <cctag/graphics/image.hpp>
-//#include <rom/engine/io/ffmpeg/VideoFFmpegReader.hpp>
-//#include <rom/engine/io/ffmpeg/VideoFFmpegWriter.hpp>
-
-//#include <rom/engine/processing/OMMarkerDetection.hpp>
 
 #include <cctag/progBase/exceptions.hpp>
 #include <cctag/progBase/MemoryPool.hpp>
@@ -38,6 +29,8 @@
 #include <fstream>
 #include <exception>
 
+#include <cctag/view.hpp>
+
 //#include <boost/gil/extension/io/jpeg_io.hpp>
 
 //using namespace rom::graphics;
@@ -49,7 +42,7 @@ namespace bfs = boost::filesystem;
 
 static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(rom::FrameId frame, rgb8_view_t& view, const std::string & paramsFilename = "")
+void detection(rom::FrameId frame, popart::View& view, const std::string & paramsFilename = "")
 {
     POP_ENTER;
     // Process markers detection
@@ -67,8 +60,10 @@ void detection(rom::FrameId frame, rgb8_view_t& view, const std::string & params
         // write class instance to archive
         oa << boost::serialization::make_nvp("CCTagsParams", params);
     }
+
+    view.setNumLayers( params._numberOfMultiresLayers );
     
-    cctagDetection( markers, frame, view, params, true );
+    cctagDetection( markers, frame, view._view, params, true );
     
     //rom::processing::markerDetection(frame, view, markers, &params, true);
 
@@ -79,8 +74,8 @@ void detection(rom::FrameId frame, rgb8_view_t& view, const std::string & params
     //CCTagVisualDebug::instance().newSession( "Identification" );
 
     BOOST_FOREACH(const rom::vision::marker::CCTag & marker, markers) {
-        rom::vision::marker::drawMarkerOnGilImage(view, marker, false);
-        rom::vision::marker::drawMarkerInfos(view, marker, false);
+        rom::vision::marker::drawMarkerOnGilImage(view._view, marker, false);
+        rom::vision::marker::drawMarkerInfos(view._view, marker, false);
 
         //CCTagVisualDebug::instance().drawMarker( marker, false);
         //CCTagVisualDebug::instance().drawInfos( marker, false);
@@ -140,17 +135,11 @@ int main(int argc, char** argv)
         bfs::path folder(argv[1]);
 
         if ((ext == ".png") || (ext == ".jpg")) {
-            rgb8_image_t image;
-            rgb8_view_t svw;
-            if (ext == ".png") {
-                image = rgb8_image_t(boost::gil::png_read_dimensions(filename.c_str()));
-                svw = rgb8_view_t(view(image));
-                boost::gil::png_read_and_convert_view(filename.c_str(), svw);
-            } else {
-                image = rgb8_image_t(boost::gil::jpeg_read_dimensions(filename.c_str()));
-                svw = rgb8_view_t(view(image));
-                boost::gil::jpeg_read_and_convert_view(filename.c_str(), svw);
-            }
+
+            popart::View my_view( filename );
+
+            rgb8_image_t& image = my_view._image;
+            rgb8_view_t&  svw   = my_view._view;
 
             // Increase image size.
             /*{
@@ -198,7 +187,7 @@ int main(int argc, char** argv)
 
             CCTagFileDebug::instance().setPath(resultFolderName.str());
 
-            detection(0, svw, paramsFilename);
+            detection(0, my_view, paramsFilename);
 
             CCTagFileDebug::instance().outPutAllSessions();
             CCTagFileDebug::instance().clearSessions();
@@ -229,16 +218,20 @@ int main(int argc, char** argv)
                     inFilename << argv[3] << "/orig/" << std::setfill('0') << std::setw(5) << frame << ".png";
                     outFilename << argv[3] << "/" << std::setfill('0') << std::setw(5) << frame << ".png";
 
-                    rgb8_image_t image(png_read_dimensions(fileInFolder.c_str()));
-                    rgb8_view_t sourceView(view(image));
-                    png_read_and_convert_view(fileInFolder.c_str(), sourceView);
+                    popart::View my_view( inFilename.str() );
+                    rgb8_image_t& image      = my_view._image;
+                    rgb8_view_t&  sourceView = my_view._view;
+
+                    // rgb8_image_t image(png_read_dimensions(fileInFolder.c_str()));
+                    // rgb8_view_t sourceView(view(image));
+                    // png_read_and_convert_view(fileInFolder.c_str(), sourceView);
 
                     POP_INFO << "writing input image to " << inFilename.str() << std::endl;
                     png_write_view(inFilename.str(), sourceView);
 
                     CCTagVisualDebug::instance().initBackgroundImage(sourceView);
 
-                    detection(frame, sourceView, paramsFilename);
+                    detection(frame, my_view, paramsFilename);
 
                     POP_INFO << "writing ouput image to " << outFilename.str() << std::endl;
                     png_write_view(outFilename.str(), sourceView);
