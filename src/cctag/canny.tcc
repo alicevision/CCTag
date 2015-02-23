@@ -20,72 +20,6 @@ namespace vision {
 namespace marker {
 namespace cctag {
 
-
-#ifdef ROM_USE_TUTTLE
-
-template<class SView, class CannyView, class GradXView, class GradYView>
-void cannyTuttle( std::vector<memory::CACHE_ELEMENT>& datas, const SView& svw, CannyView& cannyView, GradXView& cannyGradX, GradYView& cannyGradY, const double thrCannyLow, const double thrCannyHigh )
-{
-	ROM_COUT_DEBUG( "USING TUTTLE CANNY" );
-	using namespace boost::gil;
-	using namespace tuttle::host;
-	gray32f_image_t fimg( svw.dimensions() );
-	gray32f_view_t fsvw( view( fimg ) );
-	copy_and_convert_pixels( svw, fsvw );
-
-	TUTTLE_COUT_INFOS;
-
-	tuttle::host::Graph canny;
-	tuttle::host::InputBufferNode* cannyInputBuffer;
-	std::list<std::string> cannyOutputs;
-	tuttle::host::Graph::Node* cannyOutput;
-	tuttle::host::Graph::Node* sobelOutput;
-
-	createCannyGraph( canny, cannyInputBuffer, cannyOutput, sobelOutput );
-
-	cannyOutputs.push_back( cannyOutput->getName() );
-	cannyOutputs.push_back( sobelOutput->getName() );
-
-	OfxRectD ibRod = { 0, 0, fsvw.width(), fsvw.height() };
-	cannyInputBuffer->setClipRod( ibRod );
-	cannyInputBuffer->setClipRawBuffer( (char*)interleaved_view_get_raw_data( fsvw ) );
-
-	boost::posix_time::ptime t1a( boost::posix_time::microsec_clock::local_time() );
-	ROM_COUT_DEBUG( "Computing frame: " << frame );
-	memory::MemoryCache res0 = canny.compute( cannyOutputs, frame );
-	TUTTLE_COUT_INFOS;
-	boost::posix_time::ptime t2a( boost::posix_time::microsec_clock::local_time() );
-
-	ROM_COUT_DEBUG( "Process tuttle canny took: " << t2a - t1a );
-
-	TUTTLE_COUT_INFOS;
-	memory::CACHE_ELEMENT cannyRes = res0.get( cannyOutput->getName(), frame );
-	TUTTLE_COUT_INFOS;
-	memory::CACHE_ELEMENT sobelRes = res0.get( sobelOutput->getName(), frame );
-
-	TUTTLE_COUT_INFOS;
-	TUTTLE_COUT_VAR( cannyRes->getROD() );
-	TUTTLE_COUT_VAR( cannyRes->getBounds() );
-	TUTTLE_COUT_VAR( cannyRes->getComponentsType() );
-	TUTTLE_COUT_VAR( cannyRes->getBitDepth() );
-	TUTTLE_COUT_INFOS;
-	cannyView = cannyRes->getGilView<boost::gil::gray8_view_t>();
-
-	rgba32f_view_t sobelView = sobelRes->getGilView<boost::gil::rgba32f_view_t>();
-
-	cannyGradX = kth_channel_view<0>( sobelView );
-	cannyGradY = kth_channel_view<1>( sobelView );
-
-//		png_write_view( "sobelX.png", boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>( cannyGradX ) );
-//		png_write_view( "sobelY.png", boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>( cannyGradY ) );
-
-	TUTTLE_COUT_INFOS;
-	datas.push_back( cannyRes );
-	datas.push_back( sobelRes );
-}
-
-#else
-
 template<class SView, class CannyRGBView, class CannyView, class GradXView, class GradYView>
 void cannyCv( const SView& srcView, CannyRGBView& cannyRGB, CannyView& cannyView, GradXView& cannyGradX, GradYView& cannyGradY, const double thrCannyLow, const double thrCannyHigh )
 {
@@ -160,10 +94,6 @@ void cannyCv( const SView& srcView, CannyRGBView& cannyRGB, CannyView& cannyView
 	#endif
 */
 }
-
-#endif
-
-
 
 template<class CView, class DXView, class DYView>
 void edgesPointsFromCanny( std::vector<EdgePoint>& points, EdgePointsImage & edgePointsMap, CView & cannyView, DXView & dx, DYView & dy )
