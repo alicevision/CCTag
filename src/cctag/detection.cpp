@@ -56,11 +56,12 @@ namespace marker
 namespace cctag
 {
 
-void constructFlowComponentFromSeed( EdgePoint * seed,
-                                     const EdgePointsImage& edgesMap,
-                                     WinnerMap & winners, 
-                                     std::list<Candidate> & vCandidateLoopOne,
-                                     const cctag::Parameters & params)
+void constructFlowComponentFromSeed(
+        EdgePoint * seed,
+        const EdgePointsImage& edgesMap,
+        WinnerMap & winners, 
+        std::list<Candidate> & vCandidateLoopOne,
+        const cctag::Parameters & params)
 {
   // Check if the seed has already been processed, i.e. belongs to an already
   // reconstructed flow component.
@@ -110,12 +111,13 @@ void constructFlowComponentFromSeed( EdgePoint * seed,
   }
 }
 
-void completeFlowComponent(Candidate & candidate, WinnerMap & winners,
-                           std::vector<EdgePoint> & points,
-                           const EdgePointsImage& edgesMap,
-                           std::vector<Candidate> & vCandidateLoopTwo,
-                           std::size_t & nSegmentOut,
-                           const cctag::Parameters & params)
+void completeFlowComponent(
+        Candidate & candidate, WinnerMap & winners,
+        std::vector<EdgePoint> & points,
+        const EdgePointsImage& edgesMap,
+        std::vector<Candidate> & vCandidateLoopTwo,
+        std::size_t & nSegmentOut,
+        const cctag::Parameters & params)
 {
   try
   {
@@ -268,7 +270,9 @@ void completeFlowComponent(Candidate & candidate, WinnerMap & winners,
  outerEllipsePoints: edge points lying extracted on the outer ellipse
  cctagPoints: set of points constituting the final cctag 
  params: parameters of the system's algorithm */
-void flowComponentAssembling(double & quality, const Candidate & candidate,
+void flowComponentAssembling(
+        double & quality,
+        const Candidate & candidate,
         const std::vector<Candidate> & vCandidateLoopTwo,
         numerical::geometry::Ellipse & outerEllipse,
         std::vector<EdgePoint*>& outerEllipsePoints,
@@ -366,16 +370,16 @@ void flowComponentAssembling(double & quality, const Candidate & candidate,
 
 
 void cctagDetectionFromEdges(
-  CCTag::List& markers,
-  std::vector<EdgePoint>& points,
-  const boost::gil::gray8_view_t & sourceView,
-  const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX,
-  const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
-  const EdgePointsImage& edgesMap,
-  const FrameId frame,
-  int pyramidLevel,
-  double scale,
-  const cctag::Parameters & params)
+        CCTag::List& markers,
+        std::vector<EdgePoint>& points,
+        const boost::gil::gray8_view_t & sourceView,
+        const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX,
+        const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
+        const EdgePointsImage& edgesMap,
+        const FrameId frame,
+        int pyramidLevel,
+        double scale,
+        const cctag::Parameters & params)
 {
   POP_ENTER;
   using namespace boost::gil;
@@ -430,7 +434,8 @@ void cctagDetectionFromEdges(
     constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
   }
 
-  const std::size_t nCandidatesLoopOneToProcess = std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
+  const std::size_t nCandidatesLoopOneToProcess = 
+          std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
 
   std::vector<Candidate> vCandidateLoopTwo;
   vCandidateLoopTwo.reserve(nCandidatesLoopOneToProcess);
@@ -538,7 +543,7 @@ void cctagDetectionFromEdges(
                ( ( quality <= 0.96 ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||//0.96
                ( realSizeOuterEllipsePoints < 50.0  ) )
       {
-              ROM_COUT_DEBUG( "Not enough outer ellipse points : realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality );
+              ROM_COUT_DEBUG( "Not enough outer ellipse points: realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality );
               continue;
       }*/
 
@@ -644,7 +649,9 @@ void cctagDetectionFromEdges(
 }
 
 
-void createImageForVoteResultDebug(const boost::gil::gray8_view_t & sourceView, const WinnerMap & winners)
+void createImageForVoteResultDebug(
+        const boost::gil::gray8_view_t & sourceView,
+        const WinnerMap & winners)
 {
 #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
   {
@@ -695,7 +702,6 @@ void cctagDetection(CCTag::List& markers,
   using namespace cctag;
   using namespace boost::numeric::ublas;
   using namespace boost::gil;
-  //	using namespace rom::img;
 
   std::srand(1);
 
@@ -707,9 +713,12 @@ void cctagDetection(CCTag::List& markers,
   gray8_image_t grayImg;
   gray8_view_t graySrc = rom::img::toGray(srcView, grayImg);
 
-  // Compute canny
+  // Views for:
+  // canny
   typedef kth_channel_view_type<0, rgb32f_view_t>::type CannyView;
+  // x derivative
   typedef kth_channel_view_type<1, rgb32f_view_t>::type GradXView;
+  // y derivative
   typedef kth_channel_view_type<2, rgb32f_view_t>::type GradYView;
 
   rgb32f_image_t cannyRGBImg(graySrc.width(), graySrc.height());
@@ -724,7 +733,8 @@ void cctagDetection(CCTag::List& markers,
   // y gradient
   cannyGradY = kth_channel_view<2>(cannyRGB);
 
-  cctag::cannyCv(graySrc, cannyRGB, cannyView, cannyGradX, cannyGradY, params._cannyThrLow, params._cannyThrHigh);
+  cctag::cannyCv(graySrc, cannyRGB, cannyView, cannyGradX, cannyGradY,
+          params._cannyThrLow, params._cannyThrHigh);
 
   cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
 
@@ -743,8 +753,19 @@ void cctagDetection(CCTag::List& markers,
     {
       CCTag & cctag = *it;
 
-      //tstart( boost::posix_time::microsec_clock::local_time() );
-      const int detected = rom::vision::marker::identify(cctag, bank.getMarkers(), graySrc, cannyGradX, cannyGradY, params._numCrowns, params._numCutsInIdentStep, params._numSamplesOuterEdgePointsRefinement, params._cutsSelectionTrials, params._sampleCutLength, params._minIdentProba, params._useLMDif);
+      const int detected = rom::vision::marker::identify(
+              cctag,
+              bank.getMarkers(),
+              graySrc,
+              cannyGradX,
+              cannyGradY,
+              params._numCrowns,
+              params._numCutsInIdentStep,
+              params._numSamplesOuterEdgePointsRefinement,
+              params._cutsSelectionTrials,
+              params._sampleCutLength,
+              params._minIdentProba,
+              params._useLMDif);
 
       cctag.setStatus(detected);
 
@@ -758,7 +779,8 @@ void cctagDetection(CCTag::List& markers,
         BOOST_FOREACH(double radiusRatio, cctag.radiusRatios())
         {
           rom::numerical::geometry::Cercle circle(1.0 / radiusRatio);
-          ellipses.push_back(rom::numerical::geometry::Ellipse(prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
+          ellipses.push_back(rom::numerical::geometry::Ellipse(
+                  prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
         }
 
         // Push the outer ellipse

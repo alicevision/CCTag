@@ -4,10 +4,10 @@
 
 #include <cctag/fileDebug.hpp>
 #include <cctag/visualDebug.hpp>
-
 #include <cctag/progBase/exceptions.hpp>
 #include <cctag/progBase/MemoryPool.hpp>
 #include <cctag/detection.hpp>
+#include <cctag/view.hpp>
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem.hpp>
@@ -29,11 +29,6 @@
 #include <fstream>
 #include <exception>
 
-#include <cctag/view.hpp>
-
-//#include <boost/gil/extension/io/jpeg_io.hpp>
-
-//using namespace rom::graphics;
 using namespace rom::vision;
 using boost::timer;
 
@@ -64,21 +59,13 @@ void detection(rom::FrameId frame, popart::View& view, const std::string & param
     view.setNumLayers( params._numberOfMultiresLayers );
     
     cctagDetection( markers, frame, view._view, params, true );
-    
-    //rom::processing::markerDetection(frame, view, markers, &params, true);
 
     std::cout << "Id : ";
 
     int i = 0;
-
-    //CCTagVisualDebug::instance().newSession( "Identification" );
-
     BOOST_FOREACH(const rom::vision::marker::CCTag & marker, markers) {
         rom::vision::marker::drawMarkerOnGilImage(view._view, marker, false);
         rom::vision::marker::drawMarkerInfos(view._view, marker, false);
-
-        //CCTagVisualDebug::instance().drawMarker( marker, false);
-        //CCTagVisualDebug::instance().drawInfos( marker, false);
 
         if (i == 0) {
             std::cout << marker.id() + 1;
@@ -89,14 +76,13 @@ void detection(rom::FrameId frame, popart::View& view, const std::string & param
     }
     std::cout << std::endl;
 
-    ROM_TCOUT("Detected: " << markers.size() << " markers.");
-    ROM_TCOUT("CCDetection global time: " << t.elapsed());
+    ROM_TCOUT( markers.size() << " markers.");
+    ROM_TCOUT("Total time: " << t.elapsed());
     POP_LEAVE;
 }
 
 /*************************************************************/
 /*                    Main entry                             */
-
 /*************************************************************/
 int main(int argc, char** argv)
 {
@@ -113,24 +99,10 @@ int main(int argc, char** argv)
 
         bfs::path myPath(filename);
 
-        const bfs::path extPath(myPath.extension()); // ( bfs::extension( filename ) );
-
+        const bfs::path extPath(myPath.extension());
         const bfs::path subFilenamePath(myPath.filename());
-
         const bfs::path parentPath(myPath.parent_path());
-
-
         std::string ext(extPath.string());
-
-        std::ofstream stream;
-        stream.open("dataHomographies.txt");
-        stream.close();
-
-        /*
-                        std::ofstream oms;
-                        stream.open("points.txt");
-                        stream.close();
-         */
 
         bfs::path folder(argv[1]);
 
@@ -195,6 +167,7 @@ int main(int argc, char** argv)
             // write visual file output
             CCTagVisualDebug::instance().outPutAllSessions();
         } else if (bfs::is_directory(folder)) {
+          // todo@Lilian: does not work
             std::cout << folder << " is a directory containing:\n";
 
             std::vector<bfs::path> filesInFolder;
@@ -204,14 +177,12 @@ int main(int argc, char** argv)
             // path stream inserter
 
             sort(filesInFolder.begin(), filesInFolder.end());
-
             std::size_t frame = 0;
 
             BOOST_FOREACH(const bfs::path & fileInFolder, filesInFolder) {
                 ROM_TCOUT(fileInFolder);
 
                 const std::string ext(bfs::extension(fileInFolder));
-
                 std::stringstream outFilename, inFilename;
 
                 if (ext == ".png") {
@@ -239,12 +210,6 @@ int main(int argc, char** argv)
                     ++frame;
                 }
             }
-
-            //for (std::vector<bfs::path>::const_iterator it (filesInFolder.begin()); it != filesInFolder.end(); ++it)
-            //{
-            //  std::cout << "   " << *it << '\n';
-            //}
-
         } else {
             throw std::logic_error("Unrecognized input.");
         }
