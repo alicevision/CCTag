@@ -15,114 +15,110 @@
 
 #include <boost/gil/image_view_factory.hpp>
 
-namespace rom {
-namespace vision {
-namespace marker {
-namespace cctag {
-
-template<class SView, class CannyRGBView, class CannyView, class GradXView, class GradYView>
-void cannyCv( const SView& srcView, CannyRGBView& cannyRGB, CannyView& cannyView, GradXView& cannyGradX, GradYView& cannyGradY, const double thrCannyLow, const double thrCannyHigh )
+namespace rom
 {
-	using namespace boost::gil;
-	ROM_COUT_DEBUG( "USING CV CANNY" );
+namespace vision
+{
+namespace marker
+{
+namespace cctag
+{
 
-	typedef pixel<typename channel_type<SView>::type, layout<gray_t> > PixelGray;
-	typedef image<PixelGray, false> GrayImage;
-	typedef typename GrayImage::view_t GrayView;
-	typedef typename channel_type<GrayView>::type Precision;
+template<class SView,
+         class CannyRGBView,
+         class CannyView, 
+         class GradXView,
+         class GradYView>
+void cannyCv(
+        const SView& srcView,
+        CannyRGBView& cannyRGB,
+        CannyView& cannyView,
+        GradXView& cannyGradX,
+        GradYView& cannyGradY,
+        const double thrCannyLow,
+        const double thrCannyHigh)
+{
+  using namespace boost::gil;
 
-	if ( num_channels<SView>::type::value != 1 )
-	{
-		GrayImage gimg( srcView.dimensions() );
-		GrayView graySrcView( view( gimg ) );
-		copy_and_convert_pixels( srcView, graySrcView );
-		// Apply canny
-//			boost::posix_time::ptime t1a( boost::posix_time::microsec_clock::local_time() );
-		cctag::cvCanny( cannyRGB, boostCv::CvImageView( graySrcView ).get(), thrCannyLow, thrCannyHigh );
-//			rom::graphics::cuda::canny( gsvw, cannyRGB, thrCannyLow, thrCannyHigh );
-//			boost::posix_time::ptime t2a( boost::posix_time::microsec_clock::local_time() );
-//			ROM_TCOUT( "Process cvCanny took: " << t2a - t1a );
-	}
-	else
-	{
-		boost::posix_time::ptime t1a( boost::posix_time::microsec_clock::local_time() );
-		cctag::cvCanny( cannyRGB, boostCv::CvImageView( srcView ).get(), thrCannyLow, thrCannyHigh );
-//			rom::graphics::cuda::canny( svw, cannyRGB, thrCannyLow, thrCannyHigh );
-		boost::posix_time::ptime t2a( boost::posix_time::microsec_clock::local_time() );
-//			ROM_TCOUT( "Process cvCanny took: " << t2a - t1a );
-	}
-	// Thinning
-	using namespace boost::gil;
-	using namespace terry;
-	using namespace terry::numeric;
-	typedef Rect<std::ptrdiff_t> rect_t;
-	rect_t srcRod( 0, 0, cannyView.width(), cannyView.height() );
-	rect_t srcRodCrop1( 1, 1, cannyView.width() - 1, cannyView.height() - 1 );
-	rect_t srcRodCrop2( 1, 1, cannyView.width() - 1, cannyView.height() - 1 );
-	rect_t procWindowRoWCrop1 = srcRodCrop1;
-	rect_t procWindowRoWCrop2 = srcRodCrop2;
-	rom::IPoolDataPtr dataTmp = rom::MemoryPool::instance().allocate( cannyView.width() * cannyView.height() * sizeof(Precision) );
-	GrayView view_tmp = interleaved_view( srcView.width(), srcView.height(), (PixelGray*)dataTmp->data(), cannyView.width() * sizeof(Precision) );
-	PixelGray pixelZero;
-	pixel_zeros_t<PixelGray>()( pixelZero );
-	fill_pixels( view_tmp, pixelZero );
-	algorithm::transform_pixels_locator( cannyView, srcRod,
-							  view_tmp, srcRod,
-							  procWindowRoWCrop1,
-							  terry::filter::thinning::pixel_locator_thinning_t<CannyView, GrayView>( cannyView, terry::filter::thinning::lutthin1 ) );
+  typedef pixel<typename channel_type<SView>::type, layout<gray_t> > PixelGray;
+  typedef image<PixelGray, false> GrayImage;
+  typedef typename GrayImage::view_t GrayView;
+  typedef typename channel_type<GrayView>::type Precision;
 
-	fill_pixels( cannyView, pixelZero );
-	algorithm::transform_pixels_locator( view_tmp, srcRod,
-							  cannyView, srcRod,
-							  procWindowRoWCrop2,
-							  terry::filter::thinning::pixel_locator_thinning_t<GrayView, CannyView>( view_tmp, terry::filter::thinning::lutthin2 ) );
+  boost::posix_time::ptime t1a( boost::posix_time::microsec_clock::local_time() );
+  cctag::cvCanny( cannyRGB, boostCv::CvImageView( srcView ).get(), thrCannyLow, thrCannyHigh );
+  boost::posix_time::ptime t2a( boost::posix_time::microsec_clock::local_time() );
 
-//		png_write_view( "sobelX.png", color_converted_view<gray8_pixel_t>( cannyGradX ) );
-//		png_write_view( "sobelY.png", color_converted_view<gray8_pixel_t>( cannyGradY ) );
-//		png_write_view( "canny.png", color_converted_view<gray8_pixel_t>( cannyView ) );
+  // Thinning
+  using namespace terry;
+  using namespace terry::numeric;
+  typedef Rect<std::ptrdiff_t> rect_t;
+  
+  rect_t srcRod( 0, 0, cannyView.width(), cannyView.height() );
+  rect_t srcRodCrop1( 1, 1, cannyView.width() - 1, cannyView.height() - 1 );
+  rect_t srcRodCrop2( 1, 1, cannyView.width() - 1, cannyView.height() - 1 );
+  rect_t procWindowRoWCrop1 = srcRodCrop1;
+  rect_t procWindowRoWCrop2 = srcRodCrop2;
+  
+  rom::IPoolDataPtr dataTmp = rom::MemoryPool::instance().allocate(
+          cannyView.width() * cannyView.height() * sizeof(Precision) );
+  
+  GrayView view_tmp = interleaved_view(
+          srcView.width(), srcView.height(),
+          (PixelGray*)dataTmp->data(), cannyView.width() * sizeof(Precision) );
+  
+  PixelGray pixelZero;
+  pixel_zeros_t<PixelGray>()( pixelZero );
+  fill_pixels( view_tmp, pixelZero );
+  
+  algorithm::transform_pixels_locator(
+        cannyView, srcRod,
+        view_tmp, srcRod,
+        procWindowRoWCrop1,
+        terry::filter::thinning::pixel_locator_thinning_t<CannyView, GrayView>( cannyView, terry::filter::thinning::lutthin1 ) );
 
-/*
-	#ifdef USER_LILIAN
-	{
-		rgb8_image_t tmpI( cannyView.dimensions() );
-		rgb8_view_t tmpV( view( tmpI ) );
-		copy_and_convert_pixels( cannyView, tmpV );
-		std::ostringstream tmps;
-		tmps << "/home/lcalvet/cpp_workspace/rom/data/output/canny/canny_" << frame << ".png";
-		png_write_view( tmps.str(), tmpV );
-	}
-	#endif
-*/
+  fill_pixels( cannyView, pixelZero );
+  algorithm::transform_pixels_locator(
+        view_tmp, srcRod,
+        cannyView, srcRod,
+        procWindowRoWCrop2,
+        terry::filter::thinning::pixel_locator_thinning_t<GrayView, CannyView>( view_tmp, terry::filter::thinning::lutthin2 ) );
 }
 
 template<class CView, class DXView, class DYView>
-void edgesPointsFromCanny( std::vector<EdgePoint>& points, EdgePointsImage & edgePointsMap, CView & cannyView, DXView & dx, DYView & dy )
+void edgesPointsFromCanny(
+        std::vector<EdgePoint>& points,
+        EdgePointsImage & edgePointsMap,
+        CView & cannyView,
+        DXView & dx,
+        DYView & dy )
 {
-	using namespace boost::gil;
+  using namespace boost::gil;
 
-	edgePointsMap.resize( boost::extents[cannyView.width()][cannyView.height()] );
-	std::fill( edgePointsMap.origin(), edgePointsMap.origin() + edgePointsMap.size(), (EdgePoint*)NULL );
+  edgePointsMap.resize( boost::extents[cannyView.width()][cannyView.height()] );
+  std::fill( edgePointsMap.origin(), edgePointsMap.origin() + edgePointsMap.size(), (EdgePoint*)NULL );
 
-	points.reserve( cannyView.width() * cannyView.height() / 2 ); //TODO évaluer la borne max du nombre de point contour
+  // todo@Lilian: is this upper bound correct ?
+  points.reserve( cannyView.width() * cannyView.height() / 2 );
 
-	for( int y = 0 ; y < cannyView.height(); ++y )
-	{
-		typename CView::x_iterator itc = cannyView.row_begin( y );
-		typename DXView::x_iterator itDx = dx.row_begin( y );
-		typename DYView::x_iterator itDy = dy.row_begin( y );
-		for( int x = 0 ; x < cannyView.width(); ++x )
-		{
-			if ( (*itc)[0] )
-			{
-				points.push_back( EdgePoint( x, y, (*itDx)[0], (*itDy)[0] ) );
-				EdgePoint* p = &points.back();
-				edgePointsMap[x][y] = p;
-			}
-			++itc;
-			++itDx;
-			++itDy;
-		}
-	}
+  for( int y = 0 ; y < cannyView.height(); ++y )
+  {
+    typename CView::x_iterator itc = cannyView.row_begin( y );
+    typename DXView::x_iterator itDx = dx.row_begin( y );
+    typename DYView::x_iterator itDy = dy.row_begin( y );
+    for( int x = 0 ; x < cannyView.width(); ++x )
+    {
+      if ( (*itc)[0] )
+      {
+        points.push_back( EdgePoint( x, y, (*itDx)[0], (*itDy)[0] ) );
+        EdgePoint* p = &points.back();
+        edgePointsMap[x][y] = p;
+      }
+      ++itc;
+      ++itDx;
+      ++itDy;
+    }
+  }
 
 }
 

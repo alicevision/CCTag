@@ -1,11 +1,12 @@
 #ifndef _ROM_VISION_CCTAG_CANNY_HPP_
 #define _ROM_VISION_CCTAG_CANNY_HPP_
 
-//#include "EdgePoint.hpp"
 #include "types.hpp"
 
-namespace rom {
-namespace vision {
+namespace rom
+{
+namespace vision
+{
 class EdgePoint;
 }
 }
@@ -21,10 +22,14 @@ class EdgePoint;
 #include <boost/gil/typedefs.hpp>
 #include <vector>
 
-namespace rom {
-namespace vision {
-namespace marker {
-namespace cctag {
+namespace rom
+{
+namespace vision
+{
+namespace marker
+{
+namespace cctag
+{
 
 
 #ifdef ROM_USE_TUTTLE
