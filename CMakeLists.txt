@@ -50,10 +50,8 @@ if(CUDA_FOUND)
   include_directories(${CUDA_INCLUDE_DIRS})
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
-message( "\n \n  -----------------------------------------aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaalalzd \n \n \n" )
 else(CUDA_FOUND)
   message( STATUS "Failed to find CUDA" )
-message( " \n \n laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaalalzd \n \n" )
 endif(CUDA_FOUND)
 
 
