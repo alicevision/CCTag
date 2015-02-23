@@ -6,13 +6,13 @@
 	<_cannyThrLow>0.01</_cannyThrLow>
 	<_cannyThrHigh>0.04</_cannyThrHigh>
 	<_distSearch>30</_distSearch>
-    <_thrGradientMagInVote>2500</_thrGradientMagInVote>
+        <_thrGradientMagInVote>2500</_thrGradientMagInVote>
 	<_angleVoting>0.0</_angleVoting>
 	<_ratioVoting>4</_ratioVoting>
-    <_averageVoteMin>0</_averageVoteMin>
-    <_thrMedianDistanceEllipse>3.0</_thrMedianDistanceEllipse>
-    <_maximumNbSeeds>500</_maximumNbSeeds>
-    <_maximumNbCandidatesLoopTwo>30</_maximumNbCandidatesLoopTwo>
+        <_averageVoteMin>0</_averageVoteMin>
+        <_thrMedianDistanceEllipse>3.0</_thrMedianDistanceEllipse>
+        <_maximumNbSeeds>500</_maximumNbSeeds>
+        <_maximumNbCandidatesLoopTwo>30</_maximumNbCandidatesLoopTwo>
 	<_numCrowns>4</_numCrowns>
 	<_minPointsSegmentCandidate>10</_minPointsSegmentCandidate>
 	<_minVotesToSelectCandidate>3</_minVotesToSelectCandidate>
@@ -29,6 +29,7 @@
 	<_useLMDif>1</_useLMDif>
 	<_searchForAnotherSegment>1</_searchForAnotherSegment>
 	<_writeOutput>1</_writeOutput>
+        <_doIdentification>1</_doIdentification>
 </CCTagsParams>
 </boost_serialization>
 

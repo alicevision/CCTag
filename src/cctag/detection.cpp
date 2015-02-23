@@ -11,7 +11,6 @@
 #include "visualDebug.hpp"
 #include "multiresolution.hpp"
 #include "miscellaneous.hpp"
-
 #include "ellipseFittingWithGradient.hpp"
 #include "CCTagFlowComponent.hpp"
 
@@ -34,7 +33,6 @@
 #include <boost/foreach.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/round.hpp>
-
 #include <boost/mpl/bool.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/unordered/unordered_set.hpp>
@@ -746,7 +744,7 @@ void cctagDetection(CCTag::List& markers,
 
   // Identification step
   // To decomment -- enable cuts selection, homography computation and identification
-  if (1)
+  if (params._doIdentification)
   {
     CCTag::List::iterator it = markers.begin();
     while (it != markers.end())
