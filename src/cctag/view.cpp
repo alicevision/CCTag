@@ -8,7 +8,9 @@
 #include "view.hpp"
 #include "debug.hpp"
 
-#include <cuda_runtime.h>
+#ifdef WITH_CUDA
+  #include <cuda_runtime.h>
+#endif
 
 #include <boost/gil/extension/io/jpeg_io.hpp>
 #include <boost/gil/extension/io/png_io.hpp>
@@ -42,6 +44,7 @@ View::~View( )
 
 void View::setNumLayers( size_t num )
 {
+#ifdef WITH_CUDA
     if( _canvas.resizeRequired( _image.width(), _image.height() ) ) {
         _canvas.uninit( );
         _canvas.init( _image.width(), _image.height(), num );
@@ -62,6 +65,7 @@ void View::setNumLayers( size_t num )
     POP_INFO << "END - PIXEL-WISE COPYING - THIS MUST BE REMOVED" << std::endl;
 
     _canvas.uploadPixels( );
+#endif
 }
 
 MultiresolutionCanvas::MultiresolutionCanvas( )
@@ -76,6 +80,7 @@ MultiresolutionCanvas::MultiresolutionCanvas( )
 
 void MultiresolutionCanvas::init( size_t width, size_t height, size_t num )
 {
+#ifdef WITH_CUDA
     POP_ENTER;
     assert( num > 0 );
 
@@ -143,6 +148,7 @@ void MultiresolutionCanvas::init( size_t width, size_t height, size_t num )
         _device_all_float_canvasses = 0;
     }
     POP_LEAVE;
+#endif
 }
 
 MultiresolutionCanvas::~MultiresolutionCanvas( )
@@ -152,6 +158,7 @@ MultiresolutionCanvas::~MultiresolutionCanvas( )
 
 void MultiresolutionCanvas::uninit( )
 {
+#ifdef WITH_CUDA
     POP_INFO << "deallocating CUDA memory" << std::endl;
     if( _device_all_float_canvasses ) cudaFree( _device_all_float_canvasses );
     if( _device_all_int_canvasses )   cudaFree( _device_all_int_canvasses );
@@ -162,6 +169,7 @@ void MultiresolutionCanvas::uninit( )
 
     if( _canvas_size ) delete [] _canvas_size;
     _canvas_size = 0;
+#endif
 }
 
 bool MultiresolutionCanvas::resizeRequired( size_t width, size_t height ) const
@@ -171,12 +179,14 @@ bool MultiresolutionCanvas::resizeRequired( size_t width, size_t height ) const
 
 void MultiresolutionCanvas::uploadPixels( )
 {
+#ifdef WITH_CUDA
     /// precondition: everything allocated, sizes checked
     cudaError_t err;
     err = cudaMemcpy( _device_all_int_canvasses, _host_image, _canvas_size[0].sz()*3*sizeof(uint8_t), cudaMemcpyHostToDevice );
     if( err != cudaSuccess ) {
         POP_ERROR << "Uploading pixels to GPU failed. " << cudaGetErrorString(err) << std::endl;
     }
+#endif
 }
 
 } // namespace popart

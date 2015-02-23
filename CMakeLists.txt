@@ -7,8 +7,8 @@ project( CCTag )
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
 set(CMAKE_BUILD_TYPE Debug) # Debug, Release
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DGRIFF_DEBUG")
-set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   -DGRIFF_DEBUG")
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DGRIFF_DEBUG")
+#set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   -DGRIFF_DEBUG")
 if(APPLE)
   set(CMAKE_CXX_FLAGS       "${CMAKE_CXX_FLAGS}       -Wno-c++11-extensions")
 endif(APPLE)
@@ -48,8 +48,12 @@ endif(Boost_FOUND)
 find_package(CUDA 6.5)
 if(CUDA_FOUND)
   include_directories(${CUDA_INCLUDE_DIRS})
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
+message( "\n \n  -----------------------------------------aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaalalzd \n \n \n" )
 else(CUDA_FOUND)
   message( STATUS "Failed to find CUDA" )
+message( " \n \n laaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaalalzd \n \n" )
 endif(CUDA_FOUND)
 
 
