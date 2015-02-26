@@ -1,5 +1,5 @@
-#ifndef _ROM_VISION_CCTAG_DRAW_HPP_
-#define _ROM_VISION_CCTAG_DRAW_HPP_
+#ifndef _CCTAG_VISION_CCTAG_DRAW_HPP_
+#define _CCTAG_VISION_CCTAG_DRAW_HPP_
 
 #include <cctag/CCTag.hpp>
 #include <cctag/geometry/Ellipse.hpp>

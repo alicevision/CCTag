@@ -1,5 +1,5 @@
-#ifndef _ROM_MARKERS_TYPES_HPP_
-#define _ROM_MARKERS_TYPES_HPP_
+#ifndef _CCTAG_MARKERS_TYPES_HPP_
+#define _CCTAG_MARKERS_TYPES_HPP_
 
 #include "EdgePoint.hpp"
 

@@ -5,8 +5,8 @@
  * Created on September 18, 2014, 1:45 PM
  */
 
-#ifndef _ROM_MODECONFIG_HPP
-#define	_ROM_MODECONFIG_HPP
+#ifndef _CCTAG_MODECONFIG_HPP
+#define	_CCTAG_MODECONFIG_HPP
 
 #define CCTAG_STAT_DEBUG
 

@@ -1,5 +1,5 @@
-#ifndef _ROM_DATASERIALIZATION_HPP
-#define	_ROM_DATASERIALIZATION_HPP
+#ifndef _CCTAG_DATASERIALIZATION_HPP
+#define	_CCTAG_DATASERIALIZATION_HPP
 
 #include "CCTagFlowComponent.hpp"
 #include <cctag/CCTag.hpp>

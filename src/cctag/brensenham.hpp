@@ -1,5 +1,5 @@
-#ifndef _ROM_BRENSENHAM_HPP_
-#define _ROM_BRENSENHAM_HPP_
+#ifndef _CCTAG_BRENSENHAM_HPP_
+#define _CCTAG_BRENSENHAM_HPP_
 
 //#include "EdgePoint.hpp"
 #include "Labelizer.hpp"

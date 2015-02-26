@@ -1,5 +1,5 @@
-#ifndef _ROM_2DTRANSFORM_HPP_
-#define _ROM_2DTRANSFORM_HPP_
+#ifndef _CCTAG_2DTRANSFORM_HPP_
+#define _CCTAG_2DTRANSFORM_HPP_
 
 #include "../geometry/Ellipse.hpp"
 #include "../algebra/matrix/operation.hpp"

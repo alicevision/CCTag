@@ -1,5 +1,5 @@
-#ifndef _ROM_POINT_HPP_
-#define	_ROM_POINT_HPP_
+#ifndef _CCTAG_POINT_HPP_
+#define	_CCTAG_POINT_HPP_
 
 #include <cctag/progBase/exceptions.hpp>
 

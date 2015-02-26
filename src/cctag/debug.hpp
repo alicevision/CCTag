@@ -1,5 +1,5 @@
-#ifndef _ROM_DEBUG_HPP_
-#define _ROM_DEBUG_HPP_
+#ifndef _CCTAG_DEBUG_HPP_
+#define _CCTAG_DEBUG_HPP_
 
 // pre-processeur directives :
 //	# : convert to string

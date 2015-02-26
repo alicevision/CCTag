@@ -1,5 +1,5 @@
-#ifndef _ROM_CCTAG_VISUALDEBUG_HPP_
-#define	_ROM_CCTAG_VISUALDEBUG_HPP_
+#ifndef _CCTAG_CCTAG_VISUALDEBUG_HPP_
+#define	_CCTAG_CCTAG_VISUALDEBUG_HPP_
 
 #include "modeConfig.hpp"
 

@@ -1,5 +1,5 @@
-#ifndef _ROM_LINE_HPP_
-#define	_ROM_LINE_HPP_
+#ifndef _CCTAG_LINE_HPP_
+#define	_CCTAG_LINE_HPP_
 
 #include <cctag/geometry/point.hpp>
 

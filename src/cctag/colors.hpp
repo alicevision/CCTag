@@ -1,5 +1,5 @@
-#ifndef _ROM_COLORS_HPP_
-#define	_ROM_COLORS_HPP_
+#ifndef _CCTAG_COLORS_HPP_
+#define	_CCTAG_COLORS_HPP_
 
 #include <cctag/geometry/point.hpp>
 

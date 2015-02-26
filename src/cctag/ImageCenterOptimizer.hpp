@@ -1,5 +1,5 @@
-#ifndef _ROM_VISION_IMAGECENTEROPTIMIZER_HPP_
-#define	_ROM_VISION_IMAGECENTEROPTIMIZER_HPP_
+#ifndef _CCTAG_VISION_IMAGECENTEROPTIMIZER_HPP_
+#define	_CCTAG_VISION_IMAGECENTEROPTIMIZER_HPP_
 
 #include <cctag/global.hpp>
 #include <cctag/geometry/point.hpp>

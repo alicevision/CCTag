@@ -1,5 +1,5 @@
-#ifndef _ROM_DISTANCE_HPP_
-#define _ROM_DISTANCE_HPP_
+#ifndef _CCTAG_DISTANCE_HPP_
+#define _CCTAG_DISTANCE_HPP_
 
 #include "Ellipse.hpp"
 

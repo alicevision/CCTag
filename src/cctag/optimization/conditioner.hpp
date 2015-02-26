@@ -1,5 +1,5 @@
-#ifndef _ROM_CONDITIONER_HPP_
-#define _ROM_CONDITIONER_HPP_
+#ifndef _CCTAG_CONDITIONER_HPP_
+#define _CCTAG_CONDITIONER_HPP_
 
 #include "../geometry/point.hpp"
 #include "../algebra/matrix/Matrix.hpp"

@@ -1,5 +1,5 @@
-#ifndef _ROM_HOMOGRAPHY_HPP_
-#define _ROM_HOMOGRAPHY_HPP_
+#ifndef _CCTAG_HOMOGRAPHY_HPP_
+#define _CCTAG_HOMOGRAPHY_HPP_
 
 #include <opencv/cv.h>
 

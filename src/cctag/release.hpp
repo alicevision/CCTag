@@ -1,5 +1,5 @@
-#ifndef _ROM_RELEASE_HPP_
-#define _ROM_RELEASE_HPP_
+#ifndef _CCTAG_RELEASE_HPP_
+#define _CCTAG_RELEASE_HPP_
 
 /*
  * In release mode, ROM_COUT_*_DEBUG are disabled.

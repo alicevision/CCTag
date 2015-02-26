@@ -1,5 +1,5 @@
-#ifndef _ROM_VISION_EDGEPOINT_HPP_
-#define _ROM_VISION_EDGEPOINT_HPP_
+#ifndef _CCTAG_VISION_EDGEPOINT_HPP_
+#define _CCTAG_VISION_EDGEPOINT_HPP_
 
 #include "geometry/point.hpp"
 

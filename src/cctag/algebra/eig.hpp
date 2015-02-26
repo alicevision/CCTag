@@ -1,5 +1,5 @@
-#ifndef _ROM_EIG_HPP
-#define	_ROM_EIG_HPP
+#ifndef _CCTAG_EIG_HPP
+#define	_CCTAG_EIG_HPP
 
 #include <cctag/progBase/exceptions.hpp>
 

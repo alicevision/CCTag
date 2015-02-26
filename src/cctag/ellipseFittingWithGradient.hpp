@@ -20,8 +20,8 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <boost/foreach.hpp>
 
-#ifndef _ROM_ELLIPSE_FIT_WITH_GRADIENTS_H
-#define _ROM_ELLIPSE_FIT_WITH_GRADIENTS_H
+#ifndef _CCTAG_ELLIPSE_FIT_WITH_GRADIENTS_H
+#define _CCTAG_ELLIPSE_FIT_WITH_GRADIENTS_H
 
 namespace rom {
 namespace vision {

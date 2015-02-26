@@ -1,5 +1,5 @@
-#ifndef _ROM_CANDIDATE_HPP_
-#define _ROM_CANDIDATE_HPP_
+#ifndef _CCTAG_CANDIDATE_HPP_
+#define _CCTAG_CANDIDATE_HPP_
 
 #include "modeConfig.hpp"
 

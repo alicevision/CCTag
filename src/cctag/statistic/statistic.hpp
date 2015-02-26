@@ -1,5 +1,5 @@
-#ifndef _ROM_STATISTIC_HPP_
-#define _ROM_STATISTIC_HPP_
+#ifndef _CCTAG_STATISTIC_HPP_
+#define _CCTAG_STATISTIC_HPP_
 
 #include <boost/numeric/ublas/fwd.hpp>
 #include <boost/numeric/ublas/vector.hpp>

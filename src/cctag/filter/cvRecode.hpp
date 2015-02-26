@@ -1,5 +1,5 @@
-#ifndef _ROM_CVRECODE_HPP_
-#define _ROM_CVRECODE_HPP_
+#ifndef _CCTAG_CVRECODE_HPP_
+#define _CCTAG_CVRECODE_HPP_
 
 #include <opencv2/core/types_c.h>
 

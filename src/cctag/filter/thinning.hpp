@@ -1,5 +1,5 @@
-#ifndef _ROM_VISION_MARKER_THINNING_HPP_
-#define _ROM_VISION_MARKER_THINNING_HPP_
+#ifndef _CCTAG_VISION_MARKER_THINNING_HPP_
+#define _CCTAG_VISION_MARKER_THINNING_HPP_
 
 #include <opencv/cv.h>
 #include <opencv2/core/types_c.h>

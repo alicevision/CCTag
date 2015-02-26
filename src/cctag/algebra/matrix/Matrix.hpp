@@ -1,5 +1,5 @@
-#ifndef _ROM_NUMERICAL_MATRIX_HPP_
-#define	_ROM_NUMERICAL_MATRIX_HPP_
+#ifndef _CCTAG_NUMERICAL_MATRIX_HPP_
+#define	_CCTAG_NUMERICAL_MATRIX_HPP_
 
 #include <cctag/progBase/Allocator.hpp>
 

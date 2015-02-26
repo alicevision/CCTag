@@ -1,5 +1,5 @@
-#ifndef _ROM_EXCEPTIONS_HPP_
-#define _ROM_EXCEPTIONS_HPP_
+#ifndef _CCTAG_EXCEPTIONS_HPP_
+#define _CCTAG_EXCEPTIONS_HPP_
 
 #include "boost_error_info_sstream.hpp"
 #include "system/backtrace.hpp"

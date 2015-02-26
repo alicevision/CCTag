@@ -1,5 +1,5 @@
-#ifndef _ROM_SYSTEM_SYSTEM_HPP_
-#define _ROM_SYSTEM_SYSTEM_HPP_
+#ifndef _CCTAG_SYSTEM_SYSTEM_HPP_
+#define _CCTAG_SYSTEM_SYSTEM_HPP_
 
 #if defined( linux ) \
     || defined( __linux ) \

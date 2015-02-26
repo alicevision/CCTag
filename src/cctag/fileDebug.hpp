@@ -1,5 +1,5 @@
-#ifndef _ROM_CCTAGOUTPUT_HPP_
-#define	_ROM_CCTAGOUTPUT_HPP_
+#ifndef _CCTAG_CCTAGOUTPUT_HPP_
+#define	_CCTAG_CCTAGOUTPUT_HPP_
 
 #include "modeConfig.hpp"
 

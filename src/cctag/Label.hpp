@@ -1,5 +1,5 @@
-#ifndef _ROM_VISION_LABEL_HPP_
-#define _ROM_VISION_LABEL_HPP_
+#ifndef _CCTAG_VISION_LABEL_HPP_
+#define _CCTAG_VISION_LABEL_HPP_
 
 #include <cstddef>
 #include <vector>

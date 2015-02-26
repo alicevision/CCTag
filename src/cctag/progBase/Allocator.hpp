@@ -1,5 +1,5 @@
-#ifndef _ROM_ALLOCATOR_HPP_
-#define	_ROM_ALLOCATOR_HPP_
+#ifndef _CCTAG_ALLOCATOR_HPP_
+#define	_CCTAG_ALLOCATOR_HPP_
 
 #include "exceptions.hpp"
 

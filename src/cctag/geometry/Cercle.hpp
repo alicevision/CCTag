@@ -1,5 +1,5 @@
-#ifndef _ROM_NUMERICAL_CERCLE_HPP_
-#define _ROM_NUMERICAL_CERCLE_HPP_
+#ifndef _CCTAG_NUMERICAL_CERCLE_HPP_
+#define _CCTAG_NUMERICAL_CERCLE_HPP_
 
 #include "Ellipse.hpp"
 

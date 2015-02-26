@@ -1,7 +1,7 @@
 // FROM http://ljk.imag.fr/membres/Pierre.Saramito/rheolef/source_html/ublas-invert_8h-source.html
 
-#ifndef _ROM_NUMERICAL_INVERT_MATRIX_HPP_
-#define _ROM_NUMERICAL_INVERT_MATRIX_HPP_
+#ifndef _CCTAG_NUMERICAL_INVERT_MATRIX_HPP_
+#define _CCTAG_NUMERICAL_INVERT_MATRIX_HPP_
 //
 // The following code inverts the matrix input using LU-decomposition
 // with backsubstitution of unit vectors.

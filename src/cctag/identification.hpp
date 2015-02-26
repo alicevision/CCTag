@@ -1,5 +1,5 @@
-#ifndef _ROM_CCTAG_IDENTIFICATION_HPP_
-#define	_ROM_CCTAG_IDENTIFICATION_HPP_
+#ifndef _CCTAG_CCTAG_IDENTIFICATION_HPP_
+#define	_CCTAG_CCTAG_IDENTIFICATION_HPP_
 
 #include "SubPixEdgeOptimizer.hpp"
 #include "ImageCenterOptimizer.hpp"

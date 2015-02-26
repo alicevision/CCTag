@@ -1,5 +1,5 @@
-#ifndef _ROM_VISION_CCTAG_PARAMS_HPP_
-#define _ROM_VISION_CCTAG_PARAMS_HPP_
+#ifndef _CCTAG_VISION_CCTAG_PARAMS_HPP_
+#define _CCTAG_VISION_CCTAG_PARAMS_HPP_
 
 #include <boost/math/constants/constants.hpp>
 #include <boost/serialization/access.hpp>

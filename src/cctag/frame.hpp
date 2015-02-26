@@ -1,5 +1,5 @@
-#ifndef _ROM_FRAME_HPP
-#define	_ROM_FRAME_HPP
+#ifndef _CCTAG_FRAME_HPP
+#define	_CCTAG_FRAME_HPP
 
 #include <string>
 

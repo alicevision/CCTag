@@ -1,5 +1,5 @@
-#ifndef _ROM_HOMOGRAPHYCOMPUTATION_HPP
-#define	_ROM_HOMOGRAPHYCOMPUTATION_HPP
+#ifndef _CCTAG_HOMOGRAPHYCOMPUTATION_HPP
+#define	_CCTAG_HOMOGRAPHYCOMPUTATION_HPP
 
 #include "CCTag.hpp"
 #include <cctag/geometry/Ellipse.hpp>

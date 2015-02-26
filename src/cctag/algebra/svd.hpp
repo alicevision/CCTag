@@ -1,5 +1,5 @@
-#ifndef _ROM_NUMERICAL_SVD_HPP_
-#define	_ROM_NUMERICAL_SVD_HPP_
+#ifndef _CCTAG_NUMERICAL_SVD_HPP_
+#define	_CCTAG_NUMERICAL_SVD_HPP_
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/banded.hpp>

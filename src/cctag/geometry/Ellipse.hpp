@@ -1,5 +1,5 @@
-#ifndef _ROM_NUMERICAL_ELLIPSE_HPP_
-#define _ROM_NUMERICAL_ELLIPSE_HPP_
+#ifndef _CCTAG_NUMERICAL_ELLIPSE_HPP_
+#define _CCTAG_NUMERICAL_ELLIPSE_HPP_
 
 #include <iostream>
 #include "point.hpp"

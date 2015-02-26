@@ -1,5 +1,5 @@
-#ifndef _ROM_SUBPIXELEDGEOPTIMIZER_HPP_
-#define	_ROM_SUBPIXELEDGEOPTIMIZER_HPP_
+#ifndef _CCTAG_SUBPIXELEDGEOPTIMIZER_HPP_
+#define	_CCTAG_SUBPIXELEDGEOPTIMIZER_HPP_
 
 #include <cctag/geometry/point.hpp>
 #include <cctag/global.hpp>

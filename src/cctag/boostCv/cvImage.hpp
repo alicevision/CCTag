@@ -1,5 +1,5 @@
-#ifndef _ROM_CVIMAGE_HPP_
-#define	_ROM_CVIMAGE_HPP_
+#ifndef _CCTAG_CVIMAGE_HPP_
+#define	_CCTAG_CVIMAGE_HPP_
 
 #include <cctag/progBase/exceptions.hpp>
 #include <cctag/global.hpp>

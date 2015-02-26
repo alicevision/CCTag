@@ -1,5 +1,5 @@
-#ifndef _ROM_IMAGE_HPP_
-#define	_ROM_IMAGE_HPP_
+#ifndef _CCTAG_IMAGE_HPP_
+#define	_CCTAG_IMAGE_HPP_
 
 namespace rom {
 namespace img {

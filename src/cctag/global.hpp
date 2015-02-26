@@ -1,5 +1,5 @@
-#ifndef _ROM_GLOBAL_HPP_
-#define _ROM_GLOBAL_HPP_
+#ifndef _CCTAG_GLOBAL_HPP_
+#define _CCTAG_GLOBAL_HPP_
 
 //#define ROM_NO_COUT
 

@@ -1,5 +1,5 @@
-#ifndef _ROM_NUMERICAL_DETERMINANT_HPP_
-#define	_ROM_NUMERICAL_DETERMINANT_HPP_
+#ifndef _CCTAG_NUMERICAL_DETERMINANT_HPP_
+#define	_CCTAG_NUMERICAL_DETERMINANT_HPP_
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
