@@ -10,7 +10,7 @@
 #include <iostream>
 #include <limits>
 
-namespace rom {
+namespace popart {
 
 template<typename T>
 class AlignedAllocator

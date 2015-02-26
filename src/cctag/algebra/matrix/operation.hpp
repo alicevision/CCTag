@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-namespace rom {
+namespace popart {
 namespace numerical {
 
 template<class Matrix>
@@ -61,7 +61,7 @@ inline std::complex<T> product( const std::complex<T> & a, const std::complex<T>
 */
 
 template<class V>
-inline rom::numerical::BoundedVector3d cross(const V & vX, const V & vY)
+inline popart::numerical::BoundedVector3d cross(const V & vX, const V & vY)
 {
 	BoundedVector3d res;
 	res(0) = vX(1) * vY(2) - vX(2) * vY(1);
@@ -70,7 +70,7 @@ inline rom::numerical::BoundedVector3d cross(const V & vX, const V & vY)
 	return res;
 }
 
-inline rom::numerical::BoundedVector3d unit(const rom::numerical::BoundedVector3d & v)
+inline popart::numerical::BoundedVector3d unit(const popart::numerical::BoundedVector3d & v)
 {
 	using namespace boost::numeric::ublas;
 	return v/norm_2(v);

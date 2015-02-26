@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <stdexcept>
 
-namespace rom {
+namespace popart {
 
 class IUnknown
 {

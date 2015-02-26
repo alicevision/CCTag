@@ -7,7 +7,7 @@
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 
-namespace rom {
+namespace popart {
     namespace vision {
 
         CCTagVisualDebug::CCTagVisualDebug() {
@@ -59,7 +59,7 @@ namespace rom {
 #endif
         }
 
-        void CCTagVisualDebug::drawText(const rom::Point2dN<double> & p, const std::string & text, const rom::Color & color) {
+        void CCTagVisualDebug::drawText(const popart::Point2dN<double> & p, const std::string & text, const popart::Color & color) {
 #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
             using namespace boost::gil;
             boostCv::CvImageView cvview(_view);
@@ -73,7 +73,7 @@ namespace rom {
 #endif
         }
 
-        void CCTagVisualDebug::drawPoint(const rom::Point2dN<double> & p, const rom::Color & color) {
+        void CCTagVisualDebug::drawPoint(const popart::Point2dN<double> & p, const popart::Color & color) {
 #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
             using namespace boost::gil;
             if (p.x() >= 0.0 && p.x() < _view.width() &&
@@ -91,24 +91,24 @@ namespace rom {
 #endif
         }
 
-        void CCTagVisualDebug::drawPoints(const std::vector<rom::Point2dN<double> > & pts, const rom::Color & color) {
+        void CCTagVisualDebug::drawPoints(const std::vector<popart::Point2dN<double> > & pts, const popart::Color & color) {
 #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
 
-            BOOST_FOREACH(const rom::Point2dN<double> & p, pts) {
-                CCTagVisualDebug::instance().drawPoint(p, rom::color_red);
+            BOOST_FOREACH(const popart::Point2dN<double> & p, pts) {
+                CCTagVisualDebug::instance().drawPoint(p, popart::color_red);
             }
 #endif
         }
 
-        void CCTagVisualDebug::drawMarker(const rom::vision::marker::CCTag& marker, bool drawScaledMarker) {
+        void CCTagVisualDebug::drawMarker(const popart::vision::marker::CCTag& marker, bool drawScaledMarker) {
 #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
-            rom::vision::marker::drawMarkerOnGilImage(_view, marker, drawScaledMarker);
+            popart::vision::marker::drawMarkerOnGilImage(_view, marker, drawScaledMarker);
 #endif
         }
 
-        void CCTagVisualDebug::drawInfos(const rom::vision::marker::CCTag& marker, bool drawScaledMarker) {
+        void CCTagVisualDebug::drawInfos(const popart::vision::marker::CCTag& marker, bool drawScaledMarker) {
 #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
-            rom::vision::marker::drawMarkerInfos(_view, marker, drawScaledMarker);
+            popart::vision::marker::drawMarkerInfos(_view, marker, drawScaledMarker);
 #endif
         }
 
@@ -137,14 +137,14 @@ namespace rom {
 #endif
         }
 
-        void CCTagVisualDebug::writeLocalizationView(rom::vision::marker::CCTag::List& markers) const {
+        void CCTagVisualDebug::writeLocalizationView(popart::vision::marker::CCTag::List& markers) const {
 #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
 
             std::stringstream localizationResultFileName;
             localizationResultFileName << "../localization/" << _imageFileName;
             CCTagVisualDebug::instance().newSession(localizationResultFileName.str());
 
-            BOOST_FOREACH(const rom::vision::marker::CCTag & marker, markers) {
+            BOOST_FOREACH(const popart::vision::marker::CCTag & marker, markers) {
                 CCTagVisualDebug::instance().drawMarker(marker);
                 CCTagVisualDebug::instance().drawInfos(marker);
             }
@@ -152,16 +152,16 @@ namespace rom {
 #endif
         }
 
-        void CCTagVisualDebug::writeIdentificationView(rom::vision::marker::CCTag::List& markers) const {
+        void CCTagVisualDebug::writeIdentificationView(popart::vision::marker::CCTag::List& markers) const {
 #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
 
             std::stringstream identificationResultFileName;
             identificationResultFileName << "../identification/" << _imageFileName;
             CCTagVisualDebug::instance().newSession(identificationResultFileName.str());
 
-            BOOST_FOREACH(const rom::vision::marker::CCTag & marker, markers) {
+            BOOST_FOREACH(const popart::vision::marker::CCTag & marker, markers) {
                 CCTagVisualDebug::instance().drawMarker(marker);
-                CCTagVisualDebug::instance().drawPoints(marker.rescaledOuterEllipsePoints(), rom::color_red);
+                CCTagVisualDebug::instance().drawPoints(marker.rescaledOuterEllipsePoints(), popart::color_red);
                 //CCTagVisualDebug::instance().draw
                 CCTagVisualDebug::instance().drawInfos(marker);
             }

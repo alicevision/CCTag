@@ -5,7 +5,7 @@
 
 #include <boost/array.hpp>
 
-namespace rom {
+namespace popart {
 
 struct Color : public boost::array<double, 4>
 {

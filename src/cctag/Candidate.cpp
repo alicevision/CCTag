@@ -7,7 +7,7 @@
 
 #include "Candidate.hpp"
 
-namespace rom {
+namespace popart {
 namespace vision {
 
 

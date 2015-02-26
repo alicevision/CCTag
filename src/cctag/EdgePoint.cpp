@@ -1,6 +1,6 @@
 #include "EdgePoint.hpp"
 
-namespace rom {
+namespace popart {
 namespace vision {
 
 std::ostream& operator<<( std::ostream& os, const EdgePoint& eP )

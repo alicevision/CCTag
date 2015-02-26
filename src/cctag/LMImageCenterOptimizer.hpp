@@ -9,14 +9,14 @@
 
 #include <cctag/CCTag.hpp>
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
 class LMImageCenterOptimizer
 {
 public:
-	typedef std::vector< rom::Point2dN<double> > VecExtPoints;
+	typedef std::vector< popart::Point2dN<double> > VecExtPoints;
 public:
 	LMImageCenterOptimizer();
 	virtual ~LMImageCenterOptimizer();
@@ -30,7 +30,7 @@ public:
 	static int homology( void* p, int m, int n, const double* x, double* fvec, int iflag );
 
 private:
-	rom::Point2dN<double> _pToRefine;
+	popart::Point2dN<double> _pToRefine;
 };
 
 }

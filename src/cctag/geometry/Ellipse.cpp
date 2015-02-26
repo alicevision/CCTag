@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace rom {
+namespace popart {
 namespace numerical {
 namespace geometry {
 

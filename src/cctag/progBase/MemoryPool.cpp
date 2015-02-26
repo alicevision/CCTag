@@ -18,7 +18,7 @@
 #include <stdexcept>
 
 
-namespace rom {
+namespace popart {
 
 IPool::~IPool() {}
 

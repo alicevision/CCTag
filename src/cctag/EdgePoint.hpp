@@ -8,16 +8,16 @@
 #include <cmath>
 #include <iosfwd>
 
-namespace rom {
+namespace popart {
 namespace vision {
 
 class Label;
 
-class EdgePoint : public rom::Point2dN<int>
+class EdgePoint : public popart::Point2dN<int>
 {
 public:
 	EdgePoint()
-		: rom::Point2dN<int>( 0, 0 )
+		: popart::Point2dN<int>( 0, 0 )
 		, _normGrad( -1.0 )
 		, _before( NULL )
 		, _after( NULL )
@@ -34,7 +34,7 @@ public:
 	}
 
 	EdgePoint( const EdgePoint& p )
-		: rom::Point2dN<int>( p )
+		: popart::Point2dN<int>( p )
 		, _grad( p._grad )
 	    , _normGrad ( p._normGrad )
 		, _before( p._before )
@@ -51,7 +51,7 @@ public:
 	}
 
 	EdgePoint( const int vx, const int vy, const float vdx, const float vdy )
-		: rom::Point2dN<int>( vx, vy )
+		: popart::Point2dN<int>( vx, vy )
 		, _before( NULL )
 		, _after( NULL )
 		, _processed( -1 )
@@ -64,18 +64,18 @@ public:
 	{
 		//_vfieldLineRatio.reserve(4);// check a global variable from configation todo@Lilian
 		_normGrad = std::sqrt( vdx * vdx + vdy * vdy );
-		_grad = rom::Point2dN<double>( (double) vdx , (double) vdy );
+		_grad = popart::Point2dN<double>( (double) vdx , (double) vdy );
 	}
 
 	virtual ~EdgePoint() {}
 
-	inline rom::Point2dN<double> gradient() const { return _grad ; }
+	inline popart::Point2dN<double> gradient() const { return _grad ; }
 
 	inline double normGradient() const { return _normGrad ; }
 
 	friend std::ostream& operator<<( std::ostream& os, const EdgePoint& eP );
 
-	rom::Point2dN<double> _grad;
+	popart::Point2dN<double> _grad;
 	double _normGrad;
 	EdgePoint* _before;
 	EdgePoint* _after;

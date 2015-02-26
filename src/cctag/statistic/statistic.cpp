@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-namespace rom {
+namespace popart {
 namespace numerical {
 
 }

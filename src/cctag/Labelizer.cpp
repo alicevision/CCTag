@@ -4,7 +4,7 @@
 #include <boost/gil/locator.hpp>
 
 
-namespace rom {
+namespace popart {
 namespace vision {
 
 Labelizer::Labelizer()

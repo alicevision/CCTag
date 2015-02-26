@@ -18,7 +18,7 @@
 #include <cmath>
 #include <vector>
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
@@ -126,7 +126,7 @@ void clearDetectedMarkers( const std::map<std::size_t, CCTag::List> & pyramidMar
 
 } // namespace marker
 } // namespace vision
-} // namespace rom
+} // namespace popart
 
 
 #endif

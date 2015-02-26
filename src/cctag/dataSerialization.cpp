@@ -1,6 +1,6 @@
 #include "dataSerialization.hpp"
 
-namespace rom {
+namespace popart {
     namespace vision {
         namespace marker {
 
@@ -63,20 +63,20 @@ namespace rom {
                 }
             }
 
-            void serializeEllipse(boost::archive::text_oarchive & ar, const rom::numerical::geometry::Ellipse & ellipse) {
+            void serializeEllipse(boost::archive::text_oarchive & ar, const popart::numerical::geometry::Ellipse & ellipse) {
                 serializeBoundedMatrix3x3d(ar, ellipse.matrix());
             }
 
-            void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<rom::numerical::geometry::Ellipse> & ellipses) {
+            void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<popart::numerical::geometry::Ellipse> & ellipses) {
                 const int sizeEllipses = ellipses.size();
                 ar & BOOST_SERIALIZATION_NVP(sizeEllipses);
 
-                BOOST_FOREACH(const rom::numerical::geometry::Ellipse & ellipse, ellipses) {
+                BOOST_FOREACH(const popart::numerical::geometry::Ellipse & ellipse, ellipses) {
                     serializeEllipse(ar, ellipse);
                 }
             }
 
-            void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const rom::numerical::BoundedMatrix3x3d & matrix) {
+            void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const popart::numerical::BoundedMatrix3x3d & matrix) {
                 ar & BOOST_SERIALIZATION_NVP(matrix(0, 0));
                 ar & BOOST_SERIALIZATION_NVP(matrix(1, 0));
                 ar & BOOST_SERIALIZATION_NVP(matrix(2, 0));

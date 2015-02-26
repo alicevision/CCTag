@@ -29,7 +29,7 @@
 #include <fstream>
 #include <exception>
 
-using namespace rom::vision;
+using namespace popart::vision;
 using boost::timer;
 
 using namespace boost::gil;
@@ -37,13 +37,13 @@ namespace bfs = boost::filesystem;
 
 static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(rom::FrameId frame, popart::View& view, const std::string & paramsFilename = "")
+void detection(popart::FrameId frame, popart::View& view, const std::string & paramsFilename = "")
 {
     POP_ENTER;
     // Process markers detection
     boost::timer t;
     boost::ptr_list<marker::CCTag> markers;
-    rom::vision::marker::cctag::Parameters params;
+    popart::vision::marker::cctag::Parameters params;
     if (paramsFilename != "") {
         std::ifstream ifs(paramsFilename.c_str());
         boost::archive::xml_iarchive ia(ifs);
@@ -63,9 +63,9 @@ void detection(rom::FrameId frame, popart::View& view, const std::string & param
     std::cout << "Id : ";
 
     int i = 0;
-    BOOST_FOREACH(const rom::vision::marker::CCTag & marker, markers) {
-        rom::vision::marker::drawMarkerOnGilImage(view._view, marker, false);
-        rom::vision::marker::drawMarkerInfos(view._view, marker, false);
+    BOOST_FOREACH(const popart::vision::marker::CCTag & marker, markers) {
+        popart::vision::marker::drawMarkerOnGilImage(view._view, marker, false);
+        popart::vision::marker::drawMarkerInfos(view._view, marker, false);
 
         if (i == 0) {
             std::cout << marker.id() + 1;
@@ -88,9 +88,9 @@ int main(int argc, char** argv)
 {
     try {
         if (argc <= 1) {
-            BOOST_THROW_EXCEPTION(rom::exception::Bug() << rom::exception::user() + kUsageString);
+            BOOST_THROW_EXCEPTION(popart::exception::Bug() << popart::exception::user() + kUsageString);
         }
-        rom::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
+        popart::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
         const std::string filename(argv[1]);
         std::string paramsFilename;
         if (argc >= 3) {

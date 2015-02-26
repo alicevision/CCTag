@@ -1,9 +1,9 @@
 #include "draw.hpp"
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
 } // namespace marker
 } // namespace vision
-} // namespace rom
+} // namespace popart

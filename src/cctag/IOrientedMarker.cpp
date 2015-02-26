@@ -1,6 +1,6 @@
 #include "IOrientedMarker.hpp"
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 

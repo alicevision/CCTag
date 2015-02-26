@@ -9,7 +9,7 @@
 #include <fstream>
 #include <vector>
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
@@ -74,7 +74,7 @@ std::size_t CCTagMarkersBank::identify( const std::vector<double> & marker ) con
 
 	if ( normMin > 0.6 )
 	{
-		BOOST_THROW_EXCEPTION( rom::exception::Bug() << rom::exception::dev() + "Unable to identify marker" );
+		BOOST_THROW_EXCEPTION( popart::exception::Bug() << popart::exception::dev() + "Unable to identify marker" );
 	}
 	else
 	{

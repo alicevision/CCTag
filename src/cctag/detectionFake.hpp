@@ -24,15 +24,15 @@
 #include <string>
 #include <vector>
 
-namespace rom {
+namespace popart {
 namespace vision {
 class EdgePoint;
 class EdgePointImage;
 }  // namespace vision
-}  // namespace rom
+}  // namespace popart
 
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
@@ -66,7 +66,7 @@ void cctagDetectionFromEdges(
 } // namespace cctag
 } // namespace marker
 } // namespace vision
-} // namespace rom
+} // namespace popart
 
 #endif
 

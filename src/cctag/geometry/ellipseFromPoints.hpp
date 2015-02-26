@@ -16,22 +16,22 @@
 #include <vector>
 
 
-namespace rom {
+namespace popart {
 namespace numerical {
 namespace geometry {
 
 Point2dN<double> extractEllipsePointAtAngle( const Ellipse & ellipse, double theta );
 ///@todo rename this function
-void points( const Ellipse & ellipse, const std::size_t nb, std::vector< rom::Point2dN<double> > & pts );
+void points( const Ellipse & ellipse, const std::size_t nb, std::vector< popart::Point2dN<double> > & pts );
 ///@todo rename this function
-void points( const Ellipse & ellipse, const std::size_t nb, const double phi1, const double phi2, std::vector< rom::Point2dN<double> > & pts );
+void points( const Ellipse & ellipse, const std::size_t nb, const double phi1, const double phi2, std::vector< popart::Point2dN<double> > & pts );
 
 template <class T>
-void fitEllipse( const std::vector<rom::Point2dN< T > > & points, Ellipse& e )
+void fitEllipse( const std::vector<popart::Point2dN< T > > & points, Ellipse& e )
 {
 	std::vector<cv::Point2f> cvpts;
 	cvpts.reserve( points.size() );
-	BOOST_FOREACH( const rom::Point2dN< T > & pt, points )
+	BOOST_FOREACH( const popart::Point2dN< T > & pt, points )
 	{
 		cvpts.push_back( cv::Point2f( float(pt.x()), float(pt.y()) ) );
 	}
@@ -59,7 +59,7 @@ void fitEllipse( const std::vector<rom::Point2dN< T > > & points, Ellipse& e )
 	//cvWaitKey(0);
 }
 
-void ellipsePoint( const rom::numerical::geometry::Ellipse& ellipse, double theta, rom::numerical::BoundedVector3d& pt );
+void ellipsePoint( const popart::numerical::geometry::Ellipse& ellipse, double theta, popart::numerical::BoundedVector3d& pt );
 
 
 void computeIntermediatePoints(const Ellipse & ellipse, Point2dN<int> & pt11, Point2dN<int> & pt12, Point2dN<int> & pt21, Point2dN<int> & pt22);

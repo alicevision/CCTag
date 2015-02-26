@@ -18,15 +18,15 @@
 #include <string>
 #include <vector>
 
-namespace rom {
+namespace popart {
     namespace vision {
 class EdgePoint;
 class EdgePointImage;
     }  // namespace vision
-}  // namespace rom
+}  // namespace popart
 
 
-namespace rom {
+namespace popart {
     namespace vision {
         namespace marker {
 
@@ -51,7 +51,7 @@ void createImageForVoteResultDebug(const boost::gil::gray8_view_t & sourceView, 
             }  // namespace cctag
         }  // namespace marker
     }  // namespace vision
-}  // namespace rom
+}  // namespace popart
 
 #endif
 

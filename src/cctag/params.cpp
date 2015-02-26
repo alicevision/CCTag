@@ -1,6 +1,6 @@
 #include "params.hpp"
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 namespace cctag {

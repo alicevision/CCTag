@@ -45,7 +45,7 @@
 #include <list>
 #include <utility>
 
-namespace rom
+namespace popart
 {
 namespace vision
 {
@@ -179,7 +179,7 @@ void completeFlowComponent(
       }
 
       std::vector<EdgePoint*> & outerEllipsePoints = candidate._outerEllipsePoints;
-      rom::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
+      popart::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
 
       bool goodInit = false;
 
@@ -306,7 +306,7 @@ void flowComponentAssembling(
                 && (anotherCandidate._seed->_flowLength / candidate._seed->_flowLength < 1.5))
         {
           if (isInEllipse(circularResearchArea, 
-                  rom::Point2dN<double>(double(anotherCandidate._seed->x()), double(anotherCandidate._seed->y()))))
+                  popart::Point2dN<double>(double(anotherCandidate._seed->x()), double(anotherCandidate._seed->y()))))
           {
             if (anotherCandidate._score > score)
             {
@@ -484,7 +484,7 @@ void cctagDetectionFromEdges(
 
     // Does a copies -- todo@Lilian: find another solution
     std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
-    rom::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
+    popart::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
     std::vector<EdgePoint*> filteredChildrens = candidate._filteredChildrens;
 
     std::vector< std::vector< Point2dN<double> > > cctagPoints;
@@ -527,7 +527,7 @@ void cctagDetectionFromEdges(
         ROM_COUT_DEBUG("Points inside the outer ellipse and good gradient orientations");
       }
       // Create ellipse with its real size from original image.
-      rom::numerical::geometry::Ellipse rescaleEllipse(outerEllipse.center(), outerEllipse.a() * scale, outerEllipse.b() * scale, outerEllipse.angle());
+      popart::numerical::geometry::Ellipse rescaleEllipse(outerEllipse.center(), outerEllipse.a() * scale, outerEllipse.b() * scale, outerEllipse.angle());
       
       int realPixelPerimeter = rasterizeEllipsePerimeter(rescaleEllipse);
 
@@ -545,8 +545,8 @@ void cctagDetectionFromEdges(
               continue;
       }*/
 
-      rom::Point2dN<double> markerCenter;
-      rom::numerical::BoundedMatrix3x3d markerHomography;
+      popart::Point2dN<double> markerCenter;
+      popart::numerical::BoundedMatrix3x3d markerHomography;
 
       const double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
 
@@ -709,7 +709,7 @@ void cctagDetection(CCTag::List& markers,
 
   // Grayscale transform
   gray8_image_t grayImg;
-  gray8_view_t graySrc = rom::img::toGray(srcView, grayImg);
+  gray8_view_t graySrc = popart::img::toGray(srcView, grayImg);
 
   // Views for:
   // canny
@@ -751,7 +751,7 @@ void cctagDetection(CCTag::List& markers,
     {
       CCTag & cctag = *it;
 
-      const int detected = rom::vision::marker::identify(
+      const int detected = popart::vision::marker::identify(
               cctag,
               bank.getMarkers(),
               graySrc,
@@ -769,15 +769,15 @@ void cctagDetection(CCTag::List& markers,
 
       try
       {
-        std::vector<rom::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
+        std::vector<popart::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
 
         bounded_matrix<double, 3, 3> mInvH;
-        rom::numerical::invert(cctag.homography(), mInvH);
+        popart::numerical::invert(cctag.homography(), mInvH);
 
         BOOST_FOREACH(double radiusRatio, cctag.radiusRatios())
         {
-          rom::numerical::geometry::Cercle circle(1.0 / radiusRatio);
-          ellipses.push_back(rom::numerical::geometry::Ellipse(
+          popart::numerical::geometry::Cercle circle(1.0 / radiusRatio);
+          ellipses.push_back(popart::numerical::geometry::Ellipse(
                   prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
         }
 
@@ -810,4 +810,4 @@ void cctagDetection(CCTag::List& markers,
 
 } // namespace marker
 } // namespace vision
-} // namespace rom
+} // namespace popart

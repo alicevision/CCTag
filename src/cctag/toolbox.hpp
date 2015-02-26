@@ -7,7 +7,7 @@
 
 #include <cctag/geometry/point.hpp>
 
-namespace rom {
+namespace popart {
 namespace vision {
 class EdgePoint;
 }
@@ -18,24 +18,24 @@ class Ellipse;
 }
 }
 
-namespace rom {
+namespace popart {
 namespace numerical {
 
 // Precondition : pts.size >=2
 // TODO déplacer innerProdMin
-double innerProdMin( const std::vector<rom::vision::EdgePoint*>& childrens, double thrCosDiffMax, Point2dN<int> & p1, Point2dN<int> & p2 );
+double innerProdMin( const std::vector<popart::vision::EdgePoint*>& childrens, double thrCosDiffMax, Point2dN<int> & p1, Point2dN<int> & p2 );
 
-void circleFitting(rom::numerical::geometry::Ellipse& e, const std::vector<rom::vision::EdgePoint*>& points);
+void circleFitting(popart::numerical::geometry::Ellipse& e, const std::vector<popart::vision::EdgePoint*>& points);
 
-void ellipseFitting( rom::numerical::geometry::Ellipse& e, const std::vector< Point2dN<double> >& childrens );
+void ellipseFitting( popart::numerical::geometry::Ellipse& e, const std::vector< Point2dN<double> >& childrens );
 
-void ellipseFitting( rom::numerical::geometry::Ellipse& e, const std::vector<rom::vision::EdgePoint*>& childrens );
+void ellipseFitting( popart::numerical::geometry::Ellipse& e, const std::vector<popart::vision::EdgePoint*>& childrens );
 
-void ellipseFitting( rom::numerical::geometry::Ellipse& e, const std::list<rom::vision::EdgePoint*>& childrens );
+void ellipseFitting( popart::numerical::geometry::Ellipse& e, const std::list<popart::vision::EdgePoint*>& childrens );
 
-bool matrixFromFile( const std::string& filename, std::list<rom::vision::EdgePoint>& edgepoints );
+bool matrixFromFile( const std::string& filename, std::list<popart::vision::EdgePoint>& edgepoints );
 
-int discreteEllipsePerimeter( const rom::numerical::geometry::Ellipse& ellipse);
+int discreteEllipsePerimeter( const popart::numerical::geometry::Ellipse& ellipse);
 
 }
 }

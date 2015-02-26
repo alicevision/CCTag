@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace rom {
+namespace popart {
 namespace vision {
 
 class LabelEdgePoint;

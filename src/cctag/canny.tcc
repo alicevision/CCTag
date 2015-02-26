@@ -15,7 +15,7 @@
 
 #include <boost/gil/image_view_factory.hpp>
 
-namespace rom
+namespace popart
 {
 namespace vision
 {
@@ -60,7 +60,7 @@ void cannyCv(
   rect_t procWindowRoWCrop1 = srcRodCrop1;
   rect_t procWindowRoWCrop2 = srcRodCrop2;
   
-  rom::IPoolDataPtr dataTmp = rom::MemoryPool::instance().allocate(
+  popart::IPoolDataPtr dataTmp = popart::MemoryPool::instance().allocate(
           cannyView.width() * cannyView.height() * sizeof(Precision) );
   
   GrayView view_tmp = interleaved_view(

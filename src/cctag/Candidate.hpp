@@ -7,7 +7,7 @@
 #include "geometry/Ellipse.hpp"
 #include <boost/unordered/unordered_set.hpp>
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 namespace cctag {
@@ -17,7 +17,7 @@ public:
         Candidate(){}
     
 	Candidate( EdgePoint* seed, const std::list<EdgePoint*> & convexEdgeSegment,
-		const std::vector<EdgePoint*> & outerEllipsePoints, const rom::numerical::geometry::Ellipse & outerEllipse,
+		const std::vector<EdgePoint*> & outerEllipsePoints, const popart::numerical::geometry::Ellipse & outerEllipse,
 		const std::vector<EdgePoint*> & filteredChildrens, int score, std::size_t nLabel )
 		: _seed( seed )
 		, _convexEdgeSegment( convexEdgeSegment )
@@ -33,7 +33,7 @@ public:
 	EdgePoint* _seed;
 	std::list<EdgePoint*> _convexEdgeSegment;
 	std::vector<EdgePoint*> _outerEllipsePoints;
-	rom::numerical::geometry::Ellipse _outerEllipse;
+	popart::numerical::geometry::Ellipse _outerEllipse;
 	std::vector<EdgePoint*> _filteredChildrens;
 	int _score;
 	std::size_t _nLabel;

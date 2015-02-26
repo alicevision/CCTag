@@ -1,6 +1,6 @@
 #include "IMemoryPool.hpp"
 
-namespace rom {
+namespace popart {
 
 IUnknown::~IUnknown() {}
 IPoolData::~IPoolData() {}

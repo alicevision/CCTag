@@ -14,7 +14,7 @@
 #include <cctag/boostCv/cvImage.hpp>
 
 
-namespace rom {
+namespace popart {
     namespace vision {
 
         class CCTagVisualDebug : public Singleton<CCTagVisualDebug> {
@@ -46,23 +46,23 @@ namespace rom {
 
             void changeSession(const std::string & sessionName);
 
-            void drawText(const rom::Point2dN<double> & p, const std::string & text, const rom::Color & color);
+            void drawText(const popart::Point2dN<double> & p, const std::string & text, const popart::Color & color);
 
-            void drawPoint(const rom::Point2dN<double> & p, const rom::Color & color);
+            void drawPoint(const popart::Point2dN<double> & p, const popart::Color & color);
 
-            void drawPoints(const std::vector<rom::Point2dN<double> > & pts, const rom::Color & color);
+            void drawPoints(const std::vector<popart::Point2dN<double> > & pts, const popart::Color & color);
 
-            void drawMarker(const rom::vision::marker::CCTag& marker, bool drawScaledMarker = true);
+            void drawMarker(const popart::vision::marker::CCTag& marker, bool drawScaledMarker = true);
 
-            void drawInfos(const rom::vision::marker::CCTag& marker, bool drawScaledMarker = true);
+            void drawInfos(const popart::vision::marker::CCTag& marker, bool drawScaledMarker = true);
 
             void out(const std::string & filename) const;
 
             void outPutAllSessions() const;
 
-            void writeLocalizationView(rom::vision::marker::CCTag::List & markers) const;
+            void writeLocalizationView(popart::vision::marker::CCTag::List & markers) const;
 
-            void writeIdentificationView(rom::vision::marker::CCTag::List & markers) const;
+            void writeIdentificationView(popart::vision::marker::CCTag::List & markers) const;
 
             std::string getImageFileName() const;
 

@@ -7,7 +7,7 @@
 #include <boost/numeric/bindings/lapack/geev.hpp>
 #include <boostLapackExtension/ggev.hpp>
 
-namespace rom {
+namespace popart {
 namespace numerical {
 
 	template<class MatA, class MatV, class MatD>

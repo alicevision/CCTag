@@ -11,19 +11,19 @@
 #include <boost/foreach.hpp>
 
 
-namespace rom {
+namespace popart {
 namespace numerical {
 namespace optimization {
 
 
 template<class C>
-inline rom::numerical::BoundedMatrix3x3d conditionerFromPoints( const std::vector<C>& v )
+inline popart::numerical::BoundedMatrix3x3d conditionerFromPoints( const std::vector<C>& v )
 {
 	using namespace boost::numeric;
-	rom::numerical::BoundedMatrix3x3d T;
+	popart::numerical::BoundedMatrix3x3d T;
 
-	rom::numerical::BoundedVector3d m = rom::numerical::mean( v );
-	rom::numerical::BoundedVector3d s = rom::numerical::stdDev( v, m );
+	popart::numerical::BoundedVector3d m = popart::numerical::mean( v );
+	popart::numerical::BoundedVector3d s = popart::numerical::stdDev( v, m );
 
 	if( s( 0 ) == 0 )
 		s( 0 )++;
@@ -46,11 +46,11 @@ inline rom::numerical::BoundedMatrix3x3d conditionerFromPoints( const std::vecto
 	return T;
 }
 
-inline rom::numerical::BoundedMatrix3x3d conditionerFromEllipse( const rom::numerical::geometry::Ellipse & ellipse )
+inline popart::numerical::BoundedMatrix3x3d conditionerFromEllipse( const popart::numerical::geometry::Ellipse & ellipse )
 {
 
 	using namespace boost::numeric;
-	rom::numerical::BoundedMatrix3x3d T;
+	popart::numerical::BoundedMatrix3x3d T;
 
 	static const double sqrt2 = std::sqrt( 2.0 );
 	static const double meanAB = (ellipse.a()+ellipse.b())/2.0;
@@ -75,7 +75,7 @@ inline rom::numerical::BoundedMatrix3x3d conditionerFromEllipse( const rom::nume
 }
 
 
-inline void conditionerFromImage( const int c, const int r, const int f,  rom::numerical::BoundedMatrix3x3d & T, rom::numerical::BoundedMatrix3x3d & invT)
+inline void conditionerFromImage( const int c, const int r, const int f,  popart::numerical::BoundedMatrix3x3d & T, popart::numerical::BoundedMatrix3x3d & invT)
 {
 	using namespace boost::numeric;
 	T(0,0) = 1.0 / f; T(0,1) = 0       ; T(0,2) = -c/(2.0 * f);
@@ -89,20 +89,20 @@ inline void conditionerFromImage( const int c, const int r, const int f,  rom::n
 }
 
 
-inline void condition(rom::Point2dN<double> & pt, const rom::numerical::BoundedMatrix3x3d & mT)
+inline void condition(popart::Point2dN<double> & pt, const popart::numerical::BoundedMatrix3x3d & mT)
 {
 	using namespace boost::numeric;
-	rom::numerical::BoundedVector3d cPt = ublas::prec_prod(mT,pt);
+	popart::numerical::BoundedVector3d cPt = ublas::prec_prod(mT,pt);
 	BOOST_ASSERT( cPt(2) );
 	pt.setX( cPt(0)/cPt(2) );
 	pt.setY( cPt(1)/cPt(2) );
 }
 
 
-inline void condition(std::vector<rom::Point2dN<double> > & pts, const rom::numerical::BoundedMatrix3x3d & mT)
+inline void condition(std::vector<popart::Point2dN<double> > & pts, const popart::numerical::BoundedMatrix3x3d & mT)
 {
 	using namespace boost::numeric;
-	BOOST_FOREACH(rom::Point2dN<double> & pt, pts)
+	BOOST_FOREACH(popart::Point2dN<double> & pt, pts)
 	{
 		condition(pt, mT);
 	}

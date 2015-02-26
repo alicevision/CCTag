@@ -2,7 +2,7 @@
 #include "CCTagFlowComponent.hpp"
 #include "dataSerialization.hpp"
 
-namespace rom {
+namespace popart {
     namespace vision {
 
         CCTagFileDebug::CCTagFileDebug()
@@ -43,8 +43,8 @@ namespace rom {
             oa & BOOST_SERIALIZATION_NVP(status);
             const bool aux = _isAssembled;
             oa & BOOST_SERIALIZATION_NVP(aux);
-            rom::vision::marker::serializeEllipse(oa, _researchArea);
-            _researchArea = rom::numerical::geometry::Ellipse();
+            popart::vision::marker::serializeEllipse(oa, _researchArea);
+            _researchArea = popart::numerical::geometry::Ellipse();
 #endif
         }
 
@@ -69,7 +69,7 @@ namespace rom {
         void CCTagFileDebug::resetFlowComponent() {
 #if defined CCTAG_STAT_DEBUG && defined DEBUG
             _isAssembled = false;
-            _researchArea = rom::numerical::geometry::Ellipse();
+            _researchArea = popart::numerical::geometry::Ellipse();
 
             if (_vflowComponentIndex.size() > 1) {
                 for (int i = 1; i < _vflowComponentIndex.size(); ++i) {
@@ -85,7 +85,7 @@ namespace rom {
 #endif            
         }
 
-        void CCTagFileDebug::setResearchArea(rom::numerical::geometry::Ellipse circularResearchArea) {
+        void CCTagFileDebug::setResearchArea(popart::numerical::geometry::Ellipse circularResearchArea) {
 #if defined CCTAG_STAT_DEBUG && defined DEBUG
             _researchArea = circularResearchArea;
 #endif 
@@ -98,21 +98,21 @@ namespace rom {
 #endif
         }
 
-        void CCTagFileDebug::outputFlowComponentInfos(const rom::vision::marker::CCTagFlowComponent & flowComponent) {
+        void CCTagFileDebug::outputFlowComponentInfos(const popart::vision::marker::CCTagFlowComponent & flowComponent) {
 #ifdef CCTAG_STAT_DEBUG
             if (_sstream) {
                 boost::archive::text_oarchive oa(*_sstream);
                 //oa << flowComponent;
                 const std::size_t nCircles = flowComponent._nCircles;
                 oa & BOOST_SERIALIZATION_NVP(nCircles);
-                rom::vision::marker::serializeFlowComponent(oa, flowComponent);
+                popart::vision::marker::serializeFlowComponent(oa, flowComponent);
             } else {
                 ROM_COUT_ERROR("Unable to output flowComponent infos! Select session before!");
             }
 #endif
         }
 
-        void CCTagFileDebug::outputMarkerInfos(const rom::vision::marker::CCTag& marker) {
+        void CCTagFileDebug::outputMarkerInfos(const popart::vision::marker::CCTag& marker) {
 #ifdef CCTAG_STAT_DEBUG
             if (_sstream) {
                 boost::archive::text_oarchive oa(*_sstream);

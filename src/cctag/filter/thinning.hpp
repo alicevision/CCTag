@@ -7,7 +7,7 @@
 #include <iostream>
 
 
-namespace rom {
+namespace popart {
 namespace img {
 
 void thin( IplImage* inout, IplImage* temp );

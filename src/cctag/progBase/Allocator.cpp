@@ -1,5 +1,5 @@
 #include "Allocator.hpp"
 
-namespace rom {
+namespace popart {
 
 }

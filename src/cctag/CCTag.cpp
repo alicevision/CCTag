@@ -32,12 +32,12 @@
 #include <cmath>
 #include <iomanip>
 
-namespace rom {
+namespace popart {
     namespace vision {
         namespace marker {
 
             namespace ublas = boost::numeric::ublas;
-            namespace optimization = rom::numerical::optimization;
+            namespace optimization = popart::numerical::optimization;
 
             // todo@Lilian : used in the initRadiusRatio called in the CCTag constructor. Need to be changed while reading the CCTagBank build from the textFile.
             const boost::array<double, 5> CCTag::_radiusRatiosInit = {
@@ -48,25 +48,25 @@ namespace rom {
                 (29.0 / 25.0)
             };
 
-            void CCTag::condition(const rom::numerical::BoundedMatrix3x3d & mT, const rom::numerical::BoundedMatrix3x3d & mInvT) {
-                using namespace rom::numerical::geometry;
+            void CCTag::condition(const popart::numerical::BoundedMatrix3x3d & mT, const popart::numerical::BoundedMatrix3x3d & mInvT) {
+                using namespace popart::numerical::geometry;
 
                 // Condition outer ellipse
                 _outerEllipse = _outerEllipse.transform(mInvT);
-                rom::numerical::normalizeDet1(_outerEllipse.matrix());
+                popart::numerical::normalizeDet1(_outerEllipse.matrix());
 
                 // Condition each ellipses if they exist.
 
-                BOOST_FOREACH(rom::numerical::geometry::Ellipse & ellipse, _ellipses) {
+                BOOST_FOREACH(popart::numerical::geometry::Ellipse & ellipse, _ellipses) {
                     ellipse = ellipse.transform(mInvT);
-                    rom::numerical::normalizeDet1(ellipse.matrix());
+                    popart::numerical::normalizeDet1(ellipse.matrix());
                 }
 
-                BOOST_FOREACH(std::vector<rom::Point2dN<double> > & pts, _points) {
-                    rom::numerical::optimization::condition(pts, mT);
+                BOOST_FOREACH(std::vector<popart::Point2dN<double> > & pts, _points) {
+                    popart::numerical::optimization::condition(pts, mT);
                 }
 
-                rom::numerical::optimization::condition(_centerImg, mT);
+                popart::numerical::optimization::condition(_centerImg, mT);
             }
 
             void CCTag::scale(const double s) {

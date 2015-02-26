@@ -1,6 +1,6 @@
 
 #include "types.hpp"
 
-namespace rom {
+namespace popart {
 namespace vision {}
 }

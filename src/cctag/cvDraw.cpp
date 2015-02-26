@@ -3,7 +3,7 @@
 #include <opencv2/core/core_c.h>
 
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
@@ -11,7 +11,7 @@ namespace marker {
 void drawMarkerOnImage( IplImage* simg, const CCTag& marker )
 {
 	// Display ellipses
-	const rom::numerical::geometry::Ellipse & e = marker.outerEllipse();
+	const popart::numerical::geometry::Ellipse & e = marker.outerEllipse();
 	const double theta = e.angle() * 180.0 / boost::math::constants::pi<double>();
 	if ( marker.id() != 0 )
 	{

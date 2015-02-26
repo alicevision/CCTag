@@ -8,7 +8,7 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/functional.hpp>
 
-namespace rom {
+namespace popart {
 namespace numerical {
 namespace geometry {
 

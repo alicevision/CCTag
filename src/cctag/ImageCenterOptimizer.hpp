@@ -20,7 +20,7 @@
 #include <vector>
 
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
@@ -32,8 +32,8 @@ class ImageCenterOptimizer : public OPTPP::FDNLF1
 public:
 	typedef ImageCenterOptimizer This;
 	typedef OPTPP::FDNLF1 Parent;
-	typedef std::vector< rom::Point2dN<double> > VecExtPoints;
-	typedef std::vector< rom::ImageCut > VecSignals;
+	typedef std::vector< popart::Point2dN<double> > VecExtPoints;
+	typedef std::vector< popart::ImageCut > VecSignals;
 
 public:
 	ImageCenterOptimizer( const VecExtPoints & vecExtPoints );
@@ -45,7 +45,7 @@ public:
 	 * @param[in] pToRefine initial point to refine
 	 * @return refined 2D point
 	 */
-	Point2dN<double> operator()( const rom::Point2dN<double> & pToRefine, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView, const rom::numerical::geometry::Ellipse & outerEllipse, const rom::numerical::BoundedMatrix3x3d & mT );
+	Point2dN<double> operator()( const popart::Point2dN<double> & pToRefine, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView, const popart::numerical::geometry::Ellipse & outerEllipse, const popart::numerical::BoundedMatrix3x3d & mT );
 
 	inline void initFcn()
 	{
@@ -69,14 +69,14 @@ private:
 
 private:
 	const VecExtPoints & _vecExtPoints;
-	rom::Point2dN<double> _pToRefine;
+	popart::Point2dN<double> _pToRefine;
 	std::size_t _lengthSig;
 	boost::gil::gray8_view_t _sView;
-	//rom::numerical::BoundedMatrix3x3d _matEllipse;
-	rom::numerical::geometry::Ellipse _ellipse;
+	//popart::numerical::BoundedMatrix3x3d _matEllipse;
+	popart::numerical::geometry::Ellipse _ellipse;
 	std::size_t _numIter;
-	rom::numerical::BoundedMatrix3x3d _mT;
-	rom::numerical::BoundedMatrix3x3d _mInvT;
+	popart::numerical::BoundedMatrix3x3d _mT;
+	popart::numerical::BoundedMatrix3x3d _mInvT;
 };
 
 }

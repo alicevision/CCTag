@@ -5,7 +5,7 @@
 #include <tuttle/host/InputBufferNode.hpp>
 #endif
 
-namespace rom
+namespace popart
 {
 namespace vision
 {

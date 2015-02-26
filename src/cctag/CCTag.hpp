@@ -37,7 +37,7 @@
 #include <fstream>
 #include <vector>
 
-namespace rom
+namespace popart
 {
 namespace vision
 {
@@ -48,7 +48,7 @@ typedef int MarkerID;
 typedef std::vector< std::pair< MarkerID, double > > IdSet;
 
 namespace ublas = boost::numeric::ublas;
-namespace numerical = rom::numerical;
+namespace numerical = popart::numerical;
 
 class CCTag : public IOrientedMarker
 {
@@ -70,10 +70,10 @@ public:
   }
 
   CCTag(const MarkerID id,
-        const rom::Point2dN<double> & centerImg,
+        const popart::Point2dN<double> & centerImg,
         const std::vector< std::vector< Point2dN<double> > > & points,
-        const rom::numerical::geometry::Ellipse & outerEllipse,
-        const rom::numerical::BoundedMatrix3x3d & homography,
+        const popart::numerical::geometry::Ellipse & outerEllipse,
+        const popart::numerical::BoundedMatrix3x3d & homography,
         int pyramidLevel,
         double scale,
         const double quality = 1.0)
@@ -87,7 +87,7 @@ public:
     , _scale(scale)
   {
     setInitRadius();
-    rom::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
+    popart::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
     _status = 0;
   }
 
@@ -122,22 +122,22 @@ public:
     return _nCircles;
   }
 
-  const rom::numerical::BoundedMatrix3x3d & homography() const
+  const popart::numerical::BoundedMatrix3x3d & homography() const
   {
     return _mHomography;
   }
 
-  rom::numerical::BoundedMatrix3x3d & homography()
+  popart::numerical::BoundedMatrix3x3d & homography()
   {
     return _mHomography;
   }
 
-  void setHomography(const rom::numerical::BoundedMatrix3x3d & homography)
+  void setHomography(const popart::numerical::BoundedMatrix3x3d & homography)
   {
     _mHomography = homography;
   }
 
-  const rom::numerical::geometry::Ellipse & outerEllipse() const
+  const popart::numerical::geometry::Ellipse & outerEllipse() const
   {
     return _outerEllipse;
   }
@@ -202,22 +202,22 @@ public:
     _pyramidLevel = pyramidLevel;
   }
 
-  std::vector<rom::numerical::geometry::Ellipse> & ellipses()
+  std::vector<popart::numerical::geometry::Ellipse> & ellipses()
   {
     return _ellipses;
   }
 
-  std::vector<rom::numerical::geometry::Ellipse> ellipses() const
+  std::vector<popart::numerical::geometry::Ellipse> ellipses() const
   {
     return _ellipses;
   }
 
-  void setEllipses(const std::vector<rom::numerical::geometry::Ellipse> ellipses)
+  void setEllipses(const std::vector<popart::numerical::geometry::Ellipse> ellipses)
   {
     _ellipses = ellipses;
   }
 
-  void setRescaledOuterEllipse(const rom::numerical::geometry::Ellipse & rescaledOuterEllipse)
+  void setRescaledOuterEllipse(const popart::numerical::geometry::Ellipse & rescaledOuterEllipse)
   {
     _rescaledOuterEllipse = rescaledOuterEllipse;
   }
@@ -227,7 +227,7 @@ public:
     _rescaledOuterEllipsePoints = outerEllipsePoints;
   }
 
-  const rom::numerical::geometry::Ellipse & rescaledOuterEllipse() const
+  const popart::numerical::geometry::Ellipse & rescaledOuterEllipse() const
   {
     return _rescaledOuterEllipse;
   }
@@ -280,7 +280,7 @@ public:
     return new CCTag(*this);
   }
 
-  void condition(const rom::numerical::BoundedMatrix3x3d & mT, const rom::numerical::BoundedMatrix3x3d & mInvT);
+  void condition(const popart::numerical::BoundedMatrix3x3d & mT, const popart::numerical::BoundedMatrix3x3d & mInvT);
 
   bool isOverlapping(const CCTag& marker) const
   {
@@ -343,12 +343,12 @@ protected:
   std::size_t _nCircles;
   MarkerID _id;
   IdSet _idSet;
-  rom::numerical::geometry::Ellipse _outerEllipse;
-  rom::numerical::geometry::Ellipse _rescaledOuterEllipse;
+  popart::numerical::geometry::Ellipse _outerEllipse;
+  popart::numerical::geometry::Ellipse _rescaledOuterEllipse;
   std::vector< Point2dN<double> > _rescaledOuterEllipsePoints;
-  std::vector<rom::numerical::geometry::Ellipse> _ellipses;
+  std::vector<popart::numerical::geometry::Ellipse> _ellipses;
   std::vector< std::vector< Point2dN<double> > > _points;
-  rom::numerical::BoundedMatrix3x3d _mHomography;
+  popart::numerical::BoundedMatrix3x3d _mHomography;
   double _quality;
   int _pyramidLevel;
   double _scale;

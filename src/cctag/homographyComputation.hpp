@@ -21,11 +21,11 @@
 #include <limits>
 #include <utility>
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
-void conditionnate( std::pair<rom::vision::marker::CCTag, rom::vision::marker::CCTag> & frameMarkers, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mT, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mInvT );
+void conditionnate( std::pair<popart::vision::marker::CCTag, popart::vision::marker::CCTag> & frameMarkers, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mT, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mInvT );
 
 /**
   V = M * diag( 1./ sqrt(sum(M.*M)));
@@ -78,7 +78,7 @@ boost::numeric::ublas::matrix<T> null( const boost::numeric::ublas::matrix<T> & 
 	size_t m = a.size1(), n = a.size2();
 	ublas::matrix<T> u,v,z;
 	ublas::matrix<T> s;
-	rom::numerical::svd( a, u, v, s );
+	popart::numerical::svd( a, u, v, s );
 	ublas::vector<T> sd( s.size1() );
 	T smax = 0;
 	if ( s.size1() > 0 && s.size2() > 0 )
@@ -123,7 +123,7 @@ boost::numeric::ublas::matrix<typename MatC::value_type> linesFromRank2Conic( co
 	matrix<T> u,v,x,l;
 
 	diagonal_matrix<T> s;
-	rom::numerical::svds( c, u, v, s, 2 );
+	popart::numerical::svds( c, u, v, s, 2 );
 	for( std::size_t k = 0; k < s.size1(); ++k )
 	{
 		s( k, k ) = std::sqrt( std::abs( s( k, k ) ) );
@@ -161,9 +161,9 @@ void signature( const MatA & x, std::size_t & s1, std::size_t & s2, const double
 	namespace ublas = boost::numeric::ublas;
 
 	typedef typename MatA::value_type T;
-	ublas::matrix<T> xn = x / rom::numerical::norm2( x );
+	ublas::matrix<T> xn = x / popart::numerical::norm2( x );
 	ublas::diagonal_matrix<T> d;
-	rom::numerical::eigd( xn, d );
+	popart::numerical::eigd( xn, d );
 	ublas::vector<T> dg = unit( d );
 	typename ublas::vector<T>::iterator it;
 	std::size_t nneg = 0;
@@ -191,11 +191,11 @@ void get2CoplanarCircleConstraint( const boost::numeric::ublas::bounded_matrix<d
 	                               const boost::numeric::ublas::bounded_matrix<double, 3, 3> & b,
                                    boost::numeric::ublas::matrix<double> & M, std::size_t k );
 
-void rectifyHomography2PlanarCC(const rom::numerical::geometry::Ellipse & e11, const rom::numerical::geometry::Ellipse & e21, boost::numeric::ublas::bounded_matrix<double, 3, 3> & mH, const double distMarkers = 1.0);
+void rectifyHomography2PlanarCC(const popart::numerical::geometry::Ellipse & e11, const popart::numerical::geometry::Ellipse & e21, boost::numeric::ublas::bounded_matrix<double, 3, 3> & mH, const double distMarkers = 1.0);
 
 void homographyFrom2CPlanar( const std::pair<CCTag, CCTag> & cctags, boost::numeric::ublas::bounded_matrix<double, 3, 3> & h);
 
-bool disambiguate(const rom::numerical::geometry::Ellipse & q, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & H);
+bool disambiguate(const popart::numerical::geometry::Ellipse & q, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & H);
 
 
 }

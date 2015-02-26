@@ -3,7 +3,7 @@
 
 #include <opencv/cv.h>
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace viewGeometry {
 

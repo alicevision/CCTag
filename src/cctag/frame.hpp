@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace rom {
+namespace popart {
 
 typedef std::size_t FrameId;
 typedef double Time;

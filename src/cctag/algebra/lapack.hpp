@@ -15,7 +15,7 @@
 #include <boostLapackExtension/ggev.hpp>
 #include <boostLapackExtension/lange.hpp>
 
-namespace rom {
+namespace popart {
 namespace numerical {
 
 	/**

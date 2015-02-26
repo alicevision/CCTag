@@ -5,7 +5,7 @@
 
 #include <boost/numeric/ublas/vector.hpp>
 
-namespace rom {
+namespace popart {
 
 struct ImageCut
 {

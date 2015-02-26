@@ -9,7 +9,7 @@
 #include <list>
 
 
-namespace rom {
+namespace popart {
 namespace vision {
 
 /**

@@ -1,6 +1,6 @@
 #include "IMarker.hpp"
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 

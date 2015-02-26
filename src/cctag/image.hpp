@@ -1,7 +1,7 @@
 #ifndef _CCTAG_IMAGE_HPP_
 #define	_CCTAG_IMAGE_HPP_
 
-namespace rom {
+namespace popart {
 namespace img {
 
 template<class SView>

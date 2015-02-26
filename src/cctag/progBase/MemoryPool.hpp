@@ -19,7 +19,7 @@
 #include <sstream>
 
 
-namespace rom {
+namespace popart {
 
 class PoolData; ///< forward declaration
 

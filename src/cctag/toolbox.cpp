@@ -27,13 +27,13 @@
 #include <fstream>
 #include <vector>
 
-namespace rom {
+namespace popart {
     namespace numerical {
 
-        double innerProdMin(const std::vector<rom::vision::EdgePoint*>& filteredChildrens, double thrCosDiffMax, Point2dN<int> & p1, Point2dN<int> & p2) {
+        double innerProdMin(const std::vector<popart::vision::EdgePoint*>& filteredChildrens, double thrCosDiffMax, Point2dN<int> & p1, Point2dN<int> & p2) {
             using namespace boost::numeric;
-            using namespace rom::vision;
-            //using namespace rom::numerical;
+            using namespace popart::vision;
+            //using namespace popart::numerical;
 
             EdgePoint* pAngle1 = NULL;
             EdgePoint* pAngle2 = NULL;
@@ -60,7 +60,7 @@ namespace rom {
                 double gx0 = p0->_grad.x() / normGrad;
                 double gy0 = p0->_grad.y() / normGrad;
 
-                std::vector<rom::vision::EdgePoint*>::const_iterator it = ++filteredChildrens.begin();
+                std::vector<popart::vision::EdgePoint*>::const_iterator it = ++filteredChildrens.begin();
 
                 for (; it != filteredChildrens.end(); ++it) {
                     EdgePoint* pCurrent = *it;
@@ -83,7 +83,7 @@ namespace rom {
                         pAngle1 = pCurrent;
                     }
 
-                    double dist = rom::numerical::distancePoints2D(*p0, *pCurrent);
+                    double dist = popart::numerical::distancePoints2D(*p0, *pCurrent);
                     if (dist > distMax) {
                         distMax = dist;
                         p1 = *pCurrent;
@@ -120,7 +120,7 @@ namespace rom {
                         pAngle2 = pCurrent;
                     }
 
-                    double dist = rom::numerical::distancePoints2D(p1, (Point2dN<int>)(*pCurrent));
+                    double dist = popart::numerical::distancePoints2D(p1, (Point2dN<int>)(*pCurrent));
                     if (dist > distMax) {
                         distMax = dist;
                         p2 = *pCurrent;
@@ -131,7 +131,7 @@ namespace rom {
             return min;
         }
 
-        void ellipseFitting(rom::numerical::geometry::Ellipse& e, const std::vector< Point2dN<double> >& points) {
+        void ellipseFitting(popart::numerical::geometry::Ellipse& e, const std::vector< Point2dN<double> >& points) {
             std::vector<cv::Point2f> cvPoints;
             cvPoints.reserve(points.size());
 
@@ -154,11 +154,11 @@ namespace rom {
             e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
         }
 
-void ellipseFitting( rom::numerical::geometry::Ellipse& e, const std::vector<rom::vision::EdgePoint*>& points )
+void ellipseFitting( popart::numerical::geometry::Ellipse& e, const std::vector<popart::vision::EdgePoint*>& points )
 {
 	std::vector<cv::Point2f> cvPoints;
 	cvPoints.reserve( points.size() );
-	BOOST_FOREACH( rom::vision::EdgePoint * p, points )
+	BOOST_FOREACH( popart::vision::EdgePoint * p, points )
 	{
 		cvPoints.push_back( cv::Point2f( p->x(), p->y() ) );
             }
@@ -178,7 +178,7 @@ void ellipseFitting( rom::numerical::geometry::Ellipse& e, const std::vector<rom
 	e.setParameters( Point2dN<double>( xC, yC ), a, b, angle );
 }
 
-void circleFitting(rom::numerical::geometry::Ellipse& e, const std::vector<rom::vision::EdgePoint*>& points) {
+void circleFitting(popart::numerical::geometry::Ellipse& e, const std::vector<popart::vision::EdgePoint*>& points) {
             using namespace boost::numeric;
             
             std::size_t nPoints = points.size();
@@ -201,7 +201,7 @@ void circleFitting(rom::numerical::geometry::Ellipse& e, const std::vector<rom::
             ublas::matrix<double> V;
             ublas::diagonal_matrix<double> S;
 
-            rom::numerical::svd(A, U, V, S);
+            popart::numerical::svd(A, U, V, S);
 
 
             //ROM_COUT_VAR(A);
@@ -221,12 +221,12 @@ void circleFitting(rom::numerical::geometry::Ellipse& e, const std::vector<rom::
             e.setParameters(Point2dN<double>(xC, yC), radius, radius, 0);
         }
 
-void ellipseFitting( rom::numerical::geometry::Ellipse& e, const std::list<rom::vision::EdgePoint*>& points )
+void ellipseFitting( popart::numerical::geometry::Ellipse& e, const std::list<popart::vision::EdgePoint*>& points )
 {
             std::vector<cv::Point2f> cvPoints;
             cvPoints.reserve(points.size());
 
-            BOOST_FOREACH(rom::vision::EdgePoint * p, points) {
+            BOOST_FOREACH(popart::vision::EdgePoint * p, points) {
                 cvPoints.push_back(cv::Point2f(p->x(), p->y()));
             }
 
@@ -245,7 +245,7 @@ void ellipseFitting( rom::numerical::geometry::Ellipse& e, const std::list<rom::
             e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
         }
 
-        bool matrixFromFile(const std::string& filename, std::list<rom::vision::EdgePoint>& edgepoints) {
+        bool matrixFromFile(const std::string& filename, std::list<popart::vision::EdgePoint>& edgepoints) {
             std::ifstream ifs(filename.c_str());
 
             if (!ifs) {
@@ -266,14 +266,14 @@ void ellipseFitting( rom::numerical::geometry::Ellipse& e, const std::list<rom::
                 std::vector<std::string> xy;
                 boost::split(xy, *it, boost::is_any_of(", "));
                 if (xy.size() == 2) {
-                    edgepoints.push_back(rom::vision::EdgePoint(boost::lexical_cast<int>(xy[0]), boost::lexical_cast<int>(xy[1]), 0, 0));
+                    edgepoints.push_back(popart::vision::EdgePoint(boost::lexical_cast<int>(xy[0]), boost::lexical_cast<int>(xy[1]), 0, 0));
                 }
             }
 
             return true;
         }
 
-        int discreteEllipsePerimeter(const rom::numerical::geometry::Ellipse& ellipse) {
+        int discreteEllipsePerimeter(const popart::numerical::geometry::Ellipse& ellipse) {
             namespace ublas = boost::numeric::ublas;
             using namespace std;
 

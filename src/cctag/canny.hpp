@@ -3,7 +3,7 @@
 
 #include "types.hpp"
 
-namespace rom
+namespace popart
 {
 namespace vision
 {
@@ -22,7 +22,7 @@ class EdgePoint;
 #include <boost/gil/typedefs.hpp>
 #include <vector>
 
-namespace rom
+namespace popart
 {
 namespace vision
 {

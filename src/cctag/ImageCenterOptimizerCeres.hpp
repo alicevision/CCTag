@@ -30,34 +30,34 @@
 #include <cstddef>
 #include <vector>
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
 struct TotoFunctor {
 
-	typedef std::vector< rom::Point2dN<double> > VecExtPoints;
-	typedef std::vector< rom::ImageCut > VecSignals;
+	typedef std::vector< popart::Point2dN<double> > VecExtPoints;
+	typedef std::vector< popart::ImageCut > VecSignals;
 
 
   TotoFunctor( const VecExtPoints & vecExtPoints, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView,
-  const rom::numerical::geometry::Ellipse & outerEllipse, const rom::numerical::BoundedMatrix3x3d & mT)
+  const popart::numerical::geometry::Ellipse & outerEllipse, const popart::numerical::BoundedMatrix3x3d & mT)
       : _vecExtPoints(vecExtPoints), _lengthSig(lengthSig), _sView(sView), _ellipse(outerEllipse), _mT(mT) {
 
-	  rom::numerical::invert_3x3(mT,_mInvT);
+	  popart::numerical::invert_3x3(mT,_mInvT);
   }
 
 
     bool operator()(const double* const x, double* residual) const {
 	
-    rom::Point2dN<double> centerExtEllipse( x[0], x[1] );
+    popart::Point2dN<double> centerExtEllipse( x[0], x[1] );
 
-	rom::numerical::optimization::condition(centerExtEllipse, _mInvT);
+	popart::numerical::optimization::condition(centerExtEllipse, _mInvT);
 	//ROM_TCOUT_VAR( centerExtEllipse );
-	//CCTagVisualDebug::instance().drawText( centerExtEllipse, boost::lexical_cast<std::string>(this_ptr->_numIter), rom::color_white );
-	CCTagVisualDebug::instance().drawPoint( centerExtEllipse, rom::color_blue );
+	//CCTagVisualDebug::instance().drawText( centerExtEllipse, boost::lexical_cast<std::string>(this_ptr->_numIter), popart::color_white );
+	CCTagVisualDebug::instance().drawPoint( centerExtEllipse, popart::color_blue );
 
-	rom::numerical::BoundedMatrix3x3d mH;
+	popart::numerical::BoundedMatrix3x3d mH;
 	VecSignals vecSig;
 	if ( !getSignals( mH, vecSig, _lengthSig, centerExtEllipse, _vecExtPoints, _sView, _ellipse.matrix() ) )
 	{
@@ -84,11 +84,11 @@ private:
 	const VecExtPoints & _vecExtPoints;
 	std::size_t _lengthSig;
 	boost::gil::gray8_view_t _sView;
-	//rom::numerical::BoundedMatrix3x3d _matEllipse;
-	rom::numerical::geometry::Ellipse _ellipse;
+	//popart::numerical::BoundedMatrix3x3d _matEllipse;
+	popart::numerical::geometry::Ellipse _ellipse;
 	//std::size_t _numIter;
-	rom::numerical::BoundedMatrix3x3d _mT;
-	rom::numerical::BoundedMatrix3x3d _mInvT;
+	popart::numerical::BoundedMatrix3x3d _mT;
+	popart::numerical::BoundedMatrix3x3d _mInvT;
 
 };
 

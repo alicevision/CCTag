@@ -38,7 +38,7 @@
 #include <cmath>
 #include <vector>
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
@@ -75,7 +75,7 @@ typename VecT::value_type computeMedian( const VecT& vec )
 }
 
 typedef std::vector< std::vector<double> > RadiusRatioBank;
-typedef std::vector< std::pair< rom::Point2dN<double>, rom::ImageCut > > CutSelectionVec;
+typedef std::vector< std::pair< popart::Point2dN<double>, popart::ImageCut > > CutSelectionVec;
 
 inline double dis( const double sig, const double val, const double mub, const double muw, const double varSubS )
 {
@@ -95,19 +95,19 @@ inline double dis( const double sig, const double val, const double mub, const d
  * @param yi
  * @param mH
  */
-inline rom::Point2dN<double> getHPoint( const double xi, const double yi, const rom::numerical::BoundedMatrix3x3d & mH )
+inline popart::Point2dN<double> getHPoint( const double xi, const double yi, const popart::numerical::BoundedMatrix3x3d & mH )
 {
-	using namespace rom::numerical;
+	using namespace popart::numerical;
 	using namespace boost::numeric::ublas;
 	BoundedVector3d vh;
 	vh( 0 ) = xi; vh( 1 ) = yi; vh( 2 ) = 1.0;
 
-	return rom::Point2dN<double>( prec_prod<BoundedVector3d>( mH, vh ) );
+	return popart::Point2dN<double>( prec_prod<BoundedVector3d>( mH, vh ) );
 }
 
-bool orazioDistance( IdSet& idSet, const RadiusRatioBank & rrBank, const std::vector<rom::ImageCut> & cuts, const std::size_t startOffset, const double minIdentProba, std::size_t sizeIds);
+bool orazioDistance( IdSet& idSet, const RadiusRatioBank & rrBank, const std::vector<popart::ImageCut> & cuts, const std::size_t startOffset, const double minIdentProba, std::size_t sizeIds);
 
-bool orazioDistanceRobust( std::vector<std::list<double> > & vScore, const RadiusRatioBank & rrBank, const std::vector<rom::ImageCut> & cuts, const std::size_t startOffset, const double minIdentProba, std::size_t sizeIds);
+bool orazioDistanceRobust( std::vector<std::list<double> > & vScore, const RadiusRatioBank & rrBank, const std::vector<popart::ImageCut> & cuts, const std::size_t startOffset, const double minIdentProba, std::size_t sizeIds);
 
 
 /**
@@ -121,7 +121,7 @@ bool orazioDistanceRobust( std::vector<std::list<double> > & vScore, const Radiu
  * @param end ?
  */
 
-void extractSignalUsingHomography( rom::ImageCut & rectifiedSig, const boost::gil::gray8_view_t & sourceView, rom::numerical::BoundedMatrix3x3d & mH, const std::size_t n = 100, const double begin = 0.0, const double end = 1.0 );
+void extractSignalUsingHomography( popart::ImageCut & rectifiedSig, const boost::gil::gray8_view_t & sourceView, popart::numerical::BoundedMatrix3x3d & mH, const std::size_t n = 100, const double begin = 0.0, const double end = 1.0 );
 
 
 /**
@@ -134,7 +134,7 @@ void extractSignalUsingHomography( rom::ImageCut & rectifiedSig, const boost::gi
  * @param[in] n number of steps
  */
 
-std::size_t cutInterpolated( rom::ImageCut & cut, const boost::gil::gray8_view_t & sView, const rom::Point2dN<double> & pStart, const rom::Point2dN<double> & pStop, const std::size_t nSteps );
+std::size_t cutInterpolated( popart::ImageCut & cut, const boost::gil::gray8_view_t & sView, const popart::Point2dN<double> & pStart, const popart::Point2dN<double> & pStop, const std::size_t nSteps );
 
 /**
  * Collect signal from center to external ellipse point
@@ -144,10 +144,10 @@ std::size_t cutInterpolated( rom::ImageCut & cut, const boost::gil::gray8_view_t
  * @param[in] pts points on an external ellipse
  */
 
-void collectCuts( std::vector<rom::ImageCut> & cuts, const boost::gil::gray8_view_t & sourceView, const rom::Point2dN<double> & center, const std::vector< rom::Point2dN<double> > & pts,  const std::size_t sampleCutLength, const std::size_t startOffset );
+void collectCuts( std::vector<popart::ImageCut> & cuts, const boost::gil::gray8_view_t & sourceView, const popart::Point2dN<double> & center, const std::vector< popart::Point2dN<double> > & pts,  const std::size_t sampleCutLength, const std::size_t startOffset );
 
 
-double costSelectCutFun( const std::vector<double> & varCuts, const boost::numeric::ublas::vector<std::size_t> & randomIdx, const std::vector<rom::ImageCut> & collectedCuts, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & dx, const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & dy, const double alpha = 10 );
+double costSelectCutFun( const std::vector<double> & varCuts, const boost::numeric::ublas::vector<std::size_t> & randomIdx, const std::vector<popart::ImageCut> & collectedCuts, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & dx, const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & dy, const double alpha = 10 );
 
 
 /**
@@ -164,7 +164,7 @@ double costSelectCutFun( const std::vector<double> & varCuts, const boost::numer
  * @todo in progress
  */
 
-void selectCut( std::vector< rom::ImageCut > & cutSelection, std::vector< rom::Point2dN<double> > & prSelection, std::size_t selectSize, const std::vector<rom::ImageCut> & collectedCuts, const boost::gil::gray8_view_t& sourceView, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & dx, const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & dy, const double refinedSegSize, const std::size_t numSamplesOuterEdgePointsRefinement, const std::size_t cutsSelectionTrials );
+void selectCut( std::vector< popart::ImageCut > & cutSelection, std::vector< popart::Point2dN<double> > & prSelection, std::size_t selectSize, const std::vector<popart::ImageCut> & collectedCuts, const boost::gil::gray8_view_t& sourceView, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & dx, const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & dy, const double refinedSegSize, const std::size_t numSamplesOuterEdgePointsRefinement, const std::size_t cutsSelectionTrials );
 
 
 
@@ -176,9 +176,9 @@ void selectCut( std::vector< rom::ImageCut > & cutSelection, std::vector< rom::P
  * @param p
  * @return 
  */
-rom::numerical::BoundedMatrix3x3d adjustH( rom::numerical::BoundedMatrix3x3d & mH,
-										   const rom::Point2dN<double> & o,
-										   const rom::Point2dN<double> & p );
+popart::numerical::BoundedMatrix3x3d adjustH( popart::numerical::BoundedMatrix3x3d & mH,
+										   const popart::Point2dN<double> & o,
+										   const popart::Point2dN<double> & p );
 
 /**
  * @brief Get signal
@@ -192,9 +192,9 @@ rom::numerical::BoundedMatrix3x3d adjustH( rom::numerical::BoundedMatrix3x3d & m
  * @param[in] matEllipse
  */
 
-bool getSignals( rom::numerical::BoundedMatrix3x3d & mH, std::vector< rom::ImageCut > & signals, const std::size_t lengthSig, const rom::Point2dN<double> & o, const std::vector< rom::Point2dN<double> > & vecExtPoint, const boost::gil::gray8_view_t & sourceView, const rom::numerical::BoundedMatrix3x3d & matEllipse );
+bool getSignals( popart::numerical::BoundedMatrix3x3d & mH, std::vector< popart::ImageCut > & signals, const std::size_t lengthSig, const popart::Point2dN<double> & o, const std::vector< popart::Point2dN<double> > & vecExtPoint, const boost::gil::gray8_view_t & sourceView, const popart::numerical::BoundedMatrix3x3d & matEllipse );
 
-bool refineConicFamily( CCTag & cctag, std::vector< rom::ImageCut > & fsig, const std::size_t lengthSig, const boost::gil::gray8_view_t& sourceView, const rom::numerical::geometry::Ellipse & ellipse, const std::vector< rom::Point2dN<double> > & pr, const bool useLmDif );
+bool refineConicFamily( CCTag & cctag, std::vector< popart::ImageCut > & fsig, const std::size_t lengthSig, const boost::gil::gray8_view_t& sourceView, const popart::numerical::geometry::Ellipse & ellipse, const std::vector< popart::Point2dN<double> > & pr, const bool useLmDif );
 
 /**
  * Identify a marker (robust way)
@@ -226,6 +226,6 @@ int identify(
 
 } // namespace marker
 } // namespace vision
-} // namespace rom
+} // namespace popart
 
 #endif

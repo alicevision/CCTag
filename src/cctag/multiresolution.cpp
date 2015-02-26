@@ -26,7 +26,7 @@
 #include <cmath>
 #include <sstream>
 
-namespace rom
+namespace popart
 {
 namespace vision
 {
@@ -40,13 +40,13 @@ namespace marker
 
 bool intersectLineToTwoEllipses(
         std::ssize_t y,
-        const rom::numerical::geometry::Ellipse & qIn,
-        const rom::numerical::geometry::Ellipse & qOut,
+        const popart::numerical::geometry::Ellipse & qIn,
+        const popart::numerical::geometry::Ellipse & qOut,
         const EdgePointsImage & edgesMap,
         std::list<EdgePoint*> & pointsInHull)
 {
-  std::vector<double> intersectionsOut = rom::numerical::geometry::intersectEllipseWithLine(qOut, y, true);
-  std::vector<double> intersectionsIn = rom::numerical::geometry::intersectEllipseWithLine(qIn, y, true);
+  std::vector<double> intersectionsOut = popart::numerical::geometry::intersectEllipseWithLine(qOut, y, true);
+  std::vector<double> intersectionsIn = popart::numerical::geometry::intersectEllipseWithLine(qIn, y, true);
   BOOST_ASSERT(intersectionsOut.size() <= 2);
   BOOST_ASSERT(intersectionsIn.size() <= 2);
   if ((intersectionsOut.size() == 2) && (intersectionsIn.size() == 2))
@@ -133,12 +133,12 @@ bool intersectLineToTwoEllipses(
 
 void selectEdgePointInEllipticHull(
         const EdgePointsImage & edgesMap,
-        const rom::numerical::geometry::Ellipse & outerEllipse,
+        const popart::numerical::geometry::Ellipse & outerEllipse,
         double scale,
         std::list<EdgePoint*> & pointsInHull)
 {
-  rom::numerical::geometry::Ellipse qIn, qOut;
-  rom::vision::marker::cctag::computeHull(outerEllipse, scale, qIn, qOut);
+  popart::numerical::geometry::Ellipse qIn, qOut;
+  popart::vision::marker::cctag::computeHull(outerEllipse, scale, qIn, qOut);
 
   const double yCenter = outerEllipse.center().y();
 
@@ -202,7 +202,7 @@ void cctagMultiresDetection(
 
   //	* create all pyramid levels
   gray8_image_t grayImg;
-  gray8_view_t graySrc = rom::img::toGray(srcImg, grayImg);
+  gray8_view_t graySrc = popart::img::toGray(srcImg, grayImg);
 
   cctag::PyramidImage<gray8_view_t> multiresSrc(
           graySrc,
@@ -397,7 +397,7 @@ void cctagMultiresDetection(
 
       double scale = marker.scale(); //std::pow( 2.0, (double)i );
 
-      rom::numerical::geometry::Ellipse rescaledOuterEllipse = marker.rescaledOuterEllipse();
+      popart::numerical::geometry::Ellipse rescaledOuterEllipse = marker.rescaledOuterEllipse();
 
       std::list<EdgePoint*> pointsInHull;
       selectEdgePointInEllipticHull(edgesMap, rescaledOuterEllipse, scale, pointsInHull);
@@ -406,14 +406,14 @@ void cctagMultiresDetection(
 
       double SmFinal = 1e+10;
 
-      rom::vision::marker::cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0);
+      popart::vision::marker::cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0);
 
       // Optional
       //std::vector<EdgePoint*> outerEllipsePointsGrowing;
       //{
-      //rom::vision::marker::cctag::ellipseGrowing( edgesMap, outerEllipsePoints, outerEllipsePointsGrowing, outerEllipse, scale );
+      //popart::vision::marker::cctag::ellipseGrowing( edgesMap, outerEllipsePoints, outerEllipsePointsGrowing, outerEllipse, scale );
       //outerEllipsePoints.clear();
-      //rom::vision::marker::cctag::outlierRemoval( outerEllipsePointsGrowing, outerEllipsePoints, 20.0 ); // PB, move list to vector in this function or inverse in ellipseGrowing @Lilian
+      //popart::vision::marker::cctag::outlierRemoval( outerEllipsePointsGrowing, outerEllipsePoints, 20.0 ); // PB, move list to vector in this function or inverse in ellipseGrowing @Lilian
       //}
 
 
@@ -431,10 +431,10 @@ void cctagMultiresDetection(
           rescaledOuterEllipsePointsDouble.push_back(Point2dN<double>(e->x(), e->y()));
           //pointsCCTag[numCircles - 1].push_back(Point2dN<double>(e->x(), e->y()));
 
-          CCTagVisualDebug::instance().drawPoint(Point2dN<double>(e->x(), e->y()), rom::color_red);
+          CCTagVisualDebug::instance().drawPoint(Point2dN<double>(e->x(), e->y()), popart::color_red);
         }
 
-        marker.setCenterImg(rom::Point2dN<double>(marker.centerImg().getX() * scale, marker.centerImg().getY() * scale));
+        marker.setCenterImg(popart::Point2dN<double>(marker.centerImg().getX() * scale, marker.centerImg().getY() * scale));
         marker.setRescaledOuterEllipse(rescaledOuterEllipse);
         marker.setRescaledOuterEllipsePoints(rescaledOuterEllipsePointsDouble);
       }
@@ -480,9 +480,9 @@ void clearDetectedMarkers(
     const CCTag::List & markers = v.second;
     BOOST_FOREACH( const CCTag & tag, markers )
     {
-      BOOST_FOREACH( const rom::numerical::geometry::Ellipse & ellipse, tag.ellipses() )
+      BOOST_FOREACH( const popart::numerical::geometry::Ellipse & ellipse, tag.ellipses() )
       {
-        rom::numerical::geometry::Ellipse ellipseScaled = ellipse;
+        popart::numerical::geometry::Ellipse ellipseScaled = ellipse;
         // Scale center
         Point2dN<double> c = ellipseScaled.center();
         c.setX( c.x() * factor );
@@ -500,5 +500,5 @@ void clearDetectedMarkers(
 
 } // namespace marker
 } // namespace vision
-} // namespace rom
+} // namespace popart
 

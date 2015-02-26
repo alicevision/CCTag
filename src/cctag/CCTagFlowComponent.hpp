@@ -8,7 +8,7 @@
 #include <boost/foreach.hpp>
 #include <vector>
 
-namespace rom {
+namespace popart {
     namespace vision {
         namespace marker {
 
@@ -19,7 +19,7 @@ namespace rom {
                 CCTagFlowComponent(const std::vector<EdgePoint*> & outerEllipsePoints,
                 const std::list<EdgePoint*> & childrens,
                 const std::vector<EdgePoint*> & filteredChildrens,
-                const rom::numerical::geometry::Ellipse & outerEllipse,
+                const popart::numerical::geometry::Ellipse & outerEllipse,
                 const std::list<EdgePoint*> & convexEdgeSegment,
                 const EdgePoint & seed,
                 std::size_t nCircles);
@@ -30,7 +30,7 @@ namespace rom {
                 void setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens);
 
                 std::vector<EdgePoint> _outerEllipsePoints;
-                rom::numerical::geometry::Ellipse _outerEllipse;
+                popart::numerical::geometry::Ellipse _outerEllipse;
                 std::vector<std::vector<EdgePoint> > _fieldLines;
                 std::vector<std::vector<EdgePoint> > _filteredFieldLines;
                 std::list<EdgePoint> _convexEdgeSegment;

@@ -23,7 +23,7 @@
 #ifndef _CCTAG_ELLIPSE_FIT_WITH_GRADIENTS_H
 #define _CCTAG_ELLIPSE_FIT_WITH_GRADIENTS_H
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace geometry {
 
@@ -31,7 +31,7 @@ void ellipse_fit_with_gradients( double *pts, double *grad, int pts_size,
                                  double **buff, int *size_buff_max,
                                  double *param );
 
-void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, rom::numerical::geometry::Ellipse & ellipse );
+void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, popart::numerical::geometry::Ellipse & ellipse );
 
 }
 }

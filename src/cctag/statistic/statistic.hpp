@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace rom {
+namespace popart {
 namespace numerical {
 
 namespace ublas = boost::numeric::ublas;
@@ -113,7 +113,7 @@ inline double medianRef( V & v )
 
 
 } // namespace numerical
-} // namespace rom
+} // namespace popart
 
 #endif
 

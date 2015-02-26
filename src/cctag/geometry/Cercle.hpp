@@ -14,7 +14,7 @@
 
 #include <cmath>
 
-namespace rom {
+namespace popart {
 namespace numerical {
 namespace geometry {
 
@@ -64,7 +64,7 @@ public:
 
 		bounded_matrix<double, 2, 2> AInv( 2, 2 );
 
-		rom::numerical::invert_2x2( A, AInv );
+		popart::numerical::invert_2x2( A, AInv );
 
 		bounded_vector<double, 2> aux = prec_prod( AInv, bb );
 

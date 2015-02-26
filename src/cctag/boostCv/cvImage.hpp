@@ -11,7 +11,7 @@
 #include <opencv/highgui.h>
 #include <opencv/cxcore.h>
 
-namespace rom {
+namespace popart {
 namespace boostCv {
 
 /**
@@ -156,13 +156,13 @@ inline std::ostream& operator<<( std::ostream& os, const IplImage & image )
 	return os;
 }
 
-inline std::ostream& operator<<( std::ostream& os, const rom::boostCv::CvImageView & image )
+inline std::ostream& operator<<( std::ostream& os, const popart::boostCv::CvImageView & image )
 {
 	os << *image.get();
 	return os;
 }
 
-inline std::ostream& operator<<( std::ostream& os, const rom::boostCv::CvImageContainer & image )
+inline std::ostream& operator<<( std::ostream& os, const popart::boostCv::CvImageContainer & image )
 {
 	os << *image.get();
 	return os;

@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace viewGeometry {
 

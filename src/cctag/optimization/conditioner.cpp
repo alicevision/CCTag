@@ -1,6 +1,6 @@
 #include "conditioner.hpp"
 
-namespace rom {
+namespace popart {
 namespace numerical {
 namespace optimization {
 

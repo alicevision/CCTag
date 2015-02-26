@@ -13,7 +13,7 @@
 #define INV_GRAD_WEIGHT 1
 #define INV_SQRT_GRAD_WEIGHT 2
 
-namespace rom
+namespace popart
 {
 namespace vision
 {

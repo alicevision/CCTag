@@ -1,7 +1,7 @@
 #include "CCTagFlowComponent.hpp"
 #include "global.hpp"
 
-namespace rom {
+namespace popart {
     namespace vision {
         namespace marker {
 
@@ -12,7 +12,7 @@ namespace rom {
                     const std::vector<EdgePoint*> & outerEllipsePoints,
                     const std::list<EdgePoint*> & childrens,
                     const std::vector<EdgePoint*> & filteredChildrens,
-                    const rom::numerical::geometry::Ellipse & outerEllipse,
+                    const popart::numerical::geometry::Ellipse & outerEllipse,
                     const std::list<EdgePoint*> & convexEdgeSegment,
                     const EdgePoint & seed,
                     std::size_t nCircles)

@@ -7,7 +7,7 @@
 
 #include <opencv2/core/types_c.h>
 
-namespace rom {
+namespace popart {
 namespace vision {
 namespace marker {
 
@@ -18,7 +18,7 @@ class IOrientedMarker : public IMarker
 {
 public:
 	IOrientedMarker();
-	IOrientedMarker( const rom::Point2dN<double> & centerImg )
+	IOrientedMarker( const popart::Point2dN<double> & centerImg )
         : IMarker( centerImg )
         {}
 	IOrientedMarker( const IOrientedMarker & m )
@@ -29,7 +29,7 @@ public:
 	virtual IOrientedMarker* clone() const = 0;
 
 public:
-        virtual inline const rom::numerical::BoundedMatrix3x3d & homography() const = 0;
+        virtual inline const popart::numerical::BoundedMatrix3x3d & homography() const = 0;
 
 };
 
