@@ -1,5 +1,5 @@
-#ifndef _CCTAG_VISION_LABELIZER_HPP_
-#define _CCTAG_VISION_LABELIZER_HPP_
+#ifndef _POPART_VISION_LABELIZER_HPP_
+#define _POPART_VISION_LABELIZER_HPP_
 
 #include "EdgePoint.hpp"
 #include "Label.hpp"

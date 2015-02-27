@@ -1,5 +1,5 @@
-#ifndef _CCTAG_VISION_EDGEPOINT_HPP_
-#define _CCTAG_VISION_EDGEPOINT_HPP_
+#ifndef _POPART_VISION_EDGEPOINT_HPP_
+#define _POPART_VISION_EDGEPOINT_HPP_
 
 #include <cctag/geometry/point.hpp>
 

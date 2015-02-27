@@ -1,5 +1,5 @@
-#ifndef _CCTAG_VISION_CCTAG_ELLIPSE_HPP_
-#define _CCTAG_VISION_CCTAG_ELLIPSE_HPP_
+#ifndef _POPART_VISION_CCTAG_ELLIPSE_HPP_
+#define _POPART_VISION_CCTAG_ELLIPSE_HPP_
 
 #include "types.hpp"
 #include "EdgePoint.hpp"

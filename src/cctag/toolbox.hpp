@@ -1,5 +1,5 @@
-#ifndef _CCTAG_VISION_MARKER_TOOLBOX_HPP_
-#define _CCTAG_VISION_MARKER_TOOLBOX_HPP_
+#ifndef _POPART_VISION_MARKER_TOOLBOX_HPP_
+#define _POPART_VISION_MARKER_TOOLBOX_HPP_
 
 #include <list>
 #include <string>
