@@ -1,36 +1,31 @@
-#ifndef _CCTAG_CCTAG_HPP_
-#define _CCTAG_CCTAG_HPP_
+#ifndef _POPART_VISION_MARKER_CCTAG_CCTAG_HPP
+#define _POPART_VISION_MARKER_CCTAG_CCTAG_HPP
 
-#include "modeConfig.hpp"
-
-#include "types.hpp"
-#include "ellipse.hpp"
-#include "Candidate.hpp"
-#include "CCTagFlowComponent.hpp"
-
-#include "geometry/point.hpp"
-#include "algebra/matrix/Matrix.hpp"
-#include "algebra/invert.hpp"
-#include "geometry/Ellipse.hpp"
-#include "types.hpp"
-#include "IOrientedMarker.hpp"
-
-#include "viewGeometry/2DTransform.hpp"
-#include "global.hpp"
-
-#include <opencv2/core/types_c.h>
+#include <cctag/modeConfig.hpp>
+#include <cctag/types.hpp>
+#include <cctag/ellipse.hpp>
+#include <cctag/Candidate.hpp>
+#include <cctag/CCTagFlowComponent.hpp>
+#include <cctag/geometry/point.hpp>
+#include <cctag/algebra/matrix/Matrix.hpp>
+#include <cctag/algebra/invert.hpp>
+#include <cctag/geometry/Ellipse.hpp>
+#include <cctag/types.hpp>
+#include <cctag/IOrientedMarker.hpp>
+#include <cctag/viewGeometry/2DTransform.hpp>
+#include <cctag/global.hpp>
 
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/array.hpp>
 #include <boost/math/constants/constants.hpp>
-//#include <boost/numeric/ublas/matrix.hpp>
-//#include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/fwd.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/archive/text_oarchive.hpp>
+
+#include <opencv2/core/types_c.h>
 
 #include <algorithm>
 #include <cmath>
@@ -286,8 +281,6 @@ public:
   {
     return cctag::isOverlappingEllipses(_rescaledOuterEllipse, marker.rescaledOuterEllipse());
   }
-
-
 
 #ifdef CCTAG_STAT_DEBUG
 

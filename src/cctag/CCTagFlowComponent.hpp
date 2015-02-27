@@ -1,45 +1,49 @@
-#ifndef _CCTAG_CCTAGFLOWCOMPONENT_HPP
-#define	_CCTAG_CCTAGFLOWCOMPONENT_HPP
+#ifndef _POPART_VISION_MARKER_CCTAG_FLOWCOMPONENT_HPP
+#define	_POPART_VISION_MARKER_CCTAG_FLOWCOMPONENT_HPP
 
-#include "EdgePoint.hpp"
-
-#include "geometry/Ellipse.hpp"
+#include <cctag/EdgePoint.hpp>
+#include <cctag/geometry/Ellipse.hpp>
 
 #include <boost/foreach.hpp>
+
 #include <vector>
 
-namespace popart {
-    namespace vision {
-        namespace marker {
+namespace popart
+{
+namespace vision
+{
+namespace marker
+{
 
-            class CCTagFlowComponent {
-            public:
-                CCTagFlowComponent();
+class CCTagFlowComponent
+{
+public:
+  CCTagFlowComponent();
 
-                CCTagFlowComponent(const std::vector<EdgePoint*> & outerEllipsePoints,
-                const std::list<EdgePoint*> & childrens,
-                const std::vector<EdgePoint*> & filteredChildrens,
-                const popart::numerical::geometry::Ellipse & outerEllipse,
-                const std::list<EdgePoint*> & convexEdgeSegment,
-                const EdgePoint & seed,
-                std::size_t nCircles);
-                
-                virtual ~CCTagFlowComponent();
-                
-                void setFieldLines(const std::list<EdgePoint*> & childrens);
-                void setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens);
+  CCTagFlowComponent(const std::vector<EdgePoint*> & outerEllipsePoints,
+                     const std::list<EdgePoint*> & childrens,
+                     const std::vector<EdgePoint*> & filteredChildrens,
+                     const popart::numerical::geometry::Ellipse & outerEllipse,
+                     const std::list<EdgePoint*> & convexEdgeSegment,
+                     const EdgePoint & seed,
+                     std::size_t nCircles);
 
-                std::vector<EdgePoint> _outerEllipsePoints;
-                popart::numerical::geometry::Ellipse _outerEllipse;
-                std::vector<std::vector<EdgePoint> > _fieldLines;
-                std::vector<std::vector<EdgePoint> > _filteredFieldLines;
-                std::list<EdgePoint> _convexEdgeSegment;
-                EdgePoint _seed;
-                std::size_t _nCircles;
-                
-            };
-        }
-    }
+  virtual ~CCTagFlowComponent();
+
+  void setFieldLines(const std::list<EdgePoint*> & childrens);
+  void setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens);
+
+  std::vector<EdgePoint> _outerEllipsePoints;
+  popart::numerical::geometry::Ellipse _outerEllipse;
+  std::vector<std::vector<EdgePoint> > _fieldLines;
+  std::vector<std::vector<EdgePoint> > _filteredFieldLines;
+  std::list<EdgePoint> _convexEdgeSegment;
+  EdgePoint _seed;
+  std::size_t _nCircles;
+
+};
+}
+}
 }
 
 #endif	/* CCTAGFLOWCOMPONENT_HPP */

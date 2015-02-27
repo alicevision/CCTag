@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_CCTAGMARKERSIO_HPP_
-#define	_POPART_VISION_CCTAGMARKERSIO_HPP_
+#ifndef _POPART_VISION_MARKER_CCTAG_MARKERS_BANK_HPP
+#define	_POPART_VISION_MARKER_CCTAG_MARKERS_BANK_HPP
 
 #include <cctag/global.hpp>
 
@@ -15,51 +15,54 @@
 #include <string>
 #include <vector>
 
-namespace popart {
-namespace vision {
-namespace marker {
+namespace popart
+{
+namespace vision
+{
+namespace marker
+{
 
 class CCTagMarkersBank
 {
 public:
-	CCTagMarkersBank( const std::string & file );
-	virtual ~CCTagMarkersBank();
+  CCTagMarkersBank( const std::string & file );
+  virtual ~CCTagMarkersBank();
 
-	void read( const std::string & file );
-	std::size_t identify( const std::vector<double> & marker ) const;
-	inline const std::vector< std::vector<double> > & getMarkers() const
-	{
-		return _markers;
-	}
+  void read( const std::string & file );
+  std::size_t identify( const std::vector<double> & marker ) const;
+  inline const std::vector< std::vector<double> > & getMarkers() const
+  {
+    return _markers;
+  }
 
 private:
-    template <typename Iterator>
-    bool cctagLineParse( Iterator first, Iterator last, std::vector<double>& rr )
+  template <typename Iterator>
+  bool cctagLineParse( Iterator first, Iterator last, std::vector<double>& rr )
+  {
+    double n;
+    using boost::phoenix::ref;
+    using boost::phoenix::push_back;
+    using namespace boost::spirit::qi;
+    using boost::spirit::qi::_1;
+    bool r = phrase_parse( first, last,
+                           //  Begin grammar
+                           (
+                             *( ( (uint_[ boost::phoenix::ref( n ) = _1 ] >> '/' >> uint_[ boost::phoenix::ref( n ) = boost::phoenix::ref( n ) / _1 ]) | double_[ boost::phoenix::ref( n ) = _1 ] )[ push_back( boost::phoenix::ref(rr), boost::phoenix::ref( n ) ) ] )
+                           )
+                           ,
+                           //  End grammar
+                           space );
+
+    if ( first != last )
     {
-		double n;
-		using boost::phoenix::ref;
-		using boost::phoenix::push_back;
-		using namespace boost::spirit::qi;
-		using boost::spirit::qi::_1;
-        bool r = phrase_parse( first, last,
-            //  Begin grammar
-            (
-                *( ( (uint_[ boost::phoenix::ref( n ) = _1 ] >> '/' >> uint_[ boost::phoenix::ref( n ) = boost::phoenix::ref( n ) / _1 ]) | double_[ boost::phoenix::ref( n ) = _1 ] )[ push_back( boost::phoenix::ref(rr), boost::phoenix::ref( n ) ) ] )
-            )
-            ,
-            //  End grammar
-            space );
-
-        if ( first != last )
-		{
-			// fail if we did not get a full match
-            return false;
-		}
-        return r;
+      // fail if we did not get a full match
+      return false;
     }
+    return r;
+  }
 
 private:
-	std::vector< std::vector<double> > _markers;
+  std::vector< std::vector<double> > _markers;
 
 };
 
