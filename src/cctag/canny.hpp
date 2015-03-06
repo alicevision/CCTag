@@ -1,9 +1,9 @@
-#ifndef _POPART_VISION_CCTAG_CANNY_HPP_
-#define _POPART_VISION_CCTAG_CANNY_HPP_
+#ifndef VISION_CCTAG_CANNY_HPP_
+#define VISION_CCTAG_CANNY_HPP_
 
 #include "types.hpp"
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
@@ -22,13 +22,11 @@ class EdgePoint;
 #include <boost/gil/typedefs.hpp>
 #include <vector>
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
 namespace marker
-{
-namespace cctag
 {
 
 
@@ -51,8 +49,6 @@ void cvCanny( boost::gil::rgb32f_view_t & cannyView, const IplImage* srcImage, c
 template<class CView, class DXView, class DYView>
 void edgesPointsFromCanny( std::vector<EdgePoint>& points, EdgePointsImage & edgesMap, CView & cvw, DXView & dx, DYView & dy );
 
-
-}
 }
 }
 }

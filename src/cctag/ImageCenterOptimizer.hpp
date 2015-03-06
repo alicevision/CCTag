@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_IMAGECENTEROPTIMIZER_HPP_
-#define	_POPART_VISION_IMAGECENTEROPTIMIZER_HPP_
+#ifndef VISION_IMAGECENTEROPTIMIZER_HPP_
+#define	VISION_IMAGECENTEROPTIMIZER_HPP_
 
 #include <cctag/global.hpp>
 #include <cctag/geometry/point.hpp>
@@ -20,7 +20,7 @@
 #include <vector>
 
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
@@ -32,8 +32,8 @@ class ImageCenterOptimizer : public OPTPP::FDNLF1
 public:
 	typedef ImageCenterOptimizer This;
 	typedef OPTPP::FDNLF1 Parent;
-	typedef std::vector< popart::Point2dN<double> > VecExtPoints;
-	typedef std::vector< popart::ImageCut > VecSignals;
+	typedef std::vector< cctag::Point2dN<double> > VecExtPoints;
+	typedef std::vector< cctag::ImageCut > VecSignals;
 
 public:
 	ImageCenterOptimizer( const VecExtPoints & vecExtPoints );
@@ -45,7 +45,7 @@ public:
 	 * @param[in] pToRefine initial point to refine
 	 * @return refined 2D point
 	 */
-	Point2dN<double> operator()( const popart::Point2dN<double> & pToRefine, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView, const popart::numerical::geometry::Ellipse & outerEllipse, const popart::numerical::BoundedMatrix3x3d & mT );
+	Point2dN<double> operator()( const cctag::Point2dN<double> & pToRefine, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView, const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT );
 
 	inline void initFcn()
 	{
@@ -69,14 +69,14 @@ private:
 
 private:
 	const VecExtPoints & _vecExtPoints;
-	popart::Point2dN<double> _pToRefine;
+	cctag::Point2dN<double> _pToRefine;
 	std::size_t _lengthSig;
 	boost::gil::gray8_view_t _sView;
-	//popart::numerical::BoundedMatrix3x3d _matEllipse;
-	popart::numerical::geometry::Ellipse _ellipse;
+	//cctag::numerical::BoundedMatrix3x3d _matEllipse;
+	cctag::numerical::geometry::Ellipse _ellipse;
 	std::size_t _numIter;
-	popart::numerical::BoundedMatrix3x3d _mT;
-	popart::numerical::BoundedMatrix3x3d _mInvT;
+	cctag::numerical::BoundedMatrix3x3d _mT;
+	cctag::numerical::BoundedMatrix3x3d _mInvT;
 };
 
 }

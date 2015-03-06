@@ -8,10 +8,9 @@
 #ifndef MISCELLANEOUS_HPP
 #define	MISCELLANEOUS_HPP
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
-namespace cctag {
 
 
                 // todo@Lilian : tout templater
@@ -42,18 +41,17 @@ namespace cctag {
                     std::cout << "]" << std::endl;
                 }
 
-                void coutVPoint(std::vector<popart::Point2dN<double> > vPoint) {
+                void coutVPoint(std::vector<cctag::Point2dN<double> > vPoint) {
 #ifdef DEBUG
                     std::cout << "X = [ ";
 
-                    BOOST_FOREACH(const popart::Point2dN<double> & point, vPoint) {
+                    BOOST_FOREACH(const cctag::Point2dN<double> & point, vPoint) {
                         std::cout << " [" << point.x() << "," << point.y() << "] ;";
                     }
                     std::cout << "]" << std::endl;
 #endif
                 }
 
-}
 }
 }
 }

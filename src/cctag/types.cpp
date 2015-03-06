@@ -1,6 +1,6 @@
 
 #include "types.hpp"
 
-namespace popart {
+namespace cctag {
 namespace vision {}
 }

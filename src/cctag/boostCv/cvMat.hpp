@@ -15,7 +15,7 @@
 
 #include <boost/numeric/ublas/matrix.hpp>
 
-namespace popart {
+namespace cctag {
 namespace boostCv {
 
 	/**
@@ -408,7 +408,7 @@ namespace boostCv {
 	/// @}
 
 	template<typename T, std::size_t S1, std::size_t S2>
-	inline CvMatContainer createCvMatContainer( typename popart::numerical::BoundedMatrix<T,S1,S2>::Type & m )
+	inline CvMatContainer createCvMatContainer( typename cctag::numerical::BoundedMatrix<T,S1,S2>::Type & m )
 	{
 		CvMat *cvm = cvCloneMat( createCvMatView(m).get() );
 		return cvm;
@@ -418,13 +418,13 @@ namespace boostCv {
 }
 
 
-inline std::ostream& operator<<( std::ostream& os, const popart::boostCv::CvMatView & matrix )
+inline std::ostream& operator<<( std::ostream& os, const cctag::boostCv::CvMatView & matrix )
 {
 	os << *(matrix.get());
 	return os;
 }
 
-inline std::ostream& operator<<( std::ostream& os, const popart::boostCv::CvMatContainer & matrix )
+inline std::ostream& operator<<( std::ostream& os, const cctag::boostCv::CvMatContainer & matrix )
 {
 	os << *matrix.get();
 	return os;

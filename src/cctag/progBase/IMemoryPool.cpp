@@ -1,6 +1,6 @@
 #include "IMemoryPool.hpp"
 
-namespace popart {
+namespace cctag {
 
 IUnknown::~IUnknown() {}
 IPoolData::~IPoolData() {}

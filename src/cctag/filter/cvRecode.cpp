@@ -170,7 +170,7 @@ void cvRecodedCannyGPUFilter2D( void* srcarr, void* dstarr, CvMat*& dx, CvMat*& 
     gray32f_view_t vdx = interleaved_view( dx->cols, dx->rows, (gray32f_pixel_t*)dx->data.fl, dx->cols * sizeof(bits32f) );
     gray32f_view_t vdy = interleaved_view( dy->cols, dy->rows, (gray32f_pixel_t*)dy->data.fl, dy->cols * sizeof(bits32f) );
 
-    popart::graphics::cuda::sobel( svw, vdx, vdy, kerneldXi, kerneldYi, divisor );
+    cctag::graphics::cuda::sobel( svw, vdx, vdy, kerneldXi, kerneldYi, divisor );
   }
   //cvShowImage("Sobel", dx);
   //cvWaitKey(0);
@@ -422,8 +422,8 @@ void cvRecodedCannyGPUFilter2D( void* srcarr, void* dstarr, CvMat*& dx, CvMat*& 
 
       /*if(_dst[j])
          {
-          label->push_back(popart::vision::EdgePoint(j, i, _dx[j], _dy[j], label));
-          popart::vision::EdgePoint * p = & label->back() ;
+          label->push_back(cctag::vision::EdgePoint(j, i, _dx[j], _dy[j], label));
+          cctag::vision::EdgePoint * p = & label->back() ;
           p->_label = label;
           labelsMap[j][i] = p;
          }*/

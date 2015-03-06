@@ -1,6 +1,6 @@
 #include "EdgePoint.hpp"
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {

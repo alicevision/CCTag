@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace viewGeometry {
 

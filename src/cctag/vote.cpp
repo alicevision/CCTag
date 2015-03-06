@@ -39,10 +39,9 @@
 #define CONVEXITY_LOST -2
 #define LOW_FLOW -3
 
-namespace popart {
+namespace cctag {
     namespace vision {
         namespace marker {
-            namespace cctag {
 
 /* Brief: Voting procedure. For every edge points, construct the 1st order approximation 
  * of the field line passing through it which consists in a polygonal line whose
@@ -61,7 +60,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         const EdgePointsImage & edgesMap, WinnerMap& winners,
         const boost::gil::kth_channel_view_type<1,boost::gil::rgb32f_view_t>::type & cannyGradX,
         const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
-        const cctag::Parameters & params)
+        const Parameters & params)
 {
     BOOST_FOREACH(EdgePoint & p, points) {
         p._before = gradientDirectionDescent(edgesMap, p, -1, params._distSearch, cannyGradX, cannyGradY, params._thrGradientMagInVote);
@@ -72,7 +71,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
     // todo@Lilian: remove thrVotingAngle from the paramter file
     if (params._angleVoting != 0) {
-        BOOST_THROW_EXCEPTION(popart::exception::Bug() << popart::exception::user() + 
+        BOOST_THROW_EXCEPTION(cctag::exception::Bug() << cctag::exception::user() + 
                 "thrVotingAngle must be equal to 0 or edge points gradients have to be normalized");
     }
 
@@ -99,7 +98,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         if (current) {
             cosDiffTheta = -inner_prod(subrange(p._grad, 0, 2), subrange(current->_grad, 0, 2));
             if (cosDiffTheta >= params._angleVoting) {
-                lastDist = popart::numerical::distancePoints2D(p, *current);
+                lastDist = cctag::numerical::distancePoints2D(p, *current);
                 vDist.push_back(lastDist);
                 
                 // Add the sub-segment length to the total distance.
@@ -119,7 +118,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                     // Check the difference of two consecutive angles
                     cosDiffTheta = -inner_prod(subrange(target->_grad, 0, 2), subrange(current->_grad, 0, 2));
                     if (cosDiffTheta >= params._angleVoting) {
-                        dist = popart::numerical::distancePoints2D(*target, *current);
+                        dist = cctag::numerical::distancePoints2D(*target, *current);
                         vDist.push_back(dist);
                         totalDistance += dist;
 
@@ -143,7 +142,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                             }
                             cosDiffTheta = -inner_prod(subrange(target->_grad, 0, 2), subrange(current->_grad, 0, 2));
                             if (cosDiffTheta >= params._angleVoting) {
-                                dist = popart::numerical::distancePoints2D(*target, *current);
+                                dist = cctag::numerical::distancePoints2D(*target, *current);
                                 vDist.push_back(dist);
                                 totalDistance += dist;
 
@@ -429,7 +428,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             while (cnt < 70)
             {
                 // Random subset of 5 points from pts
-                const std::vector<int> perm = popart::numerical::randperm< std::vector<int> >(n);
+                const std::vector<int> perm = cctag::numerical::randperm< std::vector<int> >(n);
 
                 bounded_matrix<double, 5, 5> A(5, 5);
                 bounded_vector<double, 5> b(5);
@@ -448,7 +447,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
                 bounded_matrix<double, 5, 5> AInv(5, 5);
                 ///@todo what shall we do when invert fails ?
-                if (popart::numerical::invert(A, AInv)) {
+                if (cctag::numerical::invert(A, AInv)) {
                     bounded_vector<double, 5> temp(5);
 
                     temp = prec_prod(AInv, b); // prec_prod ou prod ?
@@ -582,9 +581,9 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         while (cnt < 100)
         {
             // Random subset of 5 points from pts
-            const std::vector<int> perm = popart::numerical::randperm< std::vector<int> >(outerEllipsePoints.size());
+            const std::vector<int> perm = cctag::numerical::randperm< std::vector<int> >(outerEllipsePoints.size());
 
-            std::vector<popart::Point2dN< double > > points;
+            std::vector<cctag::Point2dN< double > > points;
 
             std::vector<int>::const_iterator it = perm.begin();
             for (std::size_t i = 0; i < 4; ++i) {
@@ -592,7 +591,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 ++it;
             }
 
-            const std::vector<int> anotherPerm = popart::numerical::randperm< std::vector<int> >(anotherOuterEllipsePoints.size());
+            const std::vector<int> anotherPerm = cctag::numerical::randperm< std::vector<int> >(anotherOuterEllipsePoints.size());
 
             it = anotherPerm.begin();
             for (std::size_t i = 0; i < 4; ++i) {
@@ -601,7 +600,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             }
 
             numerical::geometry::Ellipse eToto;
-            popart::numerical::geometry::fitEllipse(points, eToto);
+            cctag::numerical::geometry::fitEllipse(points, eToto);
 
             try {
                 
@@ -711,7 +710,6 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         }
         return false;
     }
-}
             
         }
     }

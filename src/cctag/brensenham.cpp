@@ -10,12 +10,12 @@
 
 #include <cmath>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 
-void bresenham( const boost::gil::gray8_view_t & sView, const popart::Point2dN<int>& p, const popart::Point2dN<float>& dir, const std::size_t nmax )
+void bresenham( const boost::gil::gray8_view_t & sView, const cctag::Point2dN<int>& p, const cctag::Point2dN<float>& dir, const std::size_t nmax )
 {
-	popart::Point2dN<int> pStart = p;
+	cctag::Point2dN<int> pStart = p;
 	float e        = 0.0f;
 	float dx       = dir.x();
 	float dy       = dir.y();

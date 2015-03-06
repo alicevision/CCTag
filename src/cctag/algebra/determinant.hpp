@@ -5,7 +5,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/lu.hpp>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 
 namespace ublas = boost::numeric::ublas;

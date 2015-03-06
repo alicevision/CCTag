@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_CCTAG_DETECTION_HPP_
-#define _POPART_VISION_CCTAG_DETECTION_HPP_
+#ifndef VISION_CCTAG_DETECTION_HPP_
+#define VISION_CCTAG_DETECTION_HPP_
 
 #include "CCTag.hpp"
 #include "CCTagMarkersBank.hpp"
@@ -18,21 +18,19 @@
 #include <string>
 #include <vector>
 
-namespace popart {
+namespace cctag {
     namespace vision {
 class EdgePoint;
 class EdgePointImage;
     }  // namespace vision
-}  // namespace popart
+}  // namespace cctag
 
 
-namespace popart {
+namespace cctag {
     namespace vision {
         namespace marker {
 
-void cctagDetection( CCTag::List& markers, const FrameId frame, const boost::gil::rgb8_view_t& svw, const cctag::Parameters & params, const bool bDisplayEllipses = true );
-
-            namespace cctag {
+void cctagDetection( CCTag::List& markers, const FrameId frame, const boost::gil::rgb8_view_t& svw, const Parameters & params, const bool bDisplayEllipses = true );
 
 void cctagDetectionFromEdges(
 		CCTag::List& markers,
@@ -44,14 +42,13 @@ void cctagDetectionFromEdges(
                 const FrameId frame,
                 int pyramidLevel,
                 double scale,
-		const cctag::Parameters & params);
+		const Parameters & params);
 
 void createImageForVoteResultDebug(const boost::gil::gray8_view_t & sourceView, const WinnerMap & winners);
 
-            }  // namespace cctag
         }  // namespace marker
     }  // namespace vision
-}  // namespace popart
+}  // namespace cctag
 
 #endif
 

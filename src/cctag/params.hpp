@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_CCTAG_PARAMS_HPP_
-#define _POPART_VISION_CCTAG_PARAMS_HPP_
+#ifndef VISION_CCTAG_PARAMS_HPP_
+#define VISION_CCTAG_PARAMS_HPP_
 
 #include <boost/math/constants/constants.hpp>
 #include <boost/serialization/access.hpp>
@@ -13,13 +13,11 @@
 #define INV_GRAD_WEIGHT 1
 #define INV_SQRT_GRAD_WEIGHT 2
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
 namespace marker
-{
-namespace cctag
 {
 
 static const std::string kDefaultCCTagBankFilename( "param3.xml" );
@@ -81,40 +79,40 @@ static const std::string kParamSearchForAnotherSegment( "kParamSearchForAnotherS
 static const std::string kParamWriteOutput( "kParamWriteOutput" );
 static const std::string kParamDoIdentification( "kParamDoIdentification" );
 
-static const std::size_t kWeight = INV_GRAD_WEIGHT;
+static const std::size_t kWeight = INV_GRAD_WEIGHT; // todo@L
 
 struct Parameters
 {
   friend class boost::serialization::access;
   Parameters()
-    : _cctagBankFilename( cctag::kDefaultCCTagBankFilename )
-    , _cannyThrLow( cctag::kDefaultCannyThrLow )
-    , _cannyThrHigh( cctag::kDefaultCannyThrHigh )
-    , _distSearch( cctag::kDefaultDistSearch )
-    , _thrGradientMagInVote( cctag::kDefaultThrGradientMagInVote )
-    , _angleVoting( cctag::kDefaultAngleVoting )
-    , _ratioVoting( cctag::kDefaultRatioVoting )
-    , _averageVoteMin( cctag::kDefaultAverageVoteMin )
-    , _thrMedianDistanceEllipse( cctag::kDefaultThrMedianDistanceEllipse )
-    , _maximumNbSeeds( cctag::kDefaultMaximumNbSeeds )
-    , _maximumNbCandidatesLoopTwo( cctag::kDefaultMaximumNbCandidatesLoopTwo )
-    , _numCrowns( cctag::kDefaultNumCrowns )
-    , _minPointsSegmentCandidate( cctag::kDefaultMinPointsSegmentCandidate )
-    , _minVotesToSelectCandidate( cctag::kDefaultMinVotesToSelectCandidate )
-    , _threshRobustEstimationOfOuterEllipse( cctag::kDefaultThreshRobustEstimationOfOuterEllipse )
-    , _ellipseGrowingEllipticHullWidth( cctag::kDefaultEllipseGrowingEllipticHullWidth )
-    , _windowSizeOnInnerEllipticSegment( cctag::kDefaultWindowSizeOnInnerEllipticSegment )
-    , _numberOfMultiresLayers( cctag::kDefaultNumberOfMultiresLayers )
-    , _numberOfProcessedMultiresLayers( cctag::kDefaultNumberOfProcessedMultiresLayers )
-    , _numCutsInIdentStep( cctag::kDefaultNumCutsInIdentStep )
-    , _numSamplesOuterEdgePointsRefinement( cctag::kDefaultNumSamplesOuterEdgePointsRefinement )
-    , _cutsSelectionTrials( cctag::kDefaultCutsSelectionTrials )
-    , _sampleCutLength( cctag::kDefaultSampleCutLength )
-    , _minIdentProba( cctag::kDefaultMinIdentProba )
-    , _useLMDif( cctag::kDefaultUseLMDif )
-    , _searchForAnotherSegment( cctag::kDefaultSearchForAnotherSegment )
-    , _writeOutput( cctag::kDefaultWriteOutput )
-    , _doIdentification( cctag::kDefaultDoIdentification )
+    : _cctagBankFilename( kDefaultCCTagBankFilename )
+    , _cannyThrLow( kDefaultCannyThrLow )
+    , _cannyThrHigh( kDefaultCannyThrHigh )
+    , _distSearch( kDefaultDistSearch )
+    , _thrGradientMagInVote( kDefaultThrGradientMagInVote )
+    , _angleVoting( kDefaultAngleVoting )
+    , _ratioVoting( kDefaultRatioVoting )
+    , _averageVoteMin( kDefaultAverageVoteMin )
+    , _thrMedianDistanceEllipse( kDefaultThrMedianDistanceEllipse )
+    , _maximumNbSeeds( kDefaultMaximumNbSeeds )
+    , _maximumNbCandidatesLoopTwo( kDefaultMaximumNbCandidatesLoopTwo )
+    , _numCrowns( kDefaultNumCrowns )
+    , _minPointsSegmentCandidate( kDefaultMinPointsSegmentCandidate )
+    , _minVotesToSelectCandidate( kDefaultMinVotesToSelectCandidate )
+    , _threshRobustEstimationOfOuterEllipse( kDefaultThreshRobustEstimationOfOuterEllipse )
+    , _ellipseGrowingEllipticHullWidth( kDefaultEllipseGrowingEllipticHullWidth )
+    , _windowSizeOnInnerEllipticSegment( kDefaultWindowSizeOnInnerEllipticSegment )
+    , _numberOfMultiresLayers( kDefaultNumberOfMultiresLayers )
+    , _numberOfProcessedMultiresLayers( kDefaultNumberOfProcessedMultiresLayers )
+    , _numCutsInIdentStep( kDefaultNumCutsInIdentStep )
+    , _numSamplesOuterEdgePointsRefinement( kDefaultNumSamplesOuterEdgePointsRefinement )
+    , _cutsSelectionTrials( kDefaultCutsSelectionTrials )
+    , _sampleCutLength( kDefaultSampleCutLength )
+    , _minIdentProba( kDefaultMinIdentProba )
+    , _useLMDif( kDefaultUseLMDif )
+    , _searchForAnotherSegment( kDefaultSearchForAnotherSegment )
+    , _writeOutput( kDefaultWriteOutput )
+    , _doIdentification( kDefaultDoIdentification )
   {
     _nCircles = 2*_numCrowns;
   }
@@ -194,7 +192,6 @@ struct Parameters
   }
 };
 
-}
 }
 }
 }

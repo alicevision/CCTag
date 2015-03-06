@@ -28,7 +28,7 @@
 #define RAISED_EXCEPTION 12
 #define PASS_ALLTESTS 30
 
-namespace popart {
+namespace cctag {
     namespace vision {
 
         class CCTagFileDebug : public Singleton<CCTagFileDebug> {
@@ -47,11 +47,11 @@ namespace popart {
             void initFlowComponentsIndex(int size);
             void resetFlowComponent();
             void incrementFlowComponentIndex(int n);
-            void setResearchArea(popart::numerical::geometry::Ellipse circularResearchArea);
+            void setResearchArea(cctag::numerical::geometry::Ellipse circularResearchArea);
             void setFlowComponentAssemblingState( bool isAssembled, int indexSelectedFlowComponent);
-            void outputFlowComponentInfos(const popart::vision::marker::CCTagFlowComponent & flowComponent);
+            void outputFlowComponentInfos(const cctag::vision::marker::CCTagFlowComponent & flowComponent);
             
-            void outputMarkerInfos(const popart::vision::marker::CCTag& marker);
+            void outputMarkerInfos(const cctag::vision::marker::CCTag& marker);
 
             void outPutAllSessions() const;
 
@@ -70,7 +70,7 @@ namespace popart {
             // flowComponents index used in detection.
             std::vector<int> _vflowComponentIndex;
             bool _isAssembled;
-            popart::numerical::geometry::Ellipse _researchArea;
+            cctag::numerical::geometry::Ellipse _researchArea;
         };
     }
 }

@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <stdexcept>
 
-namespace popart {
+namespace cctag {
 
 class IUnknown
 {

@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_CCTAG_DETECTION_FAKE_HPP_
-#define _POPART_VISION_CCTAG_DETECTION_FAKE_HPP_
+#ifndef VISION_CCTAG_DETECTION_FAKE_HPP_
+#define VISION_CCTAG_DETECTION_FAKE_HPP_
 
 #include "CCTagFake.hpp"
 #include "CCTagMarkersBank.hpp"
@@ -24,15 +24,15 @@
 #include <string>
 #include <vector>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 class EdgePoint;
 class EdgePointImage;
 }  // namespace vision
-}  // namespace popart
+}  // namespace cctag
 
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
@@ -66,7 +66,7 @@ void cctagDetectionFromEdges(
 } // namespace cctag
 } // namespace marker
 } // namespace vision
-} // namespace popart
+} // namespace cctag
 
 #endif
 

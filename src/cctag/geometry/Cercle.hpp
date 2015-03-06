@@ -14,7 +14,7 @@
 
 #include <cmath>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 namespace geometry {
 
@@ -64,7 +64,7 @@ public:
 
 		bounded_matrix<double, 2, 2> AInv( 2, 2 );
 
-		popart::numerical::invert_2x2( A, AInv );
+		cctag::numerical::invert_2x2( A, AInv );
 
 		bounded_vector<double, 2> aux = prec_prod( AInv, bb );
 

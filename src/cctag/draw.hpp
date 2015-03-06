@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_CCTAG_DRAW_HPP_
-#define _POPART_VISION_CCTAG_DRAW_HPP_
+#ifndef VISION_CCTAG_DRAW_HPP_
+#define VISION_CCTAG_DRAW_HPP_
 
 #include <cctag/CCTag.hpp>
 #include <cctag/geometry/Ellipse.hpp>
@@ -14,15 +14,14 @@
 #include <vector>
 
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
-namespace cctag {
 
 template<class View>
 static bool fillEllipseLine( View& image, const numerical::geometry::Ellipse& ellipse, const typename View::value_type& color, const std::size_t y )
 {
-	std::vector<double> intersections = popart::numerical::geometry::intersectEllipseWithLine( ellipse, y, true );
+	std::vector<double> intersections = numerical::geometry::intersectEllipseWithLine( ellipse, y, true );
 	BOOST_ASSERT( intersections.size() <= 2 );
 	if( intersections.size() == 2 )
 	{
@@ -43,7 +42,7 @@ static bool fillEllipseLine( View& image, const numerical::geometry::Ellipse& el
 template<class View>
 static bool drawEllipseLineIntersections( View& image, const numerical::geometry::Ellipse& ellipse, const typename View::value_type& color, const std::size_t y )
 {
-	std::vector<double> intersections = popart::numerical::geometry::intersectEllipseWithLine( ellipse, y, true );
+	std::vector<double> intersections = numerical::geometry::intersectEllipseWithLine( ellipse, y, true );
 	BOOST_ASSERT( intersections.size() <= 2 );
 	if( intersections.size() == 2 )
 	{
@@ -64,8 +63,6 @@ static bool drawEllipseLineIntersections( View& image, const numerical::geometry
 	return true;
 }
 
-} // namespace cctag
-
             /**
              * @brief Fill image under an ellipse with \param color.
              *
@@ -81,13 +78,13 @@ inline void fillEllipse( View& image, const numerical::geometry::Ellipse& ellips
 	// visit the bottom part of the ellipse
 	for( std::ssize_t y = yCenter; y < image.height(); ++y )
 	{
-		if( ! cctag::fillEllipseLine( image, ellipse, color, y ) )
+		if( ! fillEllipseLine( image, ellipse, color, y ) )
 			break;
 	}
 	// visit the upper part of the ellipse
 	for( std::ssize_t y = yCenter; y > 0; --y )
 	{
-		if( ! cctag::fillEllipseLine( image, ellipse, color, y ) )
+		if( ! fillEllipseLine( image, ellipse, color, y ) )
 			break;
 	}
 }
@@ -96,7 +93,7 @@ template<class View>
 inline void drawEllipse( View& image, const numerical::geometry::Ellipse& ellipse, const typename View::value_type& color )
 {
 	std::vector< Point2dN<int> > vPoint;
-	popart::numerical::geometry::rasterizeEllipse( ellipse, vPoint );
+	numerical::geometry::rasterizeEllipse( ellipse, vPoint );
 
 	BOOST_FOREACH(Point2dN<int> p, vPoint){
 		if( (p.x() >= 0) && (p.x() < image.width()) && (p.y() >= 0) && (p.y() < image.height()) ){
@@ -155,7 +152,7 @@ void drawMarkerOnGilImage(View& image, const CCTag& marker, bool drawScaledMarke
         get_color(pixelCyan, blue_t()) = channel_traits<Channel>::max_value();
 
 
-        popart::numerical::geometry::Ellipse rescaledOuterEllipse;
+        numerical::geometry::Ellipse rescaledOuterEllipse;
 
         // Display ellipses
         if (drawScaledMarker) {
@@ -164,20 +161,20 @@ void drawMarkerOnGilImage(View& image, const CCTag& marker, bool drawScaledMarke
             rescaledOuterEllipse = marker.outerEllipse();
         }
 
-        if (marker.getStatus() == popart::vision::marker::no_collected_cuts) {
+        if (marker.getStatus() == vision::marker::no_collected_cuts) {
             drawEllipse(image, rescaledOuterEllipse, pixelMagenta);
-        }else if (marker.getStatus() == popart::vision::marker::no_selected_cuts) {
+        }else if (marker.getStatus() == vision::marker::no_selected_cuts) {
             drawEllipse(image, rescaledOuterEllipse, pixelCyan);
-        }else if(marker.getStatus() == popart::vision::marker::opti_has_diverged){
+        }else if(marker.getStatus() == vision::marker::opti_has_diverged){
             drawEllipse(image, rescaledOuterEllipse, pixelRed);
-        }else if(marker.getStatus() == popart::vision::marker::id_not_reliable){
+        }else if(marker.getStatus() == vision::marker::id_not_reliable){
             drawEllipse(image, rescaledOuterEllipse, pixelCyan);
-        }else if(marker.getStatus() == popart::vision::marker::id_reliable){
+        }else if(marker.getStatus() == vision::marker::id_reliable){
             drawEllipse(image, rescaledOuterEllipse, pixelGreen);
         }else if(marker.getStatus() == 0 ){
             drawEllipse(image, rescaledOuterEllipse, pixelGreen);
         }
-            //BOOST_FOREACH(const popart::numerical::geometry::Ellipse & ellipse, marker.ellipses() )
+            //BOOST_FOREACH(const cctag::numerical::geometry::Ellipse & ellipse, marker.ellipses() )
             //{
             //	drawEllipse( image, ellipse, pixelGreen );
             //}
@@ -223,6 +220,6 @@ void drawMarkersOnGilImage(View& image, const CCTag::Vector& markers)
 
 } // namespace marker
 } // namespace vision
-} // namespace popart
+} // namespace cctag
 
 #endif

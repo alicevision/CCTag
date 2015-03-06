@@ -3,7 +3,7 @@
 #include <cctag/geometry/point.hpp>
 #include <cctag/global.hpp>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 namespace geometry {
 

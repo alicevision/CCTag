@@ -32,20 +32,18 @@
 #include <cmath>
 #include <iostream>
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
 namespace marker
 {
-namespace cctag
-{
 
-bool initMarkerCenter(popart::Point2dN<double> & markerCenter,
+bool initMarkerCenter(cctag::Point2dN<double> & markerCenter,
         const std::vector< std::vector< Point2dN<double> > > & markerPoints,
         int realPixelPerimeter)
 {
-  popart::numerical::geometry::Ellipse innerEllipse;
+  cctag::numerical::geometry::Ellipse innerEllipse;
   std::size_t nbEllipse = markerPoints.size();
 
   try
@@ -58,7 +56,7 @@ bool initMarkerCenter(popart::Point2dN<double> & markerCenter,
 
         BOOST_FOREACH(Point2dN<double> pt, markerPoints[0])
         {
-          CCTagVisualDebug::instance().drawPoint(pt, popart::color_red);
+          CCTagVisualDebug::instance().drawPoint(pt, cctag::color_red);
         }
       }
       else
@@ -83,13 +81,13 @@ bool initMarkerCenter(popart::Point2dN<double> & markerCenter,
 
 bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens,
         const std::vector< EdgePoint* > & outerEllipsePoints,
-        const popart::numerical::geometry::Ellipse& outerEllipse,
+        const cctag::numerical::geometry::Ellipse& outerEllipse,
         std::vector< std::vector< Point2dN<double> > >& cctagPoints,
         std::size_t numCircles)
 {
   using namespace boost::numeric::ublas;
 
-  //popart::numerical::geometry::Ellipse innerBoundEllipse(outerEllipse.center(), outerEllipse.a()/8.0, outerEllipse.b()/8.0, outerEllipse.angle());
+  //cctag::numerical::geometry::Ellipse innerBoundEllipse(outerEllipse.center(), outerEllipse.a()/8.0, outerEllipse.b()/8.0, outerEllipse.angle());
   cctagPoints.resize(numCircles);
 
   std::vector< std::vector< Point2dN<double> > >::reverse_iterator itp = cctagPoints.rbegin();
@@ -268,8 +266,8 @@ numerical::geometry::Cercle computeCircleFromOuterEllipsePoints(const std::vecto
   //l = [l;1];
 
   // TODO inversion d'une matrice 2x2
-  popart::numerical::invert_2x2(mL, mLInv);
-  //popart::toolbox::matrixInvert(mL, mLInv);
+  cctag::numerical::invert_2x2(mL, mLInv);
+  //cctag::toolbox::matrixInvert(mL, mLInv);
   bounded_vector<double, 2> aux = prec_prod(mLInv, minones);
   bounded_vector<double, 3> l(3);
   l(0) = aux(0);
@@ -282,16 +280,16 @@ numerical::geometry::Cercle computeCircleFromOuterEllipsePoints(const std::vecto
 
   const EdgePoint * pMax = filteredChildrens.front();
   double distMax = std::min(
-                    popart::numerical::distancePoints2D((Point2dN<int>)(*pMax), p1),
-                    popart::numerical::distancePoints2D((Point2dN<int>)(*pMax), p2));
+                    cctag::numerical::distancePoints2D((Point2dN<int>)(*pMax), p1),
+                    cctag::numerical::distancePoints2D((Point2dN<int>)(*pMax), p2));
 
   double dist;
 
   BOOST_FOREACH(const EdgePoint * const e, filteredChildrens)
   {
     dist = std::min(
-            popart::numerical::distancePoints2D((Point2dN<int>)(*e), p1),
-            popart::numerical::distancePoints2D((Point2dN<int>)(*e), p2));
+            cctag::numerical::distancePoints2D((Point2dN<int>)(*e), p1),
+            cctag::numerical::distancePoints2D((Point2dN<int>)(*e), p2));
 
     if (dist > distMax)
     {
@@ -303,7 +301,7 @@ numerical::geometry::Cercle computeCircleFromOuterEllipsePoints(const std::vecto
   //ROM_COUT_VAR_DEBUG(std::abs( inner_prod( *( filteredChildrens[iMax] ), l ) ) / normL);
 
   Point2dN<double> equiPoint;
-  double distanceToAdd = popart::numerical::distancePoints2D(p1, p2) / 50; // match to the max/min of semi-axis ratio for an outer ellipse of a flow candidate
+  double distanceToAdd = cctag::numerical::distancePoints2D(p1, p2) / 50; // match to the max/min of semi-axis ratio for an outer ellipse of a flow candidate
 
   if (std::abs(inner_prod(*pMax, l)) / normL < 1e-6)
   {
@@ -408,13 +406,13 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
 void computeHull(const numerical::geometry::Ellipse& ellipse, double delta,
         numerical::geometry::Ellipse& qIn, numerical::geometry::Ellipse& qOut)
 {
-  qIn = numerical::geometry::Ellipse(popart::Point2dN<double>(
+  qIn = numerical::geometry::Ellipse(cctag::Point2dN<double>(
           ellipse.center().x(),
           ellipse.center().y()),
           std::max(ellipse.a() - delta, 0.001),
           std::max(ellipse.b() - delta, 0.001),
           ellipse.angle());
-  qOut = numerical::geometry::Ellipse(popart::Point2dN<double>(ellipse.center().x(),
+  qOut = numerical::geometry::Ellipse(cctag::Point2dN<double>(ellipse.center().x(),
           ellipse.center().y()),
           ellipse.a() + delta,
           ellipse.b() + delta,
@@ -644,7 +642,6 @@ void writeMatrix(const CvMat* M, FILE * pFile)
   fprintf(pFile, "\n");
 }
 
-}
 }
 }
 }

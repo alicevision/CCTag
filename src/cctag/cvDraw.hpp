@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_CCTAG_CVDRAW_HPP_
-#define _POPART_VISION_CCTAG_CVDRAW_HPP_
+#ifndef VISION_CCTAG_CVDRAW_HPP_
+#define VISION_CCTAG_CVDRAW_HPP_
 
 #include "CCTag.hpp"
 
@@ -11,7 +11,7 @@
 
 #include <vector>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 

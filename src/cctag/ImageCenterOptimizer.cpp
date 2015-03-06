@@ -22,7 +22,7 @@
 #include <cmath>
 #include <ostream>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
@@ -63,16 +63,16 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 
 	This *this_ptr = static_cast<This*>( objPtr );
 
-	popart::Point2dN<double> centerExtEllipse( x(1), x(2) );
+	cctag::Point2dN<double> centerExtEllipse( x(1), x(2) );
 
-	popart::numerical::optimization::condition(centerExtEllipse, this_ptr->_mInvT);
+	cctag::numerical::optimization::condition(centerExtEllipse, this_ptr->_mInvT);
 
 	//ROM_TCOUT_VAR( centerExtEllipse );
 
-	//CCTagVisualDebug::instance().drawText( centerExtEllipse, boost::lexical_cast<std::string>(this_ptr->_numIter), popart::color_white );
-	CCTagVisualDebug::instance().drawPoint( centerExtEllipse, popart::color_blue );
+	//CCTagVisualDebug::instance().drawText( centerExtEllipse, boost::lexical_cast<std::string>(this_ptr->_numIter), cctag::color_white );
+	CCTagVisualDebug::instance().drawPoint( centerExtEllipse, cctag::color_blue );
 
-	popart::numerical::BoundedMatrix3x3d mH;
+	cctag::numerical::BoundedMatrix3x3d mH;
 	VecSignals vecSig;
 	if ( !getSignals( mH, vecSig, this_ptr->_lengthSig, centerExtEllipse, this_ptr->_vecExtPoints, this_ptr->_sView, this_ptr->_ellipse.matrix() ) )
 	{
@@ -95,7 +95,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 	++this_ptr->_numIter;
 
 	//double penalty = 0;
-	//double distanceToCentre = popart::numerical::distancePoints2D( centerExtEllipse, this_ptr->_ellipse.center() );
+	//double distanceToCentre = cctag::numerical::distancePoints2D( centerExtEllipse, this_ptr->_ellipse.center() );
 	//if ( distanceToCentre > 0.2*std::min(this_ptr->_ellipse.a(), this_ptr->_ellipse.b()) )
 	//{
 	//	penalty += 1000000*distanceToCentre/std::min(this_ptr->_ellipse.a(), this_ptr->_ellipse.b());
@@ -105,7 +105,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 	result = NLPFunction;
 }
 
-Point2dN<double> ImageCenterOptimizer::operator()( const popart::Point2dN<double> & pToRefine, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView, const popart::numerical::geometry::Ellipse & outerEllipse, const popart::numerical::BoundedMatrix3x3d & mT)
+Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double> & pToRefine, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView, const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT)
 {
 	using namespace OPTPP;
 	using namespace NEWMAT;
@@ -114,7 +114,7 @@ Point2dN<double> ImageCenterOptimizer::operator()( const popart::Point2dN<double
 
 	//  Create a Nonlinear problem object
 	_pToRefine = pToRefine;
-	popart::numerical::optimization::condition(_pToRefine, mT);
+	cctag::numerical::optimization::condition(_pToRefine, mT);
 	
 	_lengthSig = lengthSig;
 	_sView = sView;
@@ -123,7 +123,7 @@ Point2dN<double> ImageCenterOptimizer::operator()( const popart::Point2dN<double
 	// 2D conditioning matrix
 	_mT = mT;
 	
-	popart::numerical::invert_3x3(mT,_mInvT);
+	cctag::numerical::invert_3x3(mT,_mInvT);
 
 	OptQNewton objfcn( this );
 
@@ -149,7 +149,7 @@ Point2dN<double> ImageCenterOptimizer::operator()( const popart::Point2dN<double
 	res.setX( x_sol( 1 ) );
 	res.setY( x_sol( 2 ) );
 
-	popart::numerical::optimization::condition(res, _mInvT);
+	cctag::numerical::optimization::condition(res, _mInvT);
 
 	objfcn.cleanup();
 

@@ -11,11 +11,11 @@
 #include <OptQNewton.h>
 #include <newmat.h>
 
-namespace popart {
+namespace cctag {
 struct ImageCut;
 }
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
@@ -29,7 +29,7 @@ public:
 	typedef OPTPP::FDNLF1 Parent;
 
 public:
-	SubPixEdgeOptimizer( const popart::ImageCut & line );
+	SubPixEdgeOptimizer( const cctag::ImageCut & line );
 
 	/**
 	 * @brief Do optimization.
@@ -63,7 +63,7 @@ private:
 	static void subPix( int n, const NEWMAT::ColumnVector& x, double& fx, int& result, void* );
 
 private:
-	const popart::ImageCut & _line;
+	const cctag::ImageCut & _line;
 	double _a, _b;
 	double _widthContour;
 	double _xp;

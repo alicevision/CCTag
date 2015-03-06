@@ -1,6 +1,6 @@
 #include "IOrientedMarker.hpp"
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 

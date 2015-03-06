@@ -7,7 +7,7 @@
 
 #include <cminpack.h>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
@@ -21,17 +21,17 @@ LMImageCenterOptimizer::~LMImageCenterOptimizer()
 
 double LMImageCenterOptimizer::operator()( CCTag & cctagToRefine )
 {
-	using namespace popart::numerical;
+	using namespace cctag::numerical;
 	// La transformation T ramène tous les points dans le "rectangle unité"
 	ublas::bounded_matrix<double, 3, 3> T = optimization::conditionerFromPoints( cctagToRefine.points()[cctagToRefine.points().size() - 1] );
 	ublas::bounded_matrix<double, 3, 3> TInv;
-	popart::numerical::invert( T, TInv );
+	cctag::numerical::invert( T, TInv );
 
 	// Conditionne le marqueur avant la minimisation
 	cctagToRefine.condition( T, TInv );
 
 	// Calcul du centre de gravité de points(0)
-	ublas::bounded_vector<double, 3> o = popart::numerical::mean( cctagToRefine.points()[0] );
+	ublas::bounded_vector<double, 3> o = cctag::numerical::mean( cctagToRefine.points()[0] );
 
 	//	std::cout << o << std::endl ;
 
@@ -126,12 +126,12 @@ int LMImageCenterOptimizer::homology( void* p, int m, int n, const double* x, do
 
 		bounded_matrix<double, 3, 3> Q1 = prec_prod( bounded_matrix<double, 3, 3>( trans( GInv ) ), bounded_matrix<double, 3, 3>( prec_prod( Q0, GInv ) ) );
 
-		popart::numerical::geometry::Ellipse l;
+		cctag::numerical::geometry::Ellipse l;
 		l.setMatrix( Q1 );
 
 		BOOST_FOREACH( const Point2dN<double> &p, *itEllipsesPts )
 		{
-			fvec[j] = popart::numerical::distancePointEllipse( p, l, f );
+			fvec[j] = cctag::numerical::distancePointEllipse( p, l, f );
 			++j;
 		}
 		++i;

@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 
 namespace ublas = boost::numeric::ublas;
@@ -113,7 +113,7 @@ inline double medianRef( V & v )
 
 
 } // namespace numerical
-} // namespace popart
+} // namespace cctag
 
 #endif
 

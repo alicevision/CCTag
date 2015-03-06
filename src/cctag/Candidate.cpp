@@ -6,9 +6,3 @@
  */
 
 #include "Candidate.hpp"
-
-namespace popart {
-namespace vision {
-
-
-}}

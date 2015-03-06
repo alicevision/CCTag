@@ -15,13 +15,11 @@
 
 #include <boost/gil/image_view_factory.hpp>
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
 namespace marker
-{
-namespace cctag
 {
 
 template<class SView,
@@ -46,7 +44,7 @@ void cannyCv(
   typedef typename channel_type<GrayView>::type Precision;
 
   boost::posix_time::ptime t1a( boost::posix_time::microsec_clock::local_time() );
-  cctag::cvCanny( cannyRGB, boostCv::CvImageView( srcView ).get(), thrCannyLow, thrCannyHigh );
+  cvCanny( cannyRGB, boostCv::CvImageView( srcView ).get(), thrCannyLow, thrCannyHigh );
   boost::posix_time::ptime t2a( boost::posix_time::microsec_clock::local_time() );
 
   // Thinning
@@ -60,7 +58,7 @@ void cannyCv(
   rect_t procWindowRoWCrop1 = srcRodCrop1;
   rect_t procWindowRoWCrop2 = srcRodCrop2;
   
-  popart::IPoolDataPtr dataTmp = popart::MemoryPool::instance().allocate(
+  IPoolDataPtr dataTmp = MemoryPool::instance().allocate(
           cannyView.width() * cannyView.height() * sizeof(Precision) );
   
   GrayView view_tmp = interleaved_view(
@@ -122,7 +120,6 @@ void edgesPointsFromCanny(
 
 }
 
-}
 }
 }
 }

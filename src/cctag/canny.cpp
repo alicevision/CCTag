@@ -5,13 +5,11 @@
 #include <tuttle/host/InputBufferNode.hpp>
 #endif
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
 namespace marker
-{
-namespace cctag
 {
 
 /**
@@ -78,7 +76,6 @@ void cvCanny(
   }
 }
 
-}
 }
 }
 }

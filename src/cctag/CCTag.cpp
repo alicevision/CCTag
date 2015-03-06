@@ -31,7 +31,7 @@
 #include <cmath>
 #include <iomanip>
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
@@ -39,7 +39,7 @@ namespace marker
 {
 
 namespace ublas = boost::numeric::ublas;
-namespace optimization = popart::numerical::optimization;
+namespace optimization = cctag::numerical::optimization;
 
 // todo@Lilian : used in the initRadiusRatio called in the CCTag constructor. Need to be changed while reading the CCTagBank build from the textFile.
 const boost::array<double, 5> CCTag::_radiusRatiosInit =
@@ -51,27 +51,27 @@ const boost::array<double, 5> CCTag::_radiusRatiosInit =
   (29.0 / 25.0)
 };
 
-void CCTag::condition(const popart::numerical::BoundedMatrix3x3d & mT, const popart::numerical::BoundedMatrix3x3d & mInvT)
+void CCTag::condition(const cctag::numerical::BoundedMatrix3x3d & mT, const cctag::numerical::BoundedMatrix3x3d & mInvT)
 {
-  using namespace popart::numerical::geometry;
+  using namespace cctag::numerical::geometry;
 
   // Condition outer ellipse
   _outerEllipse = _outerEllipse.transform(mInvT);
-  popart::numerical::normalizeDet1(_outerEllipse.matrix());
+  cctag::numerical::normalizeDet1(_outerEllipse.matrix());
 
   // Condition all ellipses
-  BOOST_FOREACH(popart::numerical::geometry::Ellipse & ellipse, _ellipses)
+  BOOST_FOREACH(cctag::numerical::geometry::Ellipse & ellipse, _ellipses)
   {
     ellipse = ellipse.transform(mInvT);
-    popart::numerical::normalizeDet1(ellipse.matrix());
+    cctag::numerical::normalizeDet1(ellipse.matrix());
   }
 
-  BOOST_FOREACH(std::vector<popart::Point2dN<double> > & pts, _points)
+  BOOST_FOREACH(std::vector<cctag::Point2dN<double> > & pts, _points)
   {
-    popart::numerical::optimization::condition(pts, mT);
+    cctag::numerical::optimization::condition(pts, mT);
   }
 
-  popart::numerical::optimization::condition(_centerImg, mT);
+  cctag::numerical::optimization::condition(_centerImg, mT);
 }
 
 void CCTag::scale(const double s)

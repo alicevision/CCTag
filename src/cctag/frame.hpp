@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace popart {
+namespace cctag {
 
 typedef std::size_t FrameId;
 typedef double Time;

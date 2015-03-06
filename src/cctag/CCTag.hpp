@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_MARKER_CCTAG_CCTAG_HPP
-#define _POPART_VISION_MARKER_CCTAG_CCTAG_HPP
+#ifndef VISION_MARKER_CCTAG_CCTAG_HPP
+#define VISION_MARKER_CCTAG_CCTAG_HPP
 
 #include <cctag/modeConfig.hpp>
 #include <cctag/types.hpp>
@@ -32,7 +32,7 @@
 #include <fstream>
 #include <vector>
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
@@ -43,7 +43,7 @@ typedef int MarkerID;
 typedef std::vector< std::pair< MarkerID, double > > IdSet;
 
 namespace ublas = boost::numeric::ublas;
-namespace numerical = popart::numerical;
+namespace numerical = cctag::numerical;
 
 class CCTag : public IOrientedMarker
 {
@@ -54,7 +54,6 @@ public:
   using IMarker::_centerImg;
 
 public:
-  // TODO
 
   CCTag()
     : _id(0)
@@ -65,10 +64,10 @@ public:
   }
 
   CCTag(const MarkerID id,
-        const popart::Point2dN<double> & centerImg,
+        const cctag::Point2dN<double> & centerImg,
         const std::vector< std::vector< Point2dN<double> > > & points,
-        const popart::numerical::geometry::Ellipse & outerEllipse,
-        const popart::numerical::BoundedMatrix3x3d & homography,
+        const cctag::numerical::geometry::Ellipse & outerEllipse,
+        const cctag::numerical::BoundedMatrix3x3d & homography,
         int pyramidLevel,
         double scale,
         const double quality = 1.0)
@@ -82,7 +81,7 @@ public:
     , _scale(scale)
   {
     setInitRadius();
-    popart::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
+    cctag::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
     _status = 0;
   }
 
@@ -117,22 +116,22 @@ public:
     return _nCircles;
   }
 
-  const popart::numerical::BoundedMatrix3x3d & homography() const
+  const cctag::numerical::BoundedMatrix3x3d & homography() const
   {
     return _mHomography;
   }
 
-  popart::numerical::BoundedMatrix3x3d & homography()
+  cctag::numerical::BoundedMatrix3x3d & homography()
   {
     return _mHomography;
   }
 
-  void setHomography(const popart::numerical::BoundedMatrix3x3d & homography)
+  void setHomography(const cctag::numerical::BoundedMatrix3x3d & homography)
   {
     _mHomography = homography;
   }
 
-  const popart::numerical::geometry::Ellipse & outerEllipse() const
+  const cctag::numerical::geometry::Ellipse & outerEllipse() const
   {
     return _outerEllipse;
   }
@@ -197,22 +196,22 @@ public:
     _pyramidLevel = pyramidLevel;
   }
 
-  std::vector<popart::numerical::geometry::Ellipse> & ellipses()
+  std::vector<cctag::numerical::geometry::Ellipse> & ellipses()
   {
     return _ellipses;
   }
 
-  std::vector<popart::numerical::geometry::Ellipse> ellipses() const
+  std::vector<cctag::numerical::geometry::Ellipse> ellipses() const
   {
     return _ellipses;
   }
 
-  void setEllipses(const std::vector<popart::numerical::geometry::Ellipse> ellipses)
+  void setEllipses(const std::vector<cctag::numerical::geometry::Ellipse> ellipses)
   {
     _ellipses = ellipses;
   }
 
-  void setRescaledOuterEllipse(const popart::numerical::geometry::Ellipse & rescaledOuterEllipse)
+  void setRescaledOuterEllipse(const cctag::numerical::geometry::Ellipse & rescaledOuterEllipse)
   {
     _rescaledOuterEllipse = rescaledOuterEllipse;
   }
@@ -222,7 +221,7 @@ public:
     _rescaledOuterEllipsePoints = outerEllipsePoints;
   }
 
-  const popart::numerical::geometry::Ellipse & rescaledOuterEllipse() const
+  const cctag::numerical::geometry::Ellipse & rescaledOuterEllipse() const
   {
     return _rescaledOuterEllipse;
   }
@@ -275,16 +274,16 @@ public:
     return new CCTag(*this);
   }
 
-  void condition(const popart::numerical::BoundedMatrix3x3d & mT, const popart::numerical::BoundedMatrix3x3d & mInvT);
+  void condition(const cctag::numerical::BoundedMatrix3x3d & mT, const cctag::numerical::BoundedMatrix3x3d & mInvT);
 
   bool isOverlapping(const CCTag& marker) const
   {
-    return cctag::isOverlappingEllipses(_rescaledOuterEllipse, marker.rescaledOuterEllipse());
+    return isOverlappingEllipses(_rescaledOuterEllipse, marker.rescaledOuterEllipse());
   }
 
 #ifdef CCTAG_STAT_DEBUG
 
-  void addFlowComponent(const cctag::Candidate & candidate)
+  void addFlowComponent(const Candidate & candidate)
   {
     _flowComponents.push_back(
       CCTagFlowComponent(
@@ -302,10 +301,10 @@ public:
     _flowComponents = flowComponents;
   }
 
-  void setFlowComponents(const std::vector<cctag::Candidate> & candidates)
+  void setFlowComponents(const std::vector<Candidate> & candidates)
   {
 
-    BOOST_FOREACH(const cctag::Candidate & candidate, candidates)
+    BOOST_FOREACH(const Candidate & candidate, candidates)
     {
       addFlowComponent(candidate);
     }
@@ -336,12 +335,12 @@ protected:
   std::size_t _nCircles;
   MarkerID _id;
   IdSet _idSet;
-  popart::numerical::geometry::Ellipse _outerEllipse;
-  popart::numerical::geometry::Ellipse _rescaledOuterEllipse;
+  cctag::numerical::geometry::Ellipse _outerEllipse;
+  cctag::numerical::geometry::Ellipse _rescaledOuterEllipse;
   std::vector< Point2dN<double> > _rescaledOuterEllipsePoints;
-  std::vector<popart::numerical::geometry::Ellipse> _ellipses;
+  std::vector<cctag::numerical::geometry::Ellipse> _ellipses;
   std::vector< std::vector< Point2dN<double> > > _points;
-  popart::numerical::BoundedMatrix3x3d _mHomography;
+  cctag::numerical::BoundedMatrix3x3d _mHomography;
   double _quality;
   int _pyramidLevel;
   double _scale;

@@ -9,7 +9,7 @@
 #include <list>
 
 
-namespace popart {
+namespace cctag {
 namespace vision {
 
 /**

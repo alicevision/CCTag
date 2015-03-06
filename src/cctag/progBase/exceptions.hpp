@@ -58,7 +58,7 @@
 
 
 
-namespace popart {
+namespace cctag {
 
 /**
  * @brief To add quotes around a string.

@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_IORIENTEDMARKER_HPP_
-#define _POPART_VISION_IORIENTEDMARKER_HPP_
+#ifndef VISION_IORIENTEDMARKER_HPP_
+#define VISION_IORIENTEDMARKER_HPP_
 
 #include "IMarker.hpp"
 
@@ -7,7 +7,7 @@
 
 #include <opencv2/core/types_c.h>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
@@ -18,7 +18,7 @@ class IOrientedMarker : public IMarker
 {
 public:
 	IOrientedMarker();
-	IOrientedMarker( const popart::Point2dN<double> & centerImg )
+	IOrientedMarker( const cctag::Point2dN<double> & centerImg )
         : IMarker( centerImg )
         {}
 	IOrientedMarker( const IOrientedMarker & m )
@@ -29,7 +29,7 @@ public:
 	virtual IOrientedMarker* clone() const = 0;
 
 public:
-        virtual inline const popart::numerical::BoundedMatrix3x3d & homography() const = 0;
+        virtual inline const cctag::numerical::BoundedMatrix3x3d & homography() const = 0;
 
 };
 

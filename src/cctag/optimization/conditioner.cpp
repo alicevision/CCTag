@@ -1,6 +1,6 @@
 #include "conditioner.hpp"
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 namespace optimization {
 

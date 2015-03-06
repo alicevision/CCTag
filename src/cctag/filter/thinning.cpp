@@ -1,6 +1,6 @@
 #include "thinning.hpp"
 
-namespace popart {
+namespace cctag {
 namespace img {
 
 void thin( IplImage* inout, IplImage* temp )

@@ -13,7 +13,7 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/foreach.hpp>
 
-namespace popart {
+namespace cctag {
     namespace vision {
         namespace marker {
 
@@ -29,11 +29,11 @@ namespace popart {
 
             void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< Point2dN<double> > > & points);
 
-            void serializeEllipse(boost::archive::text_oarchive & ar, const popart::numerical::geometry::Ellipse & ellipse);
+            void serializeEllipse(boost::archive::text_oarchive & ar, const cctag::numerical::geometry::Ellipse & ellipse);
 
-            void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<popart::numerical::geometry::Ellipse> & ellipses);
+            void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cctag::numerical::geometry::Ellipse> & ellipses);
 
-            void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const popart::numerical::BoundedMatrix3x3d & matrix);
+            void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const cctag::numerical::BoundedMatrix3x3d & matrix);
 
             void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowComponent & flowComponent);
 

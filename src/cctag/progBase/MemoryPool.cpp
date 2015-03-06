@@ -18,7 +18,7 @@
 #include <stdexcept>
 
 
-namespace popart {
+namespace cctag {
 
 IPool::~IPool() {}
 

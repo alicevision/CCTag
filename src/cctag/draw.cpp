@@ -1,9 +1,9 @@
 #include "draw.hpp"
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
 } // namespace marker
 } // namespace vision
-} // namespace popart
+} // namespace cctag

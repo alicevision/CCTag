@@ -5,7 +5,7 @@
 
 #include <boost/array.hpp>
 
-namespace popart {
+namespace cctag {
 
 struct Color : public boost::array<double, 4>
 {

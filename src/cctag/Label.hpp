@@ -1,10 +1,10 @@
-#ifndef _POPART_VISION_LABEL_HPP_
-#define _POPART_VISION_LABEL_HPP_
+#ifndef VISION_LABEL_HPP_
+#define VISION_LABEL_HPP_
 
 #include <cstddef>
 #include <vector>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 
 class LabelEdgePoint;

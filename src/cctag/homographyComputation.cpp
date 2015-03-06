@@ -23,11 +23,11 @@
 #include <vector>
 
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
-void conditionnate( std::pair<popart::vision::marker::CCTag, popart::vision::marker::CCTag> & frameMarkers, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mT, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mInvT )
+void conditionnate( std::pair<cctag::vision::marker::CCTag, cctag::vision::marker::CCTag> & frameMarkers, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mT, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mInvT )
 {
 	frameMarkers.first.condition(mT, mInvT );
 	frameMarkers.second.condition(mT, mInvT );
@@ -42,7 +42,7 @@ void get2CoplanarCircleConstraint( const boost::numeric::ublas::bounded_matrix<d
 	ublas::bounded_matrix<double, 3, 3> v;
 	ublas::diagonal_matrix<double> d;
 	ublas::bounded_matrix<double, 2, 3> S;
-	popart::numerical::eig( e1, e2, v, d );
+	cctag::numerical::eig( e1, e2, v, d );
 
 	ublas::matrix<double> degQuad[3];
 	ublas::vector<double> gVector[3];
@@ -51,17 +51,17 @@ void get2CoplanarCircleConstraint( const boost::numeric::ublas::bounded_matrix<d
 		ublas::bounded_matrix<double, 3, 3> X = e1 - d(s, s) * e2;
 
 		std::size_t s1, s2;
-		signature( X / popart::numerical::normFro( X ), s1, s2 );
+		signature( X / cctag::numerical::normFro( X ), s1, s2 );
 		S( 0, s ) = s1;
 		S( 1, s ) = s2;
 
 		ublas::bounded_matrix<double, 3, 3> uu, vv, ss;
-		popart::numerical::svds( X, uu, vv, ss, s1 + s2 );
+		cctag::numerical::svds( X, uu, vv, ss, s1 + s2 );
 
 		ublas::matrix<double> q = ublas::prod( ublas::prod< ublas::matrix<double> > ( uu, ss ), ublas::trans( vv ) );
-		q = q / popart::numerical::normFro( q );
-		degQuad[s] = q / popart::numerical::normFro( q );
-		gVector[s] = popart::numerical::normalize( ublas::bounded_vector<double, 3>( ublas::column( null( degQuad[s] ), 0 ) ) );
+		q = q / cctag::numerical::normFro( q );
+		degQuad[s] = q / cctag::numerical::normFro( q );
+		gVector[s] = cctag::numerical::normalize( ublas::bounded_vector<double, 3>( ublas::column( null( degQuad[s] ), 0 ) ) );
 	}
         
         int nok1 = 0, nok2 = 0;
@@ -125,8 +125,8 @@ void get2CoplanarCircleConstraint( const boost::numeric::ublas::bounded_matrix<d
             ublas::bounded_matrix<double, 3, 2> L;
             ublas::bounded_matrix<double, 3, 2> R;
             ublas::diagonal_matrix<double> S( 2 );
-            popart::numerical::svds( degQuad[ gvec[ s ] ], L, R, S, 2 );
-            ublas::matrix<double> di = ublas::prod( L, popart::numerical::matSqrt( S ) );
+            cctag::numerical::svds( degQuad[ gvec[ s ] ], L, R, S, 2 );
+            ublas::matrix<double> di = ublas::prod( L, cctag::numerical::matSqrt( S ) );
             ublas::bounded_vector<double, 6> b1, b2;
             b1(0) = di(0, 1) * di(0, 0);
             b1(1) = di(0, 1) * di(1, 0) + di(1, 1) * di(0, 0);
@@ -145,15 +145,15 @@ void get2CoplanarCircleConstraint( const boost::numeric::ublas::bounded_matrix<d
         }
 }
 
-void rectifyHomography2PlanarCC(const popart::numerical::geometry::Ellipse & e11, const popart::numerical::geometry::Ellipse & e21, boost::numeric::ublas::bounded_matrix<double, 3, 3> & mH, const double distMarkers)
+void rectifyHomography2PlanarCC(const cctag::numerical::geometry::Ellipse & e11, const cctag::numerical::geometry::Ellipse & e21, boost::numeric::ublas::bounded_matrix<double, 3, 3> & mH, const double distMarkers)
 {
 	namespace ublas = boost::numeric::ublas;
-	using namespace popart::numerical::geometry;
+	using namespace cctag::numerical::geometry;
 
 	Ellipse mQ11 = e11.transform(mH);
 	Ellipse mQ21 = e21.transform(mH);
 
-	double a = popart::numerical::distancePoints2D(mQ11.center(),mQ21.center()) / ( 6.0 * distMarkers ); // distance entre les 2 marqueurs = 1 dans le repère monde
+	double a = cctag::numerical::distancePoints2D(mQ11.center(),mQ21.center()) / ( 6.0 * distMarkers ); // distance entre les 2 marqueurs = 1 dans le repère monde
 	double rho = boost::math::constants::pi<double>()/2 + mQ11.angle();
 
 	ublas::bounded_matrix<double, 3, 3> mT;
@@ -190,11 +190,11 @@ void rectifyHomography2PlanarCC(const popart::numerical::geometry::Ellipse & e11
 }
 
 
-bool disambiguate(const popart::numerical::geometry::Ellipse & q, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & H)
+bool disambiguate(const cctag::numerical::geometry::Ellipse & q, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & H)
 {
 	namespace ublas = boost::numeric::ublas;
 	using boost::math::constants::pi;
-	using namespace popart::numerical;
+	using namespace cctag::numerical;
 	//Disambiguate
 	Point2dH<double> imP1 = extractEllipsePointAtAngle( q, 0 );
 	Point2dH<double> imP2 = extractEllipsePointAtAngle( q, pi<double>() / 4.0 );
@@ -205,10 +205,10 @@ bool disambiguate(const popart::numerical::geometry::Ellipse & q, const boost::n
 	ublas::column(m3Pt, 1) = imP2;
 	ublas::column(m3Pt, 2) = imP3;
 
-	double detIm3Pt = popart::numerical::det(m3Pt);
+	double detIm3Pt = cctag::numerical::det(m3Pt);
 
 	ublas::bounded_matrix<double, 3, 3> invH;
-	popart::numerical::invert(H,invH);
+	cctag::numerical::invert(H,invH);
 
 	ublas::bounded_vector<double,3> p1( ublas::prec_prod(invH,imP1) );
 	ublas::bounded_vector<double,3> p2( ublas::prec_prod(invH,imP2) );
@@ -218,7 +218,7 @@ bool disambiguate(const popart::numerical::geometry::Ellipse & q, const boost::n
 	ublas::column(m3Pt, 1) = p2;
 	ublas::column(m3Pt, 2) = p3;
 
-	double det3Pt = popart::numerical::det(m3Pt);
+	double det3Pt = cctag::numerical::det(m3Pt);
 
 	return (detIm3Pt*det3Pt < 0);
 }
@@ -228,13 +228,13 @@ bool disambiguate(const popart::numerical::geometry::Ellipse & q, const boost::n
 void homographyFrom2CPlanar( const std::pair<CCTag, CCTag> & cctags, boost::numeric::ublas::bounded_matrix<double, 3, 3> & h )
 {
 	namespace ublas = boost::numeric::ublas;
-	using namespace popart::numerical::geometry;
+	using namespace cctag::numerical::geometry;
 
 	ublas::matrix<double> MM( 21, 6 );
 	ublas::matrix<double> M[3];
 
-	std::vector< popart::numerical::geometry::Ellipse > ellipses1 = cctags.first.ellipses();
-	std::vector< popart::numerical::geometry::Ellipse > ellipses2 = cctags.second.ellipses();
+	std::vector< cctag::numerical::geometry::Ellipse > ellipses1 = cctags.first.ellipses();
+	std::vector< cctag::numerical::geometry::Ellipse > ellipses2 = cctags.second.ellipses();
 	std::size_t sz1 = ellipses1.size();
 	std::size_t sz2 = ellipses2.size();
 	assert( sz1 >= 3 );
@@ -258,7 +258,7 @@ void homographyFrom2CPlanar( const std::pair<CCTag, CCTag> & cctags, boost::nume
 
 	ublas::matrix<double> U, V;
 	ublas::diagonal_matrix<double> S;
-	popart::numerical::svd( MM, U, V, S );
+	cctag::numerical::svd( MM, U, V, S );
 	ublas::vector<double> xTLS = ublas::column( V, MM.size2() - 1 );
 	ublas::bounded_matrix<double, 3, 3> cdcp;
 	ublas::row( cdcp, 0 ) = ublas::subrange( xTLS, 0, 3 );
@@ -271,7 +271,7 @@ void homographyFrom2CPlanar( const std::pair<CCTag, CCTag> & cctags, boost::nume
 	cdcp( 2, 1 ) = xTLS( 4 );
 	cdcp( 2, 2 ) = xTLS( 5 );
 
-	popart::numerical::svd( cdcp, U, V, S );
+	cctag::numerical::svd( cdcp, U, V, S );
 	assert( S.size1() > 2 );
 	S( 0, 0 ) = std::sqrt( S( 0, 0 ) );
 	S( 1, 1 ) = std::sqrt( S( 1, 1 ) );

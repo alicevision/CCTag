@@ -1,6 +1,6 @@
 #include "2DTransform.hpp"
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace viewGeometry {}
 }

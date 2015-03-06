@@ -27,13 +27,13 @@
 #include <fstream>
 #include <vector>
 
-namespace popart {
+namespace cctag {
     namespace numerical {
 
-        double innerProdMin(const std::vector<popart::vision::EdgePoint*>& filteredChildrens, double thrCosDiffMax, Point2dN<int> & p1, Point2dN<int> & p2) {
+        double innerProdMin(const std::vector<cctag::vision::EdgePoint*>& filteredChildrens, double thrCosDiffMax, Point2dN<int> & p1, Point2dN<int> & p2) {
             using namespace boost::numeric;
-            using namespace popart::vision;
-            //using namespace popart::numerical;
+            using namespace cctag::vision;
+            //using namespace cctag::numerical;
 
             EdgePoint* pAngle1 = NULL;
             EdgePoint* pAngle2 = NULL;
@@ -60,7 +60,7 @@ namespace popart {
                 double gx0 = p0->_grad.x() / normGrad;
                 double gy0 = p0->_grad.y() / normGrad;
 
-                std::vector<popart::vision::EdgePoint*>::const_iterator it = ++filteredChildrens.begin();
+                std::vector<cctag::vision::EdgePoint*>::const_iterator it = ++filteredChildrens.begin();
 
                 for (; it != filteredChildrens.end(); ++it) {
                     EdgePoint* pCurrent = *it;
@@ -83,7 +83,7 @@ namespace popart {
                         pAngle1 = pCurrent;
                     }
 
-                    double dist = popart::numerical::distancePoints2D(*p0, *pCurrent);
+                    double dist = cctag::numerical::distancePoints2D(*p0, *pCurrent);
                     if (dist > distMax) {
                         distMax = dist;
                         p1 = *pCurrent;
@@ -120,7 +120,7 @@ namespace popart {
                         pAngle2 = pCurrent;
                     }
 
-                    double dist = popart::numerical::distancePoints2D(p1, (Point2dN<int>)(*pCurrent));
+                    double dist = cctag::numerical::distancePoints2D(p1, (Point2dN<int>)(*pCurrent));
                     if (dist > distMax) {
                         distMax = dist;
                         p2 = *pCurrent;
@@ -131,7 +131,7 @@ namespace popart {
             return min;
         }
 
-        void ellipseFitting(popart::numerical::geometry::Ellipse& e, const std::vector< Point2dN<double> >& points) {
+        void ellipseFitting(cctag::numerical::geometry::Ellipse& e, const std::vector< Point2dN<double> >& points) {
             std::vector<cv::Point2f> cvPoints;
             cvPoints.reserve(points.size());
 
@@ -154,11 +154,11 @@ namespace popart {
             e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
         }
 
-void ellipseFitting( popart::numerical::geometry::Ellipse& e, const std::vector<popart::vision::EdgePoint*>& points )
+void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::vision::EdgePoint*>& points )
 {
 	std::vector<cv::Point2f> cvPoints;
 	cvPoints.reserve( points.size() );
-	BOOST_FOREACH( popart::vision::EdgePoint * p, points )
+	BOOST_FOREACH( cctag::vision::EdgePoint * p, points )
 	{
 		cvPoints.push_back( cv::Point2f( p->x(), p->y() ) );
             }
@@ -178,7 +178,7 @@ void ellipseFitting( popart::numerical::geometry::Ellipse& e, const std::vector<
 	e.setParameters( Point2dN<double>( xC, yC ), a, b, angle );
 }
 
-void circleFitting(popart::numerical::geometry::Ellipse& e, const std::vector<popart::vision::EdgePoint*>& points) {
+void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::vision::EdgePoint*>& points) {
             using namespace boost::numeric;
             
             std::size_t nPoints = points.size();
@@ -201,7 +201,7 @@ void circleFitting(popart::numerical::geometry::Ellipse& e, const std::vector<po
             ublas::matrix<double> V;
             ublas::diagonal_matrix<double> S;
 
-            popart::numerical::svd(A, U, V, S);
+            cctag::numerical::svd(A, U, V, S);
 
 
             //ROM_COUT_VAR(A);
@@ -221,12 +221,12 @@ void circleFitting(popart::numerical::geometry::Ellipse& e, const std::vector<po
             e.setParameters(Point2dN<double>(xC, yC), radius, radius, 0);
         }
 
-void ellipseFitting( popart::numerical::geometry::Ellipse& e, const std::list<popart::vision::EdgePoint*>& points )
+void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cctag::vision::EdgePoint*>& points )
 {
             std::vector<cv::Point2f> cvPoints;
             cvPoints.reserve(points.size());
 
-            BOOST_FOREACH(popart::vision::EdgePoint * p, points) {
+            BOOST_FOREACH(cctag::vision::EdgePoint * p, points) {
                 cvPoints.push_back(cv::Point2f(p->x(), p->y()));
             }
 
@@ -245,7 +245,7 @@ void ellipseFitting( popart::numerical::geometry::Ellipse& e, const std::list<po
             e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
         }
 
-        bool matrixFromFile(const std::string& filename, std::list<popart::vision::EdgePoint>& edgepoints) {
+        bool matrixFromFile(const std::string& filename, std::list<cctag::vision::EdgePoint>& edgepoints) {
             std::ifstream ifs(filename.c_str());
 
             if (!ifs) {
@@ -266,14 +266,14 @@ void ellipseFitting( popart::numerical::geometry::Ellipse& e, const std::list<po
                 std::vector<std::string> xy;
                 boost::split(xy, *it, boost::is_any_of(", "));
                 if (xy.size() == 2) {
-                    edgepoints.push_back(popart::vision::EdgePoint(boost::lexical_cast<int>(xy[0]), boost::lexical_cast<int>(xy[1]), 0, 0));
+                    edgepoints.push_back(cctag::vision::EdgePoint(boost::lexical_cast<int>(xy[0]), boost::lexical_cast<int>(xy[1]), 0, 0));
                 }
             }
 
             return true;
         }
 
-        int discreteEllipsePerimeter(const popart::numerical::geometry::Ellipse& ellipse) {
+        int discreteEllipsePerimeter(const cctag::numerical::geometry::Ellipse& ellipse) {
             namespace ublas = boost::numeric::ublas;
             using namespace std;
 

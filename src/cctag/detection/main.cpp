@@ -29,7 +29,7 @@
 #include <fstream>
 #include <exception>
 
-using namespace popart::vision;
+using namespace cctag::vision;
 using boost::timer;
 
 using namespace boost::gil;
@@ -37,13 +37,13 @@ namespace bfs = boost::filesystem;
 
 static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(popart::FrameId frame, popart::View& view, const std::string & paramsFilename = "")
+void detection(cctag::FrameId frame, cctag::View& view, const std::string & paramsFilename = "")
 {
     POP_ENTER;
     // Process markers detection
     boost::timer t;
     boost::ptr_list<marker::CCTag> markers;
-    popart::vision::marker::cctag::Parameters params;
+    cctag::vision::marker::Parameters params;
     if (paramsFilename != "") {
         std::ifstream ifs(paramsFilename.c_str());
         boost::archive::xml_iarchive ia(ifs);
@@ -58,14 +58,16 @@ void detection(popart::FrameId frame, popart::View& view, const std::string & pa
 
     view.setNumLayers( params._numberOfMultiresLayers );
     
+    ROM_COUT("beforecctagDetection");
     cctagDetection( markers, frame, view._view, params, true );
+    ROM_COUT("aftercctagDetection");
 
     std::cout << "Id : ";
 
     int i = 0;
-    BOOST_FOREACH(const popart::vision::marker::CCTag & marker, markers) {
-        popart::vision::marker::drawMarkerOnGilImage(view._view, marker, false);
-        popart::vision::marker::drawMarkerInfos(view._view, marker, false);
+    BOOST_FOREACH(const cctag::vision::marker::CCTag & marker, markers) {
+        cctag::vision::marker::drawMarkerOnGilImage(view._view, marker, false);
+        cctag::vision::marker::drawMarkerInfos(view._view, marker, false);
 
         if (i == 0) {
             std::cout << marker.id() + 1;
@@ -88,9 +90,9 @@ int main(int argc, char** argv)
 {
     try {
         if (argc <= 1) {
-            BOOST_THROW_EXCEPTION(popart::exception::Bug() << popart::exception::user() + kUsageString);
+            BOOST_THROW_EXCEPTION(cctag::exception::Bug() << cctag::exception::user() + kUsageString);
         }
-        popart::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
+        cctag::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
         const std::string filename(argv[1]);
         std::string paramsFilename;
         if (argc >= 3) {
@@ -108,7 +110,7 @@ int main(int argc, char** argv)
 
         if ((ext == ".png") || (ext == ".jpg")) {
 
-            popart::View my_view( filename );
+            cctag::View my_view( filename );
 
             rgb8_image_t& image = my_view._image;
             rgb8_view_t&  svw   = my_view._view;
@@ -189,7 +191,7 @@ int main(int argc, char** argv)
                     inFilename << argv[3] << "/orig/" << std::setfill('0') << std::setw(5) << frame << ".png";
                     outFilename << argv[3] << "/" << std::setfill('0') << std::setw(5) << frame << ".png";
 
-                    popart::View my_view( inFilename.str() );
+                    cctag::View my_view( inFilename.str() );
                     rgb8_image_t& image      = my_view._image;
                     rgb8_view_t&  sourceView = my_view._view;
 

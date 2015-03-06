@@ -21,13 +21,13 @@
 #include <boost/numeric/ublas/lu.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 
 template<class Matrix>
 bool invert_2x2( const Matrix& A, Matrix& result )
 {
-	double detM = popart::numerical::det(A);//A( 0, 0 ) * A( 1, 1 ) - A( 0, 1 ) * A( 1, 0 );
+	double detM = cctag::numerical::det(A);//A( 0, 0 ) * A( 1, 1 ) - A( 0, 1 ) * A( 1, 0 );
 
 	if( detM == 0 )
 	{
@@ -48,7 +48,7 @@ bool invert_3x3( const Matrix& A, Matrix& result )
 	using namespace boost::numeric::ublas;
 	typedef typename Matrix::value_type T;
         
-	T determinant =  popart::numerical::det(A);
+	T determinant =  cctag::numerical::det(A);
 
 	if( determinant == 0 )
 	{

@@ -3,7 +3,7 @@
 
 #include <cctag/geometry/point.hpp>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
@@ -19,7 +19,7 @@ class IMarker
 {
 public:
 	IMarker();
-	IMarker( const popart::Point2dN<double> & centerImg ): _centerImg( centerImg ) {}
+	IMarker( const cctag::Point2dN<double> & centerImg ): _centerImg( centerImg ) {}
 	IMarker( const IMarker & m );
 	virtual ~IMarker() = 0;
 
@@ -37,12 +37,12 @@ public:
 	/** @brief Set center position in original image
 	 * @param center center position
 	 */
-	void setCenterImg( const popart::Point2dN<double>& center ) { _centerImg = center; }
+	void setCenterImg( const cctag::Point2dN<double>& center ) { _centerImg = center; }
 
 	/** @brief Set center position in the scene
 	 * @param center center position
 	 */
-	void setCenterScene( const popart::Point3d<double>& center ) { _centerScene = center; }
+	void setCenterScene( const cctag::Point3d<double>& center ) { _centerScene = center; }
 
 	/** @brief get marker detection quality
 	 * @return quality reference
@@ -52,17 +52,17 @@ public:
 	/** @brief get center inside 2D image
 	 * @return center 2D position
 	 */
-	const popart::Point2dN<double>& centerImg() const { return _centerImg; }
+	const cctag::Point2dN<double>& centerImg() const { return _centerImg; }
 
 	/** @brief get center inside 2D image
 	 * @return center 2D position
 	 */
-	popart::Point2dN<double>& centerImg() { return _centerImg; }
+	cctag::Point2dN<double>& centerImg() { return _centerImg; }
 
 	/** @brief get center inside 3D scene
 	 * @return center 3D position
 	 */
-	const popart::Point3d<double>& centerScene() const { return _centerScene; }
+	const cctag::Point3d<double>& centerScene() const { return _centerScene; }
 
 	virtual bool hasId() const = 0;
 	virtual MarkerID id() const = 0;
@@ -71,8 +71,8 @@ public:
 	virtual IMarker* clone() const = 0;
 
 protected:
-	popart::Point2dN<double> _centerImg;     ///< Center of the marker inside original image
-	popart::Point3d<double> _centerScene;   ///< Center of the marker inside scene @todo REMOVE THIS !
+	cctag::Point2dN<double> _centerImg;     ///< Center of the marker inside original image
+	cctag::Point3d<double> _centerScene;   ///< Center of the marker inside scene @todo REMOVE THIS !
 	int _quality;                               ///< Marker quality
 };
 

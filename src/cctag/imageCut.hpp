@@ -5,7 +5,7 @@
 
 #include <boost/numeric/ublas/vector.hpp>
 
-namespace popart {
+namespace cctag {
 
 struct ImageCut
 {

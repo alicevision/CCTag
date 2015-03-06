@@ -15,7 +15,7 @@
 #include <boostLapackExtension/ggev.hpp>
 #include <boostLapackExtension/lange.hpp>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 
 	/**

@@ -16,11 +16,11 @@
 #include <cstddef>
 #include <ostream>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
-SubPixEdgeOptimizer::SubPixEdgeOptimizer( const popart::ImageCut & line )
+SubPixEdgeOptimizer::SubPixEdgeOptimizer( const cctag::ImageCut & line )
 : Parent( 4, &SubPixEdgeOptimizer::subPix, NULL, this )
 , _line( line )
 {
@@ -61,7 +61,7 @@ void SubPixEdgeOptimizer::subPix( int n, const NEWMAT::ColumnVector& x, double& 
 
 	This *this_ptr = static_cast<This*>( objPtr );
 
-	const double normDir = popart::numerical::distancePoints2D( this_ptr->_line._start, this_ptr->_line._stop );
+	const double normDir = cctag::numerical::distancePoints2D( this_ptr->_line._start, this_ptr->_line._stop );
 	const double dirx = ( this_ptr->_line._stop.x() - this_ptr->_line._start.x() ) / normDir;
 	const double diry = ( this_ptr->_line._stop.y() - this_ptr->_line._start.y() ) / normDir;
 

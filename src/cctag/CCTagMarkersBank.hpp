@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_MARKER_CCTAG_MARKERS_BANK_HPP
-#define	_POPART_VISION_MARKER_CCTAG_MARKERS_BANK_HPP
+#ifndef VISION_MARKER_CCTAG_MARKERS_BANK_HPP
+#define	VISION_MARKER_CCTAG_MARKERS_BANK_HPP
 
 #include <cctag/global.hpp>
 
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {

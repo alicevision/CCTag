@@ -8,7 +8,7 @@
 
 #include <cctag/global.hpp>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 namespace geometry {
 
@@ -29,13 +29,13 @@ Point2dN<double> extractEllipsePointAtAngle( const Ellipse & ellipse, double the
     return p;
 }
 
-void points( const Ellipse & ellipse, const std::size_t nb, std::vector< popart::Point2dN<double> > & pts )
+void points( const Ellipse & ellipse, const std::size_t nb, std::vector< cctag::Point2dN<double> > & pts )
 {
 	const double step = 2.0 * boost::math::constants::pi<double>() / nb;
 	points( ellipse, nb, step, 2 * boost::math::constants::pi<double>(), pts );
 }
 
-void points( const Ellipse & ellipse, const std::size_t nb, const double phi1, const double phi2, std::vector< popart::Point2dN<double> > & pts )
+void points( const Ellipse & ellipse, const std::size_t nb, const double phi1, const double phi2, std::vector< cctag::Point2dN<double> > & pts )
 {
 	const double step = 2.0 * boost::math::constants::pi<double>() / nb;
 	pts.reserve( std::size_t( ( phi2 - phi1 ) / step ) + 1 );
@@ -45,7 +45,7 @@ void points( const Ellipse & ellipse, const std::size_t nb, const double phi1, c
 	}
 }
 
-void ellipsePoint( const popart::numerical::geometry::Ellipse& ellipse, double theta, popart::numerical::BoundedVector3d& pt )
+void ellipsePoint( const cctag::numerical::geometry::Ellipse& ellipse, double theta, cctag::numerical::BoundedVector3d& pt )
 {
 	const double x = ellipse.a() * cos( theta );
 	const double y = ellipse.b() * sin( theta );
@@ -69,13 +69,13 @@ void computeIntermediatePoints(const Ellipse & ellipse, Point2dN<int> & pt11, Po
 	const double t21 = std::atan2( -a, b );
 	const double t22 = t21 + boost::math::constants::pi<double>();
 
-	popart::numerical::BoundedVector3d v11;
+	cctag::numerical::BoundedVector3d v11;
 	ellipsePoint( ellipse, t11, v11 );
-	popart::numerical::BoundedVector3d v12;
+	cctag::numerical::BoundedVector3d v12;
 	ellipsePoint( ellipse, t12, v12 );
-	popart::numerical::BoundedVector3d v21;
+	cctag::numerical::BoundedVector3d v21;
 	ellipsePoint( ellipse, t21, v21 );
-	popart::numerical::BoundedVector3d v22;
+	cctag::numerical::BoundedVector3d v22;
 	ellipsePoint( ellipse, t22, v22 );
 
 	pt11.setX(boost::math::round( v11( 0 ) ) );

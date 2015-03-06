@@ -19,7 +19,7 @@
 #include <sstream>
 
 
-namespace popart {
+namespace cctag {
 
 class PoolData; ///< forward declaration
 

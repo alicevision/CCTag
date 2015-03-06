@@ -7,7 +7,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 
 typedef boost::numeric::ublas::row_major DefaultStorageOrder;
@@ -17,7 +17,7 @@ typedef boost::numeric::ublas::row_major DefaultStorageOrder;
 //-----------------------------
 // C++-1x solution
 template<typename BaseType>
-typedef boost::numeric::ublas::matrix<BaseType, StorageOrder, boost::numeric::ublas::unbounded_array<BaseType, popart::AlignedAllocator<BaseType> > > Matrix;
+typedef boost::numeric::ublas::matrix<BaseType, StorageOrder, boost::numeric::ublas::unbounded_array<BaseType, cctag::AlignedAllocator<BaseType> > > Matrix;
 
 template<typename T>
 void f( Matrix<T> & m );
@@ -49,7 +49,7 @@ template<typename T, typename SO = DefaultStorageOrder>
 struct Matrix
 {
 	typedef T BaseType;
-	typedef boost::numeric::ublas::unbounded_array<BaseType, popart::AlignedAllocator<BaseType> > StorageType;
+	typedef boost::numeric::ublas::unbounded_array<BaseType, cctag::AlignedAllocator<BaseType> > StorageType;
 	typedef boost::numeric::ublas::matrix<BaseType, SO, StorageType> Type;
 
 	typedef boost::numeric::ublas::shallow_array_adaptor<BaseType>        ShallowStorageType;
@@ -63,7 +63,7 @@ template<class T, std::size_t M, std::size_t N, typename SO = DefaultStorageOrde
 struct BoundedMatrix
 {
 	typedef T BaseType;
-//	typedef boost::numeric::ublas::bounded_array<BaseType, M*N, popart::AlignedAllocator<BaseType> > StorageType;
+//	typedef boost::numeric::ublas::bounded_array<BaseType, M*N, cctag::AlignedAllocator<BaseType> > StorageType;
 	typedef boost::numeric::ublas::bounded_matrix<BaseType, M, N, SO> Type;
 
 private:
@@ -74,7 +74,7 @@ template<typename T>
 struct Vector
 {
 	typedef T BaseType;
-	typedef boost::numeric::ublas::unbounded_array<BaseType, popart::AlignedAllocator<BaseType> > StorageType;
+	typedef boost::numeric::ublas::unbounded_array<BaseType, cctag::AlignedAllocator<BaseType> > StorageType;
 	typedef boost::numeric::ublas::vector<BaseType, StorageType> Type;
 
 	typedef boost::numeric::ublas::shallow_array_adaptor<BaseType>        ShallowStorageType;
@@ -88,7 +88,7 @@ template<typename T, std::size_t S>
 struct BoundedVector
 {
 	typedef T BaseType;
-//	typedef boost::numeric::ublas::bounded_array<BaseType, popart::AlignedAllocator<BaseType> > StorageType;
+//	typedef boost::numeric::ublas::bounded_array<BaseType, cctag::AlignedAllocator<BaseType> > StorageType;
 	typedef boost::numeric::ublas::bounded_vector<BaseType, S> Type;
 
 //	typedef boost::numeric::ublas::shallow_array_adaptor<BaseType>              ShallowStorageType;

@@ -1,7 +1,7 @@
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/global.hpp>
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
@@ -16,7 +16,7 @@ CCTagFlowComponent::CCTagFlowComponent(
   const std::vector<EdgePoint*> & outerEllipsePoints,
   const std::list<EdgePoint*> & childrens,
   const std::vector<EdgePoint*> & filteredChildrens,
-  const popart::numerical::geometry::Ellipse & outerEllipse,
+  const cctag::numerical::geometry::Ellipse & outerEllipse,
   const std::list<EdgePoint*> & convexEdgeSegment,
   const EdgePoint & seed,
   std::size_t nCircles)

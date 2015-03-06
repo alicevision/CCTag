@@ -9,7 +9,7 @@
 #include <boost/foreach.hpp>
 #include <boost/math/special_functions/pow.hpp>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 
 namespace ublas = boost::numeric::ublas;

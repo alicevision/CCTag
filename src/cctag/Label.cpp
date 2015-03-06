@@ -1,7 +1,7 @@
 #include "Label.hpp"
 #include "Labelizer.hpp"
 
-namespace popart {
+namespace cctag {
 namespace vision {
 
 int Label::_counter = 0;

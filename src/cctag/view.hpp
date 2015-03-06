@@ -5,7 +5,7 @@
 #include <boost/gil/image.hpp>
 #include <boost/gil/typedefs.hpp>
 
-namespace popart {
+namespace cctag {
 
 class MultiresolutionCanvas
 {
@@ -63,4 +63,4 @@ public:
     void setNumLayers( size_t num );
 };
 
-} // namespace popart
+} // namespace cctag

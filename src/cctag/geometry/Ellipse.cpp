@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 namespace geometry {
 

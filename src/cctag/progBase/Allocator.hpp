@@ -10,7 +10,7 @@
 #include <iostream>
 #include <limits>
 
-namespace popart {
+namespace cctag {
 
 template<typename T>
 class AlignedAllocator

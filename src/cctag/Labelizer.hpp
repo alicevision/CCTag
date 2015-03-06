@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_LABELIZER_HPP_
-#define _POPART_VISION_LABELIZER_HPP_
+#ifndef VISION_LABELIZER_HPP_
+#define VISION_LABELIZER_HPP_
 
 #include "EdgePoint.hpp"
 #include "Label.hpp"
@@ -27,7 +27,7 @@
 #include <utility>
 #include <vector>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 
 struct LabelEdgePoint : public EdgePoint
@@ -79,7 +79,7 @@ void Labelizer::labelize( SView& svw, CView & cvw, DXView & dx, DYView & dy )
 
 	boost::timer t;
 
-//	boost::multi_array<popart::vision::LabelEdgePoint*, 2> labelsMap;
+//	boost::multi_array<cctag::vision::LabelEdgePoint*, 2> labelsMap;
 
 	/**************************************************************************
 	 *  labelize detected edges and map them with an int id into labelsImage  *
@@ -168,7 +168,7 @@ void Labelizer::findLabels( const SView& cvw, const boost::gil::gray16s_view_t& 
 	int x = 0, y = 0;
 
 	using namespace boost::gil;
-	//using namespace popart::numerical;
+	//using namespace cctag::numerical;
 
 	typedef std::list<LabelEdgePoint> PointList;
 	std::list<PointList> labels;

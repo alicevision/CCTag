@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_CCTAG_MULTIRESOLUTION_HPP_
-#define _POPART_VISION_CCTAG_MULTIRESOLUTION_HPP_
+#ifndef VISION_CCTAG_MULTIRESOLUTION_HPP_
+#define VISION_CCTAG_MULTIRESOLUTION_HPP_
 
 #include "CCTag.hpp"
 #include "params.hpp"
@@ -18,7 +18,7 @@
 #include <cmath>
 #include <vector>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
@@ -35,11 +35,9 @@ struct CCTagParams
  * 
  */
 //template<class View, class GradView>
-void cctagMultiresDetection( CCTag::List& markers, const boost::gil::gray8_view_t& srcImg, const boost::gil::rgb32f_view_t & cannyRGB, const FrameId frame, const cctag::Parameters & params );
+void cctagMultiresDetection( CCTag::List& markers, const boost::gil::gray8_view_t& srcImg, const boost::gil::rgb32f_view_t & cannyRGB, const FrameId frame, const Parameters & params );
 
 void update(CCTag::List& markers, const CCTag& markerToAdd);
-
-namespace cctag {
 
 /**
  * @todo to put outside !!!
@@ -119,14 +117,11 @@ private:
 template<class View>
 void createMultiResolutionImage( PyramidImage<View>& multires, const View& srcImg, const std::size_t nbLevels );
 
-
-} // namespace cctag
-
 void clearDetectedMarkers( const std::map<std::size_t, CCTag::List> & pyramidMarkers, const boost::gil::rgb32f_view_t & cannyRGB, const std::size_t curLevel );
 
 } // namespace marker
 } // namespace vision
-} // namespace popart
+} // namespace cctag
 
 
 #endif

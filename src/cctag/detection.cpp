@@ -2,19 +2,16 @@
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 
-#include "modeConfig.hpp"
-#include "fileDebug.hpp"
-
-#include "ellipse.hpp"
-#include "detection.hpp"
-#include "vote.hpp"
-#include "visualDebug.hpp"
-#include "multiresolution.hpp"
-#include "miscellaneous.hpp"
-#include "ellipseFittingWithGradient.hpp"
-#include "CCTagFlowComponent.hpp"
-
-
+#include <cctag/modeConfig.hpp>
+#include <cctag/fileDebug.hpp>
+#include <cctag/ellipse.hpp>
+#include <cctag/detection.hpp>
+#include <cctag/vote.hpp>
+#include <cctag/visualDebug.hpp>
+#include <cctag/multiresolution.hpp>
+#include <cctag/miscellaneous.hpp>
+#include <cctag/ellipseFittingWithGradient.hpp>
+#include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/frame.hpp>
 #include <cctag/statistic/statistic.hpp>
@@ -45,13 +42,11 @@
 #include <list>
 #include <utility>
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
 namespace marker
-{
-namespace cctag
 {
 
 void constructFlowComponentFromSeed(
@@ -59,7 +54,7 @@ void constructFlowComponentFromSeed(
         const EdgePointsImage& edgesMap,
         WinnerMap & winners, 
         std::list<Candidate> & vCandidateLoopOne,
-        const cctag::Parameters & params)
+        const Parameters & params)
 {
   // Check if the seed has already been processed, i.e. belongs to an already
   // reconstructed flow component.
@@ -115,7 +110,7 @@ void completeFlowComponent(
         const EdgePointsImage& edgesMap,
         std::vector<Candidate> & vCandidateLoopTwo,
         std::size_t & nSegmentOut,
-        const cctag::Parameters & params)
+        const Parameters & params)
 {
   try
   {
@@ -138,7 +133,7 @@ void completeFlowComponent(
       std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
 
       outlierRemoval(childrens, filteredChildrens, SmFinal, 
-              params._threshRobustEstimationOfOuterEllipse, cctag::kWeight);
+              params._threshRobustEstimationOfOuterEllipse, kWeight);
 
       // todo@lilian see the case in outlierRemoval
       // where filteredChildrens.size()==0
@@ -179,7 +174,7 @@ void completeFlowComponent(
       }
 
       std::vector<EdgePoint*> & outerEllipsePoints = candidate._outerEllipsePoints;
-      popart::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
+      cctag::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
 
       bool goodInit = false;
 
@@ -275,7 +270,7 @@ void flowComponentAssembling(
         numerical::geometry::Ellipse & outerEllipse,
         std::vector<EdgePoint*>& outerEllipsePoints,
         std::vector< std::vector< Point2dN<double> > >& cctagPoints,
-        const cctag::Parameters & params
+        const Parameters & params
 #ifndef CCTAG_STAT_DEBUG
         )
 #else
@@ -306,7 +301,7 @@ void flowComponentAssembling(
                 && (anotherCandidate._seed->_flowLength / candidate._seed->_flowLength < 1.5))
         {
           if (isInEllipse(circularResearchArea, 
-                  popart::Point2dN<double>(double(anotherCandidate._seed->x()), double(anotherCandidate._seed->y()))))
+                  cctag::Point2dN<double>(double(anotherCandidate._seed->x()), double(anotherCandidate._seed->y()))))
           {
             if (anotherCandidate._score > score)
             {
@@ -377,7 +372,7 @@ void cctagDetectionFromEdges(
         const FrameId frame,
         int pyramidLevel,
         double scale,
-        const cctag::Parameters & params)
+        const Parameters & params)
 {
   POP_ENTER;
   using namespace boost::gil;
@@ -484,7 +479,7 @@ void cctagDetectionFromEdges(
 
     // Does a copies -- todo@Lilian: find another solution
     std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
-    popart::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
+    cctag::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
     std::vector<EdgePoint*> filteredChildrens = candidate._filteredChildrens;
 
     std::vector< std::vector< Point2dN<double> > > cctagPoints;
@@ -527,7 +522,7 @@ void cctagDetectionFromEdges(
         ROM_COUT_DEBUG("Points inside the outer ellipse and good gradient orientations");
       }
       // Create ellipse with its real size from original image.
-      popart::numerical::geometry::Ellipse rescaleEllipse(outerEllipse.center(), outerEllipse.a() * scale, outerEllipse.b() * scale, outerEllipse.angle());
+      cctag::numerical::geometry::Ellipse rescaleEllipse(outerEllipse.center(), outerEllipse.a() * scale, outerEllipse.b() * scale, outerEllipse.angle());
       
       int realPixelPerimeter = rasterizeEllipsePerimeter(rescaleEllipse);
 
@@ -545,8 +540,8 @@ void cctagDetectionFromEdges(
               continue;
       }*/
 
-      popart::Point2dN<double> markerCenter;
-      popart::numerical::BoundedMatrix3x3d markerHomography;
+      cctag::Point2dN<double> markerCenter;
+      cctag::numerical::BoundedMatrix3x3d markerHomography;
 
       const double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
 
@@ -688,12 +683,10 @@ void createImageForVoteResultDebug(
 #endif
 }
 
-} // namespace cctag
-
 void cctagDetection(CCTag::List& markers,
         const FrameId frame, 
         const boost::gil::rgb8_view_t& srcView,
-        const cctag::Parameters & params,
+        const Parameters & params,
         const bool bDisplayEllipses)
 {
   POP_ENTER;
@@ -709,7 +702,7 @@ void cctagDetection(CCTag::List& markers,
 
   // Grayscale transform
   gray8_image_t grayImg;
-  gray8_view_t graySrc = popart::img::toGray(srcView, grayImg);
+  gray8_view_t graySrc = cctag::img::toGray(srcView, grayImg);
 
   // Views for:
   // canny
@@ -731,7 +724,7 @@ void cctagDetection(CCTag::List& markers,
   // y gradient
   cannyGradY = kth_channel_view<2>(cannyRGB);
 
-  cctag::cannyCv(graySrc, cannyRGB, cannyView, cannyGradX, cannyGradY,
+  cannyCv(graySrc, cannyRGB, cannyView, cannyGradX, cannyGradY,
           params._cannyThrLow, params._cannyThrHigh);
 
   cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
@@ -751,7 +744,7 @@ void cctagDetection(CCTag::List& markers,
     {
       CCTag & cctag = *it;
 
-      const int detected = popart::vision::marker::identify(
+      const int detected = cctag::vision::marker::identify(
               cctag,
               bank.getMarkers(),
               graySrc,
@@ -769,15 +762,15 @@ void cctagDetection(CCTag::List& markers,
 
       try
       {
-        std::vector<popart::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
+        std::vector<cctag::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
 
         bounded_matrix<double, 3, 3> mInvH;
-        popart::numerical::invert(cctag.homography(), mInvH);
+        cctag::numerical::invert(cctag.homography(), mInvH);
 
         BOOST_FOREACH(double radiusRatio, cctag.radiusRatios())
         {
-          popart::numerical::geometry::Cercle circle(1.0 / radiusRatio);
-          ellipses.push_back(popart::numerical::geometry::Ellipse(
+          cctag::numerical::geometry::Cercle circle(1.0 / radiusRatio);
+          ellipses.push_back(cctag::numerical::geometry::Ellipse(
                   prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
         }
 
@@ -810,4 +803,4 @@ void cctagDetection(CCTag::List& markers,
 
 } // namespace marker
 } // namespace vision
-} // namespace popart
+} // namespace cctag

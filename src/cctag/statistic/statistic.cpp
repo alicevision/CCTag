@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 
 }

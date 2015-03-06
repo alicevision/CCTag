@@ -27,17 +27,17 @@
  */
 
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace marker {
 
 
-void optimizeCenterCeres(popart::Point2dN<double> initCenter, const TotoFunctor::VecExtPoints & vecExtPoints, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView,
-  const popart::numerical::geometry::Ellipse & outerEllipse){
+void optimizeCenterCeres(cctag::Point2dN<double> initCenter, const TotoFunctor::VecExtPoints & vecExtPoints, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView,
+  const cctag::numerical::geometry::Ellipse & outerEllipse){
 // The variable to solve for with its initial value. It will be
   // mutated in place by the solver.
 
-//popart::Point2dN<double> initCenter(400,400);
+//cctag::Point2dN<double> initCenter(400,400);
 
 	std::vector<double> x;
 	//x.reserve(2);

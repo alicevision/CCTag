@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_CCTAG_ELLIPSE_HPP_
-#define _POPART_VISION_CCTAG_ELLIPSE_HPP_
+#ifndef VISION_CCTAG_ELLIPSE_HPP_
+#define VISION_CCTAG_ELLIPSE_HPP_
 
 #include "types.hpp"
 #include "EdgePoint.hpp"
@@ -15,7 +15,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace popart
+namespace cctag
 {
 namespace vision
 {
@@ -24,11 +24,8 @@ namespace marker
 
 class CCTag;
 
-namespace cctag
-{
-
 inline bool isInEllipse(
-        const popart::numerical::geometry::Ellipse& ellipse,
+        const cctag::numerical::geometry::Ellipse& ellipse,
         const Point2dN<double> & p)
 {
   using namespace boost::numeric::ublas;
@@ -45,28 +42,28 @@ inline bool isInEllipse(
  * @return
  */
 inline bool isOverlappingEllipses(
-        const popart::numerical::geometry::Ellipse& ellipse1,
-        const popart::numerical::geometry::Ellipse& ellipse2 )
+        const cctag::numerical::geometry::Ellipse& ellipse1,
+        const cctag::numerical::geometry::Ellipse& ellipse2 )
 {
   return ( isInEllipse( ellipse1, ellipse2.center() ) || isInEllipse( ellipse2, ellipse1.center() ) );
 }
 
 bool initMarkerCenter(
-        popart::Point2dN<double> & markerCenter,
+        cctag::Point2dN<double> & markerCenter,
         const std::vector< std::vector< Point2dN<double> > > & markerPoints,
         int realPixelPerimeter);
 
 bool addCandidateFlowtoCCTag(
         const std::vector< EdgePoint* > & filteredChildrens,
         const std::vector< EdgePoint* > & outerEllipsePoints,
-        const popart::numerical::geometry::Ellipse& outerEllipse,
+        const cctag::numerical::geometry::Ellipse& outerEllipse,
         std::vector< std::vector< Point2dN<double> > >& cctagPoints,
         std::size_t numCircles);
 
 bool ellipseGrowingInit(
         std::vector<EdgePoint> & points,
         const std::vector<EdgePoint*>& filteredChildrens,
-        popart::numerical::geometry::Ellipse& ellipse);
+        cctag::numerical::geometry::Ellipse& ellipse);
 
 /** @brief Is a point in an elliptical hull ?
  * @param ellipse ellipse which defines the hull
@@ -75,13 +72,13 @@ bool ellipseGrowingInit(
  * @param ordinate of the tested point
  * @return true if located between qIn and qOut false otherwise
  */
-inline bool isInHull( const popart::numerical::geometry::Ellipse& qIn, const popart::numerical::geometry::Ellipse& qOut, const EdgePoint* p )
+inline bool isInHull( const cctag::numerical::geometry::Ellipse& qIn, const cctag::numerical::geometry::Ellipse& qOut, const EdgePoint* p )
 {
   using namespace boost::numeric;
   return ( ublas::inner_prod( *p, ublas::prec_prod( qIn.matrix(), *p ) ) * ublas::inner_prod( *p, ublas::prec_prod( qOut.matrix(), *p ) ) < 0 ) ;
 }
 
-inline bool isInHull( const popart::numerical::geometry::Ellipse& qIn, const popart::numerical::geometry::Ellipse& qOut, const Point2dN<double> p )
+inline bool isInHull( const cctag::numerical::geometry::Ellipse& qIn, const cctag::numerical::geometry::Ellipse& qOut, const Point2dN<double> p )
 {
   using namespace boost::numeric;
   return ( ublas::inner_prod( p, ublas::prec_prod( qIn.matrix(), p ) ) * ublas::inner_prod( p, ublas::prec_prod( qOut.matrix(), p ) ) < 0 ) ;
@@ -101,20 +98,20 @@ inline bool isOnTheSameSide(const Point2dN<double> & p1, const Point2dN<double> 
  * @param abscissa of the point
  * @param ordinate of the point
  */
-void connectedPoint( std::vector<EdgePoint*>& pts, const int runId, const EdgePointsImage& img, popart::numerical::geometry::Ellipse& qIn, popart::numerical::geometry::Ellipse& qOut, int x, int y );
+void connectedPoint( std::vector<EdgePoint*>& pts, const int runId, const EdgePointsImage& img, cctag::numerical::geometry::Ellipse& qIn, cctag::numerical::geometry::Ellipse& qOut, int x, int y );
 
 /** @brief Compute the hull from ellipse
  * @param ellipse ellipse from which the hull is computed
  * @param delta larger of the hull
  */
-void computeHull( const popart::numerical::geometry::Ellipse& ellipse, double delta, popart::numerical::geometry::Ellipse& qIn, popart::numerical::geometry::Ellipse& qOut );
+void computeHull( const cctag::numerical::geometry::Ellipse& ellipse, double delta, cctag::numerical::geometry::Ellipse& qIn, cctag::numerical::geometry::Ellipse& qOut );
 
 /** @brief Ellipse hull
  * @param[in,out] pts initial points to compute all the points which are in the hull formed by the ellipse
  * which fits pt. New points will be added in pts
  * @param ellipse ellipse is an optionnal parameter if the user decide to choose his hull from an ellipse
  */
-void ellipseHull( const EdgePointsImage& img, std::vector<EdgePoint*>& pts, popart::numerical::geometry::Ellipse& ellipse, double delta );
+void ellipseHull( const EdgePointsImage& img, std::vector<EdgePoint*>& pts, cctag::numerical::geometry::Ellipse& ellipse, double delta );
 
 void readPointsFromFile( char* file, std::vector<EdgePoint* >& pts );
 
@@ -125,17 +122,16 @@ void readPointsFromFile( char* file, std::vector<EdgePoint* >& pts );
  * @param Width of elliptic hull in ellipse growing
  */
 void ellipseGrowing( const EdgePointsImage& img, const std::vector<EdgePoint*>& filteredChildrens,
-                     std::vector<EdgePoint*>& outerEllipsePoints, popart::numerical::geometry::Ellipse& ellipse,
+                     std::vector<EdgePoint*>& outerEllipsePoints, cctag::numerical::geometry::Ellipse& ellipse,
                      const double ellipseGrowingEllipticHullWidth, std::size_t & nSegmentOut, std::size_t & nLabel, bool goodInit);
 
 void ellipseGrowing2( const EdgePointsImage& img, const std::vector<EdgePoint*>& filteredChildrens,
                       std::vector<EdgePoint*>& outerEllipsePoints, numerical::geometry::Ellipse& ellipse,
                       const double ellipseGrowingEllipticHullWidth, std::size_t & nSegmentOut, std::size_t & nLabel, bool goodInit);
 
-} // namespace cctag
 } // namespace marker
 } // namespace vision
-} // namespace popart
+} // namespace cctag
 
 #endif
 

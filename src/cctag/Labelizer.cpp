@@ -4,7 +4,7 @@
 #include <boost/gil/locator.hpp>
 
 
-namespace popart {
+namespace cctag {
 namespace vision {
 
 Labelizer::Labelizer()

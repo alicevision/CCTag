@@ -8,7 +8,7 @@
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/functional/hash.hpp>
 
-namespace popart {
+namespace cctag {
 
 
 /**

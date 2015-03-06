@@ -16,7 +16,7 @@
 #include <boost/gil/extension/io/png_io.hpp>
 #include <boost/filesystem.hpp>
 
-namespace popart {
+namespace cctag {
 
 MultiresolutionCanvas View::_canvas;
 
@@ -189,5 +189,5 @@ void MultiresolutionCanvas::uploadPixels( )
 #endif
 }
 
-} // namespace popart
+} // namespace cctag
 

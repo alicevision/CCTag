@@ -10,7 +10,7 @@
 #include <boost/numeric/bindings/traits/matrix_traits.hpp>
 #include <boost/numeric/bindings/lapack/lapack.hpp>
 
-namespace popart {
+namespace cctag {
 namespace numerical {
 
 /**

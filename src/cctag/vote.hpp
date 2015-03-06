@@ -1,5 +1,5 @@
-#ifndef _POPART_VISION_CCTAG_VOTE_HPP_
-#define _POPART_VISION_CCTAG_VOTE_HPP_
+#ifndef VISION_CCTAG_VOTE_HPP_
+#define VISION_CCTAG_VOTE_HPP_
 
 #include "params.hpp"
 #include "EdgePoint.hpp"
@@ -15,10 +15,9 @@
 #include <vector>
 
 
-namespace popart {
+namespace cctag {
     namespace vision {
         namespace marker {
-            namespace cctag {
 
 
 /* Brief: Voting procedure. For every edge points, construct the 1st order approximation 
@@ -38,7 +37,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         const EdgePointsImage & edgesMap, WinnerMap& winners,
         const boost::gil::kth_channel_view_type<1,boost::gil::rgb32f_view_t>::type & cannyGradX,
         const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
-        const cctag::Parameters & params);
+        const Parameters & params);
  
 /** @brief Retrieve all connected edges.
  * @param[out] convexEdgeSegment
@@ -74,7 +73,6 @@ bool isAnotherSegment( numerical::geometry::Ellipse & outerEllipse, std::vector<
         std::vector< std::vector< Point2dN<double> > >& cctagPoints, std::size_t numCircles,
         double thrMedianDistanceEllipse);
 
-}
 }
 }
 }

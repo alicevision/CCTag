@@ -2,12 +2,12 @@
 
 #include <boost/math/special_functions/sign.hpp>
 
-namespace popart
+namespace cctag
 {
 namespace toolbox
 {
 
-void bresenham( const boost::gil::gray8_view_t & sView, const popart::Point2dN<int>& p, const popart::Point2dN<float>& dir, const std::size_t nmax, ImageCut & cut )
+void bresenham( const boost::gil::gray8_view_t & sView, const cctag::Point2dN<int>& p, const cctag::Point2dN<float>& dir, const std::size_t nmax, ImageCut & cut )
 {
 	float e        = 0.0f;
 	float dx       = dir.x();
@@ -55,7 +55,7 @@ void bresenham( const boost::gil::gray8_view_t & sView, const popart::Point2dN<i
 		    y >= 0 && y < sView.height() )
 		{
 			res.push_back( *sView.xy_at( x, y ) );
-			cut._stop = popart::Point2dN<int>( x, y );
+			cut._stop = cctag::Point2dN<int>( x, y );
 		}
 		else
 		{
@@ -80,7 +80,7 @@ void bresenham( const boost::gil::gray8_view_t & sView, const popart::Point2dN<i
 			    y >= 0 && y < sView.height() )
 			{
 				res.push_back( *sView.xy_at( x, y ) );
-				cut._stop = popart::Point2dN<int>( x, y );
+				cut._stop = cctag::Point2dN<int>( x, y );
 			}
 			else
 			{
@@ -122,7 +122,7 @@ void bresenham( const boost::gil::gray8_view_t & sView, const popart::Point2dN<i
 			y >= 0 && y < sView.height() )
 		{
 			res.push_back( *sView.xy_at( x, y ) );
-			cut._stop = popart::Point2dN<int>( x, y );
+			cut._stop = cctag::Point2dN<int>( x, y );
 		}
 		else
 		{
@@ -146,7 +146,7 @@ void bresenham( const boost::gil::gray8_view_t & sView, const popart::Point2dN<i
 				y >= 0 && y < sView.height() )
 			{
 				res.push_back( *sView.xy_at( x, y ) );
-				cut._stop = popart::Point2dN<int>( x, y );
+				cut._stop = cctag::Point2dN<int>( x, y );
 			}
 			else
 			{

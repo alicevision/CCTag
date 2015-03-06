@@ -30,7 +30,7 @@
 
 #include <boost/numeric/bindings/lapack/syev.hpp>
 
-namespace popart {
+namespace cctag {
 namespace vision {
 namespace geometry {
 
@@ -371,7 +371,7 @@ void ellipse_fit_with_gradients( double *pts, double *grad, int pts_size,
 }
 
 
-void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, popart::numerical::geometry::Ellipse & ellipse ){
+void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, cctag::numerical::geometry::Ellipse & ellipse ){
 
 	std::vector<double> pts;
 	pts.reserve(vPoint.size()*2);
@@ -398,7 +398,7 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, p
                                  &buff, &size_buff_max,
                                  &param[0] );
 
-	ellipse = popart::numerical::geometry::Ellipse(Point2dN<double>(param[0],param[1]), param[2], param[3], param[4]);
+	ellipse = cctag::numerical::geometry::Ellipse(Point2dN<double>(param[0],param[1]), param[2], param[3], param[4]);
 }
 
 }
