@@ -6,7 +6,7 @@ project( CCTag )
 # set the path where we can find the findXXX.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
-set(CMAKE_BUILD_TYPE Debug) # Debug, Release
+set(CMAKE_BUILD_TYPE Release) # Debug, Release
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DGRIFF_DEBUG")
 #set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   -DGRIFF_DEBUG")
 if(APPLE)
@@ -67,7 +67,6 @@ list(APPEND CMAKE_MODULE_PATH "${OpenCV_DIR}")
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
-# link_directories(${OpenCV_LIB_DIR})
 add_definitions(${OpenCV_DEFINITIONS})
 
 # FIND OPTPP
@@ -97,7 +96,7 @@ find_package(PNG REQUIRED)
 # FIND JPEG
 find_package(JPEG REQUIRED)
 
-# FIND JPEG
+# FIND Glog
 find_package(Glog REQUIRED)
 
 # FIND GOMP
