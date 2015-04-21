@@ -37,7 +37,7 @@ namespace bfs = boost::filesystem;
 
 static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(cctag::FrameId frame, cctag::View& view, const std::string & paramsFilename = "")
+void detection(std::size_t frame, cctag::View& view, const std::string & paramsFilename = "")
 {
     POP_ENTER;
     // Process markers detection

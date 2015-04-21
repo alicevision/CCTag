@@ -36,7 +36,7 @@ namespace cctag {
 namespace vision {
 namespace marker {
 
-void cctagDetection( CCTagFake::List& markers, const FrameId frame, const rgb8_view_t& svw, const cctag::Parameters & params, const bool bDisplayEllipses = true )
+void cctagDetection( CCTagFake::List& markers, const std::size_t frame, const rgb8_view_t& svw, const cctag::Parameters & params, const bool bDisplayEllipses = true )
 {
     
 }
@@ -48,7 +48,7 @@ namespace cctag {
 //		std::vector<EdgePoint>& points,
 //		const boost::gil::gray8_view_t& sourceView, const GradView & cannyGradX, const GradView & cannyGradY,
 //		const EdgePointsImage& edgesMap, const CCTagMarkersBank& bank,
-//		const FrameId frame, const std::size_t searchDistance, const double thrVotingAngle, const double thrVotingRatio, const std::size_t numCrowns );
+//		const std::size_t frame, const std::size_t searchDistance, const double thrVotingAngle, const double thrVotingRatio, const std::size_t numCrowns );
 void cctagDetectionFromEdges(
 		CCTagFake::List& markers,
 		std::vector<EdgePoint>& points,
@@ -56,7 +56,7 @@ void cctagDetectionFromEdges(
 		const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX,
 		const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
 		const EdgePointsImage& edgesMap,
-                const FrameId frame,
+                const std::size_t frame,
                 int pyramidLevel,
                 double scale,
 		const cctag::Parameters & params){

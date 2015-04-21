@@ -369,7 +369,7 @@ void cctagDetectionFromEdges(
         const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX,
         const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
         const EdgePointsImage& edgesMap,
-        const FrameId frame,
+        const std::size_t frame,
         int pyramidLevel,
         double scale,
         const Parameters & params)
@@ -684,7 +684,7 @@ void createImageForVoteResultDebug(
 }
 
 void cctagDetection(CCTag::List& markers,
-        const FrameId frame, 
+        const std::size_t frame, 
         const boost::gil::gray8_view_t& graySrc,
         const Parameters & params,
         const bool bDisplayEllipses)

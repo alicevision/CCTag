@@ -188,7 +188,7 @@ void cctagMultiresDetection(
         CCTag::List& markers,
         const boost::gil::gray8_view_t& srcImg,
         const boost::gil::rgb32f_view_t & cannyRGB,
-        const FrameId frame,
+        const std::size_t frame,
         const Parameters & params)
 {
   POP_ENTER;
