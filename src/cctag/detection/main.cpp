@@ -59,7 +59,7 @@ void detection(cctag::FrameId frame, cctag::View& view, const std::string & para
     view.setNumLayers( params._numberOfMultiresLayers );
     
     ROM_COUT("beforecctagDetection");
-    cctagDetection( markers, frame, view._view, params, true );
+    cctagDetection( markers, frame, view._grayView, params, true );
     ROM_COUT("aftercctagDetection");
 
     std::cout << "Id : ";
