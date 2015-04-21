@@ -685,7 +685,7 @@ void createImageForVoteResultDebug(
 
 void cctagDetection(CCTag::List& markers,
         const FrameId frame, 
-        const boost::gil::rgb8_view_t& srcView,
+        const boost::gil::gray8_view_t& graySrc,
         const Parameters & params,
         const bool bDisplayEllipses)
 {
@@ -699,10 +699,6 @@ void cctagDetection(CCTag::List& markers,
   static const CCTagMarkersBank bank(params._cctagBankFilename);
 
   boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
-
-  // Grayscale transform
-  gray8_image_t grayImg;
-  gray8_view_t graySrc = cctag::img::toGray(srcView, grayImg);
 
   // Views for:
   // canny

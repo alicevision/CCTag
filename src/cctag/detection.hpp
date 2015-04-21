@@ -30,7 +30,12 @@ namespace cctag {
     namespace vision {
         namespace marker {
 
-void cctagDetection( CCTag::List& markers, const FrameId frame, const boost::gil::rgb8_view_t& svw, const Parameters & params, const bool bDisplayEllipses = true );
+void cctagDetection(
+        CCTag::List& markers,
+        const FrameId frame,
+        const boost::gil::gray8_view_t& graySrc,
+        const Parameters & params,
+        const bool bDisplayEllipses = true );
 
 void cctagDetectionFromEdges(
 		CCTag::List& markers,

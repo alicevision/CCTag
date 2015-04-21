@@ -7,6 +7,7 @@
 
 #include "view.hpp"
 #include "debug.hpp"
+#include "image.hpp"
 
 #ifdef WITH_CUDA
   #include <cuda_runtime.h>
@@ -37,6 +38,16 @@ View::View( const std::string& filename )
                   << std::endl;
         exit( -__LINE__ );
     }
+
+    // Grayscale transform
+    _grayView = cctag::img::toGray(_view, _grayImage);
+}
+
+View::View( const unsigned char * rawData, size_t width, size_t height, ptrdiff_t src_row_bytes )
+{
+    _grayView = boost::gil::interleaved_view(width, height, (boost::gil::gray8_pixel_t*) rawData, src_row_bytes);
+    
+    //boost::gil::png_write_view("/home/lilian/data/toto.png", boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>(_grayView) );
 }
 
 View::~View( )
