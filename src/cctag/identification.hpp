@@ -7,7 +7,6 @@
 #include "visualDebug.hpp"
 #include "ellipse.hpp"
 
-#include <cctag/IMarker.hpp>
 #include <cctag/imageCut.hpp>
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/geometry/Ellipse.hpp>

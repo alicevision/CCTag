@@ -11,7 +11,7 @@
 #include <cctag/algebra/invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/types.hpp>
-#include <cctag/IOrientedMarker.hpp>
+#include <cctag/ICCTag.hpp>
 #include <cctag/viewGeometry/2DTransform.hpp>
 #include <cctag/global.hpp>
 
@@ -39,19 +39,16 @@ namespace vision
 namespace marker
 {
 
-typedef int MarkerID;
 typedef std::vector< std::pair< MarkerID, double > > IdSet;
 
 namespace ublas = boost::numeric::ublas;
 namespace numerical = cctag::numerical;
 
-class CCTag : public IOrientedMarker
+class CCTag : public ICCTag
 {
 public:
   typedef boost::ptr_vector<CCTag> Vector;
   typedef boost::ptr_list<CCTag> List;
-
-  using IMarker::_centerImg;
 
 public:
 
@@ -71,7 +68,7 @@ public:
         int pyramidLevel,
         double scale,
         const double quality = 1.0)
-    : IOrientedMarker(centerImg)
+    : _centerImg(centerImg)
     , _id(id)
     , _outerEllipse(outerEllipse)
     , _points(points)
@@ -86,7 +83,7 @@ public:
   }
 
   CCTag(const CCTag & cctag)
-    : IOrientedMarker(cctag)
+    : _centerImg(cctag._centerImg)
     , _nCircles(cctag._nCircles)
     , _radiusRatios(cctag._radiusRatios)
     , _id(cctag._id)
@@ -111,6 +108,14 @@ public:
 
   void scale(const double s);
 
+  double x() const {
+    return _centerImg.getX();
+  }
+  
+  double y() const {
+    return _centerImg.getY();
+  }
+  
   std::size_t nCircles()
   {
     return _nCircles;
@@ -119,6 +124,16 @@ public:
   const cctag::numerical::BoundedMatrix3x3d & homography() const
   {
     return _mHomography;
+  }
+  
+  Point2dN<double> & centerImg()
+  {
+    return _centerImg;
+  }
+  
+  void setCenterImg( const cctag::Point2dN<double>& center )
+  {
+    _centerImg = center;
   }
 
   cctag::numerical::BoundedMatrix3x3d & homography()
@@ -335,6 +350,7 @@ protected:
   std::size_t _nCircles;
   MarkerID _id;
   IdSet _idSet;
+  cctag::Point2dN<double> _centerImg;
   cctag::numerical::geometry::Ellipse _outerEllipse;
   cctag::numerical::geometry::Ellipse _rescaledOuterEllipse;
   std::vector< Point2dN<double> > _rescaledOuterEllipsePoints;

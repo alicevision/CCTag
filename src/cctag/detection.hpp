@@ -24,12 +24,12 @@ class EdgePoint;
 class EdgePointImage;
     }  // namespace vision
 }  // namespace cctag
-
+  
 
 namespace cctag {
-    namespace vision {
-        namespace marker {
-
+  namespace vision {
+    namespace marker {
+     
 void cctagDetection(
         CCTag::List& markers,
         const std::size_t frame,
