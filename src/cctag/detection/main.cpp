@@ -8,6 +8,8 @@
 #include <cctag/progBase/MemoryPool.hpp>
 #include <cctag/detection.hpp>
 #include <cctag/view.hpp>
+#include <cctag/image.hpp>
+
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem.hpp>
@@ -22,6 +24,10 @@
 
 #include <terry/sampler/all.hpp>
 #include <terry/sampler/resample_subimage.hpp>
+
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include <opencv2/core/core.hpp>
 
 #include <sstream>
 #include <iostream>
@@ -212,6 +218,29 @@ int main(int argc, char** argv)
                     ++frame;
                 }
             }
+        } else if (ext == ".avi" ){// || ext == ".mts" || ext == ".mov") {
+          std::cout << "*** Video mode ***" << std::endl;
+          
+          // open video and check
+          cv::VideoCapture video(filename.c_str());
+        if(!video.isOpened()) {std::cout << "Unable to open the video : " << filename; return -1;}
+
+        // play loop
+        int lastFrame = video.get(CV_CAP_PROP_FRAME_COUNT);
+        int frameId = 0;
+        while( video.get(CV_CAP_PROP_POS_FRAMES) < lastFrame )
+        {
+            cv::Mat frame;
+            video >> frame;
+            cv::Mat imgGray;
+            cv::cvtColor( frame, imgGray, CV_BGR2GRAY );
+            cctag::View cctagView((const unsigned char *) imgGray.data, imgGray.cols, imgGray.rows , imgGray.step );
+            cctag::vision::marker::Parameters params;
+            boost::ptr_list<marker::CCTag> cctags;
+            cctagDetection(cctags, frameId ,cctagView._grayView ,params, true);
+            ++frameId;
+        }
+        
         } else {
             throw std::logic_error("Unrecognized input.");
         }
