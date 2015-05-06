@@ -235,9 +235,11 @@ int main(int argc, char** argv)
             cv::Mat imgGray;
             cv::cvtColor( frame, imgGray, CV_BGR2GRAY );
             cctag::View cctagView((const unsigned char *) imgGray.data, imgGray.cols, imgGray.rows , imgGray.step );
-            cctag::vision::marker::Parameters params;
-            boost::ptr_list<marker::CCTag> cctags;
-            cctagDetection(cctags, frameId ,cctagView._grayView ,params, true);
+            cctagView._view = boost::gil::interleaved_view(imgGray.cols, imgGray.rows, (boost::gil::rgb8_pixel_t*) frame.data, frame.step );
+
+            detection(frameId, cctagView);
+            
+            png_write_view("/home/lilian/data/test.png", cctagView._view);
             ++frameId;
         }
         
