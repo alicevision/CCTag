@@ -5,7 +5,7 @@
 #include <cctag/ImageCenterOptimizer.hpp>
 #include <cctag/LMImageCenterOptimizer.hpp>
 #include <cctag/visualDebug.hpp>
-#include <cctag/ellipse.hpp>
+#include <cctag/ellipseGrowing.hpp>
 #include <cctag/imageCut.hpp>
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/geometry/Ellipse.hpp>

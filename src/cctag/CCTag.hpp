@@ -3,7 +3,7 @@
 
 #include <cctag/modeConfig.hpp>
 #include <cctag/types.hpp>
-#include <cctag/ellipse.hpp>
+#include <cctag/ellipseGrowing.hpp>
 #include <cctag/Candidate.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/point.hpp>

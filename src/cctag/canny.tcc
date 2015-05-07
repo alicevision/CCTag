@@ -1,6 +1,5 @@
 #include <cctag/progBase/MemoryPool.hpp>
 #include <cctag/filter/cvRecode.hpp>
-
 #include <cctag/boostCv/cvImage.hpp>
 
 #include <terry/filter/thinning.hpp>

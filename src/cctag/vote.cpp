@@ -5,7 +5,7 @@
 #include <cctag/types.hpp>
 #include <cctag/vote.hpp>
 #include <cctag/toolbox.hpp>
-#include <cctag/ellipse.hpp>
+#include <cctag/ellipseGrowing.hpp>
 #include <cctag/fileDebug.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>

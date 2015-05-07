@@ -108,8 +108,6 @@ void computeHull( const cctag::numerical::geometry::Ellipse& ellipse, double del
  */
 void ellipseHull( const EdgePointsImage& img, std::vector<EdgePoint*>& pts, cctag::numerical::geometry::Ellipse& ellipse, double delta );
 
-void readPointsFromFile( char* file, std::vector<EdgePoint* >& pts );
-
 /** @brief Ellipse growing
  * @param childrens vote winner children points
  * @param outerEllipsePoints outer ellipse points

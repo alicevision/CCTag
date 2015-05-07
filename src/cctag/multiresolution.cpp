@@ -8,7 +8,7 @@
 #include <cctag/visualDebug.hpp>
 #include <cctag/fileDebug.hpp>
 #include <cctag/vote.hpp>
-#include <cctag/ellipse.hpp>
+#include <cctag/ellipseGrowing.hpp>
 #include <cctag/geometry/ellipseFromPoints.hpp>
 #include <cctag/toolbox.hpp>
 #include <cctag/image.hpp>

@@ -1,4 +1,4 @@
-#include <cctag/ellipse.hpp>
+#include <cctag/ellipseGrowing.hpp>
 #include <cctag/CCTag.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/toolbox.hpp>
@@ -576,65 +576,6 @@ void ellipseGrowing2(const EdgePointsImage& img,
   {
     p->_processed = -1;
   }
-}
-
-void readPointsFromFile(char* file, std::vector<EdgePoint* >& pts)
-{
-  using namespace boost::numeric::ublas;
-  std::ifstream fid(file, std::ios::in); // on ouvre en lecture
-
-  if (fid) // if file successfully opened
-  {
-    std::string containt;
-
-    while (getline(fid, containt))
-    {
-      char* cstr, * p;
-
-      //string str ("Please split this phrase into tokens");
-
-      cstr = new char [containt.size() + 1];
-      strcpy(cstr, containt.c_str());
-
-      // cstr now contains a c-string copy of str
-
-      bounded_vector<double, 3> vec;
-      vec(2) = 1.f;
-
-      p = strtok(cstr, " ");
-      int i = 0;
-
-      while (p != NULL)
-      {
-        vec(i) = atoi(p);
-
-        ++i;
-        p = strtok(NULL, " ");
-      }
-      CCTAG_COUT_LILIAN(vec);
-      EdgePoint* ePt = new EdgePoint((int) vec(0), (int) vec(1), 1.0f, 1.0f);
-      pts.push_back(ePt);
-
-      delete[] cstr;
-
-    }
-  }
-  else
-  {
-    std::cerr << "Cannot open the file" << std::endl;
-
-  }
-}
-
-void writeMatrix(const CvMat* M, FILE * pFile)
-{
-  for (int i = 0; i < cvGetSize(M).height; i++)
-  {
-    for (int j = 0; j < cvGetSize(M).width; j++)
-      fprintf(pFile, "%.15f\t", cvmGet(M, i, j));
-    fprintf(pFile, "\n");
-  }
-  fprintf(pFile, "\n");
 }
 
 } // namespace cctag
