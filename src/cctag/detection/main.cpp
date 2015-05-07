@@ -34,7 +34,7 @@
 #include <fstream>
 #include <exception>
 
-using namespace cctag::vision;
+using namespace cctag;
 using boost::timer;
 
 using namespace boost::gil;
@@ -46,7 +46,7 @@ void detection(std::size_t frame, cctag::View& view, const std::string & paramsF
 {
     POP_ENTER;
     // Set the system parameters
-    cctag::vision::marker::Parameters params;
+    cctag::Parameters params;
     
     if (paramsFilename != "") {
       // Read the parameter file provided by the user
@@ -64,7 +64,7 @@ void detection(std::size_t frame, cctag::View& view, const std::string & paramsF
     
     // Process markers detection
     boost::timer t;
-    boost::ptr_list<marker::CCTag> markers;
+    boost::ptr_list<CCTag> markers;
 
     view.setNumLayers( params._numberOfMultiresLayers );
     
@@ -76,9 +76,9 @@ void detection(std::size_t frame, cctag::View& view, const std::string & paramsF
     std::cout << "Id : ";
 
     int i = 0;
-    BOOST_FOREACH(const cctag::vision::marker::CCTag & marker, markers) {
-        cctag::vision::marker::drawMarkerOnGilImage(view._view, marker, false);
-        cctag::vision::marker::drawMarkerInfos(view._view, marker, false);
+    BOOST_FOREACH(const cctag::CCTag & marker, markers) {
+        cctag::drawMarkerOnGilImage(view._view, marker, false);
+        cctag::drawMarkerInfos(view._view, marker, false);
 
         if (i == 0) {
             std::cout << marker.id() + 1;

@@ -30,9 +30,8 @@
 namespace cctag {
     namespace numerical {
 
-        double innerProdMin(const std::vector<cctag::vision::EdgePoint*>& filteredChildrens, double thrCosDiffMax, Point2dN<int> & p1, Point2dN<int> & p2) {
+        double innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, double thrCosDiffMax, Point2dN<int> & p1, Point2dN<int> & p2) {
             using namespace boost::numeric;
-            using namespace cctag::vision;
             //using namespace cctag::numerical;
 
             EdgePoint* pAngle1 = NULL;
@@ -60,7 +59,7 @@ namespace cctag {
                 double gx0 = p0->_grad.x() / normGrad;
                 double gy0 = p0->_grad.y() / normGrad;
 
-                std::vector<cctag::vision::EdgePoint*>::const_iterator it = ++filteredChildrens.begin();
+                std::vector<cctag::EdgePoint*>::const_iterator it = ++filteredChildrens.begin();
 
                 for (; it != filteredChildrens.end(); ++it) {
                     EdgePoint* pCurrent = *it;
@@ -154,11 +153,11 @@ namespace cctag {
             e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
         }
 
-void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::vision::EdgePoint*>& points )
+void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points )
 {
 	std::vector<cv::Point2f> cvPoints;
 	cvPoints.reserve( points.size() );
-	BOOST_FOREACH( cctag::vision::EdgePoint * p, points )
+	BOOST_FOREACH( cctag::EdgePoint * p, points )
 	{
 		cvPoints.push_back( cv::Point2f( p->x(), p->y() ) );
             }
@@ -178,7 +177,7 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<c
 	e.setParameters( Point2dN<double>( xC, yC ), a, b, angle );
 }
 
-void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::vision::EdgePoint*>& points) {
+void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points) {
             using namespace boost::numeric;
             
             std::size_t nPoints = points.size();
@@ -221,12 +220,12 @@ void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cct
             e.setParameters(Point2dN<double>(xC, yC), radius, radius, 0);
         }
 
-void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cctag::vision::EdgePoint*>& points )
+void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cctag::EdgePoint*>& points )
 {
             std::vector<cv::Point2f> cvPoints;
             cvPoints.reserve(points.size());
 
-            BOOST_FOREACH(cctag::vision::EdgePoint * p, points) {
+            BOOST_FOREACH(cctag::EdgePoint * p, points) {
                 cvPoints.push_back(cv::Point2f(p->x(), p->y()));
             }
 
@@ -245,7 +244,7 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cct
             e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
         }
 
-        bool matrixFromFile(const std::string& filename, std::list<cctag::vision::EdgePoint>& edgepoints) {
+        bool matrixFromFile(const std::string& filename, std::list<cctag::EdgePoint>& edgepoints) {
             std::ifstream ifs(filename.c_str());
 
             if (!ifs) {
@@ -266,7 +265,7 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cct
                 std::vector<std::string> xy;
                 boost::split(xy, *it, boost::is_any_of(", "));
                 if (xy.size() == 2) {
-                    edgepoints.push_back(cctag::vision::EdgePoint(boost::lexical_cast<int>(xy[0]), boost::lexical_cast<int>(xy[1]), 0, 0));
+                    edgepoints.push_back(cctag::EdgePoint(boost::lexical_cast<int>(xy[0]), boost::lexical_cast<int>(xy[1]), 0, 0));
                 }
             }
 

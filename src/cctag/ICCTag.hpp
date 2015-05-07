@@ -38,7 +38,7 @@ void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
       const boost::gil::gray8_view_t& graySrc,
-      const cctag::vision::marker::Parameters & params,
+      const cctag::Parameters & params,
       const bool bDisplayEllipses = true );
 
 }

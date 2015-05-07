@@ -2,8 +2,6 @@
 
 namespace cctag
 {
-namespace vision
-{
 
 std::ostream& operator<<( std::ostream& os, const EdgePoint& eP )
 {
@@ -11,5 +9,4 @@ std::ostream& operator<<( std::ostream& os, const EdgePoint& eP )
   return os;
 }
 
-}
-}
+} // namespace cctag

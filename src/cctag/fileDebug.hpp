@@ -29,7 +29,6 @@
 #define PASS_ALLTESTS 30
 
 namespace cctag {
-    namespace vision {
 
         class CCTagFileDebug : public Singleton<CCTagFileDebug> {
             MAKE_SINGLETON_WITHCONSTRUCTORS(CCTagFileDebug)
@@ -49,9 +48,9 @@ namespace cctag {
             void incrementFlowComponentIndex(int n);
             void setResearchArea(cctag::numerical::geometry::Ellipse circularResearchArea);
             void setFlowComponentAssemblingState( bool isAssembled, int indexSelectedFlowComponent);
-            void outputFlowComponentInfos(const cctag::vision::marker::CCTagFlowComponent & flowComponent);
+            void outputFlowComponentInfos(const cctag::CCTagFlowComponent & flowComponent);
             
-            void outputMarkerInfos(const cctag::vision::marker::CCTag& marker);
+            void outputMarkerInfos(const cctag::CCTag& marker);
 
             void outPutAllSessions() const;
 
@@ -72,8 +71,8 @@ namespace cctag {
             bool _isAssembled;
             cctag::numerical::geometry::Ellipse _researchArea;
         };
-    }
-}
+        
+} // namespace cctag
 
 
 #endif

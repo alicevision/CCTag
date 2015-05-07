@@ -33,10 +33,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 namespace ublas = boost::numeric::ublas;
 namespace optimization = cctag::numerical::optimization;
@@ -117,6 +113,4 @@ void CCTag::serialize(boost::archive::text_oarchive & ar, const unsigned int ver
 #endif
 }
 
-}
-}
-}
+} // namespace cctag

@@ -22,10 +22,8 @@
 #include <utility>
 
 namespace cctag {
-namespace vision {
-namespace marker {
 
-void conditionnate( std::pair<cctag::vision::marker::CCTag, cctag::vision::marker::CCTag> & frameMarkers, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mT, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mInvT );
+void conditionnate( std::pair<cctag::CCTag, cctag::CCTag> & frameMarkers, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mT, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mInvT );
 
 /**
   V = M * diag( 1./ sqrt(sum(M.*M)));
@@ -197,10 +195,7 @@ void homographyFrom2CPlanar( const std::pair<CCTag, CCTag> & cctags, boost::nume
 
 bool disambiguate(const cctag::numerical::geometry::Ellipse & q, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & H);
 
-
-}
-}
-}
+} // namespace cctag
 
 
 #endif

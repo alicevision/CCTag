@@ -1,11 +1,10 @@
 #ifndef VISION_CCTAG_DETECTION_HPP_
 #define VISION_CCTAG_DETECTION_HPP_
 
-#include "CCTag.hpp"
-#include "CCTagMarkersBank.hpp"
-#include "types.hpp"
-#include "params.hpp"
-
+#include <cctag/CCTag.hpp>
+#include <cctag/CCTagMarkersBank.hpp>
+#include <cctag/types.hpp>
+#include <cctag/params.hpp>
 #include <cctag/frame.hpp>
 
 #include <boost/serialization/nvp.hpp>
@@ -19,16 +18,9 @@
 #include <vector>
 
 namespace cctag {
-    namespace vision {
+
 class EdgePoint;
 class EdgePointImage;
-    }  // namespace vision
-}  // namespace cctag
-  
-
-namespace cctag {
-  namespace vision {
-    namespace marker {
      
 void cctagDetection(
         CCTag::List& markers,
@@ -51,9 +43,7 @@ void cctagDetectionFromEdges(
 
 void createImageForVoteResultDebug(const boost::gil::gray8_view_t & sourceView, const WinnerMap & winners);
 
-        }  // namespace marker
-    }  // namespace vision
-}  // namespace cctag
+} // namespace cctag
 
 #endif
 

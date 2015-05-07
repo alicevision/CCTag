@@ -1,9 +1,8 @@
 #ifndef _CCTAG_2DTRANSFORM_HPP_
 #define _CCTAG_2DTRANSFORM_HPP_
 
-#include "../geometry/Ellipse.hpp"
-#include "../algebra/matrix/operation.hpp"
-//#include <rom/vision/viewGeometry/projectiveTransformation/2DTransform.hpp>
+#include <cctag/geometry/Ellipse.hpp>
+#include <cctag/algebra/matrix/operation.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
@@ -11,7 +10,6 @@
 #include <vector>
 
 namespace cctag {
-namespace vision {
 namespace viewGeometry {
 
 namespace ublas = boost::numeric::ublas;
@@ -36,9 +34,8 @@ inline void projectiveTransform( const ublas::bounded_matrix<double, 3, 3>& tr, 
 	ellipse.setMatrix( ublas::prec_prod( ttr, ( ublas::bounded_matrix<double, 3, 3>) ublas::prec_prod( ellipse.matrix(), tr ) ) );
 }
 
-}
-}
-}
+} // namespace viewGeometry
+} // namespace cctag
 
 #endif
 

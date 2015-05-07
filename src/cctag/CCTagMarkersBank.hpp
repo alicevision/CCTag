@@ -17,10 +17,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 class CCTagMarkersBank
 {
@@ -66,8 +62,6 @@ private:
 
 };
 
-}
-}
-}
+} // namespace cctag
 
 #endif

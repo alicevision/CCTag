@@ -2,7 +2,6 @@
 #include "Labelizer.hpp"
 
 namespace cctag {
-namespace vision {
 
 int Label::_counter = 0;
 
@@ -43,5 +42,4 @@ void Label::resetEdgePointsLabel()
 	}
 }
 
-}
-}
+} // namespace cctag

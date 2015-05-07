@@ -1,12 +1,11 @@
 #ifndef _CCTAG_CCTAG_IDENTIFICATION_HPP_
 #define	_CCTAG_CCTAG_IDENTIFICATION_HPP_
 
-#include "SubPixEdgeOptimizer.hpp"
-#include "ImageCenterOptimizer.hpp"
-#include "LMImageCenterOptimizer.hpp"
-#include "visualDebug.hpp"
-#include "ellipse.hpp"
-
+#include <cctag/SubPixEdgeOptimizer.hpp>
+#include <cctag/ImageCenterOptimizer.hpp>
+#include <cctag/LMImageCenterOptimizer.hpp>
+#include <cctag/visualDebug.hpp>
+#include <cctag/ellipse.hpp>
 #include <cctag/imageCut.hpp>
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/geometry/Ellipse.hpp>
@@ -38,8 +37,6 @@
 #include <vector>
 
 namespace cctag {
-namespace vision {
-namespace marker {
 
 template<typename VecT>
 typename VecT::value_type computeMedian( const VecT& vec )
@@ -210,7 +207,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig, co
  * @return detected as a marker ?
  */
 int identify(
-	marker::CCTag & cctag,
+	CCTag & cctag,
 	const std::vector< std::vector<double> > & radiusRatios, ///@todo directly use the bank
 	const boost::gil::gray8_view_t & sourceView,
 	const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & dx,
@@ -223,8 +220,6 @@ int identify(
 	const double minIdentProba,
 	const bool useLmDif );
 
-} // namespace marker
-} // namespace vision
 } // namespace cctag
 
 #endif

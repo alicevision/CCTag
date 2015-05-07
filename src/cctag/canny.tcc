@@ -17,10 +17,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 template<class SView,
          class CannyRGBView,
@@ -120,7 +116,5 @@ void edgesPointsFromCanny(
 
 }
 
-}
-}
-}
+} // namespace cctag
 

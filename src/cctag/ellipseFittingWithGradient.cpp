@@ -31,7 +31,6 @@
 #include <boost/numeric/bindings/lapack/syev.hpp>
 
 namespace cctag {
-namespace vision {
 namespace geometry {
 
 /*----------------------------------------------------------------------------*/
@@ -401,6 +400,5 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
 	ellipse = cctag::numerical::geometry::Ellipse(Point2dN<double>(param[0],param[1]), param[2], param[3], param[4]);
 }
 
-}
-}
-}
+} // namespace geometry
+} // namespace cctag

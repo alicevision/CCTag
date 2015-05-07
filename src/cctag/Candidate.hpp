@@ -7,9 +7,8 @@
 #include "geometry/Ellipse.hpp"
 #include <boost/unordered/unordered_set.hpp>
 
-namespace cctag {
-namespace vision {
-namespace marker {
+namespace cctag
+{
     
 class Candidate {
 public:
@@ -56,8 +55,6 @@ public:
 
 };
 
-}
-}
-}
+} // namespace cctag
 
 #endif

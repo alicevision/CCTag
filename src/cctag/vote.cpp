@@ -40,8 +40,6 @@
 #define LOW_FLOW -3
 
 namespace cctag {
-    namespace vision {
-        namespace marker {
 
 /* Brief: Voting procedure. For every edge points, construct the 1st order approximation 
  * of the field line passing through it which consists in a polygonal line whose
@@ -711,8 +709,6 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         return false;
     }
             
-        }
-    }
-}
+} // namespace cctag
 
 

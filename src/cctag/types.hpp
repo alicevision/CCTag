@@ -10,7 +10,6 @@
 
 
 namespace cctag {
-namespace vision {
 
 /**
  * @brief An image (2D array) of pointers to EdgePoints. For each pixel we associate an EdgePoint.
@@ -19,7 +18,6 @@ typedef boost::multi_array<EdgePoint*, 2> EdgePointsImage;
 
 typedef boost::unordered_map< EdgePoint*, std::list< EdgePoint* > > WinnerMap;  ///< associate a winner with its voters
 
-}
-}
+} // namespace cctag
 
 #endif

@@ -11,7 +11,6 @@
 #include <cmath>
 
 namespace cctag {
-namespace vision {
 
 void bresenham( const boost::gil::gray8_view_t & sView, const cctag::Point2dN<int>& p, const cctag::Point2dN<float>& dir, const std::size_t nmax )
 {
@@ -539,5 +538,4 @@ EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & c
     return NULL;
 }
 
-}
-}
+} // namespace cctag

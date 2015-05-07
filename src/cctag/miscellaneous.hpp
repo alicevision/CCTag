@@ -8,9 +8,8 @@
 #ifndef MISCELLANEOUS_HPP
 #define	MISCELLANEOUS_HPP
 
-namespace cctag {
-namespace vision {
-namespace marker {
+namespace cctag
+{
 
 
                 // todo@Lilian : tout templater
@@ -52,9 +51,7 @@ namespace marker {
 #endif
                 }
 
-}
-}
-}
+} // namespace cctag
 
 #endif	/* MISCELLANEOUS_HPP */
 

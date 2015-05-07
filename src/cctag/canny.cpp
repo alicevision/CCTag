@@ -7,10 +7,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 /**
  * @param[out] cannyView output gray view
@@ -76,8 +72,6 @@ void cvCanny(
   }
 }
 
-}
-}
-}
+} // namespace cctag
 
 

@@ -1,10 +1,10 @@
 #ifndef VISION_CCTAG_VOTE_HPP_
 #define VISION_CCTAG_VOTE_HPP_
 
-#include "params.hpp"
-#include "EdgePoint.hpp"
-#include "types.hpp"
-#include "Candidate.hpp"
+#include <cctag/params.hpp>
+#include <cctag/EdgePoint.hpp>
+#include <cctag/types.hpp>
+#include <cctag/Candidate.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
 #include <boost/unordered/unordered_set.hpp>
@@ -16,9 +16,6 @@
 
 
 namespace cctag {
-    namespace vision {
-        namespace marker {
-
 
 /* Brief: Voting procedure. For every edge points, construct the 1st order approximation 
  * of the field line passing through it which consists in a polygonal line whose
@@ -73,9 +70,7 @@ bool isAnotherSegment( numerical::geometry::Ellipse & outerEllipse, std::vector<
         std::vector< std::vector< Point2dN<double> > >& cctagPoints, std::size_t numCircles,
         double thrMedianDistanceEllipse);
 
-}
-}
-}
+} // namespace cctag
 
 #endif
 

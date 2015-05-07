@@ -31,10 +31,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 bool orazioDistance( IdSet& idSet, const RadiusRatioBank & rrBank,
         const std::vector<cctag::ImageCut> & cuts,
@@ -490,8 +486,9 @@ double costSelectCutFun( const std::vector<double> & varCuts,
         boost::gil::rgb32f_view_t>::type & dy,
         const double alpha)
 {
-  using namespace boost::numeric;
   using namespace cctag::numerical;
+  namespace ublas = boost::numeric::ublas;
+  
   BoundedVector2d sumDeriv;
   double sumVar = 0;
   sumDeriv.clear();
@@ -777,7 +774,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
 
     // Check if the refined point is near the center of the outer ellipse.
     cctag::numerical::geometry::Ellipse semiEllipse( ellipse.center(),ellipse.a()/2.0,ellipse.b()/2.0,ellipse.angle() );
-    if( !cctag::vision::marker::isInEllipse( semiEllipse, oRefined) )
+    if( !cctag::isInEllipse( semiEllipse, oRefined) )
       return false;
 
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
@@ -847,7 +844,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
 
     // Check if the refined point is near the center of the outer ellipse.
     cctag::numerical::geometry::Ellipse semiEllipse( ellipse.center(),ellipse.a()/2.0,ellipse.b()/2.0,ellipse.angle() );
-    if( !cctag::vision::marker::isInEllipse( semiEllipse, oRefined) )
+    if( !cctag::isInEllipse( semiEllipse, oRefined) )
       return false;
 
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
@@ -877,7 +874,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
 }
 
 int identify(
-  marker::CCTag & cctag,
+  CCTag & cctag,
   const std::vector< std::vector<double> > & radiusRatios, ///@todo directly use the bank
   const boost::gil::gray8_view_t & sourceView,
   const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & dx,
@@ -947,7 +944,7 @@ int identify(
   if ( cuts.size() == 0 )
   {
     // Can happen when an object or the image frame is occluding a part of all available cuts.
-    return no_collected_cuts;
+    return status::no_collected_cuts;
   }
 
 
@@ -969,7 +966,7 @@ int identify(
   if ( prSelection.size() == 0 )
   {
     // Can happen when the refined edge point estimation is diverging for all cuts.
-    return no_selected_cuts;
+    return status::no_selected_cuts;
   }
 
   std::vector< cctag::ImageCut > fsig;
@@ -981,8 +978,8 @@ int identify(
     {
       CCTAG_COUT_DEBUG(ellipse);
       CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
-      CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge " );
-      return opti_has_diverged;
+      CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." );
+      return status::opti_has_diverged;
     }
 
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
@@ -1073,15 +1070,12 @@ int identify(
   // Tell if the identification is reliable or not.
   if (idFinal)
   {
-    return id_reliable;
+    return status::id_reliable;
   }
   else
   {
-    return id_not_reliable;
+    return status::id_not_reliable;
   }
 }
 
-
-}
-}
-}
+} // namespace cctag

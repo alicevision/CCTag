@@ -19,8 +19,6 @@
 #include <vector>
 
 namespace cctag {
-namespace vision {
-namespace marker {
 
 struct CCTagParams
 {
@@ -119,8 +117,6 @@ void createMultiResolutionImage( PyramidImage<View>& multires, const View& srcIm
 
 void clearDetectedMarkers( const std::map<std::size_t, CCTag::List> & pyramidMarkers, const boost::gil::rgb32f_view_t & cannyRGB, const std::size_t curLevel );
 
-} // namespace marker
-} // namespace vision
 } // namespace cctag
 
 

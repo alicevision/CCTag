@@ -422,8 +422,8 @@ void cvRecodedCannyGPUFilter2D( void* srcarr, void* dstarr, CvMat*& dx, CvMat*& 
 
       /*if(_dst[j])
          {
-          label->push_back(cctag::vision::EdgePoint(j, i, _dx[j], _dy[j], label));
-          cctag::vision::EdgePoint * p = & label->back() ;
+          label->push_back(cctag::EdgePoint(j, i, _dx[j], _dy[j], label));
+          cctag::EdgePoint * p = & label->back() ;
           p->_label = label;
           labelsMap[j][i] = p;
          }*/

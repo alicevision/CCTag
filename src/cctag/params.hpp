@@ -15,10 +15,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 static const std::string kDefaultCCTagBankFilename( "/home/lilian/cpp_workspace/CCTag/cctagLibraries/4Crowns/ids.txt" );
 static const std::size_t kDefaultDistSearch = 30;
@@ -192,9 +188,7 @@ struct Parameters
   }
 };
 
-}
-}
-}
+} // namespace cctag
 
 #endif
 

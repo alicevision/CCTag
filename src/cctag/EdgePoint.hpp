@@ -10,8 +10,6 @@
 
 namespace cctag
 {
-namespace vision
-{
 
 class Label;
 
@@ -96,8 +94,7 @@ inline bool receivedMoreVoteThan(const EdgePoint * const p1,  const EdgePoint * 
   return (p1->_isMax > p2->_isMax);
 }
 
-}
-}
+} // namespace cctag
 
 #endif
 

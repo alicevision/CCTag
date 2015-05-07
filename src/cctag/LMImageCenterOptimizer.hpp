@@ -10,8 +10,6 @@
 #include <cctag/CCTag.hpp>
 
 namespace cctag {
-namespace vision {
-namespace marker {
 
 class LMImageCenterOptimizer
 {
@@ -33,9 +31,7 @@ private:
 	cctag::Point2dN<double> _pToRefine;
 };
 
-}
-}
-}
+} // namespace cctag
 
 #endif
 

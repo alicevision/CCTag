@@ -15,8 +15,6 @@
 
 
 namespace cctag {
-namespace vision {
-namespace marker {
 
 template<class View>
 static bool fillEllipseLine( View& image, const numerical::geometry::Ellipse& ellipse, const typename View::value_type& color, const std::size_t y )
@@ -161,15 +159,15 @@ void drawMarkerOnGilImage(View& image, const CCTag& marker, bool drawScaledMarke
             rescaledOuterEllipse = marker.outerEllipse();
         }
 
-        if (marker.getStatus() == vision::marker::no_collected_cuts) {
+        if (marker.getStatus() == status::no_collected_cuts) {
             drawEllipse(image, rescaledOuterEllipse, pixelMagenta);
-        }else if (marker.getStatus() == vision::marker::no_selected_cuts) {
+        }else if (marker.getStatus() == status::no_selected_cuts) {
             drawEllipse(image, rescaledOuterEllipse, pixelCyan);
-        }else if(marker.getStatus() == vision::marker::opti_has_diverged){
+        }else if(marker.getStatus() == status::opti_has_diverged){
             drawEllipse(image, rescaledOuterEllipse, pixelRed);
-        }else if(marker.getStatus() == vision::marker::id_not_reliable){
+        }else if(marker.getStatus() == status::id_not_reliable){
             drawEllipse(image, rescaledOuterEllipse, pixelCyan);
-        }else if(marker.getStatus() == vision::marker::id_reliable){
+        }else if(marker.getStatus() == status::id_reliable){
             drawEllipse(image, rescaledOuterEllipse, pixelGreen);
         }else if(marker.getStatus() == 0 ){
             drawEllipse(image, rescaledOuterEllipse, pixelGreen);
@@ -218,8 +216,6 @@ void drawMarkersOnGilImage(View& image, const CCTag::Vector& markers)
 
 
 
-} // namespace marker
-} // namespace vision
 } // namespace cctag
 
 #endif

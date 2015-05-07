@@ -5,7 +5,6 @@
 
 
 namespace cctag {
-namespace vision {
 
 Labelizer::Labelizer()
 {}
@@ -33,5 +32,4 @@ void Labelizer::followContour( Label* label, const int x, const int y, const boo
 	}
 }
 
-}
-}
+} // namespace cctag

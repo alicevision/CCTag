@@ -3,10 +3,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 CCTagFlowComponent::CCTagFlowComponent()
 {
@@ -120,6 +116,5 @@ void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens)
     ++i;
   }
 }
-}
-}
-}
+
+} // namespace cctag

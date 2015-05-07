@@ -28,8 +28,6 @@
 
 
 namespace cctag {
-namespace vision {
-namespace marker {
 
 
 void optimizeCenterCeres(cctag::Point2dN<double> initCenter, const TotoFunctor::VecExtPoints & vecExtPoints, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView,
@@ -72,5 +70,4 @@ void optimizeCenterCeres(cctag::Point2dN<double> initCenter, const TotoFunctor::
   return;
 }
 
-
-}}}
+} // namespace cctag

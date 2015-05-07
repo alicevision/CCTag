@@ -8,7 +8,6 @@
 #include <iostream>
 
 namespace cctag {
-namespace vision {
 namespace viewGeometry {
 
 //transforme la matrice d'une ellipse en ses paramètres correspondants
@@ -241,6 +240,5 @@ CvMat retrouve_homographie( const CvMat* E0, const CvMat* E1, const int largeur,
 	return result;
 }
 
-}
-}
-}
+} // namespace viewGeometry
+} // namespace cctag

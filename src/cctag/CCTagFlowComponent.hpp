@@ -10,10 +10,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 class CCTagFlowComponent
 {
@@ -42,8 +38,7 @@ public:
   std::size_t _nCircles;
 
 };
-}
-}
-}
+
+} // namespace cctag
 
 #endif	/* CCTAGFLOWCOMPONENT_HPP */

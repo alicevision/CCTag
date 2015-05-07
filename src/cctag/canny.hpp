@@ -5,10 +5,7 @@
 
 namespace cctag
 {
-namespace vision
-{
 class EdgePoint;
-}
 }
 
 #ifdef CCTAG_USE_TUTTLE
@@ -24,11 +21,6 @@ class EdgePoint;
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
-
 
 #ifdef CCTAG_USE_TUTTLE
 
@@ -49,9 +41,7 @@ void cvCanny( boost::gil::rgb32f_view_t & cannyView, const IplImage* srcImage, c
 template<class CView, class DXView, class DYView>
 void edgesPointsFromCanny( std::vector<EdgePoint>& points, EdgePointsImage & edgesMap, CView & cvw, DXView & dx, DYView & dy );
 
-}
-}
-}
+} // namespace cctag
 
 #include "canny.tcc"
 

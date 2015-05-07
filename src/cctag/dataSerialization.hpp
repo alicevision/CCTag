@@ -1,12 +1,10 @@
 #ifndef _CCTAG_DATASERIALIZATION_HPP
 #define	_CCTAG_DATASERIALIZATION_HPP
 
-#include "CCTagFlowComponent.hpp"
+#include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/CCTag.hpp>
-
-//#include <rom/vision/feature/marker/IMarker.hpp>
-#include "geometry/Ellipse.hpp"
-#include "algebra/matrix/Matrix.hpp"
+#include <cctag/geometry/Ellipse.hpp>
+#include <cctag/algebra/matrix/Matrix.hpp>
 
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/serialization.hpp>
@@ -14,34 +12,30 @@
 #include <boost/foreach.hpp>
 
 namespace cctag {
-    namespace vision {
-        namespace marker {
 
-            void serializeRadiusRatios(boost::archive::text_oarchive & ar, const std::vector<double> & radiusRatios);
+  void serializeRadiusRatios(boost::archive::text_oarchive & ar, const std::vector<double> & radiusRatios);
 
-            void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet);
+  void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet);
 
-            void serializePoint(boost::archive::text_oarchive & ar, const Point2dN<double> & point);
-            
-            void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e);
+  void serializePoint(boost::archive::text_oarchive & ar, const Point2dN<double> & point);
 
-            void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< Point2dN<double> > & points);
+  void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e);
 
-            void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< Point2dN<double> > > & points);
+  void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< Point2dN<double> > & points);
 
-            void serializeEllipse(boost::archive::text_oarchive & ar, const cctag::numerical::geometry::Ellipse & ellipse);
+  void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< Point2dN<double> > > & points);
 
-            void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cctag::numerical::geometry::Ellipse> & ellipses);
+  void serializeEllipse(boost::archive::text_oarchive & ar, const cctag::numerical::geometry::Ellipse & ellipse);
 
-            void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const cctag::numerical::BoundedMatrix3x3d & matrix);
+  void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cctag::numerical::geometry::Ellipse> & ellipses);
 
-            void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowComponent & flowComponent);
+  void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const cctag::numerical::BoundedMatrix3x3d & matrix);
 
-            void serializeFlowComponents(boost::archive::text_oarchive & ar, const std::vector<CCTagFlowComponent> & flowComponents);
-            
-        }
-    }
-}
+  void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowComponent & flowComponent);
+
+  void serializeFlowComponents(boost::archive::text_oarchive & ar, const std::vector<CCTagFlowComponent> & flowComponents);
+
+} // namespace cctag
 
 #endif	/* SERIALIZATION_HPP */
 

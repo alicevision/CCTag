@@ -24,10 +24,8 @@
 
 
 namespace cctag {
-namespace vision {
-namespace marker {
 
-void conditionnate( std::pair<cctag::vision::marker::CCTag, cctag::vision::marker::CCTag> & frameMarkers, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mT, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mInvT )
+void conditionnate( std::pair<cctag::CCTag, cctag::CCTag> & frameMarkers, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mT, const boost::numeric::ublas::bounded_matrix<double, 3, 3> & mInvT )
 {
 	frameMarkers.first.condition(mT, mInvT );
 	frameMarkers.second.condition(mT, mInvT );
@@ -280,6 +278,4 @@ void homographyFrom2CPlanar( const std::pair<CCTag, CCTag> & cctags, boost::nume
 	h = ublas::prec_prod(U,S);
 }
 
-}
-}
-}
+} // namespace cctag

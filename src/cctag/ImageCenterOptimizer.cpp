@@ -23,8 +23,6 @@
 #include <ostream>
 
 namespace cctag {
-namespace vision {
-namespace marker {
 
 ImageCenterOptimizer::ImageCenterOptimizer( const VecExtPoints & vecExtPoints )
 : Parent( 2, &ImageCenterOptimizer::optimizePointFun, NULL, this )
@@ -156,6 +154,4 @@ Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double>
 	return res;
 }
 
-}
-}
-}
+} // namespace cctag

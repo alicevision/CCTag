@@ -34,10 +34,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 bool initMarkerCenter(cctag::Point2dN<double> & markerCenter,
         const std::vector< std::vector< Point2dN<double> > > & markerPoints,
@@ -642,8 +638,6 @@ void writeMatrix(const CvMat* M, FILE * pFile)
   fprintf(pFile, "\n");
 }
 
-}
-}
-}
+} // namespace cctag
 
 

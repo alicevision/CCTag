@@ -28,7 +28,6 @@
 #include <vector>
 
 namespace cctag {
-namespace vision {
 
 struct LabelEdgePoint : public EdgePoint
 {
@@ -78,8 +77,6 @@ void Labelizer::labelize( SView& svw, CView & cvw, DXView & dx, DYView & dy )
 	using namespace boost::gil;
 
 	boost::timer t;
-
-//	boost::multi_array<cctag::vision::LabelEdgePoint*, 2> labelsMap;
 
 	/**************************************************************************
 	 *  labelize detected edges and map them with an int id into labelsImage  *
@@ -351,7 +348,6 @@ void Labelizer::findLabels( const SView& cvw, const boost::gil::gray16s_view_t& 
 	}
 }
 
-}
-}
+} // namespace cctag
 
 #endif

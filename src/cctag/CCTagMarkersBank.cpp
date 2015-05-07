@@ -11,10 +11,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 CCTagMarkersBank::CCTagMarkersBank( const std::string & file )
 {
@@ -85,8 +81,4 @@ std::size_t CCTagMarkersBank::identify( const std::vector<double> & marker ) con
   }
 }
 
-
-
-}
-}
-}
+} // namespace cctag

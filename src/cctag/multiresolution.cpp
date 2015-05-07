@@ -28,10 +28,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 /* @brief Add markers from a list to another, deleting duplicates.
  *
@@ -138,7 +134,7 @@ void selectEdgePointInEllipticHull(
         std::list<EdgePoint*> & pointsInHull)
 {
   numerical::geometry::Ellipse qIn, qOut;
-  vision::marker::computeHull(outerEllipse, scale, qIn, qOut);
+  computeHull(outerEllipse, scale, qIn, qOut);
 
   const double yCenter = outerEllipse.center().y();
 
@@ -406,14 +402,14 @@ void cctagMultiresDetection(
 
       double SmFinal = 1e+10;
 
-      cctag::vision::marker::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0);
+      cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0);
 
       // Optional
       //std::vector<EdgePoint*> outerEllipsePointsGrowing;
       //{
-      //cctag::vision::marker::cctag::ellipseGrowing( edgesMap, outerEllipsePoints, outerEllipsePointsGrowing, outerEllipse, scale );
+      //cctag::ellipseGrowing( edgesMap, outerEllipsePoints, outerEllipsePointsGrowing, outerEllipse, scale );
       //outerEllipsePoints.clear();
-      //cctag::vision::marker::cctag::outlierRemoval( outerEllipsePointsGrowing, outerEllipsePoints, 20.0 ); // PB, move list to vector in this function or inverse in ellipseGrowing @Lilian
+      //cctag::outlierRemoval( outerEllipsePointsGrowing, outerEllipsePoints, 20.0 ); // PB, move list to vector in this function or inverse in ellipseGrowing @Lilian
       //}
 
 
@@ -498,7 +494,5 @@ void clearDetectedMarkers(
   }
 }
 
-} // namespace marker
-} // namespace vision
 } // namespace cctag
 

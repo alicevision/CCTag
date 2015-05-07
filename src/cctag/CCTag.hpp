@@ -34,15 +34,10 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 typedef std::vector< std::pair< MarkerID, double > > IdSet;
 
 namespace ublas = boost::numeric::ublas;
-namespace numerical = cctag::numerical;
 
 class CCTag : public ICCTag
 {
@@ -372,15 +367,16 @@ inline CCTag* new_clone(const CCTag& x)
   return x.clone();
 }
 
+namespace status
+{
 // List of possible status
 static const int no_collected_cuts = -1;
 static const int no_selected_cuts = -2;
 static const int opti_has_diverged = -3;
 static const int id_not_reliable = -4;
 static const int id_reliable = 1;
+}
 
-}
-}
-}
+} // namespace cctag
 
 #endif

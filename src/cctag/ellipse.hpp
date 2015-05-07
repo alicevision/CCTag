@@ -17,10 +17,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 class CCTag;
 
@@ -129,8 +125,6 @@ void ellipseGrowing2( const EdgePointsImage& img, const std::vector<EdgePoint*>&
                       std::vector<EdgePoint*>& outerEllipsePoints, numerical::geometry::Ellipse& ellipse,
                       const double ellipseGrowingEllipticHullWidth, std::size_t & nSegmentOut, std::size_t & nLabel, bool goodInit);
 
-} // namespace marker
-} // namespace vision
 } // namespace cctag
 
 #endif

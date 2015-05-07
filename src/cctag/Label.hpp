@@ -5,7 +5,6 @@
 #include <vector>
 
 namespace cctag {
-namespace vision {
 
 class LabelEdgePoint;
 
@@ -25,8 +24,7 @@ public:
 	static int _counter;
 };
 
-}
-}
+} // namespace cctag
 
 #endif
 

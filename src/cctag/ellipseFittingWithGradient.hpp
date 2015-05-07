@@ -24,7 +24,6 @@
 #define _CCTAG_ELLIPSE_FIT_WITH_GRADIENTS_H
 
 namespace cctag {
-namespace vision {
 namespace geometry {
 
 void ellipse_fit_with_gradients( double *pts, double *grad, int pts_size,
@@ -33,8 +32,7 @@ void ellipse_fit_with_gradients( double *pts, double *grad, int pts_size,
 
 void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, cctag::numerical::geometry::Ellipse & ellipse );
 
-}
-}
-}
+} // namespace geometry
+} // namespace cctag
 
 #endif

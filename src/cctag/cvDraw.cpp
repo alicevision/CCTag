@@ -4,9 +4,6 @@
 
 
 namespace cctag {
-namespace vision {
-namespace marker {
-
 
 void drawMarkerOnImage( IplImage* simg, const CCTag& marker )
 {
@@ -48,6 +45,4 @@ void drawMarkersOnImage( IplImage* simg, const CCTag::Vector& markers )
 	}
 }
 
-}
-}
-}
+} // namespace cctag

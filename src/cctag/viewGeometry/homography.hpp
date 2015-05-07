@@ -4,7 +4,6 @@
 #include <opencv/cv.h>
 
 namespace cctag {
-namespace vision {
 namespace viewGeometry {
 
 /// @todo: move ellipse_to_params and param_to_ellipse into Ellipse.hpp
@@ -20,8 +19,7 @@ void param_to_ellipse( const double x, const double y, const double largeur, con
 //E0 correspond à la matrice de l'ellipse la plus grande
 CvMat retrouve_homographie( const CvMat* E0, const CvMat* E1, const int largeur, const int hauteur );
 
-}
-}
-}
+} // namespace viewGeometry
+} // namespace cctag
 
 #endif

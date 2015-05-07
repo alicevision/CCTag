@@ -1,6 +1,7 @@
 
 #include "types.hpp"
 
-namespace cctag {
-namespace vision {}
-}
+namespace cctag
+{
+
+} // namespace cctag

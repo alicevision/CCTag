@@ -44,10 +44,6 @@
 
 namespace cctag
 {
-namespace vision
-{
-namespace marker
-{
 
 void constructFlowComponentFromSeed(
         EdgePoint * seed,
@@ -740,7 +736,7 @@ void cctagDetection(CCTag::List& markers,
     {
       CCTag & cctag = *it;
 
-      const int detected = cctag::vision::marker::identify(
+      const int detected = cctag::identify(
               cctag,
               bank.getMarkers(),
               graySrc,
@@ -797,6 +793,4 @@ void cctagDetection(CCTag::List& markers,
   POP_LEAVE;
 }
 
-} // namespace marker
-} // namespace vision
 } // namespace cctag

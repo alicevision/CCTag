@@ -12,12 +12,8 @@
 #include <newmat.h>
 
 namespace cctag {
-struct ImageCut;
-}
-
-namespace cctag {
-namespace vision {
-namespace marker {
+  
+  struct ImageCut;
 
 /**
  * @brief Optimizer to find the subpixel position of an edge point from a 1D signal.
@@ -71,9 +67,7 @@ private:
 	double _imax;
 };
 
-}
-}
-}
+} // namespace cctag
 
 #endif
 

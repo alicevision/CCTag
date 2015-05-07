@@ -31,8 +31,6 @@
 #include <vector>
 
 namespace cctag {
-namespace vision {
-namespace marker {
 
 struct TotoFunctor {
 
@@ -94,7 +92,7 @@ private:
 
 void optimizeCenterCeres();
 
-}}}
+} // namespace cctag
 
 
 

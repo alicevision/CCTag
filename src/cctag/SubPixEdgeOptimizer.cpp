@@ -17,8 +17,6 @@
 #include <ostream>
 
 namespace cctag {
-namespace vision {
-namespace marker {
 
 SubPixEdgeOptimizer::SubPixEdgeOptimizer( const cctag::ImageCut & line )
 : Parent( 4, &SubPixEdgeOptimizer::subPix, NULL, this )
@@ -158,6 +156,4 @@ Point2dN<double> SubPixEdgeOptimizer::operator()( const double widthContour, con
 	return res;
 }
 
-}
-}
-}
+} // namespace cctag
