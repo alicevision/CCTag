@@ -65,6 +65,8 @@ namespace cctag {
             void writeIdentificationView(cctag::vision::marker::CCTag::List & markers) const;
 
             std::string getImageFileName() const;
+            
+            void clearSessions();
 
         private:
             Sessions _sessions; ///< Sessions map

@@ -168,6 +168,12 @@ namespace cctag {
 
 #endif
         }
+        
+        void CCTagVisualDebug::clearSessions() {
+#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+            _sessions.erase(_sessions.begin(), _sessions.end());
+#endif
+        }
 
     }
 }
