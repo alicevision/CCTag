@@ -70,8 +70,8 @@ void detection(std::size_t frame, cctag::View& view, const std::string & paramsF
     
     cctagDetection( markers, frame, view._grayView, params, true );
 
-    ROM_TCOUT( markers.size() << " markers.");
-    ROM_TCOUT("Total time: " << t.elapsed());
+    CCTAG_TCOUT( markers.size() << " markers.");
+    CCTAG_TCOUT("Total time: " << t.elapsed());
     
     std::cout << "Id : ";
 

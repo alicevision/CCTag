@@ -27,12 +27,12 @@ namespace numerical {
 
 		if ( ierr < 0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev("eigval param error!") );
 		}
 		else if ( ierr > 0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev("no convergence for eigval!") );
 		}
 
@@ -61,12 +61,12 @@ namespace numerical {
 
 		if ( ierr < 0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev("eigval param error!") );
 		}
 		else if ( ierr > 0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev("no convergence for eigval!") );
 		}
 
@@ -95,12 +95,12 @@ namespace numerical {
 
 		if ( ierr < 0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev("eigval param error!") );
 		}
 		else if ( ierr > 0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev("no convergence for eigval!") );
 		}
 
@@ -132,12 +132,12 @@ namespace numerical {
 
 		if ( ierr < 0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev("eigval param error!") );
 		}
 		else if ( ierr > 0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev("no convergence for eigval!") );
 		}
 
@@ -164,12 +164,12 @@ namespace numerical {
 		int ierr = lapack::geev( wa, dc, &vl, &vr, lapack::optimal_workspace() );
 		if ( ierr < 0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev("eigval param error!") );
 		}
 		else if ( ierr > 0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev("no convergence for eigval!") );
 		}
 		d.resize( a.size1(), a.size1() );

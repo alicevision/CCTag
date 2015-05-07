@@ -45,16 +45,16 @@ void fitEllipse( const std::vector<cctag::Point2dN< T > > & points, Ellipse& e )
 
 	const double angle = rR.angle * boost::math::constants::pi<double>() / 180.0;
 
-	//ROM_TCOUT_VAR(points[0]);
-	//ROM_TCOUT_VAR(xC);
-	//ROM_TCOUT_VAR(yC);
-	//ROM_TCOUT_VAR(a);
-	//ROM_TCOUT_VAR(b);
-	//ROM_TCOUT_VAR(angle);
+	//CCTAG_TCOUT_VAR(points[0]);
+	//CCTAG_TCOUT_VAR(xC);
+	//CCTAG_TCOUT_VAR(yC);
+	//CCTAG_TCOUT_VAR(a);
+	//CCTAG_TCOUT_VAR(b);
+	//CCTAG_TCOUT_VAR(angle);
 
 	e.setParameters( Point2dN<double>( xC, yC ), a, b, angle );
 
-	//ROM_TCOUT_VAR(boost::numeric::ublas::inner_prod(points[0],bounded_vector<double,3>(boost::numeric::ublas::prec_prod(e.matrix(),points[0]))));
+	//CCTAG_TCOUT_VAR(boost::numeric::ublas::inner_prod(points[0],bounded_vector<double,3>(boost::numeric::ublas::prec_prod(e.matrix(),points[0]))));
 
 	//cvWaitKey(0);
 }

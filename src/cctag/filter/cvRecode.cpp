@@ -67,7 +67,7 @@ void cvRecodedCannyGPUFilter2D( void* srcarr, void* dstarr, CvMat*& dx, CvMat*& 
     dy = cvCreateMat( size.height, size.width, CV_32FC1 );
   }
 
-  ROM_COUT_LILIAN( "Sobel allocation : " << t.elapsed() );
+  CCTAG_COUT_LILIAN( "Sobel allocation : " << t.elapsed() );
 
   t.restart();
 
@@ -175,7 +175,7 @@ void cvRecodedCannyGPUFilter2D( void* srcarr, void* dstarr, CvMat*& dx, CvMat*& 
   //cvShowImage("Sobel", dx);
   //cvWaitKey(0);
 
-  ROM_COUT_LILIAN( "Sobel took: " << t.elapsed() );
+  CCTAG_COUT_LILIAN( "Sobel took: " << t.elapsed() );
 
   t.restart();
 
@@ -227,7 +227,7 @@ void cvRecodedCannyGPUFilter2D( void* srcarr, void* dstarr, CvMat*& dx, CvMat*& 
 
   mag_row = cvMat( 1, size.width, CV_32F );
 
-  ROM_COUT_LILIAN( "Canny 1 took: " << t.elapsed() );
+  CCTAG_COUT_LILIAN( "Canny 1 took: " << t.elapsed() );
 
   t.restart();
 
@@ -366,7 +366,7 @@ void cvRecodedCannyGPUFilter2D( void* srcarr, void* dstarr, CvMat*& dx, CvMat*& 
     mag_buf[2] = _mag;
   }
 
-  ROM_COUT_LILIAN( "Canny 2 took : " << t.elapsed() );
+  CCTAG_COUT_LILIAN( "Canny 2 took : " << t.elapsed() );
 
   t.restart();
 
@@ -403,7 +403,7 @@ void cvRecodedCannyGPUFilter2D( void* srcarr, void* dstarr, CvMat*& dx, CvMat*& 
       CANNY_PUSH( m + mapstep + 1 );
   }
 
-  ROM_COUT_LILIAN( "Canny 3 took : " << t.elapsed() );
+  CCTAG_COUT_LILIAN( "Canny 3 took : " << t.elapsed() );
 
   t.restart();
 
@@ -431,7 +431,7 @@ void cvRecodedCannyGPUFilter2D( void* srcarr, void* dstarr, CvMat*& dx, CvMat*& 
     }
 
   }
-  ROM_COUT_LILIAN( "Canny 4 : " << t.elapsed() );
+  CCTAG_COUT_LILIAN( "Canny 4 : " << t.elapsed() );
 }
 
 #endif //with_cuda
@@ -497,7 +497,7 @@ void cvRecodedCanny(
 //		dy = cvCreateMat( size.height, size.width, CV_32FC1 );
 //	}
 
-  ROM_COUT_LILIAN( "Sobel allocation : " << t.elapsed() );
+  CCTAG_COUT_LILIAN( "Sobel allocation : " << t.elapsed() );
   t.restart();
 
   //cvSobel( src, dx, 1, 0, aperture_size );
@@ -635,7 +635,7 @@ void cvRecodedCanny(
 
   mag_row = cvMat( 1, size.width, CV_32F );
 
-  ROM_COUT_DEBUG( "Canny 1 took: " << t.elapsed() );
+  CCTAG_COUT_DEBUG( "Canny 1 took: " << t.elapsed() );
   t.restart();
 
   // calculate magnitude and angle of gradient, perform non-maxima supression.
@@ -773,7 +773,7 @@ void cvRecodedCanny(
     mag_buf[2] = _mag;
   }
 
-  ROM_COUT_DEBUG( "Canny 2 took : " << t.elapsed() );
+  CCTAG_COUT_DEBUG( "Canny 2 took : " << t.elapsed() );
 
   t.restart();
 
@@ -810,7 +810,7 @@ void cvRecodedCanny(
       CANNY_PUSH( m + mapstep + 1 );
   }
 
-  ROM_COUT_DEBUG( "Canny 3 took : " << t.elapsed() );
+  CCTAG_COUT_DEBUG( "Canny 3 took : " << t.elapsed() );
 
   t.restart();
 
@@ -826,5 +826,5 @@ void cvRecodedCanny(
     }
 
   }
-  ROM_COUT_DEBUG( "Canny 4 : " << t.elapsed() );
+  CCTAG_COUT_DEBUG( "Canny 4 : " << t.elapsed() );
 }

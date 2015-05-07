@@ -74,18 +74,18 @@ public:
 #if defined(EINVAL)
 			if( ret == EINVAL )
 			{
-				ROM_THROW( exception::BadAlloc()
+				CCTAG_THROW( exception::BadAlloc()
 					<< exception::dev() + "The alignment argument, value=" /*+ This::_alignment +*/ ", was not a power of two, or was not a multiple of sizeof(void *)." );
 			}
 #endif
 #if defined(ENOMEM)
 			if( ret == ENOMEM )
 			{
-				ROM_THROW( exception::BadAlloc()
+				CCTAG_THROW( exception::BadAlloc()
 					<< exception::dev("Out of memory") );
 			}
 #endif
-			ROM_THROW( exception::BadAlloc()
+			CCTAG_THROW( exception::BadAlloc()
 				<< exception::dev() + "Unrecognized error: " + ret );
 		}
 		return reinterpret_cast<pointer>( result );

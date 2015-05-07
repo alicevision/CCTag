@@ -1,4 +1,4 @@
-// FROM http://ljk.imag.fr/membres/Pierre.Saramito/rheolef/source_html/ublas-invert_8h-source.html
+// From http://ljk.imag.fr/membres/Pierre.Saramito/rheolef/source_html/ublas-invert_8h-source.html
 
 #ifndef _CCTAG_NUMERICAL_INVERT_MATRIX_HPP_
 #define _CCTAG_NUMERICAL_INVERT_MATRIX_HPP_

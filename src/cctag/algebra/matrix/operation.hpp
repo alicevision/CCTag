@@ -30,7 +30,7 @@ Matrix& normalizeDet1( Matrix& m )
 
 	if( m.size1() != m.size2())
 	{
-		ROM_THROW( exception::Bug()
+		CCTAG_THROW( exception::Bug()
 			<< exception::dev("Matrix must be square!" ) );
 	}
 	const T d = det( m );

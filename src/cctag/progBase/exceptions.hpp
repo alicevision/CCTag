@@ -16,42 +16,42 @@
 #include <stdexcept>
 #include <string>
 
-#ifdef ROM_NO_EXCEPTIONS
-#define ROM_NO_TRY_CATCH
-#define ROM_THROW(...)
+#ifdef CCTAG_NO_EXCEPTIONS
+#define CCTAG_NO_TRY_CATCH
+#define CCTAG_THROW(...)
 #else
-#define ROM_THROW BOOST_THROW_EXCEPTION
+#define CCTAG_THROW BOOST_THROW_EXCEPTION
 #endif
 
-#define ROM_FORCE_COUT_BOOST_EXCEPTION( e )  \
+#define CCTAG_FORCE_COUT_BOOST_EXCEPTION( e )  \
     ::std::cerr << "Exception:" << \
-    ::std::endl << ROM_INFOS << \
+    ::std::endl << CCTAG_INFOS << \
     ::std::endl << "\t" << ::boost::diagnostic_information( e )
 
-#define ROM_FORCE_COUT_CURRENT_EXCEPTION  \
+#define CCTAG_FORCE_COUT_CURRENT_EXCEPTION  \
     ::std::cerr << "Exception:" << \
-    ::std::endl << ROM_INFOS << \
+    ::std::endl << CCTAG_INFOS << \
     ::std::endl << "\t" << ::boost::current_exception_diagnostic_information()
 
-#ifndef ROM_NO_TRY_CATCH
-#	define ROM_TRY try
-#	define ROM_CATCH(x) catch( x )
-#	define ROM_RETHROW throw
+#ifndef CCTAG_NO_TRY_CATCH
+#	define CCTAG_TRY try
+#	define CCTAG_CATCH(x) catch( x )
+#	define CCTAG_RETHROW throw
 
-#define ROM_COUT_BOOST_EXCEPTION(e) ROM_FORCE_COUT_BOOST_EXCEPTION(e)
-#define ROM_COUT_CURRENT_EXCEPTION ROM_FORCE_COUT_CURRENT_EXCEPTION
+#define CCTAG_COUT_BOOST_EXCEPTION(e) CCTAG_FORCE_COUT_BOOST_EXCEPTION(e)
+#define CCTAG_COUT_CURRENT_EXCEPTION CCTAG_FORCE_COUT_CURRENT_EXCEPTION
 
 #else
 #    if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564))
-#        define ROM_TRY if( "" )
-#        define ROM_CATCH(x) else if( !"" )
+#        define CCTAG_TRY if( "" )
+#        define CCTAG_CATCH(x) else if( !"" )
 #    else
-#        define ROM_TRY if( true )
-#        define ROM_CATCH(x) else if( false )
+#        define CCTAG_TRY if( true )
+#        define CCTAG_CATCH(x) else if( false )
 #    endif
-#	define ROM_RETHROW
-#define ROM_COUT_BOOST_EXCEPTION(e)
-#define ROM_COUT_CURRENT_EXCEPTION
+#	define CCTAG_RETHROW
+#define CCTAG_COUT_BOOST_EXCEPTION(e)
+#define CCTAG_COUT_CURRENT_EXCEPTION
 #endif
 
 

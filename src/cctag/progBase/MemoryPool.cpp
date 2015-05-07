@@ -100,7 +100,7 @@ MemoryPool::~MemoryPool()
 {
 	if( !_dataUsed.empty() )
 	{
-		ROM_COUT_ERROR( "Error inside memory pool. Some data always mark used at the destruction (nb elements:" << _dataUsed.size() << ")" );
+		CCTAG_COUT_ERROR( "Error inside memory pool. Some data always mark used at the destruction (nb elements:" << _dataUsed.size() << ")" );
 	}
 }
 

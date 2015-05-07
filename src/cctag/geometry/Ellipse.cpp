@@ -34,7 +34,7 @@ void Ellipse::init( const Point2dN<double>& center, const double a, const double
 {
 	if( a < 0.0 || b < 0.0 )
 	{
-		ROM_THROW( exception::Bug()
+		CCTAG_THROW( exception::Bug()
 			<< exception::dev( "Semi axes must be real positive!" ) );
 	}
 
@@ -56,7 +56,7 @@ void Ellipse::setParameters( const Point2dN<double>& center, const double a, con
 {
 	if( a < 0.0 || b < 0.0 )
 	{
-		ROM_THROW( exception::Bug()
+		CCTAG_THROW( exception::Bug()
 			<< exception::dev( "Semi axes must be real positive!" ) );
 	}
 	_center = center;
@@ -76,7 +76,7 @@ void Ellipse::setA( const double a )
 {
 	if( a < 0.0 )
 	{
-		ROM_THROW( exception::Bug()
+		CCTAG_THROW( exception::Bug()
 			<< exception::dev( "Semi axes must be real positive!" ) );
 	}
 	_a = a;
@@ -87,7 +87,7 @@ void Ellipse::setB( const double b )
 {
 	if( b < 0.0 )
 	{
-		ROM_THROW( exception::Bug()
+		CCTAG_THROW( exception::Bug()
 			<< exception::dev( "Semi axes must be real positive!" ) );
 	}
 	_b = b;
@@ -154,7 +154,7 @@ void Ellipse::computeParameters()
 
 		if( aAux < 0.0 || bAux < 0.0 )
 		{
-			ROM_THROW( exception::Bug()
+			CCTAG_THROW( exception::Bug()
 				<< exception::dev( "Semi axes must be real positive!" ) );
 		}
 
@@ -184,7 +184,7 @@ void Ellipse::computeMatrix()
 	}
 	else
 	{
-		ROM_THROW( exception::Bug()
+		CCTAG_THROW( exception::Bug()
 				<< exception::dev( "Singular matrix!" ) );
 	}
 }

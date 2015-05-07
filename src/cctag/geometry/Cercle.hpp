@@ -73,13 +73,13 @@ public:
 
 		double r = sqrt( ( x1 - xc ) * ( x1 - xc ) + ( y1 - yc ) * ( y1 - yc ) );
 
-		ROM_COUT_LILIAN( " xc = " << xc << " yc = " << yc << " r = " << r );
+		CCTAG_COUT_LILIAN( " xc = " << xc << " yc = " << yc << " r = " << r );
 
 		Point2dN<double> c( xc, yc );
 
 		Ellipse::init( c, r, r, 0.0 );
 
-		ROM_COUT_LILIAN( "center x = " << _center.x() << "  y = " << center().y() << " a = " << a() << " b = " << b() );
+		CCTAG_COUT_LILIAN( "center x = " << _center.x() << "  y = " << center().y() << " a = " << a() << " b = " << b() );
 
 	}
 

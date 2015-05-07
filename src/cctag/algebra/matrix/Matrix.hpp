@@ -38,7 +38,7 @@ f<double>(m);
 // define solution
 // not really clear
 template<typename T>
-void f( ROM_Matrix(T) & m, ROM_BoundedMatrix(T, 3, 4) & mm );
+void f( CCTAG_Matrix(T) & m, CCTAG_BoundedMatrix(T, 3, 4) & mm );
 
 Matrixd m;
 f(m);
@@ -102,7 +102,7 @@ private:
 
 
 
-#define ROM_DEFINE_NUMERICAL_MATRIX_TYPES( TYPE, ORDER, ORDERSTR, POST ) \
+#define CCTAG_DEFINE_NUMERICAL_MATRIX_TYPES( TYPE, ORDER, ORDERSTR, POST ) \
 	\
 	typedef Matrix<TYPE,ORDER>::Type Matrix##ORDERSTR##POST; \
 	typedef Matrix<TYPE,ORDER>::ShallowType MatrixView##ORDERSTR##POST; \
@@ -121,11 +121,11 @@ private:
 	typedef BoundedMatrix<TYPE, 4, 4, ORDER>::Type BoundedMatrix4x4##ORDERSTR##POST; \
 //
 
-#define ROM_DEFINE_NUMERICAL_TYPES( TYPE, POST ) \
+#define CCTAG_DEFINE_NUMERICAL_TYPES( TYPE, POST ) \
 	\
-	ROM_DEFINE_NUMERICAL_MATRIX_TYPES( TYPE, boost::numeric::ublas::row_major, , POST ) \
-	ROM_DEFINE_NUMERICAL_MATRIX_TYPES( TYPE, boost::numeric::ublas::column_major, C, POST ) \
-	ROM_DEFINE_NUMERICAL_MATRIX_TYPES( TYPE, boost::numeric::ublas::row_major, R, POST ) \
+	CCTAG_DEFINE_NUMERICAL_MATRIX_TYPES( TYPE, boost::numeric::ublas::row_major, , POST ) \
+	CCTAG_DEFINE_NUMERICAL_MATRIX_TYPES( TYPE, boost::numeric::ublas::column_major, C, POST ) \
+	CCTAG_DEFINE_NUMERICAL_MATRIX_TYPES( TYPE, boost::numeric::ublas::row_major, R, POST ) \
 	\
 	typedef Vector<TYPE>::Type Vector##POST; \
 	typedef Vector<TYPE>::ShallowType VectorView##POST; \
@@ -138,10 +138,10 @@ private:
 //
 
 
-ROM_DEFINE_NUMERICAL_TYPES( double, d )
-ROM_DEFINE_NUMERICAL_TYPES( float, f )
-//ROM_DEFINE_NUMERICAL_TYPES( int, i )
-//ROM_DEFINE_NUMERICAL_TYPES( char, c )
+CCTAG_DEFINE_NUMERICAL_TYPES( double, d )
+CCTAG_DEFINE_NUMERICAL_TYPES( float, f )
+//CCTAG_DEFINE_NUMERICAL_TYPES( int, i )
+//CCTAG_DEFINE_NUMERICAL_TYPES( char, c )
 
 
 }
