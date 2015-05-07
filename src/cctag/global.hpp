@@ -1,7 +1,7 @@
 #ifndef _CCTAG_GLOBAL_HPP_
 #define _CCTAG_GLOBAL_HPP_
 
-//#define ROM_NO_COUT
+//#define CCTAG_NO_COUT
 
 #include "progBase/system/system.hpp"
 
@@ -33,14 +33,14 @@ namespace std {
 
 #ifdef NDEBUG
 #  if defined( _MSC_VER )
-#    define ROM_FORCEINLINE __forceinline
+#    define CCTAG_FORCEINLINE __forceinline
 #  elif defined( __GNUC__ ) && __GNUC__ > 3
-#    define ROM_FORCEINLINE inline __attribute__ ( ( always_inline ) )
+#    define CCTAG_FORCEINLINE inline __attribute__ ( ( always_inline ) )
 #  else
-#    define ROM_FORCEINLINE inline
+#    define CCTAG_FORCEINLINE inline
 #  endif
 #else
-#  define ROM_FORCEINLINE inline
+#  define CCTAG_FORCEINLINE inline
 #endif
 
 #ifdef DEBUG
@@ -49,85 +49,85 @@ namespace std {
  #include "release.hpp"
 #endif
 
-#ifndef ROM_PAUSE
+#ifndef CCTAG_PAUSE
 #ifdef DEBUG
-#define ROM_PAUSE  ::std::cin.ignore().get();
+#define CCTAG_PAUSE  ::std::cin.ignore().get();
 #else
-#define ROM_PAUSE
+#define CCTAG_PAUSE
 #endif
 #endif
 
-#ifndef ROM_COUT
+#ifndef CCTAG_COUT
 
 /**
- * @def   ROM_INFOS
+ * @def   CCTAG_INFOS
  * @brief informations : filename, line number, function name
  **/
- #define ROM_INFOS  "file: " << __FILE__ << ",  line: " << __LINE__ << ::std::endl << "function: " << BOOST_CURRENT_FUNCTION
+ #define CCTAG_INFOS  "file: " << __FILE__ << ",  line: " << __LINE__ << ::std::endl << "function: " << BOOST_CURRENT_FUNCTION
 
- #define ROM_VAR( a )  # a << ": " << a
- #define ROM_VAR2( a, b )  # a << ": " << a << ", " << # b << ": " << b
- #define ROM_VAR3( a, b, c )  # a << ": " << a << ", " << # b << ": " << b << ", " << # c << ": " << c
- #define ROM_VAR4( a, b, c, d )  # a << ": " << a << ", " << # b << ": " << b << ", " << # c << ": " << c << ", " << # d << ": " << d
- #define ROM_VAR_ENDL( a )  # a << ":" << ::std::endl << a
+ #define CCTAG_VAR( a )  # a << ": " << a
+ #define CCTAG_VAR2( a, b )  # a << ": " << a << ", " << # b << ": " << b
+ #define CCTAG_VAR3( a, b, c )  # a << ": " << a << ", " << # b << ": " << b << ", " << # c << ": " << c
+ #define CCTAG_VAR4( a, b, c, d )  # a << ": " << a << ", " << # b << ": " << b << ", " << # c << ": " << c << ", " << # d << ": " << d
+ #define CCTAG_VAR_ENDL( a )  # a << ":" << ::std::endl << a
 
-#ifndef ROM_NO_COUT
+#ifndef CCTAG_NO_COUT
 /**
  * @param[in] ... : all parameters with an operator << defined
  * @brief terminal display
  **/
- #define ROM_COUT(... )  ::std::cout << __VA_ARGS__ << ::std::endl
- #define ROM_COUT_NOENDL(... )  ::std::cout << __VA_ARGS__
- #define ROM_CERR(... )  ::std::cerr << __VA_ARGS__ << ::std::endl
- #define ROM_CERR_NOENDL(... )  ::std::cerr << __VA_ARGS__
+ #define CCTAG_COUT(... )  ::std::cout << __VA_ARGS__ << ::std::endl
+ #define CCTAG_COUT_NOENDL(... )  ::std::cout << __VA_ARGS__
+ #define CCTAG_CERR(... )  ::std::cerr << __VA_ARGS__ << ::std::endl
+ #define CCTAG_CERR_NOENDL(... )  ::std::cerr << __VA_ARGS__
 
- #define ROM_COUT_X( N, ... ) \
+ #define CCTAG_COUT_X( N, ... ) \
     for( unsigned int i = 0; i < N; ++i ) { ::std::cout << __VA_ARGS__; } \
     ::std::cout << ::std::endl
 
- #define ROM_CERR_X( N, ... ) \
+ #define CCTAG_CERR_X( N, ... ) \
     for( unsigned int i = 0; i < N; ++i ) { ::std::cerr << __VA_ARGS__; } \
     ::std::cerr << ::std::endl
 
 #else
- #define ROM_COUT(...)
- #define ROM_COUT_NOENDL(... )
- #define ROM_CERR(...)
- #define ROM_COUT_X( N, ... )
+ #define CCTAG_COUT(...)
+ #define CCTAG_COUT_NOENDL(... )
+ #define CCTAG_CERR(...)
+ #define CCTAG_COUT_X( N, ... )
 #endif
 
 
- #define ROM_COUT_VAR( a )  ROM_COUT( ROM_VAR( a ) )
- #define ROM_COUT_VAR2( a, b )  ROM_COUT( ROM_VAR2( a, b ) )
- #define ROM_COUT_VAR3( a, b, c )  ROM_COUT( ROM_VAR3( a, b, c ) )
- #define ROM_COUT_VAR4( a, b, c, d )  ROM_COUT( ROM_VAR4( a, b, c, d ) )
+ #define CCTAG_COUT_VAR( a )  CCTAG_COUT( CCTAG_VAR( a ) )
+ #define CCTAG_COUT_VAR2( a, b )  CCTAG_COUT( CCTAG_VAR2( a, b ) )
+ #define CCTAG_COUT_VAR3( a, b, c )  CCTAG_COUT( CCTAG_VAR3( a, b, c ) )
+ #define CCTAG_COUT_VAR4( a, b, c, d )  CCTAG_COUT( CCTAG_VAR4( a, b, c, d ) )
 
 /**
  * @brief terminal information display
  **/
- #define ROM_COUT_INFOS ROM_COUT( ROM_INFOS )
+ #define CCTAG_COUT_INFOS CCTAG_COUT( CCTAG_INFOS )
 
 /**
  * @param[in] ... : all parameters with an operator << defined
  * @brief terminal information display
  **/
- #define ROM_COUT_WITHINFOS(... )  \
-    ROM_COUT( ROM_INFOS << \
+ #define CCTAG_COUT_WITHINFOS(... )  \
+    CCTAG_COUT( CCTAG_INFOS << \
           ::std::endl << "\t" << __VA_ARGS__ )
 
- #define ROM_COUT_WARNING(... )  \
-    ROM_CERR( "Warning:" << \
-    ::std::endl << ROM_INFOS << \
+ #define CCTAG_COUT_WARNING(... )  \
+    CCTAG_CERR( "Warning:" << \
+    ::std::endl << CCTAG_INFOS << \
     ::std::endl << "\t" << __VA_ARGS__  )
 
- #define ROM_COUT_ERROR(... )  \
-    ROM_CERR( "Error:" << \
-    ::std::endl << ROM_INFOS << \
+ #define CCTAG_COUT_ERROR(... )  \
+    CCTAG_CERR( "Error:" << \
+    ::std::endl << CCTAG_INFOS << \
     ::std::endl << "\t" << __VA_ARGS__  )
 
- #define ROM_COUT_FATALERROR(... )  \
-    ROM_CERR( "Fatal error:" << \
-    ::std::endl << ROM_INFOS << \
+ #define CCTAG_COUT_FATALERROR(... )  \
+    CCTAG_CERR( "Fatal error:" << \
+    ::std::endl << CCTAG_INFOS << \
     ::std::endl << "\t" << __VA_ARGS__  )
 
 #endif
@@ -141,35 +141,35 @@ namespace std {
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-// ROM_TCOUT* defines are used by developpers for temporary displays during development stages.
+// CCTAG_TCOUT* defines are used by developpers for temporary displays during development stages.
 // They are removed in production mode.
-#ifndef ROM_PRODUCTION
-	#define ROM_TCOUT ROM_COUT
-	#define ROM_TCOUT_NOENDL ROM_COUT_NOENDL
-	#define ROM_TCOUT_X ROM_COUT_X
-	#define ROM_TCOUT_VAR ROM_COUT_VAR
-	#define ROM_TCOUT_VAR2 ROM_COUT_VAR2
-	#define ROM_TCOUT_VAR3 ROM_COUT_VAR3
-	#define ROM_TCOUT_VAR4 ROM_COUT_VAR4
-	#define ROM_TCOUT_INFOS ROM_COUT_INFOS
-	#define ROM_TCOUT_WITHINFOS ROM_COUT_WITHINFOS
+#ifndef CCTAG_PRODUCTION
+	#define CCTAG_TCOUT CCTAG_COUT
+	#define CCTAG_TCOUT_NOENDL CCTAG_COUT_NOENDL
+	#define CCTAG_TCOUT_X CCTAG_COUT_X
+	#define CCTAG_TCOUT_VAR CCTAG_COUT_VAR
+	#define CCTAG_TCOUT_VAR2 CCTAG_COUT_VAR2
+	#define CCTAG_TCOUT_VAR3 CCTAG_COUT_VAR3
+	#define CCTAG_TCOUT_VAR4 CCTAG_COUT_VAR4
+	#define CCTAG_TCOUT_INFOS CCTAG_COUT_INFOS
+	#define CCTAG_TCOUT_WITHINFOS CCTAG_COUT_WITHINFOS
 #else
-	#define ROM_TCOUT ROM_COUT_DEBUG
-	#define ROM_TCOUT_X ROM_COUT_X_DEBUG
-	#define ROM_TCOUT_VAR ROM_COUT_VAR_DEBUG
-	#define ROM_TCOUT_VAR2 ROM_COUT_VAR2_DEBUG
-	#define ROM_TCOUT_VAR3 ROM_COUT_VAR3_DEBUG
-	#define ROM_TCOUT_VAR4 ROM_COUT_VAR4_DEBUG
-	#define ROM_TCOUT_INFOS ROM_COUT_INFOS_DEBUG
-	#define ROM_TCOUT_WITHINFOS ROM_COUT_WITHINFOS_DEBUG
+	#define CCTAG_TCOUT CCTAG_COUT_DEBUG
+	#define CCTAG_TCOUT_X CCTAG_COUT_X_DEBUG
+	#define CCTAG_TCOUT_VAR CCTAG_COUT_VAR_DEBUG
+	#define CCTAG_TCOUT_VAR2 CCTAG_COUT_VAR2_DEBUG
+	#define CCTAG_TCOUT_VAR3 CCTAG_COUT_VAR3_DEBUG
+	#define CCTAG_TCOUT_VAR4 CCTAG_COUT_VAR4_DEBUG
+	#define CCTAG_TCOUT_INFOS CCTAG_COUT_INFOS_DEBUG
+	#define CCTAG_TCOUT_WITHINFOS CCTAG_COUT_WITHINFOS_DEBUG
 #endif
 
 
 
 #ifdef USER_LILIAN
-	#define ROM_COUT_LILIAN  ROM_COUT
+	#define CCTAG_COUT_LILIAN  CCTAG_COUT
 #else
-	#define ROM_COUT_LILIAN( ... )
+	#define CCTAG_COUT_LILIAN( ... )
 #endif
 
 #endif

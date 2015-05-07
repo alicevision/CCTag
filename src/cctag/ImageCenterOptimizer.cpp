@@ -67,7 +67,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 
 	cctag::numerical::optimization::condition(centerExtEllipse, this_ptr->_mInvT);
 
-	//ROM_TCOUT_VAR( centerExtEllipse );
+	//CCTAG_TCOUT_VAR( centerExtEllipse );
 
 	//CCTagVisualDebug::instance().drawText( centerExtEllipse, boost::lexical_cast<std::string>(this_ptr->_numIter), cctag::color_white );
 	CCTagVisualDebug::instance().drawPoint( centerExtEllipse, cctag::color_blue );
@@ -77,7 +77,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 	if ( !getSignals( mH, vecSig, this_ptr->_lengthSig, centerExtEllipse, this_ptr->_vecExtPoints, this_ptr->_sView, this_ptr->_ellipse.matrix() ) )
 	{
 		// We are diverging
-		ROM_COUT_DEBUG("divergence!");
+		CCTAG_COUT_DEBUG("divergence!");
 		return;
 	}
 
@@ -85,7 +85,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 
 	for( std::size_t i = 0; i < vecSig.size() - 1; ++i )
 	{
-		//ROM_TCOUT_VAR(vecSig[i]._imgSignal);
+		//CCTAG_TCOUT_VAR(vecSig[i]._imgSignal);
 		for( std::size_t j = i+1; j < vecSig.size(); ++j )
 		{
 			res += std::pow( norm_2( vecSig[i]._imgSignal - vecSig[j]._imgSignal ), 2 );
@@ -134,7 +134,7 @@ Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double>
 #if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
 	if ( !objfcn.setOutputFile("example1.out", 0) )
 	{
-		ROM_COUT_ERROR( "main: output file open failed" );
+		CCTAG_COUT_ERROR( "main: output file open failed" );
 	}
 #endif
 

@@ -105,7 +105,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
 
   std::list<EdgePoint*> vProcessedEdgePoint;
 
-  ROM_COUT_VAR_DEBUG(outerEllipse);
+  CCTAG_COUT_VAR_DEBUG(outerEllipse);
 
   bounded_vector<double, 2> gradE(2);
   bounded_vector<double, 2> toto(2);
@@ -140,7 +140,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
 
       if (!p->_processedAux)
       {
-        //ROM_COUT(*p);
+        //CCTAG_COUT(*p);
 
         p->_processedAux = true;
         vProcessedEdgePoint.push_back(p);
@@ -159,7 +159,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
 
         Point2dN<double> pointToAdd(p->x(), p->y());
 
-        //ROM_COUT_VAR(double(dir)*inner_prod( gradE, toto ));
+        //CCTAG_COUT_VAR(double(dir)*inner_prod( gradE, toto ));
 
 
         if (isInEllipse(outerEllipse, pointToAdd) && isOnTheSameSide(outerPoint, pointToAdd, lineThroughCenter))
@@ -298,7 +298,7 @@ numerical::geometry::Cercle computeCircleFromOuterEllipsePoints(const std::vecto
     }
   }
 
-  //ROM_COUT_VAR_DEBUG(std::abs( inner_prod( *( filteredChildrens[iMax] ), l ) ) / normL);
+  //CCTAG_COUT_VAR_DEBUG(std::abs( inner_prod( *( filteredChildrens[iMax] ), l ) ) / normL);
 
   Point2dN<double> equiPoint;
   double distanceToAdd = cctag::numerical::distancePoints2D(p1, p2) / 50; // match to the max/min of semi-axis ratio for an outer ellipse of a flow candidate
@@ -317,7 +317,7 @@ numerical::geometry::Cercle computeCircleFromOuterEllipsePoints(const std::vecto
     equiPoint.setY(pMax->y());
   }
 
-  //ROM_COUT("Create a circle \n" << Point2dN<double>(p1->x(), p1->y()) << " \n " << Point2dN<double>(p2->x(), p2->y())
+  //CCTAG_COUT("Create a circle \n" << Point2dN<double>(p1->x(), p1->y()) << " \n " << Point2dN<double>(p2->x(), p2->y())
   //	<< " \n" << equiPoint );
 
   numerical::geometry::Cercle resCircle(Point2dN<double>(p1.x(), p1.y()), Point2dN<double>(p2.x(), p2.y()), equiPoint);
@@ -474,7 +474,7 @@ void ellipseGrowing(const EdgePointsImage& img,
     // Compute the new ellipse which fits oulierEllipsePoints
     numerical::ellipseFitting(ellipse, outerEllipsePoints);
 
-    //ROM_TCOUT(ellipse.matrix());
+    //CCTAG_TCOUT(ellipse.matrix());
 
     ++nIter;
   }
@@ -616,7 +616,7 @@ void readPointsFromFile(char* file, std::vector<EdgePoint* >& pts)
         ++i;
         p = strtok(NULL, " ");
       }
-      ROM_COUT_LILIAN(vec);
+      CCTAG_COUT_LILIAN(vec);
       EdgePoint* ePt = new EdgePoint((int) vec(0), (int) vec(1), 1.0f, 1.0f);
       pts.push_back(ePt);
 

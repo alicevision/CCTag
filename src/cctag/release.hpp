@@ -2,28 +2,28 @@
 #define _CCTAG_RELEASE_HPP_
 
 /*
- * In release mode, ROM_COUT_*_DEBUG are disabled.
+ * In release mode, CCTAG_COUT_*_DEBUG are disabled.
  */
 
-/// @see ROM_COUT
-#define ROM_COUT_DEBUG(... )
-/// @see  ROM_COUT_INFOS
-#define ROM_COUT_INFOS_DEBUG
-/// @see  ROM_COUT_INFOS
-#define ROM_COUT_WITHINFOS_DEBUG(... )
-/// @see ROM_IF_DEBUG
-#define ROM_IF_DEBUG(... )
+/// @see CCTAG_COUT
+#define CCTAG_COUT_DEBUG(... )
+/// @see  CCTAG_COUT_INFOS
+#define CCTAG_COUT_INFOS_DEBUG
+/// @see  CCTAG_COUT_INFOS
+#define CCTAG_COUT_WITHINFOS_DEBUG(... )
+/// @see CCTAG_IF_DEBUG
+#define CCTAG_IF_DEBUG(... )
 
-#define ROM_COUT_X_DEBUG( N, ... )
-#define ROM_COUT_VAR_DEBUG(... )
-#define ROM_COUT_VAR2_DEBUG(... )
-#define ROM_COUT_VAR3_DEBUG(... )
-#define ROM_COUT_VAR4_DEBUG(... )
-#define ROM_COUT_WITHINFOS_DEBUG(... )
-#define ROM_COUT_WARNING_DEBUG(... )
-#define ROM_COUT_ERROR_DEBUG(... )
-#define ROM_COUT_FATALERROR_DEBUG(... )
-#define ROM_COUT_EXCEPTION_DEBUG(... )
+#define CCTAG_COUT_X_DEBUG( N, ... )
+#define CCTAG_COUT_VAR_DEBUG(... )
+#define CCTAG_COUT_VAR2_DEBUG(... )
+#define CCTAG_COUT_VAR3_DEBUG(... )
+#define CCTAG_COUT_VAR4_DEBUG(... )
+#define CCTAG_COUT_WITHINFOS_DEBUG(... )
+#define CCTAG_COUT_WARNING_DEBUG(... )
+#define CCTAG_COUT_ERROR_DEBUG(... )
+#define CCTAG_COUT_FATALERROR_DEBUG(... )
+#define CCTAG_COUT_EXCEPTION_DEBUG(... )
 
 #define POP_INFO  std::cerr << __FILE__ << ":" << __LINE__ << " INFO: "
 #define POP_ERROR std::cerr << __FILE__ << ":" << __LINE__ << " ERROR: "

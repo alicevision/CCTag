@@ -194,7 +194,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             }
         }
     }
-    ROM_COUT_LILIAN("Elapsed time for vote: " << t.elapsed());
+    CCTAG_COUT_LILIAN("Elapsed time for vote: " << t.elapsed());
 }
 
     void edgeLinking(const EdgePointsImage& img, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax,
@@ -501,7 +501,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                                 cnt = 0;
                                 qm = numerical::geometry::Ellipse(Q);
                                 Sm = S;
-                                //ROM_COUT(Sm);
+                                //CCTAG_COUT(Sm);
                             } else {
                                 ++cnt;
                             }
@@ -520,7 +520,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             vDistFinal.clear();
             vDistFinal.reserve(childrens.size());
 
-            //ROM_COUT_VAR(qm);
+            //CCTAG_COUT_VAR(qm);
 
             BOOST_FOREACH(EdgePoint * e, childrens) {
 
@@ -656,16 +656,16 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
         if (Sm < thr * SRef) {
 
-            ROM_COUT_DEBUG("Median test succed !!\n");
+            CCTAG_COUT_DEBUG("Median test succed !!\n");
 
-            ROM_COUT_VAR_DEBUG(outerEllipse.matrix());
-            ROM_COUT_VAR_DEBUG(outerEllipsePoints.size());
+            CCTAG_COUT_VAR_DEBUG(outerEllipse.matrix());
+            CCTAG_COUT_VAR_DEBUG(outerEllipsePoints.size());
 
             std::vector<EdgePoint*> outerEllipsePointsTemp = outerEllipsePoints;
             numerical::geometry::Ellipse outerEllipseTemp;
 
             outerEllipsePointsTemp.insert(outerEllipsePointsTemp.end(), anotherOuterEllipsePoints.begin(), anotherOuterEllipsePoints.end());
-            ROM_COUT_VAR_DEBUG(outerEllipsePointsTemp.size());
+            CCTAG_COUT_VAR_DEBUG(outerEllipsePointsTemp.size());
             
             // Compute the new ellipse which fits oulierEllipsePoints
             numerical::ellipseFitting(outerEllipseTemp, outerEllipsePointsTemp);
@@ -688,24 +688,24 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                         outerEllipsePoints = outerEllipsePointsTemp;
                         outerEllipse = outerEllipseTemp;
 
-                        ROM_COUT_VAR_DEBUG(outerEllipse);
+                        CCTAG_COUT_VAR_DEBUG(outerEllipse);
                         return true;
                     } else {
-                        ROM_COUT_DEBUG("isAnotherSegment : intermediate points outside or bad gradient orientations: ");
+                        CCTAG_COUT_DEBUG("isAnotherSegment : intermediate points outside or bad gradient orientations: ");
                         return false;
                     }
                 } else {
                     CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(FINAL_MEDIAN_TEST_FAILED_WHILE_ASSEMBLING);
-                    ROM_COUT_DEBUG("SmFinal > thrMedianDistanceEllipse in isAnotherSegment");
+                    CCTAG_COUT_DEBUG("SmFinal > thrMedianDistanceEllipse in isAnotherSegment");
                 }
             } else {
                 CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(QUALITY_TEST_FAILED_WHILE_ASSEMBLING);
-                ROM_COUT_DEBUG("Quality too high: " << quality);
+                CCTAG_COUT_DEBUG("Quality too high: " << quality);
                 return false;
             }
         } else {
             CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(MEDIAN_TEST_FAILED_WHILE_ASSEMBLING);
-            ROM_COUT_DEBUG("Test failed !!\n");
+            CCTAG_COUT_DEBUG("Test failed !!\n");
             return false;
         }
         return false;

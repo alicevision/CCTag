@@ -56,7 +56,7 @@ public:
 		}
 		else
 		{
-			ROM_COUT_ERROR( "FDNLF1:initFcn: Warning - initialization called twice\n" );
+			CCTAG_COUT_ERROR( "FDNLF1:initFcn: Warning - initialization called twice\n" );
 			initOpt( dim, mem_xc );
 		}
 	}

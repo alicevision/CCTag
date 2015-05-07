@@ -22,7 +22,7 @@ namespace marker {
                         if (format == 0) {
                             std::cout << " [" << point->x() << "," << point->y() << "] ;";
                         } else if (format == 1) {
-                            ROM_COUT(*point);
+                            CCTAG_COUT(*point);
                         }
                     }
                     std::cout << "]" << std::endl;
@@ -35,7 +35,7 @@ namespace marker {
                         if (format == 0) {
                             std::cout << " [" << point->x() << "," << point->y() << "] ;";
                         } else if (format == 1) {
-                            ROM_COUT(*point);
+                            CCTAG_COUT(*point);
                         }
                     }
                     std::cout << "]" << std::endl;

@@ -88,7 +88,7 @@ void get2CoplanarCircleConstraint( const boost::numeric::ublas::bounded_matrix<d
         
         if ( nok1 != 1 || nok2 != 2 )
         {
-            ROM_THROW( exception::Bug()
+            CCTAG_THROW( exception::Bug()
             << exception::dev("get2CoplanarCircleConstraint failed!") );
         }
         ublas::bounded_matrix<double, 3, 2> LD = linesFromRank2Conic( e1 - s11v * e2 );
@@ -107,7 +107,7 @@ void get2CoplanarCircleConstraint( const boost::numeric::ublas::bounded_matrix<d
         }
         else
         {
-            ROM_THROW( exception::Bug()
+            CCTAG_THROW( exception::Bug()
             << exception::dev("get2CoplanarCircleConstraint failed!") );
         }
         

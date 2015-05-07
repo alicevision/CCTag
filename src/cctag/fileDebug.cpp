@@ -49,12 +49,12 @@ namespace cctag {
         }
 
         void CCTagFileDebug::printInfos() {
-            ROM_COUT("Print infos");
+            CCTAG_COUT("Print infos");
             BOOST_FOREACH(const int index, _vflowComponentIndex) {
-                ROM_COUT_VAR(index);
+                CCTAG_COUT_VAR(index);
             }
-            ROM_COUT_VAR(_isAssembled);
-            ROM_PAUSE;
+            CCTAG_COUT_VAR(_isAssembled);
+            CCTAG_PAUSE;
         }
 
         void CCTagFileDebug::initFlowComponentsIndex(int size) {
@@ -107,7 +107,7 @@ namespace cctag {
                 oa & BOOST_SERIALIZATION_NVP(nCircles);
                 cctag::vision::marker::serializeFlowComponent(oa, flowComponent);
             } else {
-                ROM_COUT_ERROR("Unable to output flowComponent infos! Select session before!");
+                CCTAG_COUT_ERROR("Unable to output flowComponent infos! Select session before!");
             }
 #endif
         }
@@ -118,7 +118,7 @@ namespace cctag {
                 boost::archive::text_oarchive oa(*_sstream);
                 oa << marker;
             } else {
-                ROM_COUT_ERROR("Unable to output marker infos! Select session before!");
+                CCTAG_COUT_ERROR("Unable to output marker infos! Select session before!");
             }
 #endif
         }

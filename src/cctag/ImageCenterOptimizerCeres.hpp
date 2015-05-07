@@ -53,7 +53,7 @@ struct TotoFunctor {
     cctag::Point2dN<double> centerExtEllipse( x[0], x[1] );
 
 	cctag::numerical::optimization::condition(centerExtEllipse, _mInvT);
-	//ROM_TCOUT_VAR( centerExtEllipse );
+	//CCTAG_TCOUT_VAR( centerExtEllipse );
 	//CCTagVisualDebug::instance().drawText( centerExtEllipse, boost::lexical_cast<std::string>(this_ptr->_numIter), cctag::color_white );
 	CCTagVisualDebug::instance().drawPoint( centerExtEllipse, cctag::color_blue );
 
@@ -62,7 +62,7 @@ struct TotoFunctor {
 	if ( !getSignals( mH, vecSig, _lengthSig, centerExtEllipse, _vecExtPoints, _sView, _ellipse.matrix() ) )
 	{
 		// We are diverging
-		ROM_COUT_DEBUG("divergence!");
+		CCTAG_COUT_DEBUG("divergence!");
 		return false;
 	}
 
@@ -70,7 +70,7 @@ struct TotoFunctor {
 
 	for( std::size_t i = 0; i < vecSig.size() - 1; ++i )
 	{
-		//ROM_TCOUT_VAR(vecSig[i]._imgSignal);
+		//CCTAG_TCOUT_VAR(vecSig[i]._imgSignal);
 		for( std::size_t j = i+1; j < vecSig.size(); ++j )
 		{
 			residual[0] += std::pow( norm_2( vecSig[i]._imgSignal - vecSig[j]._imgSignal ), 2 );

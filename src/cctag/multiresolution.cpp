@@ -239,7 +239,7 @@ void cctagMultiresDetection(
             --i)
   {
 
-    ROM_COUT(":::::::::::::::: Multiresolution level " << i - 1 <<
+    CCTAG_COUT(":::::::::::::::: Multiresolution level " << i - 1 <<
              " :::::::::::::::::::");
 
     CCTag::List & markersList = pyramidMarkers[i - 1];
@@ -280,8 +280,8 @@ void cctagMultiresDetection(
             multiresSrc.getView(i - 1), cannyGradX, cannyGradY, edgesMap,
             frame, i - 1, std::pow(2.0, (int) i - 1), params);
 
-    ROM_COUT("cctagDetection on layer 1:");
-    ROM_COUT_VAR(markersList.size());
+    CCTAG_COUT("cctagDetection on layer 1:");
+    CCTAG_COUT_VAR(markersList.size());
 
     CCTagVisualDebug::instance().initBackgroundImage(multiresSrc.getView(i - 1));
     std::stringstream outFilename2;
@@ -297,7 +297,7 @@ void cctagMultiresDetection(
     }
   }
 
-  ROM_COUT(":::::::::::::::: Multiresolution level 0 :::::::::::::::::::");
+  CCTAG_COUT(":::::::::::::::: Multiresolution level 0 :::::::::::::::::::");
 
   rgb32f_view_t subCannyRGB = multiresCanny.getView(0);
   CannyView cannyView;
@@ -332,8 +332,8 @@ void cctagMultiresDetection(
 
     cctagDetectionFromEdges(markersList, points, multiresSrc.getView(0),
             cannyGradX, cannyGradY, edgesMap, frame, 0, 1.0, params);
-    ROM_COUT("After 2st cctagDetection");
-    ROM_COUT_VAR(markersList.size());
+    CCTAG_COUT("After 2st cctagDetection");
+    CCTAG_COUT_VAR(markersList.size());
 
     CCTagVisualDebug::instance().initBackgroundImage(multiresSrc.getView(0));
     CCTagVisualDebug::instance().newSession("viewLevel0");
@@ -344,7 +344,7 @@ void cctagMultiresDetection(
 
       if (doUpdate)
       {
-        ROM_COUT_DEBUG("Update Level 0");
+        CCTAG_COUT_DEBUG("Update Level 0");
         update(markers, marker);
       }
       else
@@ -365,7 +365,7 @@ void cctagMultiresDetection(
     {
       if (doUpdate)
       {
-        ROM_COUT_DEBUG("Update Level " << i);
+        CCTAG_COUT_DEBUG("Update Level " << i);
         update(markers, marker);
       }
       else

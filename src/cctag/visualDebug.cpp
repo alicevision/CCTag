@@ -85,8 +85,8 @@ namespace cctag {
                 get_color(rgb, blue_t()) = color[2];
                 color_convert(rgb, *loc);
             } else {
-                //ROM_TCOUT_VAR2( p.x(), _view.width() ); // todo@Eloi, p.x(): 23, _view.width(): 0, p.y(): 38, _view.height(): 0 ?? apparait tres souvent
-                //ROM_TCOUT_VAR2( p.y(), _view.height() );
+                //CCTAG_TCOUT_VAR2( p.x(), _view.width() ); // todo@Eloi, p.x(): 23, _view.width(): 0, p.y(): 38, _view.height(): 0 ?? apparait tres souvent
+                //CCTAG_TCOUT_VAR2( p.y(), _view.height() );
             }
 #endif
         }
@@ -131,7 +131,7 @@ namespace cctag {
                 const rgb8c_view_t svw = const_view(v.second);
                 //boost::gil::jpeg_write_view( filename, svw );
                 boost::gil::png_write_view(filename, svw);
-                //ROM_COUT_VAR(filename);
+                //CCTAG_COUT_VAR(filename);
 
             }
 #endif

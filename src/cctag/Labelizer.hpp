@@ -111,7 +111,7 @@ void Labelizer::labelize( SView& svw, CView & cvw, DXView & dx, DYView & dy )
 
 	t.restart();
 
-	ROM_COUT_LILIAN( "Width : " << cvw.width() << ", Height :" << cvw.height() );
+	CCTAG_COUT_LILIAN( "Width : " << cvw.width() << ", Height :" << cvw.height() );
 	for( int y = 0 ; y < cvw.height() ; ++y )
 	{
 		typename CView::x_iterator itc = cvw.row_begin( y );
@@ -136,10 +136,10 @@ void Labelizer::labelize( SView& svw, CView & cvw, DXView & dx, DYView & dy )
 		}
 	}
 
-	ROM_COUT_LILIAN( "Création du label 1 " );
+	CCTAG_COUT_LILIAN( "Création du label 1 " );
 
 	//findLabels( cvw, dxVw, dyVw, _labelsList, _labelsMap );
-	ROM_COUT_LILIAN( "Labelization took: " << t.elapsed() );
+	CCTAG_COUT_LILIAN( "Labelization took: " << t.elapsed() );
 	//{
 	//	gray8_image_t limg(cvw.dimensions());
 	//	gray8_view_t lvw(view(limg));

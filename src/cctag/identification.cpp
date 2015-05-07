@@ -69,19 +69,19 @@ bool orazioDistance( IdSet& idSet, const RadiusRatioBank & rrBank,
     }
   }
 
-  //ROM_TCOUT_VAR(isig);
+  //CCTAG_TCOUT_VAR(isig);
 
   // compute some statitics
   accumulator_set< double, features< /*tag::median,*/ tag::variance > > acc;
   // put sub signal into the statistical tool
   acc = std::for_each( isig.begin()+startOffset, isig.end(), acc );
 
-  //ROM_TCOUT_VAR(boost::numeric::ublas::subrange(isig,startOffset, isig.size()));
+  //CCTAG_TCOUT_VAR(boost::numeric::ublas::subrange(isig,startOffset, isig.size()));
 
   //const double mSig = boost::accumulators::median( acc );
   const double mSig = computeMedian( boost::numeric::ublas::subrange(isig,startOffset, isig.size()) );
 
-  //ROM_TCOUT("Median of the signal : " << mSig);
+  //CCTAG_TCOUT("Median of the signal : " << mSig);
 
   const double varSig = boost::accumulators::variance( acc );
 
@@ -97,8 +97,8 @@ bool orazioDistance( IdSet& idSet, const RadiusRatioBank & rrBank,
   const double muw = boost::accumulators::mean( accSup );
   const double mub = boost::accumulators::mean( accInf );
 
-  //ROM_TCOUT(muw);
-  //ROM_TCOUT(mub);
+  //CCTAG_TCOUT(muw);
+  //CCTAG_TCOUT(mub);
 
   // find the nearest ID in rrBank
   const double stepXi = 1.0 / ( isig.size() + 1.0 ); /// @todo lilian +1 ??
@@ -609,7 +609,7 @@ void selectCut( std::vector< cctag::ImageCut > & cutSelection,
       stop,
       numSamplesOuterEdgePointsRefinement );
 
-    //ROM_TCOUT_VAR( line._stop ); //don't delete.
+    //CCTAG_TCOUT_VAR( line._stop ); //don't delete.
 
     //SubPixEdgeOptimizer optimizer( cut );
 
@@ -617,7 +617,7 @@ void selectCut( std::vector< cctag::ImageCut > & cutSelection,
     //cctag::Point2dN<double> refinedPoint = optimizer( halfWidth, line._stop.x(), cut._imgSignal[0], cut._imgSignal[ cut._imgSignal.size() - 1 ] );
 
 
-    //ROM_TCOUT_VAR( refinedPoint ); //don't delete.
+    //CCTAG_TCOUT_VAR( refinedPoint ); //don't delete.
     // Take cuts the didn't diverge too much
     if ( cctag::numerical::distancePoints2D( line._stop, refinedPoint ) < halfWidth )
     {
@@ -740,7 +740,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
 #ifdef WITH_CMINPACK
   if ( useLmDif )
   {
-    ROM_COUT_DEBUG( "Before optimizer: " << oRefined );
+    CCTAG_COUT_DEBUG( "Before optimizer: " << oRefined );
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
     // Old lm optimization
     LMImageCenterOptimizer opt;
@@ -748,7 +748,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
-    ROM_COUT_DEBUG( "After optimizer (LmDif) : " << oRefined << ", timer: " << spendTime );
+    CCTAG_COUT_DEBUG( "After optimizer (LmDif) : " << oRefined << ", timer: " << spendTime );
   }
 #else
   if ( useLmDif )
@@ -783,7 +783,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
-    ROM_COUT_DEBUG( "After optimizer (optpp+interp2D) : " << oRefined << ", timer: " << spendTime );
+    CCTAG_COUT_DEBUG( "After optimizer (optpp+interp2D) : " << oRefined << ", timer: " << spendTime );
   }
 #endif
   else
@@ -853,7 +853,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
-    ROM_COUT_DEBUG( "After optimizer (optpp+interp2D) : " << oRefined << ", timer: " << spendTime );
+    CCTAG_COUT_DEBUG( "After optimizer (optpp+interp2D) : " << oRefined << ", timer: " << spendTime );
   }
 
   {
@@ -864,13 +864,13 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
   CCTagVisualDebug::instance().drawPoint( oRefined, cctag::color_red );
 
   {
-    //ROM_COUT_DEBUG( "Before getsignal" );
+    //CCTAG_COUT_DEBUG( "Before getsignal" );
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
     getSignals( mH, fsig, lengthSig, oRefined, pr, sourceView, ellipse.matrix() );
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
-    //ROM_COUT_DEBUG( "After getsignal, timer: " << spendTime );
+    //CCTAG_COUT_DEBUG( "After getsignal, timer: " << spendTime );
   }
 
   return true;
@@ -927,12 +927,12 @@ int identify(
   }
   else
   {
-    ROM_COUT("Error : unknown number of crowns");
+    CCTAG_COUT("Error : unknown number of crowns");
   }
 
   std::vector<cctag::ImageCut> cuts;
   {
-    //ROM_TCOUT( "Before collectCuts" );
+    //CCTAG_TCOUT( "Before collectCuts" );
     // Collect cuts around the extern ellipse with the interval [startOffset;1.0] not outside the image
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
     // Collect cuts around the extern ellipse with the interval [startOffset;1.0] not outside the image
@@ -940,8 +940,8 @@ int identify(
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
-    //ROM_TCOUT( "After collectCuts, timer: " << spendTime );
-    //ROM_TCOUT_VAR( cuts.size() );
+    //CCTAG_TCOUT( "After collectCuts, timer: " << spendTime );
+    //CCTAG_TCOUT_VAR( cuts.size() );
   }
 
   if ( cuts.size() == 0 )
@@ -979,9 +979,9 @@ int identify(
     bool hasConverged = refineConicFamily( cctag, fsig, sampleCutLength, sourceView, ellipse, prSelection, useLmDif );
     if( !hasConverged )
     {
-      ROM_COUT_DEBUG(ellipse);
-      ROM_COUT_VAR_DEBUG(cctag.centerImg());
-      ROM_COUT_DEBUG( "Optimization on imaged center failed to converge " );
+      CCTAG_COUT_DEBUG(ellipse);
+      CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
+      CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge " );
       return opti_has_diverged;
     }
 
@@ -1018,7 +1018,7 @@ int identify(
       }
       else
       {
-        ROM_COUT_DEBUG("Not enough quality in IDENTIFICATION");
+        CCTAG_COUT_DEBUG("Not enough quality in IDENTIFICATION");
       }
     }
     else

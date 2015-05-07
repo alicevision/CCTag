@@ -11,7 +11,7 @@ class EdgePoint;
 }
 }
 
-#ifdef ROM_USE_TUTTLE
+#ifdef CCTAG_USE_TUTTLE
 #include <tuttle/host/Graph.hpp>
 #include <tuttle/host/InputBufferNode.hpp>
 #else
@@ -30,7 +30,7 @@ namespace marker
 {
 
 
-#ifdef ROM_USE_TUTTLE
+#ifdef CCTAG_USE_TUTTLE
 
 void createCannyGraph( tuttle::host::Graph & _canny, tuttle::host::InputBufferNode* & _cannyInputBuffer, tuttle::host::Graph::Node* & cannyOutput, tuttle::host::Graph::Node* & sobelOutput );
 

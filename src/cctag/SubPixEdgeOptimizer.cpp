@@ -140,18 +140,18 @@ Point2dN<double> SubPixEdgeOptimizer::operator()( const double widthContour, con
 	ColumnVector x_sol = getXc();
 	double f_sol = getF();
 
-	// ROM_TCOUT( "Solution :" ); //don't delete.
+	// CCTAG_TCOUT( "Solution :" ); //don't delete.
 
-	// ROM_TCOUT( "width : " << x_sol(1) ); //don't delete.
-	// ROM_TCOUT( "xp : " << x_sol(2) ); //don't delete.
-	// ROM_TCOUT( "imin : " << x_sol(3) ); //don't delete.
-	// ROM_TCOUT( "imax : " << x_sol(4) ); //don't delete.
+	// CCTAG_TCOUT( "width : " << x_sol(1) ); //don't delete.
+	// CCTAG_TCOUT( "xp : " << x_sol(2) ); //don't delete.
+	// CCTAG_TCOUT( "imin : " << x_sol(3) ); //don't delete.
+	// CCTAG_TCOUT( "imax : " << x_sol(4) ); //don't delete.
 
 	// Point raffiné à retourner :
 	res.setX( x_sol(2) );
 	res.setY( _a * x_sol(2) + _b );
 
-	//ROM_TCOUT( "p0raffine : (" << res ); //don't delete.
+	//CCTAG_TCOUT( "p0raffine : (" << res ); //don't delete.
 
 	objfcn.cleanup();
 

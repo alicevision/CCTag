@@ -66,7 +66,7 @@ std::size_t CCTagMarkersBank::identify( const std::vector<double> & marker ) con
     }
     ++itm;
     norm = std::sqrt( norm );
-    ROM_COUT_LILIAN( "Res : " << norm );
+    CCTAG_COUT_LILIAN( "Res : " << norm );
     if ( norm < normMin )
     {
       normMin = norm;

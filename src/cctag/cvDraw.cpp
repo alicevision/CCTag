@@ -24,20 +24,20 @@ void drawMarkerOnImage( IplImage* simg, const CCTag& marker )
 	
 	///@todo draw center image and id
 	
-	ROM_COUT_LILIAN( e.matrix() );
+	CCTAG_COUT_LILIAN( e.matrix() );
 }
 
 void drawMarkersOnImage( IplImage* simg, const CCTag::Vector& markers )
 {
 	BOOST_FOREACH( const CCTag& m, markers )
 	{
-		ROM_COUT_LILIAN( m.ellipses()[m.ellipses().size()-1].matrix() );
+		CCTAG_COUT_LILIAN( m.ellipses()[m.ellipses().size()-1].matrix() );
 
-		ROM_COUT_LILIAN( "Radius ratio : " );
+		CCTAG_COUT_LILIAN( "Radius ratio : " );
 
 		for( std::size_t n = 0 ; n < m.radiusRatios().size() ; n++ )
 		{
-			ROM_COUT_LILIAN( m.radiusRatios()[n] );
+			CCTAG_COUT_LILIAN( m.radiusRatios()[n] );
 		}
 
 //			std::cout << "Id : " << m.id() << std::endl;

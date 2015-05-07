@@ -1,6 +1,6 @@
 #include "canny.hpp"
 
-#ifdef ROM_USE_TUTTLE
+#ifdef CCTAG_USE_TUTTLE
 #include <boost/preprocessor/stringize.hpp>
 #include <tuttle/host/InputBufferNode.hpp>
 #endif

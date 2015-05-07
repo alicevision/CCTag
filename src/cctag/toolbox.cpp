@@ -54,7 +54,7 @@ namespace cctag {
 
                 normGrad = std::sqrt(p0->_grad.x() * p0->_grad.x() + p0->_grad.y() * p0->_grad.y());
 
-                //ROM_COUT_VAR(normGrad);
+                //CCTAG_COUT_VAR(normGrad);
 
                 // Step 1
                 double gx0 = p0->_grad.x() / normGrad;
@@ -100,7 +100,7 @@ namespace cctag {
 
                 it = filteredChildrens.begin();
 
-                //ROM_COUT(" 2- 2eme element" << **it);
+                //CCTAG_COUT(" 2- 2eme element" << **it);
 
                 for (; it != filteredChildrens.end(); ++it) {
                     EdgePoint* pCurrent = *it;
@@ -149,7 +149,7 @@ namespace cctag {
             double angle = rR.angle * boost::math::constants::pi<double>() / 180.0;
 
             if ((a == 0) || (b == 0))
-                ROM_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after cv::fitEllipse => line or point."));
+                CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after cv::fitEllipse => line or point."));
 
             e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
         }
@@ -173,7 +173,7 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<c
 	double angle = rR.angle * boost::math::constants::pi<double>() / 180.0;
 
 	if ( ( a == 0) || ( b == 0 ) )
-		ROM_THROW( exception::BadHandle() << exception::dev( "Degenerate ellipse after cv::fitEllipse => line or point." ) );
+		CCTAG_THROW( exception::BadHandle() << exception::dev( "Degenerate ellipse after cv::fitEllipse => line or point." ) );
 
 	e.setParameters( Point2dN<double>( xC, yC ), a, b, angle );
 }
@@ -204,18 +204,18 @@ void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cct
             cctag::numerical::svd(A, U, V, S);
 
 
-            //ROM_COUT_VAR(A);
-            //ROM_COUT_VAR(U);
-            //ROM_COUT_VAR(V);
-            //ROM_COUT_VAR(S);
-            //ROM_COUT("V(:,end) = " << V(0, 3) << " " << V(1, 3) << " " << V(2, 3) << " " << V(3, 3) << " ");
+            //CCTAG_COUT_VAR(A);
+            //CCTAG_COUT_VAR(U);
+            //CCTAG_COUT_VAR(V);
+            //CCTAG_COUT_VAR(S);
+            //CCTAG_COUT("V(:,end) = " << V(0, 3) << " " << V(1, 3) << " " << V(2, 3) << " " << V(3, 3) << " ");
 
             double xC = -0.5 * V(0, 3) / V(3, 3);
             double yC = -0.5 * V(1, 3) / V(3, 3);
             double radius = sqrt(xC*xC + yC*yC - V(2, 3) / V(3, 3));
 
             if (radius <= 0) {
-                ROM_THROW(exception::BadHandle() << exception::dev("Degenerate circle in circleFitting."));
+                CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate circle in circleFitting."));
             }
 
             e.setParameters(Point2dN<double>(xC, yC), radius, radius, 0);
@@ -240,7 +240,7 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cct
             double angle = rR.angle * boost::math::constants::pi<double>() / 180.0;
 
             if ((a == 0) || (b == 0))
-                ROM_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after cv::fitEllipse => line or point."));
+                CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after cv::fitEllipse => line or point."));
 
             e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
         }
