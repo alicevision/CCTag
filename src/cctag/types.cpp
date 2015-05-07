@@ -1,5 +1,5 @@
 
-#include "types.hpp"
+#include <cctag/types.hpp>
 
 namespace cctag
 {

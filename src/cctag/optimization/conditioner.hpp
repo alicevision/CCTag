@@ -1,10 +1,10 @@
 #ifndef _CCTAG_CONDITIONER_HPP_
 #define _CCTAG_CONDITIONER_HPP_
 
-#include "../geometry/point.hpp"
-#include "../algebra/matrix/Matrix.hpp"
-#include "../statistic/statistic.hpp"
-#include "../geometry/Ellipse.hpp"
+#include <cctag/geometry/point.hpp>
+#include <cctag/algebra/matrix/Matrix.hpp>
+#include <cctag/statistic/statistic.hpp>
+#include <cctag/geometry/Ellipse.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>

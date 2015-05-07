@@ -1,10 +1,10 @@
 #ifndef _CCTAG_CANDIDATE_HPP_
 #define _CCTAG_CANDIDATE_HPP_
 
-#include "modeConfig.hpp"
+#include <cctag/modeConfig.hpp>
+#include <cctag/EdgePoint.hpp>
+#include <cctag/geometry/Ellipse.hpp>
 
-#include "EdgePoint.hpp"
-#include "geometry/Ellipse.hpp"
 #include <boost/unordered/unordered_set.hpp>
 
 namespace cctag

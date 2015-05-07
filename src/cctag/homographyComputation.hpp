@@ -1,9 +1,8 @@
 #ifndef _CCTAG_HOMOGRAPHYCOMPUTATION_HPP
 #define	_CCTAG_HOMOGRAPHYCOMPUTATION_HPP
 
-#include "CCTag.hpp"
+#include <cctag/CCTag.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-
 #include <cctag/algebra/eig.hpp>
 #include <cctag/algebra/lapack.hpp>
 #include <cctag/algebra/svd.hpp>
@@ -11,8 +10,6 @@
 #include <cctag/optimization/conditioner.hpp>
 
 #include <boost/foreach.hpp>
-//#include <boost/numeric/ublas/banded.hpp>
-//#include <boost/numeric/ublas/vector.hpp>
 #include "boost/numeric/ublas/fwd.hpp"
 
 #include <cstddef>

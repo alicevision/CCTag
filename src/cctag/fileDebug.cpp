@@ -1,6 +1,6 @@
-#include "fileDebug.hpp"
-#include "CCTagFlowComponent.hpp"
-#include "dataSerialization.hpp"
+#include <cctag/fileDebug.hpp>
+#include <cctag/CCTagFlowComponent.hpp>
+#include <cctag/dataSerialization.hpp>
 
 namespace cctag
 {

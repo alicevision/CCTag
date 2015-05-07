@@ -12,7 +12,7 @@
 //
 // Last edited September 4, 2007 5:23 am
 //
-#include "determinant.hpp"
+#include <cctag/algebra/determinant.hpp>
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>

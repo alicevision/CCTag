@@ -4,13 +4,11 @@
 #include <boost/gil/image_view_factory.hpp>
 #include <limits>
 
-#include "multiresolution.hpp"
-#include "visualDebug.hpp"
-#include "fileDebug.hpp"
-
-#include "vote.hpp"
-#include "ellipse.hpp"
-
+#include <cctag/multiresolution.hpp>
+#include <cctag/visualDebug.hpp>
+#include <cctag/fileDebug.hpp>
+#include <cctag/vote.hpp>
+#include <cctag/ellipse.hpp>
 #include <cctag/geometry/ellipseFromPoints.hpp>
 #include <cctag/toolbox.hpp>
 #include <cctag/image.hpp>
@@ -18,7 +16,6 @@
 #include <cctag/detection.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
-
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
 #include <boost/gil/image_view_factory.hpp>

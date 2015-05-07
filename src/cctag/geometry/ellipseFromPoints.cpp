@@ -1,4 +1,5 @@
-#include "ellipseFromPoints.hpp"
+#include <cctag/global.hpp>
+#include <cctag/geometry/ellipseFromPoints.hpp>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/mat.hpp>
@@ -6,12 +7,9 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/pow.hpp>
 
-#include <cctag/global.hpp>
-
 namespace cctag {
 namespace numerical {
 namespace geometry {
-
 
 /**
  * @brief Extract one point from the ellipse at angle around the center (2D certer or image center ??).

@@ -5,9 +5,9 @@
 #include <iostream>
 #include <limits>
 
-#include "view.hpp"
-#include "debug.hpp"
-#include "image.hpp"
+#include <cctag/view.hpp>
+#include <cctag/debug.hpp>
+#include <cctag/image.hpp>
 
 #ifdef WITH_CUDA
   #include <cuda_runtime.h>

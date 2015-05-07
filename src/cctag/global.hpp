@@ -3,7 +3,7 @@
 
 //#define CCTAG_NO_COUT
 
-#include "progBase/system/system.hpp"
+#include <cctag/progBase/system/system.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Assert needs to be everywhere

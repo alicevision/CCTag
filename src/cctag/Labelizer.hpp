@@ -1,9 +1,8 @@
 #ifndef VISION_LABELIZER_HPP_
 #define VISION_LABELIZER_HPP_
 
-#include "EdgePoint.hpp"
-#include "Label.hpp"
-
+#include <cctag/EdgePoint.hpp>
+#include <cctag/Label.hpp>
 #include <cctag/filter/thinning.hpp>
 #include <cctag/global.hpp>
 

@@ -1,7 +1,7 @@
 #ifndef _CCTAG_MARKERS_TYPES_HPP_
 #define _CCTAG_MARKERS_TYPES_HPP_
 
-#include "EdgePoint.hpp"
+#include <cctag/EdgePoint.hpp>
 
 #include <boost/multi_array.hpp>
 #include <boost/unordered/unordered_map.hpp>

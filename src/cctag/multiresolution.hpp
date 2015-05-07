@@ -1,10 +1,9 @@
 #ifndef VISION_CCTAG_MULTIRESOLUTION_HPP_
 #define VISION_CCTAG_MULTIRESOLUTION_HPP_
 
-#include "CCTag.hpp"
-#include "params.hpp"
-#include "modeConfig.hpp"
-
+#include <cctag/CCTag.hpp>
+#include <cctag/params.hpp>
+#include <cctag/modeConfig.hpp>
 #include <cctag/frame.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Cercle.hpp>

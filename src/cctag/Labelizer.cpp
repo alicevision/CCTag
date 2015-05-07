@@ -1,5 +1,5 @@
-#include "Labelizer.hpp"
-#include "Label.hpp"
+#include <cctag/Labelizer.hpp>
+#include <cctag/Label.hpp>
 
 #include <boost/gil/locator.hpp>
 

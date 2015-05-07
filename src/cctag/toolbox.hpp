@@ -1,11 +1,11 @@
 #ifndef VISION_MARKER_TOOLBOX_HPP_
 #define VISION_MARKER_TOOLBOX_HPP_
 
+#include <cctag/geometry/point.hpp>
+
 #include <list>
 #include <string>
 #include <vector>
-
-#include <cctag/geometry/point.hpp>
 
 namespace cctag {
 class EdgePoint;

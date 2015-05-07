@@ -1,7 +1,7 @@
 #ifndef _CCTAG_DISTANCE_HPP_
 #define _CCTAG_DISTANCE_HPP_
 
-#include "Ellipse.hpp"
+#include <cctag/geometry/Ellipse.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/math/special_functions/pow.hpp>

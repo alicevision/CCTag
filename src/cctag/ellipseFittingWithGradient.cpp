@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
-#include "ellipseFittingWithGradient.hpp"
+#include <cctag/ellipseFittingWithGradient.hpp>
 
 #include <boost/numeric/bindings/lapack/syev.hpp>
 

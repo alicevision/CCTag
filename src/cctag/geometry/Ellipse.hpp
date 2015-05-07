@@ -1,12 +1,13 @@
 #ifndef _CCTAG_NUMERICAL_ELLIPSE_HPP_
 #define _CCTAG_NUMERICAL_ELLIPSE_HPP_
 
-#include <iostream>
-#include "point.hpp"
+#include <cctag/geometry/point.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/functional.hpp>
+
+#include <iostream>
 
 namespace cctag {
 namespace numerical {

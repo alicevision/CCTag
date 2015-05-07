@@ -1,10 +1,3 @@
-/* 
- * File:   miscellaneous.hpp
- * Author: lcalvet
- *
- * Created on 13 août 2014, 12:27
- */
-
 #ifndef MISCELLANEOUS_HPP
 #define	MISCELLANEOUS_HPP
 

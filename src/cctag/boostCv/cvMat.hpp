@@ -2,7 +2,7 @@
 #define	_CCTAG_CVMAT_HPP
 
 #ifndef BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-	#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #endif
 
 #include <rom/numerical/algebra/matrix/Matrix.hpp>

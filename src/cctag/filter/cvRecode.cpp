@@ -1,5 +1,4 @@
-#include "cvRecode.hpp"
-
+#include <cctag/filter/cvRecode.hpp>
 #include <cctag/global.hpp>
 
 #include <opencv2/core/core.hpp>

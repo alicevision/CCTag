@@ -1,6 +1,5 @@
 #ifdef WITH_CMINPACK
-#include "LMImageCenterOptimizer.hpp"
-
+#include <cctag/LMImageCenterOptimizer.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/geometry/distance.hpp>

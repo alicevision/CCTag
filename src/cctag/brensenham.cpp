@@ -1,5 +1,5 @@
-#include "EdgePoint.hpp"
-#include "brensenham.hpp"
+#include <cctag/EdgePoint.hpp>
+#include <cctag/brensenham.hpp>
 
 #include <cctag/toolbox/gilTools.hpp>
 

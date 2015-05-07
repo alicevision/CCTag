@@ -1,11 +1,10 @@
 #ifndef VISION_CCTAG_ELLIPSE_HPP_
 #define VISION_CCTAG_ELLIPSE_HPP_
 
-#include "types.hpp"
-#include "EdgePoint.hpp"
-
-#include "geometry/Ellipse.hpp"
-#include "geometry/distance.hpp"
+#include <cctag/types.hpp>
+#include <cctag/EdgePoint.hpp>
+#include <cctag/geometry/Ellipse.hpp>
+#include <cctag/geometry/distance.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_expression.hpp>

@@ -1,4 +1,4 @@
-#include "thinning.hpp"
+#include <cctag/filter/thinning.hpp>
 
 namespace cctag {
 namespace img {

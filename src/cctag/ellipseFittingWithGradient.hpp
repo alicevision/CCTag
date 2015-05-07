@@ -16,7 +16,7 @@
   along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ------------------------------------------------------------------------------*/
-#include "EdgePoint.hpp"
+#include <cctag/EdgePoint.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <boost/foreach.hpp>
 

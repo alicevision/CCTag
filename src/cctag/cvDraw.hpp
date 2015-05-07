@@ -1,8 +1,7 @@
 #ifndef VISION_CCTAG_CVDRAW_HPP_
 #define VISION_CCTAG_CVDRAW_HPP_
 
-#include "CCTag.hpp"
-
+#include <cctag/CCTag.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
 #include <opencv2/core/types_c.h>

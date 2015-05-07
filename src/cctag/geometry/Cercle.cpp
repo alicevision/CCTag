@@ -1,7 +1,7 @@
-#include "Cercle.hpp"
-
-#include <cctag/geometry/point.hpp>
 #include <cctag/global.hpp>
+#include <cctag/geometry/Cercle.hpp>
+#include <cctag/geometry/point.hpp>
+
 
 namespace cctag {
 namespace numerical {

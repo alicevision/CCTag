@@ -1,7 +1,6 @@
-#include "toolbox.hpp"
-#include "EdgePoint.hpp"
-
 #include <cctag/global.hpp>
+#include <cctag/toolbox.hpp>
+#include <cctag/EdgePoint.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/geometry/Ellipse.hpp>
@@ -9,7 +8,6 @@
 #include <cctag/geometry/distance.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/algebra/lapack.hpp>
-//#include <rom/numerical/algebra/determinant.hpp>
 #include <cctag/algebra/matrix/operation.hpp>
 
 #include <opencv/cv.hpp>

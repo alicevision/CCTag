@@ -1,4 +1,4 @@
-#include "canny.hpp"
+#include <cctag/canny.hpp>
 
 #ifdef CCTAG_USE_TUTTLE
 #include <boost/preprocessor/stringize.hpp>

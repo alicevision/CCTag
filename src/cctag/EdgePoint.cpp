@@ -1,4 +1,4 @@
-#include "EdgePoint.hpp"
+#include <cctag/EdgePoint.hpp>
 
 namespace cctag
 {

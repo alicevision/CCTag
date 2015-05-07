@@ -1,5 +1,5 @@
-#include "Label.hpp"
-#include "Labelizer.hpp"
+#include <cctag/Label.hpp>
+#include <cctag/Labelizer.hpp>
 
 namespace cctag {
 

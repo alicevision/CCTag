@@ -1,7 +1,7 @@
 #ifndef VISION_CCTAG_CANNY_HPP_
 #define VISION_CCTAG_CANNY_HPP_
 
-#include "types.hpp"
+#include <cctag/types.hpp>
 
 namespace cctag
 {

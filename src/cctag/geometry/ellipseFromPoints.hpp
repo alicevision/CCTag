@@ -1,8 +1,7 @@
 #ifndef _CCTAG_NUMERICAL_ELLIPSEFROMPOINTS_HPP_
 #define _CCTAG_NUMERICAL_ELLIPSEFROMPOINTS_HPP_
 
-#include "Ellipse.hpp"
-
+#include <cctag/geometry/Ellipse.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 
 #include <opencv2/imgproc/imgproc.hpp>

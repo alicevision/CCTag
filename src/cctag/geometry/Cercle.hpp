@@ -1,8 +1,7 @@
 #ifndef _CCTAG_NUMERICAL_CERCLE_HPP_
 #define _CCTAG_NUMERICAL_CERCLE_HPP_
 
-#include "Ellipse.hpp"
-
+#include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/global.hpp>

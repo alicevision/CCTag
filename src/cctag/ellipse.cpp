@@ -1,11 +1,10 @@
-#include "ellipse.hpp"
-#include "CCTag.hpp"
-#include "EdgePoint.hpp"
-#include "toolbox.hpp"
-#include "visualDebug.hpp"
-#include "fileDebug.hpp"
-#include "ellipseFittingWithGradient.hpp"
-
+#include <cctag/ellipse.hpp>
+#include <cctag/CCTag.hpp>
+#include <cctag/EdgePoint.hpp>
+#include <cctag/toolbox.hpp>
+#include <cctag/visualDebug.hpp>
+#include <cctag/fileDebug.hpp>
+#include <cctag/ellipseFittingWithGradient.hpp>
 #include <cctag/geometry/Cercle.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/global.hpp>

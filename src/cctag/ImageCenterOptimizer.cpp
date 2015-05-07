@@ -1,9 +1,7 @@
-#include "modeConfig.hpp"
-
-#include "ImageCenterOptimizer.hpp"
-#include "identification.hpp"
-#include "visualDebug.hpp"
-
+#include <cctag/modeConfig.hpp>
+#include <cctag/ImageCenterOptimizer.hpp>
+#include <cctag/identification.hpp>
+#include <cctag/visualDebug.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/optimization/conditioner.hpp>
@@ -11,7 +9,7 @@
 #include <cctag/progBase/exceptions.hpp>
 #include <cctag/global.hpp>
 
-#include "OptQNewton.h"
+#include <OptQNewton.h>
 
 #include <terry/sampler/all.hpp>
 

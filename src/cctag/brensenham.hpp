@@ -1,9 +1,7 @@
 #ifndef _CCTAG_BRENSENHAM_HPP_
 #define _CCTAG_BRENSENHAM_HPP_
 
-//#include "EdgePoint.hpp"
-#include "Labelizer.hpp"
-
+#include <cctag/Labelizer.hpp>
 #include <cctag/geometry/point.hpp>
 
 #include <cstddef>

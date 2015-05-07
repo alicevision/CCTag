@@ -1,14 +1,11 @@
-#include "ImageCenterOptimizerCeres.hpp"
-#include "visualDebug.hpp"
-
+#include <cctag/ImageCenterOptimizerCeres.hpp>
+#include <cctag/visualDebug.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/geometry/distance.hpp>
 #include <cctag/progBase/exceptions.hpp>
 #include <cctag/global.hpp>
-
-//#include "OptQNewton.h"
 
 #include <terry/sampler/all.hpp>
 

@@ -1,15 +1,7 @@
-/* 
- * File:   ImageCenterOptimizerCeres.hpp
- * Author: lcalvet
- *
- * Created on 15 mai 2014, 14:52
- */
-
 #ifndef VISION_IMAGECENTEROPTIMIZERCERES_HPP
 #define	VISION_IMAGECENTEROPTIMIZERCERES_HPP
 
-#include "visualDebug.hpp"
-
+#include <cctag/visualDebug.hpp>
 #include <cctag/global.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/imageCut.hpp>

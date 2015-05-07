@@ -1,13 +1,13 @@
-#include "identification.hpp"
-
-#include <terry/sampler/all.hpp>
-
+#include <cctag/identification.hpp>
 #include <cctag/imageCut.hpp>
 #include <cctag/algebra/eig.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/optimization/conditioner.hpp>
+#include <cctag/ImageCenterOptimizerCeres.hpp>
+
+#include <terry/sampler/all.hpp>
 
 #include <boost/accumulators/statistics/mean.hpp>
 #include <boost/accumulators/statistics/median.hpp>
@@ -23,8 +23,6 @@
 #include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
-
-#include "ImageCenterOptimizerCeres.hpp"
 
 #include <cmath>
 #include <vector>

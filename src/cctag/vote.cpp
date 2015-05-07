@@ -1,13 +1,12 @@
 #define BOOST_UBLAS_TYPE_CHECK 0
 
-#include "brensenham.hpp"
-#include "EdgePoint.hpp"
-#include "types.hpp"
-#include "vote.hpp"
-#include "toolbox.hpp"
-#include "ellipse.hpp"
-#include "fileDebug.hpp"
-
+#include <cctag/brensenham.hpp>
+#include <cctag/EdgePoint.hpp>
+#include <cctag/types.hpp>
+#include <cctag/vote.hpp>
+#include <cctag/toolbox.hpp>
+#include <cctag/ellipse.hpp>
+#include <cctag/fileDebug.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/geometry/distance.hpp>
@@ -17,7 +16,6 @@
 
 #include <boost/foreach.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
-
 #include <boost/format/format_implementation.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/round.hpp>
