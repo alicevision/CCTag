@@ -108,7 +108,7 @@ void CCTag::serialize(boost::archive::text_oarchive & ar, const unsigned int ver
   serializeEllipses(ar, _ellipses);
   serializeBoundedMatrix3x3d(ar, _mHomography);
   serializePoint(ar, _centerImg);
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
   serializeFlowComponents(ar, _flowComponents);
 #endif
 }

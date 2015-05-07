@@ -91,7 +91,7 @@ public:
     , _scale(cctag._scale)
     , _rescaledOuterEllipse(cctag._rescaledOuterEllipse)
     , _status(cctag._status)
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
     , _flowComponents(cctag._flowComponents)
 #endif
   {
@@ -291,7 +291,7 @@ public:
     return isOverlappingEllipses(_rescaledOuterEllipse, marker.rescaledOuterEllipse());
   }
 
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
 
   void addFlowComponent(const Candidate & candidate)
   {
@@ -357,7 +357,7 @@ protected:
   double _scale;
   int _status;
 
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
   std::vector<CCTagFlowComponent> _flowComponents;
 #endif
 };

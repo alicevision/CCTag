@@ -3,6 +3,16 @@ include(ExternalProject)
 
 project( CCTag )
 
+# CCTAG_BUILD_MODE set to RELEASE by default (DEBUG,RELEASE)
+if(DEFINED CCTAG_BUILD_MODE)
+  add_definitions("-D${CCTAG_BUILD_MODE}")
+endif(DEFINED CCTAG_BUILD_MODE)
+
+# Store all the output
+if(CCTAG_SERIALIZE)
+  add_definitions("-DCCTAG_SERIALIZE")
+endif(CCTAG_SERIALIZE)
+
 # set the path where we can find the findXXX.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 

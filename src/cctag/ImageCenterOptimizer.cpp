@@ -127,7 +127,7 @@ Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double>
 	objfcn.setMaxFeval( 200 );
 	objfcn.setFcnTol( 1.0e-4 );
 
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#if defined(DEBUG)
 	if ( !objfcn.setOutputFile("example1.out", 0) )
 	{
 		CCTAG_COUT_ERROR( "main: output file open failed" );

@@ -226,7 +226,7 @@ void completeFlowComponent(
 
       vCandidateLoopTwo.push_back(candidate);
 
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
       // Add childrens to output the filtering results (from outlierRemoval)
       vCandidateLoopTwo.back().setChildrens(childrens);
 
@@ -267,7 +267,7 @@ void flowComponentAssembling(
         std::vector<EdgePoint*>& outerEllipsePoints,
         std::vector< std::vector< Point2dN<double> > >& cctagPoints,
         const Parameters & params
-#ifndef CCTAG_STAT_DEBUG
+#ifndef CCTAG_SERIALIZE
         )
 #else
         , std::vector<Candidate> & componentCandidates)
@@ -322,7 +322,7 @@ void flowComponentAssembling(
       }
     }
     ++i;
-#if defined CCTAG_STAT_DEBUG && defined DEBUG
+#if defined CCTAG_SERIALIZE && defined DEBUG
     if (i < vCandidateLoopTwo.size())
     {
       CCTagFileDebug::instance().incrementFlowComponentIndex(1);
@@ -345,7 +345,7 @@ void flowComponentAssembling(
     {
       quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
 
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
       componentCandidates.push_back(selectedCandidate);
 #endif
       CCTagFileDebug::instance().setFlowComponentAssemblingState(true, iMax);
@@ -389,7 +389,7 @@ void cctagDetectionFromEdges(
 
   std::size_t nSegmentOut = 0;
 
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
   std::stringstream outFlowComponents;
   outFlowComponents << "flowComponentsLevel" << pyramidLevel << ".txt";
   CCTagFileDebug::instance().newSession(outFlowComponents.str());
@@ -456,7 +456,7 @@ void cctagDetectionFromEdges(
   const double spendTime1 = d1.total_milliseconds();
   CCTAG_COUT(" ============ TIME FOR THE 1ST LOOP ============= " << spendTime1 << " ms");
 
-#if defined CCTAG_STAT_DEBUG && defined DEBUG
+#if defined CCTAG_SERIALIZE && defined DEBUG
   std::stringstream outFlowComponentsAssembling;
   outFlowComponentsAssembling << "flowComponentsAssemblingLevel" << pyramidLevel << ".txt";
   CCTagFileDebug::instance().newSession(outFlowComponentsAssembling.str());
@@ -465,7 +465,7 @@ void cctagDetectionFromEdges(
 
   BOOST_FOREACH(const Candidate & candidate, vCandidateLoopTwo)
   {
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
     CCTagFileDebug::instance().resetFlowComponent();
     std::vector<Candidate> componentCandidates;
 #ifdef DEBUG
@@ -491,7 +491,7 @@ void cctagDetectionFromEdges(
           // Search for another segment
           flowComponentAssembling( quality, candidate, vCandidateLoopTwo,
                   outerEllipse, outerEllipsePoints, cctagPoints, params
-#ifndef CCTAG_STAT_DEBUG
+#ifndef CCTAG_SERIALIZE
                   );
 #else
                   , componentCandidates);
@@ -512,7 +512,7 @@ void cctagDetectionFromEdges(
       }
       else
       {
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
         componentCandidates.push_back(candidate);
 #endif
         CCTAG_COUT_DEBUG("Points inside the outer ellipse and good gradient orientations");
@@ -606,7 +606,7 @@ void cctagDetectionFromEdges(
 
       markers.push_back(new CCTag(-1, outerEllipse.center(), cctagPoints,
               outerEllipse, markerHomography, pyramidLevel, scale, quality2));
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
       markers.back().setFlowComponents(componentCandidates);
 #ifdef DEBUG
       CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PASS_ALLTESTS);
@@ -642,7 +642,7 @@ void createImageForVoteResultDebug(
         const boost::gil::gray8_view_t & sourceView,
         const WinnerMap & winners)
 {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#if defined(CCTAG_SERIALIZE)
   {
 
     POP_INFO << "running optional 'voting' block" << std::endl;
@@ -690,6 +690,18 @@ void cctagDetection(CCTag::List& markers,
   using namespace boost::numeric::ublas;
   using namespace boost::gil;
 
+#ifdef DEBUG
+  CCTAG_COUT("");
+  CCTAG_COUT("DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG");
+  CCTAG_COUT("");
+#endif
+          
+#ifdef CCTAG_SERIALIZE
+  CCTAG_COUT("");
+  CCTAG_COUT("CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE");
+  CCTAG_COUT("");
+#endif
+  
   std::srand(1);
 
   static const CCTagMarkersBank bank(params._cctagBankFilename);

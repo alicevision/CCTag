@@ -32,7 +32,7 @@ public:
 
     template<class SView>
     void initBackgroundImage(const SView & backView) {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
         using namespace boost::gil;
         _backImage.recreate(backView.width(), backView.height());
         _backView = boost::gil::view(_backImage);

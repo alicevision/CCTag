@@ -17,7 +17,7 @@ CCTagVisualDebug::~CCTagVisualDebug() {
 }
 
 void CCTagVisualDebug::setPyramidLevel(int level) {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     _pyramidLevel = level;
 #endif
 }
@@ -27,19 +27,19 @@ int CCTagVisualDebug::getPyramidLevel() {
 }
 
 void CCTagVisualDebug::initPath(const std::string & path) {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     _path = path;
 #endif
 }
 
 void CCTagVisualDebug::setImageFileName(const std::string& imageFileName) {
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
     _imageFileName = imageFileName;
 #endif   
 }
 
 void CCTagVisualDebug::newSession(const std::string & sessionName) {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     using namespace boost::gil;
     // Don't erase old sessions
     if (_sessions.find(sessionName) == _sessions.end()) {
@@ -51,14 +51,14 @@ void CCTagVisualDebug::newSession(const std::string & sessionName) {
 }
 
 void CCTagVisualDebug::changeSession(const std::string & sessionName) {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE 
     using namespace boost::gil;
     _view = view(_sessions[sessionName]);
 #endif
 }
 
 void CCTagVisualDebug::drawText(const cctag::Point2dN<double> & p, const std::string & text, const cctag::Color & color) {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     using namespace boost::gil;
     boostCv::CvImageView cvview(_view);
     IplImage * img = cvview.get();
@@ -72,7 +72,7 @@ void CCTagVisualDebug::drawText(const cctag::Point2dN<double> & p, const std::st
 }
 
 void CCTagVisualDebug::drawPoint(const cctag::Point2dN<double> & p, const cctag::Color & color) {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     using namespace boost::gil;
     if (p.x() >= 0.0 && p.x() < _view.width() &&
             p.y() >= 0.0 && p.y() < _view.height()) {
@@ -90,7 +90,7 @@ void CCTagVisualDebug::drawPoint(const cctag::Point2dN<double> & p, const cctag:
 }
 
 void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2dN<double> > & pts, const cctag::Color & color) {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
 
     BOOST_FOREACH(const cctag::Point2dN<double> & p, pts) {
         CCTagVisualDebug::instance().drawPoint(p, cctag::color_red);
@@ -99,13 +99,13 @@ void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2dN<double> > & 
 }
 
 void CCTagVisualDebug::drawMarker(const cctag::CCTag& marker, bool drawScaledMarker) {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     cctag::drawMarkerOnGilImage(_view, marker, drawScaledMarker);
 #endif
 }
 
 void CCTagVisualDebug::drawInfos(const cctag::CCTag& marker, bool drawScaledMarker) {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     cctag::drawMarkerInfos(_view, marker, drawScaledMarker);
 #endif
 }
@@ -115,13 +115,13 @@ std::string CCTagVisualDebug::getImageFileName() const {
 }
 
 void CCTagVisualDebug::out(const std::string & filename) const {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     boost::gil::png_write_view(filename, _view);
 #endif
 }
 
 void CCTagVisualDebug::outPutAllSessions() const {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     using namespace boost::gil;
 
     BOOST_FOREACH(const Sessions::const_iterator::value_type & v, _sessions) {
@@ -136,7 +136,7 @@ void CCTagVisualDebug::outPutAllSessions() const {
 }
 
 void CCTagVisualDebug::writeLocalizationView(cctag::CCTag::List& markers) const {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
 
     std::stringstream localizationResultFileName;
     localizationResultFileName << "../localization/" << _imageFileName;
@@ -151,7 +151,7 @@ void CCTagVisualDebug::writeLocalizationView(cctag::CCTag::List& markers) const 
 }
 
 void CCTagVisualDebug::writeIdentificationView(cctag::CCTag::List& markers) const {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
 
     std::stringstream identificationResultFileName;
     identificationResultFileName << "../identification/" << _imageFileName;
@@ -168,7 +168,7 @@ void CCTagVisualDebug::writeIdentificationView(cctag::CCTag::List& markers) cons
 }
 
 void CCTagVisualDebug::clearSessions() {
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     _sessions.erase(_sessions.begin(), _sessions.end());
 #endif
 }

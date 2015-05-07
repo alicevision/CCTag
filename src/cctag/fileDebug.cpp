@@ -15,14 +15,14 @@ CCTagFileDebug::~CCTagFileDebug() {
 }
 
 void CCTagFileDebug::setPath(const std::string& folderName) {
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
     // Don't erase old sessions
     _path = folderName;
 #endif
 }
 
 void CCTagFileDebug::newSession(const std::string& sessionName) {
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
     // Don't erase old sessions
     Sessions::iterator it = _sessions.find(sessionName);
     if (it == _sessions.end()) {
@@ -34,7 +34,7 @@ void CCTagFileDebug::newSession(const std::string& sessionName) {
 }
 
 void CCTagFileDebug::outputFlowComponentAssemblingInfos(int status) {
-#if defined CCTAG_STAT_DEBUG && defined DEBUG
+#if defined CCTAG_SERIALIZE && defined DEBUG
     boost::archive::text_oarchive oa(*_sstream);
 
     BOOST_FOREACH(const int index, _vflowComponentIndex) {
@@ -58,7 +58,7 @@ void CCTagFileDebug::printInfos() {
 }
 
 void CCTagFileDebug::initFlowComponentsIndex(int size) {
-#if defined CCTAG_STAT_DEBUG && defined DEBUG
+#if defined CCTAG_SERIALIZE && defined DEBUG
     _vflowComponentIndex.resize(size);
     for (int i = 0; i < _vflowComponentIndex.size(); ++i) {
         _vflowComponentIndex[i] = 0;
@@ -67,7 +67,7 @@ void CCTagFileDebug::initFlowComponentsIndex(int size) {
 }
 
 void CCTagFileDebug::resetFlowComponent() {
-#if defined CCTAG_STAT_DEBUG && defined DEBUG
+#if defined CCTAG_SERIALIZE && defined DEBUG
     _isAssembled = false;
     _researchArea = cctag::numerical::geometry::Ellipse();
 
@@ -80,26 +80,26 @@ void CCTagFileDebug::resetFlowComponent() {
 }
 
 void CCTagFileDebug::incrementFlowComponentIndex(int n) {
-#if defined CCTAG_STAT_DEBUG && defined DEBUG
+#if defined CCTAG_SERIALIZE && defined DEBUG
     (_vflowComponentIndex[n])++;
 #endif            
 }
 
 void CCTagFileDebug::setResearchArea(cctag::numerical::geometry::Ellipse circularResearchArea) {
-#if defined CCTAG_STAT_DEBUG && defined DEBUG
+#if defined CCTAG_SERIALIZE && defined DEBUG
     _researchArea = circularResearchArea;
 #endif 
 }
 
 void CCTagFileDebug::setFlowComponentAssemblingState(bool isAssembled, int indexSelectedFlowComponent) {
-#if defined CCTAG_STAT_DEBUG && defined DEBUG
+#if defined CCTAG_SERIALIZE && defined DEBUG
     _isAssembled = isAssembled;
     _vflowComponentIndex[1] = indexSelectedFlowComponent;
 #endif
 }
 
 void CCTagFileDebug::outputFlowComponentInfos(const cctag::CCTagFlowComponent & flowComponent) {
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
     if (_sstream) {
         boost::archive::text_oarchive oa(*_sstream);
         //oa << flowComponent;
@@ -113,7 +113,7 @@ void CCTagFileDebug::outputFlowComponentInfos(const cctag::CCTagFlowComponent & 
 }
 
 void CCTagFileDebug::outputMarkerInfos(const cctag::CCTag& marker) {
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
     if (_sstream) {
         boost::archive::text_oarchive oa(*_sstream);
         oa << marker;
@@ -124,7 +124,7 @@ void CCTagFileDebug::outputMarkerInfos(const cctag::CCTag& marker) {
 }
 
 void CCTagFileDebug::outPutAllSessions() const {
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
     for (Sessions::const_iterator it = _sessions.begin(), itEnd = _sessions.end(); it != itEnd; ++it) {
         const std::string filename = _path + "/" + it->first; //cctagFileDebug_
         //const std::string filename = it->first + "/data_v2.txt";
@@ -135,7 +135,7 @@ void CCTagFileDebug::outPutAllSessions() const {
 }
 
 void CCTagFileDebug::clearSessions() {
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
     _sessions.erase(_sessions.begin(), _sessions.end());
 #endif
 }

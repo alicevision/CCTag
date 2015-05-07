@@ -38,7 +38,7 @@ public:
         float _averageReceivedVote;
         
         
-#ifdef CCTAG_STAT_DEBUG
+#ifdef CCTAG_SERIALIZE
         // From here -- only used for results analysis --
         std::list<EdgePoint*> _childrens;
         

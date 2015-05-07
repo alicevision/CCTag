@@ -252,7 +252,7 @@ void cctagMultiresDetection(
     cannyCv(multiresSrc.getView(i - 1), subCannyRGB, cannyView,
             cannyGradX, cannyGradY, params._cannyThrLow, params._cannyThrHigh);
 
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
     std::stringstream outFilenameCanny;
     outFilenameCanny << "cannyLevel" << i - 1;
     
@@ -306,7 +306,7 @@ void cctagMultiresDetection(
   cannyCv(multiresSrc.getView(0), subCannyRGB, cannyView, cannyGradX,
           cannyGradY, params._cannyThrLow, params._cannyThrHigh);
 
-#if defined(DEBUG) || defined(CCTAG_STAT_DEBUG)
+#ifdef CCTAG_SERIALIZE
   CCTagVisualDebug::instance().initBackgroundImage(
           boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>(cannyView));
   CCTagVisualDebug::instance().newSession("cannyLevel0");
