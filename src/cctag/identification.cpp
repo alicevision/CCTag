@@ -806,7 +806,6 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     cctag::numerical::BoundedMatrix3x3d mInvT;
     cctag::numerical::invert_3x3(mT,mInvT);
 
-    std::cout << "Before : " << oRefined << "\n";
     cctag::numerical::optimization::condition(oRefined, mT);
     /**********************************************************************/
     ceres::Problem problem;
@@ -837,7 +836,6 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     oRefined.setY(x[1]);
 
     cctag::numerical::optimization::condition(oRefined, mInvT);
-    std::cout << "After : " << oRefined << "\n";
     /**********************************************************************/
 
     // Check if the refined point is near the center of the outer ellipse.

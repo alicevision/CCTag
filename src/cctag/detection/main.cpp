@@ -53,13 +53,13 @@ void detection(std::size_t frame, cctag::View& view, const std::string & paramsF
       std::ifstream ifs(paramsFilename.c_str());
       boost::archive::xml_iarchive ia(ifs);
       ia >> boost::serialization::make_nvp("CCTagsParams", params);
-      std::cout << "Parameters contained in " << paramsFilename << " are used." << std::endl;
+      CCTAG_COUT("Parameters contained in " << paramsFilename << " are used.");
     } else {
       // Use the default parameters and save them in defaultParameters.xml
       std::ofstream ofs("defaultParameters.xml");
       boost::archive::xml_oarchive oa(ofs);
       oa << boost::serialization::make_nvp("CCTagsParams", params);
-      std::cout << "Parameter file not provided. Default parameters are used." << std::endl;
+      CCTAG_COUT("Parameter file not provided. Default parameters are used.");
     }
     
     // Process markers detection
@@ -70,10 +70,9 @@ void detection(std::size_t frame, cctag::View& view, const std::string & paramsF
     
     cctagDetection( markers, frame, view._grayView, params, true );
 
-    CCTAG_TCOUT( markers.size() << " markers.");
-    CCTAG_TCOUT("Total time: " << t.elapsed());
-    
-    std::cout << "Id : ";
+    CCTAG_COUT( markers.size() << " markers.");
+    CCTAG_COUT("Total time: " << t.elapsed());
+    CCTAG_COUT_NOENDL("Id : ");
 
     int i = 0;
     BOOST_FOREACH(const cctag::CCTag & marker, markers) {
@@ -81,13 +80,13 @@ void detection(std::size_t frame, cctag::View& view, const std::string & paramsF
         cctag::drawMarkerInfos(view._view, marker, false);
 
         if (i == 0) {
-            std::cout << marker.id() + 1;
+            CCTAG_COUT_NOENDL(marker.id() + 1);
         } else {
-            std::cout << ", " << marker.id() + 1;
+            CCTAG_COUT_NOENDL(", " << marker.id() + 1);
         }
         ++i;
     }
-    std::cout << std::endl;
+    CCTAG_COUT("");
     POP_LEAVE;
 }
 
@@ -170,11 +169,14 @@ int main(int argc, char** argv)
           
         } else if (ext == ".avi" )
         {
-          std::cout << "*** Video mode ***" << std::endl;
+          CCTAG_COUT("*** Video mode ***");
           
           // open video and check
           cv::VideoCapture video(filename.c_str());
-          if(!video.isOpened()) {std::cout << "Unable to open the video : " << filename; return -1;}
+          if(!video.isOpened())
+          {
+            CCTAG_COUT("Unable to open the video : " << filename); return -1;
+          }
 
           // play loop
           int lastFrame = video.get(CV_CAP_PROP_FRAME_COUNT);
