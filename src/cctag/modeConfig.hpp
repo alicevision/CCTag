@@ -1,8 +1,0 @@
-#ifndef _CCTAG_MODECONFIG_HPP
-#define	_CCTAG_MODECONFIG_HPP
-
-#ifdef DEBUG
-#define CCTAG_SERIALIZE
-#endif
-
-#endif	/* MODECONFIG_HPP */
