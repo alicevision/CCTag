@@ -64,9 +64,7 @@ int CCTagVisualDebug::getPyramidLevel() {
 }
 
 std::string CCTagVisualDebug::getPath() const {
-#ifdef CCTAG_SERIALIZE
     return _path;
-#endif
 }
 
 void CCTagVisualDebug::setImageFileName(const std::string& imageFileName) {
