@@ -688,18 +688,6 @@ void cctagDetection(CCTag::List& markers,
   using namespace cctag;
   using namespace boost::numeric::ublas;
   using namespace boost::gil;
-
-#ifdef DEBUG
-  CCTAG_COUT("");
-  CCTAG_COUT("DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG-DEBUG");
-  CCTAG_COUT("");
-#endif
-          
-#ifdef CCTAG_SERIALIZE
-  CCTAG_COUT("");
-  CCTAG_COUT("CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE-CCTAG_SERIALIZE");
-  CCTAG_COUT("");
-#endif
   
   std::srand(1);
 
