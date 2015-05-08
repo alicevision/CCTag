@@ -4,8 +4,8 @@ build
 nbproject
 # Result of the sample code
 sample/result
-sample/cctag3c
-sample/cctag4c
+sample/cctag3CC
+sample/cctag4CC
 
 # Ignore output files of optpp
 *.out
