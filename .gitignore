@@ -1,0 +1,11 @@
+# build folder
+build
+# NetBeans project folder
+nbproject
+# Result of the sample code
+sample/result
+sample/cctag3c
+sample/cctag4c
+
+# Ignore output files of optpp
+*.out
