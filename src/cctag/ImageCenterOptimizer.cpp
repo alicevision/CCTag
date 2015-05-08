@@ -1,4 +1,3 @@
-#include <cctag/modeConfig.hpp>
 #include <cctag/ImageCenterOptimizer.hpp>
 #include <cctag/identification.hpp>
 #include <cctag/visualDebug.hpp>

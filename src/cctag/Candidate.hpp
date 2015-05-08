@@ -1,7 +1,6 @@
 #ifndef _CCTAG_CANDIDATE_HPP_
 #define _CCTAG_CANDIDATE_HPP_
 
-#include <cctag/modeConfig.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 

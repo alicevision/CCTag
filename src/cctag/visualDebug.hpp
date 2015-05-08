@@ -1,7 +1,6 @@
 #ifndef _CCTAG_CCTAG_VISUALDEBUG_HPP_
 #define	_CCTAG_CCTAG_VISUALDEBUG_HPP_
 
-#include <cctag/modeConfig.hpp>
 #include <cctag/draw.hpp>
 #include <cctag/progBase/pattern/Singleton.hpp>
 #include <cctag/geometry/point.hpp>

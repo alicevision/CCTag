@@ -1,7 +1,6 @@
 #ifndef VISION_MARKER_CCTAG_CCTAG_HPP
 #define VISION_MARKER_CCTAG_CCTAG_HPP
 
-#include <cctag/modeConfig.hpp>
 #include <cctag/types.hpp>
 #include <cctag/ellipseGrowing.hpp>
 #include <cctag/Candidate.hpp>

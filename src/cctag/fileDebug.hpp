@@ -1,7 +1,6 @@
 #ifndef _CCTAG_CCTAGOUTPUT_HPP_
 #define	_CCTAG_CCTAGOUTPUT_HPP_
 
-#include <cctag/modeConfig.hpp>
 #include <cctag/global.hpp>
 #include <cctag/progBase/pattern/Singleton.hpp>
 #include <cctag/CCTag.hpp>

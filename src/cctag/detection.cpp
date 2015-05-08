@@ -2,7 +2,6 @@
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 
-#include <cctag/modeConfig.hpp>
 #include <cctag/fileDebug.hpp>
 #include <cctag/ellipseGrowing.hpp>
 #include <cctag/detection.hpp>
