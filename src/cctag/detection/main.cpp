@@ -42,24 +42,12 @@ namespace bfs = boost::filesystem;
 
 static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(std::size_t frame, cctag::View& view, const std::string & paramsFilename = "")
+void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & params, std::string outputFileName = "")
 {
     POP_ENTER;
-    // Set the system parameters
-    cctag::Parameters params;
     
-    if (paramsFilename != "") {
-      // Read the parameter file provided by the user
-      std::ifstream ifs(paramsFilename.c_str());
-      boost::archive::xml_iarchive ia(ifs);
-      ia >> boost::serialization::make_nvp("CCTagsParams", params);
-      CCTAG_COUT("Parameters contained in " << paramsFilename << " are used.");
-    } else {
-      // Use the default parameters and save them in defaultParameters.xml
-      std::ofstream ofs("defaultParameters.xml");
-      boost::archive::xml_oarchive oa(ofs);
-      oa << boost::serialization::make_nvp("CCTagsParams", params);
-      CCTAG_COUT("Parameter file not provided. Default parameters are used.");
+    if (outputFileName == "") {
+      outputFileName = "00000";
     }
     
     // Process markers detection
@@ -68,7 +56,16 @@ void detection(std::size_t frame, cctag::View& view, const std::string & paramsF
 
     view.setNumLayers( params._numberOfMultiresLayers );
     
-    cctagDetection( markers, frame, view._grayView, params, true );
+    CCTagVisualDebug::instance().initBackgroundImage(view._view);
+    CCTagVisualDebug::instance().setImageFileName(outputFileName);
+    CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
+    
+    cctagDetection(markers, frame, view._grayView, params, true);
+    
+    CCTagFileDebug::instance().outPutAllSessions();
+    CCTagFileDebug::instance().clearSessions();
+    CCTagVisualDebug::instance().outPutAllSessions();
+    CCTagVisualDebug::instance().clearSessions();
 
     CCTAG_COUT( markers.size() << " markers.");
     CCTAG_COUT("Total time: " << t.elapsed());
@@ -101,38 +98,37 @@ int main(int argc, char** argv)
         }
         cctag::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
         const std::string filename(argv[1]);
+        
+        // Set all the parameters
         std::string paramsFilename;
         if (argc >= 3) {
             paramsFilename = argv[2];
         }
-
-        bfs::path myPath(filename);
-
-        const bfs::path extPath(myPath.extension());
-        const bfs::path subFilenamePath(myPath.filename());
-        const bfs::path parentPath(myPath.parent_path());
-        std::string ext(extPath.string());
+        cctag::Parameters params;
         
-        // Create inputImagePath/result if it does not exist
-        std::stringstream resultFolderName, localizationFolderName, identificationFolderName;
-        resultFolderName << parentPath.string() << "/result";
-        localizationFolderName << resultFolderName.str() << "/localization";
-        identificationFolderName << resultFolderName.str() << "/identification";
-
-        if (!bfs::exists(resultFolderName.str())) {
-            bfs::create_directory(resultFolderName.str());
+        if (paramsFilename != "") {
+          // Read the parameter file provided by the user
+          std::ifstream ifs(paramsFilename.c_str());
+          boost::archive::xml_iarchive ia(ifs);
+          ia >> boost::serialization::make_nvp("CCTagsParams", params);
+          CCTAG_COUT("Parameters contained in " << paramsFilename << " are used.");
+        } else {
+          // Use the default parameters and save them in defaultParameters.xml
+          paramsFilename = "defaultParameters.xml";
+          std::ofstream ofs(paramsFilename.c_str());
+          boost::archive::xml_oarchive oa(ofs);
+          oa << boost::serialization::make_nvp("CCTagsParams", params);
+          CCTAG_COUT("Parameter file not provided. Default parameters are used.");
         }
 
-        if (!bfs::exists(localizationFolderName.str())) {
-            bfs::create_directory(localizationFolderName.str());
-        }
-
-        if (!bfs::exists(identificationFolderName.str())) {
-            bfs::create_directory(identificationFolderName.str());
-        }
-
+        CCTagVisualDebug::instance().initializeFolders(filename, params._numCrowns);
+        bfs::path myPath(filename);
+        std::string ext(myPath.extension().string());
+        
         if ( (ext == ".png") || (ext == ".jpg") ) {
 
+          POP_INFO << "looking at image " << myPath.string() << std::endl;
+          
           cctag::View my_view( filename );
 
           rgb8_image_t& image = my_view._image;
@@ -146,30 +142,13 @@ int main(int argc, char** argv)
                   terry::resize_view( svw, osvw, terry::sampler::bicubic_sampler() );
           }*/
 
-          resultFolderName << "/" << myPath.stem().string();
-
-          if (!bfs::exists(resultFolderName.str())) {
-            bfs::create_directory(resultFolderName.str());
-          }
-        
-          POP_INFO << "using result folder " << resultFolderName.str() << std::endl;
-          POP_INFO << "looking at image " << myPath.stem().string() << std::endl;
-
-          CCTagVisualDebug::instance().initBackgroundImage(svw);
-          CCTagVisualDebug::instance().initPath(resultFolderName.str());
-          CCTagVisualDebug::instance().setImageFileName(myPath.stem().string());
-          CCTagFileDebug::instance().setPath(resultFolderName.str());
-
-          detection(0, my_view, paramsFilename);
-
-          CCTagFileDebug::instance().outPutAllSessions();
-          CCTagFileDebug::instance().clearSessions();
-          CCTagVisualDebug::instance().outPutAllSessions();
-          CCTagVisualDebug::instance().clearSessions();
+          // Call the CCTag detection
+          detection(0, my_view, params, myPath.stem().string());
           
         } else if (ext == ".avi" )
         {
           CCTAG_COUT("*** Video mode ***");
+          POP_INFO << "looking at video " << myPath.string() << std::endl;
           
           // open video and check
           cv::VideoCapture video(filename.c_str());
@@ -190,26 +169,12 @@ int main(int argc, char** argv)
             cctag::View cctagView((const unsigned char *) imgGray.data, imgGray.cols, imgGray.rows , imgGray.step );
             cctagView._view = boost::gil::interleaved_view(imgGray.cols, imgGray.rows, (boost::gil::rgb8_pixel_t*) frame.data, frame.step );
 
-            // Write output
-            std::stringstream outFileName, outFolderName;
+            // Set the output folder
+            std::stringstream outFileName;
             outFileName << std::setfill('0') << std::setw(5) << frameId;
-            outFolderName << resultFolderName.str() << "/" << outFileName.str();
-
-            if (!bfs::exists(outFolderName.str())) {
-                bfs::create_directory(outFolderName.str());
-            }
             
-            CCTagVisualDebug::instance().initBackgroundImage(cctagView._view);
-            CCTagVisualDebug::instance().initPath(outFolderName.str());
-            CCTagVisualDebug::instance().setImageFileName(outFileName.str());
-            CCTagFileDebug::instance().setPath(outFolderName.str());
-            
-            detection(frameId, cctagView);
-            
-            CCTagFileDebug::instance().outPutAllSessions();
-            CCTagFileDebug::instance().clearSessions();
-            CCTagVisualDebug::instance().outPutAllSessions();
-            CCTagVisualDebug::instance().clearSessions();
+            // Call the CCTag detection
+            detection(frameId, cctagView, params, outFileName.str());
             
             ++frameId; 
           }

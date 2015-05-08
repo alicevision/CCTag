@@ -2,6 +2,10 @@
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/dataSerialization.hpp>
 
+#include <boost/filesystem.hpp>
+
+namespace bfs = boost::filesystem;
+
 namespace cctag
 {
 
@@ -16,8 +20,10 @@ CCTagFileDebug::~CCTagFileDebug() {
 
 void CCTagFileDebug::setPath(const std::string& folderName) {
 #ifdef CCTAG_SERIALIZE
-    // Don't erase old sessions
     _path = folderName;
+    if (!bfs::exists(_path)) {
+      bfs::create_directory(_path);
+    }
 #endif
 }
 

@@ -1,9 +1,13 @@
 #include <cctag/visualDebug.hpp>
 #include <cctag/fileDebug.hpp>
 
+#include <boost/filesystem.hpp>
+
 // griff: define int_p_NULL against a bug in boost-gil-numeric 1.0.0
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
+
+namespace bfs = boost::filesystem;
 
 namespace cctag
 {
@@ -16,6 +20,39 @@ CCTagVisualDebug::~CCTagVisualDebug() {
 
 }
 
+void CCTagVisualDebug::initializeFolders(const std::string & filename, std::size_t nCrowns)
+{
+#ifdef CCTAG_SERIALIZE
+  bfs::path myPath(filename);
+
+  const bfs::path extPath(myPath.extension());
+  const bfs::path subFilenamePath(myPath.filename());
+  const bfs::path parentPath(myPath.parent_path());
+  std::string ext(extPath.string());
+
+  // Create inputImagePath/result if it does not exist
+  std::stringstream resultFolderName, localizationFolderName, identificationFolderName;
+  resultFolderName << parentPath.string() << "/cctag" << nCrowns << "CC";
+  localizationFolderName << resultFolderName.str() << "/localization";
+  identificationFolderName << resultFolderName.str() << "/identification";
+
+  if (!bfs::exists(resultFolderName.str())) {
+      bfs::create_directory(resultFolderName.str());
+  }
+
+  if (!bfs::exists(localizationFolderName.str())) {
+      bfs::create_directory(localizationFolderName.str());
+  }
+
+  if (!bfs::exists(identificationFolderName.str())) {
+      bfs::create_directory(identificationFolderName.str());
+  }
+  
+  _pathRoot = resultFolderName.str();
+  CCTAG_COUT_VAR(_pathRoot);
+#endif
+}
+
 void CCTagVisualDebug::setPyramidLevel(int level) {
 #ifdef CCTAG_SERIALIZE
     _pyramidLevel = level;
@@ -26,15 +63,23 @@ int CCTagVisualDebug::getPyramidLevel() {
     return _pyramidLevel;
 }
 
-void CCTagVisualDebug::initPath(const std::string & path) {
+std::string CCTagVisualDebug::getPath() const {
 #ifdef CCTAG_SERIALIZE
-    _path = path;
+    return _path;
 #endif
 }
 
 void CCTagVisualDebug::setImageFileName(const std::string& imageFileName) {
 #ifdef CCTAG_SERIALIZE
     _imageFileName = imageFileName;
+      CCTAG_COUT_VAR(_imageFileName);
+    _path = _pathRoot + "/" + imageFileName;
+    CCTAG_COUT_VAR(_path);
+    if (!bfs::exists(_path)) {
+      bfs::create_directory(_path);
+      CCTAG_COUT("creation done");
+    }
+    CCTAG_COUT("exit");
 #endif   
 }
 

@@ -10,7 +10,6 @@
 
 #include <boost/gil/image_view.hpp>
 
-
 namespace cctag
 {
 
@@ -24,8 +23,8 @@ public:
     void setPyramidLevel(int level);
 
     int getPyramidLevel();
-
-    void initPath(const std::string & path);
+    
+    std::string getPath() const;
 
     void setImageFileName(const std::string& imageFileName);
 
@@ -38,6 +37,8 @@ public:
         copy_and_convert_pixels(backView, _backView);
 #endif
     }
+    
+    void initializeFolders(const std::string & filename, std::size_t nCrowns = 4);
 
     void newSession(const std::string & sessionName);
 
@@ -71,11 +72,10 @@ private:
     boost::gil::rgb8_view_t _view; ///< Current view
     boost::gil::rgb8_image_t _backImage; ///< Background image
     boost::gil::rgb8_view_t _backView; ///< Background view
-
     int _pyramidLevel;
-
-    std::string _path;
     std::string _imageFileName;
+    std::string _pathRoot;
+    std::string _path;
 };
 
 } // namespace cctag
