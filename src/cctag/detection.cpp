@@ -434,7 +434,7 @@ void cctagDetectionFromEdges(
   // Second main loop:
   // From the flow components selected in the first loop, the outer ellipse will
   // be here entirely recovered.
-  // The GPU implementation should stop at this point.
+  // The GPU implementation should stop at this point => layers ->  EdgePoint* creation.
 
   while (iCandidate < nCandidatesLoopOneToProcess)
   {
@@ -472,7 +472,7 @@ void cctagDetectionFromEdges(
 #endif
 #endif
 
-    // Does a copies -- todo@Lilian: find another solution
+    // todo@Lilian: remove copies -- find another solution
     std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
     cctag::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
     std::vector<EdgePoint*> filteredChildrens = candidate._filteredChildrens;
