@@ -179,7 +179,7 @@ void update(
 
 void cctagMultiresDetection(
         CCTag::List& markers,
-        const boost::gil::gray8_view_t& srcImg,
+        const boost::gil::gray8_view_t& graySrc,
         const boost::gil::rgb32f_view_t & cannyRGB,
         const std::size_t frame,
         const Parameters & params)
@@ -194,8 +194,8 @@ void cctagMultiresDetection(
   typedef kth_channel_view_type<2, rgb32f_view_t>::type GradYView;
 
   //	* create all pyramid levels
-  gray8_image_t grayImg;
-  gray8_view_t graySrc = img::toGray(srcImg, grayImg);
+  //gray8_image_t grayImg;
+  //gray8_view_t graySrc = img::toGray(grayImg, grayImg);
 
   PyramidImage<gray8_view_t> multiresSrc(
           graySrc,
