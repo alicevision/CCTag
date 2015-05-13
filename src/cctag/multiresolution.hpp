@@ -6,6 +6,7 @@
 #include <cctag/frame.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Cercle.hpp>
+//#include <cctag/boostCv/cvImage.hpp>
 
 #include <terry/sampler/all.hpp>
 #include <terry/sampler/resample_subimage.hpp>
@@ -96,6 +97,12 @@ private:
 		using namespace boost::gil;
 		image.recreate( scale * srcView.width(), scale * srcView.height() );
 		terry::resize_view( srcView, boost::gil::view( image ), terry::sampler::bilinear_sampler() );
+                
+                //boostCv::CvImageView cvviewSrc(srcView);
+                //IplImage * img = cvviewSrc.get();
+                
+                //boostCv::CvImageView cvviewDst(boost::gil::view( image ));
+                //cvResize(img, cvviewDst.get());
 	}
 private:
 	View _srcView; // if we use an external source view (for root image)
