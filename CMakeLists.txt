@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 2.8)
 include(ExternalProject)
 
 project( CCTag )
@@ -29,7 +29,7 @@ if(APPLE)
 endif(APPLE)
 
 # avoid the cmake policy warning about @rpath in MacOSX
-cmake_policy(SET CMP0042 NEW)
+# cmake_policy(SET CMP0042 NEW)
 
 if(APPLE)
   SET(CMAKE_MACOSX_RPATH TRUE) # initialize the MACOSX_RPATH property on all targets
@@ -60,7 +60,7 @@ else(Boost_FOUND)
   message( FATAL_ERROR "Boost not found" )
 endif(Boost_FOUND)
 
-find_package(CUDA 6.5)
+find_package(CUDA 7.0)
 if(CUDA_FOUND)
   include_directories(${CUDA_INCLUDE_DIRS})
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
