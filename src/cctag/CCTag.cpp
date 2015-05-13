@@ -7,8 +7,6 @@
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/geometry/distance.hpp>
 #include <cctag/optimization/conditioner.hpp>
-#include <cctag/viewGeometry/homography.hpp>
-#include <cctag/viewGeometry/2DTransform.hpp>
 
 #ifdef WITH_CMINPACK
 #include <cminpack.h>
