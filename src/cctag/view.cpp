@@ -23,6 +23,7 @@ MultiresolutionCanvas View::_canvas;
 
 View::View( const std::string& filename )
 {
+    std::cerr << "Enter " << __FUNCTION__ << std::endl;
     std::string ext = boost::filesystem::path(filename).extension().string();
 
     if (ext == ".png") {
@@ -41,6 +42,7 @@ View::View( const std::string& filename )
 
     // Grayscale transform
     _grayView = cctag::img::toGray(_view, _grayImage);
+    std::cerr << "Leave " << __FUNCTION__ << std::endl;
 }
 
 View::View( const unsigned char * rawData, size_t width, size_t height, ptrdiff_t src_row_bytes )

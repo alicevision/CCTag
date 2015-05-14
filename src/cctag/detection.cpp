@@ -25,6 +25,9 @@
 #include <cctag/canny.hpp>
 #include <cctag/global.hpp>
 #include <cctag/fileDebug.hpp>
+#ifdef WITH_CUDA
+#include "cuda/frame.h"
+#endif // WITH_CUDA
 
 #include <boost/foreach.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -694,7 +697,45 @@ void cctagDetection(CCTag::List& markers,
   static const CCTagMarkersBank bank(params._cctagBankFilename);
 
   boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
+#ifdef WITH_CUDA
+  {
+    uint32_t w = graySrc.width();
+    uint32_t h = graySrc.height();
+    unsigned char* pix = new unsigned char[w*h];
+    unsigned char* verify = new unsigned char[w*h];
+    memset( pix, 0, w*h );
+    memset( verify, 0, w*h );
 
+    boost::gil::copy_pixels( graySrc,
+                             boost::gil::interleaved_view( graySrc.width(),
+                                                           graySrc.height(),
+                                                           pix,
+                                                           graySrc.width() * sizeof(unsigned char) ) );
+
+    for( int i=0; i<10; i++ ) {
+        for( int j=0; j<10; j++ )
+            cerr << uint32_t(pix[ i*w + j ]) << " ";
+        cerr << endl;
+    }
+    cerr << endl;
+    popart::Frame* frame[4];
+    for( int i=0; i<4; i++ ) {
+        frame[i] = new popart::Frame( sizeof(unsigned char), w, h );
+        w = ( w >> 1 ) + ( w & 1 );
+        h = ( h >> 1 ) + ( h & 1 );
+    }
+    frame[0]->upload( pix );
+    frame[0]->download( verify, graySrc.width(), graySrc.height() );
+
+    frame[0]->streamSync( );
+    for( int i=0; i<10; i++ ) {
+        for( int j=0; j<10; j++ )
+            cerr << uint32_t(verify[ i*graySrc.width() + j ]) << " ";
+        cerr << endl;
+    }
+    cerr << endl;
+  }
+#endif
   // Views for:
   // canny
   typedef kth_channel_view_type<0, rgb32f_view_t>::type CannyView;

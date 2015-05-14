@@ -3,6 +3,10 @@ include(ExternalProject)
 
 project( CCTag )
 
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -Wall")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+
 # CCTAG_BUILD_MODE set to RELEASE by default (DEBUG,RELEASE)
 if(DEFINED CCTAG_BUILD_MODE)
   add_definitions("-D${CCTAG_BUILD_MODE}")
@@ -65,6 +69,7 @@ if(CUDA_FOUND)
   include_directories(${CUDA_INCLUDE_DIRS})
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
+  add_definitions("-DWITH_CUDA")
 else(CUDA_FOUND)
   message( STATUS "Failed to find CUDA" )
 endif(CUDA_FOUND)

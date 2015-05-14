@@ -22,12 +22,13 @@ CCTagVisualDebug::~CCTagVisualDebug() {
 
 void CCTagVisualDebug::initializeFolders(const std::string & filename, std::size_t nCrowns)
 {
+    // std::cerr << "Enter " << __FUNCTION__ << " with " << filename << "," << nCrowns << std::endl;
 #ifdef CCTAG_SERIALIZE
   bfs::path myPath(filename);
 
   const bfs::path extPath(myPath.extension());
   const bfs::path subFilenamePath(myPath.filename());
-  const bfs::path parentPath(myPath.parent_path());
+  const bfs::path parentPath( myPath.parent_path() == "" ? "." : myPath.parent_path());
   std::string ext(extPath.string());
 
   // Create inputImagePath/result if it does not exist
@@ -51,6 +52,7 @@ void CCTagVisualDebug::initializeFolders(const std::string & filename, std::size
   _pathRoot = resultFolderName.str();
   CCTAG_COUT_VAR(_pathRoot);
 #endif
+    // std::cerr << "Leave " << __FUNCTION__ << std::endl;
 }
 
 void CCTagVisualDebug::setPyramidLevel(int level) {
