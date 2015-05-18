@@ -503,6 +503,68 @@ void cvRecodedCanny(
   //cvSobel( src, dy, 0, 1, aperture_size );
 
   {
+    
+    bool use1Dkernel = false;
+    
+    if(use1Dkernel)
+    {
+      // ** Matlab code to generate the gaussian 1D kernel, filter size and standard deviation sigma**
+      //    width = 4;
+      //    sigma = 1;
+      //    ssq = sigma^2;
+      //    t = (-width:width);
+      //    gaussian1D = exp(-(t.*t)/(2*ssq))/(2*pi*ssq)     % the gaussian 1D filter
+      
+       float gaussian1D[9] = { 0.000053390535453, 
+                      0.001768051711852,
+                      0.021539279301849,
+                      0.096532352630054,
+                      0.159154943091895,
+                      0.096532352630054,
+                      0.021539279301849,
+                      0.001768051711852,
+                      0.000053390535453
+       };
+       
+      // ** Matlab code to generate the derivative of gaussian 1D kernel **
+      //    t = -width:width;
+      //    dgaussian1D = -t.*exp(-(t.*t)/(2*ssq))/(pi*ssq)/0.159154943091895 % the derivative of gaussian 1D filter
+       
+      float dgaussian1D[9] = { 0.002683701023220,
+               0.066653979229454,
+               0.541341132946452,
+               1.213061319425269,
+               0,
+               -1.213061319425269,
+               -0.541341132946452,
+               -0.066653979229454,
+               -0.002683701023220 //1D gaussian derivative with sigma=1 divided by / 0.159154943091895
+       };
+       
+      // The first option is to apply successively the (above) 1D kernels (delivered the same result as the second option used below with a 9x9 2D kernel )
+      // ** Matlab code on how to use the 1D kernels **   
+
+      //    srcSmooth = imfilter(src, gaussian1D, 'conv','replicate');                  % srcSmooth = src X gaussian1D ; with dimensions(src)==dimensions(srcSmooth) (refered by 'replicate')
+      //    srcSmooth = imfilter(srcSmooth, transpose(gaussian1D), 'conv','replicate'); % srcSmooth = srcSmooth x transpose(gaussian1D)
+      //
+      //    % Compute dx
+      //    dx = imfilter(srcSmooth, transpose(gaussian1D), 'conv','replicate');        % dx = srcSmooth X transpose(gaussian1D)
+      //    dx = imfilter(dx, dgaussian1D, 'conv','replicate');                         % dx = dx X dgaussian1D
+      //
+      //    % Compute dy
+      //    dy = imfilter(srcSmooth, gaussian1D, 'conv','replicate');                   % dy = srcSmooth X gaussian1D
+      //    dy = imfilter(dy, transpose(dgaussian1D), 'conv','replicate');              % dy = dy X transpose(dgaussian1D)
+       
+       // Summary of the two options
+       // - First option using 1D kernels:
+       //     1D convolution, kernel size 9 (6 times)
+
+       // - Second option using 2D kernels:
+       //     2D convolution, kernel size 9x9 (2 times)
+    }
+       
+    // The second option is to apply the (9x9) 2D following kernel
+       
     CvMat* kerneldX = cvCreateMat( 9, 9, CV_32FC1 );
     CvMat* kerneldY = cvCreateMat( 9, 9, CV_32FC1 );
 
@@ -593,7 +655,7 @@ void cvRecodedCanny(
 
     cvFilter2D( src, dx, kerneldX );
     cvFilter2D( src, dy, kerneldY );
-
+    
     cvReleaseMat( &kerneldX );
     cvReleaseMat( &kerneldY );
   }
@@ -668,6 +730,10 @@ void cvRecodedCanny(
           x        = _dx[j];
           y = _dy[j];
           _magf[j] = (float)std::sqrt( (double)x * x + (double)y * y );
+          if (_dx[j] > 200){
+      std::cout << _dx[j] << ", ";
+      std::cout << _dy[j] << ", ";
+          }
         }
       }
     }
