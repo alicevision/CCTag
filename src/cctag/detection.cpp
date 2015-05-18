@@ -41,6 +41,7 @@
 #include <cmath>
 #include <exception>
 #include <fstream>
+#include <sstream>
 #include <list>
 #include <utility>
 
@@ -243,7 +244,11 @@ void completeFlowComponent(
     catch (cv::Exception& e)
     {
       CCTAG_COUT_DEBUG( "OpenCV exception" );
+#ifdef WITH_CUDA
+      e.what();
+#else
       const char* err_msg = e.what();
+#endif
     }
   }
   catch (...)
@@ -356,7 +361,11 @@ void flowComponentAssembling(
 
   boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d = tstop - tstart;
+#ifdef WITH_CUDA
+  d.total_milliseconds();
+#else
   const double spendTime = d.total_milliseconds();
+#endif
 }
 
 
@@ -712,12 +721,16 @@ void cctagDetection(CCTag::List& markers,
                                                            pix,
                                                            graySrc.width() * sizeof(unsigned char) ) );
 
+#if 0
     for( int i=0; i<10; i++ ) {
         for( int j=0; j<10; j++ )
             cerr << uint32_t(pix[ i*w + j ]) << " ";
         cerr << endl;
     }
     cerr << endl;
+#endif
+    popart::Frame::writeDebugPlane( "debug-input-base.pgm", pix, w, h );
+
     popart::Frame* frame[4];
     for( int i=0; i<4; i++ ) {
         frame[i] = new popart::Frame( sizeof(unsigned char), w, h );
@@ -726,14 +739,33 @@ void cctagDetection(CCTag::List& markers,
     }
     frame[0]->upload( pix );
     frame[0]->download( verify, graySrc.width(), graySrc.height() );
+    frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float);
 
     frame[0]->streamSync( );
+    for( int i=1; i<4; i++ ) {
+        frame[i]->fillFromFrame( *(frame[0]) );
+        // frame[i]->fillFromTexture( *(frame[0]) );
+    }
+    for( int i=1; i<4; i++ ) {
+        frame[i]->streamSync( );
+    }
+    for( int i=0; i<4; i++ ) {
+        frame[i]->hostDebugDownload();
+    }
+    for( int i=0; i<4; i++ ) {
+        std::ostringstream ostr;
+        ostr << "debug-input-plane-" << i << ".pgm";
+        frame[i]->writeHostDebugPlane( ostr.str().c_str() );
+    }
+
+#if 0
     for( int i=0; i<10; i++ ) {
         for( int j=0; j<10; j++ )
             cerr << uint32_t(verify[ i*graySrc.width() + j ]) << " ";
         cerr << endl;
     }
     cerr << endl;
+#endif
   }
 #endif
   // Views for:

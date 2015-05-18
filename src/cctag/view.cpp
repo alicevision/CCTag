@@ -9,7 +9,7 @@
 #include <cctag/debug.hpp>
 #include <cctag/image.hpp>
 
-#ifdef WITH_CUDA
+#ifdef WITH_CUDA_OLD
   #include <cuda_runtime.h>
 #endif
 
@@ -57,7 +57,7 @@ View::~View( )
 
 void View::setNumLayers( size_t num )
 {
-#ifdef WITH_CUDA
+#ifdef WITH_CUDA_OLD
     if( _canvas.resizeRequired( _image.width(), _image.height() ) ) {
         _canvas.uninit( );
         _canvas.init( _image.width(), _image.height(), num );
@@ -93,7 +93,7 @@ MultiresolutionCanvas::MultiresolutionCanvas( )
 
 void MultiresolutionCanvas::init( size_t width, size_t height, size_t num )
 {
-#ifdef WITH_CUDA
+#ifdef WITH_CUDA_OLD
     POP_ENTER;
     assert( num > 0 );
 
@@ -171,7 +171,7 @@ MultiresolutionCanvas::~MultiresolutionCanvas( )
 
 void MultiresolutionCanvas::uninit( )
 {
-#ifdef WITH_CUDA
+#ifdef WITH_CUDA_OLD
     POP_INFO << "deallocating CUDA memory" << std::endl;
     if( _device_all_float_canvasses ) cudaFree( _device_all_float_canvasses );
     if( _device_all_int_canvasses )   cudaFree( _device_all_int_canvasses );
@@ -192,7 +192,7 @@ bool MultiresolutionCanvas::resizeRequired( size_t width, size_t height ) const
 
 void MultiresolutionCanvas::uploadPixels( )
 {
-#ifdef WITH_CUDA
+#ifdef WITH_CUDA_OLD
     /// precondition: everything allocated, sizes checked
     cudaError_t err;
     err = cudaMemcpy( _device_all_int_canvasses, _host_image, _canvas_size[0].sz()*3*sizeof(uint8_t), cudaMemcpyHostToDevice );

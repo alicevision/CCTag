@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string.h>
 #include <cuda_runtime.h>
 #include "debug_macros.hpp"
@@ -17,6 +18,7 @@ Frame::Frame( uint32_t type_size, uint32_t width, uint32_t height )
     : _type_size( type_size )
     , _width( width )
     , _height( height )
+    , _h_debug_plane( 0 )
     , _texture( 0 )
     , _stream_inherited( false )
 {
@@ -27,10 +29,15 @@ Frame::Frame( uint32_t type_size, uint32_t width, uint32_t height )
     size_t pitch;
     POP_CUDA_MALLOC_PITCH( (void**)&_d_plane, &pitch, width*type_size, height );
     _pitch = pitch;
+
+    cudaError_t err;
+    err = cudaMemsetAsync( _d_plane, 0, width*type_size*height );
+    POP_CUDA_FATAL_TEST( err, "cudaMemsetAsync failed: " );
 }
 
 Frame::~Frame( )
 {
+    delete _h_debug_plane;
     delete _texture;
 
     POP_CUDA_FREE( _d_plane );
@@ -48,6 +55,12 @@ void Frame::upload( const unsigned char* image )
     POP_CUDA_MEMCPY_2D_ASYNC( _d_plane, _pitch, image, w, w, _height, cudaMemcpyHostToDevice, _stream );
 }
 
+void Frame::allocHostDebugPlane( )
+{
+    delete [] _h_debug_plane;
+    _h_debug_plane = new unsigned char[ _type_size * _width * _height ];
+}
+
 void Frame::download( unsigned char* image, uint32_t width, uint32_t height )
 {
     const uint32_t host_w = width * _type_size;
@@ -59,6 +72,46 @@ void Frame::download( unsigned char* image, uint32_t width, uint32_t height )
          << " dest pitch=" << host_w
          << " height=" << _height << endl;
     POP_CUDA_MEMCPY_2D_ASYNC( image, host_w, _d_plane, _pitch, dev_w, _height, cudaMemcpyDeviceToHost, _stream );
+}
+
+void Frame::hostDebugDownload( )
+{
+    allocHostDebugPlane( );
+    download( _h_debug_plane, _width, _height );
+}
+
+void Frame::writeDebugPlane( const char* filename, unsigned char* c, uint32_t w, uint32_t h )
+{
+    ofstream of( filename );
+    of << "P5" << endl
+       << w << " " << h << endl
+       << "255" << endl;
+    of.write( (char*)c, w * h );
+}
+
+void Frame::writeHostDebugPlane( const char* filename )
+{
+    assert( _h_debug_plane );
+
+    if( _type_size == 1 ) {
+        ofstream of( filename );
+        of << "P5" << endl
+           << _width << " " << _height << endl
+           << "255" << endl;
+        of.write( (char*)_h_debug_plane, _width * _height );
+    } else if( _type_size == 4 ) {
+        ofstream of( filename );
+        of << "P5" << endl
+           << _width << " " << _height << endl
+           << "255" << endl;
+        for( uint32_t h=0; h<_height; h++ ) {
+            for( uint32_t w=0; w<_width; w++ ) {
+                of << (unsigned char)_h_debug_plane[h*_width+w];
+            }
+        }
+    } else {
+        cerr << "Only type_sizes 1 (uint8_t) and 4 (non-normalized flaot) are supported" << endl;
+    }
 }
 
 void Frame::createTexture( FrameTexture::Kind kind )
@@ -78,6 +131,30 @@ void cu_fill_from_texture( unsigned char* dst, uint32_t pitch, uint32_t width, u
     if( idx >= pitch ) return;
     float d = tex2D<float>( tex, float(idx)/float(width), float(idy)/float(height) );
     dst[ idy * pitch + idx ] = (unsigned char)( d * 256 );
+}
+
+__global__
+void cu_fill_from_frame( unsigned char* dst, uint32_t pitch, uint32_t width, uint32_t height, unsigned char* src, uint32_t spitch, uint32_t swidth, uint32_t sheight )
+{
+    uint32_t idy = blockIdx.y;
+    uint32_t idx = blockIdx.x * 32 + threadIdx.x;
+    if( idy >= height ) return;
+    if( idx >= pitch ) return;
+
+    dst[ idy * pitch + idx ] = src[ idy * spitch + idx ];
+}
+
+void Frame::fillFromFrame( Frame& src )
+{
+    dim3 grid;
+    dim3 block;
+    block.x = 32;
+    grid.x  = _width / 32;
+    grid.y  = _height;
+
+    cu_fill_from_frame
+        <<<block,grid,0,_stream>>>
+        ( _d_plane, _pitch, _width, _height, src._d_plane, src._pitch, src._width, src._height );
 }
 
 void Frame::fillFromTexture( Frame& src )

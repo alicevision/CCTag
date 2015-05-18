@@ -58,6 +58,7 @@ public:
 
     // initialize this frame from other's normalized texture
     void fillFromTexture( Frame& src );
+    void fillFromFrame( Frame& src );
 
     inline cudaTextureObject_t getTex( ) {
         assert( _texture );
@@ -68,6 +69,16 @@ public:
 
     // return the downscaled sibling "scale". The count it 0-based, 0 is this Frame
     Frame* getScale( uint32_t scale );
+
+    // return width in type_size
+    uint32_t getWidth( ) const  { return _width; }
+
+    uint32_t getHeight( ) const { return _height; }
+
+    void allocHostDebugPlane( );
+    void hostDebugDownload( );
+    static void writeDebugPlane( const char* filename, unsigned char* c, uint32_t w, uint32_t h );
+    void writeHostDebugPlane( const char* filename );
 
 private:
     Frame( );  // forbidden
@@ -80,6 +91,7 @@ private:
     uint32_t _height;
 
     unsigned char* _d_plane;
+    unsigned char* _h_debug_plane;
     FrameTexture*  _texture;
 
     // if we run out of streams (there are 32), we may have to share
