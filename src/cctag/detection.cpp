@@ -738,24 +738,32 @@ void cctagDetection(CCTag::List& markers,
         h = ( h >> 1 ) + ( h & 1 );
     }
     frame[0]->upload( pix );
+    cudaDeviceSynchronize();
     frame[0]->download( verify, graySrc.width(), graySrc.height() );
-    frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float);
+    cudaDeviceSynchronize();
+    // frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float);
 
+    cudaDeviceSynchronize();
     frame[0]->streamSync( );
+    cudaDeviceSynchronize();
     for( int i=1; i<4; i++ ) {
         frame[i]->fillFromFrame( *(frame[0]) );
         // frame[i]->fillFromTexture( *(frame[0]) );
+        cudaDeviceSynchronize();
     }
     for( int i=1; i<4; i++ ) {
         frame[i]->streamSync( );
+        cudaDeviceSynchronize();
     }
     for( int i=0; i<4; i++ ) {
         frame[i]->hostDebugDownload();
+        cudaDeviceSynchronize();
     }
     for( int i=0; i<4; i++ ) {
         std::ostringstream ostr;
         ostr << "debug-input-plane-" << i << ".pgm";
         frame[i]->writeHostDebugPlane( ostr.str().c_str() );
+        cudaDeviceSynchronize();
     }
 
 #if 0

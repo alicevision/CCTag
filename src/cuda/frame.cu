@@ -123,17 +123,6 @@ void Frame::createTexture( FrameTexture::Kind kind )
 }
 
 __global__
-void cu_fill_from_texture( unsigned char* dst, uint32_t pitch, uint32_t width, uint32_t height, cudaTextureObject_t tex )
-{
-    uint32_t idy = blockIdx.y;
-    uint32_t idx = blockIdx.x * 32 + threadIdx.x;
-    if( idy >= height ) return;
-    if( idx >= pitch ) return;
-    float d = tex2D<float>( tex, float(idx)/float(width), float(idy)/float(height) );
-    dst[ idy * pitch + idx ] = (unsigned char)( d * 256 );
-}
-
-__global__
 void cu_fill_from_frame( unsigned char* dst, uint32_t pitch, uint32_t width, uint32_t height, unsigned char* src, uint32_t spitch, uint32_t swidth, uint32_t sheight )
 {
     uint32_t idy = blockIdx.y;
@@ -146,6 +135,10 @@ void cu_fill_from_frame( unsigned char* dst, uint32_t pitch, uint32_t width, uin
 
 void Frame::fillFromFrame( Frame& src )
 {
+    cerr << "Entering " << __FUNCTION__ << endl;
+    cerr << "    copying from src frame with " << src._width << "x" << src._height << endl;
+    cerr << "    to dst plane           with " << _width << "x" << _height << endl;
+    assert( _d_plane );
     dim3 grid;
     dim3 block;
     block.x = 32;
@@ -155,6 +148,17 @@ void Frame::fillFromFrame( Frame& src )
     cu_fill_from_frame
         <<<block,grid,0,_stream>>>
         ( _d_plane, _pitch, _width, _height, src._d_plane, src._pitch, src._width, src._height );
+}
+
+__global__
+void cu_fill_from_texture( unsigned char* dst, uint32_t pitch, uint32_t width, uint32_t height, cudaTextureObject_t tex )
+{
+    uint32_t idy = blockIdx.y;
+    uint32_t idx = blockIdx.x * 32 + threadIdx.x;
+    if( idy >= height ) return;
+    if( idx >= pitch ) return;
+    float d = tex2D<float>( tex, float(idx)/float(width), float(idy)/float(height) );
+    dst[ idy * pitch + idx ] = (unsigned char)( d * 256 );
 }
 
 void Frame::fillFromTexture( Frame& src )
