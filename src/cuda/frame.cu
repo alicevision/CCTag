@@ -146,7 +146,7 @@ void Frame::fillFromFrame( Frame& src )
     grid.y  = _height;
 
     cu_fill_from_frame
-        <<<block,grid,0,_stream>>>
+        <<<grid,block,0,_stream>>>
         ( _d_plane, _pitch, _width, _height, src._d_plane, src._pitch, src._width, src._height );
 }
 
@@ -158,7 +158,7 @@ void cu_fill_from_texture( unsigned char* dst, uint32_t pitch, uint32_t width, u
     if( idy >= height ) return;
     if( idx >= pitch ) return;
     float d = tex2D<float>( tex, float(idx)/float(width), float(idy)/float(height) );
-    dst[ idy * pitch + idx ] = (unsigned char)( d * 256 );
+    dst[ idy * pitch + idx ] = (unsigned char)( d * 255 );
 }
 
 void Frame::fillFromTexture( Frame& src )
@@ -170,7 +170,7 @@ void Frame::fillFromTexture( Frame& src )
     grid.y  = _height;
 
     cu_fill_from_texture
-        <<<block,grid,0,_stream>>>
+        <<<grid,block,0,_stream>>>
         ( _d_plane, _pitch, _width, _height, src.getTex() );
 }
 

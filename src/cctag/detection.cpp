@@ -26,7 +26,8 @@
 #include <cctag/global.hpp>
 #include <cctag/fileDebug.hpp>
 #ifdef WITH_CUDA
-#include "cuda/frame.h"
+// #include "cuda/frame.h"
+#include "cuda/tag.h"
 #endif // WITH_CUDA
 
 #include <boost/foreach.hpp>
@@ -711,9 +712,7 @@ void cctagDetection(CCTag::List& markers,
     uint32_t w = graySrc.width();
     uint32_t h = graySrc.height();
     unsigned char* pix = new unsigned char[w*h];
-    unsigned char* verify = new unsigned char[w*h];
     memset( pix, 0, w*h );
-    memset( verify, 0, w*h );
 
     boost::gil::copy_pixels( graySrc,
                              boost::gil::interleaved_view( graySrc.width(),
@@ -721,59 +720,7 @@ void cctagDetection(CCTag::List& markers,
                                                            pix,
                                                            graySrc.width() * sizeof(unsigned char) ) );
 
-#if 0
-    for( int i=0; i<10; i++ ) {
-        for( int j=0; j<10; j++ )
-            cerr << uint32_t(pix[ i*w + j ]) << " ";
-        cerr << endl;
-    }
-    cerr << endl;
-#endif
-    popart::Frame::writeDebugPlane( "debug-input-base.pgm", pix, w, h );
-
-    popart::Frame* frame[4];
-    for( int i=0; i<4; i++ ) {
-        frame[i] = new popart::Frame( sizeof(unsigned char), w, h );
-        w = ( w >> 1 ) + ( w & 1 );
-        h = ( h >> 1 ) + ( h & 1 );
-    }
-    frame[0]->upload( pix );
-    cudaDeviceSynchronize();
-    frame[0]->download( verify, graySrc.width(), graySrc.height() );
-    cudaDeviceSynchronize();
-    // frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float);
-
-    cudaDeviceSynchronize();
-    frame[0]->streamSync( );
-    cudaDeviceSynchronize();
-    for( int i=1; i<4; i++ ) {
-        frame[i]->fillFromFrame( *(frame[0]) );
-        // frame[i]->fillFromTexture( *(frame[0]) );
-        cudaDeviceSynchronize();
-    }
-    for( int i=1; i<4; i++ ) {
-        frame[i]->streamSync( );
-        cudaDeviceSynchronize();
-    }
-    for( int i=0; i<4; i++ ) {
-        frame[i]->hostDebugDownload();
-        cudaDeviceSynchronize();
-    }
-    for( int i=0; i<4; i++ ) {
-        std::ostringstream ostr;
-        ostr << "debug-input-plane-" << i << ".pgm";
-        frame[i]->writeHostDebugPlane( ostr.str().c_str() );
-        cudaDeviceSynchronize();
-    }
-
-#if 0
-    for( int i=0; i<10; i++ ) {
-        for( int j=0; j<10; j++ )
-            cerr << uint32_t(verify[ i*graySrc.width() + j ]) << " ";
-        cerr << endl;
-    }
-    cerr << endl;
-#endif
+    popart::tagframe( pix, w, h );
   }
 #endif
   // Views for:
