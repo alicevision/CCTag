@@ -25,7 +25,7 @@
 #include <terry/sampler/resample_subimage.hpp>
 
 #include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/videoio.hpp>
 #include <opencv2/core/core.hpp>
 
 #include <sstream>

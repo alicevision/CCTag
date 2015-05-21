@@ -3,7 +3,6 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/core_c.h>
-#include <opencv2/core/internal.hpp>
 #include <opencv2/core/operations.hpp>
 #include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/imgproc/types_c.h>
@@ -479,7 +478,7 @@ void cvRecodedCanny(
   if( ( aperture_size & 1 ) == 0 || aperture_size < 3 || aperture_size > 7 )
     CV_Error( CV_StsBadFlag, "" );
 
-  size = cvGetMatSize( src );
+  size = CvSize(src->width,src->height);
 
   // TODO: no allocation here:
   dx = cvCreateMat( size.height, size.width, CV_16SC1 );
