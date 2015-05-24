@@ -1,5 +1,14 @@
 #include <cctag/canny.hpp>
 
+#include <boost/gil/image_view.hpp>
+
+//#define USE_CANNY_OCV3
+#ifdef USE_CANNY_OCV3
+#include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <boost/timer.hpp>
+#endif
+
 #ifdef CCTAG_USE_TUTTLE
 #include <boost/preprocessor/stringize.hpp>
 #include <tuttle/host/InputBufferNode.hpp>
@@ -40,7 +49,20 @@ void cvCanny(
     gray8_view_t cannyViewBuffer( view(cannyImgBuffer) );
     boostCv::CvImageView cannyImg( cannyViewBuffer );
 
+    //boost::timer t;
     cvRecodedCanny( const_cast<IplImage*>(srcImage), cannyImg.get(), dx, dy, thrLow * 256, thrHigh * 256, /*7*/ 3 | CV_CANNY_L2_GRADIENT );
+    //CCTAG_COUT( "Time for cvRecodedCanny " << t.elapsed() );
+    
+#ifdef USE_CANNY_OCV3
+	cv::Mat matSrc(cv::cvarrToMat( const_cast<IplImage*>(srcImage) ));
+	cv::Mat matCanny(cv::cvarrToMat( const_cast<IplImage*>(cannyImg.get()) ));
+	t.restart();
+	cv::Canny( matSrc, matCanny, thrLow * 256, thrHigh * 256, 7 );
+	CCTAG_COUT( "Time for cv::Canny " << t.elapsed() );
+	//cv::imwrite("/home/lilian/data/toto.png",matCanny);
+#endif
+    
+    
     //cvRecodedCannyGPUFilter2D( simg, cannyImg, dx, dy, thrLow * 256, thrHigh * 256, 7 | CV_CANNY_L2_GRADIENT );
     BOOST_ASSERT( dx && dy );
 

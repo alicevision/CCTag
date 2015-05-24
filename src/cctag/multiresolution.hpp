@@ -6,7 +6,7 @@
 #include <cctag/frame.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Cercle.hpp>
-//#include <cctag/boostCv/cvImage.hpp>
+#include <cctag/boostCv/cvImage.hpp>
 
 #include <terry/sampler/all.hpp>
 #include <terry/sampler/resample_subimage.hpp>
@@ -16,6 +16,8 @@
 #include <cstddef>
 #include <cmath>
 #include <vector>
+
+//#define USE_RESIZE_OCV3
 
 namespace cctag {
 
@@ -95,14 +97,16 @@ private:
 	void buildImageAtScale( Image& image, const View& srcView, const double scale )
 	{
 		using namespace boost::gil;
-		image.recreate( scale * srcView.width(), scale * srcView.height() );
-		terry::resize_view( srcView, boost::gil::view( image ), terry::sampler::bilinear_sampler() );
-                
-                //boostCv::CvImageView cvviewSrc(srcView);
-                //IplImage * img = cvviewSrc.get();
-                
-                //boostCv::CvImageView cvviewDst(boost::gil::view( image ));
-                //cvResize(img, cvviewDst.get());
+                image.recreate( scale * srcView.width(), scale * srcView.height() );
+#ifndef USE_RESIZE_OCV3
+                  terry::resize_view( srcView, boost::gil::view( image ), terry::sampler::bilinear_sampler() );
+#else
+                  boostCv::CvImageView cvviewSrc(srcView);
+                  IplImage * img = cvviewSrc.get();
+
+                  boostCv::CvImageView cvviewDst(boost::gil::view( image ));
+                  cvResize(img, cvviewDst.get());
+#endif
 	}
 private:
 	View _srcView; // if we use an external source view (for root image)
