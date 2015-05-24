@@ -45,7 +45,7 @@ void pop_cuda_memcpy( void*          dst,
                       cudaMemcpyKind type,
                       const char*    file,
                       size_t         line );
-#define POP_CUDA_MEMCPY( dst, src, sz, type ) \
+#define POP_CUDA_MEMCPY_SYNC( dst, src, sz, type ) \
     pop_cuda_memcpy( dst, src, sz, type, __FILE__, __LINE__ )
 
 void pop_cuda_memcpy_2D( void*          dst,
@@ -73,6 +73,27 @@ void pop_cuda_memcpy_2D_async( void*          dst,
 #define POP_CUDA_MEMCPY_2D_ASYNC( dst, dpitch, src, spitch, width, height, type, stream ) \
     pop_cuda_memcpy_2D_async( dst, dpitch, src, spitch, width, height, type, stream, __FILE__, __LINE__ )
 
+void pop_cuda_memcpy_to_symbol_sync( const void*    symbol,
+                                     const void*    src,
+                                     size_t         sz,
+                                     size_t         offset,
+                                     cudaMemcpyKind type,
+                                     const char*    file,
+                                     size_t         line );
+#define POP_CUDA_MEMCPY_HOST_TO_SYMBOL_SYNC( symbol, src, sz ) \
+    pop_cuda_memcpy_to_symbol_sync( symbol, src, sz, 0, cudaMemcpyHostToDevice, __FILE__, __LINE__ )
+
+void pop_cuda_memcpy_to_symbol_async( const void*    symbol,
+                                      const void*    src,
+                                      size_t         sz,
+                                      size_t         offset,
+                                      cudaMemcpyKind type,
+                                      cudaStream_t   stream,
+                                      const char*    file,
+                                      size_t         line );
+#define POP_CUDA_MEMCPY_HOST_TO_SYMBOL_ASYNC( symbol, src, sz, stream ) \
+    pop_cuda_memcpy_to_symbol_async( symbol, src, sz, 0, cudaMemcpyHostToDevice, stream, __FILE__, __LINE__ )
+
 void pop_cuda_memset_async( void*        ptr,
                             int          value,
                             size_t       bytes,
@@ -87,7 +108,7 @@ void pop_cuda_memset( void*        ptr,
                       size_t       bytes,
                       const char*  file,
                       size_t       line );
-#define POP_CUDA_MEMSET( ptr, val, sz ) \
+#define POP_CUDA_MEMSET_SYNC( ptr, val, sz ) \
     pop_cuda_memset( ptr, val, sz, __FILE__, __LINE__ )
 
 #define POP_FATAL(s) { \
@@ -120,6 +141,22 @@ void pop_cuda_memset( void*        ptr,
 #define POP_CUDA_FATAL(err,s) POP_CUDA_FATAL_FL(err,s,__FILE__,__LINE__)
 #define POP_CUDA_FATAL_TEST_FL(err,s,file,line) if( err != cudaSuccess ) { POP_CUDA_FATAL_FL(err,s,file,line); }
 #define POP_CUDA_FATAL_TEST(err,s) if( err != cudaSuccess ) { POP_CUDA_FATAL(err,s); }
+
+#if 0
+#define POP_CUDA_MALLOC_INIT0( ptr, sz ) { \
+        cudaError_t err; \
+        err = cudaMalloc( ptr, sz ); \
+        POP_CUDA_FATAL_TEST( err, "cudaMalloc failed: " ); \
+        err = cudaMemset( *ptr, 0, sz ); \
+        POP_CUDA_FATAL_TEST( err, "cudaMemset failed: " ); \
+    }
+
+#define POP_CUDA_MALLOC_NOINIT( ptr, sz ) { \
+        cudaError_t err; \
+        err = cudaMalloc( ptr, sz ); \
+        POP_CUDA_FATAL_TEST( err, "cudaMalloc failed: " ); \
+    }
+#endif
 
 void pop_cuda_malloc( void** ptr,  uint32_t byte_size, const char* file, uint32_t line );
 #define POP_CUDA_MALLOC( ptr, byte_size ) \

@@ -28,6 +28,8 @@
 #ifdef WITH_CUDA
 // #include "cuda/frame.h"
 #include "cuda/tag.h"
+#else // WITH_CUDA
+#error not compiling with cuda
 #endif // WITH_CUDA
 
 #include <boost/foreach.hpp>

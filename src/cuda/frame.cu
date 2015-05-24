@@ -5,6 +5,7 @@
 #include "debug_macros.hpp"
 
 #include "frame.h"
+#include "frame_gaussian.h"
 
 namespace popart {
 
@@ -18,6 +19,9 @@ Frame::Frame( uint32_t type_size, uint32_t width, uint32_t height )
     : _type_size( type_size )
     , _width( width )
     , _height( height )
+    , _d_gaussian_intermediate( 0 )
+    , _d_gaussian( 0 )
+    , _d_gaussian_pitch( 0 )
     , _h_debug_plane( 0 )
     , _texture( 0 )
     , _stream_inherited( false )
@@ -40,6 +44,8 @@ Frame::~Frame( )
     delete _h_debug_plane;
     delete _texture;
 
+    POP_CUDA_FREE( _d_gaussian_intermediate );
+    POP_CUDA_FREE( _d_gaussian );
     POP_CUDA_FREE( _d_plane );
     cerr << "Released frame: " << _width << "x" << _height << endl;
 }
@@ -59,6 +65,19 @@ void Frame::allocHostDebugPlane( )
 {
     delete [] _h_debug_plane;
     _h_debug_plane = new unsigned char[ _type_size * _width * _height ];
+}
+
+void Frame::allocDevGaussianPlane( )
+{
+    cerr << "Enter " << __FUNCTION__ << endl;
+
+    size_t pitch;
+    POP_CUDA_MALLOC_PITCH( (void**)&_d_gaussian, &pitch, _width*sizeof(float), _height );
+    _d_gaussian_pitch = pitch;
+
+    POP_CUDA_MALLOC_PITCH( (void**)&_d_gaussian_intermediate, &pitch, _width*sizeof(float), _height );
+
+    cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 void Frame::download( unsigned char* image, uint32_t width, uint32_t height )

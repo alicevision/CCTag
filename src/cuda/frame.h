@@ -2,6 +2,9 @@
 
 #include <cuda_runtime.h>
 #include <assert.h>
+#ifdef OPENCV_V3
+#include <opencv2/core/cuda_types.hpp>
+#endif // OPENCV_V3
 
 namespace popart {
 
@@ -45,6 +48,8 @@ public:
     Frame( uint32_t type_size, uint32_t width, uint32_t height );
     ~Frame( );
 
+    static void initGaussTable( );
+
     // copy the upper layer from the host to the device
     void upload( const unsigned char* image ); // implicitly assumed that w/h are the same as above
 
@@ -72,11 +77,16 @@ public:
     Frame* getScale( uint32_t scale );
 
     // return width in type_size
+#ifdef OPENCV_V3
+    uint32_t getWidth( ) const  { return _d_plane.cols; }
+    uint32_t getHeight( ) const { return _d_plane.rows; }
+#else // OPENCV_V3
     uint32_t getWidth( ) const  { return _width; }
-
     uint32_t getHeight( ) const { return _height; }
+#endif // OPENCV_V3
 
     void allocHostDebugPlane( );
+    void allocDevGaussianPlane( );
     void hostDebugDownload( );
     static void writeDebugPlane( const char* filename, unsigned char* c, uint32_t w, uint32_t h );
     void writeHostDebugPlane( const char* filename );
@@ -87,11 +97,18 @@ private:
 
 private:
     uint32_t _type_size;
+#ifdef OPENCV_V3
+    cv::cuda::PtrStepSzb _d_plane;
+#else // OPENCV_V3
     uint32_t _width;     // given in type_size (rg. 1 for uchar, 4 for uint32_t)
     uint32_t _pitch;     // given in bytes
     uint32_t _height;
-
     unsigned char* _d_plane;
+#endif // OPENCV_V3
+
+    float*         _d_gaussian_intermediate;
+    float*         _d_gaussian;
+    uint32_t       _d_gaussian_pitch;
     unsigned char* _h_debug_plane;
     FrameTexture*  _texture;
 

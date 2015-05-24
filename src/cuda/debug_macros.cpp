@@ -185,6 +185,57 @@ void pop_cuda_memcpy_2D_async( void*          dst,
     POP_CUDA_FATAL_TEST( err, "Failed to copy host-to-device: " );
 }
 
+void pop_cuda_memcpy_to_symbol_async( const void*    symbol,
+                                      const void*    src,
+                                      size_t         sz,
+                                      size_t         offset,
+                                      cudaMemcpyKind type,
+                                      cudaStream_t   stream,
+                                      const char*    file,
+                                      size_t         line )
+{
+    POP_CHECK_NON_NULL( src, "Source ptr in memcpy async is null." );
+    POP_CHECK_NON_NULL( sz, "Size in memcpy async is null." );
+
+    cudaError_t err;
+    err = cudaMemcpyToSymbolAsync( symbol, src, sz, offset, type, stream );
+    if( err != cudaSuccess ) {
+        cerr << "    " << "Failed to copy to symbol "
+             << (type==cudaMemcpyHostToDevice?"host-to-device":"device-to-host")
+             << ": ";
+        cerr << cudaGetErrorString(err) << endl;
+        cerr << "    src ptr=" << hex << (size_t)src << dec << endl
+             << "    dst ptr=" << hex << (size_t)symbol << dec << endl;
+        exit( -__LINE__ );
+    }
+    POP_CUDA_FATAL_TEST( err, "Failed to copy host-to-device: " );
+}
+
+void pop_cuda_memcpy_to_symbol_sync( const void*    symbol,
+                                     const void*    src,
+                                     size_t         sz,
+                                     size_t         offset,
+                                     cudaMemcpyKind type,
+                                     const char*    file,
+                                     size_t         line )
+{
+    POP_CHECK_NON_NULL( src, "Source ptr in memcpy async is null." );
+    POP_CHECK_NON_NULL( sz, "Size in memcpy async is null." );
+
+    cudaError_t err;
+    err = cudaMemcpyToSymbol( symbol, src, sz, offset, type );
+    if( err != cudaSuccess ) {
+        cerr << "    " << "Failed to copy to symbol "
+             << (type==cudaMemcpyHostToDevice?"host-to-device":"device-to-host")
+             << ": ";
+        cerr << cudaGetErrorString(err) << endl;
+        cerr << "    src ptr=" << hex << (size_t)src << dec << endl
+             << "    dst ptr=" << hex << (size_t)symbol << dec << endl;
+        exit( -__LINE__ );
+    }
+    POP_CUDA_FATAL_TEST( err, "Failed to copy host-to-device: " );
+}
+
 void pop_cuda_memset_async( void* ptr, int value, size_t bytes, cudaStream_t stream, const char* file, size_t line )
 {
     cudaError_t err;

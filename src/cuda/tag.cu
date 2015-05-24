@@ -11,6 +11,12 @@ namespace popart
 __host__
 void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h )
 {
+    cerr << "Enter " << __FUNCTION__ << endl;
+    static bool gauss_table_initialized = false;
+    if( not gauss_table_initialized ) {
+        Frame::initGaussTable( );
+    }
+
     unsigned char* verify = new unsigned char[pix_w * pix_h];
     memset( verify, 0, pix_w * pix_h );
 
@@ -37,7 +43,7 @@ void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h )
         frame[i]->streamSync( );
     }
     for( int i=0; i<4; i++ ) {
-        frame[i]->hostDebugDownload();
+        frame[i]->allocDevGaussianPlane();
     }
     for( int i=0; i<4; i++ ) {
         std::ostringstream ostr;
@@ -45,7 +51,12 @@ void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h )
         frame[i]->writeHostDebugPlane( ostr.str().c_str() );
     }
     cudaDeviceSynchronize();
+
+    for( int i=0; i<4; i++ ) {
+        frame[i]->allocDevGaussianPlane();
+    }
     cerr << "terminating in tagframe" << endl;
+    cerr << "Leave " << __FUNCTION__ << endl;
     exit( 0 );
 }
 
