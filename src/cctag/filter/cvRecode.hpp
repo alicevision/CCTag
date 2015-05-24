@@ -1,7 +1,7 @@
 #ifndef _CCTAG_CVRECODE_HPP_
 #define _CCTAG_CVRECODE_HPP_
 
-#include <opencv2/core/types_c.h>
+// #include <opencv2/core/types_c.h>
 
 void cvRecodedCannyGPUFilter2D(
         void* srcarr,

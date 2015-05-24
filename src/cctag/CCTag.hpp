@@ -24,7 +24,7 @@
 #include <boost/throw_exception.hpp>
 #include <boost/archive/text_oarchive.hpp>
 
-#include <opencv2/core/types_c.h>
+// #include <opencv2/core/types_c.h>
 
 #include <algorithm>
 #include <cmath>
