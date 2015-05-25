@@ -18,27 +18,54 @@ using namespace std;
 
 /* these numbers are taken from Lilian's file cctag/fiter/cvRecode.cpp */
 
-static const float h_gauss_filter[9] =
+static const float h_gauss_filter[32] =
 {
-    0.002683701023220,
-    0.066653979229454,
-    0.541341132946452,
-    1.213061319425269,
-    0,
-    -1.213061319425269,
-    -0.541341132946452,
-    -0.066653979229454,
-    -0.002683701023220
+    0.000053390535453f,
+    0.001768051711852f,
+    0.021539279301849f,
+    0.096532352630054f,
+    0.159154943091895f,
+    0.096532352630054f,
+    0.021539279301849f,
+    0.001768051711852f,
+    0.000053390535453f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.002683701023220f,
+    0.066653979229454f,
+    0.541341132946452f,
+    1.213061319425269f,
+    0.0f,
+    -1.213061319425269f,
+    -0.541341132946452f,
+    -0.066653979229454f,
+    -0.002683701023220f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f
 };
 
-__device__ __constant__ float d_gauss_filter[16];
+#define GAUSS_TABLE  0 // Gauss parameters
+#define GAUSS_DERIV 16 // first derivative
+__device__ __constant__ float d_gauss_filter[32];
+
 __device__ __constant__ float d_gauss_filter_by_256[16];
 
 #define V7_WIDTH    32
 
 __global__
 void filter_gauss_horiz( cv::cuda::PtrStepSzf src,
-                         cv::cuda::PtrStepSzf dst )
+                         cv::cuda::PtrStepSzf dst,
+                         int                  filter )
 {
     int block_x = blockIdx.x * V7_WIDTH;
     int block_y = blockIdx.y;
@@ -47,7 +74,7 @@ void filter_gauss_horiz( cv::cuda::PtrStepSzf src,
     float out = 0;
 
     for( int offset = 0; offset<9; offset++ ) {
-        float g  = d_gauss_filter[offset];
+        float g  = d_gauss_filter[filter + offset];
 
         idx = clamp( block_x + threadIdx.x - offset - 4, src.cols );
         float val = src.ptr(block_y)[idx];
@@ -63,7 +90,8 @@ void filter_gauss_horiz( cv::cuda::PtrStepSzf src,
 
 __global__
 void filter_gauss_vert( cv::cuda::PtrStepSzf src,
-                        cv::cuda::PtrStepSzf dst )
+                        cv::cuda::PtrStepSzf dst,
+                        int                  filter )
 {
     const int block_x = blockIdx.x * V7_WIDTH;
     const int block_y = blockIdx.y;
@@ -75,7 +103,7 @@ void filter_gauss_vert( cv::cuda::PtrStepSzf src,
     float out = 0;
 
     for( int offset = 0; offset<9; offset++ ) {
-        float g  = d_gauss_filter[offset];
+        float g  = d_gauss_filter[filter + offset];
 
         idy = clamp( block_y - offset - 4, src.rows );
         float val = src.ptr(idy)[idx];
@@ -142,7 +170,7 @@ void Frame::initGaussTable( )
 
     POP_CUDA_MEMCPY_HOST_TO_SYMBOL_SYNC( d_gauss_filter,
                                          h_gauss_filter,
-                                         9*sizeof(float) );
+                                         32*sizeof(float) );
     POP_CUDA_MEMCPY_HOST_TO_SYMBOL_SYNC( d_gauss_filter_by_256,
                                          h_gauss_filter_by_256,
                                          9*sizeof(float) );
@@ -161,33 +189,33 @@ void Frame::applyGauss( )
 
     filter_gauss_horiz_from_uchar
         <<<grid,block,0,_stream>>>
-        ( _d_plane, _d_gaussian_intermediate );
+        ( _d_plane, _d_intermediate );
 
     filter_gauss_vert
         <<<grid,block,0,_stream>>>
-        ( _d_gaussian_intermediate, _d_gaussian );
+        ( _d_intermediate, _d_smooth, GAUSS_TABLE );
+
+    filter_gauss_vert
+        <<<grid,block,0,_stream>>>
+        ( _d_smooth, _d_intermediate, GAUSS_TABLE );
 
     filter_gauss_horiz
         <<<grid,block,0,_stream>>>
-        ( _d_gaussian, _d_gaussian_intermediate );
-
-    filter_gauss_vert
-        <<<grid,block,0,_stream>>>
-        ( _d_gaussian_intermediate, _d_gaussian );
+        ( _d_intermediate, _d_dx, GAUSS_DERIV );
 
     filter_gauss_horiz
         <<<grid,block,0,_stream>>>
-        ( _d_gaussian, _d_gaussian_intermediate );
+        ( _d_smooth, _d_intermediate, GAUSS_TABLE );
 
     filter_gauss_vert
         <<<grid,block,0,_stream>>>
-        ( _d_gaussian_intermediate, _d_gaussian );
+        ( _d_intermediate, _d_dy, GAUSS_DERIV );
 
 #if 0
     // very costly printf-debugging
     debug_gauss
         <<<1,1,0,_stream>>>
-        ( _d_gaussian );
+        ( _d_smooth );
 #endif
 
     cerr << "Leave " << __FUNCTION__ << endl;
@@ -204,33 +232,49 @@ void Frame::allocDevGaussianPlane( )
     size_t p;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
-    assert( p % _d_gaussian.elemSize() == 0 );
-    _d_gaussian.data = (float*)ptr;
-    _d_gaussian.step = p;
-    _d_gaussian.cols = w;
-    _d_gaussian.rows = h;
-
-    POP_CUDA_MEMSET_ASYNC( _d_gaussian.data,
-                           0,
-                           _d_gaussian.step * _d_gaussian.rows,
-                           _stream );
-
-    cerr << "    allocated _d_gaussian with "
-         << "(" << w << "," << h << ") pitch " << _d_gaussian.step << endl;
+    assert( p % _d_smooth.elemSize() == 0 );
+    _d_smooth.data = (float*)ptr;
+    _d_smooth.step = p;
+    _d_smooth.cols = w;
+    _d_smooth.rows = h;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
-    _d_gaussian_intermediate.data = (float*)ptr;
-    _d_gaussian_intermediate.step = p;
-    _d_gaussian_intermediate.cols = w;
-    _d_gaussian_intermediate.rows = h;
+    _d_dx.data = (float*)ptr;
+    _d_dx.step = p;
+    _d_dx.cols = w;
+    _d_dx.rows = h;
 
-    POP_CUDA_MEMSET_ASYNC( _d_gaussian_intermediate.data,
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
+    _d_dy.data = (float*)ptr;
+    _d_dy.step = p;
+    _d_dy.cols = w;
+    _d_dy.rows = h;
+
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
+    _d_intermediate.data = (float*)ptr;
+    _d_intermediate.step = p;
+    _d_intermediate.cols = w;
+    _d_intermediate.rows = h;
+
+    POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
-                           _d_gaussian_intermediate.step * _d_gaussian_intermediate.rows,
+                           _d_smooth.step * _d_smooth.rows,
                            _stream );
 
-    cerr << "    allocated intermediat with "
-         << "(" << w << "," << h << ") pitch " << _d_gaussian_intermediate.step << endl;
+    POP_CUDA_MEMSET_ASYNC( _d_dx.data,
+                           0,
+                           _d_dx.step * _d_dx.rows,
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_dy.data,
+                           0,
+                           _d_dy.step * _d_dy.rows,
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_intermediate.data,
+                           0,
+                           _d_intermediate.step * _d_intermediate.rows,
+                           _stream );
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }

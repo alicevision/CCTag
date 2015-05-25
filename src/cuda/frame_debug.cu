@@ -19,28 +19,48 @@ using namespace std;
 void Frame::hostDebugDownload( )
 {
     delete [] _h_debug_plane;
-    _h_debug_plane = new unsigned char[ getWidth() * getHeight() ];
+    delete [] _h_debug_smooth;
+    delete [] _h_debug_dx;
+    delete [] _h_debug_dy;
 
-    delete [] _h_debug_gauss_plane;
-    _h_debug_gauss_plane = new float[ getWidth() * getHeight() ];
+    _h_debug_plane  = new unsigned char[ getWidth() * getHeight() ];
+    _h_debug_smooth = new float[ getWidth() * getHeight() ];
+    _h_debug_dx     = new float[ getWidth() * getHeight() ];
+    _h_debug_dy     = new float[ getWidth() * getHeight() ];
 
+    POP_SYNC_CHK;
+
+#if 0
     cerr << "Trigger download of debug plane: "
          << "(" << _d_plane.cols << "," << _d_plane.rows << ") pitch " << _d_plane.step
          << " to "
          << "(" << getWidth() << "," << getHeight() << ")" << endl;
+#endif
     POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_plane, getWidth(),
                               _d_plane.data, _d_plane.step,
                               _d_plane.cols,
                               _d_plane.rows,
                               cudaMemcpyDeviceToHost, _stream );
+#if 0
     cerr << "Trigger download of Gaussian debug plane: "
-         << "(" << _d_gaussian.cols << "," << _d_gaussian.rows << ") pitch " << _d_gaussian.step
+         << "(" << _d_smooth.cols << "," << _d_smooth.rows << ") pitch " << _d_smooth.step
          << " to "
          << "(" << getWidth() << "," << getHeight() << ")" << endl;
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_gauss_plane, getWidth() * sizeof(float),
-                              _d_gaussian.data, _d_gaussian.step,
-                              _d_gaussian.cols * sizeof(float),
-                              _d_gaussian.rows,
+#endif
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_smooth, getWidth() * sizeof(float),
+                              _d_smooth.data, _d_smooth.step,
+                              _d_smooth.cols * sizeof(float),
+                              _d_smooth.rows,
+                              cudaMemcpyDeviceToHost, _stream );
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_dx, getWidth() * sizeof(float),
+                              _d_dx.data, _d_dx.step,
+                              _d_dx.cols * sizeof(float),
+                              _d_dx.rows,
+                              cudaMemcpyDeviceToHost, _stream );
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_dy, getWidth() * sizeof(float),
+                              _d_dy.data, _d_dy.step,
+                              _d_dy.cols * sizeof(float),
+                              _d_dy.rows,
                               cudaMemcpyDeviceToHost, _stream );
 }
 
@@ -145,11 +165,25 @@ void Frame::writeHostDebugPlane( string filename )
     writeDebugPlane( s.c_str(), b );
 
     s = filename + "-gauss.pgm";
-    cv::cuda::PtrStepSzf f( getHeight(),
-                            getWidth(),
-                            _h_debug_gauss_plane,
-                            getWidth()*sizeof(float) );
-    writeDebugPlane( s.c_str(), f );
+    cv::cuda::PtrStepSzf smooth( getHeight(),
+                                 getWidth(),
+                                 _h_debug_smooth,
+                                 getWidth()*sizeof(float) );
+    writeDebugPlane( s.c_str(), smooth );
+
+    s = filename + "-dx.pgm";
+    cv::cuda::PtrStepSzf dx( getHeight(),
+                             getWidth(),
+                             _h_debug_dx,
+                             getWidth()*sizeof(float) );
+    writeDebugPlane( s.c_str(), dx );
+
+    s = filename + "-dy.pgm";
+    cv::cuda::PtrStepSzf dy( getHeight(),
+                             getWidth(),
+                             _h_debug_dy,
+                             getWidth()*sizeof(float) );
+    writeDebugPlane( s.c_str(), dy );
 }
 
 }; // namespace popart

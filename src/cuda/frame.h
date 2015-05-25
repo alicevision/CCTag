@@ -109,11 +109,15 @@ private:
 
 private:
     cv::cuda::PtrStepSzb _d_plane;
-    cv::cuda::PtrStepSzf _d_gaussian_intermediate;
-    cv::cuda::PtrStepSzf _d_gaussian;
+    cv::cuda::PtrStepSzf _d_intermediate;
+    cv::cuda::PtrStepSzf _d_smooth;
+    cv::cuda::PtrStepSzf _d_dx;
+    cv::cuda::PtrStepSzf _d_dy;
 
     unsigned char* _h_debug_plane;
-    float*         _h_debug_gauss_plane;
+    float*         _h_debug_smooth;
+    float*         _h_debug_dx;
+    float*         _h_debug_dy;
     FrameTexture*  _texture;
     FrameEvent*    _wait_for_upload;
 

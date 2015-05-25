@@ -20,7 +20,9 @@ using namespace std;
 
 Frame::Frame( uint32_t width, uint32_t height )
     : _h_debug_plane( 0 )
-    , _h_debug_gauss_plane( 0 )
+    , _h_debug_smooth( 0 )
+    , _h_debug_dx( 0 )
+    , _h_debug_dy( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
 {
@@ -46,12 +48,16 @@ Frame::~Frame( )
     deleteUploadEvent( );
 
     delete _h_debug_plane;
-    delete _h_debug_gauss_plane;
+    delete _h_debug_smooth;
+    delete _h_debug_dx;
+    delete _h_debug_dy;
     delete _texture;
 
     POP_CUDA_FREE( _d_plane.data );
-    POP_CUDA_FREE( _d_gaussian_intermediate.data );
-    POP_CUDA_FREE( _d_gaussian.data );
+    POP_CUDA_FREE( _d_intermediate.data );
+    POP_CUDA_FREE( _d_smooth.data );
+    POP_CUDA_FREE( _d_dx.data );
+    POP_CUDA_FREE( _d_dy.data );
     cerr << "Released frame: " << getWidth() << "x" << getHeight() << endl;
 }
 

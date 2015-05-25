@@ -48,6 +48,18 @@ void TagPipe::tagframe( unsigned char* pix, const uint32_t pix_w, const uint32_t
 
     _frame[0]->upload( pix ); // async
 
+    /*
+     * First thing to do seems to be Canny
+     *  tracked to cannyCv in canny.tcc
+     *   going to cvCanny( 3-layer out, 1 layer in, low thresh, high thresh )
+     *   tracked to cvCanny in canny.cpp
+     *    going to cvRecodedCanny( 1 layer in, 1 8-bit layer out, 1 16-bit layer out (dx), 1 16-bit layer out (dy), low thresh * 256, high thresh * 256, aperture size "3", CV_CANNY_L2_GRADIENT )
+     *    tracked to cvRecodedCanny in filter/cvRecode.cpp
+     *     first: apply interesting sequence of Gaussian filters
+     *    ...
+     *  on return, convert all 3 out layers to 3-layer out; implicit typecast 16-to-8-bits
+     */
+
     FrameEvent ev = _frame[0]->addUploadEvent( ); // async
 
     for( int i=1; i<4; i++ ) {

@@ -155,7 +155,7 @@ void pop_cuda_memcpy_2D( void*          dst,
     cudaError_t err;
     err = cudaMemcpy2D( dst, dpitch, src, spitch, width, height, type );
     if( err != cudaSuccess ) {
-        cerr << __FILE__ << ":" << __LINE__ << endl
+        cerr << file << ":" << line << endl
              << "    cudaMemcpy2D failed to copy "
              << (type==cudaMemcpyHostToDevice?"host-to-device":"device-to-host")
              << ": "
@@ -186,7 +186,7 @@ void pop_cuda_memcpy_2D_async( void*          dst,
          << "height " << height << endl;
     err = cudaMemcpy2DAsync( dst, dpitch, src, spitch, width, height, type, stream );
     if( err != cudaSuccess ) {
-        cerr << __FILE__ << ":" << __LINE__ << endl
+        cerr << file << ":" << line << endl
              << "    cudaMemcpy2DAsync failed to copy "
              << (type==cudaMemcpyHostToDevice?"host-to-device":"device-to-host")
              << ": "
@@ -213,7 +213,8 @@ void pop_cuda_memcpy_to_symbol_async( const void*    symbol,
     cudaError_t err;
     err = cudaMemcpyToSymbolAsync( symbol, src, sz, offset, type, stream );
     if( err != cudaSuccess ) {
-        cerr << "    " << "Failed to copy to symbol "
+        cerr << file << ":" << line << endl
+             << "    " << "Failed to copy to symbol "
              << (type==cudaMemcpyHostToDevice?"host-to-device":"device-to-host")
              << ": ";
         cerr << cudaGetErrorString(err) << endl;
@@ -238,7 +239,8 @@ void pop_cuda_memcpy_to_symbol_sync( const void*    symbol,
     cudaError_t err;
     err = cudaMemcpyToSymbol( symbol, src, sz, offset, type );
     if( err != cudaSuccess ) {
-        cerr << "    " << "Failed to copy to symbol "
+        cerr << file << ":" << line << endl
+             << "    " << "Failed to copy to symbol "
              << (type==cudaMemcpyHostToDevice?"host-to-device":"device-to-host")
              << ": ";
         cerr << cudaGetErrorString(err) << endl;
