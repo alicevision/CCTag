@@ -22,7 +22,7 @@ Frame::Frame( uint32_t width, uint32_t height )
     : _h_debug_plane( 0 )
     , _h_debug_gauss_plane( 0 )
     , _texture( 0 )
-    , _stream_inherited( false )
+    , _wait_for_upload( 0 )
 {
     cerr << "Allocating frame: " << width << "x" << height << endl;
 
@@ -43,6 +43,8 @@ Frame::Frame( uint32_t width, uint32_t height )
 
 Frame::~Frame( )
 {
+    deleteUploadEvent( );
+
     delete _h_debug_plane;
     delete _h_debug_gauss_plane;
     delete _texture;
@@ -137,9 +139,38 @@ void Frame::deleteTexture( )
     _texture = 0;
 }
 
+void Frame::allocUploadEvent( )
+{
+    _wait_for_upload = new FrameEvent;
+
+    cudaError_t err;
+    err = cudaEventCreateWithFlags( _wait_for_upload, cudaEventDisableTiming );
+    POP_CUDA_FATAL_TEST( err, "Could not create a non-timing event: " );
+}
+
+void Frame::deleteUploadEvent( )
+{
+    if( not _wait_for_upload ) return;
+    cudaEventDestroy( *_wait_for_upload );
+    delete _wait_for_upload;
+}
+
+FrameEvent Frame::addUploadEvent( )
+{
+    cudaError_t err;
+    err = cudaEventRecord( *_wait_for_upload, _stream );
+    POP_CUDA_FATAL_TEST( err, "Could not insert an event into a stream: " );
+    return *_wait_for_upload;
+}
+
 void Frame::streamSync( )
 {
     cudaStreamSynchronize( _stream );
+}
+
+void Frame::streamSync( FrameEvent ev )
+{
+    cudaStreamWaitEvent( _stream, ev, 0 );
 }
 
 /*************************************************************

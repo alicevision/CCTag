@@ -113,6 +113,7 @@ void filter_gauss_horiz_from_uchar( cv::cuda::PtrStepSzb src,
     dst.ptr(block_y)[idx] = nix ? 0 : out;
 }
 
+#if 0
 __global__
 void debug_gauss( cv::cuda::PtrStepSzf src )
 {
@@ -129,6 +130,7 @@ void debug_gauss( cv::cuda::PtrStepSzf src )
         }
     printf("There are %d non-null values in the Gaussian end result (min %f, max %f)\n", non_null_ct, minval, maxval );
 }
+#endif
 
 __host__
 void Frame::initGaussTable( )
@@ -181,9 +183,12 @@ void Frame::applyGauss( )
         <<<grid,block,0,_stream>>>
         ( _d_gaussian_intermediate, _d_gaussian );
 
+#if 0
+    // very costly printf-debugging
     debug_gauss
         <<<1,1,0,_stream>>>
         ( _d_gaussian );
+#endif
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }
@@ -211,8 +216,7 @@ void Frame::allocDevGaussianPlane( )
                            _stream );
 
     cerr << "    allocated _d_gaussian with "
-         << "(" << w << "," << h << ") pitch " << _d_gaussian.step
-         << "(" << p << " bytes)" << endl;
+         << "(" << w << "," << h << ") pitch " << _d_gaussian.step << endl;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
     _d_gaussian_intermediate.data = (float*)ptr;
@@ -226,8 +230,7 @@ void Frame::allocDevGaussianPlane( )
                            _stream );
 
     cerr << "    allocated intermediat with "
-         << "(" << w << "," << h << ") pitch " << _d_gaussian_intermediate.step
-         << "(" << p << " bytes)" << endl;
+         << "(" << w << "," << h << ") pitch " << _d_gaussian_intermediate.step << endl;
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }

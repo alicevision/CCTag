@@ -10,7 +10,13 @@ namespace popart
 {
 
 __host__
-void tagframe( unsigned char* pix, const uint32_t pix_w, const uint32_t pix_h )
+TagPipe::TagPipe( )
+{
+    for( int i=0; i<4; i++ ) _frame[i] = 0;
+}
+
+__host__
+void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
     static bool gauss_table_initialized = false;
@@ -18,46 +24,63 @@ void tagframe( unsigned char* pix, const uint32_t pix_w, const uint32_t pix_h )
         Frame::initGaussTable( );
     }
 
-    unsigned char* verify = new unsigned char[pix_w * pix_h];
-    memset( verify, 0, pix_w * pix_h );
-
-    popart::Frame* frame[4];
     uint32_t w = pix_w;
     uint32_t h = pix_h;
     for( int i=0; i<4; i++ ) {
-        frame[i] = new popart::Frame( w, h ); // sync
+        _frame[i] = new popart::Frame( w, h ); // sync
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
-    frame[0]->upload( pix ); // async
-    frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float); // sync
 
-    frame[0]->streamSync( );
-    POP_SYNC_CHK;
+    _frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float); // sync
+    _frame[0]->allocUploadEvent( ); // sync
+
+    for( int i=0; i<4; i++ ) {
+        _frame[i]->allocDevGaussianPlane(); // sync
+    }
+    cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+__host__
+void TagPipe::tagframe( unsigned char* pix, const uint32_t pix_w, const uint32_t pix_h )
+{
+    cerr << "Enter " << __FUNCTION__ << endl;
+
+    _frame[0]->upload( pix ); // async
+
+    FrameEvent ev = _frame[0]->addUploadEvent( ); // async
+
     for( int i=1; i<4; i++ ) {
-        // frame[i]->fillFromFrame( *(frame[0]) );
-        frame[i]->fillFromTexture( *(frame[0]) );
+        _frame[i]->streamSync( ev ); // aysnc
+        _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
+        // _frame[i]->fillFromFrame( *(_frame[0]) );
     }
 
     for( int i=0; i<4; i++ ) {
-        frame[i]->allocDevGaussianPlane();
-        frame[i]->applyGauss();
+        _frame[i]->applyGauss(); // async
     }
+    cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+__host__
+void TagPipe::debug( unsigned char* pix )
+{
+    cerr << "Enter " << __FUNCTION__ << endl;
 
     if( true ) {
         // This is a debug block
 
         for( int i=0; i<4; i++ ) {
-            frame[i]->hostDebugDownload();
+            _frame[i]->hostDebugDownload();
         }
         POP_SYNC_CHK;
 
-        frame[0]->hostDebugCompare( pix );
+        _frame[0]->hostDebugCompare( pix );
 
         for( int i=0; i<4; i++ ) {
             std::ostringstream ostr;
             ostr << "debug-input-plane-" << i;
-            frame[i]->writeHostDebugPlane( ostr.str() );
+            _frame[i]->writeHostDebugPlane( ostr.str() );
         }
         POP_SYNC_CHK;
     }

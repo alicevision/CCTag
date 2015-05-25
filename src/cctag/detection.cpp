@@ -708,8 +708,12 @@ void cctagDetection(CCTag::List& markers,
   boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
 #ifdef WITH_CUDA
   {
+    popart::TagPipe pipe1;
+
     uint32_t w = graySrc.width();
     uint32_t h = graySrc.height();
+    pipe1.prepframe( w, h );
+
     unsigned char* pix = new unsigned char[w*h];
     memset( pix, 0, w*h );
 
@@ -719,7 +723,8 @@ void cctagDetection(CCTag::List& markers,
                                                            pix,
                                                            graySrc.width() * sizeof(unsigned char) ) );
 
-    popart::tagframe( pix, w, h );
+    pipe1.tagframe( pix, w, h );
+    pipe1.debug( pix );
   }
 #endif
   // Views for:
