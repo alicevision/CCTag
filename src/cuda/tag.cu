@@ -43,7 +43,7 @@ void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h )
         frame[i]->streamSync( );
     }
     for( int i=0; i<4; i++ ) {
-        frame[i]->allocDevGaussianPlane();
+        frame[i]->hostDebugDownload();
     }
     for( int i=0; i<4; i++ ) {
         std::ostringstream ostr;

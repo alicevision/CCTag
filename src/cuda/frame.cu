@@ -61,12 +61,6 @@ void Frame::upload( const unsigned char* image )
     POP_CUDA_MEMCPY_2D_ASYNC( _d_plane, _pitch, image, w, w, _height, cudaMemcpyHostToDevice, _stream );
 }
 
-void Frame::allocHostDebugPlane( )
-{
-    delete [] _h_debug_plane;
-    _h_debug_plane = new unsigned char[ _type_size * _width * _height ];
-}
-
 void Frame::allocDevGaussianPlane( )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
@@ -78,6 +72,12 @@ void Frame::allocDevGaussianPlane( )
     POP_CUDA_MALLOC_PITCH( (void**)&_d_gaussian_intermediate, &pitch, _width*sizeof(float), _height );
 
     cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+void Frame::allocHostDebugPlane( )
+{
+    delete [] _h_debug_plane;
+    _h_debug_plane = new unsigned char[ _type_size * _width * _height ];
 }
 
 void Frame::download( unsigned char* image, uint32_t width, uint32_t height )

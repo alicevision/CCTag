@@ -26,10 +26,7 @@
 #include <cctag/global.hpp>
 #include <cctag/fileDebug.hpp>
 #ifdef WITH_CUDA
-// #include "cuda/frame.h"
-#include "cuda/tag.h"
-#else // WITH_CUDA
-#error not compiling with cuda
+  #include "cuda/tag.h"
 #endif // WITH_CUDA
 
 #include <boost/foreach.hpp>

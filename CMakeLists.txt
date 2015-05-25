@@ -9,8 +9,11 @@ include(ExternalProject)
 project( CCTag )
 
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
+set(USE_CUDA false CACHE BOOL "compile code for CUDA processing")
+set(CUDA_FOUND false CACHE BOOL "only true if USE_CUDA and CUDA 7.0 is found")
 
 # CCTAG_BUILD_MODE set to RELEASE by default (DEBUG,RELEASE)
 if(DEFINED CCTAG_BUILD_MODE)
@@ -34,15 +37,11 @@ endif(CCTAG_NO_COUT)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
 if(APPLE)
-  set(CMAKE_CXX_FLAGS       "${CMAKE_CXX_FLAGS}       -Wno-c++11-extensions")
-endif(APPLE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-extensions")
 
-# avoid the cmake policy warning about @rpath in MacOSX
-if(APPLE)
-cmake_policy(SET CMP0042 NEW)
-endif(APPLE)
+  # avoid the cmake policy warning about @rpath in MacOSX
+  cmake_policy(SET CMP0042 NEW)
 
-if(APPLE)
   SET(CMAKE_MACOSX_RPATH TRUE) # initialize the MACOSX_RPATH property on all targets
   SET(CMAKE_SKIP_BUILD_RPATH  FALSE) # don't skip the full RPATH for the build tree
   # SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) # when building, don't use the install RPATH already
@@ -71,15 +70,17 @@ else(Boost_FOUND)
   message( FATAL_ERROR "Boost not found" )
 endif(Boost_FOUND)
 
-find_package(CUDA 7.0)
-if(CUDA_FOUND)
-  include_directories(${CUDA_INCLUDE_DIRS})
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
-  add_definitions("-DWITH_CUDA")
-else(CUDA_FOUND)
-  message( STATUS "Failed to find CUDA" )
-endif(CUDA_FOUND)
+if(USE_CUDA)
+  find_package(CUDA 7.0)
+  if(CUDA_FOUND)
+    include_directories(${CUDA_INCLUDE_DIRS})
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
+    add_definitions("-DWITH_CUDA")
+  else(CUDA_FOUND)
+    message( STATUS "Failed to find CUDA" )
+  endif(CUDA_FOUND)
+endif(USE_CUDA)
 
 
 # FIND UBLAS
