@@ -10,6 +10,10 @@
 #include <cctag/view.hpp>
 #include <cctag/image.hpp>
 
+#ifdef WITH_CUDA
+#include "cuda/device_prop.hpp"
+#endif // WITH_CUDA
+
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -120,6 +124,11 @@ int main(int argc, char** argv)
           oa << boost::serialization::make_nvp("CCTagsParams", params);
           CCTAG_COUT("Parameter file not provided. Default parameters are used.");
         }
+
+#ifdef WITH_CUDA
+        popart::device_prop_t deviceInfo;
+        deviceInfo.print( );
+#endif // WITH_CUDA
 
         CCTagVisualDebug::instance().initializeFolders(filename, params._numCrowns);
         bfs::path myPath(filename);

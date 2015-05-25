@@ -1,7 +1,11 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 2.8)
 include(ExternalProject)
 
 project( CCTag )
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -Wall")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 # CCTAG_BUILD_MODE set to RELEASE by default (DEBUG,RELEASE)
 if(DEFINED CCTAG_BUILD_MODE)
@@ -29,7 +33,7 @@ if(APPLE)
 endif(APPLE)
 
 # avoid the cmake policy warning about @rpath in MacOSX
-cmake_policy(SET CMP0042 NEW)
+# cmake_policy(SET CMP0042 NEW)
 
 if(APPLE)
   SET(CMAKE_MACOSX_RPATH TRUE) # initialize the MACOSX_RPATH property on all targets
@@ -60,11 +64,12 @@ else(Boost_FOUND)
   message( FATAL_ERROR "Boost not found" )
 endif(Boost_FOUND)
 
-find_package(CUDA 6.5)
+find_package(CUDA 7.0)
 if(CUDA_FOUND)
   include_directories(${CUDA_INCLUDE_DIRS})
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
+  add_definitions("-DWITH_CUDA")
 else(CUDA_FOUND)
   message( STATUS "Failed to find CUDA" )
 endif(CUDA_FOUND)
