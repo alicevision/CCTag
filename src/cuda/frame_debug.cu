@@ -38,7 +38,7 @@ void Frame::hostDebugDownload( )
          << " to "
          << "(" << getWidth() << "," << getHeight() << ")" << endl;
     POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_gauss_plane, getWidth() * sizeof(float),
-                              _d_gaussian.data, _d_gaussian.step * sizeof(float),
+                              _d_gaussian.data, _d_gaussian.step,
                               _d_gaussian.cols * sizeof(float),
                               _d_gaussian.rows,
                               cudaMemcpyDeviceToHost, _stream );
@@ -86,8 +86,7 @@ void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzf& p
     // for( uint32_t i=0; i<plane.rows*plane.cols; i++ ) {
     for( size_t i=0; i<plane.rows; i++ ) {
         for( size_t j=0; j<plane.cols; j++ ) {
-            // float f = plane.ptr(i)[j];
-            float f = plane.data[i*plane.step+j];
+            float f = plane.ptr(i)[j];
             // float f = plane.data[i];
             minval = min( minval, f );
             maxval = max( maxval, f );
@@ -149,7 +148,7 @@ void Frame::writeHostDebugPlane( string filename )
     cv::cuda::PtrStepSzf f( getHeight(),
                             getWidth(),
                             _h_debug_gauss_plane,
-                            getWidth() );
+                            getWidth()*sizeof(float) );
     writeDebugPlane( s.c_str(), f );
 }
 

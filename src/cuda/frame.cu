@@ -30,14 +30,14 @@ Frame::Frame( uint32_t width, uint32_t height )
 
     size_t pitch;
     POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width, height );
-    _d_plane.step = pitch / _d_plane.elemSize();
+    _d_plane.step = pitch;
     _d_plane.cols = width;
     _d_plane.rows = height;
     assert( pitch % _d_plane.elemSize() == 0 );
 
     POP_CUDA_MEMSET_ASYNC( _d_plane.data,
                            0,
-                           _d_plane.step * _d_plane.elemSize() * _d_plane.rows,
+                           _d_plane.step * _d_plane.rows,
                            _stream );
 }
 
@@ -57,7 +57,7 @@ void Frame::upload( const unsigned char* image )
 {
     cerr << "source w=" << _d_plane.cols
          << " source pitch=" << _d_plane.cols
-         << " dest pitch=" << _d_plane.step * _d_plane.elemSize()
+         << " dest pitch=" << _d_plane.step
          << " height=" << _d_plane.rows
          << endl;
     POP_CUDA_MEMCPY_2D_ASYNC( _d_plane.data,
@@ -115,7 +115,6 @@ void cu_fill_from_texture( cv::cuda::PtrStepSzb dst, cudaTextureObject_t tex )
     bool nix = ( idx < dst.cols );
     float d = tex2D<float>( tex, float(idx)/float(dst.cols), float(idy)/float(dst.rows) );
     dst.ptr(idy)[idx] = nix ? (unsigned char)( d * 255 ) : 0;
-    // dst[ idy * dst.step + idx ] = nix ? (unsigned char)( d * 255 ) : 0;
 }
 
 void Frame::fillFromTexture( Frame& src )
@@ -167,7 +166,7 @@ void FrameTexture::makeTex_Normalized_uchar_to_float( const cv::cuda::PtrStepSzb
     _resDesc.res.pitch2D.desc.z       = 0;
     _resDesc.res.pitch2D.desc.w       = 0;
     assert( plane.elemSize() == 1 );
-    _resDesc.res.pitch2D.pitchInBytes = plane.step; // * plane.elemSize()
+    _resDesc.res.pitch2D.pitchInBytes = plane.step;
     _resDesc.res.pitch2D.width        = plane.cols;
     _resDesc.res.pitch2D.height       = plane.rows;
 

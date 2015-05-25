@@ -50,15 +50,15 @@ void filter_gauss_horiz( cv::cuda::PtrStepSzf src,
         float g  = d_gauss_filter[offset];
 
         idx = clamp( block_x + threadIdx.x - offset - 4, src.cols );
-        float val = src.data[ block_y * src.step + idx ];
+        float val = src.ptr(block_y)[idx];
         out += ( val * g );
     }
 
     if( block_y >= dst.rows ) return;
-    if( idx     >= dst.step ) return;
+    if( idx*sizeof(float) >= dst.step ) return;
 
     bool nix = ( block_x + threadIdx.x >= dst.cols ) || ( block_y >= dst.rows );
-    dst.data[ block_y * dst.step + idx ] = nix ? 0 : out;
+    dst.ptr(block_y)[idx] = nix ? 0 : out;
 }
 
 __global__
@@ -70,7 +70,7 @@ void filter_gauss_vert( cv::cuda::PtrStepSzf src,
     const int idx     = block_x + threadIdx.x;
     int idy;
 
-    if( idx >= src.step ) return;
+    if( idx*sizeof(float) >= src.step ) return;
 
     float out = 0;
 
@@ -78,15 +78,14 @@ void filter_gauss_vert( cv::cuda::PtrStepSzf src,
         float g  = d_gauss_filter[offset];
 
         idy = clamp( block_y - offset - 4, src.rows );
-        float val = src.data[ idy * src.step + idx ];
+        float val = src.ptr(idy)[idx];
         out += ( val * g );
     }
 
     if( idy >= dst.rows ) return;
-    if( idx >= dst.step  ) return;
 
     bool nix = ( idx >= dst.cols );
-    dst.data[ idy * dst.step + idx ] = nix ? 0 : out;
+    dst.ptr(idy)[idx] = nix ? 0 : out;
 }
 
 __global__
@@ -103,15 +102,15 @@ void filter_gauss_horiz_from_uchar( cv::cuda::PtrStepSzb src,
         float g  = d_gauss_filter_by_256[offset];
 
         idx = clamp( block_x + threadIdx.x - offset - 4, src.cols );
-        float val = src.data[ block_y * src.step + idx ];
+        float val = src.ptr(block_y)[idx];
         out += ( val * g );
     }
 
     if( block_y >= dst.rows ) return;
-    if( idx     >= dst.step ) return;
+    if( idx * sizeof(float) >= dst.step ) return;
 
     bool nix = ( block_x + threadIdx.x >= dst.cols ) || ( block_y >= dst.rows );
-    dst.data[ block_y * dst.step + idx ] = nix ? 0 : out;
+    dst.ptr(block_y)[idx] = nix ? 0 : out;
 }
 
 __global__
@@ -202,13 +201,13 @@ void Frame::allocDevGaussianPlane( )
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
     assert( p % _d_gaussian.elemSize() == 0 );
     _d_gaussian.data = (float*)ptr;
-    _d_gaussian.step = p / _d_gaussian.elemSize();
+    _d_gaussian.step = p;
     _d_gaussian.cols = w;
     _d_gaussian.rows = h;
 
     POP_CUDA_MEMSET_ASYNC( _d_gaussian.data,
                            0,
-                           _d_gaussian.step * _d_gaussian.elemSize() * _d_gaussian.rows,
+                           _d_gaussian.step * _d_gaussian.rows,
                            _stream );
 
     cerr << "    allocated _d_gaussian with "
@@ -217,15 +216,13 @@ void Frame::allocDevGaussianPlane( )
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
     _d_gaussian_intermediate.data = (float*)ptr;
-    _d_gaussian_intermediate.step = p / _d_gaussian_intermediate.elemSize();
+    _d_gaussian_intermediate.step = p;
     _d_gaussian_intermediate.cols = w;
     _d_gaussian_intermediate.rows = h;
 
     POP_CUDA_MEMSET_ASYNC( _d_gaussian_intermediate.data,
                            0,
-                           _d_gaussian_intermediate.step *
-                           _d_gaussian_intermediate.elemSize() *
-                           _d_gaussian_intermediate.rows,
+                           _d_gaussian_intermediate.step * _d_gaussian_intermediate.rows,
                            _stream );
 
     cerr << "    allocated intermediat with "
