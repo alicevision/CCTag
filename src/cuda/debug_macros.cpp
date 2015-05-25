@@ -180,10 +180,10 @@ void pop_cuda_memcpy_2D_async( void*          dst,
 {
     cudaError_t err;
     cerr << __FUNCTION__ << " "
-         << dpitch << " "
-         << spitch << " "
-         << width << " "
-         << height << endl;
+         << "dpitch " << dpitch << " "
+         << "spitch " << spitch << " "
+         << "width "  << width << " "
+         << "height " << height << endl;
     err = cudaMemcpy2DAsync( dst, dpitch, src, spitch, width, height, type, stream );
     if( err != cudaSuccess ) {
         cerr << __FILE__ << ":" << __LINE__ << endl

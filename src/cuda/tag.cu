@@ -10,7 +10,7 @@ namespace popart
 {
 
 __host__
-void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h )
+void tagframe( unsigned char* pix, const uint32_t pix_w, const uint32_t pix_h )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
     static bool gauss_table_initialized = false;
@@ -21,13 +21,11 @@ void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h )
     unsigned char* verify = new unsigned char[pix_w * pix_h];
     memset( verify, 0, pix_w * pix_h );
 
-    // popart::Frame::writeDebugPlane( "debug-input-base.pgm", pix, pix_w, pix_h );
-
     popart::Frame* frame[4];
     uint32_t w = pix_w;
     uint32_t h = pix_h;
     for( int i=0; i<4; i++ ) {
-        frame[i] = new popart::Frame( sizeof(unsigned char), w, h ); // sync
+        frame[i] = new popart::Frame( w, h ); // sync
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
@@ -35,6 +33,7 @@ void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h )
     frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float); // sync
 
     frame[0]->streamSync( );
+    POP_SYNC_CHK;
     for( int i=1; i<4; i++ ) {
         // frame[i]->fillFromFrame( *(frame[0]) );
         frame[i]->fillFromTexture( *(frame[0]) );
@@ -42,23 +41,23 @@ void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h )
 
     for( int i=0; i<4; i++ ) {
         frame[i]->allocDevGaussianPlane();
+        frame[i]->applyGauss();
     }
 
     if( true ) {
-        POP_SYNC_CHK;
         // This is a debug block
-        frame[0]->download( verify, pix_w, pix_h );
 
         for( int i=0; i<4; i++ ) {
-            frame[i]->streamSync( );
             frame[i]->hostDebugDownload();
         }
         POP_SYNC_CHK;
 
+        frame[0]->hostDebugCompare( pix );
+
         for( int i=0; i<4; i++ ) {
             std::ostringstream ostr;
-            ostr << "debug-input-plane-" << i << ".pgm";
-            frame[i]->writeHostDebugPlane( ostr.str().c_str() );
+            ostr << "debug-input-plane-" << i;
+            frame[i]->writeHostDebugPlane( ostr.str() );
         }
         POP_SYNC_CHK;
     }

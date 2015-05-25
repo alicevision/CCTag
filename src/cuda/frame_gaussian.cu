@@ -1,5 +1,7 @@
 #include <iostream>
+#include <limits>
 #include <cuda_runtime.h>
+#include <stdio.h>
 #include "debug_macros.hpp"
 
 #include "frame.h"
@@ -112,6 +114,23 @@ void filter_gauss_horiz_from_uchar( cv::cuda::PtrStepSzb src,
     dst.data[ block_y * dst.step + idx ] = nix ? 0 : out;
 }
 
+__global__
+void debug_gauss( cv::cuda::PtrStepSzf src )
+{
+    size_t non_null_ct = 0;
+    float minval = 1000.0f;
+    float maxval = -1000.0f;
+    for( size_t i=0; i<src.rows; i++ )
+        for( size_t j=0; j<src.cols; j++ ) {
+            float f = src.ptr(i)[j];
+            if( f != 0.0f )
+                non_null_ct++;
+            minval = min( minval, f );
+            maxval = max( maxval, f );
+        }
+    printf("There are %d non-null values in the Gaussian end result (min %f, max %f)\n", non_null_ct, minval, maxval );
+}
+
 __host__
 void Frame::initGaussTable( )
 {
@@ -162,6 +181,56 @@ void Frame::applyGauss( )
     filter_gauss_vert
         <<<grid,block,0,_stream>>>
         ( _d_gaussian_intermediate, _d_gaussian );
+
+    debug_gauss
+        <<<1,1,0,_stream>>>
+        ( _d_gaussian );
+
+    cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+__host__
+void Frame::allocDevGaussianPlane( )
+{
+    cerr << "Enter " << __FUNCTION__ << endl;
+
+    void* ptr;
+    const size_t w = getWidth();
+    const size_t h = getHeight();
+    size_t p;
+
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
+    assert( p % _d_gaussian.elemSize() == 0 );
+    _d_gaussian.data = (float*)ptr;
+    _d_gaussian.step = p / _d_gaussian.elemSize();
+    _d_gaussian.cols = w;
+    _d_gaussian.rows = h;
+
+    POP_CUDA_MEMSET_ASYNC( _d_gaussian.data,
+                           0,
+                           _d_gaussian.step * _d_gaussian.elemSize() * _d_gaussian.rows,
+                           _stream );
+
+    cerr << "    allocated _d_gaussian with "
+         << "(" << w << "," << h << ") pitch " << _d_gaussian.step
+         << "(" << p << " bytes)" << endl;
+
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
+    _d_gaussian_intermediate.data = (float*)ptr;
+    _d_gaussian_intermediate.step = p / _d_gaussian_intermediate.elemSize();
+    _d_gaussian_intermediate.cols = w;
+    _d_gaussian_intermediate.rows = h;
+
+    POP_CUDA_MEMSET_ASYNC( _d_gaussian_intermediate.data,
+                           0,
+                           _d_gaussian_intermediate.step *
+                           _d_gaussian_intermediate.elemSize() *
+                           _d_gaussian_intermediate.rows,
+                           _stream );
+
+    cerr << "    allocated intermediat with "
+         << "(" << w << "," << h << ") pitch " << _d_gaussian_intermediate.step
+         << "(" << p << " bytes)" << endl;
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }

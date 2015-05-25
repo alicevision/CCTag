@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 #include <assert.h>
 #include <fstream>
 #include <string.h>
@@ -17,18 +18,18 @@ using namespace std;
  * Frame
  *************************************************************/
 
-Frame::Frame( uint32_t type_size, uint32_t width, uint32_t height )
-    : _type_size( type_size )
-    , _h_debug_plane( 0 )
+Frame::Frame( uint32_t width, uint32_t height )
+    : _h_debug_plane( 0 )
+    , _h_debug_gauss_plane( 0 )
     , _texture( 0 )
     , _stream_inherited( false )
 {
-    cerr << "Allocating frame: " << width << "x" << height << " (typesize " << type_size << ")" << endl;
+    cerr << "Allocating frame: " << width << "x" << height << endl;
 
     POP_CUDA_STREAM_CREATE( &_stream );
 
     size_t pitch;
-    POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width*type_size, height );
+    POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width, height );
     _d_plane.step = pitch / _d_plane.elemSize();
     _d_plane.cols = width;
     _d_plane.rows = height;
@@ -43,6 +44,7 @@ Frame::Frame( uint32_t type_size, uint32_t width, uint32_t height )
 Frame::~Frame( )
 {
     delete _h_debug_plane;
+    delete _h_debug_gauss_plane;
     delete _texture;
 
     POP_CUDA_FREE( _d_plane.data );
@@ -67,95 +69,10 @@ void Frame::upload( const unsigned char* image )
                               cudaMemcpyHostToDevice, _stream );
 }
 
-void Frame::allocDevGaussianPlane( )
-{
-    cerr << "Enter " << __FUNCTION__ << endl;
-
-    void* ptr;
-    const size_t w = getWidth();
-    const size_t h = getHeight();
-    size_t p;
-
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
-    assert( p % _d_gaussian.elemSize() == 0 );
-    _d_gaussian.data = (float*)ptr;
-    _d_gaussian.step = p / _d_gaussian.elemSize();
-    _d_gaussian.cols = w;
-    _d_gaussian.rows = h;
-
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
-    _d_gaussian_intermediate.data = (float*)ptr;
-    _d_gaussian_intermediate.step = p / _d_gaussian_intermediate.elemSize();
-    _d_gaussian_intermediate.cols = w;
-    _d_gaussian_intermediate.rows = h;
-
-    cerr << "Leave " << __FUNCTION__ << endl;
-}
-
-void Frame::allocHostDebugPlane( )
-{
-    delete [] _h_debug_plane;
-    _h_debug_plane = new unsigned char[ _type_size * getWidth() * getHeight() ];
-}
-
-void Frame::download( unsigned char* image, uint32_t width, uint32_t height )
-{
-    const uint32_t host_w = width * _type_size;
-    const uint32_t dev_w  = getWidth() * _type_size;
-    assert( host_w >= getWidth() );
-    assert( height >= getHeight() );
-    cerr << "source dev_w=" << dev_w
-         << " source pitch=" << getPitch()
-         << " dest pitch=" << host_w
-         << " height=" << getHeight() << endl;
-    POP_CUDA_MEMCPY_2D_ASYNC( image, host_w, _d_plane, getPitch(), dev_w, getHeight(), cudaMemcpyDeviceToHost, _stream );
-}
-
-void Frame::hostDebugDownload( )
-{
-    allocHostDebugPlane( );
-    download( _h_debug_plane, getWidth(), getHeight() );
-}
-
-void Frame::writeDebugPlane( const char* filename, unsigned char* c, uint32_t w, uint32_t h )
-{
-    ofstream of( filename );
-    of << "P5" << endl
-       << w << " " << h << endl
-       << "255" << endl;
-    of.write( (char*)c, w * h );
-}
-
-void Frame::writeHostDebugPlane( const char* filename )
-{
-    assert( _h_debug_plane );
-
-    if( _type_size == 1 ) {
-        ofstream of( filename );
-        of << "P5" << endl
-           << getWidth() << " " << getHeight() << endl
-           << "255" << endl;
-        of.write( (char*)_h_debug_plane, getWidth() * getHeight() );
-    } else if( _type_size == 4 ) {
-        ofstream of( filename );
-        of << "P5" << endl
-           << getWidth() << " " << getHeight() << endl
-           << "255" << endl;
-        for( uint32_t h=0; h<getHeight(); h++ ) {
-            for( uint32_t w=0; w<getWidth(); w++ ) {
-                of << (unsigned char)_h_debug_plane[h*getWidth()+w];
-            }
-        }
-    } else {
-        cerr << "Only type_sizes 1 (uint8_t) and 4 (non-normalized float) are supported" << endl;
-    }
-}
-
 void Frame::createTexture( FrameTexture::Kind kind )
 {
     if( _texture ) delete _texture;
 
-    assert( _type_size == 1 );
     _texture = new FrameTexture( _d_plane );
 }
 

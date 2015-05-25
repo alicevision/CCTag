@@ -2,6 +2,7 @@
 
 #include <cuda_runtime.h>
 #include <assert.h>
+#include <string>
 
 // #include <opencv2/core/core.hpp>
 // #include <opencv2/core/core_c.h>
@@ -49,17 +50,15 @@ class Frame
 {
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
-    Frame( uint32_t type_size, uint32_t width, uint32_t height );
+    Frame( uint32_t width, uint32_t height );
     ~Frame( );
 
+    // Copy manually created Gauss filter tables to constant memory
     // implemented in frame_gaussian.cu
     static void initGaussTable( );
 
     // copy the upper layer from the host to the device
     void upload( const unsigned char* image ); // implicitly assumed that w/h are the same as above
-
-    // copy a given number of layers from the device to the host
-    void download( unsigned char* image, uint32_t width, uint32_t height );
 
     // Create a texture object this frame.
     // The caller must ensure that the Kind of texture object makes sense.
@@ -84,29 +83,31 @@ public:
     // return width in type_size
     uint32_t getWidth( ) const  { return _d_plane.cols; }
     uint32_t getHeight( ) const { return _d_plane.rows; }
-    uint32_t getPitch( ) const  { return _d_plane.step * _d_plane.elem_size; }
+    uint32_t getPitch( ) const  { return _d_plane.step; }
 
-    void allocHostDebugPlane( );
+    // implemented in frame_gaussian.cu
     void allocDevGaussianPlane( );
 
     // implemented in frame_gaussian.cu
     void applyGauss( );
 
-    void hostDebugDownload( );
-    static void writeDebugPlane( const char* filename, unsigned char* c, uint32_t w, uint32_t h );
-    void writeHostDebugPlane( const char* filename );
+    void hostDebugDownload( ); // async
+    static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzb& plane );
+    static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzf& plane );
+    void writeHostDebugPlane( std::string filename );
+    void hostDebugCompare( unsigned char* pix );
 
 private:
     Frame( );  // forbidden
     Frame( const Frame& );  // forbidden
 
 private:
-    uint32_t _type_size;
     cv::cuda::PtrStepSzb _d_plane;
     cv::cuda::PtrStepSzf _d_gaussian_intermediate;
     cv::cuda::PtrStepSzf _d_gaussian;
 
     unsigned char* _h_debug_plane;
+    float*         _h_debug_gauss_plane;
     FrameTexture*  _texture;
 
     // if we run out of streams (there are 32), we may have to share
