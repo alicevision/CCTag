@@ -6,8 +6,8 @@
 #include "debug_macros.hpp"
 
 #include "frame.h"
-#include "clamp.h"
-#include "frame_gaussian.h"
+// #include "clamp.h"
+// #include "frame_gaussian.h"
 
 namespace popart {
 
@@ -19,7 +19,6 @@ using namespace std;
 
 Frame::Frame( uint32_t type_size, uint32_t width, uint32_t height )
     : _type_size( type_size )
-    , _d_gaussian_pitch( 0 )
     , _h_debug_plane( 0 )
     , _texture( 0 )
     , _stream_inherited( false )
@@ -89,43 +88,6 @@ void Frame::allocDevGaussianPlane( )
     _d_gaussian_intermediate.step = p / _d_gaussian_intermediate.elemSize();
     _d_gaussian_intermediate.cols = w;
     _d_gaussian_intermediate.rows = h;
-
-    cerr << "Leave " << __FUNCTION__ << endl;
-}
-
-void Frame::applyGauss( )
-{
-    cerr << "Enter " << __FUNCTION__ << endl;
-
-    dim3 block;
-    dim3 grid;
-    block.x = V7_WIDTH;
-    grid.x  = getWidth() / V7_WIDTH;
-    grid.y  = getHeight();
-
-    filter_gauss_horiz_from_uchar
-        <<<grid,block,0,_stream>>>
-        ( _d_plane, _d_gaussian_intermediate );
-
-    filter_gauss_vert
-        <<<grid,block,0,_stream>>>
-        ( _d_gaussian_intermediate, _d_gaussian );
-
-    filter_gauss_horiz
-        <<<grid,block,0,_stream>>>
-        ( _d_gaussian, _d_gaussian_intermediate );
-
-    filter_gauss_vert
-        <<<grid,block,0,_stream>>>
-        ( _d_gaussian_intermediate, _d_gaussian );
-
-    filter_gauss_horiz
-        <<<grid,block,0,_stream>>>
-        ( _d_gaussian, _d_gaussian_intermediate );
-
-    filter_gauss_vert
-        <<<grid,block,0,_stream>>>
-        ( _d_gaussian_intermediate, _d_gaussian );
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }

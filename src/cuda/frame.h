@@ -52,6 +52,7 @@ public:
     Frame( uint32_t type_size, uint32_t width, uint32_t height );
     ~Frame( );
 
+    // implemented in frame_gaussian.cu
     static void initGaussTable( );
 
     // copy the upper layer from the host to the device
@@ -87,7 +88,10 @@ public:
 
     void allocHostDebugPlane( );
     void allocDevGaussianPlane( );
+
+    // implemented in frame_gaussian.cu
     void applyGauss( );
+
     void hostDebugDownload( );
     static void writeDebugPlane( const char* filename, unsigned char* c, uint32_t w, uint32_t h );
     void writeHostDebugPlane( const char* filename );
@@ -102,7 +106,6 @@ private:
     cv::cuda::PtrStepSzf _d_gaussian_intermediate;
     cv::cuda::PtrStepSzf _d_gaussian;
 
-    uint32_t       _d_gaussian_pitch;
     unsigned char* _h_debug_plane;
     FrameTexture*  _texture;
 
