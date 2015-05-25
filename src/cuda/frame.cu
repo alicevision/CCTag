@@ -5,6 +5,7 @@
 #include "debug_macros.hpp"
 
 #include "frame.h"
+#include "clamp.h"
 #include "frame_gaussian.h"
 
 namespace popart {
@@ -70,6 +71,58 @@ void Frame::allocDevGaussianPlane( )
     _d_gaussian_pitch = pitch;
 
     POP_CUDA_MALLOC_PITCH( (void**)&_d_gaussian_intermediate, &pitch, _width*sizeof(float), _height );
+
+    cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+void Frame::applyGauss( )
+{
+    cerr << "Enter " << __FUNCTION__ << endl;
+
+    dim3 block;
+    dim3 grid;
+    block.x = V7_WIDTH;
+    grid.x  = _width / V7_WIDTH;
+    grid.y  = _height;
+
+    // the kernels take float* and measure width in steps of float
+    const uint32_t element_pitch = _d_gaussian_pitch / sizeof(float);
+
+    filter_gauss_horiz_from_uchar
+        <<<grid,block,0,_stream>>>
+        ( _d_plane,
+          _d_gaussian_intermediate,
+          _width, _pitch, _height );
+
+    filter_gauss_vert
+        <<<grid,block,0,_stream>>>
+        ( _d_gaussian_intermediate,
+          _d_gaussian,
+          _width, element_pitch, _height );
+
+    filter_gauss_horiz
+        <<<grid,block,0,_stream>>>
+        ( _d_gaussian,
+          _d_gaussian_intermediate,
+          _width, element_pitch, _height );
+
+    filter_gauss_vert
+        <<<grid,block,0,_stream>>>
+        ( _d_gaussian_intermediate,
+          _d_gaussian,
+          _width, element_pitch, _height );
+
+    filter_gauss_horiz
+        <<<grid,block,0,_stream>>>
+        ( _d_gaussian,
+          _d_gaussian_intermediate,
+          _width, element_pitch, _height );
+
+    filter_gauss_vert
+        <<<grid,block,0,_stream>>>
+        ( _d_gaussian_intermediate,
+          _d_gaussian,
+          _width, element_pitch, _height );
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }

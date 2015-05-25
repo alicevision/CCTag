@@ -87,6 +87,7 @@ public:
 
     void allocHostDebugPlane( );
     void allocDevGaussianPlane( );
+    void applyGauss( );
     void hostDebugDownload( );
     static void writeDebugPlane( const char* filename, unsigned char* c, uint32_t w, uint32_t h );
     void writeHostDebugPlane( const char* filename );
