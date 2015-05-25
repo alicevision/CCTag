@@ -41,18 +41,10 @@ void Frame::initGaussTable( )
 }
 
 #define V7_WIDTH    32
-// #define V7_RANGE    4 // RANGES from 1 to 12 are possible
-// #define V7_GAUSS_BASE   ( GAUSS_ONE_SIDE_RANGE - V7_RANGE )
-// #define V7_FILTERSIZE   ( V7_RANGE + 1        + V7_RANGE )
-// #define V7_READ_RANGE   ( V7_RANGE + V7_WIDTH + V7_RANGE )
-// #define V7_LEVELS       _levels
 
 __global__
-void filter_gauss_horiz( float*   src_data,
-                         float*   dst_data,
-                         uint32_t width,
-                         uint32_t pitch,
-                         uint32_t height )
+void filter_gauss_horiz( cv::cuda::PtrStepSzf src,
+                         cv::cuda::PtrStepSzf dst )
 {
     int block_x = blockIdx.x * V7_WIDTH;
     int block_y = blockIdx.y;
@@ -63,55 +55,49 @@ void filter_gauss_horiz( float*   src_data,
     for( int offset = 0; offset<9; offset++ ) {
         float g  = d_gauss_filter[offset];
 
-        idx = clamp( block_x + threadIdx.x - offset, width );
-        float val = src_data[ block_y * pitch + idx ];
+        idx = clamp( block_x + threadIdx.x - offset - 4, src.cols );
+        float val = src.data[ block_y * src.step + idx ];
         out += ( val * g );
     }
 
-    if( block_y >= height ) return;
-    if( idx     >= pitch ) return;
+    if( block_y >= dst.rows ) return;
+    if( idx     >= dst.step ) return;
 
-    bool nix = ( block_x + threadIdx.x >= width ) || ( block_y >= height );
-    dst_data[ block_y * pitch + idx ] = nix ? 0 : out;
+    bool nix = ( block_x + threadIdx.x >= dst.cols ) || ( block_y >= dst.rows );
+    dst.data[ block_y * dst.step + idx ] = nix ? 0 : out;
 }
 
 __global__
-void filter_gauss_vert( float*   src_data,
-                           float*   dst_data,
-                           uint32_t width,
-                           uint32_t pitch,
-                           uint32_t height )
+void filter_gauss_vert( cv::cuda::PtrStepSzf src,
+                        cv::cuda::PtrStepSzf dst )
 {
     const int block_x = blockIdx.x * V7_WIDTH;
     const int block_y = blockIdx.y;
     const int idx     = block_x + threadIdx.x;
     int idy;
 
-    if( idx >= pitch ) return;
+    if( idx >= src.step ) return;
 
     float out = 0;
 
     for( int offset = 0; offset<9; offset++ ) {
         float g  = d_gauss_filter[offset];
 
-        idy = clamp( block_y - offset, height );
-        float val = src_data[ idy * pitch + idx ];
+        idy = clamp( block_y - offset - 4, src.rows );
+        float val = src.data[ idy * src.step + idx ];
         out += ( val * g );
     }
 
-    if( idy >= height ) return;
-    if( idx >= pitch  ) return;
+    if( idy >= dst.rows ) return;
+    if( idx >= dst.step  ) return;
 
-    bool nix = ( idx >= width );
-    dst_data[ idy * pitch + idx ] = nix ? 0 : out;
+    bool nix = ( idx >= dst.cols );
+    dst.data[ idy * dst.step + idx ] = nix ? 0 : out;
 }
 
 __global__
-void filter_gauss_horiz_from_uchar( unsigned char*   src_data,
-                                    float*           dst_data,
-                                    uint32_t         width,
-                                    uint32_t         pitch,
-                                    uint32_t         height )
+void filter_gauss_horiz_from_uchar( cv::cuda::PtrStepSzb src,
+                                    cv::cuda::PtrStepSzf dst )
 {
     int block_x = blockIdx.x * V7_WIDTH;
     int block_y = blockIdx.y;
@@ -122,16 +108,16 @@ void filter_gauss_horiz_from_uchar( unsigned char*   src_data,
     for( int offset = 0; offset<9; offset++ ) {
         float g  = d_gauss_filter_by_256[offset];
 
-        idx = clamp( block_x + threadIdx.x - offset, width );
-        float val = src_data[ block_y * pitch + idx ];
+        idx = clamp( block_x + threadIdx.x - offset - 4, src.cols );
+        float val = src.data[ block_y * src.step + idx ];
         out += ( val * g );
     }
 
-    if( block_y >= height ) return;
-    if( idx     >= pitch ) return;
+    if( block_y >= dst.rows ) return;
+    if( idx     >= dst.step ) return;
 
-    bool nix = ( block_x + threadIdx.x >= width ) || ( block_y >= height );
-    dst_data[ block_y * pitch + idx ] = nix ? 0 : out;
+    bool nix = ( block_x + threadIdx.x >= dst.cols ) || ( block_y >= dst.rows );
+    dst.data[ block_y * dst.step + idx ] = nix ? 0 : out;
 }
 
 }; // namespace popart

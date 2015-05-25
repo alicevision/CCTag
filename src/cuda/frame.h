@@ -2,9 +2,13 @@
 
 #include <cuda_runtime.h>
 #include <assert.h>
-#ifdef OPENCV_V3
+
+// #include <opencv2/core/core.hpp>
+// #include <opencv2/core/core_c.h>
 #include <opencv2/core/cuda_types.hpp>
-#endif // OPENCV_V3
+// #include <opencv2/core/operations.hpp>
+// #include <opencv2/imgproc/imgproc_c.h>
+// #include <opencv2/imgproc/types_c.h>
 
 namespace popart {
 
@@ -20,7 +24,7 @@ public:
         normalized_uchar_to_float
     };
 public:
-    FrameTexture( Kind k, void* ptr, uint32_t pitch, uint32_t w, uint32_t h );
+    FrameTexture( const cv::cuda::PtrStepSzb& plane );
     ~FrameTexture( );
 
     inline cudaTextureObject_t getTex( ) {
@@ -28,7 +32,7 @@ public:
     }
 
 private:
-    void makeTex_Normalized_uchar_to_float( void* ptr, uint32_t pitch, uint32_t width, uint32_t height );
+    void makeTex_Normalized_uchar_to_float( const cv::cuda::PtrStepSzb& plane );
 
 private:
     Kind                _kind;
@@ -77,13 +81,9 @@ public:
     Frame* getScale( uint32_t scale );
 
     // return width in type_size
-#ifdef OPENCV_V3
     uint32_t getWidth( ) const  { return _d_plane.cols; }
     uint32_t getHeight( ) const { return _d_plane.rows; }
-#else // OPENCV_V3
-    uint32_t getWidth( ) const  { return _width; }
-    uint32_t getHeight( ) const { return _height; }
-#endif // OPENCV_V3
+    uint32_t getPitch( ) const  { return _d_plane.step * _d_plane.elem_size; }
 
     void allocHostDebugPlane( );
     void allocDevGaussianPlane( );
@@ -98,17 +98,10 @@ private:
 
 private:
     uint32_t _type_size;
-#ifdef OPENCV_V3
     cv::cuda::PtrStepSzb _d_plane;
-#else // OPENCV_V3
-    uint32_t _width;     // given in type_size (rg. 1 for uchar, 4 for uint32_t)
-    uint32_t _pitch;     // given in bytes
-    uint32_t _height;
-    unsigned char* _d_plane;
-#endif // OPENCV_V3
+    cv::cuda::PtrStepSzf _d_gaussian_intermediate;
+    cv::cuda::PtrStepSzf _d_gaussian;
 
-    float*         _d_gaussian_intermediate;
-    float*         _d_gaussian;
     uint32_t       _d_gaussian_pitch;
     unsigned char* _h_debug_plane;
     FrameTexture*  _texture;

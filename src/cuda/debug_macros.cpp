@@ -54,6 +54,19 @@ void pop_check_last_error( const char* file, size_t line )
     }
 }
 
+void pop_sync_and_check_last_error( const char* file, size_t line )
+{
+    cudaDeviceSynchronize();
+
+    cudaError_t err = cudaGetLastError( );
+    if( err != cudaSuccess ) {
+        std::cerr << __FILE__ << ":" << __LINE__ << std::endl
+                  << "    called from " << file << ":" << line << std::endl
+                  << "    cudaGetLastError failed: " << cudaGetErrorString(err) << std::endl;
+        exit( -__LINE__ );
+    }
+}
+
 void pop_cuda_malloc( void** ptr,  uint32_t byte_size, const char* file, uint32_t line )
 {
     cudaError_t err;

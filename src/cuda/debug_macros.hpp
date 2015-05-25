@@ -51,6 +51,10 @@ void pop_check_last_error( const char* file,
                            size_t      line );
 #define POP_CHK pop_check_last_error( __FILE__, __LINE__ )
 
+void pop_sync_and_check_last_error( const char* file,
+                                    size_t      line );
+#define POP_SYNC_CHK pop_sync_and_check_last_error( __FILE__, __LINE__ )
+
 void pop_info_gridsize( bool               silent,
                         dim3&              grid,
                         dim3&              block,
