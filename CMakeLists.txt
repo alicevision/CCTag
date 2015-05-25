@@ -1,4 +1,9 @@
+if(APPLE)
+cmake_minimum_required(VERSION 3.0)
+else(APPLE)
 cmake_minimum_required(VERSION 2.8)
+endif(APPLE)
+
 include(ExternalProject)
 
 project( CCTag )
@@ -33,7 +38,9 @@ if(APPLE)
 endif(APPLE)
 
 # avoid the cmake policy warning about @rpath in MacOSX
-# cmake_policy(SET CMP0042 NEW)
+if(APPLE)
+cmake_policy(SET CMP0042 NEW)
+endif(APPLE)
 
 if(APPLE)
   SET(CMAKE_MACOSX_RPATH TRUE) # initialize the MACOSX_RPATH property on all targets
