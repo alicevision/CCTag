@@ -107,10 +107,12 @@ public:
     void applyGauss( );
 
     void hostDebugDownload( ); // async
+
+    static void writeDebugPlane1( const char* filename, const cv::cuda::PtrStepSzb& plane );
+
     template<class T>
     static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>& plane );
-    // static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzb& plane );
-    // static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzf& plane );
+
     void writeHostDebugPlane( std::string filename );
     void hostDebugCompare( unsigned char* pix );
 

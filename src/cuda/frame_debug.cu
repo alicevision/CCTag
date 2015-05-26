@@ -97,9 +97,7 @@ static void testme( cv::cuda::PtrStepSzf src )
 }
 #endif
 
-template<>
-__host__
-void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzb& plane )
+void Frame::writeDebugPlane1( const char* filename, const cv::cuda::PtrStepSzb& plane )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
     assert( plane.data );
@@ -187,7 +185,7 @@ void Frame::writeHostDebugPlane( string filename )
                             getWidth(),
                             _h_debug_plane,
                             getWidth() );
-    writeDebugPlane( s.c_str(), b );
+    writeDebugPlane1( s.c_str(), b );
 
     s = filename + "-gauss.pgm";
     cv::cuda::PtrStepSzf smooth( getHeight(),
