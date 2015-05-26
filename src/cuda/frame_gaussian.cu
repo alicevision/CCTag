@@ -152,6 +152,44 @@ void filter_gauss_horiz_from_uchar( cv::cuda::PtrStepSzb src,
     dst.ptr(block_y)[idx] = nix ? 0 : out;
 }
 
+__global__
+void compute_mag_l1( cv::cuda::PtrStepSz16s src_dx,
+                     cv::cuda::PtrStepSz16s src_dy,
+                     cv::cuda::PtrStepSz32u dst )
+{
+    int block_x = blockIdx.x * V7_WIDTH;
+    int idx     = block_x + threadIdx.x;
+    int idy     = blockIdx.y;
+
+    if( idx >= dst.cols ) return;
+    if( idy >= dst.rows ) return;
+
+    int16_t dx = src_dx.ptr(idy)[idx];
+    int16_t dy = src_dy.ptr(idy)[idx];
+    dx = ( dx < 0 ) ? -dx : dx;
+    dy = ( dy < 0 ) ? -dy : dy;
+    dst.ptr(idy)[idx] = dx + dy;
+}
+
+__global__
+void compute_mag_l2( cv::cuda::PtrStepSz16s src_dx,
+                     cv::cuda::PtrStepSz16s src_dy,
+                     cv::cuda::PtrStepSz32u dst )
+{
+    int block_x = blockIdx.x * V7_WIDTH;
+    int idx     = block_x + threadIdx.x;
+    int idy     = blockIdx.y;
+
+    if( idx >= dst.cols ) return;
+    if( idy >= dst.rows ) return;
+
+    int16_t dx = src_dx.ptr(idy)[idx];
+    int16_t dy = src_dy.ptr(idy)[idx];
+    dx *= dx;
+    dy *= dy;
+    dst.ptr(idy)[idx] = __fsqrt_rz( (float)( dx + dy ) );
+}
+
 #if 0
 __global__
 void debug_gauss( cv::cuda::PtrStepSzf src )
@@ -214,6 +252,7 @@ void Frame::applyGauss( )
         <<<grid,block,0,_stream>>>
         ( _d_intermediate, _d_dx, GAUSS_DERIV );
 
+    // possible to split into 2 streams
     filter_gauss_horiz
         <<<grid,block,0,_stream>>>
         ( _d_smooth, _d_intermediate, GAUSS_TABLE );
@@ -221,6 +260,11 @@ void Frame::applyGauss( )
     filter_gauss_vert
         <<<grid,block,0,_stream>>>
         ( _d_intermediate, _d_dy, GAUSS_DERIV );
+
+    // necessary to merge into 1 stream
+    compute_mag_l2
+        <<<grid,block,0,_stream>>>
+        ( _d_dx, _d_dy, _d_mag );
 
 #if 0
     // very costly printf-debugging
@@ -270,6 +314,13 @@ void Frame::allocDevGaussianPlane( )
     _d_intermediate.cols = w;
     _d_intermediate.rows = h;
 
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(uint32_t), h );
+    assert( p % _d_mag.elemSize() == 0 );
+    _d_mag.data = (uint32_t*)ptr;
+    _d_mag.step = p;
+    _d_mag.cols = w;
+    _d_mag.rows = h;
+
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
                            _d_smooth.step * _d_smooth.rows,
@@ -288,6 +339,11 @@ void Frame::allocDevGaussianPlane( )
     POP_CUDA_MEMSET_ASYNC( _d_intermediate.data,
                            0,
                            _d_intermediate.step * _d_intermediate.rows,
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_mag.data,
+                           0,
+                           _d_mag.step * _d_mag.rows,
                            _stream );
 
     cerr << "Leave " << __FUNCTION__ << endl;

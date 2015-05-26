@@ -22,11 +22,13 @@ void Frame::hostDebugDownload( )
     delete [] _h_debug_smooth;
     delete [] _h_debug_dx;
     delete [] _h_debug_dy;
+    delete [] _h_debug_mag;
 
     _h_debug_plane  = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_smooth = new float[ getWidth() * getHeight() ];
     _h_debug_dx     = new int16_t[ getWidth() * getHeight() ];
     _h_debug_dy     = new int16_t[ getWidth() * getHeight() ];
+    _h_debug_mag    = new uint32_t[ getWidth() * getHeight() ];
 
     POP_SYNC_CHK;
 
@@ -61,6 +63,11 @@ void Frame::hostDebugDownload( )
                               _d_dy.data, _d_dy.step,
                               _d_dy.cols * sizeof(int16_t),
                               _d_dy.rows,
+                              cudaMemcpyDeviceToHost, _stream );
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_mag, getWidth() * sizeof(uint32_t),
+                              _d_mag.data, _d_mag.step,
+                              _d_mag.cols * sizeof(uint32_t),
+                              _d_mag.rows,
                               cudaMemcpyDeviceToHost, _stream );
 }
 
@@ -110,8 +117,10 @@ void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>&
        << plane.cols << " " << plane.rows << endl
        << "255" << endl;
 
-    T minval = 1000.0;  // std::numeric_limits<float>::max();
-    T maxval = -1000.0; // std::numeric_limits<float>::min();
+    // T minval = 1000;  // std::numeric_limits<float>::max();
+    // T maxval = -1000; // std::numeric_limits<float>::min();
+    T minval = std::numeric_limits<T>::max();
+    T maxval = std::numeric_limits<T>::min();
     // for( uint32_t i=0; i<plane.rows*plane.cols; i++ ) {
     for( size_t i=0; i<plane.rows; i++ ) {
         for( size_t j=0; j<plane.cols; j++ ) {
@@ -193,6 +202,13 @@ void Frame::writeHostDebugPlane( string filename )
                                _h_debug_dy,
                                getWidth()*sizeof(int16_t) );
     writeDebugPlane( s.c_str(), dy );
+
+    s = filename + "-mag.pgm";
+    cv::cuda::PtrStepSz32u mag( getHeight(),
+                                getWidth(),
+                                _h_debug_mag,
+                                getWidth()*sizeof(uint32_t) );
+    writeDebugPlane( s.c_str(), mag );
 }
 
 }; // namespace popart

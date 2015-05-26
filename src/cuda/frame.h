@@ -13,8 +13,10 @@
 
 namespace cv {
     namespace cuda {
-        typedef PtrStepSz<int16_t> PtrStepSz16s;
-        typedef PtrStep<int16_t>   PtrStep16s;
+        typedef PtrStepSz<int16_t>  PtrStepSz16s;
+        typedef PtrStepSz<uint32_t> PtrStepSz32u;
+        typedef PtrStep<int16_t>    PtrStep16s;
+        typedef PtrStep<uint32_t>   PtrStep32u;
     }
 };
 
@@ -124,11 +126,13 @@ private:
     // cv::cuda::PtrStepSzf _d_dy;
     cv::cuda::PtrStepSz16s _d_dx;
     cv::cuda::PtrStepSz16s _d_dy;
+    cv::cuda::PtrStepSz32u _d_mag;
 
     unsigned char* _h_debug_plane;
     float*         _h_debug_smooth;
     int16_t*       _h_debug_dx;
     int16_t*       _h_debug_dy;
+    uint32_t*      _h_debug_mag;
     FrameTexture*  _texture;
     FrameEvent*    _wait_for_upload;
 
