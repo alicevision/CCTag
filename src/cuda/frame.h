@@ -89,6 +89,9 @@ public:
     void allocUploadEvent( );
     void deleteUploadEvent( );
     FrameEvent addUploadEvent( );
+    void allocDoneEvent( );
+    void deleteDoneEvent( );
+    FrameEvent addDoneEvent( );
     void streamSync( ); // Wait for the asynchronous ops to finish
     void streamSync( FrameEvent ev ); // Wait for ev to happen (in another stream)
 
@@ -141,9 +144,11 @@ private:
     unsigned char* _h_debug_edges;
     FrameTexture*  _texture;
     FrameEvent*    _wait_for_upload;
+    FrameEvent*    _wait_done;
 
     // if we run out of streams (there are 32), we may have to share
     // bool         _stream_inherited;
+public:
     cudaStream_t _stream;
 };
 

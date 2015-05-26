@@ -1,6 +1,7 @@
 #include "tag.h"
 #include "frame.h"
 #include "debug_macros.hpp"
+#include "keep_time.hpp"
 #include <sstream>
 #include <iostream>
 
@@ -37,6 +38,7 @@ void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h )
 
     for( int i=0; i<4; i++ ) {
         _frame[i]->allocDevGaussianPlane(); // sync
+        _frame[i]->allocDoneEvent( ); // sync
     }
     cerr << "Leave " << __FUNCTION__ << endl;
 }
@@ -45,6 +47,9 @@ __host__
 void TagPipe::tagframe( unsigned char* pix, const uint32_t pix_w, const uint32_t pix_h )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
+
+    KeepTime t( _frame[0]->_stream );
+    t.start();
 
     _frame[0]->upload( pix ); // async
 
@@ -71,6 +76,16 @@ void TagPipe::tagframe( unsigned char* pix, const uint32_t pix_w, const uint32_t
     for( int i=0; i<4; i++ ) {
         _frame[i]->applyGauss(); // async
     }
+
+    FrameEvent doneEv[4];
+    for( int i=1; i<4; i++ ) {
+        doneEv[i] = _frame[i]->addDoneEvent( ); // async
+    }
+    for( int i=1; i<4; i++ ) {
+        _frame[0]->streamSync( doneEv[i] ); // aysnc
+    }
+    t.stop();
+    t.report( "Time for all frames " );
     cerr << "Leave " << __FUNCTION__ << endl;
 }
 

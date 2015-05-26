@@ -28,6 +28,7 @@ Frame::Frame( uint32_t width, uint32_t height )
     , _h_debug_edges( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
+    , _wait_done( 0 )
 {
     cerr << "Allocating frame: " << width << "x" << height << endl;
 
@@ -176,6 +177,30 @@ FrameEvent Frame::addUploadEvent( )
     err = cudaEventRecord( *_wait_for_upload, _stream );
     POP_CUDA_FATAL_TEST( err, "Could not insert an event into a stream: " );
     return *_wait_for_upload;
+}
+
+void Frame::allocDoneEvent( )
+{
+    _wait_done = new FrameEvent;
+
+    cudaError_t err;
+    err = cudaEventCreateWithFlags( _wait_done, cudaEventDisableTiming );
+    POP_CUDA_FATAL_TEST( err, "Could not create a non-timing event: " );
+}
+
+void Frame::deleteDoneEvent( )
+{
+    if( not _wait_done ) return;
+    cudaEventDestroy( *_wait_done );
+    delete _wait_done;
+}
+
+FrameEvent Frame::addDoneEvent( )
+{
+    cudaError_t err;
+    err = cudaEventRecord( *_wait_done, _stream );
+    POP_CUDA_FATAL_TEST( err, "Could not insert an event into a stream: " );
+    return *_wait_done;
 }
 
 void Frame::streamSync( )

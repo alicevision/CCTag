@@ -8,6 +8,8 @@
 
 #include "frame.h"
 
+#undef CHATTY_WRITE_DEBUG_PLANE
+
 namespace popart {
 
 using namespace std;
@@ -106,7 +108,9 @@ static void testme( cv::cuda::PtrStepSzf src )
 
 void Frame::writeDebugPlane1( const char* filename, const cv::cuda::PtrStepSzb& plane )
 {
+#ifdef CHATTY_WRITE_DEBUG_PLANE
     cerr << "Enter " << __FUNCTION__ << endl;
+#endif
     assert( plane.data );
 
     ofstream of( filename );
@@ -114,15 +118,19 @@ void Frame::writeDebugPlane1( const char* filename, const cv::cuda::PtrStepSzb& 
        << plane.cols << " " << plane.rows << endl
        << "255" << endl;
     of.write( (char*)plane.data, plane.cols * plane.rows );
+#ifdef CHATTY_WRITE_DEBUG_PLANE
     cerr << "Leave " << __FUNCTION__ << endl;
+#endif
 }
 
 template<class T>
 __host__
 void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>& plane )
 {
+#ifdef CHATTY_WRITE_DEBUG_PLANE
     cerr << "Enter " << __FUNCTION__ << endl;
     cerr << "    filename: " << filename << endl;
+#endif
 
     ofstream of( filename );
     of << "P5" << endl
@@ -142,9 +150,11 @@ void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>&
             maxval = max( maxval, f );
         }
     }
+#ifdef CHATTY_WRITE_DEBUG_PLANE
     cerr << "    step size is " << plane.step << endl;
     cerr << "    found minimum value " << minval << endl;
     cerr << "    found maximum value " << maxval << endl;
+#endif
 
     // testme( plane );
 
@@ -156,7 +166,9 @@ void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>&
         of << uc;
     }
 
+#ifdef CHATTY_WRITE_DEBUG_PLANE
     cerr << "Leave " << __FUNCTION__ << endl;
+#endif
 }
 
 void Frame::hostDebugCompare( unsigned char* pix )
