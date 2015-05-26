@@ -23,12 +23,14 @@ void Frame::hostDebugDownload( )
     delete [] _h_debug_dx;
     delete [] _h_debug_dy;
     delete [] _h_debug_mag;
+    delete [] _h_debug_map;
 
     _h_debug_plane  = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_smooth = new float[ getWidth() * getHeight() ];
     _h_debug_dx     = new int16_t[ getWidth() * getHeight() ];
     _h_debug_dy     = new int16_t[ getWidth() * getHeight() ];
     _h_debug_mag    = new uint32_t[ getWidth() * getHeight() ];
+    _h_debug_map    = new unsigned char[ getWidth() * getHeight() ];
 
     POP_SYNC_CHK;
 
@@ -68,6 +70,11 @@ void Frame::hostDebugDownload( )
                               _d_mag.data, _d_mag.step,
                               _d_mag.cols * sizeof(uint32_t),
                               _d_mag.rows,
+                              cudaMemcpyDeviceToHost, _stream );
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_map, getWidth() * sizeof(uint8_t),
+                              _d_map.data, _d_map.step,
+                              _d_map.cols * sizeof(uint8_t),
+                              _d_map.rows,
                               cudaMemcpyDeviceToHost, _stream );
 }
 
@@ -209,6 +216,13 @@ void Frame::writeHostDebugPlane( string filename )
                                 _h_debug_mag,
                                 getWidth()*sizeof(uint32_t) );
     writeDebugPlane( s.c_str(), mag );
+
+    s = filename + "-map.pgm";
+    cv::cuda::PtrStepSzb   map( getHeight(),
+                                getWidth(),
+                                _h_debug_map,
+                                getWidth()*sizeof(uint8_t) );
+    writeDebugPlane( s.c_str(), map );
 }
 
 }; // namespace popart
