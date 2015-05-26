@@ -250,6 +250,29 @@ void compute_map( const cv::cuda::PtrStepSz16s dx,
     map.ptr(idy)[idx] = edge_type;
 }
 
+__global__
+void edge_hysteresis( cv::cuda::PtrStepSzb map, cv::cuda::PtrStepSzb edges )
+{
+    const int block_x = blockIdx.x * V7_WIDTH;
+    const int idx     = block_x + threadIdx.x;
+    const int idy     = blockIdx.y;
+
+    uint8_t log = 0;
+
+    if( idx >= 1 && idy >=1 && idx <= map.cols-2 && idy <= map.rows-2 ) {
+        log |= ( map.ptr(idy-1)[idx-1] == 2 ) ? 0x80 : 0;
+        log |= ( map.ptr(idy-1)[idx  ] == 2 ) ? 0x01 : 0;
+        log |= ( map.ptr(idy-1)[idx+1] == 2 ) ? 0x02 : 0;
+        log |= ( map.ptr(idy  )[idx+1] == 2 ) ? 0x04 : 0;
+        log |= ( map.ptr(idy+1)[idx+1] == 2 ) ? 0x08 : 0;
+        log |= ( map.ptr(idy+1)[idx  ] == 2 ) ? 0x10 : 0;
+        log |= ( map.ptr(idy+1)[idx-1] == 2 ) ? 0x20 : 0;
+        log |= ( map.ptr(idy  )[idx-1] == 2 ) ? 0x40 : 0;
+        if( log != 0 ) log = 1;
+    }
+    edges.ptr(idy)[idx] = log;
+}
+
 #if 0
 __global__
 void debug_gauss( cv::cuda::PtrStepSzf src )
@@ -333,6 +356,10 @@ void Frame::applyGauss( )
         <<<grid,block,0,_stream>>>
         ( _d_dx, _d_dy, _d_mag, _d_map, 0.01f, 0.04f );
 
+    edge_hysteresis
+        <<<grid,block,0,_stream>>>
+        ( _d_map, _d_edges );
+
 #if 0
     // very costly printf-debugging
     debug_gauss
@@ -395,6 +422,13 @@ void Frame::allocDevGaussianPlane( )
     _d_map.cols = w;
     _d_map.rows = h;
 
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(unsigned char), h );
+    assert( p % _d_edges.elemSize() == 0 );
+    _d_edges.data = (unsigned char*)ptr;
+    _d_edges.step = p;
+    _d_edges.cols = w;
+    _d_edges.rows = h;
+
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
                            _d_smooth.step * _d_smooth.rows,
@@ -423,6 +457,11 @@ void Frame::allocDevGaussianPlane( )
     POP_CUDA_MEMSET_ASYNC( _d_map.data,
                            0,
                            _d_map.step * _d_map.rows,
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_edges.data,
+                           0,
+                           _d_edges.step * _d_edges.rows,
                            _stream );
 
     cerr << "Leave " << __FUNCTION__ << endl;

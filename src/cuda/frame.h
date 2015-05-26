@@ -130,6 +130,7 @@ private:
     cv::cuda::PtrStepSz16s _d_dy;
     cv::cuda::PtrStepSz32u _d_mag;
     cv::cuda::PtrStepSzb   _d_map;
+    cv::cuda::PtrStepSzb   _d_edges;
 
     unsigned char* _h_debug_plane;
     float*         _h_debug_smooth;
@@ -137,6 +138,7 @@ private:
     int16_t*       _h_debug_dy;
     uint32_t*      _h_debug_mag;
     unsigned char* _h_debug_map;
+    unsigned char* _h_debug_edges;
     FrameTexture*  _texture;
     FrameEvent*    _wait_for_upload;
 
