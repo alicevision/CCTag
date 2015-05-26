@@ -25,8 +25,8 @@ void Frame::hostDebugDownload( )
 
     _h_debug_plane  = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_smooth = new float[ getWidth() * getHeight() ];
-    _h_debug_dx     = new float[ getWidth() * getHeight() ];
-    _h_debug_dy     = new float[ getWidth() * getHeight() ];
+    _h_debug_dx     = new int16_t[ getWidth() * getHeight() ];
+    _h_debug_dy     = new int16_t[ getWidth() * getHeight() ];
 
     POP_SYNC_CHK;
 
@@ -52,29 +52,19 @@ void Frame::hostDebugDownload( )
                               _d_smooth.cols * sizeof(float),
                               _d_smooth.rows,
                               cudaMemcpyDeviceToHost, _stream );
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_dx, getWidth() * sizeof(float),
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_dx, getWidth() * sizeof(int16_t),
                               _d_dx.data, _d_dx.step,
-                              _d_dx.cols * sizeof(float),
+                              _d_dx.cols * sizeof(int16_t),
                               _d_dx.rows,
                               cudaMemcpyDeviceToHost, _stream );
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_dy, getWidth() * sizeof(float),
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_dy, getWidth() * sizeof(int16_t),
                               _d_dy.data, _d_dy.step,
-                              _d_dy.cols * sizeof(float),
+                              _d_dy.cols * sizeof(int16_t),
                               _d_dy.rows,
                               cudaMemcpyDeviceToHost, _stream );
 }
 
-void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzb& plane )
-{
-    assert( plane.data );
-
-    ofstream of( filename );
-    of << "P5" << endl
-       << plane.cols << " " << plane.rows << endl
-       << "255" << endl;
-    of.write( (char*)plane.data, plane.cols * plane.rows );
-}
-
+#if 0
 __host__
 static void testme( cv::cuda::PtrStepSzf src )
 {
@@ -91,22 +81,41 @@ static void testme( cv::cuda::PtrStepSzf src )
         }
     printf("testme: There are %lu non-null values in the Gaussian end result (min %f, max %f)\n", (unsigned long)non_null_ct, minval, maxval );
 }
+#endif
 
-void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzf& plane )
+template<>
+__host__
+void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzb& plane )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
+    assert( plane.data );
+
+    ofstream of( filename );
+    of << "P5" << endl
+       << plane.cols << " " << plane.rows << endl
+       << "255" << endl;
+    of.write( (char*)plane.data, plane.cols * plane.rows );
+    cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+template<class T>
+__host__
+void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>& plane )
+{
+    cerr << "Enter " << __FUNCTION__ << endl;
+    cerr << "    filename: " << filename << endl;
 
     ofstream of( filename );
     of << "P5" << endl
        << plane.cols << " " << plane.rows << endl
        << "255" << endl;
 
-    float minval = 1000.0f;  // std::numeric_limits<float>::max();
-    float maxval = -1000.0f; // std::numeric_limits<float>::min();
+    T minval = 1000.0;  // std::numeric_limits<float>::max();
+    T maxval = -1000.0; // std::numeric_limits<float>::min();
     // for( uint32_t i=0; i<plane.rows*plane.cols; i++ ) {
     for( size_t i=0; i<plane.rows; i++ ) {
         for( size_t j=0; j<plane.cols; j++ ) {
-            float f = plane.ptr(i)[j];
+            T f = plane.ptr(i)[j];
             // float f = plane.data[i];
             minval = min( minval, f );
             maxval = max( maxval, f );
@@ -116,11 +125,11 @@ void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzf& p
     cerr << "    found minimum value " << minval << endl;
     cerr << "    found maximum value " << maxval << endl;
 
-    testme( plane );
+    // testme( plane );
 
-    maxval = 255.0f / ( maxval - minval );
+    maxval = 255.0 / ( maxval - minval );
     for( uint32_t i=0; i<plane.rows*plane.cols; i++ ) {
-        float f = plane.data[i];
+        T f = plane.data[i];
         f = ( f - minval ) * maxval;
         unsigned char uc = (unsigned char)f;
         of << uc;
@@ -172,17 +181,17 @@ void Frame::writeHostDebugPlane( string filename )
     writeDebugPlane( s.c_str(), smooth );
 
     s = filename + "-dx.pgm";
-    cv::cuda::PtrStepSzf dx( getHeight(),
-                             getWidth(),
-                             _h_debug_dx,
-                             getWidth()*sizeof(float) );
+    cv::cuda::PtrStepSz16s dx( getHeight(),
+                               getWidth(),
+                               _h_debug_dx,
+                               getWidth()*sizeof(int16_t) );
     writeDebugPlane( s.c_str(), dx );
 
     s = filename + "-dy.pgm";
-    cv::cuda::PtrStepSzf dy( getHeight(),
-                             getWidth(),
-                             _h_debug_dy,
-                             getWidth()*sizeof(float) );
+    cv::cuda::PtrStepSz16s dy( getHeight(),
+                               getWidth(),
+                               _h_debug_dy,
+                               getWidth()*sizeof(int16_t) );
     writeDebugPlane( s.c_str(), dy );
 }
 

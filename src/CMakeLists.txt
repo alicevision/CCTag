@@ -18,9 +18,9 @@ IF(CUDA_FOUND)
           ./cuda/*.cu
     )
     set_source_files_properties( ${CUDA_cpp} ${CUDA_cu}
-                                 PROPERTIES COMPILE_FLAGS "-Wall"
+                                 PROPERTIES COMPILE_FLAGS "-g -Wall"
     )
-    set(CUDA_NVCC_FLAGS "-G -g -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52 -O3")
+    set(CUDA_NVCC_FLAGS "-G -g -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52")
     # set(CUDA_NVCC_FLAGS "-gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52 -O3")
 
     # I try to find parameters that allow Dynamic Parallelism.

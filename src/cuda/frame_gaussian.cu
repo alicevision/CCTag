@@ -16,7 +16,15 @@ using namespace std;
  * This is actually a code file, to be included into frame.cu
  */
 
-/* these numbers are taken from Lilian's file cctag/fiter/cvRecode.cpp */
+/* These numbers are taken from Lilian's file cctag/fiter/cvRecode.cpp
+ * Note that the array looks like because a __constant__ device array
+ * with 2 dimensions is conceptually very problematic. The reason is
+ * that the compiler pads each dimension separately, but there is no
+ * way of asking about this padding (pitch, stepsize, whatever you
+ * call it).
+ * If the kernels should be multi-use, we need one array with two offsets.
+ * Aligning to anything less than 16 floats is a bad idea.
+ */
 
 static const float h_gauss_filter[32] =
 {
@@ -62,10 +70,11 @@ __device__ __constant__ float d_gauss_filter_by_256[16];
 
 #define V7_WIDTH    32
 
+template <class DestType>
 __global__
-void filter_gauss_horiz( cv::cuda::PtrStepSzf src,
-                         cv::cuda::PtrStepSzf dst,
-                         int                  filter )
+void filter_gauss_horiz( cv::cuda::PtrStepSzf          src,
+                         cv::cuda::PtrStepSz<DestType> dst,
+                         int                           filter )
 {
     int block_x = blockIdx.x * V7_WIDTH;
     int block_y = blockIdx.y;
@@ -85,13 +94,14 @@ void filter_gauss_horiz( cv::cuda::PtrStepSzf src,
     if( idx*sizeof(float) >= dst.step ) return;
 
     bool nix = ( block_x + threadIdx.x >= dst.cols ) || ( block_y >= dst.rows );
-    dst.ptr(block_y)[idx] = nix ? 0 : out;
+    dst.ptr(block_y)[idx] = nix ? 0 : (DestType)out;
 }
 
+template <class DestType>
 __global__
-void filter_gauss_vert( cv::cuda::PtrStepSzf src,
-                        cv::cuda::PtrStepSzf dst,
-                        int                  filter )
+void filter_gauss_vert( cv::cuda::PtrStepSzf          src,
+                        cv::cuda::PtrStepSz<DestType> dst,
+                        int                           filter )
 {
     const int block_x = blockIdx.x * V7_WIDTH;
     const int block_y = blockIdx.y;
@@ -113,7 +123,7 @@ void filter_gauss_vert( cv::cuda::PtrStepSzf src,
     if( idy >= dst.rows ) return;
 
     bool nix = ( idx >= dst.cols );
-    dst.ptr(idy)[idx] = nix ? 0 : out;
+    dst.ptr(idy)[idx] = nix ? 0 : (DestType)out;
 }
 
 __global__
@@ -127,7 +137,8 @@ void filter_gauss_horiz_from_uchar( cv::cuda::PtrStepSzb src,
     float out = 0;
 
     for( int offset = 0; offset<9; offset++ ) {
-        float g  = d_gauss_filter_by_256[offset];
+        // float g  = d_gauss_filter_by_256[offset];
+        float g  = d_gauss_filter[offset];
 
         idx = clamp( block_x + threadIdx.x - offset - 4, src.cols );
         float val = src.ptr(block_y)[idx];
@@ -238,19 +249,22 @@ void Frame::allocDevGaussianPlane( )
     _d_smooth.cols = w;
     _d_smooth.rows = h;
 
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
-    _d_dx.data = (float*)ptr;
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int16_t), h );
+    assert( p % _d_dx.elemSize() == 0 );
+    _d_dx.data = (int16_t*)ptr;
     _d_dx.step = p;
     _d_dx.cols = w;
     _d_dx.rows = h;
 
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
-    _d_dy.data = (float*)ptr;
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int16_t), h );
+    assert( p % _d_dy.elemSize() == 0 );
+    _d_dy.data = (int16_t*)ptr;
     _d_dy.step = p;
     _d_dy.cols = w;
     _d_dy.rows = h;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
+    assert( p % _d_intermediate.elemSize() == 0 );
     _d_intermediate.data = (float*)ptr;
     _d_intermediate.step = p;
     _d_intermediate.cols = w;

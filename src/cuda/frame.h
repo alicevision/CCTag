@@ -11,6 +11,13 @@
 // #include <opencv2/imgproc/imgproc_c.h>
 // #include <opencv2/imgproc/types_c.h>
 
+namespace cv {
+    namespace cuda {
+        typedef PtrStepSz<int16_t> PtrStepSz16s;
+        typedef PtrStep<int16_t>   PtrStep16s;
+    }
+};
+
 namespace popart {
 
 typedef cudaEvent_t FrameEvent;
@@ -98,8 +105,10 @@ public:
     void applyGauss( );
 
     void hostDebugDownload( ); // async
-    static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzb& plane );
-    static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzf& plane );
+    template<class T>
+    static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>& plane );
+    // static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzb& plane );
+    // static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSzf& plane );
     void writeHostDebugPlane( std::string filename );
     void hostDebugCompare( unsigned char* pix );
 
@@ -111,13 +120,15 @@ private:
     cv::cuda::PtrStepSzb _d_plane;
     cv::cuda::PtrStepSzf _d_intermediate;
     cv::cuda::PtrStepSzf _d_smooth;
-    cv::cuda::PtrStepSzf _d_dx;
-    cv::cuda::PtrStepSzf _d_dy;
+    // cv::cuda::PtrStepSzf _d_dx;
+    // cv::cuda::PtrStepSzf _d_dy;
+    cv::cuda::PtrStepSz16s _d_dx;
+    cv::cuda::PtrStepSz16s _d_dy;
 
     unsigned char* _h_debug_plane;
     float*         _h_debug_smooth;
-    float*         _h_debug_dx;
-    float*         _h_debug_dy;
+    int16_t*       _h_debug_dx;
+    int16_t*       _h_debug_dy;
     FrameTexture*  _texture;
     FrameEvent*    _wait_for_upload;
 
