@@ -62,11 +62,56 @@ static const float h_gauss_filter[32] =
     0.0f
 };
 
+static unsigned char h_thinning_lut[256] = {
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 
+        1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 
+        1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 
+        1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 
+        0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 
+};
+
+// Note that the transposed h_thinning_lut_t is not really necessary
+// because flipping the 4 LSBs and 4 HSBs in the unsigned char that
+// I use for lookup is really quick. Therefore: remove soon.
+static unsigned char h_thinning_lut_t[256] = {
+        1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 
+        1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 
+        1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+};
+
 #define GAUSS_TABLE  0 // Gauss parameters
 #define GAUSS_DERIV 16 // first derivative
 __device__ __constant__ float d_gauss_filter[32];
 
 __device__ __constant__ float d_gauss_filter_by_256[16];
+
+__device__ __constant__ unsigned char d_thinning_lut[256];
+
+__device__ __constant__ unsigned char d_thinning_lut_t[256];
 
 #define V7_WIDTH    32
 
@@ -273,6 +318,37 @@ void edge_hysteresis( cv::cuda::PtrStepSzb map, cv::cuda::PtrStepSzb edges )
     edges.ptr(idy)[idx] = log;
 }
 
+__global__
+void thinning( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, bool first_run )
+{
+    const int block_x = blockIdx.x * V7_WIDTH;
+    const int idx     = block_x + threadIdx.x;
+    const int idy     = blockIdx.y;
+
+    uint8_t log = 0;
+
+    if( src.ptr(idy)[idx] == 0 ) return;
+
+    if( idx >= 1 && idy >=1 && idx <= src.cols-2 && idy <= src.rows-2 ) {
+        log |= ( src.ptr(idy-1)[idx-1] != 0 ) ? 0x80 : 0;
+        log |= ( src.ptr(idy-1)[idx  ] != 0 ) ? 0x01 : 0;
+        log |= ( src.ptr(idy-1)[idx+1] != 0 ) ? 0x02 : 0;
+        log |= ( src.ptr(idy  )[idx+1] != 0 ) ? 0x04 : 0;
+        log |= ( src.ptr(idy+1)[idx+1] != 0 ) ? 0x08 : 0;
+        log |= ( srs.ptr(idy+1)[idx  ] != 0 ) ? 0x10 : 0;
+        log |= ( src.ptr(idy+1)[idx-1] != 0 ) ? 0x20 : 0;
+        log |= ( src.ptr(idy  )[idx-1] != 0 ) ? 0x40 : 0;
+
+        if( first_run == false ) {
+            uint8_t b = log;
+            b   = ( b   << 4 ) & 0xf0;
+            log = ( ( log >> 4 ) & 0x0f ) | b;
+        }
+
+        dst.ptr(idy)[idx] = d_thinning_lut[log];
+    }
+}
+
 #if 0
 __global__
 void debug_gauss( cv::cuda::PtrStepSzf src )
@@ -306,6 +382,12 @@ void Frame::initGaussTable( )
     POP_CUDA_MEMCPY_HOST_TO_SYMBOL_SYNC( d_gauss_filter_by_256,
                                          h_gauss_filter_by_256,
                                          9*sizeof(float) );
+    POP_CUDA_MEMCPY_HOST_TO_SYMBOL_SYNC( d_thinning_lut,
+                                         h_thinning_lut,
+                                         256*sizeof(unsigned char) );
+    POP_CUDA_MEMCPY_HOST_TO_SYMBOL_SYNC( d_thinning_lut_t,
+                                         h_thinning_lut_t,
+                                         256*sizeof(unsigned char) );
 }
 
 __host__
@@ -359,6 +441,14 @@ void Frame::applyGauss( )
     edge_hysteresis
         <<<grid,block,0,_stream>>>
         ( _d_map, _d_edges );
+
+    thinning
+        <<<grid,block,0,_stream>>>
+        ( _d_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
+
+    thinning
+        <<<grid,block,0,_stream>>>
+        ( cv::cuda::PtrStepSzb(_d_intermediate), _d_edges );
 
 #if 0
     // very costly printf-debugging
