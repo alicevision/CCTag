@@ -335,10 +335,16 @@ void thinning( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, bool first_ru
         log |= ( src.ptr(idy-1)[idx+1] != 0 ) ? 0x02 : 0;
         log |= ( src.ptr(idy  )[idx+1] != 0 ) ? 0x04 : 0;
         log |= ( src.ptr(idy+1)[idx+1] != 0 ) ? 0x08 : 0;
-        log |= ( srs.ptr(idy+1)[idx  ] != 0 ) ? 0x10 : 0;
+        log |= ( src.ptr(idy+1)[idx  ] != 0 ) ? 0x10 : 0;
         log |= ( src.ptr(idy+1)[idx-1] != 0 ) ? 0x20 : 0;
         log |= ( src.ptr(idy  )[idx-1] != 0 ) ? 0x40 : 0;
 
+#if 1
+        if( first_run )
+            dst.ptr(idy)[idx] = d_thinning_lut[log];
+        else
+            dst.ptr(idy)[idx] = d_thinning_lut_t[log];
+#else
         if( first_run == false ) {
             uint8_t b = log;
             b   = ( b   << 4 ) & 0xf0;
@@ -346,6 +352,7 @@ void thinning( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, bool first_ru
         }
 
         dst.ptr(idy)[idx] = d_thinning_lut[log];
+#endif
     }
 }
 
@@ -444,11 +451,11 @@ void Frame::applyGauss( )
 
     thinning
         <<<grid,block,0,_stream>>>
-        ( _d_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
+        ( _d_edges, cv::cuda::PtrStepSzb(_d_intermediate), true );
 
     thinning
         <<<grid,block,0,_stream>>>
-        ( cv::cuda::PtrStepSzb(_d_intermediate), _d_edges );
+        ( cv::cuda::PtrStepSzb(_d_intermediate), _d_edges, false );
 
 #if 0
     // very costly printf-debugging
