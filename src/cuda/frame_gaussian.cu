@@ -115,22 +115,23 @@ __device__ __constant__ unsigned char d_thinning_lut_t[256];
 
 #define V7_WIDTH    32
 
+template <typename T>
 __device__
 inline
-bool outOfBounds( int x, int y, const cv::cuda::PtrStepSzb& edges )
+bool outOfBounds( int x, int y, const cv::cuda::PtrStepSz<T>& edges )
 {
     return ( x < 0 || x >= edges.cols || y < 0 || y >= edges.rows );
 }
 
-__device__
 template <typename T>
+__device__
 inline T d_abs( T value )
 {
     return ( ( value < 0 ) ? -value : value );
 }
 
-__device__
 template <typename T>
+__device__
 inline int d_sign( T value )
 {
     return ( ( value < 0 ) ? -1 : 1 );
@@ -391,7 +392,7 @@ void thinning_and_store( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, uin
 
     bool keep = thinning_inner( idx, idy, src, dst, false );
 
-    uint32_t mask = __balloc( keep );  // bitfield of warps with results
+    uint32_t mask = __ballot( keep );  // bitfield of warps with results
     uint32_t ct   = __popc( mask );    // horizontal reduce
     uint32_t leader = __ffs(mask) - 1; // the highest thread id with indicator==true
     uint32_t write_index;
@@ -403,7 +404,7 @@ void thinning_and_store( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, uin
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
     if( keep && write_index < edgeMax ) {
-        edgeCoords[write_index] = make_int4( idx, idy );
+        edgeCoords[write_index] = make_int2( idx, idy );
     }
 }
 
@@ -438,7 +439,7 @@ bool gradiant_descent_inner( int4&                  out_edge_info,
                              int32_t                thrGradient )
 {
     const int offset    = blockIdx.x * 32 + threadIdx.y;
-    const int direction = threadIdx.x == 0 ? 1 : -1;
+    int direction = threadIdx.x == 0 ? 1 : -1;
 
     if( offset >= edgeCount ) return false;
 
@@ -476,9 +477,9 @@ bool gradiant_descent_inner( int4&                  out_edge_info,
         const float dy2 = d_dy.ptr(idy)[idx];
         const float compdir = dx2*dxRef+dy2*dyRef;
         // dir = ( compdir < 0 ) ? -1 : 1;
-        dir = d_sign( compdir );
-        dx = dir * dx2;
-        dy = dir * dy2;
+        direction = d_sign( compdir );
+        dx = direction * dx2;
+        dy = direction * dy2;
     }
     if( ady > adx ) {
         updateXY(dy,dx,y,x,e,stpY,stpX);
@@ -489,7 +490,7 @@ bool gradiant_descent_inner( int4&                  out_edge_info,
 
     if( outOfBounds( x, y, edges ) ) return false;
 
-    ret = edges.ptr(y)[x];
+    uint8_t ret = edges.ptr(y)[x];
     if( ret ) {
         out_edge_info = make_int4( idx, idy, x, y );
         return true;
@@ -553,7 +554,7 @@ void gradiant_descent( int2*                  d_edgelist,
                                         d_dy,
                                         thrGradient );
 
-    uint32_t mask = __balloc( keep );  // bitfield of warps with results
+    uint32_t mask = __ballot( keep );  // bitfield of warps with results
     uint32_t ct   = __popc( mask );    // horizontal reduce
     uint32_t leader = __ffs(mask) - 1; // the highest thread id with indicator==true
     uint32_t write_index;
@@ -668,13 +669,13 @@ void Frame::applyGauss( )
         ( _d_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
 
     uint32_t edge_counter = 0;
-    POP_CUDA_MEMCPY_ASYNC( _d_edge_counter, &edge_count, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream );
+    POP_CUDA_MEMCPY_ASYNC( _d_edge_counter, &edge_count, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream, true );
 
     thinning_and_store
         <<<grid,block,0,_stream>>>
         ( cv::cuda::PtrStepSzb(_d_intermediate), _d_edges, _d_edge_counter, _edge_max, _d_edgelist );
 
-    POP_CUDA_MEMCPY_ASYNC( &edge_counter, _d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost, _stream );
+    POP_CUDA_MEMCPY_ASYNC( &edge_counter, _d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost, _stream, true );
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
     cudaStreamSynchronize( _stream );
@@ -689,14 +690,14 @@ void Frame::applyGauss( )
 
     {
         uint32_t dummy = 0;
-        POP_CUDA_MEMCPY_ASYNC( _d_edge_counter, &dummy, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream );
+        POP_CUDA_MEMCPY_ASYNC( _d_edge_counter, &dummy, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream, true );
     }
 
     gradiant_descent
         <<<grid,block,0,_stream>>>
         ( _d_edgelist, edge_counter, _d_edgelist_2, _d_edge_counter, _d_edges, nmax, _d_dx, _d_dy, threshold, _d_out_points );
 
-    POP_CUDA_MEMCPY_ASYNC( &edge_counter, _d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost,_stream );
+    POP_CUDA_MEMCPY_ASYNC( &edge_counter, _d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost,_stream, true );
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
     cudaStreamSynchronize( _stream );
