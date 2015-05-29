@@ -44,7 +44,10 @@ void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h )
 }
 
 __host__
-void TagPipe::tagframe( unsigned char* pix, const uint32_t pix_w, const uint32_t pix_h )
+void TagPipe::tagframe( unsigned char* pix,
+                        const uint32_t pix_w,
+                        const uint32_t pix_h,
+                        const cctag::Parameters& params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
@@ -74,7 +77,7 @@ void TagPipe::tagframe( unsigned char* pix, const uint32_t pix_w, const uint32_t
     }
 
     for( int i=0; i<4; i++ ) {
-        _frame[i]->applyGauss(); // async
+        _frame[i]->applyGauss( params ); // async
     }
 
     FrameEvent doneEv[4];

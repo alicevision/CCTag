@@ -723,7 +723,7 @@ void cctagDetection(CCTag::List& markers,
                                                            pix,
                                                            graySrc.width() * sizeof(unsigned char) ) );
 
-    pipe1.tagframe( pix, w, h );
+    pipe1.tagframe( pix, w, h, params );
     pipe1.debug( pix );
   }
 #endif

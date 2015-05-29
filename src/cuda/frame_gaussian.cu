@@ -384,6 +384,7 @@ void thinning( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
     thinning_inner( idx, idy, src, dst, true );
 }
 
+__global__
 void thinning_and_store( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, uint32_t* edgeCounter, uint32_t edgeMax, int2* edgeCoords )
 {
     const int block_x = blockIdx.x * V7_WIDTH;
@@ -538,6 +539,7 @@ void gradiant_descent( int2*                  d_edgelist,
                        uint32_t               edgeCount,
                        int4*                  d_new_edgelist,
                        uint32_t*              d_new_edge_counter,
+                       uint32_t               max_num_edges,
                        cv::cuda::PtrStepSzb   edges,
                        uint32_t               nmax,
                        cv::cuda::PtrStepSz16s d_dx,
@@ -565,7 +567,7 @@ void gradiant_descent( int2*                  d_edgelist,
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
-    if( keep && write_index < edgeMax ) {
+    if( keep && write_index < max_num_edges ) {
         d_new_edgelist[write_index] = out_edge_info;
     }
 }
@@ -613,7 +615,7 @@ void Frame::initGaussTable( )
 }
 
 __host__
-void Frame::applyGauss( )
+void Frame::applyGauss( const cctag::Parameters & params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
@@ -668,21 +670,22 @@ void Frame::applyGauss( )
         <<<grid,block,0,_stream>>>
         ( _d_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
 
+    const uint32_t max_num_edges = params._maxEdges;
     uint32_t edge_counter = 0;
-    POP_CUDA_MEMCPY_ASYNC( _d_edge_counter, &edge_count, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream, true );
+    POP_CUDA_MEMCPY_ASYNC( &_d_edge_counter, &edge_counter, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream, true );
 
     thinning_and_store
         <<<grid,block,0,_stream>>>
-        ( cv::cuda::PtrStepSzb(_d_intermediate), _d_edges, _d_edge_counter, _edge_max, _d_edgelist );
+        ( cv::cuda::PtrStepSzb(_d_intermediate), _d_edges, &_d_edge_counter, max_num_edges, _d_edgelist );
 
-    POP_CUDA_MEMCPY_ASYNC( &edge_counter, _d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost, _stream, true );
+    POP_CUDA_MEMCPY_ASYNC( &edge_counter, &_d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost, _stream, true );
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
     cudaStreamSynchronize( _stream );
     // Try to figure out how that can be done with CMake.
 
-    const uint32_t nmax      = params._distSearch;
-    const int32_t  threshold = params._thrGradientMagInVote;
+    const uint32_t nmax          = params._distSearch;
+    const int32_t  threshold     = params._thrGradientMagInVote;
     block.x = 2;
     block.y = 32;
     block.z = 0;
@@ -690,14 +693,14 @@ void Frame::applyGauss( )
 
     {
         uint32_t dummy = 0;
-        POP_CUDA_MEMCPY_ASYNC( _d_edge_counter, &dummy, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream, true );
+        POP_CUDA_MEMCPY_ASYNC( &_d_edge_counter, &dummy, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream, true );
     }
 
     gradiant_descent
         <<<grid,block,0,_stream>>>
-        ( _d_edgelist, edge_counter, _d_edgelist_2, _d_edge_counter, _d_edges, nmax, _d_dx, _d_dy, threshold, _d_out_points );
+        ( _d_edgelist, edge_counter, _d_edgelist_2, &_d_edge_counter, max_num_edges, _d_edges, nmax, _d_dx, _d_dy, threshold ); // , _d_out_points );
 
-    POP_CUDA_MEMCPY_ASYNC( &edge_counter, _d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost,_stream, true );
+    POP_CUDA_MEMCPY_ASYNC( &edge_counter, &_d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost,_stream, true );
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
     cudaStreamSynchronize( _stream );

@@ -4,12 +4,9 @@
 #include <assert.h>
 #include <string>
 
-// #include <opencv2/core/core.hpp>
-// #include <opencv2/core/core_c.h>
 #include <opencv2/core/cuda_types.hpp>
-// #include <opencv2/core/operations.hpp>
-// #include <opencv2/imgproc/imgproc_c.h>
-// #include <opencv2/imgproc/types_c.h>
+
+#include "../cctag/params.hpp"
 
 namespace cv {
     namespace cuda {
@@ -107,7 +104,7 @@ public:
     void allocDevGaussianPlane( );
 
     // implemented in frame_gaussian.cu
-    void applyGauss( );
+    void applyGauss( const cctag::Parameters& param );
 
     void hostDebugDownload( ); // async
 
@@ -134,6 +131,9 @@ private:
     cv::cuda::PtrStepSz32u _d_mag;
     cv::cuda::PtrStepSzb   _d_map;
     cv::cuda::PtrStepSzb   _d_edges;
+    int2*                  _d_edgelist;
+    int4*                  _d_edgelist_2;
+    uint32_t               _d_edge_counter;
 
     unsigned char* _h_debug_plane;
     float*         _h_debug_smooth;

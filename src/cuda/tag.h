@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+#include "../cctag/params.hpp"
 
 namespace popart
 {
@@ -14,7 +15,7 @@ class TagPipe
 public:
     TagPipe( );
     void prepframe( const uint32_t pix_w, const uint32_t pix_h );
-    void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h );
+    void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h, const cctag::Parameters& params );
     void debug( unsigned char* pix );
 };
 
