@@ -25,6 +25,9 @@
 #include <cctag/canny.hpp>
 #include <cctag/global.hpp>
 #include <cctag/fileDebug.hpp>
+#ifdef WITH_CUDA
+  #include "cuda/tag.h"
+#endif // WITH_CUDA
 
 #include <boost/foreach.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -38,6 +41,7 @@
 #include <cmath>
 #include <exception>
 #include <fstream>
+#include <sstream>
 #include <list>
 #include <utility>
 
@@ -240,7 +244,11 @@ void completeFlowComponent(
     catch (cv::Exception& e)
     {
       CCTAG_COUT_DEBUG( "OpenCV exception" );
+#ifdef WITH_CUDA
+      e.what();
+#else
       const char* err_msg = e.what();
+#endif
     }
   }
   catch (...)
@@ -353,7 +361,11 @@ void flowComponentAssembling(
 
   boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d = tstop - tstart;
+#ifdef WITH_CUDA
+  d.total_milliseconds();
+#else
   const double spendTime = d.total_milliseconds();
+#endif
 }
 
 
@@ -694,7 +706,27 @@ void cctagDetection(CCTag::List& markers,
   static const CCTagMarkersBank bank(params._cctagBankFilename);
 
   boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
+#ifdef WITH_CUDA
+  {
+    popart::TagPipe pipe1;
 
+    uint32_t w = graySrc.width();
+    uint32_t h = graySrc.height();
+    pipe1.prepframe( w, h );
+
+    unsigned char* pix = new unsigned char[w*h];
+    memset( pix, 0, w*h );
+
+    boost::gil::copy_pixels( graySrc,
+                             boost::gil::interleaved_view( graySrc.width(),
+                                                           graySrc.height(),
+                                                           pix,
+                                                           graySrc.width() * sizeof(unsigned char) ) );
+
+    pipe1.tagframe( pix, w, h, params );
+    pipe1.debug( pix );
+  }
+#endif
   // Views for:
   // canny
   typedef kth_channel_view_type<0, rgb32f_view_t>::type CannyView;
