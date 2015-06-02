@@ -39,10 +39,11 @@ IF(CUDA_FOUND)
 ELSE(CUDA_FOUND)
     SET(CUDA_cpp "")
 
-    add_library( CCTag STATIC ${CCTag_cpp} )
+    add_library( CCTag SHARED ${CCTag_cpp} )
+    #add_library( CCTagStatic STATIC ${CCTag_cpp} )
 ENDIF(CUDA_FOUND)
 
-target_link_libraries( CCTag PUBLIC
+SET(CCTAG_LINK_LIBRARIES
     ${OpenCV_LIBS}
     ${Boost_LIBRARIES}
     ${OPTPP_LIBRARIES}
@@ -58,6 +59,9 @@ target_link_libraries( CCTag PUBLIC
     dl
     ${Gomp_LIBRARIES} )
 
+target_link_libraries( CCTag PUBLIC ${CCTAG_LINK_LIBRARIES} )
+#target_link_libraries( CCTagStatic PUBLIC ${CCTAG_LINK_LIBRARIES} )
+
 target_include_directories( CCTag PUBLIC .)
 
 set(CCTagDetect_cpp ./cctag/detection/main.cpp)
@@ -72,6 +76,15 @@ endif(CUDA_FOUND)
 
 install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 
-file(GLOB_RECURSE FILES_TO_DEPLOY ./cctag/*.hpp)
-INSTALL( FILES ${FILES_TO_DEPLOY} DESTINATION include/cctag )
-INSTALL( DIRECTORY ${DIRS_TO_DEPLOY} DESTINATION include/cctag )
+set( FILES_TO_DEPLOY
+      ./cctag/view.hpp
+      ./cctag/ICCTag.hpp
+      ./cctag/params.hpp
+      ./cctag/progBase/MemoryPool.hpp
+      ./cctag/progBase/IMemoryPool.hpp
+      ./cctag/progBase/pattern/Singleton.hpp)
+
+foreach ( file ${FILES_TO_DEPLOY} )
+get_filename_component( dir ${file} DIRECTORY )
+install( FILES ${file} DESTINATION include/${dir} )
+endforeach()
