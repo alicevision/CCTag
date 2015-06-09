@@ -2,7 +2,6 @@
 <!DOCTYPE boost_serialization>
 <boost_serialization signature="serialization::archive" version="9">
 <CCTagsParams class_id="0" tracking_level="0" version="0">
-	<_cctagBankFilename>cctagLibraries/4Crowns/ids.txt</_cctagBankFilename>
 	<_cannyThrLow>0.004</_cannyThrLow>
 	<_cannyThrHigh>0.02</_cannyThrHigh>
 	<_distSearch>30</_distSearch>

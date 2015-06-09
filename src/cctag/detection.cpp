@@ -694,6 +694,7 @@ void cctagDetection(CCTag::List& markers,
         const std::size_t frame, 
         const boost::gil::gray8_view_t& graySrc,
         const Parameters & params,
+        const std::string & cctagBankFilename,
         const bool bDisplayEllipses)
 {
   POP_ENTER;
@@ -703,7 +704,7 @@ void cctagDetection(CCTag::List& markers,
   
   std::srand(1);
 
-  static const CCTagMarkersBank bank(params._cctagBankFilename);
+  static const CCTagMarkersBank bank(cctagBankFilename);
 
   boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
 #ifdef WITH_CUDA

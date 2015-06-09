@@ -11,6 +11,7 @@ void cctagDetection(
       const std::size_t frame,
       const boost::gil::gray8_view_t& graySrc,
       const cctag::Parameters & params,
+      const std::string & cctagBankFilename,
       const bool bDisplayEllipses)
 {
   
@@ -20,7 +21,9 @@ void cctagDetection(
   cctag::cctagDetection(cctags,
         frame, 
         graySrc,
-        params, bDisplayEllipses);
+        params, 
+        cctagBankFilename,
+        bDisplayEllipses);
   
   
   BOOST_FOREACH(const cctag::CCTag & cctag, cctags)

@@ -16,7 +16,6 @@
 namespace cctag
 {
 
-static const std::string kDefaultCCTagBankFilename( "/home/lilian/cpp_workspace/CCTag/cctagLibraries/4Crowns/ids.txt" );
 static const std::size_t kDefaultDistSearch = 30;
 static const std::size_t kDefaultNumCrowns  = 4;
 static const std::size_t kDefaultNumCircles = 8;
@@ -47,7 +46,6 @@ static const bool kDefaultWriteOutput = false;
 static const bool kDefaultDoIdentification = true;
 static const uint32_t kDefaultMaxEdges = 20000;
 
-static const std::string kParamCCTagBankFilename( "kParamCCTagBankFilename" );
 static const std::string kParamCannyThrLow( "kParamCannyThrLow" );
 static const std::string kParamCannyThrHigh( "kParamCannyThrHigh" );
 static const std::string kParamDistSearch( "kParamDistSearch" );
@@ -83,8 +81,7 @@ struct Parameters
 {
   friend class boost::serialization::access;
   Parameters()
-    : _cctagBankFilename( kDefaultCCTagBankFilename )
-    , _cannyThrLow( kDefaultCannyThrLow )
+    : _cannyThrLow( kDefaultCannyThrLow )
     , _cannyThrHigh( kDefaultCannyThrHigh )
     , _distSearch( kDefaultDistSearch )
     , _thrGradientMagInVote( kDefaultThrGradientMagInVote )
@@ -116,8 +113,6 @@ struct Parameters
     _nCircles = 2*_numCrowns;
   }
 
-  std::string _cctagBankFilename; // path of the cctag bank containing the radius radio
-  // of the CCTag library
   float _cannyThrLow; // canny low threshold
   float _cannyThrHigh; // canny high threshold
   std::size_t _distSearch; // maximum distance (in pixels) of research from one edge points
@@ -160,7 +155,6 @@ struct Parameters
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    ar & BOOST_SERIALIZATION_NVP( _cctagBankFilename );
     ar & BOOST_SERIALIZATION_NVP( _cannyThrLow );
     ar & BOOST_SERIALIZATION_NVP( _cannyThrHigh );
     ar & BOOST_SERIALIZATION_NVP( _distSearch );

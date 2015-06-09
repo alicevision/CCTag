@@ -46,7 +46,7 @@ namespace bfs = boost::filesystem;
 
 static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & params, std::string outputFileName = "")
+void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & params, const std::string & cctagBankFilename, std::string outputFileName = "")
 {
     POP_ENTER;
     
@@ -64,7 +64,7 @@ void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & p
     CCTagVisualDebug::instance().setImageFileName(outputFileName);
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
     
-    cctagDetection(markers, frame, view._grayView, params, true);
+    cctagDetection(markers, frame, view._grayView, params, cctagBankFilename, true);
     
     CCTagFileDebug::instance().outPutAllSessions();
     CCTagFileDebug::instance().clearSessions();
@@ -103,10 +103,18 @@ int main(int argc, char** argv)
         cctag::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
         const std::string filename(argv[1]);
         
+        // Marker bank file name (file containing the radius ratios)
+        std::string  cctagBankFilename;
+        if (argc >= 3) {
+          cctagBankFilename = argv[2];
+        }else{
+          cctagBankFilename = std::string("cctagLibraries/4Crowns/ids.txt");
+        }
+        
         // Set all the parameters
         std::string paramsFilename;
-        if (argc >= 3) {
-            paramsFilename = argv[2];
+        if (argc >= 4) {
+          paramsFilename = argv[3];
         }
         cctag::Parameters params;
         
@@ -152,7 +160,7 @@ int main(int argc, char** argv)
           }*/
 
           // Call the CCTag detection
-          detection(0, my_view, params, myPath.stem().string());
+          detection(0, my_view, params, cctagBankFilename, myPath.stem().string());
           
         } else if (ext == ".avi" )
         {
@@ -183,7 +191,7 @@ int main(int argc, char** argv)
             outFileName << std::setfill('0') << std::setw(5) << frameId;
             
             // Call the CCTag detection
-            detection(frameId, cctagView, params, outFileName.str());
+            detection(frameId, cctagView, params, cctagBankFilename, outFileName.str());
             
             ++frameId; 
           }
