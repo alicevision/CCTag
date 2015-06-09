@@ -3,6 +3,7 @@ TODO
 Some examples:
 ./configure_user -DCMAKE_BUILD_TYPE=Debug
 ./configure_user -DCMAKE_BUILD_TYPE=Release -DCCTAG_SERIALIZE=1 -DCCTAG_NO_COUT=0
+./configure_lilian -DCMAKE_BUILD_TYPE=Release -DCCTAG_SERIALIZE=0 -DCCTAG_NO_COUT=0 -DCCTAG_BUILD_MODE=DEBUG
 
 configure_user:
 
