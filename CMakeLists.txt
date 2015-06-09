@@ -8,8 +8,10 @@ include(ExternalProject)
 
 project( CCTag )
 
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
+# load local machine config <hostname>.cmake
+site_name(MACHINE_NAME)
+include("${MACHINE_NAME}.cmake")
+
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
 set(USE_CUDA false CACHE BOOL "compile code for CUDA processing")
