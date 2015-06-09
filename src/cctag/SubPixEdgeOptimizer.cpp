@@ -130,7 +130,6 @@ Point2dN<double> SubPixEdgeOptimizer::operator()( const double widthContour, con
 
 	objfcn.optimize();
 
-	objfcn.printStatus("Solution from quasi-newton");
 	objfcn.cleanup();
 
 	//#ifdef REG_TEST
