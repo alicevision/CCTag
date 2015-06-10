@@ -28,6 +28,8 @@
 #include <terry/sampler/all.hpp>
 #include <terry/sampler/resample_subimage.hpp>
 
+#include <third_party/cmdLine/cmdLine.h>
+
 #include <opencv/cv.h>
 #include <opencv2/videoio.hpp>
 #include <opencv2/core/core.hpp>
@@ -91,117 +93,162 @@ void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & p
     POP_LEAVE;
 }
 
+void printUsageErr( const char* const argv0 )
+{
+  std::cerr << "Usage: " << argv0 << '\n'
+  << "[-i|--input path] \n"
+  << "[-b|--bank path] \n"
+  << "\n[Optional]\n"
+  << "[-p|--params path] \n"
+  << std::endl;
+}
+
 /*************************************************************/
 /*                    Main entry                             */
 /*************************************************************/
 int main(int argc, char** argv)
 {
-    try {
-        if (argc <= 1) {
-            BOOST_THROW_EXCEPTION(cctag::exception::Bug() << cctag::exception::user() + kUsageString);
-        }
-        cctag::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
-        const std::string filename(argv[1]);
-        
-        // Marker bank file name (file containing the radius ratios)
-        std::string  cctagBankFilename;
-        if (argc >= 3) {
-          cctagBankFilename = argv[2];
-        }else{
-          cctagBankFilename = std::string("cctagLibraries/4Crowns/ids.txt");
-        }
-        
-        // Set all the parameters
-        std::string paramsFilename;
-        if (argc >= 4) {
-          paramsFilename = argv[3];
-        }
-        cctag::Parameters params;
-        
-        if (paramsFilename != "") {
-          // Read the parameter file provided by the user
-          std::ifstream ifs(paramsFilename.c_str());
-          boost::archive::xml_iarchive ia(ifs);
-          ia >> boost::serialization::make_nvp("CCTagsParams", params);
-          CCTAG_COUT("Parameters contained in " << paramsFilename << " are used.");
-        } else {
-          // Use the default parameters and save them in defaultParameters.xml
-          paramsFilename = "defaultParameters.xml";
-          std::ofstream ofs(paramsFilename.c_str());
-          boost::archive::xml_oarchive oa(ofs);
-          oa << boost::serialization::make_nvp("CCTagsParams", params);
-          CCTAG_COUT("Parameter file not provided. Default parameters are used.");
-        }
+  cctag::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
+
+  std::string filename = "";
+  std::string  cctagBankFilename = "";
+  std::string paramsFilename = "";
+
+  CmdLine cmd;
+  cmd.add( make_option('i', filename, "input") );
+  cmd.add( make_option('b', cctagBankFilename, "cctagBank") );
+  cmd.add( make_option('p', paramsFilename, "parameters") );
+
+  try {
+      if (argc == 1) throw std::string("Invalid command line parameters.");
+      cmd.process(argc, argv);
+  } catch(const std::string& s) {
+    printUsageErr(argv[0]);
+    return EXIT_FAILURE;
+  }
+
+  std::cout << "You called: " <<std::endl
+      << argv[0] << std::endl
+      << "--input " << filename << std::endl
+      << "--bank " << cctagBankFilename << std::endl
+      << "--params " << paramsFilename << std::endl;
+
+  // Check input path
+  if (filename.compare("") != 0){
+    if (!boost::filesystem::exists(filename)) {
+      std::cerr << std::endl
+        << "The input file \""<< filename << "\" is missing" << std::endl;
+      return EXIT_FAILURE;
+    }
+  }else{
+    std::cerr << std::endl
+        << "An input file is required" << std::endl;
+    printUsageErr(argv[0]);
+    return EXIT_FAILURE;
+  }
+
+  // Check cctag bank path
+  if (cctagBankFilename.compare("") != 0){
+    if (!boost::filesystem::exists(cctagBankFilename)) {
+      std::cerr << std::endl
+        << "The input file \""<< cctagBankFilename << "\" is missing" << std::endl;
+      return EXIT_FAILURE;
+    }
+  }else{
+    std::cerr << std::endl
+        << "An bank file is required" << std::endl;
+    printUsageErr(argv[0]);
+    return EXIT_FAILURE;
+  }
+
+  // Check the (optional) parameters path
+  cctag::Parameters params;
+  
+  if (paramsFilename != "") {
+    if (!boost::filesystem::exists(paramsFilename)) {
+      std::cerr << std::endl
+        << "The input file \""<< paramsFilename << "\" is missing" << std::endl;
+      return EXIT_FAILURE;
+    }
+
+    // Read the parameter file provided by the user
+    std::ifstream ifs(paramsFilename.c_str());
+    boost::archive::xml_iarchive ia(ifs);
+    ia >> boost::serialization::make_nvp("CCTagsParams", params);
+  } else {
+    // Use the default parameters and save them in defaultParameters.xml
+    paramsFilename = "defaultParameters.xml";
+    std::ofstream ofs(paramsFilename.c_str());
+    boost::archive::xml_oarchive oa(ofs);
+    oa << boost::serialization::make_nvp("CCTagsParams", params);
+    CCTAG_COUT("Parameter file not provided. Default parameters are used.");
+  }
 
 #ifdef WITH_CUDA
-        popart::device_prop_t deviceInfo;
-        deviceInfo.print( );
+  popart::device_prop_t deviceInfo;
+  deviceInfo.print( );
 #endif // WITH_CUDA
 
-        CCTagVisualDebug::instance().initializeFolders(filename, params._numCrowns);
-        bfs::path myPath(filename);
-        std::string ext(myPath.extension().string());
-        
-        if ( (ext == ".png") || (ext == ".jpg") ) {
+  CCTagVisualDebug::instance().initializeFolders(filename, params._numCrowns);
+  bfs::path myPath(filename);
+  std::string ext(myPath.extension().string());
 
-          POP_INFO << "looking at image " << myPath.string() << std::endl;
-          
-          cctag::View my_view( filename );
+  if ( (ext == ".png") || (ext == ".jpg") ) {
 
-          rgb8_image_t& image = my_view._image;
-          rgb8_view_t&  svw   = my_view._view;
+    POP_INFO << "looking at image " << myPath.string() << std::endl;
 
-          // Increase image size.
-          /*{
-                  rgb8_image_t simage;
-                  simage.recreate( 2 * image.width(), 2 * image.height() );
-                  rgb8_view_t osvw( view( simage ) );
-                  terry::resize_view( svw, osvw, terry::sampler::bicubic_sampler() );
-          }*/
+    cctag::View my_view( filename );
 
-          // Call the CCTag detection
-          detection(0, my_view, params, cctagBankFilename, myPath.stem().string());
-          
-        } else if (ext == ".avi" )
-        {
-          CCTAG_COUT("*** Video mode ***");
-          POP_INFO << "looking at video " << myPath.string() << std::endl;
-          
-          // open video and check
-          cv::VideoCapture video(filename.c_str());
-          if(!video.isOpened())
-          {
-            CCTAG_COUT("Unable to open the video : " << filename); return -1;
-          }
+    rgb8_image_t& image = my_view._image;
+    rgb8_view_t&  svw   = my_view._view;
 
-          // play loop
-          int lastFrame = video.get(CV_CAP_PROP_FRAME_COUNT);
-          int frameId = 0;
-          while( video.get(CV_CAP_PROP_POS_FRAMES) < lastFrame )
-          {
-            cv::Mat frame;
-            video >> frame;
-            cv::Mat imgGray;
-            cv::cvtColor( frame, imgGray, CV_BGR2GRAY );
-            cctag::View cctagView((const unsigned char *) imgGray.data, imgGray.cols, imgGray.rows , imgGray.step );
-            cctagView._view = boost::gil::interleaved_view(imgGray.cols, imgGray.rows, (boost::gil::rgb8_pixel_t*) frame.data, frame.step );
+    // Increase image size.
+    /*{
+            rgb8_image_t simage;
+            simage.recreate( 2 * image.width(), 2 * image.height() );
+            rgb8_view_t osvw( view( simage ) );
+            terry::resize_view( svw, osvw, terry::sampler::bicubic_sampler() );
+    }*/
 
-            // Set the output folder
-            std::stringstream outFileName;
-            outFileName << std::setfill('0') << std::setw(5) << frameId;
-            
-            // Call the CCTag detection
-            detection(frameId, cctagView, params, cctagBankFilename, outFileName.str());
-            
-            ++frameId; 
-          }
-        } else {
-            throw std::logic_error("Unrecognized input.");
-        }
-    } catch (...) {
-        std::cerr << boost::current_exception_diagnostic_information() << std::endl;
-        return 1;
+    // Call the CCTag detection
+    detection(0, my_view, params, cctagBankFilename, myPath.stem().string());
+
+  } else if (ext == ".avi" )
+  {
+    CCTAG_COUT("*** Video mode ***");
+    POP_INFO << "looking at video " << myPath.string() << std::endl;
+
+    // open video and check
+    cv::VideoCapture video(filename.c_str());
+    if(!video.isOpened())
+    {
+      CCTAG_COUT("Unable to open the video : " << filename); return -1;
     }
-    return 0;
+
+    // play loop
+    int lastFrame = video.get(CV_CAP_PROP_FRAME_COUNT);
+    int frameId = 0;
+    while( video.get(CV_CAP_PROP_POS_FRAMES) < lastFrame )
+    {
+      cv::Mat frame;
+      video >> frame;
+      cv::Mat imgGray;
+      cv::cvtColor( frame, imgGray, CV_BGR2GRAY );
+      cctag::View cctagView((const unsigned char *) imgGray.data, imgGray.cols, imgGray.rows , imgGray.step );
+      cctagView._view = boost::gil::interleaved_view(imgGray.cols, imgGray.rows, (boost::gil::rgb8_pixel_t*) frame.data, frame.step );
+
+      // Set the output folder
+      std::stringstream outFileName;
+      outFileName << std::setfill('0') << std::setw(5) << frameId;
+
+      // Call the CCTag detection
+      detection(frameId, cctagView, params, cctagBankFilename, outFileName.str());
+
+      ++frameId; 
+    }
+  } else {
+      throw std::logic_error("Unrecognized input.");
+  }
+  return 0;
 }
 

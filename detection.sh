@@ -1,2 +1,2 @@
-# Simple use
-build/src/detection sample/00001.png parameters/param4.xml
+# Example
+build/src/detection -i sample/00003.jpg -b cctagLibraries/4Crowns/ids.txt -p parameters/param4.xml
