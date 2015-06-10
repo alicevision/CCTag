@@ -465,7 +465,7 @@ void cctagDetectionFromEdges(
   boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d1 = tstop1 - tstart0;
   const double spendTime1 = d1.total_milliseconds();
-  CCTAG_COUT_OPTIM(" ============ TIME FOR THE 1ST LOOP ============= " << spendTime1 << " ms");
+  CCTAG_COUT_OPTIM(" Time in the 1st loop " << spendTime1 << " ms");
 
 #if defined CCTAG_SERIALIZE && defined DEBUG
   std::stringstream outFlowComponentsAssembling;
@@ -640,7 +640,7 @@ void cctagDetectionFromEdges(
   boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d2 = tstop2 - tstop1;
   const double spendTime2 = d2.total_milliseconds();
-  CCTAG_COUT_OPTIM(" ============ TIME FOR THE 2ND LOOP ============= " << spendTime2 << " ms");
+  CCTAG_COUT_OPTIM("Time in the 2nd loop" << spendTime2 << " ms");
 
   //	markers.sort();
 
@@ -706,7 +706,10 @@ void cctagDetection(CCTag::List& markers,
 
   static const CCTagMarkersBank bank(cctagBankFilename);
 
-  boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+#endif
+  
 #ifdef WITH_CUDA
   {
     popart::TagPipe pipe1;
@@ -753,12 +756,14 @@ void cctagDetection(CCTag::List& markers,
 
   cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
 
-  boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
 
-  boost::posix_time::time_duration d = tstop - tstart;
+  boost::posix_time::time_duration d = t1 - t0;
   const double spendTime = d.total_milliseconds();
-  CCTAG_COUT("Detection step: " << spendTime);
-
+  CCTAG_COUT_OPTIM("TIME IN DETECTION: " << spendTime << " ms");
+#endif
+  
   // Identification step
   // To decomment -- enable cuts selection, homography computation and identification
   if (params._doIdentification)
@@ -775,7 +780,7 @@ void cctagDetection(CCTag::List& markers,
               cannyGradX,
               cannyGradY,
               params);
-
+      
       cctag.setStatus(detected);
 
       try
@@ -804,6 +809,12 @@ void cctagDetection(CCTag::List& markers,
         //it = markers.erase( it );
       }
     }
+#ifdef CCTAG_OPTIM
+      boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
+      boost::posix_time::time_duration d2 = t2 - t1;
+      const double spendTime2 = d2.total_milliseconds();
+      CCTAG_COUT_OPTIM("TIME IN IDENTIFICATION: " << spendTime2 << " ms");
+#endif
   }
 
   markers.sort();

@@ -917,6 +917,10 @@ int identify(
     CCTAG_COUT("Error : unknown number of crowns");
   }
 
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+#endif
+  
   std::vector<cctag::ImageCut> cuts;
   {
     //CCTAG_TCOUT( "Before collectCuts" );
@@ -930,14 +934,21 @@ int identify(
     //CCTAG_TCOUT( "After collectCuts, timer: " << spendTime );
     //CCTAG_TCOUT_VAR( cuts.size() );
   }
+  
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
+
+  boost::posix_time::time_duration d = t1 - t0;
+  double spendTime = d.total_milliseconds();
+  CCTAG_COUT_OPTIM("Time in collectCuts: " << spendTime << " ms");
+#endif
 
   if ( cuts.size() == 0 )
   {
     // Can happen when an object or the image frame is occluding a part of all available cuts.
     return status::no_collected_cuts;
   }
-
-
+  
   std::vector< cctag::ImageCut > cutSelection;
   std::vector< cctag::Point2dN<double> > prSelection;
 
@@ -952,6 +963,14 @@ int identify(
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
   }
+  
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
+
+  d = t2 - t1;
+  spendTime = d.total_milliseconds();
+  CCTAG_COUT_OPTIM("Time in selectCut: " << spendTime << " ms");
+#endif
 
   if ( prSelection.size() == 0 )
   {
@@ -971,6 +990,14 @@ int identify(
       CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." );
       return status::opti_has_diverged;
     }
+    
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t3(boost::posix_time::microsec_clock::local_time());
+
+  d = t3 - t2;
+  spendTime = d.total_milliseconds();
+  CCTAG_COUT_OPTIM("Time in refineConicFamily: " << spendTime << " ms");
+#endif
 
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
