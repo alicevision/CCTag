@@ -232,7 +232,7 @@ void cctagMultiresDetection(
             --i)
   {
 
-    CCTAG_COUT(":::::::::::::::: Multiresolution level " << i - 1 <<
+    CCTAG_COUT_OPTIM(":::::::::::::::: Multiresolution level " << i - 1 <<
              " :::::::::::::::::::");
 
     CCTag::List & markersList = pyramidMarkers[i - 1];
@@ -290,7 +290,7 @@ void cctagMultiresDetection(
     }
   }
 
-  CCTAG_COUT(":::::::::::::::: Multiresolution level 0 :::::::::::::::::::");
+  CCTAG_COUT_OPTIM(":::::::::::::::: Multiresolution level 0 :::::::::::::::::::");
 
   rgb32f_view_t subCannyRGB = multiresCanny.getView(0);
   CannyView cannyView;
@@ -325,8 +325,8 @@ void cctagMultiresDetection(
 
     cctagDetectionFromEdges(markersList, points, multiresSrc.getView(0),
             cannyGradX, cannyGradY, edgesMap, frame, 0, 1.0, params);
-    CCTAG_COUT("After 2st cctagDetection");
-    CCTAG_COUT_VAR(markersList.size());
+    CCTAG_COUT_OPTIM("After 2st cctagDetection");
+    CCTAG_COUT_VAR_OPTIM(markersList.size());
 
     CCTagVisualDebug::instance().initBackgroundImage(multiresSrc.getView(0));
     CCTagVisualDebug::instance().newSession("viewLevel0");

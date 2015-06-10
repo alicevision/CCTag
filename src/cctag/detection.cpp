@@ -83,7 +83,7 @@ void constructFlowComponentFromSeed(
       }
     }
 
-    // All flow components will be next sorted based on this characteristic (scalar)
+    // All flow components WILL BE next sorted based on this characteristic (scalar)
     candidate._averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
 
     if (vCandidateLoopOne.size() > 0)
@@ -465,7 +465,7 @@ void cctagDetectionFromEdges(
   boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d1 = tstop1 - tstart0;
   const double spendTime1 = d1.total_milliseconds();
-  CCTAG_COUT(" ============ TIME FOR THE 1ST LOOP ============= " << spendTime1 << " ms");
+  CCTAG_COUT_OPTIM(" ============ TIME FOR THE 1ST LOOP ============= " << spendTime1 << " ms");
 
 #if defined CCTAG_SERIALIZE && defined DEBUG
   std::stringstream outFlowComponentsAssembling;
@@ -640,7 +640,7 @@ void cctagDetectionFromEdges(
   boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d2 = tstop2 - tstop1;
   const double spendTime2 = d2.total_milliseconds();
-  CCTAG_COUT(" ============ TIME FOR THE 2ND LOOP ============= " << spendTime2 << " ms");
+  CCTAG_COUT_OPTIM(" ============ TIME FOR THE 2ND LOOP ============= " << spendTime2 << " ms");
 
   //	markers.sort();
 
