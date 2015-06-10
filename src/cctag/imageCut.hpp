@@ -11,6 +11,7 @@ namespace cctag {
 class ImageCut
 {
   
+public:
   ImageCut()
   {
     
@@ -19,7 +20,7 @@ class ImageCut
   ImageCut(Point2dN<double> pStart, Point2dN<double> pStop)
   : _start(pStart), _stop(pStop)
   {
-    _imgSignal.reserve(cctag::kDefaultSampleCutLength);
+    _imgSignal.resize(cctag::kDefaultSampleCutLength);
   }
   
   virtual ~ImageCut()
