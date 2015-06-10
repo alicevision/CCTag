@@ -640,7 +640,7 @@ void cctagDetectionFromEdges(
   boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d2 = tstop2 - tstop1;
   const double spendTime2 = d2.total_milliseconds();
-  CCTAG_COUT(" ============ TIME FOR THE 1ST LOOP ============= " << spendTime2 << " ms");
+  CCTAG_COUT(" ============ TIME FOR THE 2ND LOOP ============= " << spendTime2 << " ms");
 
   //	markers.sort();
 
