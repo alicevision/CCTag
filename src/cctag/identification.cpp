@@ -875,13 +875,7 @@ int identify(
   const boost::gil::gray8_view_t & sourceView,
   const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & dx,
   const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & dy,
-  const std::size_t numCrown,
-  const std::size_t numCutsInIdentStep,
-  const std::size_t numSamplesOuterEdgePointsRefinement,
-  const std::size_t cutsSelectionTrials,
-  const std::size_t sampleCutLength,
-  const double minIdentProba,
-  const bool useLmDif )
+  const cctag::Parameters & params)
 {
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
   const std::vector< cctag::Point2dN<double> > & outerEllipsePoints = cctag.rescaledOuterEllipsePoints();
@@ -909,12 +903,12 @@ int identify(
 
   std::size_t startOffset = 0;
 
-  if (numCrown == 3)
+  if (params._numCrowns == 3)
   {
     // Signal begin at 25% of the radius (for 3 crowns markers).
-    startOffset = sampleCutLength-(2*numCrown-1)*0.15*sampleCutLength;	// Considering 6 radius.
+    startOffset = params._sampleCutLength-(2*params._numCrowns-1)*0.15*params._sampleCutLength;	// Considering 6 radius.
   }
-  else if (numCrown == 4)
+  else if (params._numCrowns == 4)
   {
     startOffset = 26;
   }
@@ -929,7 +923,7 @@ int identify(
     // Collect cuts around the extern ellipse with the interval [startOffset;1.0] not outside the image
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
     // Collect cuts around the extern ellipse with the interval [startOffset;1.0] not outside the image
-    collectCuts( cuts, sourceView, ellipse.center(), ellipsePoints, sampleCutLength, startOffset);
+    collectCuts( cuts, sourceView, ellipse.center(), ellipsePoints, params._sampleCutLength, startOffset);
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
@@ -950,9 +944,9 @@ int identify(
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
     
-    selectCut( cutSelection, prSelection, numCutsInIdentStep, cuts, sourceView, 
-            dx, dy, refinedSegSize, numSamplesOuterEdgePointsRefinement,
-            cutsSelectionTrials );
+    selectCut( cutSelection, prSelection, params._numCutsInIdentStep, cuts, sourceView, 
+            dx, dy, refinedSegSize, params._numSamplesOuterEdgePointsRefinement,
+            params._cutsSelectionTrials );
     
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
@@ -969,7 +963,7 @@ int identify(
 
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-    bool hasConverged = refineConicFamily( cctag, fsig, sampleCutLength, sourceView, ellipse, prSelection, useLmDif );
+    bool hasConverged = refineConicFamily( cctag, fsig, params._sampleCutLength, sourceView, ellipse, prSelection, params._useLMDif );
     if( !hasConverged )
     {
       CCTAG_COUT_DEBUG(ellipse);
@@ -999,7 +993,7 @@ int identify(
 
     if(0)
     {
-      idFinal = orazioDistance( idSet, radiusRatios, fsig, startOffset, minIdentProba, sizeIds);
+      idFinal = orazioDistance( idSet, radiusRatios, fsig, startOffset, params._minIdentProba, sizeIds);
       // If success
       if ( idFinal )
       {
@@ -1016,7 +1010,7 @@ int identify(
     }
     else
     {
-      idFinal = orazioDistanceRobust( vScore, radiusRatios, fsig, startOffset, minIdentProba, sizeIds);
+      idFinal = orazioDistanceRobust( vScore, radiusRatios, fsig, startOffset, params._minIdentProba, sizeIds);
 #ifdef GRIFF_DEBUG
       if( idFinal )
       {
@@ -1052,7 +1046,7 @@ int identify(
         cctag.setIdSet( idSet );
         cctag.setRadiusRatios( radiusRatios[iMax] );
 
-        idFinal = (score > minIdentProba);
+        idFinal = (score > params._minIdentProba);
 #ifdef GRIFF_DEBUG
       }
 #endif // GRIFF_DEBUG

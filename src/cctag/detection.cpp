@@ -774,13 +774,7 @@ void cctagDetection(CCTag::List& markers,
               graySrc,
               cannyGradX,
               cannyGradY,
-              params._numCrowns,
-              params._numCutsInIdentStep,
-              params._numSamplesOuterEdgePointsRefinement,
-              params._cutsSelectionTrials,
-              params._sampleCutLength,
-              params._minIdentProba,
-              params._useLMDif);
+              params);
 
       cctag.setStatus(detected);
 

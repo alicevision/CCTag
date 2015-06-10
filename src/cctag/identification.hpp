@@ -212,14 +212,7 @@ int identify(
 	const boost::gil::gray8_view_t & sourceView,
 	const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & dx,
 	const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & dy,
-	const std::size_t numCrown,
-	const std::size_t numCutsInIdentStep,
-	const std::size_t numSamplesOuterEdgePointsRefinement,
-	const std::size_t cutsSelectionTrials,
-	const std::size_t sampleCutLength,
-	const double minIdentProba,
-	const bool useLmDif );
-
+	const cctag::Parameters & params);
 } // namespace cctag
 
 #endif
