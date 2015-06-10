@@ -1,5 +1,5 @@
 #include <cctag/SubPixEdgeOptimizer.hpp>
-#include <cctag/imageCut.hpp>
+#include <cctag/ImageCut.hpp>
 #include <cctag/geometry/distance.hpp>
 #include <cctag/progBase/exceptions.hpp>
 #include <cctag/global.hpp>

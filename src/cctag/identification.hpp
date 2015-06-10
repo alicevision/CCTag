@@ -6,7 +6,7 @@
 #include <cctag/LMImageCenterOptimizer.hpp>
 #include <cctag/visualDebug.hpp>
 #include <cctag/ellipseGrowing.hpp>
-#include <cctag/imageCut.hpp>
+#include <cctag/ImageCut.hpp>
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/distance.hpp>
