@@ -406,19 +406,14 @@ void cctagDetectionFromEdges(
   CCTagFileDebug::instance().newSession(outFlowComponents.str());
 #endif
 
-  // sort candidates.
-#ifdef GRIFF_DEBUG
+  // Sort the seeds based on the number of received votes.
   if( seeds.size() > 0 )
   {
-    POP_INFO << "'optional' voting block is not really optional? " << seeds.size() << " seeds" << std::endl;
+    std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
+  }else{
+    // No seeds to process
+    return;
   }
-  else
-  {
-    POP_INFO << "sorting empty edge point vector?" << std::endl;
-  }
-#endif // GRIFF_DEBUG
-  // Sort the seeds based on the number of received votes.
-  std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
 
   const std::size_t nSeedsToProcess = std::min(seeds.size(), params._maximumNbSeeds);
 
@@ -434,11 +429,11 @@ void cctagDetectionFromEdges(
     constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
   }
 
-  const std::size_t nCandidatesLoopOneToProcess = 
+  const std::size_t nFlowComponentToProcessLoopTwo = 
           std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
 
   std::vector<Candidate> vCandidateLoopTwo;
-  vCandidateLoopTwo.reserve(nCandidatesLoopOneToProcess);
+  vCandidateLoopTwo.reserve(nFlowComponentToProcessLoopTwo);
 
   std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
   std::size_t iCandidate = 0;
@@ -448,7 +443,7 @@ void cctagDetectionFromEdges(
   // be here entirely recovered.
   // The GPU implementation should stop at this point => layers ->  EdgePoint* creation.
 
-  while (iCandidate < nCandidatesLoopOneToProcess)
+  while (iCandidate < nFlowComponentToProcessLoopTwo)
   {
     completeFlowComponent(*it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, params);
     ++it;
