@@ -179,12 +179,13 @@ void update(
 
 void cctagMultiresDetection(
         CCTag::List& markers,
-        const boost::gil::gray8_view_t& graySrc,
+        const cv::Mat& imgGraySrc,
         const boost::gil::rgb32f_view_t & cannyRGB,
         const std::size_t frame,
         const Parameters & params)
 {
   POP_ENTER;
+  #ifdef TOTO
   bool doUpdate = true;
 
   using namespace boost::gil;
@@ -249,8 +250,17 @@ void cctagMultiresDetection(
     // y gradient
     cannyGradY = kth_channel_view<2>(subCannyRGB);
 
-    cannyCv(multiresSrc.getView(i - 1), subCannyRGB, cannyView,
-            cannyGradX, cannyGradY, params._cannyThrLow, params._cannyThrHigh);
+    //cannyCv(multiresSrc.getView(i - 1), subCannyRGB, cannyView,
+    //        cannyGradX, cannyGradY, params._cannyThrLow, params._cannyThrHigh);
+    
+#endif
+    
+    cv::Mat imgCanny;
+    cv::Mat imgDX;
+    cv::Mat imgDY;
+    cv::Mat imgMag;
+    
+    cvCanny( imgGraySrc,imgCanny,imgDX,imgDY,imgMag,params._cannyThrLow,params._cannyThrHigh );
 
 #ifdef CCTAG_SERIALIZE
     std::stringstream outFilenameCanny;
@@ -263,6 +273,8 @@ void cctagMultiresDetection(
 
 #endif
 
+#ifdef TOTO
+    
     std::vector<EdgePoint> points;
     EdgePointsImage edgesMap;
     edgesPointsFromCanny(points, edgesMap, cannyView, cannyGradX, cannyGradY);
@@ -452,6 +464,8 @@ void cctagMultiresDetection(
   }
 
   POP_LEAVE;
+#endif
+  
 }
 
 void clearDetectedMarkers(

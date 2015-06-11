@@ -37,10 +37,19 @@ void cannyTuttle( std::vector<memory::CACHE_ELEMENT>& datas, const SView& svw, C
 
 #else
 
-template<class SView, class CannyRGBView, class CannyView, class GradXView, class GradYView>
-void cannyCv( const SView& svw, CannyRGBView& cannyRGB, CannyView& cannyView, GradXView& cannyGradX, GradYView& cannyGradY, const double thrCannyLow, const double thrCannyHigh );
+//template<class SView, class CannyRGBView, class CannyView, class GradXView, class GradYView>
+//void cannyCv( const SView& svw, CannyRGBView& cannyRGB, CannyView& cannyView, GradXView& cannyGradX, GradYView& cannyGradY, const double thrCannyLow, const double thrCannyHigh );
 
-void cvCanny( boost::gil::rgb32f_view_t & cannyView, const IplImage* srcImage, const double thrLow, const double thrHigh );
+void cvCanny(
+        const cv::Mat & imgGraySrc,
+        cv::Mat & imgCanny,
+        cv::Mat & imgDX,
+        cv::Mat & imgDY,
+        cv::Mat & imgMag,
+        const double thrLow,
+        const double thrHigh );
+
+void thinning(cv::Mat & imgSrc);
 
 #endif
 

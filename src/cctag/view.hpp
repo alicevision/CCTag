@@ -1,3 +1,6 @@
+#ifndef _CCTAG_VIEW_HPP_
+#define _CCTAG_VIEW_HPP_
+
 #pragma once
 
 #include <string>
@@ -70,3 +73,5 @@ public:
 };
 
 } // namespace cctag
+
+#endif

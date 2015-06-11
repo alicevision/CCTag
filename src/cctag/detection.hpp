@@ -25,7 +25,7 @@ class EdgePointImage;
 void cctagDetection(
         CCTag::List& markers,
         const std::size_t frame,
-        const boost::gil::gray8_view_t& graySrc,
+        const cv::Mat & graySrc,
         const Parameters & params,
         const std::string & cctagBankFilename,
         const bool bDisplayEllipses = true );

@@ -38,6 +38,8 @@
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include <opencv2/opencv.hpp>
+
 #include <cmath>
 #include <exception>
 #include <fstream>
@@ -687,7 +689,7 @@ void createImageForVoteResultDebug(
 
 void cctagDetection(CCTag::List& markers,
         const std::size_t frame, 
-        const boost::gil::gray8_view_t& graySrc,
+        const cv::Mat & imgGraySrc,
         const Parameters & params,
         const std::string & cctagBankFilename,
         const bool bDisplayEllipses)
@@ -695,7 +697,7 @@ void cctagDetection(CCTag::List& markers,
   POP_ENTER;
   using namespace cctag;
   using namespace boost::numeric::ublas;
-  using namespace boost::gil;
+  //using namespace boost::gil;
   
   std::srand(1);
 
@@ -709,48 +711,60 @@ void cctagDetection(CCTag::List& markers,
   {
     popart::TagPipe pipe1;
 
-    uint32_t w = graySrc.width();
-    uint32_t h = graySrc.height();
+    uint32_t w = graySrc.size().width;
+    uint32_t h = graySrc.size().height;
     pipe1.prepframe( w, h );
 
-    unsigned char* pix = new unsigned char[w*h];
-    memset( pix, 0, w*h );
-
-    boost::gil::copy_pixels( graySrc,
-                             boost::gil::interleaved_view( graySrc.width(),
-                                                           graySrc.height(),
-                                                           pix,
-                                                           graySrc.width() * sizeof(unsigned char) ) );
+    unsigned char* pix = frame.data;
 
     pipe1.tagframe( pix, w, h, params ); // Compute all four levels including smoothing+dx+dy+canny(with thinning))
                                          // in tag.h (inside applyGauss in farem_gaussian.cu)
     pipe1.debug( pix );
   }
 #endif
-  // Views for:
-  // canny
-  typedef kth_channel_view_type<0, rgb32f_view_t>::type CannyView;
-  // x derivative
-  typedef kth_channel_view_type<1, rgb32f_view_t>::type GradXView;
-  // y derivative
-  typedef kth_channel_view_type<2, rgb32f_view_t>::type GradYView;
+//  // Views for:
+//  // canny
+//  typedef kth_channel_view_type<0, rgb32f_view_t>::type CannyView;
+//  // x derivative
+//  typedef kth_channel_view_type<1, rgb32f_view_t>::type GradXView;
+//  // y derivative
+//  typedef kth_channel_view_type<2, rgb32f_view_t>::type GradYView;
+//
+//  rgb32f_image_t cannyRGBImg(graySrc.width(), graySrc.height());
+//  rgb32f_view_t cannyRGB(view(cannyRGBImg));
+//  CannyView cannyView;
+//  GradXView cannyGradX;
+//  GradYView cannyGradY;
+//  
+//
+//  cannyView = kth_channel_view<0>(cannyRGB);
+//  // x gradient
+//  cannyGradX = kth_channel_view<1>(cannyRGB);
+//  // y gradient
+//  cannyGradY = kth_channel_view<2>(cannyRGB);
+   
+//  cannyView = kth_channel_view<0>(cannyRGB);
+//  // x gradient
+//  cannyGradX = kth_channel_view<1>(cannyRGB);
+//  // y gradient
+//  cannyGradY = kth_channel_view<2>(cannyRGB);
+//  
+  
+  
+    ///
+  cv::Mat imgCanny(imgGraySrc.size().height , imgGraySrc.size().width, CV_8UC1);
+  cv::Mat imgDX(imgGraySrc.size().height , imgGraySrc.size().width, CV_16SC1 );
+  cv::Mat imgDY(imgGraySrc.size().height , imgGraySrc.size().width, CV_16SC1 );
+  
+  cvRecodedCanny( imgGraySrc, imgCanny, imgDX, imgDY, params._cannyThrLow * 256, params._cannyThrHigh * 256, /*7*/ 3 | CV_CANNY_L2_GRADIENT );
+  
+  thinning( imgCanny );
+  
+  cv::imwrite("/home/lilian/data/canny.png", imgCanny);
+  cv::imwrite("/home/lilian/data/imgDX.png", imgDX);
+  cv::imwrite("/home/lilian/data/imgDY.png", imgDY);
 
-  rgb32f_image_t cannyRGBImg(graySrc.width(), graySrc.height());
-  rgb32f_view_t cannyRGB(view(cannyRGBImg));
-  CannyView cannyView;
-  GradXView cannyGradX;
-  GradYView cannyGradY;
-
-  cannyView = kth_channel_view<0>(cannyRGB);
-  // x gradient
-  cannyGradX = kth_channel_view<1>(cannyRGB);
-  // y gradient
-  cannyGradY = kth_channel_view<2>(cannyRGB);
-
-  cannyCv(graySrc, cannyRGB, cannyView, cannyGradX, cannyGradY,
-          params._cannyThrLow, params._cannyThrHigh);
-
-  cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
+  //cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
@@ -760,6 +774,8 @@ void cctagDetection(CCTag::List& markers,
   CCTAG_COUT_OPTIM("TIME IN DETECTION: " << spendTime << " ms");
 #endif
   
+  
+#ifdef TOTO
   // Identification step
   // To decomment -- enable cuts selection, homography computation and identification
   if (params._doIdentification)
@@ -812,16 +828,17 @@ void cctagDetection(CCTag::List& markers,
       CCTAG_COUT_OPTIM("TIME IN IDENTIFICATION: " << spendTime2 << " ms");
 #endif
   }
+ #endif 
 
-  markers.sort();
-
-  CCTagVisualDebug::instance().writeIdentificationView(markers);
-  CCTagFileDebug::instance().newSession("identification.txt");
-
-  BOOST_FOREACH(const CCTag & marker, markers)
-  {
-    CCTagFileDebug::instance().outputMarkerInfos(marker);
-  }
+//  markers.sort();
+//
+//  CCTagVisualDebug::instance().writeIdentificationView(markers);
+//  CCTagFileDebug::instance().newSession("identification.txt");
+//
+//  BOOST_FOREACH(const CCTag & marker, markers)
+//  {
+//    CCTagFileDebug::instance().outputMarkerInfos(marker);
+//  }
 
   POP_LEAVE;
 }

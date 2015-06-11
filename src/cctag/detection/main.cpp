@@ -66,7 +66,9 @@ void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & p
     CCTagVisualDebug::instance().setImageFileName(outputFileName);
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
     
-    cctagDetection(markers, frame, view._grayView, params, cctagBankFilename, true);
+    cv::Mat graySrc(cv::cvarrToMat( const_cast<IplImage*>(boostCv::CvImageView( view._grayView ).get()) ));
+
+    cctagDetection(markers, frame, graySrc, params, cctagBankFilename, true);
     
     CCTagFileDebug::instance().outPutAllSessions();
     CCTagFileDebug::instance().clearSessions();
