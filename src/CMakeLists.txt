@@ -64,7 +64,7 @@ target_link_libraries( CCTag PUBLIC ${CCTAG_LINK_LIBRARIES} )
 
 target_include_directories( CCTag PUBLIC .)
 
-set(CCTagDetect_cpp ./cctag/detection/main.cpp)
+set(CCTagDetect_cpp ./applications/detection/main.cpp)
 
 if(CUDA_FOUND)
     add_executable( detection ${CCTagDetect_cpp} ${cuda_files} )
@@ -73,6 +73,10 @@ else(CUDA_FOUND)
     add_executable( detection ${CCTagDetect_cpp})
     target_link_libraries( detection CCTag )
 endif(CUDA_FOUND)
+
+set(testMemoryPool_cpp ./applications/test/testMemoryPool.cpp)
+add_executable( testMemoryPool ${testMemoryPool_cpp})
+target_link_libraries( testMemoryPool CCTag )
 
 install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 

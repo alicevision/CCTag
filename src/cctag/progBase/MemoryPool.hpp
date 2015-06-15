@@ -41,6 +41,7 @@ public:
 	MemoryPool( const std::size_t maxSize = 0 );
 	~MemoryPool();
 
+        void allocateImagePyramid( const std::size_t width, const std::size_t height );
 	IPoolDataPtr allocate( const std::size_t size );
 	std::size_t  updateMemoryAuthorizedWithRAM();
 
@@ -61,7 +62,7 @@ public:
 private:
 	typedef boost::unordered_set<PoolData*> DataList;
 	boost::ptr_list<PoolData> _allDatas; // the owner
-	std::map<char*, PoolData*> _dataMap; // the owner
+	std::map<unsigned char*, PoolData*> _dataMap; // the owner
 	DataList _dataUsed;
 	DataList _dataUnused;
 	std::size_t _memoryAuthorized;
