@@ -830,15 +830,17 @@ void cctagDetection(CCTag::List& markers,
   }
  #endif 
 
-//  markers.sort();
-//
-//  CCTagVisualDebug::instance().writeIdentificationView(markers);
-//  CCTagFileDebug::instance().newSession("identification.txt");
-//
-//  BOOST_FOREACH(const CCTag & marker, markers)
-//  {
-//    CCTagFileDebug::instance().outputMarkerInfos(marker);
-//  }
+#ifdef TOTO
+  markers.sort();
+
+  CCTagVisualDebug::instance().writeIdentificationView(markers);
+  CCTagFileDebug::instance().newSession("identification.txt");
+
+  BOOST_FOREACH(const CCTag & marker, markers)
+  {
+    CCTagFileDebug::instance().outputMarkerInfos(marker);
+  }
+#endif
 
   POP_LEAVE;
 }
