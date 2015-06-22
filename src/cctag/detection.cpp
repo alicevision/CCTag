@@ -764,7 +764,9 @@ void cctagDetection(CCTag::List& markers,
   cv::imwrite("/home/lilian/data/imgDX.png", imgDX);
   cv::imwrite("/home/lilian/data/imgDY.png", imgDY);
 
-  //cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
+#ifdef TOTO
+  cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
+#endif
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
