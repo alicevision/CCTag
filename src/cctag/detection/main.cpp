@@ -12,6 +12,7 @@
 
 #ifdef WITH_CUDA
 #include "cuda/device_prop.hpp"
+#include "cuda/debug_macros.hpp"
 #endif // WITH_CUDA
 
 #include <boost/filesystem/convenience.hpp>
@@ -28,7 +29,12 @@
 #include <terry/sampler/all.hpp>
 #include <terry/sampler/resample_subimage.hpp>
 
+#if 0
+// Do you want this command line parser because getopt_long is LGPL ?
 #include <third_party/cmdLine/cmdLine.h>
+#else
+#include <getopt.h>
+#endif
 
 #include <opencv/cv.h>
 #include <opencv2/videoio.hpp>
@@ -93,14 +99,67 @@ void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & p
     POP_LEAVE;
 }
 
+#define no_argument       0 
+#define required_argument 1 
+#define optional_argument 2
+
+std::string filename = "";
+std::string cctagBankFilename = "";
+std::string paramsFilename = "";
+#ifdef WITH_CUDA
+bool        switchSync = false;
+#endif
+
+static const struct option longopts[] =
+{
+    {"input",      required_argument, 0, 'i'},
+    {"bank",       required_argument, 0, 'b'},
+    {"parameters", required_argument, 0, 'p'},
+    {"sync",       no_argument,       0, 0xd0 },
+    {0,0,0,0},
+};
+
+static bool parseargs( int argc, char* argv[] )
+{
+  int index;
+  int iarg=0;
+  bool has_i = false;
+  bool has_b = false;
+
+  //turn off getopt error message
+  // opterr=1; 
+
+  while(iarg != -1)
+  {
+    iarg = getopt_long(argc, argv, "i:b:p:", longopts, &index);
+
+    switch (iarg)
+    {
+      case 'i'  : filename          = optarg; has_i = true; break;
+      case 'b'  : cctagBankFilename = optarg; has_b = true; break;
+      case 'p'  : paramsFilename    = optarg; break;
+      case 0xd0 : switchSync        = true;   break;
+      default : break;
+    }
+  }
+  return ( has_i & has_b );
+}
+
 void printUsageErr( const char* const argv0 )
 {
-  std::cerr << "Usage: " << argv0 << '\n'
-  << "[-i|--input path] \n"
-  << "[-b|--bank path] \n"
-  << "\n[Optional]\n"
-  << "[-p|--params path] \n"
-  << std::endl;
+  std::cerr << "Usage: " << argv0 << "<parameters>\n"
+               "    Mandatory:\n"
+               "           (-i|--input) <imgpath>\n"
+               "           (-b|--bank) <bankpath>\n"
+               "    Optional:\n"
+               "           [-p|--params <confpath>]\n"
+               "           [--sync]\n"
+               "\n"
+               "    <imgpath>  - path to an image (JPG, PNG) or video\n"
+               "    <bankpath> - path to a bank parameter file\n"
+               "    <confpath> - path to configuration XML file \n"
+               "    --sync     - CUDA debug option, run all CUDA ops synchronously\n"
+               "\n" << std::endl;
 }
 
 /*************************************************************/
@@ -109,15 +168,20 @@ void printUsageErr( const char* const argv0 )
 int main(int argc, char** argv)
 {
   cctag::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
-
-  std::string filename = "";
-  std::string  cctagBankFilename = "";
-  std::string paramsFilename = "";
-
+#if 1
+  if( parseargs( argc, argv ) == false ) {
+    printUsageErr( argv[0] );
+    return EXIT_FAILURE;
+  }
+#else
   CmdLine cmd;
-  cmd.add( make_option('i', filename, "input") );
-  cmd.add( make_option('b', cctagBankFilename, "cctagBank") );
-  cmd.add( make_option('p', paramsFilename, "parameters") );
+  cmd.add( OptionField<std::string>('i', filename, "input") );
+  // cmd.add( make_option('b', cctagBankFilename, "cctagBank") );
+  cmd.add( OptionField<std::string>('b', cctagBankFilename, "bank") );
+  cmd.add( OptionField<std::string>('p', paramsFilename, "parameters") );
+#ifdef WITH_CUDA
+  cmd.add( OptionSwitch( 0xd0, switchSync, "sync" ) );
+#endif
 
   try {
       if (argc == 1) throw std::string("Invalid command line parameters.");
@@ -126,12 +190,19 @@ int main(int argc, char** argv)
     printUsageErr(argv[0]);
     return EXIT_FAILURE;
   }
+#endif
 
   std::cout << "You called: " <<std::endl
       << argv[0] << std::endl
-      << "--input " << filename << std::endl
-      << "--bank " << cctagBankFilename << std::endl
-      << "--params " << paramsFilename << std::endl;
+      << "    --input " << filename << std::endl
+      << "    --bank " << cctagBankFilename << std::endl
+      << "    --params " << paramsFilename << std::endl;
+#ifdef WITH_CUDA
+  if( switchSync ) {
+    std::cout << "    --sync" << std::endl;
+  }
+#endif
+  std::cout << std::endl;
 
   // Check input path
   if (filename.compare("") != 0){
@@ -161,6 +232,9 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
+#ifdef WITH_CUDA
+  popart::pop_cuda_only_sync_calls( switchSync );
+#endif
   // Check the (optional) parameters path
   cctag::Parameters params;
   
@@ -195,7 +269,7 @@ int main(int argc, char** argv)
 
   if ( (ext == ".png") || (ext == ".jpg") ) {
 
-    POP_INFO << "looking at image " << myPath.string() << std::endl;
+    POP_INFO( "looking at image " << myPath.string() );
 
     cctag::View my_view( filename );
 
@@ -216,7 +290,7 @@ int main(int argc, char** argv)
   } else if (ext == ".avi" )
   {
     CCTAG_COUT("*** Video mode ***");
-    POP_INFO << "looking at video " << myPath.string() << std::endl;
+    POP_INFO( "looking at video " << myPath.string() );
 
     // open video and check
     cv::VideoCapture video(filename.c_str());
