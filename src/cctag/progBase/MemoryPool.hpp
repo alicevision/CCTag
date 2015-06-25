@@ -2,6 +2,7 @@
 #define _CCTAG_PROGBASE_MEMORYPOOL_HPP_
 
 #include "IMemoryPool.hpp"
+#include <cctag/ImagePyramid.hpp>
 
 #include <cctag/progBase/pattern/Singleton.hpp>
 
@@ -41,7 +42,9 @@ public:
 	MemoryPool( const std::size_t maxSize = 0 );
 	~MemoryPool();
 
-        void allocateImagePyramid( const std::size_t width, const std::size_t height );
+        void allocateImagePyramid( std::size_t width, std::size_t height, std::size_t nbLevels);
+        ImagePyramid & getImagePyramid();
+
 	IPoolDataPtr allocate( const std::size_t size );
 	std::size_t  updateMemoryAuthorizedWithRAM();
 
@@ -67,6 +70,9 @@ private:
 	DataList _dataUnused;
 	std::size_t _memoryAuthorized;
 	mutable boost::mutex _mutex;
+    
+    // Added    
+    ImagePyramid* _imagePyramid;
 };
 
 }

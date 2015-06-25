@@ -93,8 +93,9 @@ void PoolData::release()
 }
 
 MemoryPool::MemoryPool( const std::size_t maxSize )
-	: _memoryAuthorized( maxSize )
-{}
+        : _memoryAuthorized(maxSize)
+{
+}
 
 MemoryPool::~MemoryPool()
 {
@@ -169,9 +170,15 @@ struct DataFitSize : public std::unary_function<PoolData*, void>
  * w: image width
  * h: image height
  */
-void MemoryPool::allocateImagePyramid( std::size_t width, std::size_t height )
+void MemoryPool::allocateImagePyramid( std::size_t width, std::size_t height, std::size_t nbLevels )
 {
-  // TODO TODO
+  _imagePyramid = new ImagePyramid(width, height, nbLevels);
+  // TODO@Lilian need to be deleted somewhere
+}
+
+ImagePyramid & MemoryPool::getImagePyramid()
+{
+  return *_imagePyramid;
 }
 
 boost::intrusive_ptr<IPoolData> MemoryPool::allocate( const std::size_t size )

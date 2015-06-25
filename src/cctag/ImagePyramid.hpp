@@ -1,6 +1,8 @@
 #ifndef IMAGEPYRAMID_HPP
 #define	IMAGEPYRAMID_HPP
 
+#include <opencv2/opencv.hpp>
+
 #include <stdint.h>
 #include <cstddef>
 #include <vector>
@@ -10,35 +12,47 @@
 
 namespace cctag {
 
-class Frame
+class Level
 {
 public:
   
-  Frame( uint32_t width, uint32_t height );
+  Level( std::size_t width, std::size_t height );
+  
+  void setLevel(const cv::Mat & src);
+  const cv::Mat & getSrc() const;
+  const cv::Mat & getDx() const;
+  const cv::Mat & getDy() const;
+  const cv::Mat & getMag() const; 
+  const cv::Mat & getEdges() const;
 
 private:
   
-  // Should match with cuda/frame.h
-  int16_t*       _dx;
-  int16_t*       _dy;
-  uint32_t*      _mag;
-  unsigned char* _src;
-  unsigned char* _edges;
-
-  std::size_t _width;
-  std::size_t _height;
-  std::size_t _pitch;
+  cv::Mat _dx;
+  cv::Mat _dy;
+  cv::Mat _mag;
+  cv::Mat _src;
+  cv::Mat _edges;
 
 };
 
 class ImagePyramid
 {
-  ImagePyramid( const unsigned char* src, std::size_t pitch, const std::size_t width, const std::size_t height, const std::size_t nbLevels );
+public:
+  ImagePyramid();
+  
+  ImagePyramid( const std::size_t width, const std::size_t height, const std::size_t nLevels );
+  
+  ~ImagePyramid();
 
-  Frame* getFrame( const std::size_t level ) const;
+  Level* getLevel( const std::size_t level ) const;
+  
+  std::size_t getNbLevels() const;
+  
+  void build(const cv::Mat & src);
+  void output();
 
 private:
-	std::vector<Frame*> _imagePyramid;
+  std::vector<Level*> _levels;
 };
 
 }
