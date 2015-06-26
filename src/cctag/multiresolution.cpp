@@ -177,6 +177,158 @@ void update(
   }
 }
 
+void cctagMultiresDetectionNew(
+        CCTag::List& markers,
+        const cv::Mat& imgGraySrc,
+        const ImagePyramid & imagePyramid,
+        const std::size_t frame,
+        const Parameters & params)
+{
+    POP_ENTER;
+  //	* For each pyramid level:
+  //	** launch CCTag detection based on the canny edge detection output.
+  
+  bool doUpdate = true; // todo@Lilian: add in the parameter file.
+
+  std::map<std::size_t, CCTag::List> pyramidMarkers;
+  std::vector<EdgePointsImage> vEdgeMaps;
+  vEdgeMaps.reserve(imagePyramid.getNbLevels());
+  
+  for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i ) //todo@Lilian : to move
+  {
+    EdgePointsImage edgesMap;
+    edgesMap.resize( boost::extents[imagePyramid.getLevel(i)->width()][imagePyramid.getLevel(i)->height()] );
+    std::fill( edgesMap.origin(), edgesMap.origin() + edgesMap.size(), (EdgePoint*)NULL );
+    vEdgeMaps.push_back(edgesMap);
+  }
+
+  BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
+  for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i )
+  {
+    CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::");
+
+    //CCTag::List & markersList = pyramidMarkers[i];
+
+    // Create EdgePoints for every detected edge points in edges.
+    std::vector<EdgePoint> points;
+    
+    edgesPointsFromCannyNew( points, vEdgeMaps[i],
+            imagePyramid.getLevel(i)->getEdges(),
+            imagePyramid.getLevel(i)->getDx(),
+            imagePyramid.getLevel(i)->getDy());
+    
+    //edgesPointsFromCanny(points, edgesMap, cannyView, cannyGradX, cannyGradY);
+
+    //CCTagVisualDebug::instance().setPyramidLevel(i - 1);
+
+
+    //cctagDetectionFromEdges(markersList, points,
+    //        multiresSrc.getView(i - 1), cannyGradX, cannyGradY, edgesMap,
+    //        frame, i - 1, std::pow(2.0, (int) i - 1), params);
+    
+    cctagDetectionFromEdges(
+            pyramidMarkers[i], points,
+            imagePyramid.getLevel(i)->getSrc(),
+            imagePyramid.getLevel(i)->getDx(),
+            imagePyramid.getLevel(i)->getDy(),
+            vEdgeMaps[i],
+            frame, i, std::pow(2.0, (int) i), params);
+    
+    CCTAG_COUT_VAR(pyramidMarkers[i].size());
+
+//    CCTagVisualDebug::instance().initBackgroundImage(multiresSrc.getView(i - 1));
+//    std::stringstream outFilename2;
+//    outFilename2 << "viewLevel" << i - 1;
+//    CCTagVisualDebug::instance().newSession(outFilename2.str());
+//
+//    BOOST_FOREACH(const CCTag & marker, markersList)
+//    {
+//      CCTagVisualDebug::instance().drawMarker(marker, false);
+//    }
+  }
+
+  // Delete overlapping markers while keeping the best ones.
+  BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
+  for (std::size_t i = 0 ; i < pyramidMarkers.size() ; ++i)
+    // set the _numberOfProcessedMultiresLayers <= _numberOfMultiresLayers todo@Lilian
+  {
+    CCTag::List & markersList = pyramidMarkers[i];
+
+    BOOST_FOREACH(const CCTag & marker, markersList)
+    {
+      if (doUpdate)
+      {
+        update(markers, marker);
+      }
+      else
+      {
+        markers.push_back(new CCTag(marker));
+      }
+    }
+  }
+  CCTagVisualDebug::instance().writeLocalizationView(markers);
+
+  // Final step: extraction of the detected markers in the original (scale) image.
+  CCTagVisualDebug::instance().newSession("multiresolution");
+
+  // Project markers from the top of the pyramid to the bottom (original image).
+  BOOST_FOREACH(CCTag & marker, markers)
+  {
+    int i = marker.pyramidLevel();
+    // if the marker has to be rescaled into the original image
+    if (i > 0)
+    {
+      BOOST_ASSERT( i < params._numberOfMultiresLayers );
+      double scale = marker.scale(); // pow( 2.0, (double)i );
+
+      cctag::numerical::geometry::Ellipse rescaledOuterEllipse = marker.rescaledOuterEllipse();
+
+      std::list<EdgePoint*> pointsInHull;
+      selectEdgePointInEllipticHull(vEdgeMaps[0], rescaledOuterEllipse, scale, pointsInHull);
+
+      std::vector<EdgePoint*> rescaledOuterEllipsePoints;
+
+      double SmFinal = 1e+10;
+
+      cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0);
+
+      try
+      {
+        numerical::ellipseFitting(rescaledOuterEllipse, rescaledOuterEllipsePoints);
+
+        std::vector< Point2dN<double> > rescaledOuterEllipsePointsDouble;// todo@Lilian : add a reserve
+        std::size_t numCircles = params._numCrowns * 2;
+
+        BOOST_FOREACH(EdgePoint * e, rescaledOuterEllipsePoints)
+        {
+          rescaledOuterEllipsePointsDouble.push_back(Point2dN<double>(e->x(), e->y()));
+          CCTagVisualDebug::instance().drawPoint(Point2dN<double>(e->x(), e->y()), cctag::color_red);
+        }
+        marker.setCenterImg(cctag::Point2dN<double>(marker.centerImg().getX() * scale, marker.centerImg().getY() * scale));
+        marker.setRescaledOuterEllipse(rescaledOuterEllipse);
+        marker.setRescaledOuterEllipsePoints(rescaledOuterEllipsePointsDouble);
+      }
+      catch (...)
+      {
+        // catch exception from ellipseFitting
+      }
+    }
+    else
+    {
+      marker.setRescaledOuterEllipsePoints(marker.points().back());
+    }
+  }
+  
+  // Log
+  CCTagFileDebug::instance().newSession("data.txt");
+  BOOST_FOREACH(const CCTag & marker, markers)
+  {
+    CCTagFileDebug::instance().outputMarkerInfos(marker);
+  }
+  POP_LEAVE;
+  
+}
+
 void cctagMultiresDetection(
         CCTag::List& markers,
         const cv::Mat& imgGraySrc,
@@ -185,7 +337,7 @@ void cctagMultiresDetection(
         const Parameters & params)
 {
   POP_ENTER;
-  #ifdef TOTO
+#ifdef TOTO
   bool doUpdate = true;
 
   using namespace boost::gil;

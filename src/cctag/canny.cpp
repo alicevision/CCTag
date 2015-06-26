@@ -99,6 +99,34 @@ void cvCanny(
   }
 }
 
+void edgesPointsFromCannyNew(
+        std::vector<EdgePoint>& points,
+        EdgePointsImage & edgePointsMap,
+        const cv::Mat & edges,
+        const cv::Mat & dx,
+        const cv::Mat & dy )
+{
+  std::size_t width = edges.cols;
+  std::size_t height = edges.rows;
+
+  points.reserve( width * height / 2 ); // todo: allocate that in the memory pool @Lilian
+
+  for( int y = 0 ; y < height ; ++y )
+  {
+    for( int x = 0 ; x < width ; ++x )
+    {
+      if ( edges.at<uchar>(y,x) == 255 )
+      {
+        points.push_back( EdgePoint( x, y, (float) dx.at<short>(y,x), (float) dy.at<short>(y,x) ) );
+        
+        EdgePoint* p = &points.back();
+        edgePointsMap[x][y] = p;
+      }
+    }
+  }
+
+}
+
 } // namespace cctag
 
 

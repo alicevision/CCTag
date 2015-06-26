@@ -31,18 +31,21 @@ void cctagDetection(
         const bool bDisplayEllipses = true );
 
 void cctagDetectionFromEdges(
-		CCTag::List& markers,
-		std::vector<EdgePoint>& points,
-		const boost::gil::gray8_view_t & sourceView,
-		const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX,
-		const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
-		const EdgePointsImage& edgesMap,
-                const std::size_t frame,
-                int pyramidLevel,
-                double scale,
-		const Parameters & params);
+        CCTag::List& markers,
+        std::vector<EdgePoint>& points,
+        const cv::Mat & src,
+        const cv::Mat & dx,
+        const cv::Mat & dy,
+        const EdgePointsImage& edgesMap,
+        const std::size_t frame,
+        int pyramidLevel,
+        double scale,
+        const Parameters & params);
 
-void createImageForVoteResultDebug(const boost::gil::gray8_view_t & sourceView, const WinnerMap & winners);
+void createImageForVoteResultDebug(
+        const cv::Mat & src,
+        const WinnerMap & winners,
+        std::size_t nLevel);
 
 } // namespace cctag
 

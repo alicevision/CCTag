@@ -17,6 +17,17 @@ public:
   const cv::Mat & getDy() const;
   const cv::Mat & getMag() const; 
   const cv::Mat & getEdges() const;
+  
+  inline std::size_t width() const
+  {
+    return _src.cols;
+  }
+  
+  inline std::size_t height() const
+  {
+    return _src.rows;
+  }
+  
 
 private:
   
@@ -28,6 +39,6 @@ private:
   cv::Mat _temp;
 };
 
-#endif	/* _CCTAG_LEVEL_HPP */
-
 }
+
+#endif	/* _CCTAG_LEVEL_HPP */

@@ -54,18 +54,18 @@ namespace cctag {
  */
 void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         const EdgePointsImage & edgesMap, WinnerMap& winners,
-        const boost::gil::kth_channel_view_type<1,boost::gil::rgb32f_view_t>::type & cannyGradX,
-        const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
+        const cv::Mat & dx,
+        const cv::Mat & dy,
         const Parameters & params)
 {
     BOOST_FOREACH(EdgePoint & p, points) {
-        p._before = gradientDirectionDescent(edgesMap, p, -1, params._distSearch, cannyGradX, cannyGradY, params._thrGradientMagInVote);
-        p._after = gradientDirectionDescent(edgesMap, p, 1, params._distSearch, cannyGradX, cannyGradY, params._thrGradientMagInVote);
+        p._before = gradientDirectionDescent(edgesMap, p, -1, params._distSearch, dx, dy, params._thrGradientMagInVote);
+        p._after  = gradientDirectionDescent(edgesMap, p, 1, params._distSearch, dx, dy, params._thrGradientMagInVote);
     }
     // Vote
     seeds.reserve(points.size() / 2);
 
-    // todo@Lilian: remove thrVotingAngle from the paramter file
+    // todo@Lilian: remove thrVotingAngle from the parameter file
     if (params._angleVoting != 0) {
         BOOST_THROW_EXCEPTION(cctag::exception::Bug() << cctag::exception::user() + 
                 "thrVotingAngle must be equal to 0 or edge points gradients have to be normalized");

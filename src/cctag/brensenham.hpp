@@ -21,7 +21,14 @@ void bresenham( const boost::gil::gray8_view_t & sView, const cctag::Point2dN<in
  *
  */
 
-EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & canny, const EdgePoint& p, const int dir, const std::size_t nmax, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX, const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradY, int thrGradient);
+EdgePoint* gradientDirectionDescent(
+        const boost::multi_array<EdgePoint*, 2> & canny,
+        const EdgePoint& p,
+        const int dir,
+        const std::size_t nmax,
+        const cv::Mat & dx, 
+        const cv::Mat & dy,
+        int thrGradient);
 
 } // namespace cctag
 

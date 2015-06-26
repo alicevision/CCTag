@@ -1,5 +1,5 @@
 #ifndef _CCTAG_IMAGEPYRAMID_HPP
-#define	IMAGEPYRAMID_HPP
+#define	_CCTAG_IMAGEPYRAMID_HPP
 
 #include <cctag/Level.hpp>
 

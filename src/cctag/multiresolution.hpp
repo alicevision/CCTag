@@ -7,6 +7,7 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Cercle.hpp>
 #include <cctag/boostCv/cvImage.hpp>
+#include <cctag/ImagePyramid.hpp>
 
 #include <terry/sampler/all.hpp>
 #include <terry/sampler/resample_subimage.hpp>
@@ -35,6 +36,13 @@ struct CCTagParams
  */
 //template<class View, class GradView>
 void cctagMultiresDetection( CCTag::List& markers, const boost::gil::gray8_view_t& srcImg, const boost::gil::rgb32f_view_t & cannyRGB, const std::size_t frame, const Parameters & params );
+
+void cctagMultiresDetectionNew(
+        CCTag::List& markers,
+        const cv::Mat& imgGraySrc,
+        const ImagePyramid & imagePyramid,
+        const std::size_t frame,
+        const Parameters & params);
 
 void update(CCTag::List& markers, const CCTag& markerToAdd);
 

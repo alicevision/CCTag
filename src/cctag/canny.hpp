@@ -27,7 +27,7 @@ class EdgePoint;
 
 namespace cctag
 {
-
+  
 #ifdef CCTAG_USE_TUTTLE
 
 void createCannyGraph( tuttle::host::Graph & _canny, tuttle::host::InputBufferNode* & _cannyInputBuffer, tuttle::host::Graph::Node* & cannyOutput, tuttle::host::Graph::Node* & sobelOutput );
@@ -53,6 +53,13 @@ void cvCanny(
 
 template<class CView, class DXView, class DYView>
 void edgesPointsFromCanny( std::vector<EdgePoint>& points, EdgePointsImage & edgesMap, CView & cvw, DXView & dx, DYView & dy );
+
+void edgesPointsFromCannyNew(
+        std::vector<EdgePoint>& points,
+        EdgePointsImage & edgePointsMap,
+        const cv::Mat & edges,
+        const cv::Mat & dx,
+        const cv::Mat & dy );
 
 } // namespace cctag
 

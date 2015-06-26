@@ -374,9 +374,9 @@ void flowComponentAssembling(
 void cctagDetectionFromEdges(
         CCTag::List& markers,
         std::vector<EdgePoint>& points,
-        const boost::gil::gray8_view_t & sourceView,
-        const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX,
-        const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
+        const cv::Mat & src,
+        const cv::Mat & dx,
+        const cv::Mat & dy,
         const EdgePointsImage& edgesMap,
         const std::size_t frame,
         int pyramidLevel,
@@ -391,10 +391,10 @@ void cctagDetectionFromEdges(
   std::vector<EdgePoint*> seeds;
 
   // Voting procedure applied on every edge points.
-  vote(points, seeds, edgesMap, winners, cannyGradX, cannyGradY, params);
+  vote(points, seeds, edgesMap, winners, dx, dy, params);
 
   // Call for debug only. Write the vote result as an image.
-  createImageForVoteResultDebug(sourceView, winners);
+  createImageForVoteResultDebug(src, winners, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
 
   // Set some timers
   boost::timer t3;
@@ -647,19 +647,16 @@ void cctagDetectionFromEdges(
 
 
 void createImageForVoteResultDebug(
-        const boost::gil::gray8_view_t & sourceView,
-        const WinnerMap & winners)
+        const cv::Mat & src,
+        const WinnerMap & winners,
+        std::size_t nLevel)
 {
-#if defined(CCTAG_SERIALIZE)
+//#if defined(CCTAG_SERIALIZE)
   {
-
     POP_INFO << "running optional 'voting' block" << std::endl;
     std::size_t mx = 0;
-    boost::gil::gray8_image_t vimg(sourceView.dimensions());
-    boost::gil::gray8_view_t votevw(view(vimg));
-
-    // Zero filling
-    boost::gil::fill_black(votevw);
+    
+    cv::Mat imgVote(src.rows, src.cols, CV_8UC1, cv::Scalar(0,0,0));
 
     for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
     {
@@ -675,16 +672,19 @@ void createImageForVoteResultDebug(
     {
       EdgePoint* winner = itr->first;
       std::list<EdgePoint*> v = itr->second;
-      *votevw.xy_at(winner->x(), winner->y()) = (unsigned char) ((v.size() * 10.0));
+      imgVote.at<uchar>(winner->y(),winner->x()) = (unsigned char) ((v.size() * 10.0));
     }
 
     std::stringstream outFilenameVote;
-    outFilenameVote << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
-    CCTagVisualDebug::instance().initBackgroundImage(boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>(votevw));
-    CCTagVisualDebug::instance().newSession(outFilenameVote.str());
-
+    outFilenameVote << "/home/lilian/data/vote_" << nLevel << ".png";
+    imwrite(outFilenameVote.str(), imgVote);
+    
+    //std::stringstream outFilenameVote;
+    //outFilenameVote << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
+    //CCTagVisualDebug::instance().initBackgroundImage(boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>(votevw));
+    //CCTagVisualDebug::instance().newSession(outFilenameVote.str());
   }
-#endif
+//#endif
 }
 
 void cctagDetection(CCTag::List& markers,
@@ -721,49 +721,13 @@ void cctagDetection(CCTag::List& markers,
                                          // in tag.h (inside applyGauss in farem_gaussian.cu)
     pipe1.debug( pix );
   }
-#endif
-//  // Views for:
-//  // canny
-//  typedef kth_channel_view_type<0, rgb32f_view_t>::type CannyView;
-//  // x derivative
-//  typedef kth_channel_view_type<1, rgb32f_view_t>::type GradXView;
-//  // y derivative
-//  typedef kth_channel_view_type<2, rgb32f_view_t>::type GradYView;
-//
-//  rgb32f_image_t cannyRGBImg(graySrc.width(), graySrc.height());
-//  rgb32f_view_t cannyRGB(view(cannyRGBImg));
-//  CannyView cannyView;
-//  GradXView cannyGradX;
-//  GradYView cannyGradY;
-//  
-//
-//  cannyView = kth_channel_view<0>(cannyRGB);
-//  // x gradient
-//  cannyGradX = kth_channel_view<1>(cannyRGB);
-//  // y gradient
-//  cannyGradY = kth_channel_view<2>(cannyRGB);
-   
-//  cannyView = kth_channel_view<0>(cannyRGB);
-//  // x gradient
-//  cannyGradX = kth_channel_view<1>(cannyRGB);
-//  // y gradient
-//  cannyGradY = kth_channel_view<2>(cannyRGB);
-//  
+#else
+  ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
+  imagePyramid.build(imgGraySrc);
   
-  
-    ///
-  cv::Mat imgCanny(imgGraySrc.size().height , imgGraySrc.size().width, CV_8UC1);
-  cv::Mat imgDX(imgGraySrc.size().height , imgGraySrc.size().width, CV_16SC1 );
-  cv::Mat imgDY(imgGraySrc.size().height , imgGraySrc.size().width, CV_16SC1 );
-  
-  cvRecodedCanny( imgGraySrc, imgCanny, imgDX, imgDY, params._cannyThrLow * 256, params._cannyThrHigh * 256, /*7*/ 3 | CV_CANNY_L2_GRADIENT );
-  
-  cv::imwrite("/home/lilian/data/canny.png", imgCanny);
-  cv::imwrite("/home/lilian/data/imgDX.png", imgDX);
-  cv::imwrite("/home/lilian/data/imgDY.png", imgDY);
-
-#ifdef TOTO
-  cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
+  imagePyramid.output();
+  //cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
+  cctagMultiresDetectionNew(markers, imgGraySrc, imagePyramid, frame, params);
 #endif
 
 #ifdef CCTAG_OPTIM
