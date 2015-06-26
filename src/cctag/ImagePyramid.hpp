@@ -1,5 +1,7 @@
-#ifndef IMAGEPYRAMID_HPP
+#ifndef _CCTAG_IMAGEPYRAMID_HPP
 #define	IMAGEPYRAMID_HPP
+
+#include <cctag/Level.hpp>
 
 #include <opencv2/opencv.hpp>
 
@@ -7,33 +9,7 @@
 #include <cstddef>
 #include <vector>
 
-// TODO TODO TODO TODO TODO
-// New simplified version of pyramidImage 
-
 namespace cctag {
-
-class Level
-{
-public:
-  
-  Level( std::size_t width, std::size_t height );
-  
-  void setLevel(const cv::Mat & src);
-  const cv::Mat & getSrc() const;
-  const cv::Mat & getDx() const;
-  const cv::Mat & getDy() const;
-  const cv::Mat & getMag() const; 
-  const cv::Mat & getEdges() const;
-
-private:
-  
-  cv::Mat _dx;
-  cv::Mat _dy;
-  cv::Mat _mag;
-  cv::Mat _src;
-  cv::Mat _edges;
-  cv::Mat _temp;
-};
 
 class ImagePyramid
 {
@@ -57,5 +33,5 @@ private:
 
 }
 
-#endif	/* IMAGEPYRAMID_HPP */
+#endif	/* _CCTAG_IMAGEPYRAMID_HPP */
 
