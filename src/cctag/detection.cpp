@@ -758,8 +758,6 @@ void cctagDetection(CCTag::List& markers,
   
   cvRecodedCanny( imgGraySrc, imgCanny, imgDX, imgDY, params._cannyThrLow * 256, params._cannyThrHigh * 256, /*7*/ 3 | CV_CANNY_L2_GRADIENT );
   
-  thinning( imgCanny );
-  
   cv::imwrite("/home/lilian/data/canny.png", imgCanny);
   cv::imwrite("/home/lilian/data/imgDX.png", imgDX);
   cv::imwrite("/home/lilian/data/imgDY.png", imgDY);
@@ -830,9 +828,7 @@ void cctagDetection(CCTag::List& markers,
       CCTAG_COUT_OPTIM("TIME IN IDENTIFICATION: " << spendTime2 << " ms");
 #endif
   }
- #endif 
-
-#ifdef TOTO
+  
   markers.sort();
 
   CCTagVisualDebug::instance().writeIdentificationView(markers);

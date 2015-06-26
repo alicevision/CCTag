@@ -49,8 +49,6 @@ void cvCanny(
         const double thrLow,
         const double thrHigh );
 
-void thinning(cv::Mat & imgSrc);
-
 #endif
 
 template<class CView, class DXView, class DYView>

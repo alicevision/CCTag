@@ -99,11 +99,6 @@ void cvCanny(
   }
 }
 
-void thinning(cv::Mat & imgSrc)
-{
-  
-}
-
 } // namespace cctag
 
 
