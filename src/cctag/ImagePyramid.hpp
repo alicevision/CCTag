@@ -32,7 +32,7 @@ private:
   cv::Mat _mag;
   cv::Mat _src;
   cv::Mat _edges;
-
+  cv::Mat _temp;
 };
 
 class ImagePyramid

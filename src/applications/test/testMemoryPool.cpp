@@ -57,7 +57,7 @@ int main(int argc, char** argv)
       
       cctag::MemoryPool::instance().getImagePyramid().build(edges);
       
-      //cctag::MemoryPool::instance().getImagePyramid().output();
+      cctag::MemoryPool::instance().getImagePyramid().output();
 
 //#ifndef OPENCV3
 //      // OpenCV 2.4.9 (recoded, kernel 9x9)
