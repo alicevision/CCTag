@@ -34,10 +34,8 @@ struct CCTagParams
  * @param[in] frame
  * 
  */
-//template<class View, class GradView>
-void cctagMultiresDetection( CCTag::List& markers, const boost::gil::gray8_view_t& srcImg, const boost::gil::rgb32f_view_t & cannyRGB, const std::size_t frame, const Parameters & params );
 
-void cctagMultiresDetectionNew(
+void cctagMultiresDetection(
         CCTag::List& markers,
         const cv::Mat& imgGraySrc,
         const ImagePyramid & imagePyramid,

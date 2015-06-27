@@ -1,7 +1,3 @@
-#define png_infopp_NULL (png_infopp)NULL
-#define int_p_NULL (int*)NULL
-#include <boost/gil/extension/io/png_io.hpp>
-
 #include <cctag/fileDebug.hpp>
 #include <cctag/visualDebug.hpp>
 #include <cctag/progBase/exceptions.hpp>
@@ -17,9 +13,6 @@
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
-#include <boost/gil/gil_all.hpp>
-#include <boost/gil/image.hpp>
-#include <boost/gil/extension/io/jpeg_io.hpp>
 #include <boost/exception/all.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/archive/xml_oarchive.hpp>
@@ -48,7 +41,7 @@ namespace bfs = boost::filesystem;
 
 static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & params, const std::string & cctagBankFilename, std::string outputFileName = "")
+void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const std::string & cctagBankFilename, std::string outputFileName = "")
 {
     POP_ENTER;
     
@@ -59,16 +52,12 @@ void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & p
     // Process markers detection
     boost::timer t;
     boost::ptr_list<CCTag> markers;
-
-    view.setNumLayers( params._numberOfMultiresLayers );
     
-    CCTagVisualDebug::instance().initBackgroundImage(view._view);
+    CCTagVisualDebug::instance().initBackgroundImage(src);
     CCTagVisualDebug::instance().setImageFileName(outputFileName);
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
-    
-    cv::Mat graySrc(cv::cvarrToMat( const_cast<IplImage*>(boostCv::CvImageView( view._grayView ).get()) ));
 
-    cctagDetection(markers, frame, graySrc, params, cctagBankFilename, true);
+    cctagDetection(markers, frameId , src, params, cctagBankFilename, true);
     
     CCTagFileDebug::instance().outPutAllSessions();
     CCTagFileDebug::instance().clearSessions();
@@ -81,9 +70,6 @@ void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & p
 
     int i = 0;
     BOOST_FOREACH(const cctag::CCTag & marker, markers) {
-        cctag::drawMarkerOnGilImage(view._view, marker, false);
-        cctag::drawMarkerInfos(view._view, marker, false);
-
         if (i == 0) {
             CCTAG_COUT_NOENDL(marker.id() + 1);
         } else {
@@ -198,13 +184,13 @@ int main(int argc, char** argv)
   if ( (ext == ".png") || (ext == ".jpg") ) {
 
     POP_INFO << "looking at image " << myPath.string() << std::endl;
+    
+    // Gray scale convertion
+    cv::Mat src = cv::imread(filename);
+    cv::Mat graySrc;
+    cv::cvtColor( src, graySrc, CV_BGR2GRAY );
 
-    cctag::View my_view( filename );
-
-    rgb8_image_t& image = my_view._image;
-    rgb8_view_t&  svw   = my_view._view;
-
-    // Increase image size.
+    // Upscale original image
     /*{
             rgb8_image_t simage;
             simage.recreate( 2 * image.width(), 2 * image.height() );
@@ -213,7 +199,7 @@ int main(int argc, char** argv)
     }*/
 
     // Call the CCTag detection
-    detection(0, my_view, params, cctagBankFilename, myPath.stem().string());
+    detection(0, graySrc, params, cctagBankFilename, myPath.stem().string());
 
   } else if (ext == ".avi" )
   {
@@ -236,15 +222,13 @@ int main(int argc, char** argv)
       video >> frame;
       cv::Mat imgGray;
       cv::cvtColor( frame, imgGray, CV_BGR2GRAY );
-      cctag::View cctagView((const unsigned char *) imgGray.data, imgGray.cols, imgGray.rows , imgGray.step );
-      cctagView._view = boost::gil::interleaved_view(imgGray.cols, imgGray.rows, (boost::gil::rgb8_pixel_t*) frame.data, frame.step );
 
       // Set the output folder
       std::stringstream outFileName;
       outFileName << std::setfill('0') << std::setw(5) << frameId;
 
       // Call the CCTag detection
-      detection(frameId, cctagView, params, cctagBankFilename, outFileName.str());
+      detection(frameId, imgGray, params, cctagBankFilename, outFileName.str());
 
       ++frameId; 
     }

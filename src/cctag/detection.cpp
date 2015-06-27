@@ -651,7 +651,7 @@ void createImageForVoteResultDebug(
         const WinnerMap & winners,
         std::size_t nLevel)
 {
-//#if defined(CCTAG_SERIALIZE)
+#ifdef CCTAG_SERIALIZE 
   {
     POP_INFO << "running optional 'voting' block" << std::endl;
     std::size_t mx = 0;
@@ -675,16 +675,16 @@ void createImageForVoteResultDebug(
       imgVote.at<uchar>(winner->y(),winner->x()) = (unsigned char) ((v.size() * 10.0));
     }
 
-    std::stringstream outFilenameVote;
-    outFilenameVote << "/home/lilian/data/vote_" << nLevel << ".png";
-    imwrite(outFilenameVote.str(), imgVote);
-    
     //std::stringstream outFilenameVote;
-    //outFilenameVote << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
-    //CCTagVisualDebug::instance().initBackgroundImage(boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>(votevw));
-    //CCTagVisualDebug::instance().newSession(outFilenameVote.str());
+    //outFilenameVote << "/home/lilian/data/vote_" << nLevel << ".png";
+    //imwrite(outFilenameVote.str(), imgVote);
+    
+    std::stringstream outFilenameVote;
+    outFilenameVote << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
+    CCTagVisualDebug::instance().initBackgroundImage(imgVote);
+    CCTagVisualDebug::instance().newSession(outFilenameVote.str());
   }
-//#endif
+#endif
 }
 
 void cctagDetection(CCTag::List& markers,
@@ -725,14 +725,11 @@ void cctagDetection(CCTag::List& markers,
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
   imagePyramid.build(imgGraySrc);
   
-  imagePyramid.output();
-  //cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
-  cctagMultiresDetectionNew(markers, imgGraySrc, imagePyramid, frame, params);
+  cctagMultiresDetection(markers, imgGraySrc, imagePyramid, frame, params);
 #endif
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-
   boost::posix_time::time_duration d = t1 - t0;
   const double spendTime = d.total_milliseconds();
   CCTAG_COUT_OPTIM("TIME IN DETECTION: " << spendTime << " ms");
@@ -781,8 +778,6 @@ void cctagDetection(CCTag::List& markers,
       }
       catch (...)
       {
-        // Impossible to construct Ellipse from computed homographies => conics are not ellipses!
-        //it = markers.erase( it );
       }
     }
 #ifdef CCTAG_OPTIM

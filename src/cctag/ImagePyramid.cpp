@@ -1,5 +1,6 @@
 #include <cctag/global.hpp>
 #include <cctag/ImagePyramid.hpp>
+#include <cctag/visualDebug.hpp>
 
 #include <opencv2/imgproc/imgproc.hpp>
 
@@ -31,6 +32,16 @@ void ImagePyramid::build( const cv::Mat & src )
   {
     _levels[i]->setLevel( _levels[i-1]->getSrc() );
   }
+  
+#ifdef CCTAG_SERIALIZE
+  for(int i = 0; i < _levels.size() ; ++i)
+  {
+    std::stringstream outFilenameCanny;
+    outFilenameCanny << "cannyLevel" << i;
+    CCTagVisualDebug::instance().initBackgroundImage(_levels[i]->getEdges());
+    CCTagVisualDebug::instance().newSession(outFilenameCanny.str());
+  }
+#endif
 }
 
 void ImagePyramid::output()
