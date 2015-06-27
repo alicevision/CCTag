@@ -41,7 +41,7 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
     _h_debug_map        = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_edges      = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_edgelist   = new int2[ min(params._maxEdges,_h_edgelist_sz) ];
-    _h_debug_edgelist_2 = new int4[ min(params._maxEdges,_h_edgelist_2_sz) ];
+    _h_debug_edgelist_2 = new TriplePoint[ min(params._maxEdges,_h_edgelist_2_sz) ];
 
     POP_SYNC_CHK;
 
@@ -98,7 +98,7 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
                            cudaMemcpyDeviceToHost, _stream );
     POP_CUDA_MEMCPY_ASYNC( _h_debug_edgelist_2,
                            _d_edgelist_2,
-                           min(params._maxEdges,_h_edgelist_2_sz) * sizeof(int4),
+                           min(params._maxEdges,_h_edgelist_2_sz) * sizeof(TriplePoint),
                            cudaMemcpyDeviceToHost, _stream );
 }
 
@@ -195,12 +195,14 @@ void Frame::writeInt2Array( const char* filename, const int2* array, uint32_t sz
     }
 }
 
-void Frame::writeInt4Array( const char* filename, const int4* array, uint32_t sz )
+void Frame::writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz )
 {
     ofstream of( filename );
 
     for( uint32_t i=0; i<sz; i++ ) {
-        of << array[i].x << " " << array[i].y << " " << array[i].z << " " << array[i].w << endl;
+        of << array[i].coord.x << " " << array[i].coord.y << " "
+           << array[i].befor.x << " " << array[i].befor.y << " "
+           << array[i].after.x << " " << array[i].after.y << endl;
     }
 }
 
@@ -299,7 +301,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     writeInt2Array( s.c_str(), _h_debug_edgelist, min(params._maxEdges,_h_edgelist_sz) );
 
     s = filename + "-edgelist2.txt";
-    writeInt4Array( s.c_str(), _h_debug_edgelist_2, min(params._maxEdges,_h_edgelist_2_sz) );
+    writeTriplePointArray( s.c_str(), _h_debug_edgelist_2, min(params._maxEdges,_h_edgelist_2_sz) );
 }
 
 }; // namespace popart

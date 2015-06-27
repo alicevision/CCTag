@@ -429,7 +429,7 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
 }
 
 __device__
-bool gradiant_descent_inner( int4&                  out_edge_info,
+bool gradient_descent_inner( int4&                  out_edge_info,
                              int2*                  d_edgelist,
                              uint32_t               edgelist_sz,
                              cv::cuda::PtrStepSzb   edges,
@@ -440,7 +440,7 @@ bool gradiant_descent_inner( int4&                  out_edge_info,
                              int32_t                thrGradient )
 {
     const int offset = blockIdx.x * 32 + threadIdx.x;
-    int direction    = threadIdx.y == 0 ? 1 : -1;
+    int direction    = threadIdx.y == 0 ? -1 : 1;
 
     if( offset >= edgelist_sz ) return false;
 
@@ -496,6 +496,7 @@ bool gradiant_descent_inner( int4&                  out_edge_info,
         out_edge_info = make_int4( idx, idy, x, y );
         return true;
     }
+return false;
     
     while( n <= nmax ) {
         if( ady > adx ) {
@@ -535,9 +536,9 @@ bool gradiant_descent_inner( int4&                  out_edge_info,
 }
 
 __global__
-void gradiant_descent( int2*                  d_edgelist,
+void gradient_descent( int2*                  d_edgelist,
                        uint32_t               d_edgelist_sz,
-                       int4*                  d_new_edgelist,
+                       TriplePoint*           d_new_edgelist,
                        uint32_t*              d_new_edgelist_sz,
                        uint32_t               max_num_edges,
                        cv::cuda::PtrStepSzb   edges,
@@ -550,17 +551,45 @@ void gradiant_descent( int2*                  d_edgelist,
     assert( *d_new_edgelist_sz <= 2*d_edgelist_sz );
 
     int4 out_edge_info;
-    bool keep = gradiant_descent_inner( out_edge_info,
-                                        d_edgelist,
-                                        d_edgelist_sz,
-                                        edges,
-                                        nmax,
-                                        d_dx,
-                                        d_dy,
-                                        thrGradient );
+    bool keep;
+    // before -1  if threadIdx.y == 0
+    // after   1  if threadIdx.y == 1
+
+    keep = gradient_descent_inner( out_edge_info,
+                                   d_edgelist,
+                                   d_edgelist_sz,
+                                   edges,
+                                   nmax,
+                                   d_dx,
+                                   d_dy,
+                                   thrGradient );
+
+    __syncthreads();
+    __shared__ int2 merge_directions[2][32];
+    merge_directions[threadIdx.y][threadIdx.x].x = keep ? out_edge_info.z : 0;
+    merge_directions[threadIdx.y][threadIdx.x].y = keep ? out_edge_info.w : 0;
+
+    /* The vote.cpp procedure computes points for before and after, and stores all
+     * info in one point. In the voting procedure, after is never processed when
+     * before is false.
+     * Consequently, we ignore after completely when before is already false.
+     * Lots of idling cores; but the _inner has a bad loop, and we may run into it,
+     * which would be worse.
+     */
+    if( threadIdx.y == 1 ) return;
 
     uint32_t mask = __ballot( keep );  // bitfield of warps with results
     if( mask == 0 ) return;
+
+    __syncthreads(); // be on the safe side: __ballot syncs only one warp, we have 2
+
+    TriplePoint out_edge;
+    out_edge.coord.x = keep ? out_edge_info.x : 0;
+    out_edge.coord.y = keep ? out_edge_info.y : 0;
+    out_edge.befor.x = keep ? merge_directions[0][threadIdx.x].x : 0;
+    out_edge.befor.y = keep ? merge_directions[0][threadIdx.x].y : 0;
+    out_edge.after.x = keep ? merge_directions[1][threadIdx.x].x : 0;
+    out_edge.after.y = keep ? merge_directions[1][threadIdx.x].y : 0;
 
     uint32_t ct   = __popc( mask );    // horizontal reduce
     assert( ct <= 32 );
@@ -593,7 +622,7 @@ void gradiant_descent( int2*                  d_edgelist,
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
     if( keep && write_index < max_num_edges ) {
-        d_new_edgelist[write_index] = out_edge_info;
+        d_new_edgelist[write_index] = out_edge;
     }
 }
 
@@ -745,7 +774,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
         POP_CUDA_MEMCPY_ASYNC( _d_edge_counter, &dummy, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream );
     }
 
-    cout << "    calling gradiant descent with " << _h_edgelist_sz << " edge points" << endl;
+    cout << "    calling gradient descent with " << _h_edgelist_sz << " edge points" << endl;
     cout << "    max num edges is " << max_num_edges << endl;
 
     device_print_edge_counter
@@ -755,7 +784,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
     cout << "    grid (" << grid.x << "," << grid.y << "," << grid.z << ")"
          << " block (" << block.x << "," << block.y << "," << block.z << ")" << endl;
 
-    gradiant_descent
+    gradient_descent
         <<<grid,block,0,_stream>>>
         ( _d_edgelist,   _h_edgelist_sz,
           _d_edgelist_2, _d_edge_counter,
@@ -776,7 +805,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
     cudaStreamSynchronize( _stream );
     // Try to figure out how that can be done with CMake.
 
-    cout << "    after   gradiant descent, edge counter is " << _h_edgelist_2_sz << endl;
+    cout << "    after   gradient descent, edge counter is " << _h_edgelist_2_sz << endl;
 
     /*
      * After this:
@@ -893,8 +922,8 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int2) );
     _d_edgelist = (int2*)ptr;
 
-    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int4) );
-    _d_edgelist_2 = (int4*)ptr;
+    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(TriplePoint) );
+    _d_edgelist_2 = (TriplePoint*)ptr;
 
     POP_CUDA_MALLOC( &ptr, sizeof(uint32_t) );
     _d_edge_counter = (uint32_t*)ptr;

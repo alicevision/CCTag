@@ -51,6 +51,17 @@ private:
 };
 
 /*************************************************************
+ * TriplePoint
+ * A simplified version of EdgePoint in the C++ code.
+ *************************************************************/
+struct TriplePoint
+{
+    int2 coord;
+    int2 befor;
+    int2 after;
+};
+
+/*************************************************************
  * Frame
  * The basic structure for managing data stored on the GPU
  *************************************************************/
@@ -114,7 +125,7 @@ public:
     static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>& plane );
 
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
-    static void writeInt4Array( const char* filename, const int4* array, uint32_t sz );
+    static void writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz );
 
     void writeHostDebugPlane( std::string filename, const cctag::Parameters& params );
     void hostDebugCompare( unsigned char* pix );
@@ -133,7 +144,7 @@ private:
     cv::cuda::PtrStepSzb   _d_map;
     cv::cuda::PtrStepSzb   _d_edges;
     int2*                  _d_edgelist;
-    int4*                  _d_edgelist_2;
+    TriplePoint*           _d_edgelist_2;
     uint32_t*              _d_edge_counter;
 
     unsigned char* _h_debug_plane;
@@ -145,7 +156,7 @@ private:
     unsigned char* _h_debug_edges;
     int2*          _h_debug_edgelist;
     uint32_t       _h_edgelist_sz;
-    int4*          _h_debug_edgelist_2;
+    TriplePoint*   _h_debug_edgelist_2;
     uint32_t       _h_edgelist_2_sz;
 
     FrameTexture*  _texture;
