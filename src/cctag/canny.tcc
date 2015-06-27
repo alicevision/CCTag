@@ -19,15 +19,15 @@ namespace cctag
 
 template<class SView,
          class CannyRGBView,
-         class CannyView, 
-         class GradXView,
-         class GradYView>
+         class CannyView>
+         // class GradXView,
+         // class GradYView>
 void cannyCv(
         const SView& srcView,
         CannyRGBView& cannyRGB,
         CannyView& cannyView,
-        GradXView& cannyGradX,
-        GradYView& cannyGradY,
+        // GradXView& cannyGradX,
+        // GradYView& cannyGradY,
         const double thrCannyLow,
         const double thrCannyHigh)
 {

@@ -751,7 +751,9 @@ void cctagDetection(CCTag::List& markers,
   // y gradient
   cannyGradY = kth_channel_view<2>(cannyRGB);
 
-  cannyCv(graySrc, cannyRGB, cannyView, cannyGradX, cannyGradY,
+  cannyCv(graySrc, cannyRGB, cannyView,
+          // cannyGradX,
+          // cannyGradY,
           params._cannyThrLow, params._cannyThrHigh);
 
   cctagMultiresDetection(markers, graySrc, cannyRGB, frame, params);
