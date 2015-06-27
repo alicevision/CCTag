@@ -145,7 +145,8 @@ void pop_cuda_memcpy_sync( void* dst, const void* src, size_t sz, cudaMemcpyKind
     cudaError_t err;
     err = cudaMemcpy( dst, src, sz, type );
     if( err != cudaSuccess ) {
-        cerr << "    " << "Failed to copy "
+        cerr << file << ":" << line << endl
+             << "    " << "Failed to copy "
              << (type==cudaMemcpyHostToDevice?"host-to-device":"device-to-host")
              << ": ";
         cerr << cudaGetErrorString(err) << endl;
