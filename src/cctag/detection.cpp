@@ -716,7 +716,7 @@ void cctagDetection(CCTag::List& markers,
 
     uint32_t w = graySrc.width();
     uint32_t h = graySrc.height();
-    pipe1.prepframe( w, h );
+    pipe1.prepframe( w, h, params );
 
     unsigned char* pix = new unsigned char[w*h];
     memset( pix, 0, w*h );
@@ -728,7 +728,7 @@ void cctagDetection(CCTag::List& markers,
                                                            graySrc.width() * sizeof(unsigned char) ) );
 
     pipe1.tagframe( pix, w, h, params );
-    pipe1.debug( pix );
+    pipe1.debug( pix, params );
   }
 #endif
   // Views for:
