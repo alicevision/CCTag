@@ -26,13 +26,21 @@ Frame::Frame( uint32_t width, uint32_t height )
     , _h_debug_mag( 0 )
     , _h_debug_map( 0 )
     , _h_debug_edges( 0 )
+    , _h_debug_edgelist( 0 )
+    , _h_edgelist_sz( 0 )
+    , _h_debug_edgelist_2( 0 )
+    , _h_edgelist_2_sz( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
     , _wait_done( 0 )
 {
     cerr << "Allocating frame: " << width << "x" << height << endl;
 
+#if 0
+    _stream = 0;
+#else
     POP_CUDA_STREAM_CREATE( &_stream );
+#endif
 
     size_t pitch;
     POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width, height );
@@ -51,13 +59,15 @@ Frame::~Frame( )
 {
     deleteUploadEvent( );
 
-    delete _h_debug_plane;
-    delete _h_debug_smooth;
-    delete _h_debug_dx;
-    delete _h_debug_dy;
-    delete _h_debug_mag;
-    delete _h_debug_map;
-    delete _h_debug_edges;
+    delete [] _h_debug_plane;
+    delete [] _h_debug_smooth;
+    delete [] _h_debug_dx;
+    delete [] _h_debug_dy;
+    delete [] _h_debug_mag;
+    delete [] _h_debug_map;
+    delete [] _h_debug_edges;
+    delete [] _h_debug_edgelist;
+    delete [] _h_debug_edgelist_2;
     delete _texture;
 
     POP_CUDA_FREE( _d_plane.data );
@@ -120,6 +130,7 @@ void Frame::fillFromFrame( Frame& src )
     cu_fill_from_frame
         <<<grid,block,0,_stream>>>
         ( _d_plane, getPitch(), getWidth(), getHeight(), src._d_plane, src.getPitch(), src.getWidth(), src.getHeight() );
+    POP_CHK_CALL_IFSYNC;
 }
 
 __global__
@@ -147,6 +158,7 @@ void Frame::fillFromTexture( Frame& src )
         <<<grid,block,0,_stream>>>
         // ( _d_plane, getPitch(), getWidth(), getHeight(), src.getTex() );
         ( _d_plane, src.getTex() );
+    POP_CHK_CALL_IFSYNC;
 }
 
 void Frame::deleteTexture( )
