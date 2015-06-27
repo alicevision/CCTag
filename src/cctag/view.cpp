@@ -63,7 +63,7 @@ void View::setNumLayers( size_t num )
         _canvas.init( _image.width(), _image.height(), num );
     }
 
-    POP_INFO << "BEGIN - PIXEL-WISE COPYING - THIS MUST BE REMOVED" << std::endl;
+    POP_INFO("BEGIN - PIXEL-WISE COPYING - THIS MUST BE REMOVED");
     size_t   host_canvas_width      = _canvas.hostCanvasWidth();
     size_t   host_canvas_layer_size = _canvas.hostCanvasSize();
     uint8_t* ptr                    = _canvas.hostCanvas();
