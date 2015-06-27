@@ -42,15 +42,19 @@ public:
     : c(d), used(false), longName(name) {}
     virtual ~Option() {}
     virtual bool check(int& argc, char* argv[])=0; ///< Option found at argv[0]?
-    virtual Option* clone() const=0; ///< Copy
+    virtual Option* clone() = 0; ///< Copy
 };
 
 /// Option on/off is called a switch
 class OptionSwitch : public Option {
 public:
     /// Constructor with short name/long name (optional)
-    OptionSwitch(char c, std::string name="")
-    : Option(c,name) {}
+    OptionSwitch(const char c, bool& field, std::string name="")
+        : Option(c,name)
+        , _field(field)
+    {
+        _field = false;
+    }
     /// Find switch in argv[0]
     bool check(int& argc, char* argv[]) {
         if(std::string("-")+c==argv[0] ||
@@ -58,19 +62,23 @@ public:
             used = true;
             std::rotate(argv, argv+1, argv+argc);
             argc -= 1;
+            _field = true;
             return true;
         } else if(std::string(argv[0]).find(std::string("-")+c)==0) {
             used = true; // Handle multiple switches in single option
             std::rotate(argv[0]+1, argv[0]+2,
                         argv[0]+std::string(argv[0]).size()+1);
+            _field = true;
             return true;
         }
         return false;
     }
     /// Copy
-    Option* clone() const {
-        return new OptionSwitch(c, longName);
+    virtual Option* clone() {
+        return new OptionSwitch(c, _field, longName);
     }
+private:
+    bool _field;
 };
 
 /// Option with an argument of type T. The type must be readable by operator>>
@@ -113,7 +121,7 @@ public:
         return !((str >> _field).fail() || !str.eof());
     }
     /// Copy
-    Option* clone() const {
+    virtual Option* clone() {
         return new OptionField<T>(c, _field, longName);
     }
 private:
@@ -128,9 +136,11 @@ inline bool OptionField<std::string>::read_param(const std::string& param) {
     return true;
 }
 
+#if 0
+// THIS IS DANGEROUS !
 /// New switch option
-OptionSwitch make_switch(char c, std::string name="") {
-    return OptionSwitch(c, name);
+OptionSwitch make_switch(char c, bool& field, std::string name="") {
+    return OptionSwitch(c, field, name);
 }
 
 /// New option with argument.
@@ -138,6 +148,7 @@ template <class T>
 OptionField<T> make_option(char c, T& field, std::string name="") {
     return OptionField<T>(c, field, name);
 }
+#endif
 
 /// Command line parsing
 class CmdLine {
@@ -150,7 +161,7 @@ public:
             delete *it;
     }
     /// Add an option
-    void add(const Option& opt) {
+    void add( Option& opt ) {
         opts.push_back( opt.clone() );
     }
     /// Parse of command line acting as a filter. All options are virtually
