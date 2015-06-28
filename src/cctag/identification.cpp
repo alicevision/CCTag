@@ -13,7 +13,6 @@
 #include <boost/accumulators/statistics/median.hpp>
 #include <boost/accumulators/statistics/variance.hpp>
 #include <boost/assert.hpp>
-#include <boost/gil/image_view.hpp>
 #include <boost/numeric/ublas/banded.hpp>
 #include <boost/numeric/ublas/expression_types.hpp>
 #include <boost/numeric/ublas/functional.hpp>
@@ -345,18 +344,14 @@ cctag::numerical::BoundedMatrix3x3d adjustH( cctag::numerical::BoundedMatrix3x3d
 }
 
 void extractSignalUsingHomography( cctag::ImageCut & rectifiedSig,
-        const boost::gil::gray8_view_t & sourceView,
+        const cv::Mat & src,
         cctag::numerical::BoundedMatrix3x3d & mH,
         const std::size_t n, const double begin,
         const double end )
 {
   using namespace boost;
   using namespace boost::numeric::ublas;
-  using namespace boost::gil;
   using namespace cctag::numerical;
-
-  typedef typename color_converted_view_type<boost::gil::gray8_view_t, gray32f_pixel_t>::type View32F;
-  View32F csvw = color_converted_view<gray32f_pixel_t>( sourceView );
 
   BOOST_ASSERT( rectifiedSig._imgSignal.size() == 0 );
   BOOST_ASSERT( end >= begin );
@@ -378,18 +373,14 @@ void extractSignalUsingHomography( cctag::ImageCut & rectifiedSig,
   {
     const double xi = i * stepXi + begin;
     const cctag::Point2dN<double> hp = getHPoint( xi, 0.0, mH );
-    gray32f_pixel_t pix;
-    if ( hp.x() >= 0.0 && hp.x() <= sourceView.width()-1 &&
-         hp.y() >= 0.0 && hp.y() <= sourceView.height()-1 &&
-         sample( terry::sampler::bicubic_sampler(),
-                 csvw,
-                 point2<double>( hp.x(), hp.y() ),
-                 pix,
-                 terry::sampler::eParamFilterOutBlack ) )
+
+    if ( hp.x() >= 1.0 && hp.x() <= src.cols-1 &&
+         hp.y() >= 1.0 && hp.y() <= src.rows-1 )
     {
       // put pixel value to rectified signal
-      rectifiedSig._imgSignal(i) = pix[0];
-      acc( pix[0] );
+      double pixVal = getPixelBilinear( src, hp.x(), hp.y());
+      rectifiedSig._imgSignal(i) = pixVal;
+      acc( pixVal );
     }
     else
     {
@@ -405,16 +396,11 @@ void extractSignalUsingHomography( cctag::ImageCut & rectifiedSig,
 }
 
 std::size_t cutInterpolated( cctag::ImageCut & cut,
-        const boost::gil::gray8_view_t & sView,
+        const cv::Mat & src,
         const cctag::Point2dN<double> & pStart,
         const cctag::Point2dN<double> & pStop,
         const std::size_t nSteps )
 {
-  using namespace boost::gil;
-
-  typedef typename color_converted_view_type<boost::gil::gray8_view_t, gray32f_pixel_t>::type View32F;
-  View32F csvw = color_converted_view<gray32f_pixel_t>( sView );
-
   const double kx = ( pStop.x() - pStart.x() ) / ( nSteps - 1 );
   const double ky = ( pStop.y() - pStart.y() ) / ( nSteps - 1 );
   cut._imgSignal.resize( nSteps );
@@ -425,17 +411,11 @@ std::size_t cutInterpolated( cctag::ImageCut & cut,
   std::size_t len = 0;
   for( std::size_t i = 0; i < nSteps; ++i )
   {
-    gray32f_pixel_t pix;
-    if ( x >= 0.0 && x < sView.width() &&
-         y >= 0.0 && y < sView.height() &&
-         sample( terry::sampler::bicubic_sampler(),
-                 csvw,
-                 point2<double>( x, y ),
-                 pix,
-                 terry::sampler::eParamFilterOutBlack ) )
+    if ( x >= 1.0 && x < src.cols-1 &&
+         y >= 1.0 && y < src.rows-1 )
     {
       // put pixel value to rectified signal
-      cut._imgSignal(i) = pix[0];
+      cut._imgSignal(i) = double(getPixelBilinear( src, x, y));
       ++len;
     }
     else
@@ -449,9 +429,8 @@ std::size_t cutInterpolated( cctag::ImageCut & cut,
   return len;
 }
 
-
 void collectCuts( std::vector<cctag::ImageCut> & cuts,
-        const boost::gil::gray8_view_t & sourceView,
+        const cv::Mat & src,
         const cctag::Point2dN<double> & center,
         const std::vector< cctag::Point2dN<double> > & pts,
         const std::size_t sampleCutLength,
@@ -464,7 +443,7 @@ void collectCuts( std::vector<cctag::ImageCut> & cuts,
     cuts.push_back( cctag::ImageCut() );
     cctag::ImageCut & cut = cuts.back();
     if ( cutInterpolated( cut,
-                          sourceView,
+                          src,
                           center,
                           p,
                           sampleCutLength ) < ( sampleCutLength - startOffset ) )
@@ -478,10 +457,8 @@ void collectCuts( std::vector<cctag::ImageCut> & cuts,
 double costSelectCutFun( const std::vector<double> & varCuts,
         const boost::numeric::ublas::vector<std::size_t> & randomIdx,
         const std::vector<cctag::ImageCut> & collectedCuts,
-        const boost::gil::kth_channel_view_type<1,
-        boost::gil::rgb32f_view_t>::type & dx,
-        const boost::gil::kth_channel_view_type<2,
-        boost::gil::rgb32f_view_t>::type & dy,
+        const cv::Mat & dx,
+        const cv::Mat & dy,
         const double alpha)
 {
   using namespace cctag::numerical;
@@ -495,8 +472,8 @@ double costSelectCutFun( const std::vector<double> & varCuts,
     BOOST_ASSERT( i < varCuts.size() );
 
     ublas::bounded_vector<double,2> gradient;
-    gradient(0) = (*dx.xy_at( collectedCuts[i]._stop.x(), collectedCuts[i]._stop.y() ))[0];
-    gradient(1) = (*dy.xy_at( collectedCuts[i]._stop.x(), collectedCuts[i]._stop.y() ))[0];
+    gradient(0) = dx.at<short>( collectedCuts[i]._stop.y(), collectedCuts[i]._stop.x() );
+    gradient(1) = dy.at<short>( collectedCuts[i]._stop.y(), collectedCuts[i]._stop.x() );
     double normGrad = ublas::norm_2(gradient);
     sumDeriv(0) += gradient(0)/normGrad;
     sumDeriv(1) += gradient(1)/normGrad;
@@ -513,17 +490,14 @@ double costSelectCutFun( const std::vector<double> & varCuts,
 void selectCut( std::vector< cctag::ImageCut > & cutSelection,
         std::vector< cctag::Point2dN<double> > & prSelection,
         std::size_t selectSize, const std::vector<cctag::ImageCut> & collectedCuts,
-        const boost::gil::gray8_view_t& sourceView,
-        const boost::gil::kth_channel_view_type<1,
-        boost::gil::rgb32f_view_t>::type & dx,
-        const boost::gil::kth_channel_view_type<2,
-        boost::gil::rgb32f_view_t>::type & dy,
+        const cv::Mat & src,
+        const cv::Mat & dx,
+        const cv::Mat & dy,
         const double refinedSegSize,
         const std::size_t numSamplesOuterEdgePointsRefinement,
         const std::size_t cutsSelectionTrials )
 {
   using namespace boost::numeric;
-  using namespace boost::gil;
   using namespace boost::accumulators;
 
   selectSize = std::min( selectSize, collectedCuts.size() );
@@ -579,14 +553,14 @@ void selectCut( std::vector< cctag::ImageCut > & cutSelection,
   BOOST_FOREACH( const MapT::value_type & v, mapVar )
   {
     const cctag::ImageCut & line = *v.second;
-    BOOST_ASSERT( line._stop.x() >= 0 && line._stop.x() < dx.width() );
-    BOOST_ASSERT( line._stop.y() >= 0 && line._stop.y() < dx.height() );
-    BOOST_ASSERT( line._stop.x() >= 0 && line._stop.x() < dy.width() );
-    BOOST_ASSERT( line._stop.y() >= 0 && line._stop.y() < dy.height() );
+    BOOST_ASSERT( line._stop.x() >= 0 && line._stop.x() < dx.cols );
+    BOOST_ASSERT( line._stop.y() >= 0 && line._stop.y() < dx.rows );
+    BOOST_ASSERT( line._stop.x() >= 0 && line._stop.x() < dy.cols );
+    BOOST_ASSERT( line._stop.y() >= 0 && line._stop.y() < dy.rows );
 
     cctag::numerical::BoundedVector3d gradDirection;
-    gradDirection( 0 ) = (*dx.xy_at(line._stop.x(), line._stop.y()))[0];
-    gradDirection( 1 ) = (*dy.xy_at(line._stop.x(), line._stop.y()))[0];
+    gradDirection( 0 ) = dx.at<short>(line._stop.y(), line._stop.x());
+    gradDirection( 1 ) = dy.at<short>(line._stop.y(), line._stop.x());
     gradDirection( 2 ) = 0.0;
     gradDirection = cctag::numerical::unit( gradDirection );
 
@@ -599,7 +573,7 @@ void selectCut( std::vector< cctag::ImageCut > & cutSelection,
     cctag::ImageCut cut;
     cutInterpolated(
       cut,
-      sourceView,
+      src,
       start,
       stop,
       numSamplesOuterEdgePointsRefinement );
@@ -634,13 +608,13 @@ bool getSignals( cctag::numerical::BoundedMatrix3x3d & mH,
         std::vector< cctag::ImageCut > & signals,
         const std::size_t lengthSig, const cctag::Point2dN<double> & o,
         const std::vector< cctag::Point2dN<double> > & vecExtPoint, 
-        const boost::gil::gray8_view_t & sourceView, 
+        const cv::Mat & src, 
         const cctag::numerical::BoundedMatrix3x3d & matEllipse )
 {
   BOOST_ASSERT( vecExtPoint.size() > 0 );
 
   // Check if we aren't diverging
-  if( o.x() < -150 || o.x() > sourceView.width()+150 || o.y() < -150 || o.y() > sourceView.height()+150 )
+  if( o.x() < -150 || o.x() > src.cols+150 || o.y() < -150 || o.y() > src.rows+150 )
     return false;
 
   using namespace cctag::numerical;
@@ -703,7 +677,7 @@ bool getSignals( cctag::numerical::BoundedMatrix3x3d & mH,
   // First pass
   {
     cctag::ImageCut & rectifiedSig = signals.front();
-    extractSignalUsingHomography( rectifiedSig, sourceView, mHrot, lengthSig );
+    extractSignalUsingHomography( rectifiedSig, src, mHrot, lengthSig );
   }
 
 
@@ -711,14 +685,14 @@ bool getSignals( cctag::numerical::BoundedMatrix3x3d & mH,
   {
     mHrot = adjustH( mHrot, o, vecExtPoint[i] );
     cctag::ImageCut & rectifiedSig = signals[i];
-    extractSignalUsingHomography( rectifiedSig, sourceView, mHrot, lengthSig );
+    extractSignalUsingHomography( rectifiedSig, src, mHrot, lengthSig );
   }
   return true;
 }
 
 
 bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig, 
-        const std::size_t lengthSig, const boost::gil::gray8_view_t& sourceView,
+        const std::size_t lengthSig, const cv::Mat & src,
         const cctag::numerical::geometry::Ellipse & ellipse,
         const std::vector< cctag::Point2dN<double> > & pr,
         const bool useLmDif )
@@ -768,7 +742,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromPoints( pr );
     //cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromEllipse( ellipse );
 
-    oRefined = opt( oRefined, lengthSig, sourceView, ellipse, mT );
+    oRefined = opt( oRefined, lengthSig, src, ellipse, mT );
 
     // Check if the refined point is near the center of the outer ellipse.
     cctag::numerical::geometry::Ellipse semiEllipse( ellipse.center(),ellipse.a()/2.0,ellipse.b()/2.0,ellipse.angle() );
@@ -815,7 +789,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     x.push_back(oRefined.y());
 
     ceres::CostFunction* cost_function =
-      new ceres::NumericDiffCostFunction<TotoFunctor, ceres::CENTRAL, 1, 2> (new TotoFunctor(pr, lengthSig, sourceView, ellipse, mT )   );
+      new ceres::NumericDiffCostFunction<TotoFunctor, ceres::CENTRAL, 1, 2> (new TotoFunctor(pr, lengthSig, src, ellipse, mT )   );
     problem.AddResidualBlock(cost_function, NULL, &x[0]);
 
     // Run the solver!
@@ -859,7 +833,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
   {
     //CCTAG_COUT_DEBUG( "Before getsignal" );
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-    getSignals( mH, fsig, lengthSig, oRefined, pr, sourceView, ellipse.matrix() );
+    getSignals( mH, fsig, lengthSig, oRefined, pr, src, ellipse.matrix() );
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
@@ -872,9 +846,9 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
 int identify(
   CCTag & cctag,
   const std::vector< std::vector<double> > & radiusRatios, ///@todo directly use the bank
-  const boost::gil::gray8_view_t & sourceView,
-  const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & dx,
-  const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & dy,
+  const cv::Mat & src,
+  const cv::Mat & dx,
+  const cv::Mat & dy,
   const cctag::Parameters & params)
 {
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
@@ -927,7 +901,7 @@ int identify(
     // Collect cuts around the extern ellipse with the interval [startOffset;1.0] not outside the image
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
     // Collect cuts around the extern ellipse with the interval [startOffset;1.0] not outside the image
-    collectCuts( cuts, sourceView, ellipse.center(), ellipsePoints, params._sampleCutLength, startOffset);
+    collectCuts( cuts, src, ellipse.center(), ellipsePoints, params._sampleCutLength, startOffset);
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
@@ -955,7 +929,7 @@ int identify(
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
     
-    selectCut( cutSelection, prSelection, params._numCutsInIdentStep, cuts, sourceView, 
+    selectCut( cutSelection, prSelection, params._numCutsInIdentStep, cuts, src, 
             dx, dy, refinedSegSize, params._numSamplesOuterEdgePointsRefinement,
             params._cutsSelectionTrials );
     
@@ -982,7 +956,7 @@ int identify(
 
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-    bool hasConverged = refineConicFamily( cctag, fsig, params._sampleCutLength, sourceView, ellipse, prSelection, params._useLMDif );
+    bool hasConverged = refineConicFamily( cctag, fsig, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
     if( !hasConverged )
     {
       CCTAG_COUT_DEBUG(ellipse);

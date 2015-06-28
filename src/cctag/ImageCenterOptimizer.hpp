@@ -12,9 +12,8 @@
 #include <NLF.h>
 #include <OptQNewton.h>
 
-#include <boost/gil/image_view.hpp>
-#include <boost/gil/typedefs.hpp>
 #include <boost/numeric/ublas/vector.hpp>
+#include <opencv2/core/core.hpp>
 
 #include <cstddef>
 #include <vector>
@@ -43,7 +42,12 @@ public:
 	 * @param[in] pToRefine initial point to refine
 	 * @return refined 2D point
 	 */
-	Point2dN<double> operator()( const cctag::Point2dN<double> & pToRefine, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView, const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT );
+	Point2dN<double> operator()(
+                const cctag::Point2dN<double> & pToRefine,
+                const std::size_t lengthSig,
+                const cv::Mat & src,
+                const cctag::numerical::geometry::Ellipse & outerEllipse,
+                const cctag::numerical::BoundedMatrix3x3d & mT );
 
 	inline void initFcn()
 	{
@@ -69,8 +73,7 @@ private:
 	const VecExtPoints & _vecExtPoints;
 	cctag::Point2dN<double> _pToRefine;
 	std::size_t _lengthSig;
-	boost::gil::gray8_view_t _sView;
-	//cctag::numerical::BoundedMatrix3x3d _matEllipse;
+	cv::Mat _src;
 	cctag::numerical::geometry::Ellipse _ellipse;
 	std::size_t _numIter;
 	cctag::numerical::BoundedMatrix3x3d _mT;

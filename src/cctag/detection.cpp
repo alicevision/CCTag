@@ -735,8 +735,6 @@ void cctagDetection(CCTag::List& markers,
   CCTAG_COUT_OPTIM("TIME IN DETECTION: " << spendTime << " ms");
 #endif
   
-  
-#ifdef TOTO
   // Identification step
   // To decomment -- enable cuts selection, homography computation and identification
   if (params._doIdentification)
@@ -749,9 +747,9 @@ void cctagDetection(CCTag::List& markers,
       const int detected = cctag::identify(
               cctag,
               bank.getMarkers(),
-              graySrc,
-              cannyGradX,
-              cannyGradY,
+              imagePyramid.getLevel(0)->getSrc(),
+              imagePyramid.getLevel(0)->getDx(),
+              imagePyramid.getLevel(0)->getDy(),
               params);
       
       cctag.setStatus(detected);
@@ -790,6 +788,7 @@ void cctagDetection(CCTag::List& markers,
   
   markers.sort();
 
+  CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
   CCTagVisualDebug::instance().writeIdentificationView(markers);
   CCTagFileDebug::instance().newSession("identification.txt");
 
@@ -797,7 +796,6 @@ void cctagDetection(CCTag::List& markers,
   {
     CCTagFileDebug::instance().outputMarkerInfos(marker);
   }
-#endif
 
   POP_LEAVE;
 }
