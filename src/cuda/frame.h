@@ -12,8 +12,10 @@ namespace cv {
     namespace cuda {
         typedef PtrStepSz<int16_t>  PtrStepSz16s;
         typedef PtrStepSz<uint32_t> PtrStepSz32u;
+        typedef PtrStepSz<int32_t>  PtrStepSz32s;
         typedef PtrStep<int16_t>    PtrStep16s;
         typedef PtrStep<uint32_t>   PtrStep32u;
+        typedef PtrStep<int32_t>    PtrStep32s;
     }
 };
 
@@ -59,6 +61,8 @@ struct TriplePoint
     int2 coord;
     int2 befor;
     int2 after;
+    int  next_coord;
+    int  next_after;
 };
 
 /*************************************************************
@@ -146,6 +150,8 @@ private:
     int2*                  _d_edgelist;
     TriplePoint*           _d_edgelist_2;
     uint32_t*              _d_edge_counter;
+    cv::cuda::PtrStepSz32s _d_next_edge_coord; // 2D plane for chaining TriplePoint coord
+    cv::cuda::PtrStepSz32s _d_next_edge_after; // 2D plane for chaining TriplePoint after
 
     unsigned char* _h_debug_plane;
     float*         _h_debug_smooth;

@@ -464,7 +464,7 @@ bool gradient_descent_inner( int4&                  out_edge_info,
     int    stpY  = 0;
     int    x     = idx;
     int    y     = idy;
-
+    
     if( ady > adx ) {
         updateXY(dy,dx,y,x,e,stpY,stpX);
     } else {
@@ -496,7 +496,6 @@ bool gradient_descent_inner( int4&                  out_edge_info,
         out_edge_info = make_int4( idx, idy, x, y );
         return true;
     }
-return false;
     
     while( n <= nmax ) {
         if( ady > adx ) {
@@ -540,6 +539,8 @@ void gradient_descent( int2*                  d_edgelist,
                        uint32_t               d_edgelist_sz,
                        TriplePoint*           d_new_edgelist,
                        uint32_t*              d_new_edgelist_sz,
+                       cv::cuda::PtrStepSz32s d_next_edge_coord,
+                       cv::cuda::PtrStepSz32s d_next_edge_after,
                        uint32_t               max_num_edges,
                        cv::cuda::PtrStepSzb   edges,
                        uint32_t               nmax,
@@ -578,9 +579,6 @@ void gradient_descent( int2*                  d_edgelist,
      */
     if( threadIdx.y == 1 ) return;
 
-    uint32_t mask = __ballot( keep );  // bitfield of warps with results
-    if( mask == 0 ) return;
-
     __syncthreads(); // be on the safe side: __ballot syncs only one warp, we have 2
 
     TriplePoint out_edge;
@@ -590,6 +588,16 @@ void gradient_descent( int2*                  d_edgelist,
     out_edge.befor.y = keep ? merge_directions[0][threadIdx.x].y : 0;
     out_edge.after.x = keep ? merge_directions[1][threadIdx.x].x : 0;
     out_edge.after.y = keep ? merge_directions[1][threadIdx.x].y : 0;
+
+    /* This is an addition to the logic by griff, because I have trouble believing
+     * that we have found a good gradient if searching in both directions leads
+     * to identical coordinates.
+     * @Lilian - please explain what happens here
+     */
+    if( out_edge.befor.x == out_edge.after.x && out_edge.befor.y == out_edge.after.y ) keep = false;
+
+    uint32_t mask = __ballot( keep );  // bitfield of warps with results
+    if( mask == 0 ) return;
 
     uint32_t ct   = __popc( mask );    // horizontal reduce
     assert( ct <= 32 );
@@ -622,6 +630,21 @@ void gradient_descent( int2*                  d_edgelist,
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
     if( keep && write_index < max_num_edges ) {
+        /* At this point we know that we will keep the point.
+         * Obviously, pointer chains in CUDA are tricky, but we can use index
+         * chains based on the element's offset index in d_new_edgelist.
+         * We use atomic exchange for the chaining operation.
+         * Actually, for coord, we don't have to do it because there is a unique
+         * mapping kernel instance to coord.
+         * The after table _d_next_edge_after, on the hand. may form a true
+         * chain.
+         */
+        int* p_coord = &d_next_edge_coord.ptr(out_edge.coord.y)[out_edge.coord.x];
+        out_edge.next_coord = atomicExch( p_coord, write_index );
+
+        int* p_after = &d_next_edge_after.ptr(out_edge.after.y)[out_edge.after.x];
+        out_edge.next_after = atomicExch( p_after, write_index );
+
         d_new_edgelist[write_index] = out_edge;
     }
 }
@@ -788,6 +811,8 @@ void Frame::applyGauss( const cctag::Parameters & params )
         <<<grid,block,0,_stream>>>
         ( _d_edgelist,   _h_edgelist_sz,
           _d_edgelist_2, _d_edge_counter,
+          _d_next_edge_coord,
+          _d_next_edge_after,
           max_num_edges, _d_edges, nmax, _d_dx, _d_dy, threshold ); // , _d_out_points );
     POP_CHK_CALL_IFSYNC;
 
@@ -928,6 +953,20 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     POP_CUDA_MALLOC( &ptr, sizeof(uint32_t) );
     _d_edge_counter = (uint32_t*)ptr;
 
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
+    assert( p % _d_next_edge_coord.elemSize() == 0 );
+    _d_next_edge_coord.data = (int32_t*)ptr;
+    _d_next_edge_coord.step = p;
+    _d_next_edge_coord.cols = w;
+    _d_next_edge_coord.rows = h;
+
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
+    assert( p % _d_next_edge_after.elemSize() == 0 );
+    _d_next_edge_after.data = (int32_t*)ptr;
+    _d_next_edge_after.step = p;
+    _d_next_edge_after.cols = w;
+    _d_next_edge_after.rows = h;
+
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
                            _d_smooth.step * _d_smooth.rows,
@@ -961,6 +1000,16 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     POP_CUDA_MEMSET_ASYNC( _d_edges.data,
                            0,
                            _d_edges.step * _d_edges.rows,
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_next_edge_coord.data,
+                           0,
+                           _d_next_edge_coord.step * _d_next_edge_coord.rows,
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_next_edge_after.data,
+                           0,
+                           _d_next_edge_after.step * _d_next_edge_after.rows,
                            _stream );
 
     cerr << "Leave " << __FUNCTION__ << endl;
