@@ -138,9 +138,9 @@ void pop_cuda_memcpy_async( void* dst, const void* src, size_t sz, cudaMemcpyKin
 
 void pop_cuda_memcpy_sync( void* dst, const void* src, size_t sz, cudaMemcpyKind type, const char* file, size_t line )
 {
-    POP_CHECK_NON_NULL( dst, "Dest ptr in memcpy async is null." );
-    POP_CHECK_NON_NULL( src, "Source ptr in memcpy async is null." );
-    POP_CHECK_NON_NULL( sz, "Size in memcpy async is null." );
+    POP_CHECK_NON_NULL_FL( dst, "Dest ptr in memcpy async is null.", file, line );
+    POP_CHECK_NON_NULL_FL( src, "Source ptr in memcpy async is null.", file, line );
+    POP_CHECK_NON_NULL_FL( sz, "Size in memcpy async is null.", file, line );
 
     cudaError_t err;
     err = cudaMemcpy( dst, src, sz, type );

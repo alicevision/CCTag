@@ -154,7 +154,7 @@ void filter_gauss_horiz( cv::cuda::PtrStepSzf          src,
     }
 
     if( idy >= dst.rows ) return;
-    if( idx*sizeof(float) >= dst.step ) return;
+    if( idx*sizeof(float) >= src.step ) return;
 
     bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
     dst.ptr(idy)[idx] = nix ? 0 : (DestType)out;
@@ -448,7 +448,10 @@ bool gradient_descent_inner( int4&                  out_edge_info,
     float  dx    = direction * d_dx.ptr(idy)[idx];
     float  dy    = direction * d_dy.ptr(idy)[idx];
 
+#warning continue with this bug
+#if 0
     assert( dx!=0 || dy!=0 );
+#endif
 
     const float  adx   = d_abs( dx );
     const float  ady   = d_abs( dy );
