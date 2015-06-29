@@ -656,7 +656,7 @@ void createImageForVoteResultDebug(
 #if defined(CCTAG_SERIALIZE)
   {
 
-    POP_INFO << "running optional 'voting' block" << std::endl;
+    POP_INFO("running optional 'voting' block");
     std::size_t mx = 0;
     boost::gil::gray8_image_t vimg(sourceView.dimensions());
     boost::gil::gray8_view_t votevw(view(vimg));
