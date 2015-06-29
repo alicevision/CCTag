@@ -8,6 +8,15 @@
 
 #include "../cctag/params.hpp"
 
+/* A table is copied to constant memory containing sigma values
+ * for Gauss filtering at the 0-offset, and the derivatives
+ * at +16.
+ * Necessary to overcome alignment mess with __constant__
+ * memory.
+ */
+#define GAUSS_TABLE  0 // Gauss parameters
+#define GAUSS_DERIV 16 // first derivative
+
 namespace cv {
     namespace cuda {
         typedef PtrStepSz<int16_t>  PtrStepSz16s;
@@ -81,6 +90,9 @@ public:
     // implemented in frame_gaussian.cu
     static void initGaussTable( );
 
+    // Copy manually created LUT tables for thinning
+    static void initThinningTable( );
+
     // copy the upper layer from the host to the device
     void upload( const unsigned char* image ); // implicitly assumed that w/h are the same as above
 
@@ -121,6 +133,9 @@ public:
 
     // implemented in frame_gaussian.cu
     void applyGauss( const cctag::Parameters& param );
+
+    // implemented in frame_apply.cu
+    void applyMore( const cctag::Parameters& param );
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
@@ -176,6 +191,27 @@ private:
 public:
     cudaStream_t _stream;
 };
+
+template <typename T>
+__device__
+inline bool outOfBounds( int x, int y, const cv::cuda::PtrStepSz<T>& edges )
+{
+    return ( x < 0 || x >= edges.cols || y < 0 || y >= edges.rows );
+}
+
+template <typename T>
+__device__
+inline T d_abs( T value )
+{
+    return ( ( value < 0 ) ? -value : value );
+}
+
+template <typename T>
+__device__
+inline int d_sign( T value )
+{
+    return ( ( value < 0 ) ? -1 : 1 );
+}
 
 }; // namespace popart
 

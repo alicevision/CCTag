@@ -21,9 +21,11 @@ void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h,
                          const cctag::Parameters& params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
-    static bool gauss_table_initialized = false;
-    if( not gauss_table_initialized ) {
+    static bool tables_initialized = false;
+    if( not tables_initialized ) {
+        tables_initialized = true;
         Frame::initGaussTable( );
+        Frame::initThinningTable( );
     }
 
     uint32_t w = pix_w;
@@ -79,6 +81,7 @@ void TagPipe::tagframe( unsigned char* pix,
 
     for( int i=0; i<4; i++ ) {
         _frame[i]->applyGauss( params ); // async
+        _frame[i]->applyMore( params );  // async
     }
 
     FrameEvent doneEv[4];
