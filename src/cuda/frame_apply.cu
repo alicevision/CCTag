@@ -179,12 +179,14 @@ void edge_hysteresis( cv::cuda::PtrStepSzb map, cv::cuda::PtrStepSzb edges )
 __device__
 bool thinning_inner( const int idx, const int idy, cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, bool first_run )
 {
-    uint8_t log = 0;
-
-    if( src.ptr(idy)[idx] == 0 ) return false;
+    if( src.ptr(idy)[idx] == 0 ) {
+        dst.ptr(idy)[idx] = 0;
+        return false;
+    }
 
     if( idx >= 1 && idy >=1 && idx <= src.cols-2 && idy <= src.rows-2 ) {
-        log |= ( src.ptr(idy-1)[idx-1] != 0 ) ? 0x80 : 0;
+        uint8_t log = 0;
+
         log |= ( src.ptr(idy-1)[idx  ] != 0 ) ? 0x01 : 0;
         log |= ( src.ptr(idy-1)[idx+1] != 0 ) ? 0x02 : 0;
         log |= ( src.ptr(idy  )[idx+1] != 0 ) ? 0x04 : 0;
@@ -192,6 +194,7 @@ bool thinning_inner( const int idx, const int idy, cv::cuda::PtrStepSzb src, cv:
         log |= ( src.ptr(idy+1)[idx  ] != 0 ) ? 0x10 : 0;
         log |= ( src.ptr(idy+1)[idx-1] != 0 ) ? 0x20 : 0;
         log |= ( src.ptr(idy  )[idx-1] != 0 ) ? 0x40 : 0;
+        log |= ( src.ptr(idy-1)[idx-1] != 0 ) ? 0x80 : 0;
 
 #if 1
         if( first_run )
