@@ -154,27 +154,46 @@ void compute_map( const cv::cuda::PtrStepSz16s dx,
     map.ptr(idy)[idx] = edge_type;
 }
 
-__global__
-void edge_hysteresis( cv::cuda::PtrStepSzb map, cv::cuda::PtrStepSzb edges )
+__device__
+inline
+void edge_hysteresis_updown( uint8_t& up, uint8_t& down, uint8_t input, uint8_t clock )
 {
-    const int block_x = blockIdx.x * 32;
-    const int idx     = block_x + threadIdx.x;
+    up   |= ( input == 2 ) ? clock : 0;
+    down |= ( input == 1 ) ? clock : 0;
+}
+
+__global__
+void edge_hysteresis( cv::cuda::PtrStepSzb map, cv::cuda::PtrStepSzb edges, bool final )
+{
+    const int idx     = blockIdx.x * 32 + threadIdx.x;
     const int idy     = blockIdx.y;
 
-    uint8_t log = 0;
+    if( outOfBounds( idx, idy, edges ) ) return;
 
-    if( idx >= 1 && idy >=1 && idx <= map.cols-2 && idy <= map.rows-2 ) {
-        log |= ( map.ptr(idy-1)[idx-1] == 2 ) ? 0x80 : 0;
-        log |= ( map.ptr(idy-1)[idx  ] == 2 ) ? 0x01 : 0;
-        log |= ( map.ptr(idy-1)[idx+1] == 2 ) ? 0x02 : 0;
-        log |= ( map.ptr(idy  )[idx+1] == 2 ) ? 0x04 : 0;
-        log |= ( map.ptr(idy+1)[idx+1] == 2 ) ? 0x08 : 0;
-        log |= ( map.ptr(idy+1)[idx  ] == 2 ) ? 0x10 : 0;
-        log |= ( map.ptr(idy+1)[idx-1] == 2 ) ? 0x20 : 0;
-        log |= ( map.ptr(idy  )[idx-1] == 2 ) ? 0x40 : 0;
-        if( log != 0 ) log = 1;
+    uint8_t localVal = map.ptr(idy)[idx];
+
+    if( __any( localVal == 1 ) )
+    {
+        if( localVal == 1 ) {
+            if( idx >= 1 && idy >=1 && idx <= map.cols-2 && idy <= map.rows-2 ) {
+                uint8_t up   = 0;
+                uint8_t down = 0;
+                edge_hysteresis_updown( up, down, map.ptr(idy-1)[idx  ], 0x01 );
+                edge_hysteresis_updown( up, down, map.ptr(idy-1)[idx+1], 0x02 );
+                edge_hysteresis_updown( up, down, map.ptr(idy  )[idx+1], 0x04 );
+                edge_hysteresis_updown( up, down, map.ptr(idy+1)[idx+1], 0x08 );
+                edge_hysteresis_updown( up, down, map.ptr(idy+1)[idx  ], 0x10 );
+                edge_hysteresis_updown( up, down, map.ptr(idy+1)[idx-1], 0x20 );
+                edge_hysteresis_updown( up, down, map.ptr(idy  )[idx-1], 0x40 );
+                edge_hysteresis_updown( up, down, map.ptr(idy-1)[idx-1], 0x80 );
+
+                localVal = ( up != 0 ) ? 2 : ( down == 0 ) ? 0 : final ? 0 : 1;
+            }
+        }
+        edges.ptr(idy)[idx] = localVal;
+    } else {
+        edges.ptr(idy)[idx] = localVal;
     }
-    edges.ptr(idy)[idx] = log;
 }
 
 __device__
@@ -557,23 +576,31 @@ void Frame::applyMore( const cctag::Parameters & params )
         ( _d_dx, _d_dy, _d_mag );
     POP_CHK_CALL_IFSYNC;
 
-    // static const float kDefaultCannyThrLow      =  0.01f ;
-    // static const float kDefaultCannyThrHigh     =  0.04f ;
-
-#if 0
-    compute_map
-        <<<grid,block,0,_stream>>>
-        ( _d_dx, _d_dy, _d_mag, _d_map, 256.0f * 0.01f, 256.0f * 0.04f );
-#else
     compute_map
         <<<grid,block,0,_stream>>>
         ( _d_dx, _d_dy, _d_mag, _d_map, 256.0f * params._cannyThrLow, 256.0f * params._cannyThrHigh );
-#endif
     POP_CHK_CALL_IFSYNC;
 
     edge_hysteresis
         <<<grid,block,0,_stream>>>
-        ( _d_map, _d_hyst_edges );
+        ( _d_map, cv::cuda::PtrStepSzb(_d_intermediate), false );
+    POP_CHK_CALL_IFSYNC;
+
+#if 1
+    edge_hysteresis
+        <<<grid,block,0,_stream>>>
+        ( cv::cuda::PtrStepSzb(_d_intermediate), _d_hyst_edges, false );
+    POP_CHK_CALL_IFSYNC;
+
+    edge_hysteresis
+        <<<grid,block,0,_stream>>>
+        ( _d_hyst_edges, cv::cuda::PtrStepSzb(_d_intermediate), false );
+    POP_CHK_CALL_IFSYNC;
+#endif
+
+    edge_hysteresis
+        <<<grid,block,0,_stream>>>
+        ( cv::cuda::PtrStepSzb(_d_intermediate), _d_hyst_edges, true );
     POP_CHK_CALL_IFSYNC;
 
     thinning
