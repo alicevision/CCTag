@@ -22,6 +22,16 @@ using namespace std;
  * Aligning to anything less than 16 floats is a bad idea.
  */
 
+static const float sum_of_gauss_values = 0.000053390535453f +
+                                         0.001768051711852f +
+                                         0.021539279301849f +
+                                         0.096532352630054f +
+                                         0.159154943091895f +
+                                         0.096532352630054f +
+                                         0.021539279301849f +
+                                         0.001768051711852f +
+                                         0.000053390535453f;
+
 static const float h_gauss_filter[32] =
 {
     0.000053390535453f,
@@ -65,7 +75,8 @@ template <class DestType>
 __global__
 void filter_gauss_horiz( cv::cuda::PtrStepSzf          src,
                          cv::cuda::PtrStepSz<DestType> dst,
-                         int                           filter )
+                         int                           filter,
+                         float                         scale )
 {
     const int idx     = blockIdx.x * 32 + threadIdx.x;
     const int idy     = blockIdx.y;
@@ -83,6 +94,7 @@ void filter_gauss_horiz( cv::cuda::PtrStepSzf          src,
     if( idx*sizeof(float) >= src.step ) return;
 
     bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
+    out /= scale;
     dst.ptr(idy)[idx] = nix ? 0 : (DestType)out;
 }
 
@@ -90,7 +102,8 @@ template <class DestType>
 __global__
 void filter_gauss_vert( cv::cuda::PtrStepSzf          src,
                         cv::cuda::PtrStepSz<DestType> dst,
-                        int                           filter )
+                        int                           filter,
+                        float                         scale )
 {
     const int idx     = blockIdx.x * 32 + threadIdx.x;
     const int idy     = blockIdx.y;
@@ -109,12 +122,14 @@ void filter_gauss_vert( cv::cuda::PtrStepSzf          src,
     if( idy >= dst.rows ) return;
 
     bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
+    out /= scale;
     dst.ptr(idy)[idx] = nix ? 0 : (DestType)out;
 }
 
 __global__
 void filter_gauss_horiz_from_uchar( cv::cuda::PtrStepSzb src,
-                                    cv::cuda::PtrStepSzf dst )
+                                    cv::cuda::PtrStepSzf dst,
+                                    float                scale )
 {
     const int idx     = blockIdx.x * 32 + threadIdx.x;
     const int idy     = blockIdx.y;
@@ -132,6 +147,7 @@ void filter_gauss_horiz_from_uchar( cv::cuda::PtrStepSzb src,
     if( idx * sizeof(float) >= dst.step ) return;
 
     bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
+    out /= scale;
     dst.ptr(idy)[idx] = nix ? 0 : out;
 }
 
@@ -164,33 +180,33 @@ void Frame::applyGauss( const cctag::Parameters & params )
 
     filter_gauss_horiz_from_uchar
         <<<grid,block,0,_stream>>>
-        ( _d_plane, _d_intermediate );
+        ( _d_plane, _d_intermediate, sum_of_gauss_values );
     POP_CHK_CALL_IFSYNC;
 
     filter_gauss_vert
         <<<grid,block,0,_stream>>>
-        ( _d_intermediate, _d_smooth, GAUSS_TABLE );
+        ( _d_intermediate, _d_smooth, GAUSS_TABLE, sum_of_gauss_values );
     POP_CHK_CALL_IFSYNC;
 
     filter_gauss_vert
         <<<grid,block,0,_stream>>>
-        ( _d_smooth, _d_intermediate, GAUSS_TABLE );
+        ( _d_smooth, _d_intermediate, GAUSS_TABLE, sum_of_gauss_values );
     POP_CHK_CALL_IFSYNC;
 
     filter_gauss_horiz
         <<<grid,block,0,_stream>>>
-        ( _d_intermediate, _d_dx, GAUSS_DERIV );
+        ( _d_intermediate, _d_dx, GAUSS_DERIV, 1.0f );
     POP_CHK_CALL_IFSYNC;
 
     // possible to split into 2 streams
     filter_gauss_horiz
         <<<grid,block,0,_stream>>>
-        ( _d_smooth, _d_intermediate, GAUSS_TABLE );
+        ( _d_smooth, _d_intermediate, GAUSS_TABLE, sum_of_gauss_values );
     POP_CHK_CALL_IFSYNC;
 
     filter_gauss_vert
         <<<grid,block,0,_stream>>>
-        ( _d_intermediate, _d_dy, GAUSS_DERIV );
+        ( _d_intermediate, _d_dy, GAUSS_DERIV, 1.0f );
     POP_CHK_CALL_IFSYNC;
 
     cerr << "Leave " << __FUNCTION__ << endl;
