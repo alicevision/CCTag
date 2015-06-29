@@ -30,6 +30,11 @@ if(CCTAG_SERIALIZE)
   add_definitions("-DCCTAG_SERIALIZE")
 endif(CCTAG_SERIALIZE)
 
+# Store all the output
+if(CCTAG_VOTE_DEBUG)
+  add_definitions("-DCCTAG_VOTE_DEBUG")
+endif(CCTAG_VOTE_DEBUG)
+
 # Disable output stream
 if(CCTAG_NO_COUT)
   add_definitions("-DCCTAG_NO_COUT")

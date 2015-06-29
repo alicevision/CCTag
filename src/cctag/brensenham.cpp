@@ -1,5 +1,6 @@
 #include <cctag/EdgePoint.hpp>
 #include <cctag/brensenham.hpp>
+#include <cctag/fileDebug.hpp>
 
 #include <cctag/toolbox/gilTools.hpp>
 
@@ -399,11 +400,15 @@ EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & c
 
     int x = p.x();
     int y = p.y();
+    
+    CCTagFileDebug::instance().newVote(x,y,dx,dy);
 
     if( ady > adx )
     {
 
         updateXY(dy,dx,y,x,e,stpY,stpX);
+        CCTagFileDebug::instance().addFieldLinePoint(x, y);
+        
         n = n+1;
 
         if ( dx*dx+dy*dy > thrGradient )
@@ -416,6 +421,7 @@ EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & c
         }
 
         updateXY(dy,dx,y,x,e,stpY,stpX);
+        CCTagFileDebug::instance().addFieldLinePoint(x, y);
         n = n+1;
 
         if( x >= 0 && x < canny.shape()[0] &&
@@ -435,6 +441,7 @@ EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & c
         while( n <= nmax)
         {
             updateXY(dy,dx,y,x,e, stpY,stpX);
+            CCTagFileDebug::instance().addFieldLinePoint(x, y);
             n = n+1;
 
             if( x >= 0 && x < canny.shape()[0] &&
@@ -471,6 +478,7 @@ EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & c
     else
     {
         updateXY(dx,dy,x,y,e,stpX,stpY);
+        CCTagFileDebug::instance().addFieldLinePoint(x, y);
         n = n+1;
 
         if ( dx*dx+dy*dy > thrGradient )
@@ -483,6 +491,7 @@ EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & c
         }
 
         updateXY(dx,dy,x,y,e,stpX,stpY);
+        CCTagFileDebug::instance().addFieldLinePoint(x, y);
         n = n+1;
 
         if( x >= 0 && x < canny.shape()[0] &&
@@ -502,6 +511,7 @@ EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & c
         while( n <= nmax)
         {
             updateXY(dx,dy,x,y,e,stpX,stpY);
+            CCTagFileDebug::instance().addFieldLinePoint(x, y);
             n = n+1;
 
             if( x >= 0 && x < canny.shape()[0] &&
