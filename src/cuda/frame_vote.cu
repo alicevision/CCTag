@@ -132,7 +132,6 @@ TriplePoint* vote_inner( TriplePoint* d_edgelist_2,     // input
     // direction.
     TriplePoint* current = vote::find_befor( p, d_next_edge_befor, d_edgelist_2 );
     // Here current contains the edge point lying on the 2nd ellipse (from outer to inner)
-    TriplePoint* chosen = NULL;
 
     // To save all sub-segments length
     int       vDistSize = 0;
@@ -146,30 +145,31 @@ TriplePoint* vote_inner( TriplePoint* d_edgelist_2,     // input
 
     // compute difference in subsequent gradients orientation
     float cosDiffTheta = -vote::inner_prod( p, current, d_dx, d_dy );
-    if( cosDiffTheta >= 0.0 ) {
-        float lastDist = vote::distance( p, current ); // hypotf is CUDA float intrinsic for sqrt(pow2+pow2)
-        vDist[vDistSize++] = lastDist;
-        assert( vDistSize <= vDistMax );
+    if( cosDiffTheta < 0.0 ) return 0;
+
+    float lastDist = vote::distance( p, current ); // hypotf is CUDA float intrinsic for sqrt(pow2+pow2)
+    vDist[vDistSize++] = lastDist;
+    assert( vDistSize <= vDistMax );
         
-        // Add the sub-segment length to the total distance.
-        totalDistance += lastDist;
+    // Add the sub-segment length to the total distance.
+    totalDistance += lastDist;
 
-        // Iterate over all crowns
-        for( int i=1; i < numCrowns; ++i ) {
-            chosen = NULL;
+    TriplePoint* chosen = 0;
 
-            // First in the gradient direction
-            TriplePoint* target = vote::find_after( current, d_next_edge_after, d_edgelist_2 );
-            // No edge point was found in that direction
-            if( not target ) {
-                break;
-            }
+    // Iterate over all crowns
+    for( int i=1; i < numCrowns; ++i ) {
+        chosen = 0;
+
+        // First in the gradient direction
+        TriplePoint* target = vote::find_after( current, d_next_edge_after, d_edgelist_2 );
+        // No edge point was found in that direction
+        if( not target ) return 0;
             
-            // Check the difference of two consecutive angles
-            cosDiffTheta = -vote::inner_prod( target, current, d_dx, d_dy );
-            if( cosDiffTheta < 0.0 ) {
-                break;
-            } else {
+        // Check the difference of two consecutive angles
+        cosDiffTheta = -vote::inner_prod( target, current, d_dx, d_dy );
+        if( cosDiffTheta < 0.0 ) return 0;
+
+        {
                 dist = vote::distance( target, current );
                 vDist[vDistSize++] = dist;
                 assert( vDistSize <= vDistMax );
@@ -222,7 +222,6 @@ TriplePoint* vote_inner( TriplePoint* d_edgelist_2,     // input
                     }
                 }
             }
-        }
     }
     return chosen;
 }

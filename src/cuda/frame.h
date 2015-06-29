@@ -61,8 +61,9 @@ struct TriplePoint
     int2 coord;
     int2 befor;
     int2 after;
-    int  next_coord;
+    int  next_coord; // I believe that this can be removed
     int  next_after;
+    int  next_befor;
 };
 
 /*************************************************************
@@ -152,6 +153,7 @@ private:
     uint32_t*              _d_edge_counter;
     cv::cuda::PtrStepSz32s _d_next_edge_coord; // 2D plane for chaining TriplePoint coord
     cv::cuda::PtrStepSz32s _d_next_edge_after; // 2D plane for chaining TriplePoint after
+    cv::cuda::PtrStepSz32s _d_next_edge_befor; // 2D plane for chaining TriplePoint after
 
     unsigned char* _h_debug_plane;
     float*         _h_debug_smooth;
