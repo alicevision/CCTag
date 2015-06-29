@@ -55,6 +55,11 @@ namespace cctag {
             void clearSessions();
             
             void printInfos();
+            
+            // Vote debug
+            void newVote(float x, float y, float dx, float dy);
+            void addFieldLinePoint(float x, float y);
+            void endVote();
 
             
             

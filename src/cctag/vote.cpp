@@ -13,6 +13,7 @@
 #include <cctag/geometry/ellipseFromPoints.hpp>
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/global.hpp>
+#include <cctag/visualDebug.hpp>
 
 #include <boost/foreach.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
@@ -58,9 +59,17 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
         const Parameters & params)
 {
+#ifdef CCTAG_VOTE_DEBUG
+  std::stringstream outFilenameVote;
+  outFilenameVote << "vote" << CCTagVisualDebug::instance().getPyramidLevel() << ".txt";
+  CCTagFileDebug::instance().newSession(outFilenameVote.str());
+#endif
+
     BOOST_FOREACH(EdgePoint & p, points) {
         p._before = gradientDirectionDescent(edgesMap, p, -1, params._distSearch, cannyGradX, cannyGradY, params._thrGradientMagInVote);
+        CCTagFileDebug::instance().endVote();
         p._after = gradientDirectionDescent(edgesMap, p, 1, params._distSearch, cannyGradX, cannyGradY, params._thrGradientMagInVote);
+        CCTagFileDebug::instance().endVote();
     }
     // Vote
     seeds.reserve(points.size() / 2);
