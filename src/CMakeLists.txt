@@ -8,7 +8,7 @@ FILE( GLOB_RECURSE
       ./cctag/*.cpp
 )
 
-IF(CUDA_FOUND)
+IF(USE_CUDA)
     FILE( GLOB_RECURSE
           CUDA_cpp
           ./cuda/*.cpp
@@ -20,8 +20,8 @@ IF(CUDA_FOUND)
     set_source_files_properties( ${CUDA_cpp} ${CUDA_cu}
                                  PROPERTIES COMPILE_FLAGS "-g -Wall"
     )
-    # set(CUDA_NVCC_FLAGS "-G -g -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52")
-    set(CUDA_NVCC_FLAGS "-gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52 -O3")
+    # set(CUDA_NVCC_DEBUG_FLAGS "-G -g -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52")
+    # set(CUDA_NVCC_RELEASE_FLAGS "-gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52 -O3")
 
     # I try to find parameters that allow Dynamic Parallelism.
     # So far not successful, but the following settings appear
@@ -36,12 +36,12 @@ IF(CUDA_FOUND)
                   ${CUDA_cu} )
 
     add_library( CCTag STATIC ${CUDA_cpp} ${CCTag_cpp} )
-ELSE(CUDA_FOUND)
+ELSE(USE_CUDA)
     SET(CUDA_cpp "")
 
     add_library( CCTag SHARED ${CCTag_cpp} )
     #add_library( CCTagStatic STATIC ${CCTag_cpp} )
-ENDIF(CUDA_FOUND)
+ENDIF(USE_CUDA)
 
 SET(CCTAG_LINK_LIBRARIES
     ${OpenCV_LIBS}
@@ -66,13 +66,16 @@ target_include_directories( CCTag PUBLIC .)
 
 set(CCTagDetect_cpp ./cctag/detection/main.cpp)
 
-if(CUDA_FOUND)
+if(USE_CUDA)
     add_executable( detection ${CCTagDetect_cpp} ${cuda_files} )
     target_link_libraries( detection CCTag ${CUDA_LIBRARIES} )
-else(CUDA_FOUND)
+else(USE_CUDA)
     add_executable( detection ${CCTagDetect_cpp})
     target_link_libraries( detection CCTag )
-endif(CUDA_FOUND)
+endif(USE_CUDA)
+
+add_executable( pgmdiff playground/pgmdiff.cc )
+target_link_libraries( pgmdiff PUBLIC ${Boost_LIBRARIES} )
 
 install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 

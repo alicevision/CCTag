@@ -17,7 +17,8 @@ TagPipe::TagPipe( )
 }
 
 __host__
-void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h )
+void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h,
+                         const cctag::Parameters& params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
     static bool gauss_table_initialized = false;
@@ -37,7 +38,7 @@ void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h )
     _frame[0]->allocUploadEvent( ); // sync
 
     for( int i=0; i<4; i++ ) {
-        _frame[i]->allocDevGaussianPlane(); // sync
+        _frame[i]->allocDevGaussianPlane( params ); // sync
         _frame[i]->allocDoneEvent( ); // sync
     }
     cerr << "Leave " << __FUNCTION__ << endl;
@@ -93,7 +94,7 @@ void TagPipe::tagframe( unsigned char* pix,
 }
 
 __host__
-void TagPipe::debug( unsigned char* pix )
+void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
@@ -101,7 +102,7 @@ void TagPipe::debug( unsigned char* pix )
         // This is a debug block
 
         for( int i=0; i<4; i++ ) {
-            _frame[i]->hostDebugDownload();
+            _frame[i]->hostDebugDownload( params );
         }
         POP_SYNC_CHK;
 
@@ -110,7 +111,7 @@ void TagPipe::debug( unsigned char* pix )
         for( int i=0; i<4; i++ ) {
             std::ostringstream ostr;
             ostr << "debug-input-plane-" << i;
-            _frame[i]->writeHostDebugPlane( ostr.str() );
+            _frame[i]->writeHostDebugPlane( ostr.str(), params );
         }
         POP_SYNC_CHK;
     }

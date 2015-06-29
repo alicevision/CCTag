@@ -4,7 +4,10 @@
 #include <fstream>
 #include <string.h>
 #include <cuda_runtime.h>
+#include <sys/stat.h>
 #include "debug_macros.hpp"
+
+#include "../cctag/cmdline.hpp"
 
 #include "frame.h"
 
@@ -18,7 +21,7 @@ using namespace std;
  * Frame
  *************************************************************/
 
-void Frame::hostDebugDownload( )
+void Frame::hostDebugDownload( const cctag::Parameters& params )
 {
     delete [] _h_debug_plane;
     delete [] _h_debug_smooth;
@@ -27,14 +30,18 @@ void Frame::hostDebugDownload( )
     delete [] _h_debug_mag;
     delete [] _h_debug_map;
     delete [] _h_debug_edges;
+    delete [] _h_debug_edgelist;
+    delete [] _h_debug_edgelist_2;
 
-    _h_debug_plane  = new unsigned char[ getWidth() * getHeight() ];
-    _h_debug_smooth = new float[ getWidth() * getHeight() ];
-    _h_debug_dx     = new int16_t[ getWidth() * getHeight() ];
-    _h_debug_dy     = new int16_t[ getWidth() * getHeight() ];
-    _h_debug_mag    = new uint32_t[ getWidth() * getHeight() ];
-    _h_debug_map    = new unsigned char[ getWidth() * getHeight() ];
-    _h_debug_edges    = new unsigned char[ getWidth() * getHeight() ];
+    _h_debug_plane      = new unsigned char[ getWidth() * getHeight() ];
+    _h_debug_smooth     = new float[ getWidth() * getHeight() ];
+    _h_debug_dx         = new int16_t[ getWidth() * getHeight() ];
+    _h_debug_dy         = new int16_t[ getWidth() * getHeight() ];
+    _h_debug_mag        = new uint32_t[ getWidth() * getHeight() ];
+    _h_debug_map        = new unsigned char[ getWidth() * getHeight() ];
+    _h_debug_edges      = new unsigned char[ getWidth() * getHeight() ];
+    _h_debug_edgelist   = new int2[ min(params._maxEdges,_h_edgelist_sz) ];
+    _h_debug_edgelist_2 = new TriplePoint[ min(params._maxEdges,_h_edgelist_2_sz) ];
 
     POP_SYNC_CHK;
 
@@ -85,6 +92,14 @@ void Frame::hostDebugDownload( )
                               _d_edges.cols * sizeof(uint8_t),
                               _d_edges.rows,
                               cudaMemcpyDeviceToHost, _stream );
+    POP_CUDA_MEMCPY_ASYNC( _h_debug_edgelist,
+                           _d_edgelist,
+                           min(params._maxEdges,_h_edgelist_sz) * sizeof(int2),
+                           cudaMemcpyDeviceToHost, _stream );
+    POP_CUDA_MEMCPY_ASYNC( _h_debug_edgelist_2,
+                           _d_edgelist_2,
+                           min(params._maxEdges,_h_edgelist_2_sz) * sizeof(TriplePoint),
+                           cudaMemcpyDeviceToHost, _stream );
 }
 
 #if 0
@@ -171,6 +186,26 @@ void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>&
 #endif
 }
 
+void Frame::writeInt2Array( const char* filename, const int2* array, uint32_t sz )
+{
+    ofstream of( filename );
+
+    for( uint32_t i=0; i<sz; i++ ) {
+        of << array[i].x << " " << array[i].y << endl;
+    }
+}
+
+void Frame::writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz )
+{
+    ofstream of( filename );
+
+    for( uint32_t i=0; i<sz; i++ ) {
+        of << array[i].coord.x << " " << array[i].coord.y << " "
+           << array[i].befor.x << " " << array[i].befor.y << " "
+           << array[i].after.x << " " << array[i].after.y << endl;
+    }
+}
+
 void Frame::hostDebugCompare( unsigned char* pix )
 {
     bool found_mistake = false;
@@ -197,8 +232,22 @@ void Frame::hostDebugCompare( unsigned char* pix )
     }
 }
 
-void Frame::writeHostDebugPlane( string filename )
+void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& params )
 {
+    struct stat st = {0};
+
+    string dir = cmdline.debugDir;
+    char   dirtail = dir[ dir.size()-1 ];
+    if( dirtail != '/' ) {
+        filename = dir + "/" + filename;
+    } else {
+        filename = dir + filename;
+    }
+
+    if (stat( dir.c_str(), &st) == -1) {
+        mkdir( dir.c_str(), 0700);
+    }
+
     string s = filename + ".pgm";
     cv::cuda::PtrStepSzb b( getHeight(),
                             getWidth(),
@@ -247,6 +296,12 @@ void Frame::writeHostDebugPlane( string filename )
                                   _h_debug_edges,
                                   getWidth()*sizeof(uint8_t) );
     writeDebugPlane( s.c_str(), edges );
+
+    s = filename + "-edgelist.txt";
+    writeInt2Array( s.c_str(), _h_debug_edgelist, min(params._maxEdges,_h_edgelist_sz) );
+
+    s = filename + "-edgelist2.txt";
+    writeTriplePointArray( s.c_str(), _h_debug_edgelist_2, min(params._maxEdges,_h_edgelist_2_sz) );
 }
 
 }; // namespace popart

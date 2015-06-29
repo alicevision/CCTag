@@ -429,9 +429,9 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
 }
 
 __device__
-bool gradiant_descent_inner( int4&                  out_edge_info,
+bool gradient_descent_inner( int4&                  out_edge_info,
                              int2*                  d_edgelist,
-                             uint32_t               edgeCount,
+                             uint32_t               edgelist_sz,
                              cv::cuda::PtrStepSzb   edges,
                              // int                    direction,
                              uint32_t               nmax,
@@ -439,10 +439,10 @@ bool gradiant_descent_inner( int4&                  out_edge_info,
                              cv::cuda::PtrStepSz16s d_dy,
                              int32_t                thrGradient )
 {
-    const int offset    = blockIdx.x * 32 + threadIdx.y;
-    int direction = threadIdx.x == 0 ? 1 : -1;
+    const int offset = blockIdx.x * 32 + threadIdx.x;
+    int direction    = threadIdx.y == 0 ? -1 : 1;
 
-    if( offset >= edgeCount ) return false;
+    if( offset >= edgelist_sz ) return false;
 
     const int idx = d_edgelist[offset].x;
     const int idy = d_edgelist[offset].y;
@@ -464,7 +464,7 @@ bool gradiant_descent_inner( int4&                  out_edge_info,
     int    stpY  = 0;
     int    x     = idx;
     int    y     = idy;
-
+    
     if( ady > adx ) {
         updateXY(dy,dx,y,x,e,stpY,stpX);
     } else {
@@ -535,10 +535,12 @@ bool gradiant_descent_inner( int4&                  out_edge_info,
 }
 
 __global__
-void gradiant_descent( int2*                  d_edgelist,
-                       uint32_t               edgeCount,
-                       int4*                  d_new_edgelist,
-                       uint32_t*              d_new_edge_counter,
+void gradient_descent( int2*                  d_edgelist,
+                       uint32_t               d_edgelist_sz,
+                       TriplePoint*           d_new_edgelist,
+                       uint32_t*              d_new_edgelist_sz,
+                       cv::cuda::PtrStepSz32s d_next_edge_coord,
+                       cv::cuda::PtrStepSz32s d_next_edge_after,
                        uint32_t               max_num_edges,
                        cv::cuda::PtrStepSzb   edges,
                        uint32_t               nmax,
@@ -546,32 +548,115 @@ void gradiant_descent( int2*                  d_edgelist,
                        cv::cuda::PtrStepSz16s d_dy,
                        int32_t                thrGradient )
 {
+    assert( blockDim.x * gridDim.x < d_edgelist_sz + 32 );
+    assert( *d_new_edgelist_sz <= 2*d_edgelist_sz );
+
     int4 out_edge_info;
-    bool keep = gradiant_descent_inner( out_edge_info,
-                                        d_edgelist,
-                                        edgeCount,
-                                        edges,
-                                        nmax,
-                                        d_dx,
-                                        d_dy,
-                                        thrGradient );
+    bool keep;
+    // before -1  if threadIdx.y == 0
+    // after   1  if threadIdx.y == 1
+
+    keep = gradient_descent_inner( out_edge_info,
+                                   d_edgelist,
+                                   d_edgelist_sz,
+                                   edges,
+                                   nmax,
+                                   d_dx,
+                                   d_dy,
+                                   thrGradient );
+
+    __syncthreads();
+    __shared__ int2 merge_directions[2][32];
+    merge_directions[threadIdx.y][threadIdx.x].x = keep ? out_edge_info.z : 0;
+    merge_directions[threadIdx.y][threadIdx.x].y = keep ? out_edge_info.w : 0;
+
+    /* The vote.cpp procedure computes points for before and after, and stores all
+     * info in one point. In the voting procedure, after is never processed when
+     * before is false.
+     * Consequently, we ignore after completely when before is already false.
+     * Lots of idling cores; but the _inner has a bad loop, and we may run into it,
+     * which would be worse.
+     */
+    if( threadIdx.y == 1 ) return;
+
+    __syncthreads(); // be on the safe side: __ballot syncs only one warp, we have 2
+
+    TriplePoint out_edge;
+    out_edge.coord.x = keep ? out_edge_info.x : 0;
+    out_edge.coord.y = keep ? out_edge_info.y : 0;
+    out_edge.befor.x = keep ? merge_directions[0][threadIdx.x].x : 0;
+    out_edge.befor.y = keep ? merge_directions[0][threadIdx.x].y : 0;
+    out_edge.after.x = keep ? merge_directions[1][threadIdx.x].x : 0;
+    out_edge.after.y = keep ? merge_directions[1][threadIdx.x].y : 0;
+
+    /* This is an addition to the logic by griff, because I have trouble believing
+     * that we have found a good gradient if searching in both directions leads
+     * to identical coordinates.
+     * @Lilian - please explain what happens here
+     */
+    if( out_edge.befor.x == out_edge.after.x && out_edge.befor.y == out_edge.after.y ) keep = false;
 
     uint32_t mask = __ballot( keep );  // bitfield of warps with results
+    if( mask == 0 ) return;
+
     uint32_t ct   = __popc( mask );    // horizontal reduce
+    assert( ct <= 32 );
+
+#if 0
     uint32_t leader = __ffs(mask) - 1; // the highest thread id with indicator==true
+#else
+    uint32_t leader = 0;
+#endif
     uint32_t write_index;
     if( threadIdx.x == leader ) {
         // leader gets warp's offset from global value and increases it
-        write_index = atomicAdd( d_new_edge_counter, ct );
+        write_index = atomicAdd( d_new_edgelist_sz, ct );
+
+        if( *d_new_edgelist_sz > 2*d_edgelist_sz ) {
+            printf( "max offset: (%d x %d)=%d\n"
+                    "my  offset: (%d*32+%d)=%d\n"
+                    "edges in:    %d\n"
+                    "edges found: %d (total %d)\n",
+                    gridDim.x, blockDim.x, blockDim.x * gridDim.x,
+                    blockIdx.x, threadIdx.x, threadIdx.x + blockIdx.x*32,
+                    d_edgelist_sz,
+                    ct, d_new_edgelist_sz );
+            assert( *d_new_edgelist_sz <= 2*d_edgelist_sz );
+        }
     }
+    // assert( *d_new_edgelist_sz >= 2*d_edgelist_sz );
+
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
     if( keep && write_index < max_num_edges ) {
-        d_new_edgelist[write_index] = out_edge_info;
+        /* At this point we know that we will keep the point.
+         * Obviously, pointer chains in CUDA are tricky, but we can use index
+         * chains based on the element's offset index in d_new_edgelist.
+         * We use atomic exchange for the chaining operation.
+         * Actually, for coord, we don't have to do it because there is a unique
+         * mapping kernel instance to coord.
+         * The after table _d_next_edge_after, on the hand. may form a true
+         * chain.
+         */
+        int* p_coord = &d_next_edge_coord.ptr(out_edge.coord.y)[out_edge.coord.x];
+        out_edge.next_coord = atomicExch( p_coord, write_index );
+
+        int* p_after = &d_next_edge_after.ptr(out_edge.after.y)[out_edge.after.x];
+        out_edge.next_after = atomicExch( p_after, write_index );
+
+        d_new_edgelist[write_index] = out_edge;
     }
 }
 
+__global__
+void device_print_edge_counter( uint32_t edge_ctr_in, uint32_t* d_edge_counter )
+{
+    if( edge_ctr_in != 0 ) {
+        printf("    Function called with %d edges\n", edge_ctr_in );
+    }
+    printf("    Device sees edge counter %d\n", *d_edge_counter);
+}
 
 #if 0
 __global__
@@ -628,32 +713,39 @@ void Frame::applyGauss( const cctag::Parameters & params )
     filter_gauss_horiz_from_uchar
         <<<grid,block,0,_stream>>>
         ( _d_plane, _d_intermediate );
+    POP_CHK_CALL_IFSYNC;
 
     filter_gauss_vert
         <<<grid,block,0,_stream>>>
         ( _d_intermediate, _d_smooth, GAUSS_TABLE );
+    POP_CHK_CALL_IFSYNC;
 
     filter_gauss_vert
         <<<grid,block,0,_stream>>>
         ( _d_smooth, _d_intermediate, GAUSS_TABLE );
+    POP_CHK_CALL_IFSYNC;
 
     filter_gauss_horiz
         <<<grid,block,0,_stream>>>
         ( _d_intermediate, _d_dx, GAUSS_DERIV );
+    POP_CHK_CALL_IFSYNC;
 
     // possible to split into 2 streams
     filter_gauss_horiz
         <<<grid,block,0,_stream>>>
         ( _d_smooth, _d_intermediate, GAUSS_TABLE );
+    POP_CHK_CALL_IFSYNC;
 
     filter_gauss_vert
         <<<grid,block,0,_stream>>>
         ( _d_intermediate, _d_dy, GAUSS_DERIV );
+    POP_CHK_CALL_IFSYNC;
 
     // necessary to merge into 1 stream
     compute_mag_l2
         <<<grid,block,0,_stream>>>
         ( _d_dx, _d_dy, _d_mag );
+    POP_CHK_CALL_IFSYNC;
 
     // static const float kDefaultCannyThrLow      =  0.01f ;
     // static const float kDefaultCannyThrHigh     =  0.04f ;
@@ -661,24 +753,31 @@ void Frame::applyGauss( const cctag::Parameters & params )
     compute_map
         <<<grid,block,0,_stream>>>
         ( _d_dx, _d_dy, _d_mag, _d_map, 0.01f, 0.04f );
+    POP_CHK_CALL_IFSYNC;
 
     edge_hysteresis
         <<<grid,block,0,_stream>>>
         ( _d_map, _d_edges );
+    POP_CHK_CALL_IFSYNC;
 
     thinning
         <<<grid,block,0,_stream>>>
         ( _d_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
+    POP_CHK_CALL_IFSYNC;
 
     const uint32_t max_num_edges = params._maxEdges;
-    uint32_t edge_counter = 0;
-    POP_CUDA_MEMCPY_ASYNC( &_d_edge_counter, &edge_counter, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream, true );
+
+    {
+        uint32_t dummy = 0;
+        POP_CUDA_MEMCPY_ASYNC( _d_edge_counter, &dummy, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream );
+    }
 
     thinning_and_store
         <<<grid,block,0,_stream>>>
-        ( cv::cuda::PtrStepSzb(_d_intermediate), _d_edges, &_d_edge_counter, max_num_edges, _d_edgelist );
+        ( cv::cuda::PtrStepSzb(_d_intermediate), _d_edges, _d_edge_counter, max_num_edges, _d_edgelist );
+    POP_CHK_CALL_IFSYNC;
 
-    POP_CUDA_MEMCPY_ASYNC( &edge_counter, &_d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost, _stream, true );
+    POP_CUDA_MEMCPY_ASYNC( &_h_edgelist_sz, _d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost, _stream );
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
     cudaStreamSynchronize( _stream );
@@ -686,25 +785,52 @@ void Frame::applyGauss( const cctag::Parameters & params )
 
     const uint32_t nmax          = params._distSearch;
     const int32_t  threshold     = params._thrGradientMagInVote;
-    block.x = 2;
-    block.y = 32;
-    block.z = 0;
-    grid.x  = edge_counter / 32 + ( edge_counter & 0x1f != 0 ? 1 : 0 );
+    block.x = 32;
+    block.y = 2;
+    block.z = 1;
+    grid.x  = _h_edgelist_sz / 32 + ( _h_edgelist_sz % 32 != 0 ? 1 : 0 );
+    grid.y  = 1;
+    grid.z  = 1;
 
     {
         uint32_t dummy = 0;
-        POP_CUDA_MEMCPY_ASYNC( &_d_edge_counter, &dummy, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream, true );
+        POP_CUDA_MEMCPY_ASYNC( _d_edge_counter, &dummy, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream );
     }
 
-    gradiant_descent
-        <<<grid,block,0,_stream>>>
-        ( _d_edgelist, edge_counter, _d_edgelist_2, &_d_edge_counter, max_num_edges, _d_edges, nmax, _d_dx, _d_dy, threshold ); // , _d_out_points );
+    cout << "    calling gradient descent with " << _h_edgelist_sz << " edge points" << endl;
+    cout << "    max num edges is " << max_num_edges << endl;
 
-    POP_CUDA_MEMCPY_ASYNC( &edge_counter, &_d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost,_stream, true );
+    device_print_edge_counter
+        <<<1,1,0,_stream>>>
+        ( 0, _d_edge_counter );
+
+    cout << "    grid (" << grid.x << "," << grid.y << "," << grid.z << ")"
+         << " block (" << block.x << "," << block.y << "," << block.z << ")" << endl;
+
+    gradient_descent
+        <<<grid,block,0,_stream>>>
+        ( _d_edgelist,   _h_edgelist_sz,
+          _d_edgelist_2, _d_edge_counter,
+          _d_next_edge_coord,
+          _d_next_edge_after,
+          max_num_edges, _d_edges, nmax, _d_dx, _d_dy, threshold ); // , _d_out_points );
+    POP_CHK_CALL_IFSYNC;
+
+    device_print_edge_counter
+        <<<1,1,0,_stream>>>
+        ( _h_edgelist_sz, _d_edge_counter );
+
+    POP_CUDA_MEMCPY_ASYNC( &_h_edgelist_2_sz, _d_edge_counter, sizeof(uint32_t), cudaMemcpyDeviceToHost,_stream );
+
+    device_print_edge_counter
+        <<<1,1,0,_stream>>>
+        ( 0, _d_edge_counter );
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
     cudaStreamSynchronize( _stream );
     // Try to figure out how that can be done with CMake.
+
+    cout << "    after   gradient descent, edge counter is " << _h_edgelist_2_sz << endl;
 
     /*
      * After this:
@@ -760,7 +886,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
 }
 
 __host__
-void Frame::allocDevGaussianPlane( )
+void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
@@ -818,6 +944,29 @@ void Frame::allocDevGaussianPlane( )
     _d_edges.cols = w;
     _d_edges.rows = h;
 
+    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int2) );
+    _d_edgelist = (int2*)ptr;
+
+    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(TriplePoint) );
+    _d_edgelist_2 = (TriplePoint*)ptr;
+
+    POP_CUDA_MALLOC( &ptr, sizeof(uint32_t) );
+    _d_edge_counter = (uint32_t*)ptr;
+
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
+    assert( p % _d_next_edge_coord.elemSize() == 0 );
+    _d_next_edge_coord.data = (int32_t*)ptr;
+    _d_next_edge_coord.step = p;
+    _d_next_edge_coord.cols = w;
+    _d_next_edge_coord.rows = h;
+
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
+    assert( p % _d_next_edge_after.elemSize() == 0 );
+    _d_next_edge_after.data = (int32_t*)ptr;
+    _d_next_edge_after.step = p;
+    _d_next_edge_after.cols = w;
+    _d_next_edge_after.rows = h;
+
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
                            _d_smooth.step * _d_smooth.rows,
@@ -851,6 +1000,16 @@ void Frame::allocDevGaussianPlane( )
     POP_CUDA_MEMSET_ASYNC( _d_edges.data,
                            0,
                            _d_edges.step * _d_edges.rows,
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_next_edge_coord.data,
+                           0,
+                           _d_next_edge_coord.step * _d_next_edge_coord.rows,
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_next_edge_after.data,
+                           0,
+                           _d_next_edge_after.step * _d_next_edge_after.rows,
                            _stream );
 
     cerr << "Leave " << __FUNCTION__ << endl;

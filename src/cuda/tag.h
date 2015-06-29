@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <stdlib.h>
 #include <inttypes.h>
 #include "../cctag/params.hpp"
@@ -14,9 +15,15 @@ class TagPipe
     Frame* _frame[4];
 public:
     TagPipe( );
-    void prepframe( const uint32_t pix_w, const uint32_t pix_h );
-    void tagframe( unsigned char* pix, uint32_t pix_w, uint32_t pix_h, const cctag::Parameters& params );
-    void debug( unsigned char* pix );
+    void prepframe( const uint32_t pix_w,
+                    const uint32_t pix_h,
+                    const cctag::Parameters& params );
+    void tagframe( unsigned char* pix,
+                   uint32_t pix_w,
+                   uint32_t pix_h,
+                   const cctag::Parameters& params );
+    void debug( unsigned char* pix,
+                const cctag::Parameters& params );
 };
 
 }; // namespace popart

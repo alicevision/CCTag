@@ -250,7 +250,9 @@ void cctagMultiresDetection(
     cannyGradY = kth_channel_view<2>(subCannyRGB);
 
     cannyCv(multiresSrc.getView(i - 1), subCannyRGB, cannyView,
-            cannyGradX, cannyGradY, params._cannyThrLow, params._cannyThrHigh);
+            // cannyGradX,
+            // cannyGradY,
+            params._cannyThrLow, params._cannyThrHigh);
 
 #ifdef CCTAG_SERIALIZE
     std::stringstream outFilenameCanny;
@@ -303,8 +305,10 @@ void cctagMultiresDetection(
   // y gradient
   cannyGradY = kth_channel_view<2>(cannyRGB);
 
-  cannyCv(multiresSrc.getView(0), subCannyRGB, cannyView, cannyGradX,
-          cannyGradY, params._cannyThrLow, params._cannyThrHigh);
+  cannyCv(multiresSrc.getView(0), subCannyRGB, cannyView,
+          // cannyGradX,
+          // cannyGradY,
+          params._cannyThrLow, params._cannyThrHigh);
 
 #ifdef CCTAG_SERIALIZE
   CCTagVisualDebug::instance().initBackgroundImage(
