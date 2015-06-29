@@ -113,8 +113,6 @@ __device__ __constant__ unsigned char d_thinning_lut[256];
 
 __device__ __constant__ unsigned char d_thinning_lut_t[256];
 
-#define V7_WIDTH    32
-
 template <typename T>
 __device__
 inline
@@ -143,25 +141,23 @@ void filter_gauss_horiz( cv::cuda::PtrStepSzf          src,
                          cv::cuda::PtrStepSz<DestType> dst,
                          int                           filter )
 {
-    int block_x = blockIdx.x * V7_WIDTH;
-    int block_y = blockIdx.y;
-    int idx;
-
+    const int idx     = blockIdx.x * 32 + threadIdx.x;
+    const int idy     = blockIdx.y;
     float out = 0;
 
     for( int offset = 0; offset<9; offset++ ) {
         float g  = d_gauss_filter[filter + offset];
 
-        idx = clamp( block_x + threadIdx.x - offset - 4, src.cols );
-        float val = src.ptr(block_y)[idx];
+        int lookup = clamp( idx + offset - 4, src.cols );
+        float val = src.ptr(idy)[lookup];
         out += ( val * g );
     }
 
-    if( block_y >= dst.rows ) return;
+    if( idy >= dst.rows ) return;
     if( idx*sizeof(float) >= dst.step ) return;
 
-    bool nix = ( block_x + threadIdx.x >= dst.cols ) || ( block_y >= dst.rows );
-    dst.ptr(block_y)[idx] = nix ? 0 : (DestType)out;
+    bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
+    dst.ptr(idy)[idx] = nix ? 0 : (DestType)out;
 }
 
 template <class DestType>
@@ -170,26 +166,23 @@ void filter_gauss_vert( cv::cuda::PtrStepSzf          src,
                         cv::cuda::PtrStepSz<DestType> dst,
                         int                           filter )
 {
-    const int block_x = blockIdx.x * V7_WIDTH;
-    const int block_y = blockIdx.y;
-    const int idx     = block_x + threadIdx.x;
-    int idy;
+    const int idx     = blockIdx.x * 32 + threadIdx.x;
+    const int idy     = blockIdx.y;
+    float out = 0;
 
     if( idx*sizeof(float) >= src.step ) return;
-
-    float out = 0;
 
     for( int offset = 0; offset<9; offset++ ) {
         float g  = d_gauss_filter[filter + offset];
 
-        idy = clamp( block_y - offset - 4, src.rows );
-        float val = src.ptr(idy)[idx];
+        int lookup = clamp( idy + offset - 4, src.rows );
+        float val = src.ptr(lookup)[idx];
         out += ( val * g );
     }
 
     if( idy >= dst.rows ) return;
 
-    bool nix = ( idx >= dst.cols );
+    bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
     dst.ptr(idy)[idx] = nix ? 0 : (DestType)out;
 }
 
@@ -197,26 +190,23 @@ __global__
 void filter_gauss_horiz_from_uchar( cv::cuda::PtrStepSzb src,
                                     cv::cuda::PtrStepSzf dst )
 {
-    int block_x = blockIdx.x * V7_WIDTH;
-    int block_y = blockIdx.y;
-    int idx;
-
+    const int idx     = blockIdx.x * 32 + threadIdx.x;
+    const int idy     = blockIdx.y;
     float out = 0;
 
     for( int offset = 0; offset<9; offset++ ) {
-        // float g  = d_gauss_filter_by_256[offset];
         float g  = d_gauss_filter[offset];
 
-        idx = clamp( block_x + threadIdx.x - offset - 4, src.cols );
-        float val = src.ptr(block_y)[idx];
+        int lookup = clamp( idx + offset - 4, src.cols );
+        float val = src.ptr(idy)[lookup];
         out += ( val * g );
     }
 
-    if( block_y >= dst.rows ) return;
+    if( idy >= dst.rows ) return;
     if( idx * sizeof(float) >= dst.step ) return;
 
-    bool nix = ( block_x + threadIdx.x >= dst.cols ) || ( block_y >= dst.rows );
-    dst.ptr(block_y)[idx] = nix ? 0 : out;
+    bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
+    dst.ptr(idy)[idx] = nix ? 0 : out;
 }
 
 __global__
@@ -224,7 +214,7 @@ void compute_mag_l1( cv::cuda::PtrStepSz16s src_dx,
                      cv::cuda::PtrStepSz16s src_dy,
                      cv::cuda::PtrStepSz32u dst )
 {
-    int block_x = blockIdx.x * V7_WIDTH;
+    int block_x = blockIdx.x * 32;
     int idx     = block_x + threadIdx.x;
     int idy     = blockIdx.y;
 
@@ -242,7 +232,7 @@ void compute_mag_l2( cv::cuda::PtrStepSz16s src_dx,
                      cv::cuda::PtrStepSz16s src_dy,
                      cv::cuda::PtrStepSz32u dst )
 {
-    int block_x = blockIdx.x * V7_WIDTH;
+    int block_x = blockIdx.x * 32;
     int idx     = block_x + threadIdx.x;
     int idy     = blockIdx.y;
 
@@ -266,7 +256,7 @@ void compute_map( const cv::cuda::PtrStepSz16s dx,
     const int CANNY_SHIFT = 15;
     const int TG22 = (int32_t)(0.4142135623730950488016887242097*(1<<CANNY_SHIFT) + 0.5);
 
-    const int block_x = blockIdx.x * V7_WIDTH;
+    const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
     const int idy     = blockIdx.y;
 
@@ -318,7 +308,7 @@ void compute_map( const cv::cuda::PtrStepSz16s dx,
 __global__
 void edge_hysteresis( cv::cuda::PtrStepSzb map, cv::cuda::PtrStepSzb edges )
 {
-    const int block_x = blockIdx.x * V7_WIDTH;
+    const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
     const int idy     = blockIdx.y;
 
@@ -377,7 +367,7 @@ bool thinning_inner( const int idx, const int idy, cv::cuda::PtrStepSzb src, cv:
 __global__
 void thinning( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 {
-    const int block_x = blockIdx.x * V7_WIDTH;
+    const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
     const int idy     = blockIdx.y;
 
@@ -387,7 +377,7 @@ void thinning( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 __global__
 void thinning_and_store( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, uint32_t* edgeCounter, uint32_t edgeMax, int2* edgeCoords )
 {
-    const int block_x = blockIdx.x * V7_WIDTH;
+    const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
     const int idy     = blockIdx.y;
 
@@ -446,7 +436,7 @@ bool gradient_descent_inner( int4&                  out_edge_info,
 
     const int idx = d_edgelist[offset].x;
     const int idy = d_edgelist[offset].y;
-    // const int block_x = blockIdx.x * V7_WIDTH;
+    // const int block_x = blockIdx.x * 32;
     // const int idx     = block_x + threadIdx.x;
     // const int idy     = blockIdx.y;
 
@@ -457,6 +447,9 @@ bool gradient_descent_inner( int4&                  out_edge_info,
     float  e     = 0.0f;
     float  dx    = direction * d_dx.ptr(idy)[idx];
     float  dy    = direction * d_dy.ptr(idy)[idx];
+
+    assert( dx!=0 || dy!=0 );
+
     const float  adx   = d_abs( dx );
     const float  ady   = d_abs( dy );
     size_t n     = 0;
@@ -541,6 +534,7 @@ void gradient_descent( int2*                  d_edgelist,
                        uint32_t*              d_new_edgelist_sz,
                        cv::cuda::PtrStepSz32s d_next_edge_coord,
                        cv::cuda::PtrStepSz32s d_next_edge_after,
+                       cv::cuda::PtrStepSz32s d_next_edge_befor,
                        uint32_t               max_num_edges,
                        cv::cuda::PtrStepSzb   edges,
                        uint32_t               nmax,
@@ -594,7 +588,7 @@ void gradient_descent( int2*                  d_edgelist,
      * to identical coordinates.
      * @Lilian - please explain what happens here
      */
-    if( out_edge.befor.x == out_edge.after.x && out_edge.befor.y == out_edge.after.y ) keep = false;
+    // if( out_edge.befor.x == out_edge.after.x && out_edge.befor.y == out_edge.after.y ) keep = false;
 
     uint32_t mask = __ballot( keep );  // bitfield of warps with results
     if( mask == 0 ) return;
@@ -636,7 +630,7 @@ void gradient_descent( int2*                  d_edgelist,
          * We use atomic exchange for the chaining operation.
          * Actually, for coord, we don't have to do it because there is a unique
          * mapping kernel instance to coord.
-         * The after table _d_next_edge_after, on the hand. may form a true
+         * The after table _d_next_edge_after, on the hand, may form a true
          * chain.
          */
         int* p_coord = &d_next_edge_coord.ptr(out_edge.coord.y)[out_edge.coord.x];
@@ -644,6 +638,9 @@ void gradient_descent( int2*                  d_edgelist,
 
         int* p_after = &d_next_edge_after.ptr(out_edge.after.y)[out_edge.after.x];
         out_edge.next_after = atomicExch( p_after, write_index );
+
+        int* p_befor = &d_next_edge_befor.ptr(out_edge.befor.y)[out_edge.befor.x];
+        out_edge.next_befor = atomicExch( p_befor, write_index );
 
         d_new_edgelist[write_index] = out_edge;
     }
@@ -706,8 +703,8 @@ void Frame::applyGauss( const cctag::Parameters & params )
 
     dim3 block;
     dim3 grid;
-    block.x = V7_WIDTH;
-    grid.x  = getWidth() / V7_WIDTH;
+    block.x = 32;
+    grid.x  = getWidth() / 32;
     grid.y  = getHeight();
 
     filter_gauss_horiz_from_uchar
@@ -813,6 +810,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
           _d_edgelist_2, _d_edge_counter,
           _d_next_edge_coord,
           _d_next_edge_after,
+          _d_next_edge_befor,
           max_num_edges, _d_edges, nmax, _d_dx, _d_dy, threshold ); // , _d_out_points );
     POP_CHK_CALL_IFSYNC;
 
@@ -967,6 +965,13 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     _d_next_edge_after.cols = w;
     _d_next_edge_after.rows = h;
 
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
+    assert( p % _d_next_edge_befor.elemSize() == 0 );
+    _d_next_edge_befor.data = (int32_t*)ptr;
+    _d_next_edge_befor.step = p;
+    _d_next_edge_befor.cols = w;
+    _d_next_edge_befor.rows = h;
+
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
                            _d_smooth.step * _d_smooth.rows,
@@ -1010,6 +1015,11 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     POP_CUDA_MEMSET_ASYNC( _d_next_edge_after.data,
                            0,
                            _d_next_edge_after.step * _d_next_edge_after.rows,
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_next_edge_befor.data,
+                           0,
+                           _d_next_edge_befor.step * _d_next_edge_befor.rows,
                            _stream );
 
     cerr << "Leave " << __FUNCTION__ << endl;
