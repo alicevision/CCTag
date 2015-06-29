@@ -159,7 +159,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
     dim3 block;
     dim3 grid;
     block.x = 32;
-    grid.x  = getWidth() / 32;
+    grid.x  = ( getWidth() / 32 )  + ( getWidth() % 32 == 0 ? 0 : 1 );
     grid.y  = getHeight();
 
     filter_gauss_horiz_from_uchar

@@ -162,6 +162,7 @@ private:
     cv::cuda::PtrStepSz16s _d_dy; // cv::cuda::PtrStepSzf _d_dy;
     cv::cuda::PtrStepSz32u _d_mag;
     cv::cuda::PtrStepSzb   _d_map;
+    cv::cuda::PtrStepSzb   _d_hyst_edges;
     cv::cuda::PtrStepSzb   _d_edges;
     int2*                  _d_edgelist;
     TriplePoint*           _d_edgelist_2;
@@ -176,6 +177,7 @@ private:
     int16_t*       _h_debug_dy;
     uint32_t*      _h_debug_mag;
     unsigned char* _h_debug_map;
+    unsigned char* _h_debug_hyst_edges;
     unsigned char* _h_debug_edges;
     int2*          _h_debug_edgelist;
     uint32_t       _h_edgelist_sz;

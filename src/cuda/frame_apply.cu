@@ -88,6 +88,7 @@ void compute_mag_l2( cv::cuda::PtrStepSz16s src_dx,
 
     int16_t dx = src_dx.ptr(idy)[idx];
     int16_t dy = src_dy.ptr(idy)[idx];
+    // --- hypot --
     dx *= dx;
     dy *= dy;
     dst.ptr(idy)[idx] = __fsqrt_rz( (float)( dx + dy ) );
@@ -547,7 +548,7 @@ void Frame::applyMore( const cctag::Parameters & params )
     dim3 block;
     dim3 grid;
     block.x = 32;
-    grid.x  = getWidth() / 32;
+    grid.x  = ( getWidth() / 32 ) + ( getWidth() % 32 == 0 ? 0 : 1 );
     grid.y  = getHeight();
 
     // necessary to merge into 1 stream
@@ -559,19 +560,25 @@ void Frame::applyMore( const cctag::Parameters & params )
     // static const float kDefaultCannyThrLow      =  0.01f ;
     // static const float kDefaultCannyThrHigh     =  0.04f ;
 
+#if 0
     compute_map
         <<<grid,block,0,_stream>>>
-        ( _d_dx, _d_dy, _d_mag, _d_map, 0.01f, 0.04f );
+        ( _d_dx, _d_dy, _d_mag, _d_map, 256.0f * 0.01f, 256.0f * 0.04f );
+#else
+    compute_map
+        <<<grid,block,0,_stream>>>
+        ( _d_dx, _d_dy, _d_mag, _d_map, 256.0f * params._cannyThrLow, 256.0f * params._cannyThrHigh );
+#endif
     POP_CHK_CALL_IFSYNC;
 
     edge_hysteresis
         <<<grid,block,0,_stream>>>
-        ( _d_map, _d_edges );
+        ( _d_map, _d_hyst_edges );
     POP_CHK_CALL_IFSYNC;
 
     thinning
         <<<grid,block,0,_stream>>>
-        ( _d_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
+        ( _d_hyst_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
     POP_CHK_CALL_IFSYNC;
 
     const uint32_t max_num_edges = params._maxEdges;
@@ -591,6 +598,12 @@ void Frame::applyMore( const cctag::Parameters & params )
     // Note: right here, Dynamic Parallelism would avoid blocking.
     cudaStreamSynchronize( _stream );
     // Try to figure out how that can be done with CMake.
+
+    if( _h_edgelist_sz == 0 ) {
+        cerr << "I have not found any edges!" << endl;
+        cerr << "Leave " << __FUNCTION__ << endl;
+        return;
+    }
 
     const uint32_t nmax          = params._distSearch;
     const int32_t  threshold     = params._thrGradientMagInVote;
