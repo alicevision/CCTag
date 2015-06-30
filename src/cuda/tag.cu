@@ -81,7 +81,9 @@ void TagPipe::tagframe( unsigned char* pix,
 
     for( int i=0; i<4; i++ ) {
         _frame[i]->applyGauss( params ); // async
-        _frame[i]->applyMore( params );  // async
+        _frame[i]->applyMag(   params );  // async
+        _frame[i]->applyHyst(  params );  // async
+        _frame[i]->applyMore(  params );  // async
     }
 
     FrameEvent doneEv[4];
