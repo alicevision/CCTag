@@ -18,6 +18,10 @@ public:
   const cv::Mat & getMag() const; 
   const cv::Mat & getEdges() const;
   
+#ifdef CCTAG_EXTRA_LAYER_DEBUG
+  const cv::Mat & getCannyNotThin() const;
+#endif
+  
   inline std::size_t width() const
   {
     return _src.cols;
@@ -37,6 +41,10 @@ private:
   cv::Mat _src;
   cv::Mat _edges;
   cv::Mat _temp;
+  
+#ifdef CCTAG_EXTRA_LAYER_DEBUG
+  cv::Mat _edgesNotThin;
+#endif
 };
 
 }

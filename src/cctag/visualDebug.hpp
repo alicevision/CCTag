@@ -50,6 +50,21 @@ public:
     void writeIdentificationView(cctag::CCTag::List & markers) const;
 
     std::string getImageFileName() const;
+    
+#ifdef CCTAG_EXTRA_LAYER_DEBUG
+    template<typename T>
+    void coutImage(cv::Mat src) const
+    {
+      for (int i=0 ; i < src.rows ; ++i)
+      {
+        for (int j=0 ; j < src.cols ; ++j)
+        {
+          std::cout << (int) src.at<T>(i,j) << " ";
+        }
+        std::cout << std::endl;
+      }
+    }
+#endif
 
     void clearSessions();
 

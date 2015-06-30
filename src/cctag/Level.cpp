@@ -13,6 +13,11 @@ Level::Level( std::size_t width, std::size_t height )
   _mag = cv::Mat(height, width, CV_16SC1 );
   _edges = cv::Mat(height, width, CV_8UC1);
   _temp = cv::Mat(height, width, CV_8UC1);
+  
+#ifdef CCTAG_EXTRA_LAYER_DEBUG
+  _edgesNotThin = cv::Mat(height, width, CV_8UC1);
+#endif
+  
 }
 
 void Level::setLevel( const cv::Mat & src )
@@ -22,6 +27,11 @@ void Level::setLevel( const cv::Mat & src )
   // Compute derivative and canny edge extraction.
   cvRecodedCanny(_src,_edges,_dx,_dy,0, 30, 3 | CV_CANNY_L2_GRADIENT );
   // Perform the thinning.
+
+#ifdef CCTAG_EXTRA_LAYER_DEBUG
+  _edgesNotThin = _edges.clone();
+#endif
+  
   thin(_edges,_temp);
 }
 
@@ -29,6 +39,13 @@ const cv::Mat & Level::getSrc() const
 {
   return _src;
 }
+
+#ifdef CCTAG_EXTRA_LAYER_DEBUG
+const cv::Mat & Level::getCannyNotThin() const
+{
+  return _edgesNotThin;
+}
+#endif
 
 const cv::Mat & Level::getDx() const
 {
