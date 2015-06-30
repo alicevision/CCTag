@@ -46,8 +46,6 @@ ENDIF(USE_CUDA)
 SET(CCTAG_LINK_LIBRARIES
     ${OpenCV_LIBS}
     ${Boost_LIBRARIES}
-    ${OPTPP_LIBRARIES}
-    ${Ceres_LIBRARIES}
     ${Eigen_LIBRARIES}
     ${PNG_LIBRARIES}
     ${JPEG_LIBRARIES}
@@ -68,10 +66,17 @@ set(CCTagDetect_cpp ./cctag/detection/main.cpp)
 
 if(USE_CUDA)
     add_executable( detection ${CCTagDetect_cpp} ${cuda_files} )
-    target_link_libraries( detection CCTag ${CUDA_LIBRARIES} )
+    target_link_libraries( detection CCTag
+                                     ${CUDA_LIBRARIES}
+                                     ${OPTPP_LIBRARIES}
+				     ${Ceres_LIBRARIES}
+				     )
 else(USE_CUDA)
     add_executable( detection ${CCTagDetect_cpp})
-    target_link_libraries( detection CCTag )
+    target_link_libraries( detection CCTag
+                                     ${OPTPP_LIBRARIES}
+				     ${Ceres_LIBRARIES}
+				     )
 endif(USE_CUDA)
 
 add_executable( pgmdiff playground/pgmdiff.cc )

@@ -64,6 +64,13 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     _d_map.rows = h;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(unsigned char), h );
+    assert( p % _d_hyst_edges.elemSize() == 0 );
+    _d_hyst_edges.data = (unsigned char*)ptr;
+    _d_hyst_edges.step = p;
+    _d_hyst_edges.cols = w;
+    _d_hyst_edges.rows = h;
+
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(unsigned char), h );
     assert( p % _d_edges.elemSize() == 0 );
     _d_edges.data = (unsigned char*)ptr;
     _d_edges.step = p;

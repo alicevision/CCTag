@@ -25,6 +25,7 @@ Frame::Frame( uint32_t width, uint32_t height )
     , _h_debug_dy( 0 )
     , _h_debug_mag( 0 )
     , _h_debug_map( 0 )
+    , _h_debug_hyst_edges( 0 )
     , _h_debug_edges( 0 )
     , _h_debug_edgelist( 0 )
     , _h_edgelist_sz( 0 )
@@ -65,6 +66,7 @@ Frame::~Frame( )
     delete [] _h_debug_dy;
     delete [] _h_debug_mag;
     delete [] _h_debug_map;
+    delete [] _h_debug_hyst_edges;
     delete [] _h_debug_edges;
     delete [] _h_debug_edgelist;
     delete [] _h_debug_edgelist_2;
@@ -77,6 +79,7 @@ Frame::~Frame( )
     POP_CUDA_FREE( _d_dy.data );
     POP_CUDA_FREE( _d_mag.data );
     POP_CUDA_FREE( _d_map.data );
+    POP_CUDA_FREE( _d_hyst_edges.data );
     POP_CUDA_FREE( _d_edges.data );
     POP_CUDA_FREE( _d_next_edge_coord.data );
     POP_CUDA_FREE( _d_next_edge_after.data );
@@ -155,7 +158,7 @@ void Frame::fillFromTexture( Frame& src )
     dim3 grid;
     dim3 block;
     block.x = 32;
-    grid.x  = getWidth() / 32;
+    grid.x  = ( getWidth() / 32 ) + ( getWidth() % 32 == 0 ? 0 : 1 );
     grid.y  = getHeight();
 
     cu_fill_from_texture
