@@ -70,9 +70,9 @@ struct TriplePoint
     int2 coord;
     int2 befor;
     int2 after;
-    int  next_coord; // I believe that this can be removed
-    int  next_after;
-    int  next_befor;
+    // int  next_coord;
+    // int  next_after;
+    // int  next_befor;
 };
 
 /*************************************************************
@@ -143,6 +143,9 @@ public:
     // implemented in frame_apply.cu
     void applyMore( const cctag::Parameters& param );
 
+    // implemented in frame_vote.cu
+    void applyVote( const cctag::Parameters& param );
+
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
     static void writeDebugPlane1( const char* filename, const cv::cuda::PtrStepSzb& plane );
@@ -152,6 +155,8 @@ public:
 
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
     static void writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz );
+    static void debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv::cuda::PtrStepSzb img );
+
 
     void writeHostDebugPlane( std::string filename, const cctag::Parameters& params );
     void hostDebugCompare( unsigned char* pix );
@@ -174,8 +179,8 @@ private:
     TriplePoint*           _d_edgelist_2;
     uint32_t*              _d_edge_counter;
     cv::cuda::PtrStepSz32s _d_next_edge_coord; // 2D plane for chaining TriplePoint coord
-    cv::cuda::PtrStepSz32s _d_next_edge_after; // 2D plane for chaining TriplePoint after
-    cv::cuda::PtrStepSz32s _d_next_edge_befor; // 2D plane for chaining TriplePoint after
+    // cv::cuda::PtrStepSz32s _d_next_edge_after; // 2D plane for chaining TriplePoint after
+    // cv::cuda::PtrStepSz32s _d_next_edge_befor; // 2D plane for chaining TriplePoint after
 
     unsigned char* _h_debug_plane;
     float*         _h_debug_smooth;

@@ -275,8 +275,7 @@ bool gradient_descent_inner( int4&                  out_edge_info,
     float  dx    = direction * d_dx.ptr(idy)[idx];
     float  dy    = direction * d_dy.ptr(idy)[idx];
 
-#warning continue with this bug
-#if 0
+#if 1
     assert( dx!=0 || dy!=0 );
 #endif
 
@@ -317,6 +316,7 @@ bool gradient_descent_inner( int4&                  out_edge_info,
     uint8_t ret = edges.ptr(y)[x];
     if( ret ) {
         out_edge_info = make_int4( idx, idy, x, y );
+        assert( idx != x || idy != y );
         return true;
     }
     
@@ -333,6 +333,7 @@ bool gradient_descent_inner( int4&                  out_edge_info,
         ret = edges.ptr(y)[x];
         if( ret ) {
             out_edge_info = make_int4( idx, idy, x, y );
+            assert( idx != x || idy != y );
             return true;
         }
 
@@ -342,6 +343,7 @@ bool gradient_descent_inner( int4&                  out_edge_info,
             ret = edges.ptr(y-stpY)[x];
             if( ret ) {
                 out_edge_info = make_int4( idx, idy, x, y-stpY );
+                assert( idx != x || idy != y-stpY );
                 return true;
             }
         } else {
@@ -350,6 +352,7 @@ bool gradient_descent_inner( int4&                  out_edge_info,
             ret = edges.ptr(y)[x-stpX];
             if( ret ) {
                 out_edge_info = make_int4( idx, idy, x-stpX, y );
+                assert( idx != x-stpX || idy != y );
                 return true;
             }
         }
@@ -363,8 +366,8 @@ void gradient_descent( int2*                  d_edgelist,
                        TriplePoint*           d_new_edgelist,
                        uint32_t*              d_new_edgelist_sz,
                        cv::cuda::PtrStepSz32s d_next_edge_coord,
-                       cv::cuda::PtrStepSz32s d_next_edge_after,
-                       cv::cuda::PtrStepSz32s d_next_edge_befor,
+                       // cv::cuda::PtrStepSz32s d_next_edge_after,
+                       // cv::cuda::PtrStepSz32s d_next_edge_befor,
                        uint32_t               max_num_edges,
                        cv::cuda::PtrStepSzb   edges,
                        uint32_t               nmax,
@@ -434,6 +437,7 @@ void gradient_descent( int2*                  d_edgelist,
     uint32_t write_index;
     if( threadIdx.x == leader ) {
         // leader gets warp's offset from global value and increases it
+        // not that it is initialized with 1 to ensure that 0 represents a NULL pointer
         write_index = atomicAdd( d_new_edgelist_sz, ct );
 
         if( *d_new_edgelist_sz > 2*d_edgelist_sz ) {
@@ -454,6 +458,10 @@ void gradient_descent( int2*                  d_edgelist,
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
     if( keep && write_index < max_num_edges ) {
+        assert( out_edge.coord.x != out_edge.befor.x || out_edge.coord.y != out_edge.befor.y );
+        assert( out_edge.coord.x != out_edge.after.x || out_edge.coord.y != out_edge.after.y );
+        assert( out_edge.befor.x != out_edge.after.x || out_edge.befor.y != out_edge.after.y );
+
         /* At this point we know that we will keep the point.
          * Obviously, pointer chains in CUDA are tricky, but we can use index
          * chains based on the element's offset index in d_new_edgelist.
@@ -463,14 +471,13 @@ void gradient_descent( int2*                  d_edgelist,
          * The after table _d_next_edge_after, on the hand, may form a true
          * chain.
          */
-        int* p_coord = &d_next_edge_coord.ptr(out_edge.coord.y)[out_edge.coord.x];
-        out_edge.next_coord = atomicExch( p_coord, write_index );
+        d_next_edge_coord.ptr(out_edge.coord.y)[out_edge.coord.x] = write_index;
 
-        int* p_after = &d_next_edge_after.ptr(out_edge.after.y)[out_edge.after.x];
-        out_edge.next_after = atomicExch( p_after, write_index );
+        // int* p_after = &d_next_edge_after.ptr(out_edge.after.y)[out_edge.after.x];
+        // out_edge.next_after = atomicExch( p_after, write_index );
 
-        int* p_befor = &d_next_edge_befor.ptr(out_edge.befor.y)[out_edge.befor.x];
-        out_edge.next_befor = atomicExch( p_befor, write_index );
+        // int* p_befor = &d_next_edge_befor.ptr(out_edge.befor.y)[out_edge.befor.x];
+        // out_edge.next_befor = atomicExch( p_befor, write_index );
 
         d_new_edgelist[write_index] = out_edge;
     }
@@ -597,7 +604,12 @@ void Frame::applyMore( const cctag::Parameters & params )
     grid.z  = 1;
 
     {
-        uint32_t dummy = 0;
+        /* Note: the initial _d_edge_counter is set to 1 because it is used
+         * as an index for writing points into a array. Starting the counter
+         * at 1 allows to distinguish unchained points (0) from chained
+         * points non-0.
+         */
+        uint32_t dummy = 1;
         POP_CUDA_MEMCPY_ASYNC( _d_edge_counter, &dummy, sizeof(uint32_t), cudaMemcpyHostToDevice, _stream );
     }
 
@@ -616,8 +628,8 @@ void Frame::applyMore( const cctag::Parameters & params )
         ( _d_edgelist,   _h_edgelist_sz,
           _d_edgelist_2, _d_edge_counter,
           _d_next_edge_coord,
-          _d_next_edge_after,
-          _d_next_edge_befor,
+          // _d_next_edge_after,
+          // _d_next_edge_befor,
           max_num_edges, _d_edges, nmax, _d_dx, _d_dy, threshold ); // , _d_out_points );
     POP_CHK_CALL_IFSYNC;
 
@@ -635,7 +647,7 @@ void Frame::applyMore( const cctag::Parameters & params )
     cudaStreamSynchronize( _stream );
     // Try to figure out how that can be done with CMake.
 
-    cout << "    after   gradient descent, edge counter is " << _h_edgelist_2_sz << endl;
+    cout << "    after gradient descent, edge counter is " << _h_edgelist_2_sz << endl;
 
     /*
      * After this:

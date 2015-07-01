@@ -93,19 +93,19 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     _d_next_edge_coord.cols = w;
     _d_next_edge_coord.rows = h;
 
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
-    assert( p % _d_next_edge_after.elemSize() == 0 );
-    _d_next_edge_after.data = (int32_t*)ptr;
-    _d_next_edge_after.step = p;
-    _d_next_edge_after.cols = w;
-    _d_next_edge_after.rows = h;
+    // POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
+    // assert( p % _d_next_edge_after.elemSize() == 0 );
+    // _d_next_edge_after.data = (int32_t*)ptr;
+    // _d_next_edge_after.step = p;
+    // _d_next_edge_after.cols = w;
+    // _d_next_edge_after.rows = h;
 
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
-    assert( p % _d_next_edge_befor.elemSize() == 0 );
-    _d_next_edge_befor.data = (int32_t*)ptr;
-    _d_next_edge_befor.step = p;
-    _d_next_edge_befor.cols = w;
-    _d_next_edge_befor.rows = h;
+    // POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
+    // assert( p % _d_next_edge_befor.elemSize() == 0 );
+    // _d_next_edge_befor.data = (int32_t*)ptr;
+    // _d_next_edge_befor.step = p;
+    // _d_next_edge_befor.cols = w;
+    // _d_next_edge_befor.rows = h;
 
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
@@ -142,20 +142,30 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
                            _d_edges.step * _d_edges.rows,
                            _stream );
 
+    POP_CUDA_MEMSET_ASYNC( _d_edgelist,
+                           0,
+                           params._maxEdges*sizeof(int2),
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_edgelist_2,
+                           0,
+                           params._maxEdges*sizeof(TriplePoint),
+                           _stream );
+
     POP_CUDA_MEMSET_ASYNC( _d_next_edge_coord.data,
                            0,
                            _d_next_edge_coord.step * _d_next_edge_coord.rows,
                            _stream );
 
-    POP_CUDA_MEMSET_ASYNC( _d_next_edge_after.data,
-                           0,
-                           _d_next_edge_after.step * _d_next_edge_after.rows,
-                           _stream );
+    // POP_CUDA_MEMSET_ASYNC( _d_next_edge_after.data,
+    //                        0,
+    //                        _d_next_edge_after.step * _d_next_edge_after.rows,
+    //                        _stream );
 
-    POP_CUDA_MEMSET_ASYNC( _d_next_edge_befor.data,
-                           0,
-                           _d_next_edge_befor.step * _d_next_edge_befor.rows,
-                           _stream );
+    // POP_CUDA_MEMSET_ASYNC( _d_next_edge_befor.data,
+    //                        0,
+    //                        _d_next_edge_befor.step * _d_next_edge_befor.rows,
+    //                        _stream );
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }

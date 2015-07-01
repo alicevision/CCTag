@@ -10,6 +10,7 @@
 #include "../cctag/cmdline.hpp"
 
 #include "frame.h"
+#include "assist.h"
 
 #undef CHATTY_WRITE_DEBUG_PLANE
 
@@ -243,6 +244,28 @@ void Frame::hostDebugCompare( unsigned char* pix )
     }
 }
 
+void Frame::debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv::cuda::PtrStepSzb img )
+{
+    for( uint32_t x=0; x<img.cols; x++ ) {
+        for( uint32_t y=0; y<img.rows; y++ ) {
+            if( img.ptr(y)[x] != 0 ) img.ptr(y)[x] = 1;
+        }
+    }
+    for( uint32_t i=0; i<sz; i++ ) {
+        const int2& coord = array[i].coord;
+        const int2& befor = array[i].befor;
+        // const int2& after = array[i].after;
+        if( outOfBounds( coord.x, coord.y, img ) ) {
+            cout << "Coord of point (" << coord.x << "," << coord.y << ") is out of bounds" << endl;
+        } else {
+            // if( befor.x != 0 && befor.y != 0 && after.x != 0 && after.y != 0 )
+            if( befor.x != 0 && befor.y != 0 ) {
+                img.ptr(coord.y)[coord.x] = 3;
+            }
+        }
+    }
+}
+
 void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& params )
 {
     struct stat st = {0};
@@ -383,6 +406,11 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     if( _h_edgelist_2_sz > 0 ) {
         s = filename + "-edgelist2.txt";
         writeTriplePointArray( s.c_str(), _h_debug_edgelist_2, min(params._maxEdges,_h_edgelist_2_sz) );
+
+        debugPlotPointsIntoImage( _h_debug_edgelist_2, min(params._maxEdges,_h_edgelist_2_sz), edges );
+
+        s = filename + "-edges-dots.pgm";
+        writeDebugPlane( s.c_str(), edges );
     }
 }
 
