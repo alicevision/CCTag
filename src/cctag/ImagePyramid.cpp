@@ -41,6 +41,7 @@ void ImagePyramid::build( const cv::Mat & src )
     CCTagVisualDebug::instance().initBackgroundImage(_levels[i]->getEdges());
     CCTagVisualDebug::instance().newSession(outFilenameCanny.str());
     
+#ifdef CCTAG_EXTRA_LAYER_DEBUG
     outFilenameCanny << "_wt";
     CCTagVisualDebug::instance().initBackgroundImage(_levels[i]->getCannyNotThin());
     CCTagVisualDebug::instance().newSession(outFilenameCanny.str());
@@ -52,6 +53,7 @@ void ImagePyramid::build( const cv::Mat & src )
     CCTagVisualDebug::instance().coutImage<short>(_levels[i]->getDx());
     CCTAG_COUT("dy_");
     CCTagVisualDebug::instance().coutImage<short>(_levels[i]->getDy());
+#endif
   }
 #endif
 }

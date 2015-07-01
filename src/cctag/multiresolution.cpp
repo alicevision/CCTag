@@ -231,6 +231,8 @@ void cctagMultiresDetection(
     
     CCTAG_COUT_VAR(pyramidMarkers[i].size());
 
+    CCTAG_COUT(" ---------------------------------- 1 --------");
+    
     CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(i)->getSrc());
     std::stringstream outFilename2;
     outFilename2 << "viewLevel" << i;
@@ -242,9 +244,11 @@ void cctagMultiresDetection(
     }
   }
 
+  CCTAG_COUT("---------------------------------- 2 --------");
+  
   // Delete overlapping markers while keeping the best ones.
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
-  for (std::size_t i = 0 ; i < pyramidMarkers.size() ; ++i)
+  for (std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers ; ++i)
   // set the _numberOfProcessedMultiresLayers <= _numberOfMultiresLayers todo@Lilian
   {
     CCTag::List & markersList = pyramidMarkers[i];
@@ -262,11 +266,15 @@ void cctagMultiresDetection(
     }
   }
   
+  CCTAG_COUT(" ---------------------------------- 3 --------");
+  
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
   CCTagVisualDebug::instance().writeLocalizationView(markers);
 
   // Final step: extraction of the detected markers in the original (scale) image.
   CCTagVisualDebug::instance().newSession("multiresolution");
+  
+  CCTAG_COUT("---------------------------------- 4 --------");
 
   // Project markers from the top of the pyramid to the bottom (original image).
   BOOST_FOREACH(CCTag & marker, markers)
@@ -281,14 +289,20 @@ void cctagMultiresDetection(
       cctag::numerical::geometry::Ellipse rescaledOuterEllipse = marker.rescaledOuterEllipse();
 
       std::list<EdgePoint*> pointsInHull;
+      CCTAG_COUT(" ---------------------------------- 5-1 --------");
       selectEdgePointInEllipticHull(vEdgeMaps[0], rescaledOuterEllipse, scale, pointsInHull);
+      CCTAG_COUT("---------------------------------- 5-2 --------");
 
       std::vector<EdgePoint*> rescaledOuterEllipsePoints;
 
       double SmFinal = 1e+10;
 
+      CCTAG_COUT("---------------------------------- 5 --------");
+      
       cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0);
 
+      CCTAG_COUT("---------------------------------- 6 --------");
+      
       try
       {
         numerical::ellipseFitting(rescaledOuterEllipse, rescaledOuterEllipsePoints);
@@ -316,12 +330,17 @@ void cctagMultiresDetection(
     }
   }
   
+  CCTAG_COUT("---------------------------------- 7 --------");
+  
   // Log
   CCTagFileDebug::instance().newSession("data.txt");
   BOOST_FOREACH(const CCTag & marker, markers)
   {
     CCTagFileDebug::instance().outputMarkerInfos(marker);
   }
+  
+  CCTAG_COUT("---------------------------------- 8 --------");
+  
   POP_LEAVE;
   
 }

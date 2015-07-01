@@ -17,6 +17,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 set(USE_CUDA false CACHE BOOL "compile code for CUDA processing")
 set(CUDA_FOUND false CACHE BOOL "only true if USE_CUDA and CUDA 7.0 is found")
 
+set(CMAKE_BUILD_TYPE Release)
+
 # CCTAG_BUILD_MODE set to RELEASE by default (DEBUG,RELEASE)
 if(DEFINED CCTAG_BUILD_MODE)
   add_definitions("-D${CCTAG_BUILD_MODE}")
