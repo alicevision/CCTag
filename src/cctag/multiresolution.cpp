@@ -19,6 +19,9 @@
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
 #include <boost/gil/image_view_factory.hpp>
+#include <boost/timer.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 
 #include <cmath>
 #include <sstream>
@@ -207,6 +210,10 @@ void cctagMultiresDetection(
   {
     CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::");
 
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+#endif
+    
     // Create EdgePoints for every detected edge points in edges.
     std::vector<EdgePoint> points;
     
@@ -220,6 +227,13 @@ void cctagMultiresDetection(
     //cctagDetectionFromEdges(markersList, points,
     //        multiresSrc.getView(i - 1), cannyGradX, cannyGradY, edgesMap,
     //        frame, i - 1, std::pow(2.0, (int) i - 1), params);
+    
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::time_duration d = t1 - t0;
+  const double spendTime = d.total_milliseconds();
+  CCTAG_COUT_OPTIM("Time in edge point collection: " << spendTime << " ms");
+#endif
     
     cctagDetectionFromEdges(
             pyramidMarkers[i], points,

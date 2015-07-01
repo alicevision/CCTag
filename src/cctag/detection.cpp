@@ -384,6 +384,9 @@ void cctagDetectionFromEdges(
         const Parameters & params)
 {
   POP_ENTER;
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+#endif
   using namespace boost::gil;
 
   // Get vote winners
@@ -392,6 +395,13 @@ void cctagDetectionFromEdges(
 
   // Voting procedure applied on every edge points.
   vote(points, seeds, edgesMap, winners, dx, dy, params);
+  
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::time_duration d = t1 - t0;
+  const double spendTime = d.total_milliseconds();
+  CCTAG_COUT_OPTIM("Time in vote: " << spendTime << " ms");
+#endif
 
   // Call for debug only. Write the vote result as an image.
   createImageForVoteResultDebug(src, winners, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
@@ -723,7 +733,18 @@ void cctagDetection(CCTag::List& markers,
   }
 #else
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
+
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
+#endif
   imagePyramid.build(imgGraySrc);
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
+
+  boost::posix_time::time_duration dBuildPyramid = t10 - t00;
+  double spendTimeBuildPyramid = dBuildPyramid.total_milliseconds();
+  CCTAG_COUT_OPTIM("Time in buildPyramid: " << spendTimeBuildPyramid << " ms");
+#endif
   
   cctagMultiresDetection(markers, imgGraySrc, imagePyramid, frame, params);
 #endif

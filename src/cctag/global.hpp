@@ -140,7 +140,7 @@ namespace std {
  #include "release.hpp"
 #endif
 
-//#define CCTAG_OPTIM
+#define CCTAG_OPTIM
 
 #ifdef CCTAG_OPTIM
  #define CCTAG_COUT_OPTIM CCTAG_COUT
