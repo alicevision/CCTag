@@ -39,6 +39,7 @@ void CCTagMarkersBank::read( const std::string & file )
       _markers.push_back( rr );
     }
   }
+  input.close();
 }
 
 std::size_t CCTagMarkersBank::identify( const std::vector<double> & marker ) const

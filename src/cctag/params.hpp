@@ -17,8 +17,8 @@ namespace cctag
 {
 
 static const std::size_t kDefaultDistSearch = 30;
-static const std::size_t kDefaultNumCrowns  = 4;
-static const std::size_t kDefaultNumCircles = 8;
+static const std::size_t kDefaultNumCrowns  = 3;//4;
+static const std::size_t kDefaultNumCircles = 6;//8;
 static const int kDefaultThrGradientMagInVote = 2500;
 static const float kDefaultAngleVoting        = 0.0f;
 static const float kDefaultRatioVoting        = 4.f;
@@ -35,7 +35,7 @@ static const double kDefaultEllipseGrowingEllipticHullWidth =  2.3;
 static const std::size_t kDefaultWindowSizeOnInnerEllipticSegment =  20;
 static const std::size_t kDefaultNumberOfMultiresLayers = 4;
 static const std::size_t kDefaultNumberOfProcessedMultiresLayers = 4;
-static const std::size_t kDefaultNumCutsInIdentStep = 50;
+static const std::size_t kDefaultNumCutsInIdentStep = 15;
 static const std::size_t kDefaultNumSamplesOuterEdgePointsRefinement = 20;
 static const std::size_t kDefaultCutsSelectionTrials = 10000;
 static const std::size_t kDefaultSampleCutLength = 100;
