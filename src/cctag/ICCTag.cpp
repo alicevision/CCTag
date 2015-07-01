@@ -11,9 +11,9 @@ void cctagDetection(
       const std::size_t frame,
       const boost::gil::gray8_view_t& graySrc,
       const cctag::Parameters & params,
-      const std::string & cctagBankFilename,
       const bool bDisplayEllipses)
 {
+  std::string cctagBankFilename("/home/lilian/cpp_workspace/CCTag/cctagLibraries/3Crowns/ids.txt");
   
   markers.clear();// need to be checked!
   boost::ptr_list<cctag::CCTag> cctags;
