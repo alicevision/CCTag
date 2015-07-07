@@ -77,35 +77,7 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     _d_edges.cols = w;
     _d_edges.rows = h;
 
-    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int2) );
-    _d_edgelist = (int2*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(TriplePoint) );
-    _d_edgelist_2 = (TriplePoint*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, sizeof(uint32_t) );
-    _d_edge_counter = (uint32_t*)ptr;
-
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
-    assert( p % _d_next_edge_coord.elemSize() == 0 );
-    _d_next_edge_coord.data = (int32_t*)ptr;
-    _d_next_edge_coord.step = p;
-    _d_next_edge_coord.cols = w;
-    _d_next_edge_coord.rows = h;
-
-    // POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
-    // assert( p % _d_next_edge_after.elemSize() == 0 );
-    // _d_next_edge_after.data = (int32_t*)ptr;
-    // _d_next_edge_after.step = p;
-    // _d_next_edge_after.cols = w;
-    // _d_next_edge_after.rows = h;
-
-    // POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
-    // assert( p % _d_next_edge_befor.elemSize() == 0 );
-    // _d_next_edge_befor.data = (int32_t*)ptr;
-    // _d_next_edge_befor.step = p;
-    // _d_next_edge_befor.cols = w;
-    // _d_next_edge_befor.rows = h;
+    _vote.alloc( params, w, h );
 
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
@@ -142,20 +114,7 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
                            _d_edges.step * _d_edges.rows,
                            _stream );
 
-    POP_CUDA_MEMSET_ASYNC( _d_edgelist,
-                           0,
-                           params._maxEdges*sizeof(int2),
-                           _stream );
-
-    POP_CUDA_MEMSET_ASYNC( _d_edgelist_2,
-                           0,
-                           params._maxEdges*sizeof(TriplePoint),
-                           _stream );
-
-    POP_CUDA_MEMSET_ASYNC( _d_next_edge_coord.data,
-                           0,
-                           _d_next_edge_coord.step * _d_next_edge_coord.rows,
-                           _stream );
+    _vote.init( params, _stream );
 
     // POP_CUDA_MEMSET_ASYNC( _d_next_edge_after.data,
     //                        0,
@@ -168,6 +127,71 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     //                        _stream );
 
     cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+void Voting::alloc( const cctag::Parameters& params, size_t w, size_t h )
+{
+    void*  ptr;
+    size_t p;
+
+    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int2) );
+    _d_edgelist_1 = (int2*)ptr;
+
+    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(TriplePoint) );
+    _d_edgelist_2 = (TriplePoint*)ptr;
+
+    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int) );
+    _d_edgelist_3 = (int*)ptr;
+
+    POP_CUDA_MALLOC( &ptr, sizeof(uint32_t) );
+    _d_edgelist_1_sz = (uint32_t*)ptr;
+
+    POP_CUDA_MALLOC( &ptr, sizeof(uint32_t) );
+    _d_edgelist_2_sz = (uint32_t*)ptr;
+
+    POP_CUDA_MALLOC( &ptr, sizeof(uint32_t) );
+    _d_edgelist_3_sz = (uint32_t*)ptr;
+
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
+    assert( p % _d_next_edge_coord.elemSize() == 0 );
+    _d_next_edge_coord.data = (int32_t*)ptr;
+    _d_next_edge_coord.step = p;
+    _d_next_edge_coord.cols = w;
+    _d_next_edge_coord.rows = h;
+}
+
+void Voting::init( const cctag::Parameters& params, cudaStream_t stream )
+{
+    POP_CUDA_MEMSET_ASYNC( _d_edgelist_1,
+                           0,
+                           params._maxEdges*sizeof(int2),
+                           stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_edgelist_2,
+                           0,
+                           params._maxEdges*sizeof(TriplePoint),
+                           stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_edgelist_3,
+                           0,
+                           params._maxEdges*sizeof(int),
+                           stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_next_edge_coord.data,
+                           0,
+                           _d_next_edge_coord.step * _d_next_edge_coord.rows,
+                           stream );
+}
+
+void Voting::release( )
+{
+    POP_CUDA_FREE( _d_edgelist_1 );
+    POP_CUDA_FREE( _d_edgelist_2 );
+    POP_CUDA_FREE( _d_edgelist_3 );
+    POP_CUDA_FREE( _d_edgelist_1_sz );
+    POP_CUDA_FREE( _d_edgelist_2_sz );
+    POP_CUDA_FREE( _d_edgelist_3_sz );
+    POP_CUDA_FREE( _d_next_edge_coord.data );
 }
 
 }; // namespace popart

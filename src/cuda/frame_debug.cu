@@ -32,8 +32,8 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
     delete [] _h_debug_map;
     delete [] _h_debug_hyst_edges;
     delete [] _h_debug_edges;
-    delete [] _h_debug_edgelist;
-    delete [] _h_debug_edgelist_2;
+    delete [] _vote._h_debug_edgelist_1;
+    delete [] _vote._h_debug_edgelist_2;
 
     _h_debug_plane      = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_smooth     = new float[ getWidth() * getHeight() ];
@@ -43,8 +43,8 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
     _h_debug_map        = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_hyst_edges = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_edges      = new unsigned char[ getWidth() * getHeight() ];
-    _h_debug_edgelist   = new int2[ min(params._maxEdges,_h_edgelist_sz) ];
-    _h_debug_edgelist_2 = new TriplePoint[ min(params._maxEdges,_h_edgelist_2_sz) ];
+    _vote._h_debug_edgelist_1 = new int2[ params._maxEdges ];
+    _vote._h_debug_edgelist_2 = new TriplePoint[ params._maxEdges ];
 
     POP_SYNC_CHK;
 
@@ -100,16 +100,20 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
                               _d_edges.cols * sizeof(uint8_t),
                               _d_edges.rows,
                               cudaMemcpyDeviceToHost, _stream );
-    if( _h_edgelist_sz > 0 ) {
-        POP_CUDA_MEMCPY_ASYNC( _h_debug_edgelist,
-                               _d_edgelist,
-                               min(params._maxEdges,_h_edgelist_sz) * sizeof(int2),
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._h_debug_edgelist_1_sz, _vote._d_edgelist_1_sz, sizeof(uint32_t), _stream );
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._h_debug_edgelist_2_sz, _vote._d_edgelist_2_sz, sizeof(uint32_t), _stream );
+    POP_CUDA_SYNC( _stream );
+
+    if( _vote._h_debug_edgelist_1_sz > 0 ) {
+        POP_CUDA_MEMCPY_ASYNC( _vote._h_debug_edgelist_1,
+                               _vote._d_edgelist_1,
+                               min(params._maxEdges,_vote._h_debug_edgelist_1_sz) * sizeof(int2),
                                cudaMemcpyDeviceToHost, _stream );
     }
-    if( _h_edgelist_2_sz > 0 ) {
-        POP_CUDA_MEMCPY_ASYNC( _h_debug_edgelist_2,
-                               _d_edgelist_2,
-                               min(params._maxEdges,_h_edgelist_2_sz) * sizeof(TriplePoint),
+    if( _vote._h_debug_edgelist_2_sz > 0 ) {
+        POP_CUDA_MEMCPY_ASYNC( _vote._h_debug_edgelist_2,
+                               _vote._d_edgelist_2,
+                               min(params._maxEdges,_vote._h_debug_edgelist_2_sz) * sizeof(TriplePoint),
                                cudaMemcpyDeviceToHost, _stream );
     }
 }
@@ -398,16 +402,16 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                                   getWidth()*sizeof(uint8_t) );
     writeDebugPlane( s.c_str(), edges );
 
-    if( _h_edgelist_sz > 0 ) {
+    if( _vote._h_debug_edgelist_1_sz > 0 ) {
         s = filename + "-edgelist.txt";
-        writeInt2Array( s.c_str(), _h_debug_edgelist, min(params._maxEdges,_h_edgelist_sz) );
+        writeInt2Array( s.c_str(), _vote._h_debug_edgelist_1, min(params._maxEdges,_vote._h_debug_edgelist_1_sz) );
     }
 
-    if( _h_edgelist_2_sz > 0 ) {
+    if( _vote._h_debug_edgelist_2_sz > 0 ) {
         s = filename + "-edgelist2.txt";
-        writeTriplePointArray( s.c_str(), _h_debug_edgelist_2, min(params._maxEdges,_h_edgelist_2_sz) );
+        writeTriplePointArray( s.c_str(), _vote._h_debug_edgelist_2, min(params._maxEdges,_vote._h_debug_edgelist_2_sz) );
 
-        debugPlotPointsIntoImage( _h_debug_edgelist_2, min(params._maxEdges,_h_edgelist_2_sz), edges );
+        debugPlotPointsIntoImage( _vote._h_debug_edgelist_2, min(params._maxEdges,_vote._h_debug_edgelist_2_sz), edges );
 
         s = filename + "-edges-dots.pgm";
         writeDebugPlane( s.c_str(), edges );
