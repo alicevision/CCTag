@@ -21,6 +21,8 @@ struct KeepTime
     void stop( );
     void report( const char* msg );
 
+    float getElapsed( ); // very careful with this one, it creates synchrony
+
     void waitFor( cudaStream_t otherStream );
 };
 
