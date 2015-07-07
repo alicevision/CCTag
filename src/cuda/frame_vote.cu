@@ -174,8 +174,8 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
 
 __device__
 bool gradient_descent_inner( int4&                  out_edge_info,
-                             int2*                  d_edgelist_1,
-                             uint32_t               d_edgelist_1_sz,
+                             int2*                  d_all_edgepoint_list,
+                             uint32_t               d_all_edgepoint_list_sz,
                              cv::cuda::PtrStepSzb   edges,
                              uint32_t               nmax,
                              cv::cuda::PtrStepSz16s d_dx,
@@ -185,10 +185,10 @@ bool gradient_descent_inner( int4&                  out_edge_info,
     const int offset = blockIdx.x * 32 + threadIdx.x;
     int direction    = threadIdx.y == 0 ? -1 : 1;
 
-    if( offset >= d_edgelist_1_sz ) return false;
+    if( offset >= d_all_edgepoint_list_sz ) return false;
 
-    const int idx = d_edgelist_1[offset].x;
-    const int idy = d_edgelist_1[offset].y;
+    const int idx = d_all_edgepoint_list[offset].x;
+    const int idy = d_all_edgepoint_list[offset].y;
     // const int block_x = blockIdx.x * 32;
     // const int idx     = block_x + threadIdx.x;
     // const int idy     = blockIdx.y;
@@ -287,8 +287,8 @@ bool gradient_descent_inner( int4&                  out_edge_info,
 }
 
 __global__
-void gradient_descent( int2*                  d_edgelist_1,
-                       uint32_t               d_edgelist_1_sz,
+void gradient_descent( int2*                  d_all_edgepoint_list,
+                       uint32_t               d_all_edgepoint_list_sz,
                        TriplePoint*           d_edgelist_2,
                        uint32_t*              d_edgelist_2_sz,
                        cv::cuda::PtrStepSz32s d_next_edge_coord,
@@ -299,8 +299,8 @@ void gradient_descent( int2*                  d_edgelist_1,
                        cv::cuda::PtrStepSz16s d_dy,
                        int32_t                thrGradient )
 {
-    assert( blockDim.x * gridDim.x < d_edgelist_1_sz + 32 );
-    assert( *d_edgelist_2_sz <= 2*d_edgelist_1_sz );
+    assert( blockDim.x * gridDim.x < d_all_edgepoint_list_sz + 32 );
+    assert( *d_edgelist_2_sz <= 2*d_all_edgepoint_list_sz );
 
     int4 out_edge_info;
     bool keep;
@@ -308,8 +308,8 @@ void gradient_descent( int2*                  d_edgelist_1,
     // after   1  if threadIdx.y == 1
 
     keep = gradient_descent_inner( out_edge_info,
-                                   d_edgelist_1,
-                                   d_edgelist_1_sz,
+                                   d_all_edgepoint_list,
+                                   d_all_edgepoint_list_sz,
                                    edges,
                                    nmax,
                                    d_dx,
@@ -361,19 +361,19 @@ void gradient_descent( int2*                  d_edgelist_1,
         // not that it is initialized with 1 to ensure that 0 represents a NULL pointer
         write_index = atomicAdd( d_edgelist_2_sz, ct );
 
-        if( *d_edgelist_2_sz > 2*d_edgelist_1_sz ) {
+        if( *d_edgelist_2_sz > 2*d_all_edgepoint_list_sz ) {
             printf( "max offset: (%d x %d)=%d\n"
                     "my  offset: (%d*32+%d)=%d\n"
                     "edges in:    %d\n"
                     "edges found: %d (total %d)\n",
                     gridDim.x, blockDim.x, blockDim.x * gridDim.x,
                     blockIdx.x, threadIdx.x, threadIdx.x + blockIdx.x*32,
-                    d_edgelist_1_sz,
+                    d_all_edgepoint_list_sz,
                     ct, d_edgelist_2_sz );
-            assert( *d_edgelist_2_sz <= 2*d_edgelist_1_sz );
+            assert( *d_edgelist_2_sz <= 2*d_all_edgepoint_list_sz );
         }
     }
-    // assert( *d_edgelist_2_sz >= 2*d_edgelist_1_sz );
+    // assert( *d_edgelist_2_sz >= 2*d_all_edgepoint_list_sz );
 
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
@@ -404,8 +404,8 @@ void gradient_descent( int2*                  d_edgelist_1,
     }
 }
 
-/* Brief: Voting procedure. For every edge points, construct the 1st order approximation 
- * of the field line passing through it which consists in a polygonal line whose
+/* Brief: Voting procedure. For every edge point, construct the 1st order approximation 
+ * of the field line passing through it, which consists in a polygonal line whose
  * extremities are two edge points.
  * Input:
  * points: set of edge points to be processed, i.e. considered as the 1st extremity
@@ -576,7 +576,7 @@ void init_choices( )
 __global__
 void print_choices( )
 {
-    printf("  The number of points chosen is %d\n", count_choices );
+    printf("    The number of points chosen is %d\n", count_choices );
 }
 #endif // NDEBUG
 
@@ -586,16 +586,16 @@ void construct_line( TriplePoint*           d_edgelist_2,     // input
                      int*                   d_edgelist_3,     // output
                      uint32_t*              d_edgelist_3_sz,  // output
                      uint32_t               d_edgelist_3_max, // input
-                     cv::cuda::PtrStepSz16s d_dx,  // input
-                     cv::cuda::PtrStepSz16s d_dy,  // input
+                     cv::cuda::PtrStepSz16s d_dx,             // input
+                     cv::cuda::PtrStepSz16s d_dy,             // input
                      cv::cuda::PtrStepSz32s d_next_edge_coord, // input
                      size_t                 numCrowns,
                      float                  ratioVoting )
 {
     const TriplePoint* chosen = vote::inner( d_edgelist_2,     // input
                                              d_edgelist_2_sz,  // input
-                                             d_dx,  // input
-                                             d_dy,  // input
+                                             d_dx,             // input
+                                             d_dy,             // input
                                              d_next_edge_coord, // input
                                              numCrowns,
                                              ratioVoting );
@@ -680,15 +680,6 @@ void print_edgelist_3( TriplePoint*           d_edgelist_2,
                 chosen->_flowLength );
     }
 }
-
-__global__
-void device_print_edge_counter( uint32_t edge_ctr_in, uint32_t* d_edge_counter )
-{
-    if( edge_ctr_in != 0 ) {
-        printf("    Function called with %d edges\n", edge_ctr_in );
-    }
-    printf("    Device sees edge counter %d\n", *d_edge_counter);
-}
 #endif // NDEBUG
 
 struct NumVotersIsGreaterEqual
@@ -713,36 +704,30 @@ struct NumVotersIsGreaterEqual
 };
 
 __host__
-void Frame::applyVote( const cctag::Parameters& params )
+bool Voting::gradientDescent( const cctag::Parameters&     params,
+                              const cv::cuda::PtrStepSzb   edges,
+                              const cv::cuda::PtrStepSz16s d_dx,
+                              const cv::cuda::PtrStepSz16s d_dy,
+                              cudaStream_t                 stream )
 {
-    dim3 block;
-    dim3 grid;
-
-    cout << "Enter " << __FUNCTION__ << endl;
-
-    if( params._numCrowns > MAX_CROWNS ) {
-        cerr << "Error in " << __FILE__ << ":" << __LINE__ << ":" << endl
-             << "    static maximum of parameter crowns is " << MAX_CROWNS
-             << ", parameter file wants " << params._numCrowns << endl
-             << "    edit " << __FILE__ << " and recompile" << endl
-             << endl;
-        exit( -1 );
-    }
+    cout << "  Enter " << __FUNCTION__ << endl;
 
     uint32_t listsize;
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &listsize, _vote._d_edgelist_2_sz, sizeof(uint32_t), _stream );
-    POP_CUDA_SYNC( _stream );
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &listsize, _d_all_edgecoord_list_sz, sizeof(uint32_t), stream );
+    POP_CUDA_SYNC( stream );
 
     if( listsize == 0 ) {
-        cerr << "I have not found any edges!" << endl;
-        cerr << "Leave " << __FUNCTION__ << endl;
-        return;
+        cerr << "    I have not found any edges!" << endl;
+        cerr << "  Leave " << __FUNCTION__ << endl;
+        return false;
     }
 
     const uint32_t nmax          = params._distSearch;
     const int32_t  threshold     = params._thrGradientMagInVote;
+    dim3           block;
+    dim3           grid;
     block.x = 32;
     block.y = 2;
     block.z = 1;
@@ -755,48 +740,51 @@ void Frame::applyVote( const cctag::Parameters& params )
      * at 1 allows to distinguish unchained points (0) from chained
      * points non-0.
      */
-    POP_CUDA_SETX_ASYNC( _vote._d_edgelist_2_sz, (uint32_t)1, _stream );
+    POP_CUDA_SETX_ASYNC( _d_edgelist_2_sz, (uint32_t)1, stream );
 
 #ifndef NDEBUG
     cout << "    calling gradient descent with " << listsize << " edge points" << endl;
     cout << "    max num edges is " << params._maxEdges << endl;
-
-    device_print_edge_counter
-        <<<1,1,0,_stream>>>
-        ( 0, _vote._d_edgelist_2_sz );
 
     cout << "    grid (" << grid.x << "," << grid.y << "," << grid.z << ")"
          << " block (" << block.x << "," << block.y << "," << block.z << ")" << endl;
 #endif // NDEBUG
 
     vote::gradient_descent
-        <<<grid,block,0,_stream>>>
-        ( _vote._d_edgelist_1, listsize,
-          _vote._d_edgelist_2, _vote._d_edgelist_2_sz,
-          _vote._d_next_edge_coord,
+        <<<grid,block,0,stream>>>
+        ( _d_all_edgecoord_list, listsize,
+          _d_edgelist_2, _d_edgelist_2_sz,
+          _d_next_edge_coord,
           params._maxEdges,
-          _d_edges, nmax, _d_dx, _d_dy, threshold ); // , _d_out_points );
+          edges, nmax, d_dx, d_dy, threshold );
     POP_CHK_CALL_IFSYNC;
 
-#ifndef NDEBUG
-    device_print_edge_counter
-        <<<1,1,0,_stream>>>
-        ( listsize, _vote._d_edgelist_2_sz );
-#endif // NDEBUG
+    cout << "  Leave " << __FUNCTION__ << endl;
+    return true;
+}
+
+__host__
+bool Voting::constructLine( const cctag::Parameters&     params,
+                            const cv::cuda::PtrStepSz16s d_dx,
+                            const cv::cuda::PtrStepSz16s d_dy,
+                            cudaStream_t                 stream )
+{
+    cout << "  Enter " << __FUNCTION__ << endl;
+    uint32_t listsize;
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &listsize, _vote._d_edgelist_2_sz, sizeof(uint32_t), _stream );
-    POP_CUDA_SYNC( _stream );
-
-#ifndef NDEBUG
-    device_print_edge_counter
-        <<<1,1,0,_stream>>>
-        ( 0, _vote._d_edgelist_2_sz );
-#endif // NDEBUG
-
-    // Try to figure out how that can be done with CMake.
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &listsize, _d_edgelist_2_sz, sizeof(uint32_t), stream );
+    POP_CUDA_SYNC( stream );
 
     cout << "    after gradient descent, edge counter is " << listsize << endl;
+
+    if( listsize == 0 ) {
+        cout << "  Leave " << __FUNCTION__ << endl;
+        return false;
+    }
+
+    dim3 block;
+    dim3 grid;
 
     block.x = 32;
     block.y = 1;
@@ -805,34 +793,76 @@ void Frame::applyVote( const cctag::Parameters& params )
     grid.y  = 1;
     grid.z  = 1;
 
-    POP_CUDA_SET0_ASYNC( _vote._d_edgelist_3_sz, _stream );
+    POP_CUDA_SET0_ASYNC( _d_edgelist_3_sz, stream );
 
 #ifndef NDEBUG
-    vote::init_choices<<<1,1,0,_stream>>>( );
+    vote::init_choices<<<1,1,0,stream>>>( );
 #endif // NDEBUG
 
     vote::construct_line
-        <<<grid,block,0,_stream>>>
-        ( _vote._d_edgelist_2,
+        <<<grid,block,0,stream>>>
+        ( _d_edgelist_2,
           listsize,
-          _vote._d_edgelist_3,
-          _vote._d_edgelist_3_sz,
+          _d_edgelist_3,
+          _d_edgelist_3_sz,
           params._maxEdges,
-          _d_dx,
-          _d_dy,
-          _vote._d_next_edge_coord,
+          d_dx,
+          d_dy,
+          _d_next_edge_coord,
           params._numCrowns,
           params._ratioVoting );
     POP_CHK_CALL_IFSYNC;
 
 #ifndef NDEBUG
-    vote::print_choices<<<1,1,0,_stream>>>( );
+    vote::print_choices<<<1,1,0,stream>>>( );
     POP_CHK_CALL_IFSYNC;
 #endif // NDEBUG
+
+    cout << "  Leave " << __FUNCTION__ << endl;
+    return true;
+}
+
+__host__
+void Frame::applyVote( const cctag::Parameters& params )
+{
+    cout << "Enter " << __FUNCTION__ << endl;
+
+    if( params._numCrowns > MAX_CROWNS ) {
+        cerr << "Error in " << __FILE__ << ":" << __LINE__ << ":" << endl
+             << "    static maximum of parameter crowns is " << MAX_CROWNS
+             << ", parameter file wants " << params._numCrowns << endl
+             << "    edit " << __FILE__ << " and recompile" << endl
+             << endl;
+        exit( -1 );
+    }
+
+    bool success;
+    
+    success = _vote.gradientDescent( params,
+                                     _d_edges,
+                                     _d_dx,
+                                     _d_dy,
+                                     _stream );
+
+    if( not success ) {
+        cout << "Leave " << __FUNCTION__ << endl;
+        return;
+    }
+
+    success = _vote.constructLine( params,
+                                   _d_dx,
+                                   _d_dy,
+                                   _stream );
+
+    if( not success ) {
+        cout << "Leave " << __FUNCTION__ << endl;
+        return;
+    }
 
     /* For every chosen, compute the average flow size from all
      * of its voters, and count the number of its voters.
      */
+    uint32_t listsize;
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &listsize, _vote._d_edgelist_3_sz, sizeof(uint32_t), _stream );
     POP_CUDA_SYNC( _stream );
 
@@ -846,12 +876,12 @@ void Frame::applyVote( const cctag::Parameters& params )
         void*  assist_buffer = (void*)_d_intermediate.data;
         size_t assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
 
-        /* We re-use the device-sided int2* array _vote._d_edgelist_1 as an int
+        /* We re-use the device-sided int2* array _vote._d_all_edgecoord_list as an int
          * array. We are certain that it has twice the required size and
          * that it is no longer needed.
          */
         cub::DoubleBuffer<int> d_keys( _vote._d_edgelist_3,
-                                       reinterpret_cast<int*>(_vote._d_edgelist_1) );
+                                       reinterpret_cast<int*>(_vote._d_all_edgecoord_list) );
 
         int num_items = static_cast<int>(listsize);
 
@@ -892,6 +922,8 @@ void Frame::applyVote( const cctag::Parameters& params )
         POP_CUDA_MEMCPY_TO_HOST_ASYNC( &num_selected_out, _vote._d_edgelist_2_sz, sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
 
+        dim3 block;
+        dim3 grid;
         block.x = 32;
         block.y = 1;
         block.z = 1;
@@ -913,8 +945,8 @@ void Frame::applyVote( const cctag::Parameters& params )
         assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
         cub::DeviceSelect::If( assist_buffer,
                                assist_buffer_sz,
-                               d_keys.d_buffers[  d_keys.selector ], // unique_out,
-                               d_keys.d_buffers[ !d_keys.selector ], // unique_in,
+                               d_keys.d_buffers[  d_keys.selector ],
+                               d_keys.d_buffers[ !d_keys.selector ],
                                d_num_selected_out,
                                num_items,
                                select_op,
@@ -928,13 +960,15 @@ void Frame::applyVote( const cctag::Parameters& params )
          * value d_num_selected_out from the device before the voting
          * step.
          */
-        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &num_selected_out, d_num_selected_out, sizeof(int), _stream );
+        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._h_seed_sz, d_num_selected_out, sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
+
+        _vote._d_seeds = d_keys.Current();
 
 #ifndef NDEBUG
         print_edgelist_3<<<1,1,0,_stream>>>( _vote._d_edgelist_2,
-                                             d_keys.Current(),
-                                             num_selected_out );
+                                             _vote._d_seeds,
+                                             _vote._h_seed_sz );
         POP_CHK_CALL_IFSYNC;
 #endif // NDEBUG
     }

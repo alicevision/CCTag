@@ -202,7 +202,11 @@ void thinning( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 }
 
 __global__
-void thinning_and_store( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, uint32_t* edgeCounter, uint32_t edgeMax, int2* edgeCoords )
+void thinning_and_store( cv::cuda::PtrStepSzb src,          // input
+                         cv::cuda::PtrStepSzb dst,          // output
+                         uint32_t*            edgeCounter,  // output
+                         uint32_t             edgeMax,      // input
+                         int2*                edgeCoords )  // output
 {
     const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
@@ -270,7 +274,7 @@ void Frame::applyMag( const cctag::Parameters & params )
 }
 
 __host__
-void Frame::applyMore( const cctag::Parameters & params )
+void Frame::applyThinning( const cctag::Parameters & params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
@@ -285,15 +289,15 @@ void Frame::applyMore( const cctag::Parameters & params )
         ( _d_hyst_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
     POP_CHK_CALL_IFSYNC;
 
-    POP_CUDA_SET0_ASYNC( _vote._d_edgelist_2_sz, _stream );
+    POP_CUDA_SET0_ASYNC( _vote._d_all_edgecoord_list_sz, _stream );
 
     thinning_and_store
         <<<grid,block,0,_stream>>>
-        ( cv::cuda::PtrStepSzb(_d_intermediate),
-          _d_edges,
-          _vote._d_edgelist_2_sz,
-          params._maxEdges,
-          _vote._d_edgelist_1 );
+        ( cv::cuda::PtrStepSzb(_d_intermediate), // input
+          _d_edges,                              // output
+          _vote._d_all_edgecoord_list_sz,                // output
+          params._maxEdges,                      // input
+          _vote._d_all_edgecoord_list );                 // output
     POP_CHK_CALL_IFSYNC;
 
     cerr << "Leave " << __FUNCTION__ << endl;

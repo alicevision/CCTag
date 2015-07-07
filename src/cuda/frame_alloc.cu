@@ -135,7 +135,7 @@ void Voting::alloc( const cctag::Parameters& params, size_t w, size_t h )
     size_t p;
 
     POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int2) );
-    _d_edgelist_1 = (int2*)ptr;
+    _d_all_edgecoord_list = (int2*)ptr;
 
     POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(TriplePoint) );
     _d_edgelist_2 = (TriplePoint*)ptr;
@@ -144,7 +144,7 @@ void Voting::alloc( const cctag::Parameters& params, size_t w, size_t h )
     _d_edgelist_3 = (int*)ptr;
 
     POP_CUDA_MALLOC( &ptr, sizeof(uint32_t) );
-    _d_edgelist_1_sz = (uint32_t*)ptr;
+    _d_all_edgecoord_list_sz = (uint32_t*)ptr;
 
     POP_CUDA_MALLOC( &ptr, sizeof(uint32_t) );
     _d_edgelist_2_sz = (uint32_t*)ptr;
@@ -162,7 +162,7 @@ void Voting::alloc( const cctag::Parameters& params, size_t w, size_t h )
 
 void Voting::init( const cctag::Parameters& params, cudaStream_t stream )
 {
-    POP_CUDA_MEMSET_ASYNC( _d_edgelist_1,
+    POP_CUDA_MEMSET_ASYNC( _d_all_edgecoord_list,
                            0,
                            params._maxEdges*sizeof(int2),
                            stream );
@@ -185,10 +185,10 @@ void Voting::init( const cctag::Parameters& params, cudaStream_t stream )
 
 void Voting::release( )
 {
-    POP_CUDA_FREE( _d_edgelist_1 );
+    POP_CUDA_FREE( _d_all_edgecoord_list );
     POP_CUDA_FREE( _d_edgelist_2 );
     POP_CUDA_FREE( _d_edgelist_3 );
-    POP_CUDA_FREE( _d_edgelist_1_sz );
+    POP_CUDA_FREE( _d_all_edgecoord_list_sz );
     POP_CUDA_FREE( _d_edgelist_2_sz );
     POP_CUDA_FREE( _d_edgelist_3_sz );
     POP_CUDA_FREE( _d_next_edge_coord.data );

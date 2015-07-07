@@ -100,13 +100,13 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
                               _d_edges.cols * sizeof(uint8_t),
                               _d_edges.rows,
                               cudaMemcpyDeviceToHost, _stream );
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._h_debug_edgelist_1_sz, _vote._d_edgelist_1_sz, sizeof(uint32_t), _stream );
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._h_debug_edgelist_1_sz, _vote._d_all_edgecoord_list_sz, sizeof(uint32_t), _stream );
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._h_debug_edgelist_2_sz, _vote._d_edgelist_2_sz, sizeof(uint32_t), _stream );
     POP_CUDA_SYNC( _stream );
 
     if( _vote._h_debug_edgelist_1_sz > 0 ) {
         POP_CUDA_MEMCPY_ASYNC( _vote._h_debug_edgelist_1,
-                               _vote._d_edgelist_1,
+                               _vote._d_all_edgecoord_list,
                                min(params._maxEdges,_vote._h_debug_edgelist_1_sz) * sizeof(int2),
                                cudaMemcpyDeviceToHost, _stream );
     }

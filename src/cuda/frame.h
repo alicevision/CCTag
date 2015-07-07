@@ -129,7 +129,7 @@ public:
     void applyHyst( const cctag::Parameters& param );
 
     // implemented in frame_apply.cu
-    void applyMore( const cctag::Parameters& param );
+    void applyThinning( const cctag::Parameters& param );
 
     // implemented in frame_vote.cu
     void applyVote( const cctag::Parameters& param );

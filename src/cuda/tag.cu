@@ -75,7 +75,7 @@ void TagPipe::tagframe( unsigned char* pix,
     for( int i=0; i<4; i++ ) {
         _frame[i]->applyMag(   params );  // async
         _frame[i]->applyHyst(  params );  // async
-        _frame[i]->applyMore(  params );  // async
+        _frame[i]->applyThinning(  params );  // async
         _frame[i]->applyVote(  params );  // async
     }
 
@@ -118,7 +118,7 @@ void TagPipe::tagframe( unsigned char* pix,
         _frame[i]->applyGauss( params ); // async
         _frame[i]->applyMag(   params );  // async
         _frame[i]->applyHyst(  params );  // async
-        _frame[i]->applyMore(  params );  // async
+        _frame[i]->applyThinning(  params );  // async
         _frame[i]->applyVote(  params );  // async
     }
 
