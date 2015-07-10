@@ -27,10 +27,6 @@ Frame::Frame( uint32_t width, uint32_t height )
     , _h_debug_map( 0 )
     , _h_debug_hyst_edges( 0 )
     , _h_debug_edges( 0 )
-    , _h_debug_edgelist( 0 )
-    , _h_edgelist_sz( 0 )
-    , _h_debug_edgelist_2( 0 )
-    , _h_edgelist_2_sz( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
     , _wait_done( 0 )
@@ -68,8 +64,6 @@ Frame::~Frame( )
     delete [] _h_debug_map;
     delete [] _h_debug_hyst_edges;
     delete [] _h_debug_edges;
-    delete [] _h_debug_edgelist;
-    delete [] _h_debug_edgelist_2;
     delete _texture;
 
     POP_CUDA_FREE( _d_plane.data );
@@ -81,9 +75,8 @@ Frame::~Frame( )
     POP_CUDA_FREE( _d_map.data );
     POP_CUDA_FREE( _d_hyst_edges.data );
     POP_CUDA_FREE( _d_edges.data );
-    POP_CUDA_FREE( _d_next_edge_coord.data );
-    POP_CUDA_FREE( _d_next_edge_after.data );
-    POP_CUDA_FREE( _d_next_edge_befor.data );
+    // POP_CUDA_FREE( _d_next_edge_after.data );
+    // POP_CUDA_FREE( _d_next_edge_befor.data );
 
     cerr << "Released frame: " << getWidth() << "x" << getHeight() << endl;
 }

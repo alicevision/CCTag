@@ -7,6 +7,8 @@
 #include <opencv2/core/cuda_types.hpp>
 
 #include "../cctag/params.hpp"
+#include "frame_vote.h"
+#include "triple_point.h"
 
 /* A table is copied to constant memory containing sigma values
  * for Gauss filtering at the 0-offset, and the derivatives
@@ -59,20 +61,6 @@ private:
     cudaTextureObject_t _texture;
     cudaTextureDesc     _texDesc;
     cudaResourceDesc    _resDesc;
-};
-
-/*************************************************************
- * TriplePoint
- * A simplified version of EdgePoint in the C++ code.
- *************************************************************/
-struct TriplePoint
-{
-    int2 coord;
-    int2 befor;
-    int2 after;
-    int  next_coord; // I believe that this can be removed
-    int  next_after;
-    int  next_befor;
 };
 
 /*************************************************************
@@ -135,7 +123,16 @@ public:
     void applyGauss( const cctag::Parameters& param );
 
     // implemented in frame_apply.cu
-    void applyMore( const cctag::Parameters& param );
+    void applyMag( const cctag::Parameters& param );
+
+    // implemented in frame_hyst.cu
+    void applyHyst( const cctag::Parameters& param );
+
+    // implemented in frame_apply.cu
+    void applyThinning( const cctag::Parameters& param );
+
+    // implemented in frame_vote.cu
+    void applyVote( const cctag::Parameters& param );
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
@@ -146,6 +143,8 @@ public:
 
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
     static void writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz );
+    static void debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv::cuda::PtrStepSzb img );
+
 
     void writeHostDebugPlane( std::string filename, const cctag::Parameters& params );
     void hostDebugCompare( unsigned char* pix );
@@ -164,12 +163,6 @@ private:
     cv::cuda::PtrStepSzb   _d_map;
     cv::cuda::PtrStepSzb   _d_hyst_edges;
     cv::cuda::PtrStepSzb   _d_edges;
-    int2*                  _d_edgelist;
-    TriplePoint*           _d_edgelist_2;
-    uint32_t*              _d_edge_counter;
-    cv::cuda::PtrStepSz32s _d_next_edge_coord; // 2D plane for chaining TriplePoint coord
-    cv::cuda::PtrStepSz32s _d_next_edge_after; // 2D plane for chaining TriplePoint after
-    cv::cuda::PtrStepSz32s _d_next_edge_befor; // 2D plane for chaining TriplePoint after
 
     unsigned char* _h_debug_plane;
     float*         _h_debug_smooth;
@@ -179,10 +172,17 @@ private:
     unsigned char* _h_debug_map;
     unsigned char* _h_debug_hyst_edges;
     unsigned char* _h_debug_edges;
-    int2*          _h_debug_edgelist;
-    uint32_t       _h_edgelist_sz;
-    TriplePoint*   _h_debug_edgelist_2;
-    uint32_t       _h_edgelist_2_sz;
+
+    Voting _vote;
+    // int2*                  _d_edgelist_1;
+    // TriplePoint*           _d_edgelist_2;
+    // uint32_t*              _d_edgelist_2_sz;
+    // int*                   _d_edgelist_3;
+    // uint32_t*              _d_edgelist_3_sz;
+    // int2*          _h_debug_edgelist;
+    // uint32_t       _h_edgelist_sz;
+    // TriplePoint*   _h_debug_edgelist_2;
+    // uint32_t       _h_edgelist_2_sz;
 
     FrameTexture*  _texture;
     FrameEvent*    _wait_for_upload;
@@ -193,27 +193,6 @@ private:
 public:
     cudaStream_t _stream;
 };
-
-template <typename T>
-__device__
-inline bool outOfBounds( int x, int y, const cv::cuda::PtrStepSz<T>& edges )
-{
-    return ( x < 0 || x >= edges.cols || y < 0 || y >= edges.rows );
-}
-
-template <typename T>
-__device__
-inline T d_abs( T value )
-{
-    return ( ( value < 0 ) ? -value : value );
-}
-
-template <typename T>
-__device__
-inline int d_sign( T value )
-{
-    return ( ( value < 0 ) ? -1 : 1 );
-}
 
 }; // namespace popart
 

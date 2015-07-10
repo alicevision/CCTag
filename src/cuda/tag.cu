@@ -54,6 +54,41 @@ void TagPipe::tagframe( unsigned char* pix,
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
+#if 0
+    _frame[0]->upload( pix ); // async
+
+    FrameEvent ev = _frame[0]->addUploadEvent( ); // async
+
+    for( int i=1; i<4; i++ ) {
+        _frame[i]->streamSync( ev ); // aysnc
+        _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
+        // _frame[i]->fillFromFrame( *(_frame[0]) );
+    }
+
+    for( int i=0; i<4; i++ ) {
+        _frame[i]->applyGauss( params ); // async
+    }
+
+    KeepTime t( _frame[0]->_stream );
+    t.start();
+
+    for( int i=0; i<4; i++ ) {
+        _frame[i]->applyMag(   params );  // async
+        _frame[i]->applyHyst(  params );  // async
+        _frame[i]->applyThinning(  params );  // async
+        _frame[i]->applyVote(  params );  // async
+    }
+
+    FrameEvent doneEv[4];
+    for( int i=1; i<4; i++ ) {
+        doneEv[i] = _frame[i]->addDoneEvent( ); // async
+    }
+    for( int i=1; i<4; i++ ) {
+        _frame[0]->streamSync( doneEv[i] ); // aysnc
+    }
+    t.stop();
+    t.report( "Time for all frames " );
+#else
     KeepTime t( _frame[0]->_stream );
     t.start();
 
@@ -81,7 +116,10 @@ void TagPipe::tagframe( unsigned char* pix,
 
     for( int i=0; i<4; i++ ) {
         _frame[i]->applyGauss( params ); // async
-        _frame[i]->applyMore( params );  // async
+        _frame[i]->applyMag(   params );  // async
+        _frame[i]->applyHyst(  params );  // async
+        _frame[i]->applyThinning(  params );  // async
+        _frame[i]->applyVote(  params );  // async
     }
 
     FrameEvent doneEv[4];
@@ -93,6 +131,7 @@ void TagPipe::tagframe( unsigned char* pix,
     }
     t.stop();
     t.report( "Time for all frames " );
+#endif
     cerr << "Leave " << __FUNCTION__ << endl;
 }
 
