@@ -1,4 +1,3 @@
-#include <cctag/progBase/MemoryPool.hpp>
 #include <cctag/filter/cvRecode.hpp>
 #include <cctag/boostCv/cvImage.hpp>
 
@@ -38,9 +37,7 @@ void cannyCv(
   typedef typename GrayImage::view_t GrayView;
   typedef typename channel_type<GrayView>::type Precision;
 
-  boost::posix_time::ptime t1a( boost::posix_time::microsec_clock::local_time() );
   cvCanny( cannyRGB, boostCv::CvImageView( srcView ).get(), thrCannyLow, thrCannyHigh );
-  boost::posix_time::ptime t2a( boost::posix_time::microsec_clock::local_time() );
 
   // Thinning
   using namespace terry;
@@ -53,12 +50,9 @@ void cannyCv(
   rect_t procWindowRoWCrop1 = srcRodCrop1;
   rect_t procWindowRoWCrop2 = srcRodCrop2;
   
-  IPoolDataPtr dataTmp = MemoryPool::instance().allocate(
-          cannyView.width() * cannyView.height() * sizeof(Precision) );
+  cv::Mat dataTmp = cv::Mat(cannyView.height(), cannyView.width(), CV_8UC1);
   
-  GrayView view_tmp = interleaved_view(
-          srcView.width(), srcView.height(),
-          (PixelGray*)dataTmp->data(), cannyView.width() * sizeof(Precision) );
+  GrayView view_tmp = interleaved_view( dataTmp.cols, dataTmp.rows, (PixelGray*) dataTmp.data, dataTmp.step );
   
   PixelGray pixelZero;
   pixel_zeros_t<PixelGray>()( pixelZero );
