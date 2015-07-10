@@ -32,8 +32,6 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
     delete [] _h_debug_map;
     delete [] _h_debug_hyst_edges;
     delete [] _h_debug_edges;
-    delete [] _vote._h_debug_edgelist_1;
-    delete [] _vote._h_debug_edgelist_2;
 
     _h_debug_plane      = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_smooth     = new float[ getWidth() * getHeight() ];
@@ -43,8 +41,6 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
     _h_debug_map        = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_hyst_edges = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_edges      = new unsigned char[ getWidth() * getHeight() ];
-    _vote._h_debug_edgelist_1 = new int2[ params._maxEdges ];
-    _vote._h_debug_edgelist_2 = new TriplePoint[ params._maxEdges ];
 
     POP_SYNC_CHK;
 
@@ -100,42 +96,7 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
                               _d_edges.cols * sizeof(uint8_t),
                               _d_edges.rows,
                               cudaMemcpyDeviceToHost, _stream );
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._h_debug_edgelist_1_sz, _vote._d_all_edgecoord_list_sz, sizeof(uint32_t), _stream );
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._h_debug_edgelist_2_sz, _vote._d_edgelist_2_sz, sizeof(uint32_t), _stream );
-    POP_CUDA_SYNC( _stream );
-
-    if( _vote._h_debug_edgelist_1_sz > 0 ) {
-        POP_CUDA_MEMCPY_ASYNC( _vote._h_debug_edgelist_1,
-                               _vote._d_all_edgecoord_list,
-                               min(params._maxEdges,_vote._h_debug_edgelist_1_sz) * sizeof(int2),
-                               cudaMemcpyDeviceToHost, _stream );
-    }
-    if( _vote._h_debug_edgelist_2_sz > 0 ) {
-        POP_CUDA_MEMCPY_ASYNC( _vote._h_debug_edgelist_2,
-                               _vote._d_edgelist_2,
-                               min(params._maxEdges,_vote._h_debug_edgelist_2_sz) * sizeof(TriplePoint),
-                               cudaMemcpyDeviceToHost, _stream );
-    }
 }
-
-#if 0
-__host__
-static void testme( cv::cuda::PtrStepSzf src )
-{
-    size_t non_null_ct = 0;
-    float minval = 1000.0f;
-    float maxval = -1000.0f;
-    for( size_t i=0; i<src.rows; i++ )
-        for( size_t j=0; j<src.cols; j++ ) {
-            float f = src.ptr(i)[j];
-            if( f != 0.0f )
-                non_null_ct++;
-            minval = min( minval, f );
-            maxval = max( maxval, f );
-        }
-    printf("testme: There are %lu non-null values in the Gaussian end result (min %f, max %f)\n", (unsigned long)non_null_ct, minval, maxval );
-}
-#endif
 
 void Frame::writeDebugPlane1( const char* filename, const cv::cuda::PtrStepSzb& plane )
 {
@@ -168,8 +129,6 @@ void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>&
        << plane.cols << " " << plane.rows << endl
        << "255" << endl;
 
-    // T minval = 1000;  // std::numeric_limits<float>::max();
-    // T maxval = -1000; // std::numeric_limits<float>::min();
     T minval = std::numeric_limits<T>::max();
     T maxval = std::numeric_limits<T>::min();
     // for( uint32_t i=0; i<plane.rows*plane.cols; i++ ) {
@@ -200,26 +159,6 @@ void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>&
 #ifdef CHATTY_WRITE_DEBUG_PLANE
     cerr << "Leave " << __FUNCTION__ << endl;
 #endif
-}
-
-void Frame::writeInt2Array( const char* filename, const int2* array, uint32_t sz )
-{
-    ofstream of( filename );
-
-    for( uint32_t i=0; i<sz; i++ ) {
-        of << array[i].x << " " << array[i].y << endl;
-    }
-}
-
-void Frame::writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz )
-{
-    ofstream of( filename );
-
-    for( uint32_t i=0; i<sz; i++ ) {
-        of << array[i].coord.x << " " << array[i].coord.y << " "
-           << array[i].befor.x << " " << array[i].befor.y << " "
-           << array[i].after.x << " " << array[i].after.y << endl;
-    }
 }
 
 void Frame::hostDebugCompare( unsigned char* pix )
@@ -402,16 +341,14 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                                   getWidth()*sizeof(uint8_t) );
     writeDebugPlane( s.c_str(), edges );
 
-    if( _vote._h_debug_edgelist_1_sz > 0 ) {
-        s = filename + "-edgelist.txt";
-        writeInt2Array( s.c_str(), _vote._h_debug_edgelist_1, min(params._maxEdges,_vote._h_debug_edgelist_1_sz) );
-    }
+    s = filename + "-edgelist.txt";
+    _vote._all_edgecoords.debugOut( params._maxEdges, s.c_str() );
 
-    if( _vote._h_debug_edgelist_2_sz > 0 ) {
+    if( _vote._chained_edgecoords.host.size > 0 ) {
         s = filename + "-edgelist2.txt";
-        writeTriplePointArray( s.c_str(), _vote._h_debug_edgelist_2, min(params._maxEdges,_vote._h_debug_edgelist_2_sz) );
+        _vote._chained_edgecoords.debugOut( params._maxEdges, s.c_str() );
 
-        debugPlotPointsIntoImage( _vote._h_debug_edgelist_2, min(params._maxEdges,_vote._h_debug_edgelist_2_sz), edges );
+        // debugPlotPointsIntoImage( _vote._chained_edgecoords.host.debug_ptr, min(params._maxEdges,_vote._chained_edgecoords.host.size), edges );
 
         s = filename + "-edges-dots.pgm";
         writeDebugPlane( s.c_str(), edges );

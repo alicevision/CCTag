@@ -187,6 +187,12 @@ void pop_cuda_memset_sync( void*        ptr,
 #define POP_CUDA_MEMCPY_SYNC( dst, src, sz, type ) \
     pop_cuda_memcpy_sync( dst, src, sz, type, __FILE__, __LINE__ )
 
+#define POP_CUDA_MEMCPY_TO_HOST_SYNC( dst, src, sz ) \
+    pop_cuda_memcpy_sync( dst, src, sz, cudaMemcpyDeviceToHost, __FILE__, __LINE__ )
+
+#define POP_CUDA_MEMCPY_TO_DEVICE_SYNC( dst, src, sz ) \
+    pop_cuda_memcpy_sync( dst, src, sz, cudaMemcpyHostToDevice, __FILE__, __LINE__ )
+
 #define POP_CUDA_MEMCPY_2D_SYNC( dst, dpitch, src, spitch, width, height, type ) \
     pop_cuda_memcpy_2D_sync( dst, dpitch, src, spitch, width, height, type, __FILE__, __LINE__ )
 

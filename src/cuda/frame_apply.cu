@@ -204,9 +204,8 @@ void thinning( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 __global__
 void thinning_and_store( cv::cuda::PtrStepSzb src,          // input
                          cv::cuda::PtrStepSzb dst,          // output
-                         uint32_t*            edgeCounter,  // output
-                         uint32_t             edgeMax,      // input
-                         int2*                edgeCoords )  // output
+                         DevEdgeList<int2>    edgeCoords,   // output
+                         uint32_t             edgeMax )     // input
 {
     const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
@@ -220,13 +219,13 @@ void thinning_and_store( cv::cuda::PtrStepSzb src,          // input
     uint32_t write_index;
     if( threadIdx.x == leader ) {
         // leader gets warp's offset from global value and increases it
-        write_index = atomicAdd( edgeCounter, ct );
+        write_index = atomicAdd( edgeCoords.size, int(ct) );
     }
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
     if( keep && write_index < edgeMax ) {
-        edgeCoords[write_index] = make_int2( idx, idy );
+        edgeCoords.ptr[write_index] = make_int2( idx, idy );
     }
 }
 
@@ -289,15 +288,14 @@ void Frame::applyThinning( const cctag::Parameters & params )
         ( _d_hyst_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
     POP_CHK_CALL_IFSYNC;
 
-    POP_CUDA_SET0_ASYNC( _vote._d_all_edgecoord_list_sz, _stream );
+    POP_CUDA_SET0_ASYNC( _vote._all_edgecoords.dev.size, _stream );
 
     thinning_and_store
         <<<grid,block,0,_stream>>>
         ( cv::cuda::PtrStepSzb(_d_intermediate), // input
           _d_edges,                              // output
-          _vote._d_all_edgecoord_list_sz,                // output
-          params._maxEdges,                      // input
-          _vote._d_all_edgecoord_list );                 // output
+          _vote._all_edgecoords.dev,           // output
+          params._maxEdges );                    // input
     POP_CHK_CALL_IFSYNC;
 
     cerr << "Leave " << __FUNCTION__ << endl;
