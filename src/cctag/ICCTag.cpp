@@ -21,15 +21,18 @@ void cctagDetection(
   // Load parameters
   cctag::Parameters params = cctag::Parameters(nCrowns);
     
-  if (!boost::filesystem::exists( parameterFilename )) {
-    std::cerr << std::endl
-      << "The input parameter file \""<< parameterFilename << "\" is missing" << std::endl;
-    return;
-  }else{
-    std::ifstream ifs( parameterFilename.c_str() );
-    boost::archive::xml_iarchive ia(ifs);
-    ia >> boost::serialization::make_nvp("CCTagsParams", params);
-    assert(  nCrowns == params._nCrowns  );
+  if ( !parameterFilename.empty() )
+  {
+    if (!boost::filesystem::exists( parameterFilename )) {
+      std::cerr << std::endl
+        << "The input parameter file \""<< parameterFilename << "\" is missing" << std::endl;
+      return;
+    }else{
+      std::ifstream ifs( parameterFilename.c_str() );
+      boost::archive::xml_iarchive ia(ifs);
+      ia >> boost::serialization::make_nvp("CCTagsParams", params);
+      assert(  nCrowns == params._nCrowns  );
+    }
   }
   
   CCTagMarkersBank bank(params._nCrowns);
