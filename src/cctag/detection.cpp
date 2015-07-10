@@ -347,7 +347,7 @@ void flowComponentAssembling(
 
     if( isAnotherSegment(outerEllipse, outerEllipsePoints, 
             selectedCandidate._filteredChildrens, selectedCandidate,
-            cctagPoints, params._numCrowns * 2,
+            cctagPoints, params._nCrowns * 2,
             params._thrMedianDistanceEllipse) )
     {
       quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
@@ -514,7 +514,7 @@ void cctagDetectionFromEdges(
       // cctagPoints may be not empty, i.e. when the assembling succeed.
       if (! addCandidateFlowtoCCTag(candidate._filteredChildrens, 
               candidate._outerEllipsePoints, outerEllipse,
-              cctagPoints, params._numCrowns * 2))
+              cctagPoints, params._nCrowns * 2))
       {
         CCTAG_COUT_DEBUG("Points outside the outer ellipse OR CCTag not valid : bad gradient orientations");
         CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTSOUTSIDE_OR_BADGRADORIENT);
@@ -694,7 +694,7 @@ void cctagDetection(CCTag::List& markers,
         const std::size_t frame, 
         const boost::gil::gray8_view_t& graySrc,
         const Parameters & params,
-        const std::string & cctagBankFilename,
+        const cctag::CCTagMarkersBank & bank,
         const bool bDisplayEllipses)
 {
   POP_ENTER;
@@ -703,9 +703,7 @@ void cctagDetection(CCTag::List& markers,
   using namespace boost::gil;
   
   std::srand(1);
-
-  static const CCTagMarkersBank bank(cctagBankFilename);
-
+  
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
 #endif

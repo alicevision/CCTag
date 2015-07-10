@@ -419,7 +419,7 @@ void cctagMultiresDetection(
         numerical::ellipseFitting(rescaledOuterEllipse, rescaledOuterEllipsePoints);
 
         std::vector< Point2dN<double> > rescaledOuterEllipsePointsDouble;// todo@Lilian : add a reserve
-        std::size_t numCircles = params._numCrowns * 2;
+        std::size_t numCircles = params._nCrowns * 2;
         //pointsCCTag.resize(numCircles);
 
         BOOST_FOREACH(EdgePoint * e, rescaledOuterEllipsePoints)

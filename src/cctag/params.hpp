@@ -17,8 +17,8 @@ namespace cctag
 {
 
 static const std::size_t kDefaultDistSearch = 30;
-static const std::size_t kDefaultNumCrowns  = 3;//4;
-static const std::size_t kDefaultNumCircles = 6;//8;
+static const std::size_t kDefaultNCrowns  = 3;//4;
+static const std::size_t kDefaultNCircles = 6;//8;
 static const int kDefaultThrGradientMagInVote = 2500;
 static const float kDefaultAngleVoting        = 0.0f;
 static const float kDefaultRatioVoting        = 4.f;
@@ -56,7 +56,7 @@ static const std::string kParamAverageVoteMin( "kParamAverageVoteMin" );
 static const std::string kParamThrMedianDistanceEllipse( "kParamThrMedianDistanceEllipse" );
 static const std::string kParamMaximumNbSeeds( "kParamMaximumNbSeeds" );
 static const std::string kParamMaximumNbCandidatesLoopTwo( "kParamMaximumNbCandidatesLoopTwo" );
-static const std::string kParamNumCrowns( "kParamNumCrowns" );
+static const std::string kParamNCrowns( "kParamNCrowns" );
 static const std::string kParamMinPointsSegmentCandidate( "kParamMinPointsSegmentCandidate" );
 static const std::string kParamMinVotesToSelectCandidate( "kParamMinVotesToSelectCandidate" );
 static const std::string kParamThreshRobustEstimationOfOuterEllipse( "kParamThreshRobustEstimationOfOuterEllipse" );
@@ -80,7 +80,7 @@ static const std::size_t kWeight = INV_GRAD_WEIGHT; // todo@L
 struct Parameters
 {
   friend class boost::serialization::access;
-  Parameters()
+  Parameters(const std::size_t nCrowns)
     : _cannyThrLow( kDefaultCannyThrLow )
     , _cannyThrHigh( kDefaultCannyThrHigh )
     , _distSearch( kDefaultDistSearch )
@@ -91,7 +91,7 @@ struct Parameters
     , _thrMedianDistanceEllipse( kDefaultThrMedianDistanceEllipse )
     , _maximumNbSeeds( kDefaultMaximumNbSeeds )
     , _maximumNbCandidatesLoopTwo( kDefaultMaximumNbCandidatesLoopTwo )
-    , _numCrowns( kDefaultNumCrowns )
+    , _nCrowns( nCrowns )
     , _minPointsSegmentCandidate( kDefaultMinPointsSegmentCandidate )
     , _minVotesToSelectCandidate( kDefaultMinVotesToSelectCandidate )
     , _threshRobustEstimationOfOuterEllipse( kDefaultThreshRobustEstimationOfOuterEllipse )
@@ -110,7 +110,7 @@ struct Parameters
     , _doIdentification( kDefaultDoIdentification )
     , _maxEdges( kDefaultMaxEdges )
   {
-    _nCircles = 2*_numCrowns;
+    _nCircles = 2*_nCrowns;
   }
 
   float _cannyThrLow; // canny low threshold
@@ -128,7 +128,7 @@ struct Parameters
   double _thrMedianDistanceEllipse;
   std::size_t _maximumNbSeeds; // number of seeds to process as potential candidates
   std::size_t _maximumNbCandidatesLoopTwo;
-  std::size_t _numCrowns; // number of crowns
+  std::size_t _nCrowns; // number of crowns
   std::size_t _nCircles; // number of circles
   std::size_t _minPointsSegmentCandidate; // minimal number of points on the outer ellipse to select an inner segment candidate
   std::size_t _minVotesToSelectCandidate; // minimum number of received votes to select an edge
@@ -165,7 +165,7 @@ struct Parameters
     ar & BOOST_SERIALIZATION_NVP( _thrMedianDistanceEllipse);
     ar & BOOST_SERIALIZATION_NVP( _maximumNbSeeds);
     ar & BOOST_SERIALIZATION_NVP( _maximumNbCandidatesLoopTwo);
-    ar & BOOST_SERIALIZATION_NVP( _numCrowns );
+    ar & BOOST_SERIALIZATION_NVP( _nCrowns );
     ar & BOOST_SERIALIZATION_NVP( _minPointsSegmentCandidate );
     ar & BOOST_SERIALIZATION_NVP( _minVotesToSelectCandidate );
     ar & BOOST_SERIALIZATION_NVP( _threshRobustEstimationOfOuterEllipse );
@@ -183,7 +183,7 @@ struct Parameters
     ar & BOOST_SERIALIZATION_NVP( _writeOutput );
     ar & BOOST_SERIALIZATION_NVP( _doIdentification );
     ar & BOOST_SERIALIZATION_NVP( _maxEdges );
-    _nCircles = 2*_numCrowns;
+    _nCircles = 2*_nCrowns;
   }
 };
 

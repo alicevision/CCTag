@@ -5,12 +5,13 @@
 class CmdLine
 {
 public:
-    std::string filename;
-    std::string cctagBankFilename;
-    std::string paramsFilename;
+    std::string _filename;
+    std::string _cctagBankFilename;
+    std::string _paramsFilename;
+    std::string _nCrowns;
 #ifdef WITH_CUDA
-    bool        switchSync;
-    std::string debugDir;
+    bool        _switchSync;
+    std::string _debugDir;
 #endif
 
     CmdLine( );

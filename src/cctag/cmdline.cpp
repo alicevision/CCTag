@@ -14,6 +14,7 @@ CmdLine cmdline;
 static const struct option longopts[] =
 {
     {"input",      required_argument, 0, 'i'},
+    {"nbrings",    required_argument, 0, 'n'},    
     {"bank",       required_argument, 0, 'b'},
     {"parameters", required_argument, 0, 'p'},
     {"sync",       no_argument,       0, 0xd0 },
@@ -22,12 +23,13 @@ static const struct option longopts[] =
 };
 
 CmdLine::CmdLine( )
-    : filename( "" )
-    , cctagBankFilename( "" )
-    , paramsFilename( "" )
+    : _filename( "" )
+    , _nCrowns( "" )
+    , _cctagBankFilename( "" )
+    , _paramsFilename( "" )
 #ifdef WITH_CUDA
-    , switchSync( false )
-    , debugDir( "" )
+    , _switchSync( false )
+    , _debugDir( "" )
 #endif
 { }
 
@@ -38,40 +40,42 @@ bool CmdLine::parse( int argc, char* argv[] )
 
   // bools to check that mandatory parameters are present
   bool has_i = false;
-  bool has_b = false;
+  bool has_n = false;
 
   //turn off getopt error message
   // opterr=1; 
 
   while(iarg != -1)
   {
-    iarg = getopt_long(argc, argv, "i:b:p:", longopts, &index);
+    iarg = getopt_long(argc, argv, "i:n:b:p:", longopts, &index);
 
     switch (iarg)
     {
-      case 'i'  : filename          = optarg; has_i = true; break;
-      case 'b'  : cctagBankFilename = optarg; has_b = true; break;
-      case 'p'  : paramsFilename    = optarg; break;
+      case 'i'  : _filename          = optarg; has_i = true; break;
+      case 'n'  : _nCrowns           = optarg; has_n = true; break;
+      case 'b'  : _cctagBankFilename = optarg; break;
+      case 'p'  : _paramsFilename    = optarg; break;
 #ifdef WITH_CUDA
-      case 0xd0 : switchSync        = true;   break;
-      case 0xd1 : debugDir          = optarg; break;
+      case 0xd0 : _switchSync        = true;   break;
+      case 0xd1 : _debugDir          = optarg; break;
 #endif
       default : break;
     }
   }
-  return ( has_i & has_b );
+  return ( has_i & has_n );
 }
 
 void CmdLine::print( const char* const argv0 )
 {
     cout << "You called " << argv0 << " with:" << endl
-         << "    --input     " << filename << endl
-         << "    --bank      " << cctagBankFilename << endl
-         << "    --params    " << paramsFilename << endl;
+         << "    --input     " << _filename << endl
+         << "    --nbrings     " << _nCrowns << endl
+         << "    --bank      " << _cctagBankFilename << endl
+         << "    --params    " << _paramsFilename << endl;
 #ifdef WITH_CUDA
-    if( switchSync )
+    if( _switchSync )
         cout << "    --sync " << endl;
-    if( debugDir != "" )
+    if( _debugDir != "" )
         cout << "    --debug-dir " << debugDir << endl;
 #endif
     cout << endl;
@@ -81,14 +85,16 @@ void CmdLine::usage( const char* const argv0 )
 {
   cerr << "Usage: " << argv0 << "<parameters>\n"
           "    Mandatory:\n"
-          "           (-i|--input) <imgpath>\n"
-          "           (-b|--bank) <bankpath>\n"
+          "           [-i|--input] <imgpath>\n"
+          "           [-n|--nbrings] <nbrings>\n"
           "    Optional:\n"
           "           [-p|--params <confpath>]\n"
+          "           [-b|--bank] <bankpath>\n"
           "           [--sync]\n"
           "           [--debug-dir <debugdir>]\n"
           "\n"
           "    <imgpath>  - path to an image (JPG, PNG) or video\n"
+          "    <nbrings>  - number of rings of the CCTags to detect\n"
           "    <bankpath> - path to a bank parameter file, e.g. 4Crowns/ids.txt \n"
           "    <confpath> - path to configuration XML file \n"
           "    --sync     - CUDA debug option, run all CUDA ops synchronously\n"

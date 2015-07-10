@@ -903,12 +903,12 @@ int identify(
 
   std::size_t startOffset = 0;
 
-  if (params._numCrowns == 3)
+  if (params._nCrowns == 3)
   {
     // Signal begin at 25% of the radius (for 3 crowns markers).
-    startOffset = params._sampleCutLength-(2*params._numCrowns-1)*0.15*params._sampleCutLength;	// Considering 6 radius.
+    startOffset = params._sampleCutLength-(2*params._nCrowns-1)*0.15*params._sampleCutLength;	// Considering 6 radius.
   }
-  else if (params._numCrowns == 4)
+  else if (params._nCrowns == 4)
   {
     startOffset = 26;
   }

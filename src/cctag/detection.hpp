@@ -27,7 +27,7 @@ void cctagDetection(
         const std::size_t frame,
         const boost::gil::gray8_view_t& graySrc,
         const Parameters & params,
-        const std::string & cctagBankFilename,
+        const cctag::CCTagMarkersBank & bank,
         const bool bDisplayEllipses = true );
 
 void cctagDetectionFromEdges(

@@ -12,7 +12,7 @@
     <_thrMedianDistanceEllipse>3.0</_thrMedianDistanceEllipse>
     <_maximumNbSeeds>500</_maximumNbSeeds>
     <_maximumNbCandidatesLoopTwo>30</_maximumNbCandidatesLoopTwo>
-	<_numCrowns>4</_numCrowns>
+	<_nCrowns>4</_nCrowns>
 	<_minPointsSegmentCandidate>10</_minPointsSegmentCandidate>
 	<_minVotesToSelectCandidate>3</_minVotesToSelectCandidate>
 	<_threshRobustEstimationOfOuterEllipse>30</_threshRobustEstimationOfOuterEllipse>
