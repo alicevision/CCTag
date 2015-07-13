@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 #include <assert.h>
 #include <string>
+#include <vector>
 
 #include <opencv2/core/cuda_types.hpp>
 
@@ -141,12 +142,16 @@ public:
     template<class T>
     static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>& plane );
 
+    static void writeDebugRandomColor( const char* filename, const cv::cuda::PtrStepSzb& plane );
+
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
     static void writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz );
     static void debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv::cuda::PtrStepSzb img );
+    static void debugPlotChosenPointsIntoImage( const std::vector<TriplePoint>& v, cv::cuda::PtrStepSzb img );
 
 
     void writeHostDebugPlane( std::string filename, const cctag::Parameters& params );
+
     void hostDebugCompare( unsigned char* pix );
 
 private:
@@ -154,9 +159,9 @@ private:
     Frame( const Frame& );  // forbidden
 
 private:
-    cv::cuda::PtrStepSzb _d_plane;
-    cv::cuda::PtrStepSzf _d_intermediate;
-    cv::cuda::PtrStepSzf _d_smooth;
+    cv::cuda::PtrStepSzb   _d_plane;
+    cv::cuda::PtrStepSzf   _d_intermediate;
+    cv::cuda::PtrStepSzf   _d_smooth;
     cv::cuda::PtrStepSz16s _d_dx; // cv::cuda::PtrStepSzf _d_dx;
     cv::cuda::PtrStepSz16s _d_dy; // cv::cuda::PtrStepSzf _d_dy;
     cv::cuda::PtrStepSz32u _d_mag;
@@ -174,15 +179,6 @@ private:
     unsigned char* _h_debug_edges;
 
     Voting _vote;
-    // int2*                  _d_edgelist_1;
-    // TriplePoint*           _d_edgelist_2;
-    // uint32_t*              _d_edgelist_2_sz;
-    // int*                   _d_edgelist_3;
-    // uint32_t*              _d_edgelist_3_sz;
-    // int2*          _h_debug_edgelist;
-    // uint32_t       _h_edgelist_sz;
-    // TriplePoint*   _h_debug_edgelist_2;
-    // uint32_t       _h_edgelist_2_sz;
 
     FrameTexture*  _texture;
     FrameEvent*    _wait_for_upload;

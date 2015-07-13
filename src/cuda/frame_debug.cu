@@ -5,6 +5,7 @@
 #include <string.h>
 #include <cuda_runtime.h>
 #include <sys/stat.h>
+#include <map>
 #include "debug_macros.hpp"
 
 #include "../cctag/cmdline.hpp"
@@ -44,23 +45,11 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
 
     POP_SYNC_CHK;
 
-#if 0
-    cerr << "Trigger download of debug plane: "
-         << "(" << _d_plane.cols << "," << _d_plane.rows << ") pitch " << _d_plane.step
-         << " to "
-         << "(" << getWidth() << "," << getHeight() << ")" << endl;
-#endif
     POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_plane, getWidth(),
                               _d_plane.data, _d_plane.step,
                               _d_plane.cols,
                               _d_plane.rows,
                               cudaMemcpyDeviceToHost, _stream );
-#if 0
-    cerr << "Trigger download of Gaussian debug plane: "
-         << "(" << _d_smooth.cols << "," << _d_smooth.rows << ") pitch " << _d_smooth.step
-         << " to "
-         << "(" << getWidth() << "," << getHeight() << ")" << endl;
-#endif
     POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_smooth, getWidth() * sizeof(float),
                               _d_smooth.data, _d_smooth.step,
                               _d_smooth.cols * sizeof(float),
@@ -131,7 +120,7 @@ void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>&
 
     T minval = std::numeric_limits<T>::max();
     T maxval = std::numeric_limits<T>::min();
-    // for( uint32_t i=0; i<plane.rows*plane.cols; i++ ) {
+    // for( uint32_t i=0; i<plane.rows*plane.cols; i++ )
     for( size_t i=0; i<plane.rows; i++ ) {
         for( size_t j=0; j<plane.cols; j++ ) {
             T f = plane.ptr(i)[j];
@@ -154,6 +143,64 @@ void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>&
         float outf = ( (float)f - (float)minval ) * fmaxval;
         unsigned char uc = (unsigned char)outf;
         of << uc;
+    }
+
+#ifdef CHATTY_WRITE_DEBUG_PLANE
+    cerr << "Leave " << __FUNCTION__ << endl;
+#endif
+}
+
+struct DebugHostRandomColor
+{
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+
+    DebugHostRandomColor( unsigned char r_, unsigned char g_, unsigned char b_ )
+        : r(r_), g(g_), b(b_)
+        { }
+};
+
+__host__
+void Frame::writeDebugRandomColor( const char* filename, const cv::cuda::PtrStepSzb& plane )
+{
+#ifdef CHATTY_WRITE_DEBUG_PLANE
+    cerr << "Enter " << __FUNCTION__ << endl;
+    cerr << "    filename: " << filename << endl;
+#endif
+
+    ofstream of( filename );
+    of << "P6" << endl
+       << plane.cols << " " << plane.rows << endl
+       << "255" << endl;
+
+    typedef unsigned char T_t;
+    typedef std::map<T_t,DebugHostRandomColor>  map_t;
+    typedef map_t::iterator                     it_t;
+    typedef std::pair<T_t,DebugHostRandomColor> pair_t;
+
+    static map_t random_mapping;
+    static bool  random_mapping_initialized = false;
+    if( not random_mapping_initialized ) {
+        random_mapping.insert( pair_t( 0, DebugHostRandomColor(  0,  0,  0) ) );
+        random_mapping.insert( pair_t( 1, DebugHostRandomColor(100,100,100) ) );
+        random_mapping.insert( pair_t( 2, DebugHostRandomColor(150,150,150) ) );
+        random_mapping.insert( pair_t( 3, DebugHostRandomColor(200,200,200) ) );
+        random_mapping_initialized = true;
+    }
+
+    for( uint32_t i=0; i<plane.rows*plane.cols; i++ ) {
+        unsigned char f = plane.data[i];
+        it_t it = random_mapping.find(f);
+        if( it == random_mapping.end() )
+        {
+            DebugHostRandomColor c( random() % 255,
+                                    random() % 255,
+                                    random() % 255 );
+            it = random_mapping.insert( pair_t( f, c ) ).first;
+        }
+
+        of << it->second.r << it->second.g << it->second.b;
     }
 
 #ifdef CHATTY_WRITE_DEBUG_PLANE
@@ -187,17 +234,50 @@ void Frame::hostDebugCompare( unsigned char* pix )
     }
 }
 
-void Frame::debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv::cuda::PtrStepSzb img )
+void Frame::debugPlotChosenPointsIntoImage( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb img )
 {
+    int coloradd = 0;
+
+    /* All images points that are non-null are normalized to 1.
+     */
     for( uint32_t x=0; x<img.cols; x++ ) {
         for( uint32_t y=0; y<img.rows; y++ ) {
             if( img.ptr(y)[x] != 0 ) img.ptr(y)[x] = 1;
         }
     }
+
+    vector<TriplePoint>::const_iterator cit, cend;
+    cend = v.end();
+    cout << "Plotting in image of size " << img.cols << " x " << img.rows << endl;
+    for( cit=v.begin(); cit!=cend; cit++ ) {
+        if( outOfBounds( cit->coord.x, cit->coord.y, img ) ) {
+            cout << "Coord of point (" << cit->coord.x << "," << cit->coord.y << ") is out of bounds" << endl;
+        } else {
+            cout << "  Plotting (" << cit->coord.x << "," << cit->coord.y << ")" << endl;
+            img.ptr(cit->coord.y)[cit->coord.x] = 3+coloradd;
+            coloradd = ( coloradd + random() ) % 250;
+        }
+    }
+}
+
+void Frame::debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv::cuda::PtrStepSzb img )
+{
+    int coloradd = 0;
+
+    /* All images points that are non-null are normalized to 1.
+     */
+    for( uint32_t x=0; x<img.cols; x++ ) {
+        for( uint32_t y=0; y<img.rows; y++ ) {
+            if( img.ptr(y)[x] != 0 ) img.ptr(y)[x] = 1;
+        }
+    }
+
+    /* All coordinates in the TriplePoint array are plotted into the
+     * image with brightness 5. */
     for( uint32_t i=0; i<sz; i++ ) {
         const int2& coord = array[i].coord;
         const int2& befor = array[i].befor;
-        // const int2& after = array[i].after;
+
         if( outOfBounds( coord.x, coord.y, img ) ) {
             cout << "Coord of point (" << coord.x << "," << coord.y << ") is out of bounds" << endl;
         } else {
@@ -206,6 +286,41 @@ void Frame::debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv:
                 img.ptr(coord.y)[coord.x] = 3;
             }
         }
+
+#ifndef NDEBUG
+        if( array[i]._coords_idx > 1 ) {
+            for( int j=1; j<array[i]._coords_idx; j++ ) {
+                int2 from = array[i]._coords[j-1];
+                int2 to   = array[i]._coords[j];
+                int  absx = abs(from.x-to.x);
+                int  absy = abs(from.y-to.y);
+                if( absx >= absy ) {
+                    if( from.x > to.x ) {
+                        std::swap( from.x, to.x );
+                        std::swap( from.y, to.y );
+                    }
+                    for( int xko=from.x; xko<=to.x; xko++ ) {
+                        int yko =  from.y + (int)roundf( ( to.y - from.y ) * (float)(xko-from.x) / (float)absx ); 
+                        if( not outOfBounds( xko, yko, img ) ) {
+                            img.ptr(yko)[xko] = 4+coloradd;
+                        }
+                    }
+                } else {
+                    if( from.y > to.y ) {
+                        std::swap( from.x, to.x );
+                        std::swap( from.y, to.y );
+                    }
+                    for( int yko=from.y; yko<=to.y; yko++ ) {
+                        int xko =  from.x + (int)roundf( ( to.x - from.x ) * (float)(yko-from.y) / (float)absy ); 
+                        if( not outOfBounds( xko, yko, img ) ) {
+                            img.ptr(yko)[xko] = 4+coloradd;
+                        }
+                    }
+                }
+            }
+            coloradd = ( coloradd + random() ) % 250;
+        }
+#endif // NDEBUG
     }
 }
 
@@ -213,7 +328,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 {
     struct stat st = {0};
 
-    string dir = cmdline.debugDir;
+    string dir = cmdline._debugDir;
     char   dirtail = dir[ dir.size()-1 ];
     if( dirtail != '/' ) {
         filename = dir + "/" + filename;
@@ -341,18 +456,32 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                                   getWidth()*sizeof(uint8_t) );
     writeDebugPlane( s.c_str(), edges );
 
+#ifndef NDEBUG
     s = filename + "-edgelist.txt";
-    _vote._all_edgecoords.debugOut( params._maxEdges, s.c_str() );
+    _vote._all_edgecoords.debug_out( params._maxEdges, s.c_str() );
 
     if( _vote._chained_edgecoords.host.size > 0 ) {
+        s = filename + "-chosenindices.txt";
+        _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, s.c_str() );
+
         s = filename + "-edgelist2.txt";
-        _vote._chained_edgecoords.debugOut( params._maxEdges, s.c_str() );
+        _vote._chained_edgecoords.debug_out( params._maxEdges, s.c_str() );
 
-        // debugPlotPointsIntoImage( _vote._chained_edgecoords.host.debug_ptr, min(params._maxEdges,_vote._chained_edgecoords.host.size), edges );
+        if( 1 ) {
+            vector<TriplePoint> out;
+            _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, out );
+            debugPlotChosenPointsIntoImage( out, edges );
 
-        s = filename + "-edges-dots.pgm";
-        writeDebugPlane( s.c_str(), edges );
+            s = filename + "-chosen-dots.ppm";
+            writeDebugRandomColor( s.c_str(), edges );
+        } else {
+            debugPlotPointsIntoImage( _vote._chained_edgecoords.debug_ptr, min(params._maxEdges,_vote._chained_edgecoords.host.size), edges );
+
+            s = filename + "-edges-dots.ppm";
+            writeDebugRandomColor( s.c_str(), edges );
+        }
     }
+#endif // NDEBUG
 }
 
 }; // namespace popart
