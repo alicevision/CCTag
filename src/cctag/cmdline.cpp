@@ -76,7 +76,7 @@ void CmdLine::print( const char* const argv0 )
     if( _switchSync )
         cout << "    --sync " << endl;
     if( _debugDir != "" )
-        cout << "    --debug-dir " << debugDir << endl;
+        cout << "    --debug-dir " << _debugDir << endl;
 #endif
     cout << endl;
 }
