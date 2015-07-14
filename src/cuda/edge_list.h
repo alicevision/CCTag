@@ -10,6 +10,14 @@
 
 namespace popart {
 
+#ifndef NDEBUG
+enum EdgeListFilter
+{
+    EdgeListFilterAny = 0,
+    EdgeListFilterCommittedOnly = 1
+};
+#endif // NDEBUG
+
 template <typename T>
 struct DevEdgeList
 {
@@ -35,12 +43,43 @@ struct HostEdgeList
 
 #ifndef NDEBUG
 template <typename T>
-inline void writeArray( const char* filename, const T* debug_ptr, int size )
+inline bool writeArrayFilter( const T& elem, EdgeListFilter f )
 {
-    std::ofstream of( filename );
+    std::cerr << "Applying filter to incompatible type in "
+              << __FILE__ << ":" << __LINE__ << std::endl;
+    return true;
+}
 
-    for( int i=0; i<size; i++ ) {
-        of << debug_ptr[i].debug_out( ) << std::endl;
+template <>
+inline bool writeArrayFilter<TriplePoint>( const TriplePoint& elem, EdgeListFilter f )
+{
+    switch( f ) {
+    case EdgeListFilterCommittedOnly :
+        return ( elem._coords_idx != 0 );
+    default :
+        std::cerr << "Applying unknown filter to type TriplePoint in "
+                  << __FILE__ << ":" << __LINE__ << std::endl;
+        break;
+    }
+    return true;
+}
+
+template <typename T>
+inline void writeArray( std::vector<T>& out,
+                        const T*        debug_ptr,
+                        int             size,
+                        EdgeListFilter  f = EdgeListFilterAny )
+{
+    if( f == EdgeListFilterAny ) {
+        for( int i=0; i<size; i++ ) {
+            out.push_back( debug_ptr[i] );
+        }
+    } else {
+        for( int i=0; i<size; i++ ) {
+            if( writeArrayFilter( debug_ptr[i], f ) ) {
+                out.push_back( debug_ptr[i] );
+            }
+        }
     }
 }
 
@@ -68,23 +107,60 @@ inline void writeArray( std::vector<T>& out, const T* debug_ptr, int size, const
     }
 }
 
-template <>
-inline void writeArray<int2>( const char* filename, const int2* debug_ptr, int size )
+template <typename T>
+inline void writeArray( const char* filename, const T* debug_ptr, int size,
+                        EdgeListFilter  f = EdgeListFilterAny )
 {
     std::ofstream of( filename );
 
-    for( int i=0; i<size; i++ ) {
-        of << debug_ptr[i].x << " " << debug_ptr[i].y << std::endl;
+    if( f == EdgeListFilterAny ) {
+        for( int i=0; i<size; i++ ) {
+            of << debug_ptr[i].debug_out( ) << std::endl;
+        }
+    } else {
+        for( int i=0; i<size; i++ ) {
+            if( writeArrayFilter( debug_ptr[i], f ) ) {
+                of << debug_ptr[i].debug_out( ) << std::endl;
+            }
+        }
     }
 }
 
 template <>
-inline void writeArray<int>( const char* filename, const int* debug_ptr, int size )
+inline void writeArray<int2>( const char* filename, const int2* debug_ptr, int size,
+                              EdgeListFilter  f )
 {
     std::ofstream of( filename );
 
-    for( int i=0; i<size; i++ ) {
-        of << debug_ptr[i] << std::endl;
+    if( f == EdgeListFilterAny ) {
+        for( int i=0; i<size; i++ ) {
+            of << debug_ptr[i].x << " " << debug_ptr[i].y << std::endl;
+        }
+    } else {
+        for( int i=0; i<size; i++ ) {
+            if( writeArrayFilter( debug_ptr[i], f ) ) {
+                of << debug_ptr[i].x << " " << debug_ptr[i].y << std::endl;
+            }
+        }
+    }
+}
+
+template <>
+inline void writeArray<int>( const char* filename, const int* debug_ptr, int size,
+                             EdgeListFilter  f )
+{
+    std::ofstream of( filename );
+
+    if( f == EdgeListFilterAny ) {
+        for( int i=0; i<size; i++ ) {
+            of << debug_ptr[i] << std::endl;
+        }
+    } else {
+        for( int i=0; i<size; i++ ) {
+            if( writeArrayFilter( debug_ptr[i], f ) ) {
+                of << debug_ptr[i] << std::endl;
+            }
+        }
     }
 }
 #endif // NDEBUG
@@ -135,13 +211,22 @@ public:
         }
     }
 
-    void debug_out( int maxSize, const char* outFilename )
+    void debug_out( int maxSize, const char* outFilename, EdgeListFilter f = EdgeListFilterAny )
     {
         bool success = get_debug_mem( maxSize );
         if( not success ) return;
 
         const int size = min( maxSize, host.size );
-        writeArray( outFilename, debug_ptr, size );
+        writeArray( outFilename, debug_ptr, size, f );
+    }
+
+    void debug_out( int maxSize, std::vector<T>& out, EdgeListFilter f = EdgeListFilterAny )
+    {
+        bool success = get_debug_mem( maxSize );
+        if( not success ) return;
+
+        const int size = min( maxSize, host.size );
+        writeArray( out, debug_ptr, size, f );
     }
 
     void debug_out( EdgeList<int>& indices, int maxSize, const char* outFilename )

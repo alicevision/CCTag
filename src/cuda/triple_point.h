@@ -24,27 +24,33 @@ struct TriplePoint
     int   _winnerSize;
     float _flowLength;
 #ifndef NDEBUG
+    int   _coords_collect_idx;
     int   _coords_idx;
-    int2  _coords[10];
+    int2  _coords[12];
 
     __device__
     inline void debug_init( ) {
-        _coords_idx = 0;
+        _coords_idx         = 0;
+        _coords_collect_idx = 0;
     }
     __device__
     inline void debug_add( int2 c ) {
-        if( _coords_idx >= 10 ) return;
-        _coords[_coords_idx].x = c.x;
-        _coords[_coords_idx].y = c.y;
-        _coords_idx++;
+        if( _coords_collect_idx >= 12 ) return;
+        _coords[_coords_collect_idx].x = c.x;
+        _coords[_coords_collect_idx].y = c.y;
+        _coords_collect_idx++;
+    }
+    __device__
+    inline void debug_commit( ) {
+        _coords_idx = _coords_collect_idx;
     }
 
     __host__
     inline std::string debug_out( ) const {
         std::ostringstream ostr;
-        ostr << coord.x << " " << coord.y << " "
-             << befor.x << " " << befor.y << " "
-             << after.x << " " << after.y;
+        ostr << "orig=" << coord.x << " " << coord.y << " "
+             << "bef=" << befor.x << " " << befor.y << " "
+             << "aft=" << after.x << " " << after.y;
         if( _coords_idx != 0 ) {
             for( int i=0; i<_coords_idx; i++ ) {
                 ostr << " (" << _coords[i].x << "," << _coords[i].y << ")";

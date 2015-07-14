@@ -11,6 +11,11 @@
 #include "frame_vote.h"
 #include "triple_point.h"
 
+#undef  DEBUG_ALLOW_AFTER_DIRECTION_ALSO
+#undef  DEBUG_RETURN_AFTER_EDGELIST_CREATION
+#undef  DEBUG_RETURN_AFTER_GRADIENT_DESCENT
+#define DEBUG_RETURN_AFTER_CONSTRUCT_LINE
+
 /* A table is copied to constant memory containing sigma values
  * for Gauss filtering at the 0-offset, and the derivatives
  * at +16.
@@ -64,12 +69,54 @@ private:
     cudaResourceDesc    _resDesc;
 };
 
+/* The class DebugImage could be a namespace, but I like the private
+ * section.
+ */
+class DebugImage
+{
+public:
+    enum BaseColor
+    {
+        BLACK = 0,
+        GREY1,
+        GREY2,
+        GREY3,
+        GREEN,
+        BLUE,
+        GREEN_1,
+        GREEN_2,
+        GREEN_3,
+        GREEN_4,
+        LAST,
+        WHITE = 255
+    };
+
+    static void plotLines( EdgeList<TriplePoint>& points,
+                           int                    maxSize,
+                           cv::cuda::PtrStepSzb   img );
+    static void plotPoints( const std::vector<TriplePoint>& v,
+                            cv::cuda::PtrStepSzb            img,
+                            bool                            normalize = true,
+                            enum BaseColor                  b = WHITE );
+    static void plotPoints( const std::vector<int2>& v,
+                            cv::cuda::PtrStepSzb     img,
+                            bool                     normalize = true );
+private:
+    /* if normalize is true, set all non-zero (non-BLACK) pixels
+     * in the image to 1 (GREY1).
+     * else do nothing
+     */
+    static void normalizeImage( cv::cuda::PtrStepSzb img,
+                                bool                 normalize );
+};
+
 /*************************************************************
  * Frame
  * The basic structure for managing data stored on the GPU
  *************************************************************/
 class Frame
 {
+
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
     Frame( uint32_t width, uint32_t height );
@@ -146,8 +193,7 @@ public:
 
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
     static void writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz );
-    static void debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv::cuda::PtrStepSzb img );
-    static void debugPlotChosenPointsIntoImage( const std::vector<TriplePoint>& v, cv::cuda::PtrStepSzb img );
+    // static void debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv::cuda::PtrStepSzb img );
 
 
     void writeHostDebugPlane( std::string filename, const cctag::Parameters& params );

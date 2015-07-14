@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <limits>
 #include <assert.h>
 #include <fstream>
@@ -182,10 +183,12 @@ void Frame::writeDebugRandomColor( const char* filename, const cv::cuda::PtrStep
     static map_t random_mapping;
     static bool  random_mapping_initialized = false;
     if( not random_mapping_initialized ) {
-        random_mapping.insert( pair_t( 0, DebugHostRandomColor(  0,  0,  0) ) );
-        random_mapping.insert( pair_t( 1, DebugHostRandomColor(100,100,100) ) );
-        random_mapping.insert( pair_t( 2, DebugHostRandomColor(150,150,150) ) );
-        random_mapping.insert( pair_t( 3, DebugHostRandomColor(200,200,200) ) );
+        random_mapping.insert( pair_t( DebugImage::BLACK, DebugHostRandomColor(  0,  0,  0) ) );
+        random_mapping.insert( pair_t( DebugImage::GREY1, DebugHostRandomColor(100,100,100) ) );
+        random_mapping.insert( pair_t( DebugImage::GREY2, DebugHostRandomColor(150,150,150) ) );
+        random_mapping.insert( pair_t( DebugImage::GREY3, DebugHostRandomColor(200,200,200) ) );
+        random_mapping.insert( pair_t( DebugImage::GREEN, DebugHostRandomColor(0,255,0) ) );
+        random_mapping.insert( pair_t( DebugImage::BLUE,  DebugHostRandomColor(0,0,255) ) );
         random_mapping_initialized = true;
     }
 
@@ -194,7 +197,7 @@ void Frame::writeDebugRandomColor( const char* filename, const cv::cuda::PtrStep
         it_t it = random_mapping.find(f);
         if( it == random_mapping.end() )
         {
-            DebugHostRandomColor c( random() % 255,
+            DebugHostRandomColor c( 255,
                                     random() % 255,
                                     random() % 255 );
             it = random_mapping.insert( pair_t( f, c ) ).first;
@@ -234,17 +237,22 @@ void Frame::hostDebugCompare( unsigned char* pix )
     }
 }
 
-void Frame::debugPlotChosenPointsIntoImage( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb img )
+void DebugImage::normalizeImage( cv::cuda::PtrStepSzb img, bool normalize )
 {
-    int coloradd = 0;
+    if( not normalize ) return;
 
     /* All images points that are non-null are normalized to 1.
      */
     for( uint32_t x=0; x<img.cols; x++ ) {
         for( uint32_t y=0; y<img.rows; y++ ) {
-            if( img.ptr(y)[x] != 0 ) img.ptr(y)[x] = 1;
+            if( img.ptr(y)[x] != BLACK ) img.ptr(y)[x] = GREY1;
         }
     }
+}
+
+void DebugImage::plotPoints( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb img, bool normalize, BaseColor b )
+{
+    normalizeImage( img, normalize );
 
     vector<TriplePoint>::const_iterator cit, cend;
     cend = v.end();
@@ -253,45 +261,75 @@ void Frame::debugPlotChosenPointsIntoImage( const vector<TriplePoint>& v, cv::cu
         if( outOfBounds( cit->coord.x, cit->coord.y, img ) ) {
             cout << "Coord of point (" << cit->coord.x << "," << cit->coord.y << ") is out of bounds" << endl;
         } else {
-            cout << "  Plotting (" << cit->coord.x << "," << cit->coord.y << ")" << endl;
-            img.ptr(cit->coord.y)[cit->coord.x] = 3+coloradd;
-            coloradd = ( coloradd + random() ) % 250;
+            int coloradd;
+            switch( b ) {
+            case GREEN :
+            case BLUE :
+                coloradd = b;
+                break;
+            case WHITE :
+            default :
+                coloradd = LAST + random() % ( 255 - LAST );
+                break;
+            }
+            img.ptr(cit->coord.y)[cit->coord.x] = coloradd;
         }
     }
 }
 
-void Frame::debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv::cuda::PtrStepSzb img )
+void DebugImage::plotPoints( const vector<int2>& v, cv::cuda::PtrStepSzb img, bool normalize )
 {
-    int coloradd = 0;
+    normalizeImage( img, normalize );
 
-    /* All images points that are non-null are normalized to 1.
-     */
-    for( uint32_t x=0; x<img.cols; x++ ) {
-        for( uint32_t y=0; y<img.rows; y++ ) {
-            if( img.ptr(y)[x] != 0 ) img.ptr(y)[x] = 1;
+    vector<int2>::const_iterator cit, cend;
+    cend = v.end();
+    cout << "Plotting in image of size " << img.cols << " x " << img.rows << endl;
+    for( cit=v.begin(); cit!=cend; cit++ ) {
+        if( outOfBounds( cit->x, cit->y, img ) ) {
+            cout << "Coord of point (" << cit->x << "," << cit->y << ") is out of bounds" << endl;
+        } else {
+            int coloradd = LAST + random() % ( 255 - LAST );
+            img.ptr(cit->y)[cit->x] = coloradd;
         }
     }
+}
+
+void DebugImage::plotLines( EdgeList<TriplePoint>& points,
+                                   int                    maxSize,
+                                   cv::cuda::PtrStepSzb   img )
+{
+#ifndef NDEBUG
+    int coloradd = LAST + random() % ( 255 - LAST );
+#endif // NDEBUG
+
+    normalizeImage( img, true );
+
+    std::vector<TriplePoint> out;
+    points.debug_out( maxSize, out );
+    std::vector<TriplePoint>::iterator out_it  = out.begin();
+    std::vector<TriplePoint>::iterator out_end = out.end();
 
     /* All coordinates in the TriplePoint array are plotted into the
-     * image with brightness 5. */
-    for( uint32_t i=0; i<sz; i++ ) {
-        const int2& coord = array[i].coord;
-        const int2& befor = array[i].befor;
+     * image with brightness 3. */
+    for( ; out_it != out_end; out_it++ ) {
+    // for( uint32_t i=0; i<sz; i++ )
+        const int2& coord = out_it->coord; // array[i].coord;
+        const int2& befor = out_it->befor; // array[i].befor;
 
         if( outOfBounds( coord.x, coord.y, img ) ) {
             cout << "Coord of point (" << coord.x << "," << coord.y << ") is out of bounds" << endl;
         } else {
             // if( befor.x != 0 && befor.y != 0 && after.x != 0 && after.y != 0 )
             if( befor.x != 0 && befor.y != 0 ) {
-                img.ptr(coord.y)[coord.x] = 3;
+                img.ptr(coord.y)[coord.x] = GREY2;
             }
         }
 
 #ifndef NDEBUG
-        if( array[i]._coords_idx > 1 ) {
-            for( int j=1; j<array[i]._coords_idx; j++ ) {
-                int2 from = array[i]._coords[j-1];
-                int2 to   = array[i]._coords[j];
+        if( out_it->_coords_idx > 1 ) {
+            for( int j=1; j<out_it->_coords_idx; j++ ) {
+                int2 from = out_it->_coords[j-1];
+                int2 to   = out_it->_coords[j];
                 int  absx = abs(from.x-to.x);
                 int  absy = abs(from.y-to.y);
                 if( absx >= absy ) {
@@ -302,7 +340,7 @@ void Frame::debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv:
                     for( int xko=from.x; xko<=to.x; xko++ ) {
                         int yko =  from.y + (int)roundf( ( to.y - from.y ) * (float)(xko-from.x) / (float)absx ); 
                         if( not outOfBounds( xko, yko, img ) ) {
-                            img.ptr(yko)[xko] = 4+coloradd;
+                            img.ptr(yko)[xko] = coloradd;
                         }
                     }
                 } else {
@@ -313,12 +351,12 @@ void Frame::debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv:
                     for( int yko=from.y; yko<=to.y; yko++ ) {
                         int xko =  from.x + (int)roundf( ( to.x - from.x ) * (float)(yko-from.y) / (float)absy ); 
                         if( not outOfBounds( xko, yko, img ) ) {
-                            img.ptr(yko)[xko] = 4+coloradd;
+                            img.ptr(yko)[xko] = coloradd;
                         }
                     }
                 }
             }
-            coloradd = ( coloradd + random() ) % 250;
+            coloradd = LAST + random() % ( 255 - LAST );
         }
 #endif // NDEBUG
     }
@@ -460,6 +498,83 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     s = filename + "-edgelist.txt";
     _vote._all_edgecoords.debug_out( params._maxEdges, s.c_str() );
 
+#ifdef DEBUG_RETURN_AFTER_EDGELIST_CREATION
+    {
+        /* Very basic debugging stage:
+         * do we really put all of those edge points into the edge list
+         * that are also present in the edge image?
+         *
+         * Confirmed that this works
+         */
+        vector<int2> out;
+        _vote._all_edgecoords.debug_out( params._maxEdges, out );
+        DebugImage::plotPoints( out, edges );
+        s = filename + "-edgelist.ppm";
+        writeDebugRandomColor( s.c_str(), edges );
+    }
+#else // not DEBUG_RETURN_AFTER_EDGELIST_CREATION
+#ifdef DEBUG_RETURN_AFTER_GRADIENT_DESCENT
+    {
+        /* Debugging immediately after gradientDescent.
+         * The list of TriplePoints has been created in
+         * _vote._chained_edgecoords
+         * These points have no before or after information yet.
+         * The size of this list has not been copied to the host yet.
+         */
+        POP_CUDA_MEMCPY_TO_HOST_SYNC( &_vote._chained_edgecoords.host.size,
+                                      _vote._chained_edgecoords.dev.size,
+                                      sizeof(int) );
+
+        if( _vote._chained_edgecoords.host.size > 0 ) {
+            vector<TriplePoint> out;
+            _vote._chained_edgecoords.debug_out(  params._maxEdges, out );
+            DebugImage::plotPoints( out, edges );
+
+            s = filename + "-voters-dots.ppm";
+            writeDebugRandomColor( s.c_str(), edges );
+        }
+
+        return;
+    }
+#else // not DEBUG_RETURN_AFTER_GRADIENT_DESCENT
+#ifdef DEBUG_RETURN_AFTER_CONSTRUCT_LINE
+    {
+        /* _chained_edgecoords.dev.size has been loaded into .host.size
+         * _edge_indices has been created into this step.
+         * _vote._edge_indices.dev.size, has been loaded into .host.soze
+         * before returning.
+         * The edge indices are all points that have received votes. No
+         * filtering has taken place yet.
+         * ... have the paths leading to these votes been stored?
+         */
+        if( _vote._chained_edgecoords.host.size > 0 && _vote._edge_indices.host.size > 0) {
+            vector<TriplePoint> out;
+#if 1
+            _vote._chained_edgecoords.debug_out( params._maxEdges, out, EdgeListFilterCommittedOnly );
+            DebugImage::plotPoints( out, edges, true, DebugImage::GREEN );
+
+            out.clear();
+            _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, out );
+            DebugImage::plotPoints( out, edges, false, DebugImage::BLUE );
+#else
+            _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, out );
+            DebugImage::plotPoints( out, edges, true, BLUE );
+#endif
+
+            s = filename + "-chosen-dots.ppm";
+            writeDebugRandomColor( s.c_str(), edges );
+
+            s = filename + "-voter-chains.txt";
+            _vote._chained_edgecoords.debug_out(  params._maxEdges, s.c_str(), EdgeListFilterCommittedOnly );
+
+            s = filename + "-chosen-dots.txt";
+            _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, s.c_str() );
+        }
+
+        return;
+    }
+#else // not DEBUG_RETURN_AFTER_CONSTRUCT_LINE
+
     if( _vote._chained_edgecoords.host.size > 0 ) {
         s = filename + "-chosenindices.txt";
         _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, s.c_str() );
@@ -467,20 +582,23 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
         s = filename + "-edgelist2.txt";
         _vote._chained_edgecoords.debug_out( params._maxEdges, s.c_str() );
 
-        if( 1 ) {
+        if( 0 ) {
             vector<TriplePoint> out;
             _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, out );
-            debugPlotChosenPointsIntoImage( out, edges );
+            DebugImage::plotPoints( out, edges );
 
             s = filename + "-chosen-dots.ppm";
             writeDebugRandomColor( s.c_str(), edges );
         } else {
-            debugPlotPointsIntoImage( _vote._chained_edgecoords.debug_ptr, min(params._maxEdges,_vote._chained_edgecoords.host.size), edges );
+            DebugImage::plotLines( _vote._chained_edgecoords, params._maxEdges, edges );
 
             s = filename + "-edges-dots.ppm";
             writeDebugRandomColor( s.c_str(), edges );
         }
     }
+#endif // not DEBUG_RETURN_AFTER_CONSTRUCT_LINE
+#endif // not DEBUG_RETURN_AFTER_GRADIENT_DESCENT
+#endif // not DEBUG_RETURN_AFTER_EDGELIST_CREATION
 #endif // NDEBUG
 }
 

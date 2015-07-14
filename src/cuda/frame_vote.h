@@ -35,6 +35,8 @@ struct Voting
         release( );
     }
 
+    void debug_download( const cctag::Parameters& params );
+
     void alloc( const cctag::Parameters& params, size_t w, size_t h );
     void init( const cctag::Parameters& params, cudaStream_t stream );
     void release( );
