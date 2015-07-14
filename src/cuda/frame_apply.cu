@@ -173,10 +173,13 @@ bool thinning_inner( const int idx, const int idy, cv::cuda::PtrStepSzb src, cv:
         log |= ( src.ptr(idy-1)[idx-1] != 0 ) ? 0x80 : 0;
 
 #if 1
-        if( first_run )
-            dst.ptr(idy)[idx] = d_thinning_lut[log];
-        else
-            dst.ptr(idy)[idx] = d_thinning_lut_t[log];
+        unsigned char result;
+        if( first_run ) {
+            result = d_thinning_lut[log];
+        } else {
+            result = d_thinning_lut_t[log];
+        }
+        dst.ptr(idy)[idx] = result;
 #else
         if( first_run == false ) {
             uint8_t b = log;
@@ -186,7 +189,8 @@ bool thinning_inner( const int idx, const int idy, cv::cuda::PtrStepSzb src, cv:
 
         dst.ptr(idy)[idx] = d_thinning_lut[log];
 #endif
-        return true;
+        return ( result == 1 );
+        // return true;
     }
     return false;
 }
