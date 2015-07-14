@@ -12,6 +12,7 @@
 #include "../cctag/cmdline.hpp"
 
 #include "frame.h"
+#include "debug_image.h"
 #include "assist.h"
 
 #undef CHATTY_WRITE_DEBUG_PLANE
@@ -88,129 +89,6 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
                               cudaMemcpyDeviceToHost, _stream );
 }
 
-void Frame::writeDebugPlane1( const char* filename, const cv::cuda::PtrStepSzb& plane )
-{
-#ifdef CHATTY_WRITE_DEBUG_PLANE
-    cerr << "Enter " << __FUNCTION__ << endl;
-#endif
-    assert( plane.data );
-
-    ofstream of( filename );
-    of << "P5" << endl
-       << plane.cols << " " << plane.rows << endl
-       << "255" << endl;
-    of.write( (char*)plane.data, plane.cols * plane.rows );
-#ifdef CHATTY_WRITE_DEBUG_PLANE
-    cerr << "Leave " << __FUNCTION__ << endl;
-#endif
-}
-
-template<class T>
-__host__
-void Frame::writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>& plane )
-{
-#ifdef CHATTY_WRITE_DEBUG_PLANE
-    cerr << "Enter " << __FUNCTION__ << endl;
-    cerr << "    filename: " << filename << endl;
-#endif
-
-    ofstream of( filename );
-    of << "P5" << endl
-       << plane.cols << " " << plane.rows << endl
-       << "255" << endl;
-
-    T minval = std::numeric_limits<T>::max();
-    T maxval = std::numeric_limits<T>::min();
-    // for( uint32_t i=0; i<plane.rows*plane.cols; i++ )
-    for( size_t i=0; i<plane.rows; i++ ) {
-        for( size_t j=0; j<plane.cols; j++ ) {
-            T f = plane.ptr(i)[j];
-            // float f = plane.data[i];
-            minval = min( minval, f );
-            maxval = max( maxval, f );
-        }
-    }
-#ifdef CHATTY_WRITE_DEBUG_PLANE
-    cerr << "    step size is " << plane.step << endl;
-    cerr << "    found minimum value " << minval << endl;
-    cerr << "    found maximum value " << maxval << endl;
-#endif
-
-    // testme( plane );
-
-    float fmaxval = 255.0 / ( (float)maxval - (float)minval );
-    for( uint32_t i=0; i<plane.rows*plane.cols; i++ ) {
-        T f = plane.data[i];
-        float outf = ( (float)f - (float)minval ) * fmaxval;
-        unsigned char uc = (unsigned char)outf;
-        of << uc;
-    }
-
-#ifdef CHATTY_WRITE_DEBUG_PLANE
-    cerr << "Leave " << __FUNCTION__ << endl;
-#endif
-}
-
-struct DebugHostRandomColor
-{
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-
-    DebugHostRandomColor( unsigned char r_, unsigned char g_, unsigned char b_ )
-        : r(r_), g(g_), b(b_)
-        { }
-};
-
-__host__
-void Frame::writeDebugRandomColor( const char* filename, const cv::cuda::PtrStepSzb& plane )
-{
-#ifdef CHATTY_WRITE_DEBUG_PLANE
-    cerr << "Enter " << __FUNCTION__ << endl;
-    cerr << "    filename: " << filename << endl;
-#endif
-
-    ofstream of( filename );
-    of << "P6" << endl
-       << plane.cols << " " << plane.rows << endl
-       << "255" << endl;
-
-    typedef unsigned char T_t;
-    typedef std::map<T_t,DebugHostRandomColor>  map_t;
-    typedef map_t::iterator                     it_t;
-    typedef std::pair<T_t,DebugHostRandomColor> pair_t;
-
-    static map_t random_mapping;
-    static bool  random_mapping_initialized = false;
-    if( not random_mapping_initialized ) {
-        random_mapping.insert( pair_t( DebugImage::BLACK, DebugHostRandomColor(  0,  0,  0) ) );
-        random_mapping.insert( pair_t( DebugImage::GREY1, DebugHostRandomColor(100,100,100) ) );
-        random_mapping.insert( pair_t( DebugImage::GREY2, DebugHostRandomColor(150,150,150) ) );
-        random_mapping.insert( pair_t( DebugImage::GREY3, DebugHostRandomColor(200,200,200) ) );
-        random_mapping.insert( pair_t( DebugImage::GREEN, DebugHostRandomColor(0,255,0) ) );
-        random_mapping.insert( pair_t( DebugImage::BLUE,  DebugHostRandomColor(0,0,255) ) );
-        random_mapping_initialized = true;
-    }
-
-    for( uint32_t i=0; i<plane.rows*plane.cols; i++ ) {
-        unsigned char f = plane.data[i];
-        it_t it = random_mapping.find(f);
-        if( it == random_mapping.end() )
-        {
-            DebugHostRandomColor c( 255,
-                                    random() % 255,
-                                    random() % 255 );
-            it = random_mapping.insert( pair_t( f, c ) ).first;
-        }
-
-        of << it->second.r << it->second.g << it->second.b;
-    }
-
-#ifdef CHATTY_WRITE_DEBUG_PLANE
-    cerr << "Leave " << __FUNCTION__ << endl;
-#endif
-}
-
 void Frame::hostDebugCompare( unsigned char* pix )
 {
     bool found_mistake = false;
@@ -237,131 +115,6 @@ void Frame::hostDebugCompare( unsigned char* pix )
     }
 }
 
-void DebugImage::normalizeImage( cv::cuda::PtrStepSzb img, bool normalize )
-{
-    if( not normalize ) return;
-
-    /* All images points that are non-null are normalized to 1.
-     */
-    for( uint32_t x=0; x<img.cols; x++ ) {
-        for( uint32_t y=0; y<img.rows; y++ ) {
-            if( img.ptr(y)[x] != BLACK ) img.ptr(y)[x] = GREY1;
-        }
-    }
-}
-
-void DebugImage::plotPoints( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb img, bool normalize, BaseColor b )
-{
-    normalizeImage( img, normalize );
-
-    vector<TriplePoint>::const_iterator cit, cend;
-    cend = v.end();
-    cout << "Plotting in image of size " << img.cols << " x " << img.rows << endl;
-    for( cit=v.begin(); cit!=cend; cit++ ) {
-        if( outOfBounds( cit->coord.x, cit->coord.y, img ) ) {
-            cout << "Coord of point (" << cit->coord.x << "," << cit->coord.y << ") is out of bounds" << endl;
-        } else {
-            int coloradd;
-            switch( b ) {
-            case GREEN :
-            case BLUE :
-                coloradd = b;
-                break;
-            case WHITE :
-            default :
-                coloradd = LAST + random() % ( 255 - LAST );
-                break;
-            }
-            img.ptr(cit->coord.y)[cit->coord.x] = coloradd;
-        }
-    }
-}
-
-void DebugImage::plotPoints( const vector<int2>& v, cv::cuda::PtrStepSzb img, bool normalize )
-{
-    normalizeImage( img, normalize );
-
-    vector<int2>::const_iterator cit, cend;
-    cend = v.end();
-    cout << "Plotting in image of size " << img.cols << " x " << img.rows << endl;
-    for( cit=v.begin(); cit!=cend; cit++ ) {
-        if( outOfBounds( cit->x, cit->y, img ) ) {
-            cout << "Coord of point (" << cit->x << "," << cit->y << ") is out of bounds" << endl;
-        } else {
-            int coloradd = LAST + random() % ( 255 - LAST );
-            img.ptr(cit->y)[cit->x] = coloradd;
-        }
-    }
-}
-
-void DebugImage::plotLines( EdgeList<TriplePoint>& points,
-                                   int                    maxSize,
-                                   cv::cuda::PtrStepSzb   img )
-{
-#ifndef NDEBUG
-    int coloradd = LAST + random() % ( 255 - LAST );
-#endif // NDEBUG
-
-    normalizeImage( img, true );
-
-    std::vector<TriplePoint> out;
-    points.debug_out( maxSize, out );
-    std::vector<TriplePoint>::iterator out_it  = out.begin();
-    std::vector<TriplePoint>::iterator out_end = out.end();
-
-    /* All coordinates in the TriplePoint array are plotted into the
-     * image with brightness 3. */
-    for( ; out_it != out_end; out_it++ ) {
-    // for( uint32_t i=0; i<sz; i++ )
-        const int2& coord = out_it->coord; // array[i].coord;
-        const int2& befor = out_it->befor; // array[i].befor;
-
-        if( outOfBounds( coord.x, coord.y, img ) ) {
-            cout << "Coord of point (" << coord.x << "," << coord.y << ") is out of bounds" << endl;
-        } else {
-            // if( befor.x != 0 && befor.y != 0 && after.x != 0 && after.y != 0 )
-            if( befor.x != 0 && befor.y != 0 ) {
-                img.ptr(coord.y)[coord.x] = GREY2;
-            }
-        }
-
-#ifndef NDEBUG
-        if( out_it->_coords_idx > 1 ) {
-            for( int j=1; j<out_it->_coords_idx; j++ ) {
-                int2 from = out_it->_coords[j-1];
-                int2 to   = out_it->_coords[j];
-                int  absx = abs(from.x-to.x);
-                int  absy = abs(from.y-to.y);
-                if( absx >= absy ) {
-                    if( from.x > to.x ) {
-                        std::swap( from.x, to.x );
-                        std::swap( from.y, to.y );
-                    }
-                    for( int xko=from.x; xko<=to.x; xko++ ) {
-                        int yko =  from.y + (int)roundf( ( to.y - from.y ) * (float)(xko-from.x) / (float)absx ); 
-                        if( not outOfBounds( xko, yko, img ) ) {
-                            img.ptr(yko)[xko] = coloradd;
-                        }
-                    }
-                } else {
-                    if( from.y > to.y ) {
-                        std::swap( from.x, to.x );
-                        std::swap( from.y, to.y );
-                    }
-                    for( int yko=from.y; yko<=to.y; yko++ ) {
-                        int xko =  from.x + (int)roundf( ( to.x - from.x ) * (float)(yko-from.y) / (float)absy ); 
-                        if( not outOfBounds( xko, yko, img ) ) {
-                            img.ptr(yko)[xko] = coloradd;
-                        }
-                    }
-                }
-            }
-            coloradd = LAST + random() % ( 255 - LAST );
-        }
-#endif // NDEBUG
-    }
-}
-
 void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& params )
 {
     struct stat st = {0};
@@ -378,121 +131,90 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
         mkdir( dir.c_str(), 0700);
     }
 
-    string s = filename + ".pgm";
+    string s;
+
+#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
     cv::cuda::PtrStepSzb b( getHeight(),
                             getWidth(),
                             _h_debug_plane,
                             getWidth() );
-    writeDebugPlane1( s.c_str(), b );
+    DebugImage::writePGM( filename + ".pgm", b );
+#ifdef DEBUG_WRITE_ORIGINAL_AS_ASCII
+    DebugImage::writeASCII( filename + "-img-ascii.txt", b );
+#endif // DEBUG_WRITE_ORIGINAL_AS_ASCII
+#endif // WRITE_ORIGINAL_AS_PGM
 
-    {
-        ofstream of( ( filename + "-img-ascii.txt" ).c_str() );
-        for( int y=0; y<getHeight(); y++ ) {
-            for( int x=0; x<getWidth(); x++ )
-            {
-                int val = b.ptr(y)[x];
-                of << val << " ";
-            }
-            of << endl;
-        }
-    }
-
-    s = filename + "-gauss.pgm";
+#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
     cv::cuda::PtrStepSzf smooth( getHeight(),
                                  getWidth(),
                                  _h_debug_smooth,
                                  getWidth()*sizeof(float) );
-    writeDebugPlane( s.c_str(), smooth );
+    DebugImage::writePGMscaled( filename + "-gauss.pgm", smooth );
+#ifdef DEBUG_WRITE_GAUSSIAN_AS_ASCII
+    DebugImage::writeASCII( filename + "-gauss-ascii.txt", smooth );
+#endif // DEBUG_WRITE_GAUSSIAN_AS_ASCII
+#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
 
-    {
-        ofstream of( ( filename + "-gauss-ascii.txt" ).c_str() );
-        for( int y=0; y<getHeight(); y++ ) {
-            for( int x=0; x<getWidth(); x++ )
-            {
-                int val = smooth.ptr(y)[x];
-                of << val << " ";
-            }
-            of << endl;
-        }
-    }
-
-    s = filename + "-dx.pgm";
+#ifdef DEBUG_WRITE_DX_AS_PGM
     cv::cuda::PtrStepSz16s dx( getHeight(),
                                getWidth(),
                                _h_debug_dx,
                                getWidth()*sizeof(int16_t) );
-    writeDebugPlane( s.c_str(), dx );
+    DebugImage::writePGMscaled( filename + "-dx.pgm", dx );
+#ifdef DEBUG_WRITE_DX_AS_ASCII
+    DebugImage::writeASCII( filename + "-dx-ascii.txt", dx );
+#endif // DEBUG_WRITE_DX_AS_ASCII
+#endif // DEBUG_WRITE_DX_AS_PGM
 
-    {
-        ofstream of( ( filename + "-dx-ascii.txt" ).c_str() );
-        for( int y=0; y<getHeight(); y++ ) {
-            for( int x=0; x<getWidth(); x++ )
-            {
-                int val = dx.ptr(y)[x];
-                of << val << " ";
-            }
-            of << endl;
-        }
-    }
-
-    s = filename + "-dy.pgm";
+#ifdef DEBUG_WRITE_DY_AS_PGM
     cv::cuda::PtrStepSz16s dy( getHeight(),
                                getWidth(),
                                _h_debug_dy,
                                getWidth()*sizeof(int16_t) );
-    writeDebugPlane( s.c_str(), dy );
+    DebugImage::writePGMscaled( filename + "-dy.pgm", dy );
+#ifdef DEBUG_WRITE_DY_AS_ASCII
+    DebugImage::writeASCII( filename + "-dy-ascii.txt", dy );
+#endif // DEBUG_WRITE_DY_AS_ASCII
+#endif // DEBUG_WRITE_DY_AS_PGM
 
-    {
-        ofstream of( ( filename + "-dy-ascii.txt" ).c_str() );
-        for( int y=0; y<getHeight(); y++ ) {
-            for( int x=0; x<getWidth(); x++ )
-            {
-                int val = dy.ptr(y)[x];
-                of << val << " ";
-            }
-            of << endl;
-        }
-    }
 
-    s = filename + "-mag.pgm";
+#ifdef DEBUG_WRITE_MAG_AS_PGM
     cv::cuda::PtrStepSz32u mag( getHeight(),
                                 getWidth(),
                                 _h_debug_mag,
                                 getWidth()*sizeof(uint32_t) );
-    writeDebugPlane( s.c_str(), mag );
+    DebugImage::writePGMscaled( filename + "-mag.pgm", mag );
+#ifdef DEBUG_WRITE_MAG_AS_ASCII
+    DebugImage::writeASCII( filename + "-mag-ascii.txt", mag );
+#endif // DEBUG_WRITE_MAG_AS_ASCII
+#endif // DEBUG_WRITE_MAG_AS_PGM
 
-    s = filename + "-map.pgm";
+#ifdef DEBUG_WRITE_MAP_AS_PGM
     cv::cuda::PtrStepSzb   map( getHeight(),
                                 getWidth(),
                                 _h_debug_map,
                                 getWidth()*sizeof(uint8_t) );
-    writeDebugPlane( s.c_str(), map );
+    DebugImage::writePGMscaled( filename + "-map.pgm", map );
+#ifdef DEBUG_WRITE_MAP_AS_ASCII
+    DebugImage::writeASCII( filename + "-map-ascii.txt", map );
+#endif // DEBUG_WRITE_MAP_AS_ASCII
+#endif // DEBUG_WRITE_MAP_AS_PGM
 
-    {
-        ofstream of( ( filename + "-map-ascii.txt" ).c_str() );
-        for( int y=0; y<getHeight(); y++ ) {
-            for( int x=0; x<getWidth(); x++ )
-            {
-                int val = map.ptr(y)[x];
-                of << val << " ";
-            }
-            of << endl;
-        }
-    }
-
-    s = filename + "-hystedges.pgm";
+#ifdef DEBUG_WRITE_HYSTEDGES_AS_PGM
     cv::cuda::PtrStepSzb   hystedges( getHeight(),
                                       getWidth(),
                                       _h_debug_hyst_edges,
                                       getWidth()*sizeof(uint8_t) );
-    writeDebugPlane( s.c_str(), hystedges );
+    DebugImage::writePGMscaled( filename + "-hystedges.pgm", hystedges );
+#endif // DEBUG_WRITE_HYSTEDGES_AS_PGM
 
-    s = filename + "-edges.pgm";
+#ifdef DEBUG_WRITE_EDGES_AS_PGM
     cv::cuda::PtrStepSzb   edges( getHeight(),
                                   getWidth(),
                                   _h_debug_edges,
                                   getWidth()*sizeof(uint8_t) );
-    writeDebugPlane( s.c_str(), edges );
+    DebugImage::writePGMscaled( filename + "-edges.pgm", edges );
+#endif // DEBUG_WRITE_EDGES_AS_PGM
 
 #ifndef NDEBUG
     s = filename + "-edgelist.txt";
@@ -509,8 +231,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
         vector<int2> out;
         _vote._all_edgecoords.debug_out( params._maxEdges, out );
         DebugImage::plotPoints( out, edges );
-        s = filename + "-edgelist.ppm";
-        writeDebugRandomColor( s.c_str(), edges );
+        DebugImage::writePPM( filename + "-edgelist.ppm", edges );
     }
 #else // not DEBUG_RETURN_AFTER_EDGELIST_CREATION
 #ifdef DEBUG_RETURN_AFTER_GRADIENT_DESCENT
@@ -530,8 +251,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
             _vote._chained_edgecoords.debug_out(  params._maxEdges, out );
             DebugImage::plotPoints( out, edges );
 
-            s = filename + "-voters-dots.ppm";
-            writeDebugRandomColor( s.c_str(), edges );
+            DebugImage::writePPM( filename + "-voters-dots.ppm", edges );
         }
 
         return;
@@ -561,8 +281,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
             DebugImage::plotPoints( out, edges, true, BLUE );
 #endif
 
-            s = filename + "-chosen-dots.ppm";
-            writeDebugRandomColor( s.c_str(), edges );
+            DebugImage::writePPM( filename + "-chosen-dots.ppm", edges );
 
             s = filename + "-voter-chains.txt";
             _vote._chained_edgecoords.debug_out(  params._maxEdges, s.c_str(), EdgeListFilterCommittedOnly );
@@ -587,13 +306,11 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
             _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, out );
             DebugImage::plotPoints( out, edges );
 
-            s = filename + "-chosen-dots.ppm";
-            writeDebugRandomColor( s.c_str(), edges );
+            DebugImage::writePPM( filename + "-chosen-dots.ppm", edges );
         } else {
-            DebugImage::plotLines( _vote._chained_edgecoords, params._maxEdges, edges );
+            DebugImage::plotLines( _vote._chained_edgecoords, params._maxEdges, edges, true, DebugImage::WHITE, 5 );
 
-            s = filename + "-edges-dots.ppm";
-            writeDebugRandomColor( s.c_str(), edges );
+            DebugImage::writePPM( filename + "-edges-dots.ppm", edges );
         }
     }
 #endif // not DEBUG_RETURN_AFTER_CONSTRUCT_LINE
