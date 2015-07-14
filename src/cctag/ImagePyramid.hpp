@@ -31,6 +31,8 @@ private:
   std::vector<Level*> _levels;
 };
 
+void sIntToUchar(const cv::Mat & src, cv::Mat & dst);
+
 }
 
 #endif	/* _CCTAG_IMAGEPYRAMID_HPP */

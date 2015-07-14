@@ -42,6 +42,18 @@ void ImagePyramid::build( const cv::Mat & src )
     CCTagVisualDebug::instance().newSession(outFilenameCanny.str());
     
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
+    std::stringstream dX, dY;
+    cv::Mat imgDX, imgDY;
+    
+    dX << "dX" << i;
+    sIntToUchar(_levels[i]->getDx(), imgDX);
+    CCTagVisualDebug::instance().initBackgroundImage(imgDX);
+    CCTagVisualDebug::instance().newSession(dX.str());   
+    dY << "dY" << i;
+    sIntToUchar(_levels[i]->getDy(), imgDY);
+    CCTagVisualDebug::instance().initBackgroundImage(imgDY);
+    CCTagVisualDebug::instance().newSession(dY.str()); 
+    
     outFilenameCanny << "_wt";
     CCTagVisualDebug::instance().initBackgroundImage(_levels[i]->getCannyNotThin());
     CCTagVisualDebug::instance().newSession(outFilenameCanny.str());
@@ -93,6 +105,31 @@ std::size_t ImagePyramid::getNbLevels() const
 Level* ImagePyramid::getLevel( const std::size_t level ) const
 {
         return _levels[level];
+}
+
+void toUchar(const cv::Mat & src, cv::Mat & dst)
+{
+  std::size_t width = src.cols;
+  std::size_t height = src.rows;
+  dst = cv::Mat(height, width, CV_8UC1);
+  
+  double min = 0;
+  double max = 0;
+  
+  cv::minMaxLoc(src, &min, &max);
+  
+  CCTAG_COUT_VAR(min);
+  CCTAG_COUT_VAR(max);
+  
+  double scale = 255/(max-min);
+  
+  for ( int i=0 ; i < width ; ++i)
+  {
+    for ( int j=0 ; j < height ; ++j)
+    {
+      dst.at<uchar>(j,i) = (uchar) ((src.at<short>(j,i)+min)*scale);
+    }
+  }
 }
 
 }
