@@ -51,12 +51,12 @@ namespace bfs = boost::filesystem;
 
 // static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::string outputFileName = "")
+void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ofstream & output, std::string debugFileName = "")
 {
     POP_ENTER;
     
-    if (outputFileName == "") {
-      outputFileName = "00000";
+    if (debugFileName == "") {
+      debugFileName = "00000";
     }
     
     // Process markers detection
@@ -66,7 +66,7 @@ void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & p
     view.setNumLayers( params._numberOfMultiresLayers );
     
     CCTagVisualDebug::instance().initBackgroundImage(view._view);
-    CCTagVisualDebug::instance().setImageFileName(outputFileName);
+    CCTagVisualDebug::instance().setImageFileName(debugFileName);
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
     
     cctagDetection(markers, frame, view._grayView, params, bank, true );
@@ -82,15 +82,19 @@ void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & p
 
     int i = 0;
     BOOST_FOREACH(const cctag::CCTag & marker, markers) {
-        cctag::drawMarkerOnGilImage(view._view, marker, false);
-        cctag::drawMarkerInfos(view._view, marker, false);
+      if (output.is_open())
+      {
+        output << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
+      }
+      cctag::drawMarkerOnGilImage(view._view, marker, false);
+      cctag::drawMarkerInfos(view._view, marker, false);
 
-        if (i == 0) {
-            CCTAG_COUT_NOENDL(marker.id() + 1);
-        } else {
-            CCTAG_COUT_NOENDL(", " << marker.id() + 1);
-        }
-        ++i;
+      if (i == 0) {
+          CCTAG_COUT_NOENDL(marker.id() + 1);
+      } else {
+          CCTAG_COUT_NOENDL(", " << marker.id() + 1);
+      }
+      ++i;
     }
     CCTAG_COUT("");
     POP_LEAVE;
@@ -186,6 +190,12 @@ int main(int argc, char** argv)
   bfs::path myPath( cmdline._filename );
   std::string ext(myPath.extension().string());
 
+  const bfs::path subFilenamePath(myPath.filename());
+  const bfs::path parentPath( myPath.parent_path() == "" ? "." : myPath.parent_path());
+  const std::string outputFileName(parentPath.string() + "/cctag" + std::to_string(nCrowns) + "CC.out");
+  std::ofstream outputFile;
+  outputFile.open( outputFileName );
+  
   if ( (ext == ".png") || (ext == ".jpg") ) {
 
     POP_INFO( "looking at image " << myPath.string() );
@@ -204,7 +214,7 @@ int main(int argc, char** argv)
     }*/
 
     // Call the CCTag detection
-    detection(0, my_view, params, bank, myPath.stem().string());
+    detection(0, my_view, params, bank, outputFile, myPath.stem().string());
     
   } else if (ext == ".avi" )
   {
@@ -235,13 +245,14 @@ int main(int argc, char** argv)
       outFileName << std::setfill('0') << std::setw(5) << frameId;
 
       // Call the CCTag detection
-      detection(frameId, cctagView, params, cmdline._cctagBankFilename, outFileName.str());
-
+      detection(frameId, cctagView, params, bank, outputFile, outFileName.str());
+      
       ++frameId; 
     }
   } else {
       throw std::logic_error("Unrecognized input.");
   }
+  outputFile.close();
   return 0;
 }
 
