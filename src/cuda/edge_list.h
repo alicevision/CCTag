@@ -83,6 +83,7 @@ inline void writeArray( std::vector<T>& out,
     }
 }
 
+#if 0
 template <typename T>
 inline void writeArray( const char* filename, const T* debug_ptr, int size, const int* indexlist, int indexsize )
 {
@@ -96,17 +97,20 @@ inline void writeArray( const char* filename, const T* debug_ptr, int size, cons
         }
     }
 }
+#endif
 
 template <typename T>
-inline void writeArray( std::vector<T>& out, const T* debug_ptr, int size, const int* indexlist, int indexsize )
+inline void writeArray( std::vector<T>& out, const T* debug_ptr, int debug_size, const int* indexlist, int indexsize )
 {
-    for( int idx=0; idx<indexsize; idx++ ) {
-        if( idx < size ) {
+    for( int i=0; i<indexsize; i++ ) {
+        int idx = indexlist[i];
+        if( idx < debug_size ) {
             out.push_back( debug_ptr[idx] );
         }
     }
 }
 
+#if 0
 template <typename T>
 inline void writeArray( const char* filename, const T* debug_ptr, int size,
                         EdgeListFilter  f = EdgeListFilterAny )
@@ -125,44 +129,7 @@ inline void writeArray( const char* filename, const T* debug_ptr, int size,
         }
     }
 }
-
-template <>
-inline void writeArray<int2>( const char* filename, const int2* debug_ptr, int size,
-                              EdgeListFilter  f )
-{
-    std::ofstream of( filename );
-
-    if( f == EdgeListFilterAny ) {
-        for( int i=0; i<size; i++ ) {
-            of << debug_ptr[i].x << " " << debug_ptr[i].y << std::endl;
-        }
-    } else {
-        for( int i=0; i<size; i++ ) {
-            if( writeArrayFilter( debug_ptr[i], f ) ) {
-                of << debug_ptr[i].x << " " << debug_ptr[i].y << std::endl;
-            }
-        }
-    }
-}
-
-template <>
-inline void writeArray<int>( const char* filename, const int* debug_ptr, int size,
-                             EdgeListFilter  f )
-{
-    std::ofstream of( filename );
-
-    if( f == EdgeListFilterAny ) {
-        for( int i=0; i<size; i++ ) {
-            of << debug_ptr[i] << std::endl;
-        }
-    } else {
-        for( int i=0; i<size; i++ ) {
-            if( writeArrayFilter( debug_ptr[i], f ) ) {
-                of << debug_ptr[i] << std::endl;
-            }
-        }
-    }
-}
+#endif
 #endif // NDEBUG
 
 template <typename T>
@@ -209,15 +176,6 @@ public:
         } else {
             return 0;
         }
-    }
-
-    void debug_out( int maxSize, const char* outFilename, EdgeListFilter f = EdgeListFilterAny )
-    {
-        bool success = get_debug_mem( maxSize );
-        if( not success ) return;
-
-        const int size = min( maxSize, host.size );
-        writeArray( outFilename, debug_ptr, size, f );
     }
 
     void debug_out( int maxSize, std::vector<T>& out, EdgeListFilter f = EdgeListFilterAny )

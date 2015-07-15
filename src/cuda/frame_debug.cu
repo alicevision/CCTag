@@ -115,6 +115,28 @@ void Frame::hostDebugCompare( unsigned char* pix )
     }
 }
 
+struct PtrStepSzbClone
+{
+    cv::cuda::PtrStepSzb e;
+
+    PtrStepSzbClone( const cv::cuda::PtrStepSzb& orig )
+        : e ( orig )
+    {
+        e.data = new uint8_t[ orig.rows * orig.step ];
+        memcpy( e.data, orig.data, orig.rows * orig.step );
+    }
+
+    ~PtrStepSzbClone( )
+    {
+        delete [] e.data;
+    }
+
+private:
+    PtrStepSzbClone( );
+    PtrStepSzbClone( const PtrStepSzbClone& );
+    PtrStepSzbClone& operator=( const PtrStepSzbClone& );
+};
+
 void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& params )
 {
     struct stat st = {0};
@@ -208,19 +230,16 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     DebugImage::writePGMscaled( filename + "-hystedges.pgm", hystedges );
 #endif // DEBUG_WRITE_HYSTEDGES_AS_PGM
 
-#ifdef DEBUG_WRITE_EDGES_AS_PGM
     cv::cuda::PtrStepSzb   edges( getHeight(),
                                   getWidth(),
                                   _h_debug_edges,
                                   getWidth()*sizeof(uint8_t) );
+
+#ifdef DEBUG_WRITE_EDGES_AS_PGM
     DebugImage::writePGMscaled( filename + "-edges.pgm", edges );
 #endif // DEBUG_WRITE_EDGES_AS_PGM
 
-#ifndef NDEBUG
-    s = filename + "-edgelist.txt";
-    _vote._all_edgecoords.debug_out( params._maxEdges, s.c_str() );
-
-#ifdef DEBUG_RETURN_AFTER_EDGELIST_CREATION
+#ifdef DEBUG_WRITE_EDGELIST_AS_PPM
     {
         /* Very basic debugging stage:
          * do we really put all of those edge points into the edge list
@@ -230,11 +249,17 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
          */
         vector<int2> out;
         _vote._all_edgecoords.debug_out( params._maxEdges, out );
-        DebugImage::plotPoints( out, edges );
-        DebugImage::writePPM( filename + "-edgelist.ppm", edges );
+
+        PtrStepSzbClone edgeclone( edges );
+        DebugImage::plotPoints( out, edgeclone.e );
+        DebugImage::writePPM( filename + "-edgelist.ppm", edgeclone.e );
+#ifdef DEBUG_WRITE_EDGELIST_AS_ASCII
+        DebugImage::writeASCII( filename + "-edgelist.txt", out );
+#endif // DEBUG_WRITE_EDGELIST_AS_ASCII
     }
-#else // not DEBUG_RETURN_AFTER_EDGELIST_CREATION
-#ifdef DEBUG_RETURN_AFTER_GRADIENT_DESCENT
+#endif // DEBUG_WRITE_EDGELIST_AS_PPM
+
+#ifdef DEBUG_WRITE_VOTERS_AS_PPM
     {
         /* Debugging immediately after gradientDescent.
          * The list of TriplePoints has been created in
@@ -246,18 +271,16 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                                       _vote._chained_edgecoords.dev.size,
                                       sizeof(int) );
 
-        if( _vote._chained_edgecoords.host.size > 0 ) {
-            vector<TriplePoint> out;
-            _vote._chained_edgecoords.debug_out(  params._maxEdges, out );
-            DebugImage::plotPoints( out, edges );
+        vector<TriplePoint> out;
+        _vote._chained_edgecoords.debug_out(  params._maxEdges, out );
 
-            DebugImage::writePPM( filename + "-voters-dots.ppm", edges );
-        }
-
-        return;
+        PtrStepSzbClone edgeclone( edges );
+        DebugImage::plotPoints( out, edgeclone.e );
+        DebugImage::writePPM( filename + "-voter-dots.ppm", edgeclone.e );
     }
-#else // not DEBUG_RETURN_AFTER_GRADIENT_DESCENT
-#ifdef DEBUG_RETURN_AFTER_CONSTRUCT_LINE
+#endif // DEBUG_WRITE_VOTERS_AS_PPM
+
+#ifdef DEBUG_WRITE_CHOSEN_AS_PPM
     {
         /* _chained_edgecoords.dev.size has been loaded into .host.size
          * _edge_indices has been created into this step.
@@ -269,54 +292,24 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
          */
         if( _vote._chained_edgecoords.host.size > 0 && _vote._edge_indices.host.size > 0) {
             vector<TriplePoint> out;
-#if 1
+            PtrStepSzbClone edgeclone( edges );
             _vote._chained_edgecoords.debug_out( params._maxEdges, out, EdgeListFilterCommittedOnly );
-            DebugImage::plotPoints( out, edges, true, DebugImage::GREEN );
+            DebugImage::plotPoints( out, edgeclone.e, true, DebugImage::GREEN );
+#ifdef DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
+            DebugImage::writeASCII( filename + "-chosen-voter-chains.txt", out );
+#endif // DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
 
             out.clear();
             _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, out );
-            DebugImage::plotPoints( out, edges, false, DebugImage::BLUE );
-#else
-            _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, out );
-            DebugImage::plotPoints( out, edges, true, BLUE );
-#endif
+            DebugImage::plotPoints( out, edgeclone.e, false, DebugImage::BLUE );
+#ifdef DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
+            DebugImage::writeASCII( filename + "-chosen-dots.txt", out );
+#endif // DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
 
-            DebugImage::writePPM( filename + "-chosen-dots.ppm", edges );
-
-            s = filename + "-voter-chains.txt";
-            _vote._chained_edgecoords.debug_out(  params._maxEdges, s.c_str(), EdgeListFilterCommittedOnly );
-
-            s = filename + "-chosen-dots.txt";
-            _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, s.c_str() );
-        }
-
-        return;
-    }
-#else // not DEBUG_RETURN_AFTER_CONSTRUCT_LINE
-
-    if( _vote._chained_edgecoords.host.size > 0 ) {
-        s = filename + "-chosenindices.txt";
-        _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, s.c_str() );
-
-        s = filename + "-edgelist2.txt";
-        _vote._chained_edgecoords.debug_out( params._maxEdges, s.c_str() );
-
-        if( 0 ) {
-            vector<TriplePoint> out;
-            _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, out );
-            DebugImage::plotPoints( out, edges );
-
-            DebugImage::writePPM( filename + "-chosen-dots.ppm", edges );
-        } else {
-            DebugImage::plotLines( _vote._chained_edgecoords, params._maxEdges, edges, true, DebugImage::WHITE, 5 );
-
-            DebugImage::writePPM( filename + "-edges-dots.ppm", edges );
+            DebugImage::writePPM( filename + "-chosen-dots.ppm", edgeclone.e );
         }
     }
-#endif // not DEBUG_RETURN_AFTER_CONSTRUCT_LINE
-#endif // not DEBUG_RETURN_AFTER_GRADIENT_DESCENT
-#endif // not DEBUG_RETURN_AFTER_EDGELIST_CREATION
-#endif // NDEBUG
+#endif // DEBUG_WRITE_CHOSEN_AS_PPM
 }
 
 }; // namespace popart

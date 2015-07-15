@@ -59,6 +59,19 @@ struct TriplePoint
         return ostr.str();
 
     }
+
+    __host__
+    inline void debug_out( std::ostream& ostr ) const {
+        ostr << "orig=" << coord.x << " " << coord.y << " "
+             << "bef=" << befor.x << " " << befor.y << " "
+             << "aft=" << after.x << " " << after.y;
+        if( _coords_idx != 0 ) {
+            for( int i=0; i<_coords_idx; i++ ) {
+                ostr << " (" << _coords[i].x << "," << _coords[i].y << ")";
+            }
+        }
+
+    }
 #endif
 };
 

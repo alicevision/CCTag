@@ -144,6 +144,43 @@ void DebugImage::writeASCII( const string& filename,
 {
     writeASCII_T( filename, plane );
 }
+__host__
+void DebugImage::writeASCII( const string&           filename,
+                             const std::vector<int>& list )
+{
+    ofstream of( filename.c_str() );
+
+    vector<int>::const_iterator it  = list.begin();
+    vector<int>::const_iterator end = list.end();
+    for( ; it!=end; it++ ) {
+        of << *it << endl;
+    }
+}
+__host__
+void DebugImage::writeASCII( const string&            filename,
+                             const std::vector<int2>& list )
+{
+    ofstream of( filename.c_str() );
+
+    vector<int2>::const_iterator it  = list.begin();
+    vector<int2>::const_iterator end = list.end();
+    for( ; it!=end; it++ ) {
+        of << it->x << " " << it->y << endl;
+    }
+}
+__host__
+void DebugImage::writeASCII( const string&                   filename,
+                             const std::vector<TriplePoint>& list )
+{
+    ofstream of( filename.c_str() );
+
+    vector<TriplePoint>::const_iterator it  = list.begin();
+    vector<TriplePoint>::const_iterator end = list.end();
+    for( ; it!=end; it++ ) {
+        it->debug_out( of );
+        of << endl;
+    }
+}
 
 void DebugImage::normalizeImage( cv::cuda::PtrStepSzb img, bool normalize )
 {

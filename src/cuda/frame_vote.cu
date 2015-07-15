@@ -179,10 +179,13 @@ bool gradient_descent_inner( int4&                  out_edge_info,
 
     const int idx = all_edgecoords.ptr[offset].x;
     const int idy = all_edgecoords.ptr[offset].y;
-#ifdef DEBUG_ALLOW_AFTER_DIRECTION_ALSO
+#if 0
+    /* This was necessary to allow the "after" threads (threadIdx.y==1)
+     * to return sensible results even if "before" was 0.
+     * Now useless, but kept just in case.  */
     out_edge_info.x = idx;
     out_edge_info.y = idy;
-#endif // DEBUG_ALLOW_AFTER_DIRECTION_ALSO
+#endif
 
     if( outOfBounds( idx, idy, edge_image ) ) return false; // should never happen
 
@@ -857,17 +860,6 @@ void Frame::applyVote( const cctag::Parameters& params )
              << endl;
         exit( -1 );
     }
-
-#ifndef NDEBUG
-#ifdef  DEBUG_RETURN_AFTER_EDGELIST_CREATION
-    {
-        /* The edge image and the list of edge points has been created
-         */
-        cout << "Leave " << __FUNCTION__ << endl;
-        return;
-    }
-#endif // DEBUG_RETURN_AFTER_EDGELIST_CREATION
-#endif // NDEBUG
 
     bool success;
     

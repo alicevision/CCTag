@@ -10,7 +10,7 @@
 #include "frame.h"
 // #include "../cctag/params.hpp"
 // #include "frame_vote.h"
-// #include "triple_point.h"
+#include "triple_point.h"
 
 namespace popart {
 
@@ -113,6 +113,12 @@ public:
                             const cv::cuda::PtrStepSz<int16_t>& plane );
     static void writeASCII( const std::string& filename,
                             const cv::cuda::PtrStepSz<uint32_t>& plane );
+    static void writeASCII( const std::string&      filename,
+                            const std::vector<int>& list );
+    static void writeASCII( const std::string&       filename,
+                            const std::vector<int2>& list );
+    static void writeASCII( const std::string&              filename,
+                            const std::vector<TriplePoint>& list );
 
     /* This may draw quite many lines. If there are too many, use skip to
      * draw only some.
