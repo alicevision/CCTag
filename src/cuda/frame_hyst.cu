@@ -5,22 +5,143 @@
 #include "clamp.h"
 #include "assist.h"
 
-#undef ABBREVIATED_HYSTERESIS
+#define ABBREVIATED_HYSTERESIS
 
 namespace popart
 {
 
 using namespace std;
 
-namespace hysteresis
-{
-__shared__ uint8_t array[34][34];
-
 __device__
+inline
 uint8_t get( const cv::cuda::PtrStepSzb map, const int idx, const int idy )
 {
     return map.ptr( clamp( idy, map.rows ) )[ clamp( idx, map.cols ) ];
 }
+
+#ifdef ABBREVIATED_HYSTERESIS
+// HYST    4 x 32 -> >10
+// HYST    2 x 32 -> >11.5
+// HYST   16 x 16 -> 9.380 - 10.426
+// HYST    8 x 32 -> 9.6 - 9.9
+// HYST   32 x 32 -> 9.460 - 9.793
+// HYST    8 x  8 -> 9.7 - 10.16
+#define HYST_H   32
+#define HYST_W   32
+
+#if HYST_W < HYST_H
+#error The code requires W<=32 and H<=W
+#endif
+
+__device__
+inline
+bool edge_loop( cv::cuda::PtrStepSzb map )
+{
+    const int idx  = blockIdx.x * HYST_W + threadIdx.x;
+    const int idy  = blockIdx.y * HYST_H + threadIdx.y;
+
+    if( idx == 0 || idy == 0 || idx >= map.cols-1 || idy >= map.rows-1 ) return false;
+
+    uint8_t val = get( map, idx, idy );
+
+    if( val != 1 ) return false;
+
+    int n;
+    n  = ( get( map, idx-1, idy-1 ) == 2 );
+    n += ( get( map, idx  , idy-1 ) == 2 );
+    n += ( get( map, idx+1, idy-1 ) == 2 );
+    n += ( get( map, idx-1, idy   ) == 2 );
+    n += ( get( map, idx+1, idy   ) == 2 );
+    n += ( get( map, idx-1, idy+1 ) == 2 );
+    n += ( get( map, idx  , idy+1 ) == 2 );
+    n += ( get( map, idx+1, idy+1 ) == 2 );
+
+    if( n == 0 ) return false;
+
+    map.ptr(idy)[idx] = 2;
+
+    return true;
+}
+
+__device__
+bool edge_block_loop( cv::cuda::PtrStepSzb map )
+{
+    __shared__ bool continuation[HYST_H];
+    bool            again = true;
+    bool            nothing_changed = true;
+
+    while( again ) {
+        bool mark      = edge_loop( map );
+        bool any_marks = __any( mark );
+        if( threadIdx.x == 0 ) continuation[threadIdx.y] = any_marks;
+        __syncthreads();
+        mark = threadIdx.x < HYST_H ? continuation[threadIdx.x] : false;
+        __syncthreads();
+        again = __any( mark );
+        if( again ) nothing_changed = false;
+    }
+
+    return nothing_changed;
+}
+
+__global__
+void edge_hysteresis( cv::cuda::PtrStepSzb map, Frame::EdgeHistInfo* edge_hist_info )
+{
+    bool nothing_changed = edge_block_loop( map );
+    if( threadIdx.x == 0 && threadIdx.y == 0 ) {
+        if( nothing_changed ) {
+            atomicSub( &edge_hist_info->block_counter, 1 );
+        }
+#if 0
+        int am_i_last = atomicSub( &edge_hysteresis_block_counter.x, 1 );
+        if( am_i_last == 1 ) {
+            int active_blocks = edge_hysteresis_block_counter.y;
+            edge_hysteresis_block_again = active_blocks;
+            // only useful for Dynamic Parallelism
+        }
+#endif
+    }
+}
+
+__host__
+void Frame::applyHyst( const cctag::Parameters & params )
+{
+    cerr << "Enter " << __FUNCTION__ << endl;
+
+    dim3 block;
+    dim3 grid;
+    block.x = HYST_W;
+    block.y = HYST_H;
+    grid.x  = ( getWidth()  / HYST_W ) + ( getWidth()  % HYST_W == 0 ? 0 : 1 );
+    grid.y  = ( getHeight() / HYST_H ) + ( getHeight() % HYST_H == 0 ? 0 : 1 );
+
+    EdgeHistInfo info;
+    do
+    {
+        info.block_counter = grid.x * grid.y;
+        POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( _d_edge_hysteresis,
+                                         &info,
+                                         sizeof(EdgeHistInfo), _stream );
+        edge_hysteresis
+            <<<grid,block,0,_stream>>>
+            ( _d_map,
+              _d_edge_hysteresis );
+        POP_CHK_CALL_IFSYNC;
+
+        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &info,
+                                       _d_edge_hysteresis,
+                                       sizeof(EdgeHistInfo), _stream );
+        POP_CUDA_SYNC( _stream );
+        cerr << "  Still active blocks: " << info.block_counter << endl;
+    }
+    while( info.block_counter > 0 );
+
+    cerr << "Leave " << __FUNCTION__ << endl;
+}
+#else // not ABBREVIATED_HYSTERESIS
+namespace hysteresis
+{
+__shared__ uint8_t array[34][34];
 
 __device__
 void set( cv::cuda::PtrStepSzb map, const int idx, const int idy, uint8_t val )
@@ -138,6 +259,8 @@ void Frame::applyHyst( const cctag::Parameters & params )
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }
+
+#endif // not ABBREVIATED_HYSTERESIS
 
 }; // namespace popart
 

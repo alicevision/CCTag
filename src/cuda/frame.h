@@ -3,12 +3,38 @@
 #include <cuda_runtime.h>
 #include <assert.h>
 #include <string>
+#include <vector>
 
 #include <opencv2/core/cuda_types.hpp>
 
 #include "../cctag/params.hpp"
 #include "frame_vote.h"
 #include "triple_point.h"
+
+#undef  DEBUG_WRITE_ORIGINAL_AS_PGM
+#undef  DEBUG_WRITE_ORIGINAL_AS_ASCII
+#undef  DEBUG_WRITE_GAUSSIAN_AS_PGM
+#undef  DEBUG_WRITE_GAUSSIAN_AS_ASCII
+#undef  DEBUG_WRITE_DX_AS_PGM
+#undef  DEBUG_WRITE_DX_AS_ASCII
+#undef  DEBUG_WRITE_DY_AS_PGM
+#undef  DEBUG_WRITE_DY_AS_ASCII
+#undef  DEBUG_WRITE_MAG_AS_PGM
+#undef  DEBUG_WRITE_MAG_AS_ASCII
+#undef  DEBUG_WRITE_MAP_AS_PGM
+#undef  DEBUG_WRITE_MAP_AS_ASCII
+#undef  DEBUG_WRITE_HYSTEDGES_AS_PGM
+#undef  DEBUG_WRITE_EDGES_AS_PGM
+#undef  DEBUG_WRITE_EDGELIST_AS_PPM
+#undef  DEBUG_WRITE_EDGELIST_AS_ASCII
+#define DEBUG_WRITE_VOTERS_AS_PPM
+#define DEBUG_WRITE_CHOSEN_AS_PPM
+#define DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
+#define DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
+
+#define  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
+
+#define RESERVE_MEM_MAX_CROWNS  5
 
 /* A table is copied to constant memory containing sigma values
  * for Gauss filtering at the 0-offset, and the derivatives
@@ -69,6 +95,7 @@ private:
  *************************************************************/
 class Frame
 {
+
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
     Frame( uint32_t width, uint32_t height );
@@ -136,27 +163,29 @@ public:
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
-    static void writeDebugPlane1( const char* filename, const cv::cuda::PtrStepSzb& plane );
-
-    template<class T>
-    static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>& plane );
-
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
     static void writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz );
-    static void debugPlotPointsIntoImage( const TriplePoint* array, uint32_t sz, cv::cuda::PtrStepSzb img );
-
 
     void writeHostDebugPlane( std::string filename, const cctag::Parameters& params );
+
     void hostDebugCompare( unsigned char* pix );
 
 private:
     Frame( );  // forbidden
     Frame( const Frame& );  // forbidden
 
+public:
+    struct EdgeHistInfo
+    {
+        int block_counter;
+    };
+
 private:
-    cv::cuda::PtrStepSzb _d_plane;
-    cv::cuda::PtrStepSzf _d_intermediate;
-    cv::cuda::PtrStepSzf _d_smooth;
+    EdgeHistInfo* _d_edge_hysteresis;
+
+    cv::cuda::PtrStepSzb   _d_plane;
+    cv::cuda::PtrStepSzf   _d_intermediate;
+    cv::cuda::PtrStepSzf   _d_smooth;
     cv::cuda::PtrStepSz16s _d_dx; // cv::cuda::PtrStepSzf _d_dx;
     cv::cuda::PtrStepSz16s _d_dy; // cv::cuda::PtrStepSzf _d_dy;
     cv::cuda::PtrStepSz32u _d_mag;
@@ -174,15 +203,6 @@ private:
     unsigned char* _h_debug_edges;
 
     Voting _vote;
-    // int2*                  _d_edgelist_1;
-    // TriplePoint*           _d_edgelist_2;
-    // uint32_t*              _d_edgelist_2_sz;
-    // int*                   _d_edgelist_3;
-    // uint32_t*              _d_edgelist_3_sz;
-    // int2*          _h_debug_edgelist;
-    // uint32_t       _h_edgelist_sz;
-    // TriplePoint*   _h_debug_edgelist_2;
-    // uint32_t       _h_edgelist_2_sz;
 
     FrameTexture*  _texture;
     FrameEvent*    _wait_for_upload;

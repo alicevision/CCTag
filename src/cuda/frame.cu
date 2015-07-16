@@ -66,6 +66,7 @@ Frame::~Frame( )
     delete [] _h_debug_edges;
     delete _texture;
 
+    POP_CUDA_FREE( _d_edge_hysteresis );
     POP_CUDA_FREE( _d_plane.data );
     POP_CUDA_FREE( _d_intermediate.data );
     POP_CUDA_FREE( _d_smooth.data );
@@ -75,8 +76,6 @@ Frame::~Frame( )
     POP_CUDA_FREE( _d_map.data );
     POP_CUDA_FREE( _d_hyst_edges.data );
     POP_CUDA_FREE( _d_edges.data );
-    // POP_CUDA_FREE( _d_next_edge_after.data );
-    // POP_CUDA_FREE( _d_next_edge_befor.data );
 
     cerr << "Released frame: " << getWidth() << "x" << getHeight() << endl;
 }

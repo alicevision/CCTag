@@ -407,16 +407,6 @@ void cctagDetectionFromEdges(
 #endif
 
   // sort candidates.
-#ifdef GRIFF_DEBUG
-  if( seeds.size() > 0 )
-  {
-    POP_INFO << "'optional' voting block is not really optional? " << seeds.size() << " seeds" << std::endl;
-  }
-  else
-  {
-    POP_INFO << "sorting empty edge point vector?" << std::endl;
-  }
-#endif // GRIFF_DEBUG
   // Sort the seeds based on the number of received votes.
   std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
 

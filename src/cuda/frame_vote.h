@@ -35,6 +35,8 @@ struct Voting
         release( );
     }
 
+    void debug_download( const cctag::Parameters& params );
+
     void alloc( const cctag::Parameters& params, size_t w, size_t h );
     void init( const cctag::Parameters& params, cudaStream_t stream );
     void release( );
@@ -46,8 +48,6 @@ struct Voting
                           cudaStream_t                 stream );
 
     bool constructLine( const cctag::Parameters&     params,
-                        const cv::cuda::PtrStepSz16s d_dx,
-                        const cv::cuda::PtrStepSz16s d_dy,
                         cudaStream_t                 stream );
 };
 
