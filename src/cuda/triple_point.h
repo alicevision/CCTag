@@ -13,8 +13,16 @@ namespace popart {
 struct TriplePoint
 {
     int2  coord;
-    int2  befor;
-    int2  after;
+    int2  d;     // hold d.x = dx, d.y = dy
+    union {
+        struct {
+            int2  befor;
+            int2  after;
+        } descending;
+        struct {
+            int processed;
+        } edgeLinking;
+    };
 
     // in the original code, chosen keeps list of voters
     // no possible here; we must invert this
@@ -46,31 +54,22 @@ struct TriplePoint
     }
 
     __host__
-    inline std::string debug_out( ) const {
-        std::ostringstream ostr;
+    inline void debug_out( std::ostream& ostr ) const {
         ostr << "orig=" << coord.x << " " << coord.y << " "
-             << "bef=" << befor.x << " " << befor.y << " "
-             << "aft=" << after.x << " " << after.y;
+             << "bef=" << descending.befor.x << " " << descending.befor.y << " "
+             << "aft=" << descending.after.x << " " << descending.after.y;
         if( _coords_idx != 0 ) {
             for( int i=0; i<_coords_idx; i++ ) {
                 ostr << " (" << _coords[i].x << "," << _coords[i].y << ")";
             }
         }
-        return ostr.str();
-
     }
 
     __host__
-    inline void debug_out( std::ostream& ostr ) const {
-        ostr << "orig=" << coord.x << " " << coord.y << " "
-             << "bef=" << befor.x << " " << befor.y << " "
-             << "aft=" << after.x << " " << after.y;
-        if( _coords_idx != 0 ) {
-            for( int i=0; i<_coords_idx; i++ ) {
-                ostr << " (" << _coords[i].x << "," << _coords[i].y << ")";
-            }
-        }
-
+    inline std::string debug_out( ) const {
+        std::ostringstream ostr;
+        debug_out( ostr );
+        return ostr.str();
     }
 #endif
 };

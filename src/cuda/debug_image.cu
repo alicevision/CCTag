@@ -281,7 +281,7 @@ void DebugImage::plotLines( EdgeList<TriplePoint>& points,
      * image with brightness 3. */
     for( ; out_it != out_end; out_it++ ) {
         const int2& coord = out_it->coord; // array[i].coord;
-        const int2& befor = out_it->befor; // array[i].befor;
+        const int2& befor = out_it->descending.befor; // array[i].befor;
 
         if( outOfBounds( coord.x, coord.y, img ) ) {
             cout << "Coord of point (" << coord.x << "," << coord.y << ") is out of bounds" << endl;

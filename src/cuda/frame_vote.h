@@ -48,8 +48,6 @@ struct Voting
                           cudaStream_t                 stream );
 
     bool constructLine( const cctag::Parameters&     params,
-                        const cv::cuda::PtrStepSz16s d_dx,
-                        const cv::cuda::PtrStepSz16s d_dy,
                         cudaStream_t                 stream );
 };
 

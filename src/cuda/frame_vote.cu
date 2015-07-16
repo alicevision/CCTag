@@ -11,7 +11,7 @@
 
 using namespace std;
 
-#define MAX_CROWNS  5
+#define COMPRESS_VOTING_AND_SELECT
 
 namespace popart
 {
@@ -47,13 +47,13 @@ void debug_inner_test_consistency( int                            p_idx,
         assert( 0 );
     }
 
-    if( outOfBounds( p->befor, edgepoint_index_table ) ) {
-        printf("Before coordinations (%d,%d) do not fit into lookup tables\n", p->befor.x, p->befor.y );
+    if( outOfBounds( p->descending.befor, edgepoint_index_table ) ) {
+        printf("Before coordinations (%d,%d) do not fit into lookup tables\n", p->descending.befor.x, p->descending.befor.y );
         assert( 0 );
     }
 
-    if( outOfBounds( p->after, edgepoint_index_table ) ) {
-        printf("After coordinations (%d,%d) do not fit into lookup tables\n", p->after.x, p->after.y );
+    if( outOfBounds( p->descending.after, edgepoint_index_table ) ) {
+        printf("After coordinations (%d,%d) do not fit into lookup tables\n", p->descending.after.x, p->descending.after.y );
         assert( 0 );
     }
 }
@@ -92,7 +92,7 @@ TriplePoint* find_befor( const TriplePoint*       p,
                          cv::cuda::PtrStepSz32s   edgepoint_index_table,
                          DevEdgeList<TriplePoint> chained_edgecoords )
 {
-    return find_neigh( p->befor, edgepoint_index_table, chained_edgecoords );
+    return find_neigh( p->descending.befor, edgepoint_index_table, chained_edgecoords );
 }
 
 
@@ -102,35 +102,23 @@ TriplePoint* find_after( const TriplePoint*             p,
                                cv::cuda::PtrStepSz32s   edgepoint_index_table,
                                DevEdgeList<TriplePoint> chained_edgecoords )
 {
-    return find_neigh( p->after, edgepoint_index_table, chained_edgecoords );
+    return find_neigh( p->descending.after, edgepoint_index_table, chained_edgecoords );
 }
 
 __device__
 float inner_prod( const TriplePoint* l,
-                  const TriplePoint* r,
-                  cv::cuda::PtrStepSz16s d_dx,  // input
-                  cv::cuda::PtrStepSz16s d_dy ) // input
+                  const TriplePoint* r )
 {
     assert( l );
     assert( r );
-    const int2& l_coord = l->coord;
-    const int2& r_coord = r->coord;
-    assert( l_coord.x >= 0 );
-    assert( l_coord.x < d_dx.cols );
-    assert( l_coord.y >= 0 );
-    assert( l_coord.y < d_dx.rows );
-    assert( r_coord.x >= 0 );
-    assert( r_coord.x < d_dy.cols );
-    assert( r_coord.y >= 0 );
-    assert( r_coord.y < d_dy.rows );
-    const float l_dx = d_dx.ptr(l_coord.y)[l_coord.x];
-    const float l_dy = d_dy.ptr(l_coord.y)[l_coord.x];
-    const float r_dx = d_dx.ptr(r_coord.y)[r_coord.x];
-    const float r_dy = d_dy.ptr(r_coord.y)[r_coord.x];
+    const int16_t l_dx = l->d.x;
+    const int16_t l_dy = l->d.y;
+    const int16_t r_dx = r->d.x;
+    const int16_t r_dy = r->d.y;
     assert( l_dx != 0 || l_dy != 0 );
     assert( r_dx != 0 || r_dy != 0 );
-    const float ret  = l_dx * r_dx + l_dy * r_dy;
-    // assert( ret != 0 ); <- this can actually be 0 ?
+    const float ret  = (float)l_dx * (float)r_dx
+                     + (float)l_dy * (float)r_dy;
     return ret;
 
     // Point2dN l ( l_dx, l_dy );
@@ -165,6 +153,7 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
 
 __device__
 bool gradient_descent_inner( int4&                  out_edge_info,
+                             short2&                out_edge_d,
                              DevEdgeList<int2>      all_edgecoords,
                              cv::cuda::PtrStepSzb   edge_image,
                              uint32_t               nmax,
@@ -195,8 +184,10 @@ bool gradient_descent_inner( int4&                  out_edge_info,
     }
 
     float  e     = 0.0f;
-    float  dx    = direction * d_dx.ptr(idy)[idx];
-    float  dy    = direction * d_dy.ptr(idy)[idx];
+    out_edge_d.x = d_dx.ptr(idy)[idx];
+    out_edge_d.y = d_dy.ptr(idy)[idx];
+    float  dx    = direction * out_edge_d.x;
+    float  dy    = direction * out_edge_d.y;
 
     assert( dx!=0 || dy!=0 );
 
@@ -217,8 +208,8 @@ bool gradient_descent_inner( int4&                  out_edge_info,
     if ( dx*dx+dy*dy > thrGradient ) {
         const float dxRef = dx;
         const float dyRef = dy;
-        const float dx2 = d_dx.ptr(idy)[idx];
-        const float dy2 = d_dy.ptr(idy)[idx];
+        const float dx2 = out_edge_d.x; // d_dx.ptr(idy)[idx];
+        const float dy2 = out_edge_d.y; // d_dy.ptr(idy)[idx];
         const float compdir = dx2*dxRef+dy2*dyRef;
         // dir = ( compdir < 0 ) ? -1 : 1;
         direction = d_sign( compdir );
@@ -295,12 +286,14 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
     assert( blockDim.x * gridDim.x < all_edgecoords.Size() + 32 );
     assert( chained_edgecoords.Size() <= 2*all_edgecoords.Size() );
 
-    int4 out_edge_info;
-    bool keep;
+    int4   out_edge_info;
+    short2 out_edge_d;
+    bool   keep;
     // before -1  if threadIdx.y == 0
     // after   1  if threadIdx.y == 1
 
     keep = gradient_descent_inner( out_edge_info,
+                                   out_edge_d,
                                    all_edgecoords,
                                    edge_image,
                                    nmax,
@@ -327,10 +320,12 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
     TriplePoint out_edge;
     out_edge.coord.x = keep ? out_edge_info.x : 0;
     out_edge.coord.y = keep ? out_edge_info.y : 0;
-    out_edge.befor.x = keep ? merge_directions[0][threadIdx.x].x : 0;
-    out_edge.befor.y = keep ? merge_directions[0][threadIdx.x].y : 0;
-    out_edge.after.x = keep ? merge_directions[1][threadIdx.x].x : 0;
-    out_edge.after.y = keep ? merge_directions[1][threadIdx.x].y : 0;
+    out_edge.d.x     = keep ? out_edge_d.x : 0;
+    out_edge.d.y     = keep ? out_edge_d.y : 0;
+    out_edge.descending.befor.x = keep ? merge_directions[0][threadIdx.x].x : 0;
+    out_edge.descending.befor.y = keep ? merge_directions[0][threadIdx.x].y : 0;
+    out_edge.descending.after.x = keep ? merge_directions[1][threadIdx.x].x : 0;
+    out_edge.descending.after.y = keep ? merge_directions[1][threadIdx.x].y : 0;
     out_edge.my_vote            = 0;
     out_edge.chosen_flow_length = 0.0f;
     out_edge._winnerSize        = 0;
@@ -371,26 +366,18 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
     if( keep && write_index < max_num_edges ) {
-        assert( out_edge.coord.x != out_edge.befor.x || out_edge.coord.y != out_edge.befor.y );
-        assert( out_edge.coord.x != out_edge.after.x || out_edge.coord.y != out_edge.after.y );
-        assert( out_edge.befor.x != out_edge.after.x || out_edge.befor.y != out_edge.after.y );
+        assert( out_edge.coord.x != out_edge.descending.befor.x ||
+                out_edge.coord.y != out_edge.descending.befor.y );
+        assert( out_edge.coord.x != out_edge.descending.after.x ||
+                out_edge.coord.y != out_edge.descending.after.y );
+        assert( out_edge.descending.befor.x != out_edge.descending.after.x ||
+                out_edge.descending.befor.y != out_edge.descending.after.y );
 
         /* At this point we know that we will keep the point.
          * Obviously, pointer chains in CUDA are tricky, but we can use index
          * chains based on the element's offset index in chained_edgecoord_list.
-         * We use atomic exchange for the chaining operation.
-         * Actually, for coord, we don't have to do it because there is a unique
-         * mapping kernel instance to coord.
-         * The after table _d_next_edge_after, on the hand, may form a true
-         * chain.
          */
         edgepoint_index_table.ptr(out_edge.coord.y)[out_edge.coord.x] = write_index;
-
-        // int* p_after = &d_next_edge_after.ptr(out_edge.after.y)[out_edge.after.x];
-        // out_edge.next_after = atomicExch( p_after, write_index );
-
-        // int* p_befor = &d_next_edge_befor.ptr(out_edge.befor.y)[out_edge.befor.x];
-        // out_edge.next_befor = atomicExch( p_befor, write_index );
 
         chained_edgecoords.ptr[write_index] = out_edge;
     }
@@ -412,8 +399,6 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
 __device__
 const TriplePoint* construct_line_inner(
     DevEdgeList<TriplePoint>       chained_edgecoords,
-    const cv::cuda::PtrStepSz16s   d_dx,
-    const cv::cuda::PtrStepSz16s   d_dy,
     const cv::cuda::PtrStepSz32s   edgepoint_index_table,
     const size_t                   numCrowns,
     const float                    ratioVoting )
@@ -453,7 +438,7 @@ const TriplePoint* construct_line_inner(
 #ifndef NDEBUG
     const int vDistMax  = numCrowns * 2 - 1;
 #endif // NDEBUG
-    float     vDist[MAX_CROWNS * 2 - 1];
+    float     vDist[RESERVE_MEM_MAX_CROWNS * 2 - 1];
     int flagDist = 1;
 
     // Length of the reconstructed field line approximation between the two
@@ -461,7 +446,7 @@ const TriplePoint* construct_line_inner(
     float totalDistance = 0.0;
 
     // compute difference in subsequent gradients orientation
-    float cosDiffTheta = -vote::inner_prod( p, current, d_dx, d_dy );
+    float cosDiffTheta = -vote::inner_prod( p, current );
     if( cosDiffTheta < 0.0 ) {
         return 0;
     }
@@ -492,7 +477,7 @@ const TriplePoint* construct_line_inner(
 #endif
 
         // Check the difference of two consecutive angles
-        cosDiffTheta = -vote::inner_prod( target, current, d_dx, d_dy );
+        cosDiffTheta = -vote::inner_prod( target, current );
         if( cosDiffTheta < 0.0 ) {
             return 0;
         }
@@ -526,7 +511,7 @@ const TriplePoint* construct_line_inner(
             return 0;
         }
 
-        cosDiffTheta = -vote::inner_prod( target, current, d_dx, d_dy );
+        cosDiffTheta = -vote::inner_prod( target, current );
         if( cosDiffTheta < 0.0 ) {
             return 0;
         }
@@ -593,16 +578,12 @@ __global__
 void construct_line( DevEdgeList<int>             edge_indices,       // output
                      DevEdgeList<TriplePoint>     chained_edgecoords, // input (modified)
                      const int                    edge_index_max,     // input
-                     const cv::cuda::PtrStepSz16s d_dx,               // input
-                     const cv::cuda::PtrStepSz16s d_dy,               // input
                      const cv::cuda::PtrStepSz32s edgepoint_index_table, // input
                      const size_t                 numCrowns,
                      const float                  ratioVoting )
 {
     const TriplePoint* chosen =
         construct_line_inner( chained_edgecoords,     // input
-                              d_dx,             // input
-                              d_dy,             // input
                               edgepoint_index_table, // input
                               numCrowns,
                               ratioVoting );
@@ -630,8 +611,34 @@ void construct_line( DevEdgeList<int>             edge_indices,       // output
     }
 }
 
+__device__ inline
+int count_winners( const int                       chosen_edge_index,
+                   TriplePoint*                    chosen_edge,
+                   const DevEdgeList<TriplePoint>& array )
+{
+    int   winner_size = 0;
+    float flow_length = 0.0f;
+
+    /* This loop looks dangerous, but it is actually faster than
+     * a manually partially unrolled loop.
+     */
+    const int voter_list_size = array.Size();
+    for( int i=0; i<voter_list_size; i++ )
+    // for( int i=0; i<chained_edgecoords.Size(); i++ )
+    {
+        if( array.ptr[i].my_vote == chosen_edge_index ) {
+            winner_size += 1;
+            flow_length += array.ptr[i].chosen_flow_length;
+        }
+    }
+    chosen_edge->_winnerSize = winner_size;
+    chosen_edge->_flowLength = flow_length / winner_size;
+    return winner_size;
+}
+
 } // namespace vote
 
+#ifndef COMPRESS_VOTING_AND_SELECT
 /* For all chosen inner points, compute the average flow length and the
  * number of voters, and store in the TriplePoint structure of the chosen
  * inner point.
@@ -652,6 +659,10 @@ void vote_eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input
 
     const int    chosen_edge_index = edge_indices.ptr[offset];
     TriplePoint* chosen_edge = &chained_edgecoords.ptr[chosen_edge_index];
+#if 1
+    vote::count_winners( chosen_edge_index, chosen_edge, chained_edgecoords );
+#else
+
     int          winner_size = 0;
     float        flow_length = 0.0f;
 
@@ -669,42 +680,9 @@ void vote_eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input
     }
     chosen_edge->_winnerSize = winner_size;
     chosen_edge->_flowLength = flow_length / winner_size;
+#endif
 }
-
-#ifndef NDEBUG
-__global__
-void print_edgelist( int*     d_edgelist_3,
-                     uint32_t d_edgelist_3_sz )
-{
-    for( int i=0; i<d_edgelist_3_sz; i++ ) {
-        printf( "  i=%d e[i]=%d\n", i, d_edgelist_3[i] );
-    }
-}
-
-__global__
-void print_edgelist_3( DevEdgeList<TriplePoint> chained_edgecoords,
-                       int*                     d_edgelist_3,
-                       uint32_t                 d_edgelist_3_sz )
-{
-    for( int i=0; i<d_edgelist_3_sz; i++ ) {
-        int inner_point_index = d_edgelist_3[i];
-        TriplePoint* chosen = &chained_edgecoords.ptr[inner_point_index];
-        printf( "  i=%d e[i]=%d (%d,%d) has %d voters, %f avg len\n",
-                i,
-                inner_point_index,
-                chosen->coord.x,
-                chosen->coord.y,
-                chosen->_winnerSize,
-                chosen->_flowLength );
-        for( int j=0; j<chained_edgecoords.Size(); j++ ) {
-            const TriplePoint& voter = chained_edgecoords.ptr[j];
-            if( voter.my_vote == inner_point_index ) {
-                printf("    voter for %d: (%d,%d)\n", inner_point_index, voter.coord.x, voter.coord.y );
-            }
-        }
-    }
-}
-#endif // NDEBUG
+#endif // not COMPRESSED
 
 struct NumVotersIsGreaterEqual
 {
@@ -719,12 +697,23 @@ struct NumVotersIsGreaterEqual
         , _array( _d_array )
     {}
 
-    CUB_RUNTIME_FUNCTION
-    __host__ __device__
+#ifdef COMPRESS_VOTING_AND_SELECT
+    // CUB_RUNTIME_FUNCTION
+    __device__
+    __forceinline__
+    bool operator()(const int &a) const {
+        TriplePoint* chosen_edge = &_array.ptr[a];
+        int winner_size = vote::count_winners( a, chosen_edge, _array );
+        return (winner_size >= _compare);
+    }
+#else // not COMPRESS_VOTING_AND_SELECT
+    // CUB_RUNTIME_FUNCTION
+    __device__
     __forceinline__
     bool operator()(const int &a) const {
         return (_array.ptr[a]._winnerSize >= _compare);
     }
+#endif // not COMPRESS_VOTING_AND_SELECT
 };
 
 __host__
@@ -789,8 +778,6 @@ bool Voting::gradientDescent( const cctag::Parameters&     params,
 
 __host__
 bool Voting::constructLine( const cctag::Parameters&     params,
-                            const cv::cuda::PtrStepSz16s d_dx,
-                            const cv::cuda::PtrStepSz16s d_dy,
                             cudaStream_t                 stream )
 {
     cout << "  Enter " << __FUNCTION__ << endl;
@@ -831,8 +818,6 @@ bool Voting::constructLine( const cctag::Parameters&     params,
         ( _edge_indices.dev,        // output
           _chained_edgecoords.dev,  // input
           params._maxEdges,         // input
-          d_dx,                     // input
-          d_dy,                     // input
           _d_edgepoint_index_table, // input
           params._nCrowns,          // input
           params._ratioVoting );    // input
@@ -852,9 +837,10 @@ void Frame::applyVote( const cctag::Parameters& params )
 {
     cout << "Enter " << __FUNCTION__ << endl;
 
-    if( params._nCrowns > MAX_CROWNS ) {
+    if( params._nCrowns > RESERVE_MEM_MAX_CROWNS ) {
         cerr << "Error in " << __FILE__ << ":" << __LINE__ << ":" << endl
-             << "    static maximum of parameter crowns is " << MAX_CROWNS
+             << "    static maximum of parameter crowns is "
+             << RESERVE_MEM_MAX_CROWNS
              << ", parameter file wants " << params._nCrowns << endl
              << "    edit " << __FILE__ << " and recompile" << endl
              << endl;
@@ -886,8 +872,6 @@ void Frame::applyVote( const cctag::Parameters& params )
 #endif // NDEBUG
 
     success = _vote.constructLine( params,
-                                   _d_dx,
-                                   _d_dy,
                                    _stream );
 
     if( not success ) {
@@ -972,8 +956,14 @@ void Frame::applyVote( const cctag::Parameters& params )
                                        sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
 
-        // int num_selected_out = _vote._edge_indices_2.host.size;
-
+#ifdef COMPRESS_VOTING_AND_SELECT
+        /* The computation of vote_eval_chosen can be
+         * included into NumVotersIsGreaterEqual::operator()
+         */
+#else // COMPRESS_VOTING_AND_SELECT
+        /* Add number of voters to chosen inner points, and
+         * add average flow length to chosen inner points.
+         */
         dim3 block;
         dim3 grid;
 
@@ -984,14 +974,12 @@ void Frame::applyVote( const cctag::Parameters& params )
         grid.y  = 1;
         grid.z  = 1;
 
-        /* Add number of voters to chosen inner points, and
-         * add average flow length to chosen inner points.
-         */
         vote_eval_chosen
             <<<grid,block,0,_stream>>>
             ( _vote._chained_edgecoords.dev,
               _vote._edge_indices_2.dev );
         POP_CHK_CALL_IFSYNC;
+#endif // COMPRESS_VOTING_AND_SELECT
 
         // safety: SortKeys is allowed to alter assist_buffer_sz
         assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
@@ -1019,15 +1007,6 @@ void Frame::applyVote( const cctag::Parameters& params )
         POP_CUDA_SYNC( _stream );
 
         cout << "  Number of viable inner points: " << _vote._edge_indices.host.size << endl;
-
-#ifndef NDEBUG
-#if 0
-        print_edgelist_3<<<1,1,0,_stream>>>( _vote._chained_edgecoords.dev,
-                                             _vote._edge_indices.dev.ptr,
-                                             _vote._edge_indices.host.size );
-        POP_CHK_CALL_IFSYNC;
-#endif // 0
-#endif // NDEBUG
     }
     cout << "Leave " << __FUNCTION__ << endl;
 }

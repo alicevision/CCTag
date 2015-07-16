@@ -11,28 +11,30 @@
 #include "frame_vote.h"
 #include "triple_point.h"
 
-#undef  DEBUG_WRITE_ORIGINAL_AS_PGM
-#undef  DEBUG_WRITE_ORIGINAL_AS_ASCII
-#undef  DEBUG_WRITE_GAUSSIAN_AS_PGM
-#undef  DEBUG_WRITE_GAUSSIAN_AS_ASCII
-#undef  DEBUG_WRITE_DX_AS_PGM
-#undef  DEBUG_WRITE_DX_AS_ASCII
-#undef  DEBUG_WRITE_DY_AS_PGM
-#undef  DEBUG_WRITE_DY_AS_ASCII
-#undef  DEBUG_WRITE_MAG_AS_PGM
-#undef  DEBUG_WRITE_MAG_AS_ASCII
-#undef  DEBUG_WRITE_MAP_AS_PGM
-#undef  DEBUG_WRITE_MAP_AS_ASCII
-#undef  DEBUG_WRITE_HYSTEDGES_AS_PGM
+#define DEBUG_WRITE_ORIGINAL_AS_PGM
+#define DEBUG_WRITE_ORIGINAL_AS_ASCII
+#define DEBUG_WRITE_GAUSSIAN_AS_PGM
+#define DEBUG_WRITE_GAUSSIAN_AS_ASCII
+#define DEBUG_WRITE_DX_AS_PGM
+#define DEBUG_WRITE_DX_AS_ASCII
+#define DEBUG_WRITE_DY_AS_PGM
+#define DEBUG_WRITE_DY_AS_ASCII
+#define DEBUG_WRITE_MAG_AS_PGM
+#define DEBUG_WRITE_MAG_AS_ASCII
+#define DEBUG_WRITE_MAP_AS_PGM
+#define DEBUG_WRITE_MAP_AS_ASCII
+#define DEBUG_WRITE_HYSTEDGES_AS_PGM
 #define DEBUG_WRITE_EDGES_AS_PGM
 #define DEBUG_WRITE_EDGELIST_AS_PPM
-#undef  DEBUG_WRITE_EDGELIST_AS_ASCII
+#define DEBUG_WRITE_EDGELIST_AS_ASCII
 #define DEBUG_WRITE_VOTERS_AS_PPM
 #define DEBUG_WRITE_CHOSEN_AS_PPM
-#undef  DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
-#undef  DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
+#define DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
+#define DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
 
-#undef  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
+#define  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
+
+#define RESERVE_MEM_MAX_CROWNS  5
 
 /* A table is copied to constant memory containing sigma values
  * for Gauss filtering at the 0-offset, and the derivatives
@@ -172,7 +174,15 @@ private:
     Frame( );  // forbidden
     Frame( const Frame& );  // forbidden
 
+public:
+    struct EdgeHistInfo
+    {
+        int block_counter;
+    };
+
 private:
+    EdgeHistInfo* _d_edge_hysteresis;
+
     cv::cuda::PtrStepSzb   _d_plane;
     cv::cuda::PtrStepSzf   _d_intermediate;
     cv::cuda::PtrStepSzf   _d_smooth;
