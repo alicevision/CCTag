@@ -81,11 +81,10 @@ void detection(std::size_t frame, cctag::View& view, const cctag::Parameters & p
     CCTAG_COUT_NOENDL("Id : ");
 
     int i = 0;
+    output << "#frame " << frame << '\n';
+    output << markers.size() << '\n';
     BOOST_FOREACH(const cctag::CCTag & marker, markers) {
-      if (output.is_open())
-      {
-        output << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
-      }
+      output << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
       cctag::drawMarkerOnGilImage(view._view, marker, false);
       cctag::drawMarkerInfos(view._view, marker, false);
 
@@ -186,13 +185,21 @@ int main(int argc, char** argv)
   deviceInfo.print( );
 #endif // WITH_CUDA
 
-  CCTagVisualDebug::instance().initializeFolders( cmdline._filename, params._nCrowns );
   bfs::path myPath( cmdline._filename );
   std::string ext(myPath.extension().string());
 
   const bfs::path subFilenamePath(myPath.filename());
   const bfs::path parentPath( myPath.parent_path() == "" ? "." : myPath.parent_path());
-  const std::string outputFileName(parentPath.string() + "/cctag" + std::to_string(nCrowns) + "CC.out");
+  std::string outputFileName;
+  if (!bfs::is_directory(myPath))
+  {
+    CCTagVisualDebug::instance().initializeFolders( parentPath , params._nCrowns );
+    outputFileName = parentPath.string() + "/cctag" + std::to_string(nCrowns) + "CC.out";
+  }else
+  {
+    CCTagVisualDebug::instance().initializeFolders( myPath , params._nCrowns );
+    outputFileName = myPath.string() + "/cctag" + std::to_string(nCrowns) + "CC.out";
+  }
   std::ofstream outputFile;
   outputFile.open( outputFileName );
   
@@ -201,9 +208,6 @@ int main(int argc, char** argv)
     POP_INFO( "looking at image " << myPath.string() );
 
     cctag::View my_view( cmdline._filename );
-
-    rgb8_image_t& image = my_view._image;
-    rgb8_view_t&  svw   = my_view._view;
 
     // Increase image size.
     /*{
@@ -230,7 +234,7 @@ int main(int argc, char** argv)
 
     // play loop
     int lastFrame = video.get(CV_CAP_PROP_FRAME_COUNT);
-    int frameId = 0;
+    std::size_t frameId = 0;
     while( video.get(CV_CAP_PROP_POS_FRAMES) < lastFrame )
     {
       cv::Mat frame;
@@ -249,7 +253,31 @@ int main(int argc, char** argv)
       
       ++frameId; 
     }
-  } else {
+  } else if (bfs::is_directory(myPath)) {
+    CCTAG_COUT("*** Image sequence mode ***");
+
+    std::vector<bfs::path> vFileInFolder;
+
+    std::copy(bfs::directory_iterator(myPath), bfs::directory_iterator(), std::back_inserter(vFileInFolder)); // is directory_entry, which is
+    std::sort(vFileInFolder.begin(), vFileInFolder.end());
+
+    std::size_t frameId = 0;
+
+    for(const auto & fileInFolder : vFileInFolder) {
+      const std::string subExt(bfs::extension(fileInFolder));
+      
+      if ( (subExt == ".png") || (subExt == ".jpg") ) {
+        CCTAG_COUT( "Processing image " << fileInFolder.string() );
+
+        cctag::View my_view( fileInFolder.string() );
+        
+        // Call the CCTag detection
+        detection(frameId, my_view, params, bank, outputFile, fileInFolder.stem().string());
+        ++frameId;
+      }
+    }
+  }else
+  {
       throw std::logic_error("Unrecognized input.");
   }
   outputFile.close();

@@ -9,6 +9,7 @@
 #include <cctag/boostCv/cvImage.hpp>
 
 #include <boost/gil/image_view.hpp>
+#include <boost/filesystem.hpp>
 
 namespace cctag
 {
@@ -38,7 +39,7 @@ public:
 #endif
     }
     
-    void initializeFolders(const std::string & filename, std::size_t nCrowns = 4);
+    void initializeFolders(const boost::filesystem::path & filename, std::size_t nCrowns = 4);
 
     void newSession(const std::string & sessionName);
 
