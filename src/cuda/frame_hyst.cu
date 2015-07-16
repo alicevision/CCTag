@@ -20,12 +20,25 @@ uint8_t get( const cv::cuda::PtrStepSzb map, const int idx, const int idy )
 }
 
 #ifdef ABBREVIATED_HYSTERESIS
+// HYST    4 x 32 -> >10
+// HYST    2 x 32 -> >11.5
+// HYST   16 x 16 -> 9.380 - 10.426
+// HYST    8 x 32 -> 9.6 - 9.9
+// HYST   32 x 32 -> 9.460 - 9.793
+// HYST    8 x  8 -> 9.7 - 10.16
+#define HYST_H   32
+#define HYST_W   32
+
+#if HYST_W < HYST_H
+#error The code requires W<=32 and H<=W
+#endif
+
 __device__
 inline
 bool edge_loop( cv::cuda::PtrStepSzb map )
 {
-    const int idx  = blockIdx.x * 32 + threadIdx.x;
-    const int idy  = blockIdx.y * 32 + threadIdx.y;
+    const int idx  = blockIdx.x * HYST_W + threadIdx.x;
+    const int idy  = blockIdx.y * HYST_H + threadIdx.y;
 
     if( idx == 0 || idy == 0 || idx >= map.cols-1 || idy >= map.rows-1 ) return false;
 
@@ -53,7 +66,7 @@ bool edge_loop( cv::cuda::PtrStepSzb map )
 __device__
 bool edge_block_loop( cv::cuda::PtrStepSzb map )
 {
-    __shared__ bool continuation[32];
+    __shared__ bool continuation[HYST_H];
     bool            again = true;
     bool            nothing_changed = true;
 
@@ -62,7 +75,7 @@ bool edge_block_loop( cv::cuda::PtrStepSzb map )
         bool any_marks = __any( mark );
         if( threadIdx.x == 0 ) continuation[threadIdx.y] = any_marks;
         __syncthreads();
-        mark = continuation[threadIdx.x];
+        mark = threadIdx.x < HYST_H ? continuation[threadIdx.x] : false;
         __syncthreads();
         again = __any( mark );
         if( again ) nothing_changed = false;
@@ -97,10 +110,10 @@ void Frame::applyHyst( const cctag::Parameters & params )
 
     dim3 block;
     dim3 grid;
-    block.x = 32;
-    block.y = 32;
-    grid.x  = ( getWidth()  / 32 ) + ( getWidth()  % 32 == 0 ? 0 : 1 );
-    grid.y  = ( getHeight() / 32 ) + ( getHeight() % 32 == 0 ? 0 : 1 );
+    block.x = HYST_W;
+    block.y = HYST_H;
+    grid.x  = ( getWidth()  / HYST_W ) + ( getWidth()  % HYST_W == 0 ? 0 : 1 );
+    grid.y  = ( getHeight() / HYST_H ) + ( getHeight() % HYST_H == 0 ? 0 : 1 );
 
     EdgeHistInfo info;
     do

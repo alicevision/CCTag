@@ -11,7 +11,14 @@
 
 using namespace std;
 
-#define COMPRESS_VOTING_AND_SELECT
+/* The idea of COMPRESS_VOTING_AND_SELECT was to merge
+ * voting into the CUB::DeviceSelect::If operation.
+ */
+#undef  COMPRESS_VOTING_AND_SELECT
+/* DO NOT USE COMPRESS_VOTING_AND_SELECT
+ * This has increased runtime from 9.4ms to 85.6ms !!!
+ * Try again if Dynamic Parallelism ever works.
+ */
 
 namespace popart
 {
@@ -698,7 +705,6 @@ struct NumVotersIsGreaterEqual
     {}
 
 #ifdef COMPRESS_VOTING_AND_SELECT
-    // CUB_RUNTIME_FUNCTION
     __device__
     __forceinline__
     bool operator()(const int &a) const {
@@ -929,7 +935,6 @@ void Frame::applyVote( const cctag::Parameters& params )
         if( d_keys.d_buffers[d_keys.selector] == _vote._edge_indices_2.dev.ptr ) {
             std::swap( _vote._edge_indices.dev.ptr,   _vote._edge_indices_2.dev.ptr );
             std::swap( _vote._edge_indices.dev.size,  _vote._edge_indices_2.dev.size );
-            std::swap( _vote._edge_indices.host.size, _vote._edge_indices_2.host.size );
         }
 
         // safety: SortKeys is allowed to alter assist_buffer_sz
@@ -943,7 +948,7 @@ void Frame::applyVote( const cctag::Parameters& params )
                                    _vote._edge_indices.dev.ptr,     // input
                                    _vote._edge_indices_2.dev.ptr,   // output
                                    _vote._edge_indices_2.dev.size,  // output
-                                   _vote._edge_indices_2.host.size, // input (unchanged in sort)
+                                   _vote._edge_indices.host.size,   // input (unchanged in sort)
                                    _stream );
         POP_CHK_CALL_IFSYNC;
 

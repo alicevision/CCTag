@@ -168,6 +168,8 @@ void DebugImage::writeASCII( const string&            filename,
         of << it->x << " " << it->y << endl;
     }
 }
+
+#ifndef NDEBUG
 __host__
 void DebugImage::writeASCII( const string&                   filename,
                              const std::vector<TriplePoint>& list )
@@ -181,6 +183,7 @@ void DebugImage::writeASCII( const string&                   filename,
         of << endl;
     }
 }
+#endif // NDEBUG
 
 void DebugImage::normalizeImage( cv::cuda::PtrStepSzb img, bool normalize )
 {
@@ -263,6 +266,7 @@ void DebugImage::plotOneLine( int2 from, int2 to, cv::cuda::PtrStepSzb img, int 
     }
 }
 
+#ifndef NDEBUG
 void DebugImage::plotLines( EdgeList<TriplePoint>& points,
                             int                    maxSize,
                             cv::cuda::PtrStepSzb   img,
@@ -311,6 +315,7 @@ void DebugImage::plotLines( EdgeList<TriplePoint>& points,
         }
     }
 }
+#endif // NDEBUG
 
 }; // namespace popart
 

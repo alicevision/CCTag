@@ -117,18 +117,22 @@ public:
                             const std::vector<int>& list );
     static void writeASCII( const std::string&       filename,
                             const std::vector<int2>& list );
+#ifndef NDEBUG
     static void writeASCII( const std::string&              filename,
                             const std::vector<TriplePoint>& list );
+#endif // NDEBUG
 
     /* This may draw quite many lines. If there are too many, use skip to
      * draw only some.
      */
+#ifndef NDEBUG
     static void plotLines( EdgeList<TriplePoint>& points,
                            int                    maxSize,
                            cv::cuda::PtrStepSzb   img,
                            bool                   normalize = true,
                            BaseColor              b = WHITE,
                            int                    skip = 0 );
+#endif // NDEBUG
     static void plotPoints( const std::vector<TriplePoint>& v,
                             cv::cuda::PtrStepSzb            img,
                             bool                            normalize = true,

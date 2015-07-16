@@ -259,6 +259,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     }
 #endif // DEBUG_WRITE_EDGELIST_AS_PPM
 
+#ifndef NDEBUG
 #ifdef DEBUG_WRITE_VOTERS_AS_PPM
     {
         /* Debugging immediately after gradientDescent.
@@ -279,7 +280,9 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
         DebugImage::writePPM( filename + "-voter-dots.ppm", edgeclone.e );
     }
 #endif // DEBUG_WRITE_VOTERS_AS_PPM
+#endif // NDEBUG
 
+#ifndef NDEBUG
 #ifdef DEBUG_WRITE_CHOSEN_AS_PPM
     {
         /* _chained_edgecoords.dev.size has been loaded into .host.size
@@ -310,6 +313,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
         }
     }
 #endif // DEBUG_WRITE_CHOSEN_AS_PPM
+#endif // NDEBUG
 }
 
 }; // namespace popart
