@@ -13,6 +13,7 @@
 
 #include "frame.h"
 #include "debug_image.h"
+#include "edge_list.h"
 #include "assist.h"
 
 #undef CHATTY_WRITE_DEBUG_PLANE
@@ -239,6 +240,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     DebugImage::writePGMscaled( filename + "-edges.pgm", edges );
 #endif // DEBUG_WRITE_EDGES_AS_PGM
 
+#ifndef NDEBUG
 #ifdef DEBUG_WRITE_EDGELIST_AS_PPM
     {
         /* Very basic debugging stage:
@@ -259,7 +261,6 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     }
 #endif // DEBUG_WRITE_EDGELIST_AS_PPM
 
-#ifndef NDEBUG
 #ifdef DEBUG_WRITE_VOTERS_AS_PPM
     {
         /* Debugging immediately after gradientDescent.

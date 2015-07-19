@@ -94,6 +94,9 @@ void pop_cuda_malloc( void** ptr,  uint32_t byte_size, const char* file, uint32_
     cudaError_t err;
     err = cudaMalloc( ptr, byte_size );
     POP_CUDA_FATAL_TEST_FL( err, "cudaMalloc failed to allocate device memory: ", file, line );
+#ifndef NDEBUG
+    pop_cuda_memset_sync( *ptr, 255, byte_size, file, line );
+#endif // NDEBUG
 }
 
 void pop_cuda_malloc_pitch( void** ptr, size_t* byte_pitch, uint32_t byte_width, uint32_t byte_height, const char* file, uint32_t line )
@@ -101,6 +104,9 @@ void pop_cuda_malloc_pitch( void** ptr, size_t* byte_pitch, uint32_t byte_width,
     cudaError_t err;
     err = cudaMallocPitch( ptr, byte_pitch, byte_width, byte_height );
     POP_CUDA_FATAL_TEST_FL( err, "cudaMallocPitch failed to allocate device memory: ", file, line );
+#ifndef NDEBUG
+    pop_cuda_memset_sync( *ptr, 255, (*byte_pitch)*byte_height, file, line );
+#endif // NDEBUG
 }
 
 void pop_cuda_free( void* ptr, const char* file, uint32_t line )

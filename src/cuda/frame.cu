@@ -66,7 +66,8 @@ Frame::~Frame( )
     delete [] _h_debug_edges;
     delete _texture;
 
-    POP_CUDA_FREE( _d_edge_hysteresis );
+    POP_CUDA_FREE( _d_hysteresis_block_counter );
+    POP_CUDA_FREE( _d_connect_component_block_counter );
     POP_CUDA_FREE( _d_plane.data );
     POP_CUDA_FREE( _d_intermediate.data );
     POP_CUDA_FREE( _d_smooth.data );

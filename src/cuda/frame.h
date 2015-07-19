@@ -11,27 +11,28 @@
 #include "frame_vote.h"
 #include "triple_point.h"
 
-#undef  DEBUG_WRITE_ORIGINAL_AS_PGM
+#define DEBUG_WRITE_ORIGINAL_AS_PGM
 #undef  DEBUG_WRITE_ORIGINAL_AS_ASCII
-#undef  DEBUG_WRITE_GAUSSIAN_AS_PGM
+#define DEBUG_WRITE_GAUSSIAN_AS_PGM
 #undef  DEBUG_WRITE_GAUSSIAN_AS_ASCII
-#undef  DEBUG_WRITE_DX_AS_PGM
+#define DEBUG_WRITE_DX_AS_PGM
 #undef  DEBUG_WRITE_DX_AS_ASCII
-#undef  DEBUG_WRITE_DY_AS_PGM
+#define DEBUG_WRITE_DY_AS_PGM
 #undef  DEBUG_WRITE_DY_AS_ASCII
-#undef  DEBUG_WRITE_MAG_AS_PGM
+#define DEBUG_WRITE_MAG_AS_PGM
 #undef  DEBUG_WRITE_MAG_AS_ASCII
-#undef  DEBUG_WRITE_MAP_AS_PGM
+#define DEBUG_WRITE_MAP_AS_PGM
 #undef  DEBUG_WRITE_MAP_AS_ASCII
-#undef  DEBUG_WRITE_HYSTEDGES_AS_PGM
+#define DEBUG_WRITE_HYSTEDGES_AS_PGM
 #undef  DEBUG_WRITE_EDGES_AS_PGM
-#undef  DEBUG_WRITE_EDGELIST_AS_PPM
+#define DEBUG_WRITE_EDGELIST_AS_PPM
 #undef  DEBUG_WRITE_EDGELIST_AS_ASCII
 #define DEBUG_WRITE_VOTERS_AS_PPM
 #define DEBUG_WRITE_CHOSEN_AS_PPM
 #define DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
 #define DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
 
+#define  DEBUG_RETURN_AFTER_GRADIENT_DESCENT
 #define  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
 
 #define RESERVE_MEM_MAX_CROWNS  5
@@ -149,17 +150,20 @@ public:
     // implemented in frame_gaussian.cu
     void applyGauss( const cctag::Parameters& param );
 
-    // implemented in frame_apply.cu
+    // implemented in frame_magmap.cu
     void applyMag( const cctag::Parameters& param );
 
     // implemented in frame_hyst.cu
     void applyHyst( const cctag::Parameters& param );
 
-    // implemented in frame_apply.cu
+    // implemented in frame_thin.cu
     void applyThinning( const cctag::Parameters& param );
 
     // implemented in frame_vote.cu
     void applyVote( const cctag::Parameters& param );
+
+    // implemented in frame_link.cu
+    void applyLink( const cctag::Parameters& param );
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
@@ -174,14 +178,9 @@ private:
     Frame( );  // forbidden
     Frame( const Frame& );  // forbidden
 
-public:
-    struct EdgeHistInfo
-    {
-        int block_counter;
-    };
-
 private:
-    EdgeHistInfo* _d_edge_hysteresis;
+    int*                   _d_hysteresis_block_counter;
+    int*                   _d_connect_component_block_counter;
 
     cv::cuda::PtrStepSzb   _d_plane;
     cv::cuda::PtrStepSzf   _d_intermediate;

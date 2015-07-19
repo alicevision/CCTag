@@ -77,8 +77,11 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     _d_edges.cols = w;
     _d_edges.rows = h;
 
-    POP_CUDA_MALLOC( &ptr, sizeof(EdgeHistInfo) );
-    _d_edge_hysteresis = (EdgeHistInfo*)ptr;
+    POP_CUDA_MALLOC( &ptr, sizeof(int) );
+    _d_hysteresis_block_counter        = (int*)ptr;
+
+    POP_CUDA_MALLOC( &ptr, sizeof(int) );
+    _d_connect_component_block_counter = (int*)ptr;
 
     _vote.alloc( params, w, h );
 

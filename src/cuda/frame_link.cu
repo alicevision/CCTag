@@ -2,6 +2,8 @@
 #include <math_constants.h>
 
 #include "frame.h"
+#include "assist.h"
+#include "recursive_sweep.h"
 
 #define EDGE_NOT_FOUND -1
 #define CONVEXITY_LOST -2
@@ -12,6 +14,7 @@ using namespace std;
 namespace popart
 {
 
+#if 0 // UNUSED
 __constant__
 static int xoff_select[8]    =   { 1,  1,  0, -1, -1, -1,  0,  1};
 
@@ -230,7 +233,104 @@ void edge_linking( cv::cuda::PtrStepSzb     edges,
         }
     }
 }
+#endif // UNUSED
 
+
+#define LINK_REINIT_W   32
+#define LINK_REINIT_H   1
+
+namespace link
+{
+__global__
+void reinit_edge_image( cv::cuda::PtrStepSz32s out_img, cv::cuda::PtrStepSzb in_img )
+{
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int idy = blockIdx.y * blockDim.x + threadIdx.y;
+
+    if( not outOfBounds( idx, idy, in_img ) ) {
+        int val = in_img.ptr(idy)[idx];
+        val = ( val == 2 ) ? -1 : -0;
+        out_img.ptr(idy)[idx] = val;
+    }
+}
+
+__global__
+void init_seed_labels( cv::cuda::PtrStepSz32s         img,
+                       const DevEdgeList<int>         seed_indices,
+                       const DevEdgeList<TriplePoint> chained_edgecoords )
+{
+    const int offset = blockIdx.x * blockDim.x + threadIdx.x;
+    if( offset == 0 ) return;
+    if( offset >= seed_indices.Size() ) return;
+    const int label = seed_indices.ptr[offset];
+    const TriplePoint* p = &chained_edgecoords.ptr[label];
+    if( outOfBounds( p->coord.x, p->coord.y, img ) ) {
+        assert( not outOfBounds( p->coord.x, p->coord.y, img ) );
+        return;
+    }
+    img.ptr(p->coord.y)[p->coord.x] = label;
+}
+
+}; // namespace link
+
+__host__
+void Frame::applyLink( const cctag::Parameters& params )
+{
+    cout << "Enter " << __FUNCTION__ << endl;
+
+    if( _vote._edge_indices.host.size <= 0 ) {
+        cout << "Leave " << __FUNCTION__ << endl;
+        // We have note found any seed, return
+        return;
+    }
+
+    /* We could re-use edges, but it has only 1-byte cells.
+     * Seeds may have int-valued indices, so we need 4-byte cells.
+     * _d_intermediate is a float image, and can be used.
+     */
+    cv::cuda::PtrStepSz32s edge_cast( _d_intermediate );
+
+    /* Relabel the edge image. If the edge was 2 before, set it to -1.
+     * If it was anything else, set it to 0.
+     */
+    dim3 block;
+    dim3 grid;
+
+    block.x = LINK_REINIT_W;
+    block.y = LINK_REINIT_H;
+    block.z = 1;
+    grid.x  = grid_divide( _d_edges.cols, LINK_REINIT_W );
+    grid.y  = grid_divide( _d_edges.rows, LINK_REINIT_H );
+    grid.z  = 1;
+
+    link::reinit_edge_image
+        <<<grid,block,0,_stream>>>
+        ( edge_cast, _d_edges );
+
+    /* Seeds have an index in the _edge_indices list.
+     * For each of those seeds, mark their coordinate with a label.
+     * This label is their index in the _edge_indices list, because
+     * it is a unique int strictly > 0
+     */
+    block.x = 32;
+    block.y = 1;
+    block.z = 1;
+    grid.x  = grid_divide( _vote._edge_indices.host.size, 32 );
+    grid.y  = 1;
+    grid.z  = 1;
+
+    link::init_seed_labels
+        <<<grid,block,0,_stream>>>
+        ( edge_cast, _vote._edge_indices.dev, _vote._chained_edgecoords.dev );
+
+    /* Label connected components with highest label value.
+     * non-null means edge point, positive means point is labeled,
+     * highest label wins
+     */
+    recursive_sweep::connectComponents( edge_cast, _d_connect_component_block_counter, _stream );
+
+    cout << "Leave " << __FUNCTION__ << endl;
+}
 }; // namespace popart
 
 

@@ -1,13 +1,23 @@
 #pragma once
 
+#include <iostream>
 #include <cuda_runtime.h>
-// #include <assert.h>
-// #include <string>
-
 #include <opencv2/core/cuda_types.hpp>
+
+using namespace std;
+
+std::ostream& operator<<( std::ostream& ostr, const dim3& p );
 
 namespace popart
 {
+
+/* This computation is needed very frequently when a dim3 grid block is
+ * initialized. It ensure that the tail is not forgotten.
+ */
+inline int grid_divide( int size, int divider )
+{
+    return size / divider + ( size % divider != 0 ? 1 : 0 );
+}
 
 template <typename T>
 __device__ __host__
@@ -38,7 +48,8 @@ inline int d_sign( T value )
 }
 
 __device__
-inline bool reduceAND_32x32( bool cnt )
+inline
+bool reduce_OR_32x32( bool cnt )
 {
     __shared__ int reduce_array[32];
 

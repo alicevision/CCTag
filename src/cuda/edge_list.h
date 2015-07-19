@@ -25,7 +25,18 @@ struct DevEdgeList
     int* size;
 
     __device__
-    int Size() const { return *size; }
+    int Size() const
+    {
+        assert(size);
+        return *size;
+    }
+
+    __device__
+    void setSize( int sz )
+    {
+        assert(size);
+        *size = sz;
+    }
 };
 
 template <typename T>

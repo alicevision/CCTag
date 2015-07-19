@@ -12,14 +12,10 @@ namespace popart
 
 using namespace std;
 
-__device__
-inline
-uint8_t get( const cv::cuda::PtrStepSzb map, const int idx, const int idy )
-{
-    return map.ptr( clamp( idy, map.rows ) )[ clamp( idx, map.cols ) ];
-}
-
 #ifdef ABBREVIATED_HYSTERESIS
+
+namespace hysteresis
+{
 // HYST    4 x 32 -> >10
 // HYST    2 x 32 -> >11.5
 // HYST   16 x 16 -> 9.380 - 10.426
@@ -33,64 +29,198 @@ uint8_t get( const cv::cuda::PtrStepSzb map, const int idx, const int idy )
 #error The code requires W<=32 and H<=W
 #endif
 
+__shared__ volatile uint8_t array[HYST_H+2][HYST_W+2];
+
 __device__
 inline
-bool edge_loop( cv::cuda::PtrStepSzb map )
+uint8_t get( cv::cuda::PtrStepSzb img, const int idx, const int idy )
 {
-    const int idx  = blockIdx.x * HYST_W + threadIdx.x;
-    const int idy  = blockIdx.y * HYST_H + threadIdx.y;
-
-    if( idx == 0 || idy == 0 || idx >= map.cols-1 || idy >= map.rows-1 ) return false;
-
-    uint8_t val = get( map, idx, idy );
-
-    if( val != 1 ) return false;
-
-    int n;
-    n  = ( get( map, idx-1, idy-1 ) == 2 );
-    n += ( get( map, idx  , idy-1 ) == 2 );
-    n += ( get( map, idx+1, idy-1 ) == 2 );
-    n += ( get( map, idx-1, idy   ) == 2 );
-    n += ( get( map, idx+1, idy   ) == 2 );
-    n += ( get( map, idx-1, idy+1 ) == 2 );
-    n += ( get( map, idx  , idy+1 ) == 2 );
-    n += ( get( map, idx+1, idy+1 ) == 2 );
-
-    if( n == 0 ) return false;
-
-    map.ptr(idy)[idx] = 2;
-
-    return true;
+#if 1
+    return img.ptr( clamp( idy, img.rows ) )[ clamp( idx, img.cols ) ];
+#else
+    int x = clamp( idx, img.cols );
+    int y = clamp( idy, img.rows );
+    assert( x >= 0 );
+    assert( y >= 0 );
+    assert( x < img.cols );
+    assert( y < img.rows );
+    uint8_t  val = img.ptr(y)[x];
+    if( val > 2 ) {
+        printf("idx=%d -> x=%d, idy=%d -> y=%d, img.cols=%d img.rows=%d val=%d\n",
+            idx, x, idy, y, img.cols, img.rows, val );
+        assert( val <= 2 );
+    }
+    return val;
+#endif
 }
 
 __device__
-bool edge_block_loop( cv::cuda::PtrStepSzb map )
+void load( cv::cuda::PtrStepSzb img )
+{
+#if 0
+    //
+    // After several dead ends, this is the most trivial, most
+    // brute-force approach for loading that I could find.
+    //
+    const int srcidx = blockIdx.x * HYST_W + threadIdx.x;
+    const int srcidy = blockIdx.y * HYST_H + threadIdx.y;
+    // const int dstidx = threadIdx.x;
+    // const int dstidy = threadIdx.y;
+
+    volatile uint8_t val[3][3];
+    val[0][0] = get( img, srcidx-1, srcidy-1 );
+    val[0][1] = get( img, srcidx  , srcidy-1 );
+    val[0][2] = get( img, srcidx+1, srcidy-1 );
+    val[1][0] = get( img, srcidx-1, srcidy   );
+    val[1][1] = get( img, srcidx  , srcidy   );
+    val[1][2] = get( img, srcidx+1, srcidy   );
+    val[2][0] = get( img, srcidx-1, srcidy+1 );
+    val[2][1] = get( img, srcidx  , srcidy+1 );
+    val[2][2] = get( img, srcidx+1, srcidy+1 );
+
+    assert( val[0][0] <= 2 );
+    assert( val[0][1] <= 2 );
+    assert( val[0][2] <= 2 );
+    assert( val[1][0] <= 2 );
+    assert( val[1][1] <= 2 );
+    assert( val[1][2] <= 2 );
+    assert( val[2][0] <= 2 );
+    assert( val[2][1] <= 2 );
+    assert( val[2][2] <= 2 );
+
+    array[threadIdx.y  ][threadIdx.x  ] = val[0][0];
+    array[threadIdx.y  ][threadIdx.x+2] = val[0][2];
+    if( threadIdx.y >= HYST_H - 2 ) {
+        array[threadIdx.y+2][threadIdx.x  ] = val[2][0];
+        array[threadIdx.y+2][threadIdx.x+2] = val[2][2];
+    }
+    __syncthreads();
+#else
+    const int srcidx = blockIdx.x * HYST_W + threadIdx.x;
+    const int srcidy = blockIdx.y * HYST_H + threadIdx.y;
+
+    uint8_t val_0_0;
+    val_0_0 = get( img, srcidx-1, srcidy-1 );
+    array[threadIdx.y  ][threadIdx.x  ] = val_0_0;
+
+    if( threadIdx.x >= HYST_W - 2 ) {
+        uint8_t val_0_2;
+        val_0_2 = get( img, srcidx+1, srcidy-1 );
+        array[threadIdx.y  ][threadIdx.x+2] = val_0_2;
+    }
+    if( threadIdx.y >= HYST_H - 2 ) {
+        uint8_t val_2_0;
+        val_2_0 = get( img, srcidx-1, srcidy+1 );
+        array[threadIdx.y+2][threadIdx.x  ] = val_2_0;
+        if( threadIdx.x >= HYST_W - 2 ) {
+            uint8_t val_2_2;
+            val_2_2 = get( img, srcidx+1, srcidy+1 );
+            array[threadIdx.y+2][threadIdx.x+2] = val_2_2;
+        }
+    }
+    __syncthreads();
+#endif
+}
+
+__device__
+void store( cv::cuda::PtrStepSzb img )
+{
+    const int dstidx  = blockIdx.x * HYST_W + threadIdx.x;
+    const int dstidy  = blockIdx.y * HYST_H + threadIdx.y;
+
+    volatile uint8_t val;
+    val = array[threadIdx.y+1][threadIdx.x+1];
+    assert( val <= 2 );
+    // if( outOfBounds( dstidx, dstidy, img ) ) return;
+    if( dstidx < img.cols && dstidy < img.rows ) {
+        img.ptr(dstidy)[dstidx] =  val;
+    }
+    // __syncthreads();
+}
+
+__device__
+inline
+bool update_edge_pixel( )
+{
+    uint8_t val[3][3];
+    val[0][0] = array[threadIdx.y  ][threadIdx.x  ];
+    val[0][1] = array[threadIdx.y  ][threadIdx.x+1];
+    val[0][2] = array[threadIdx.y  ][threadIdx.x+2];
+    val[1][0] = array[threadIdx.y+1][threadIdx.x  ];
+    val[1][1] = array[threadIdx.y+1][threadIdx.x+1];
+    val[1][2] = array[threadIdx.y+1][threadIdx.x+2];
+    val[2][0] = array[threadIdx.y+2][threadIdx.x  ];
+    val[2][1] = array[threadIdx.y+2][threadIdx.x+1];
+    val[2][2] = array[threadIdx.y+2][threadIdx.x+2];
+
+    assert( val[0][0] <= 2 );
+    assert( val[0][1] <= 2 );
+    assert( val[0][2] <= 2 );
+    assert( val[1][0] <= 2 );
+    assert( val[1][1] <= 2 );
+    assert( val[1][2] <= 2 );
+    assert( val[2][0] <= 2 );
+    assert( val[2][1] <= 2 );
+    assert( val[2][2] <= 2 );
+
+    bool    change = false;
+
+    if( val[1][1] == 1 ) {
+        change = ( val[0][0] == 2 ||
+                   val[0][1] == 2 ||
+                   val[0][2] == 2 ||
+                   val[1][0] == 2 ||
+                   val[1][2] == 2 ||
+                   val[2][0] == 2 ||
+                   val[2][1] == 2 ||
+                   val[2][2] == 2 );
+        val[1][1] = change ? 2 : 1 ;
+    }
+    __syncthreads();
+    array[threadIdx.y+1][threadIdx.x+1] = val[1][1];
+    // __threadfence_block();
+
+#if 0
+    uint8_t test = array[threadIdx.y+1][threadIdx.x+1];
+    assert( test <= 2 );
+    assert( not change || test == 2 );
+#endif
+
+    return change;
+}
+
+__device__
+bool edge_block_loop( )
 {
     __shared__ bool continuation[HYST_H];
     bool            again = true;
     bool            nothing_changed = true;
+    bool            line_changed = false;
+    int ct = 0;
 
     while( again ) {
-        bool mark      = edge_loop( map );
-        bool any_marks = __any( mark );
-        if( threadIdx.x == 0 ) continuation[threadIdx.y] = any_marks;
+        assert( ct <= HYST_W*HYST_H );
+        bool mark    = update_edge_pixel( );
+        __threadfence();
+        line_changed = __any( mark );
+        if( threadIdx.x == 0 ) continuation[threadIdx.y] = line_changed;
         __syncthreads();
         mark = threadIdx.x < HYST_H ? continuation[threadIdx.x] : false;
-        __syncthreads();
         again = __any( mark );
         if( again ) nothing_changed = false;
+        ct++;
     }
 
     return nothing_changed;
 }
 
-__global__
-void edge_hysteresis( cv::cuda::PtrStepSzb map, Frame::EdgeHistInfo* edge_hist_info )
+__device__
+bool edge( int* block_counter )
 {
-    bool nothing_changed = edge_block_loop( map );
+    bool nothing_changed = edge_block_loop( );
     if( threadIdx.x == 0 && threadIdx.y == 0 ) {
         if( nothing_changed ) {
-            atomicSub( &edge_hist_info->block_counter, 1 );
+            atomicSub( block_counter, 1 );
         }
 #if 0
         int am_i_last = atomicSub( &edge_hysteresis_block_counter.x, 1 );
@@ -101,7 +231,57 @@ void edge_hysteresis( cv::cuda::PtrStepSzb map, Frame::EdgeHistInfo* edge_hist_i
         }
 #endif
     }
+    __syncthreads();
+    return nothing_changed;
 }
+
+__global__
+void edge_first( cv::cuda::PtrStepSzb img, int* block_counter, cv::cuda::PtrStepSzb src )
+{
+    // const int idx  = blockIdx.x * HYST_W + threadIdx.x;
+    // const int idy  = blockIdx.y * HYST_H + threadIdx.y;
+    // if( outOfBounds( idx, idy, img ) ) return;
+    // uint8_t val = src.ptr(idy)[idx];
+    // img.ptr(idy)[idx] = val;
+    load( src );
+    bool nothing_changed = edge( block_counter );
+    store( img );
+}
+
+__global__
+void edge_second( cv::cuda::PtrStepSzb img, int* block_counter )
+{
+    load( img );
+    bool nothing_changed = edge( block_counter );
+    if( not nothing_changed ) {
+        store( img );
+    }
+}
+
+
+}; // namespace hysteresis
+
+#ifndef NDEBUG
+__global__
+void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w, int h )
+{
+    assert( img.cols == w );
+    assert( img.rows == h );
+    assert( ver.cols == w );
+    assert( ver.rows == h );
+
+    const int idx  = blockIdx.x * HYST_W + threadIdx.x;
+    const int idy  = blockIdx.y * HYST_H + threadIdx.y;
+    uint32_t x = clamp( idx, img.cols );
+    uint32_t y = clamp( idy, img.rows );
+    uint8_t  val = img.ptr(y)[x];
+    if( val > 2 ) {
+        printf("idx=%d -> x=%d, idy=%d -> y=%d, img.cols=%d img.rows=%d val=%d\n",
+            idx, x, idy, y, img.cols, img.rows, val );
+        assert( val <= 2 );
+    }
+}
+#endif // NDEBUG
 
 __host__
 void Frame::applyHyst( const cctag::Parameters & params )
@@ -112,154 +292,56 @@ void Frame::applyHyst( const cctag::Parameters & params )
     dim3 grid;
     block.x = HYST_W;
     block.y = HYST_H;
-    grid.x  = ( getWidth()  / HYST_W ) + ( getWidth()  % HYST_W == 0 ? 0 : 1 );
-    grid.y  = ( getHeight() / HYST_H ) + ( getHeight() % HYST_H == 0 ? 0 : 1 );
+    grid.x  = grid_divide( getWidth(),   HYST_W );
+    grid.y  = grid_divide( getHeight(),  HYST_H );
+    assert( getWidth()  == _d_map.cols );
+    assert( getHeight() == _d_map.rows );
+    assert( getWidth()  == _d_hyst_edges.cols );
+    assert( getHeight() == _d_hyst_edges.rows );
 
-    EdgeHistInfo info;
+    cerr << "  Config: grid=" << grid << " block=" << block << endl;
+
+#ifndef NDEBUG
+    verify_map_valid
+        <<<grid,block,0,_stream>>>
+        ( _d_map, _d_hyst_edges, getWidth(), getHeight() );
+#endif
+
+    bool first_time = true;
+    int block_counter;
     do
     {
-        info.block_counter = grid.x * grid.y;
-        POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( _d_edge_hysteresis,
-                                         &info,
-                                         sizeof(EdgeHistInfo), _stream );
-        edge_hysteresis
-            <<<grid,block,0,_stream>>>
-            ( _d_map,
-              _d_edge_hysteresis );
+        block_counter = grid.x * grid.y;
+        POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( _d_hysteresis_block_counter,
+                                         &block_counter,
+                                         sizeof(int), _stream );
+        if( first_time ) {
+            hysteresis::edge_first
+                <<<grid,block,0,_stream>>>
+                ( _d_hyst_edges,
+                  _d_hysteresis_block_counter,
+                  _d_map );
+            first_time = false;
+        } else {
+            hysteresis::edge_second
+                <<<grid,block,0,_stream>>>
+                ( _d_hyst_edges,
+                  _d_hysteresis_block_counter );
+        }
         POP_CHK_CALL_IFSYNC;
 
-        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &info,
-                                       _d_edge_hysteresis,
-                                       sizeof(EdgeHistInfo), _stream );
+        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &block_counter,
+                                       _d_hysteresis_block_counter,
+                                       sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
-        cerr << "  Still active blocks: " << info.block_counter << endl;
+        cerr << "  Blocks remaining: " << block_counter << endl;
     }
-    while( info.block_counter > 0 );
+    while( block_counter > 0 );
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }
 #else // not ABBREVIATED_HYSTERESIS
-namespace hysteresis
-{
-__shared__ uint8_t array[34][34];
-
-__device__
-void set( cv::cuda::PtrStepSzb map, const int idx, const int idy, uint8_t val )
-{
-    if( outOfBounds( idx, idy, map ) ) return;
-    map.ptr(idy)[idx] = val;
-}
-
-__device__
-void loadHoriz( const cv::cuda::PtrStepSzb map, int offy, const int idx, const int idy )
-{
-    int offx = threadIdx.x + 1;
-    array[offy][offx] = get( map, idx, idy );
-
-    if( threadIdx.x == 0 )
-        array[offy][offx-1] = get( map, idx-1, idy );
-    if( threadIdx.x == 31 )
-        array[offy][offx+1] = get( map, idx+1, idy );
-}
-
-__device__
-void loadVert( const cv::cuda::PtrStepSzb map, int offx, const int idx, const int idy )
-{
-    int offy = threadIdx.x + 1;
-    array[offy][offx] = get( map, idx, idy );
-}
-
-__device__
-void load( const cv::cuda::PtrStepSzb map )
-{
-    const int idx  = blockIdx.x * 32 + threadIdx.x;
-    const int idy  = blockIdx.y * 32 + threadIdx.y;
-    const int offx = threadIdx.x + 1;
-    const int offy = threadIdx.y + 1;
-
-    array[offy][offx] = get( map, idx, idy );
-
-    if( threadIdx.y == 0 ) {
-        loadHoriz( map,  0, idx, blockIdx.y*32- 1 );
-        loadHoriz( map, 33, idx, blockIdx.y*32+32 );
-        loadVert(  map,  0, blockIdx.x*32- 1, blockIdx.y*32+threadIdx.x );
-        loadVert(  map, 33, blockIdx.x*32+32, blockIdx.y*32+threadIdx.x );
-    }
-    __syncthreads();
-}
-
-__device__
-bool update( )
-{
-    const int idx = threadIdx.x + 1;
-    const int idy = threadIdx.y + 1;
-
-    uint8_t val = array[idy][idx];
-
-    if( val == 1 ) {
-        int n = ( array[idy-1][idx-1] == 2 )
-              + ( array[idy  ][idx-1] == 2 )
-              + ( array[idy+1][idx-1] == 2 )
-              + ( array[idy-1][idx  ] == 2 )
-              + ( array[idy+1][idx  ] == 2 )
-              + ( array[idy-1][idx+1] == 2 )
-              + ( array[idy  ][idx+1] == 2 )
-              + ( array[idy+1][idx+1] == 2 );
-        if( n > 0 ) {
-            array[idy][idx] = 2;
-            val = 2;
-            return true;
-        }
-    }
-    return false;
-}
-} // namespace hysteresis
-
-__global__
-void edge_hysteresis( const cv::cuda::PtrStepSzb map, cv::cuda::PtrStepSzb edges, bool final )
-{
-    hysteresis::load( map );
-
-    uint8_t val = hysteresis::array[threadIdx.y+1][threadIdx.x+1];
-
-    if( reduceAND_32x32( val == 1 ) ) {
-        for( int i=0; i<20; i++ ) {
-            bool updated = hysteresis::update( );
-            bool any_more = reduceAND_32x32( updated );
-            if( not any_more ) break;
-        }
-    }
-
-    val = hysteresis::array[threadIdx.y+1][threadIdx.x+1];
-    val = ( final && val == 1 ) ? 0 : val;
-    hysteresis::set( edges, blockIdx.x*32+threadIdx.x, blockIdx.y*32+threadIdx.y, val );
-}
-
-__host__
-void Frame::applyHyst( const cctag::Parameters & params )
-{
-    cerr << "Enter " << __FUNCTION__ << endl;
-
-    dim3 big_block;
-    dim3 big_grid;
-    big_block.x = 32;
-    big_block.y = 32;
-    big_grid.x  = ( getWidth()  / 32 ) + ( getWidth()  % 32 == 0 ? 0 : 1 );
-    big_grid.y  = ( getHeight() / 32 ) + ( getHeight() % 32 == 0 ? 0 : 1 );
-
-    edge_hysteresis
-        <<<big_grid,big_block,0,_stream>>>
-        ( _d_map, cv::cuda::PtrStepSzb(_d_intermediate), false );
-    POP_CHK_CALL_IFSYNC;
-
-    edge_hysteresis
-        <<<big_grid,big_block,0,_stream>>>
-        ( cv::cuda::PtrStepSzb(_d_intermediate), _d_hyst_edges, true );
-    POP_CHK_CALL_IFSYNC;
-
-    cerr << "Leave " << __FUNCTION__ << endl;
-}
-
+#include "frame_hyst_oldcode.h"
 #endif // not ABBREVIATED_HYSTERESIS
 
 }; // namespace popart

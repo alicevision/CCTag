@@ -5,6 +5,7 @@
 #include <thrust/system/cuda/detail/cub/cub.cuh>
 #include <stdio.h>
 #include "debug_macros.hpp"
+#include "debug_is_on_edge.h"
 
 #include "frame.h"
 #include "assist.h"
@@ -762,11 +763,16 @@ bool Voting::gradientDescent( const cctag::Parameters&     params,
     POP_CUDA_SETX_ASYNC( _chained_edgecoords.dev.size, (int)1, stream );
 
 #ifndef NDEBUG
+    debugPointIsOnEdge( edge_image, _all_edgecoords, stream );
+#endif
+
+#ifndef NDEBUG
+#if 0
     cout << "    calling gradient descent with " << listsize << " edge points" << endl;
     cout << "    max num edges is " << params._maxEdges << endl;
 
-    cout << "    grid (" << grid.x << "," << grid.y << "," << grid.z << ")"
-         << " block (" << block.x << "," << block.y << "," << block.z << ")" << endl;
+    cout << "    Config: grid=" << grid << " block=" << block << endl;
+#endif
 #endif // NDEBUG
 
     vote::gradient_descent
@@ -776,6 +782,10 @@ bool Voting::gradientDescent( const cctag::Parameters&     params,
           _d_edgepoint_index_table, // output - table, map coord to TriplePoint index
           params._maxEdges,
           edge_image, nmax, d_dx, d_dy, threshold );
+POP_CUDA_SYNC( stream );
+cudaDeviceSynchronize( );
+cout << "  Leave " << __FUNCTION__ << endl;
+return true;
     POP_CHK_CALL_IFSYNC;
 
     cout << "  Leave " << __FUNCTION__ << endl;
@@ -860,6 +870,8 @@ void Frame::applyVote( const cctag::Parameters& params )
                                      _d_dx,
                                      _d_dy,
                                      _stream );
+cout << "Leave " << __FUNCTION__ << endl;
+return;
 
     if( not success ) {
         cout << "Leave " << __FUNCTION__ << endl;
