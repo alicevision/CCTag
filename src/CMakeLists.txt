@@ -20,6 +20,9 @@ IF(USE_CUDA)
     set_source_files_properties( ${CUDA_cpp} ${CUDA_cu}
                                  PROPERTIES COMPILE_FLAGS "-g -Wall"
     )
+    set_source_files_properties( ${CCTag_cpp}
+                                 PROPERTIES COMPILE_FLAGS "-std=c++11"
+    )
     # set(CUDA_NVCC_DEBUG_FLAGS "-G -g -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52")
     # set(CUDA_NVCC_RELEASE_FLAGS "-gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52 -O3")
 
@@ -65,6 +68,9 @@ target_include_directories( CCTag PUBLIC .)
 set(CCTagDetect_cpp ./cctag/detection/main.cpp)
 
 if(USE_CUDA)
+    set_source_files_properties( ${CCTagDetect_cpp}
+                                 PROPERTIES COMPILE_FLAGS "-std=c++11"
+    )
     add_executable( detection ${CCTagDetect_cpp} ${cuda_files} )
     target_link_libraries( detection CCTag
                                      ${CUDA_LIBRARIES}
