@@ -782,10 +782,6 @@ bool Voting::gradientDescent( const cctag::Parameters&     params,
           _d_edgepoint_index_table, // output - table, map coord to TriplePoint index
           params._maxEdges,
           edge_image, nmax, d_dx, d_dy, threshold );
-POP_CUDA_SYNC( stream );
-cudaDeviceSynchronize( );
-cout << "  Leave " << __FUNCTION__ << endl;
-return true;
     POP_CHK_CALL_IFSYNC;
 
     cout << "  Leave " << __FUNCTION__ << endl;
@@ -870,8 +866,6 @@ void Frame::applyVote( const cctag::Parameters& params )
                                      _d_dx,
                                      _d_dy,
                                      _stream );
-cout << "Leave " << __FUNCTION__ << endl;
-return;
 
     if( not success ) {
         cout << "Leave " << __FUNCTION__ << endl;
