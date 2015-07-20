@@ -14,6 +14,7 @@ using namespace std;
 namespace popart
 {
 
+#if 1
 __constant__
 static int xoff_select[8]    =   { 1,  1,  0, -1, -1, -1,  0,  1};
 
@@ -232,6 +233,45 @@ void edge_linking( cv::cuda::PtrStepSzb     edges,
         }
     }
 }
+#endif // UNUSED
+
+
+#define LINK_REINIT_W   32
+#define LINK_REINIT_H   1
+
+namespace link
+{
+__global__
+void reinit_edge_image( cv::cuda::PtrStepSz32s out_img, cv::cuda::PtrStepSzb in_img )
+{
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int idy = blockIdx.y * blockDim.x + threadIdx.y;
+
+    if( not outOfBounds( idx, idy, in_img ) ) {
+        int val = in_img.ptr(idy)[idx];
+        val = ( val == 2 ) ? -1 : -0;
+        out_img.ptr(idy)[idx] = val;
+    }
+}
+
+__global__
+void init_seed_labels( cv::cuda::PtrStepSz32s         img,
+                       const DevEdgeList<int>         seed_indices,
+                       const DevEdgeList<TriplePoint> chained_edgecoords )
+{
+    const int offset = blockIdx.x * blockDim.x + threadIdx.x;
+    if( offset == 0 ) return;
+    if( offset >= seed_indices.Size() ) return;
+    const int label = seed_indices.ptr[offset];
+    const TriplePoint* p = &chained_edgecoords.ptr[label];
+    if( outOfBounds( p->coord.x, p->coord.y, img ) ) {
+        assert( not outOfBounds( p->coord.x, p->coord.y, img ) );
+        return;
+    }
+    img.ptr(p->coord.y)[p->coord.x] = label;
+}
+
+}; // namespace link
 
 __host__
 void Frame::applyLink( const cctag::Parameters& params )
@@ -256,6 +296,17 @@ void Frame::applyLink( const cctag::Parameters& params )
     dim3 block;
     dim3 grid;
 
+    block.x = LINK_REINIT_W;
+    block.y = LINK_REINIT_H;
+    block.z = 1;
+    grid.x  = grid_divide( _d_edges.cols, LINK_REINIT_W );
+    grid.y  = grid_divide( _d_edges.rows, LINK_REINIT_H );
+    grid.z  = 1;
+
+    link::reinit_edge_image
+        <<<grid,block,0,_stream>>>
+        ( edge_cast, _d_edges );
+
     /* Seeds have an index in the _edge_indices list.
      * For each of those seeds, mark their coordinate with a label.
      * This label is their index in the _edge_indices list, because
@@ -268,13 +319,15 @@ void Frame::applyLink( const cctag::Parameters& params )
     grid.y  = 1;
     grid.z  = 1;
 
-    edge_linking
+    link::init_seed_labels
         <<<grid,block,0,_stream>>>
-        ( _d_edges,
-          _vote._chained_edgecoords.dev,
-          _vote._edge_indices.dev,
-          param.windowSizeOnInnerEllipticSegment,
-          param.averageVoteMin );
+        ( edge_cast, _vote._edge_indices.dev, _vote._chained_edgecoords.dev );
+
+    /* Label connected components with highest label value.
+     * non-null means edge point, positive means point is labeled,
+     * highest label wins
+     */
+    recursive_sweep::connectComponents( edge_cast, _d_connect_component_block_counter, _stream );
 
     cout << "Leave " << __FUNCTION__ << endl;
 }
