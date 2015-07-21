@@ -115,10 +115,13 @@ void TagPipe::tagframe( unsigned char* pix,
     }
 
     for( int i=0; i<4; i++ ) {
+        bool success;
         _frame[i]->applyGauss( params ); // async
         _frame[i]->applyMag(   params );  // async
         _frame[i]->applyHyst(  params );  // async
         _frame[i]->applyThinning(  params );  // async
+        success = _frame[i]->applyDesc(  params );  // async
+        if( not success ) continue;
         _frame[i]->applyVote(  params );  // async
     }
 
