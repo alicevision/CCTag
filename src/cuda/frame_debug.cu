@@ -287,14 +287,14 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #ifdef DEBUG_WRITE_CHOSEN_AS_PPM
     {
         /* _chained_edgecoords.dev.size has been loaded into .host.size
-         * _edge_indices has been created into this step.
-         * _vote._edge_indices.dev.size, has been loaded into .host.soze
+         * _seed_indices has been created into this step.
+         * _vote._seed_indices.dev.size, has been loaded into .host.soze
          * before returning.
          * The edge indices are all points that have received votes. No
          * filtering has taken place yet.
          * ... have the paths leading to these votes been stored?
          */
-        if( _vote._chained_edgecoords.host.size > 0 && _vote._edge_indices.host.size > 0) {
+        if( _vote._chained_edgecoords.host.size > 0 && _vote._seed_indices.host.size > 0) {
             vector<TriplePoint> out;
             PtrStepSzbClone edgeclone( edges );
             _vote._chained_edgecoords.debug_out( params._maxEdges, out, EdgeListFilterCommittedOnly );
@@ -304,7 +304,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
 
             out.clear();
-            _vote._chained_edgecoords.debug_out( _vote._edge_indices, params._maxEdges, out );
+            _vote._chained_edgecoords.debug_out( _vote._seed_indices, params._maxEdges, out );
             DebugImage::plotPoints( out, edgeclone.e, false, DebugImage::BLUE );
 #ifdef DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
             DebugImage::writeASCII( filename + "-chosen-dots.txt", out );

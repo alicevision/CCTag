@@ -23,8 +23,8 @@ struct Voting
 {
     EdgeList<int2>         _all_edgecoords;
     EdgeList<TriplePoint>  _chained_edgecoords;
-    EdgeList<int>          _edge_indices;
-    EdgeList<int>          _edge_indices_2;
+    EdgeList<int>          _seed_indices;
+    EdgeList<int>          _seed_indices_2;
     cv::cuda::PtrStepSz32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
 
     Voting( )

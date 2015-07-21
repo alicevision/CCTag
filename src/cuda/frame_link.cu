@@ -41,14 +41,16 @@ struct ListReplacement
  * @param d_dx
  * @param d_dy
  * @param triplepoints  The array of points including voters and seeds
- * @param edge_indices  The array of indices of seeds in triplepoints
+ * @param seed_indices  The array of indices of seeds in triplepoints
  * @param param_windowSizeOnInnerEllipticSegment
  * @param param_averageVoteMin
  */
 __device__
-void edge_linking( cv::cuda::PtrStepSzb     edges,
-                   DevEdgeList<TriplePoint> triplepoints,
-                   DevEdgeList<int>         edge_indices,
+void edge_linking( cv::cuda::PtrStepSzb         edges,
+                   DevEdgeList<TriplePoint>     triplepoints,
+                   DevEdgeList<int>             seed_indices,
+                   const cv::cuda::PtrStepSz16s d_dx,
+                   const cv::cuda::PtrStepSz16s d_dy,
                    size_t param_windowSizeOnInnerEllipticSegment,
                    float  param_averageVoteMin )
 {
@@ -60,7 +62,7 @@ void edge_linking( cv::cuda::PtrStepSzb     edges,
 
     if( offset == 0 ) return;
 
-    int idx = edge_indices.ptr[offset];
+    int idx = seed_indices.ptr[offset];
     if( idx >= triplepoints.Size() ) return;
 
     TriplePoint* p = &triplepoints.ptr[idx];
@@ -238,7 +240,7 @@ void Frame::applyLink( const cctag::Parameters& params )
 {
     cout << "Enter " << __FUNCTION__ << endl;
 
-    if( _vote._edge_indices.host.size <= 0 ) {
+    if( _vote._seed_indices.host.size <= 0 ) {
         cout << "Leave " << __FUNCTION__ << endl;
         // We have note found any seed, return
         return;
@@ -256,15 +258,15 @@ void Frame::applyLink( const cctag::Parameters& params )
     dim3 block;
     dim3 grid;
 
-    /* Seeds have an index in the _edge_indices list.
+    /* Seeds have an index in the _seed_indices list.
      * For each of those seeds, mark their coordinate with a label.
-     * This label is their index in the _edge_indices list, because
+     * This label is their index in the _seed_indices list, because
      * it is a unique int strictly > 0
      */
     block.x = 32;
     block.y = 1;
     block.z = 1;
-    grid.x  = grid_divide( _vote._edge_indices.host.size, 32 );
+    grid.x  = grid_divide( _vote._seed_indices.host.size, 32 );
     grid.y  = 1;
     grid.z  = 1;
 
@@ -272,7 +274,9 @@ void Frame::applyLink( const cctag::Parameters& params )
         <<<grid,block,0,_stream>>>
         ( _d_edges,
           _vote._chained_edgecoords.dev,
-          _vote._edge_indices.dev,
+          _vote._seed_indices.dev,
+          _d_dx,
+          _d_dy,
           param.windowSizeOnInnerEllipticSegment,
           param.averageVoteMin );
 

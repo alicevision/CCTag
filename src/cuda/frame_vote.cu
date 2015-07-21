@@ -246,7 +246,7 @@ void print_choices( )
 #endif // NDEBUG
 
 __global__
-void construct_line( DevEdgeList<int>             edge_indices,       // output
+void construct_line( DevEdgeList<int>             seed_indices,       // output
                      DevEdgeList<TriplePoint>     chained_edgecoords, // input (modified)
                      const int                    edge_index_max,     // input
                      const cv::cuda::PtrStepSz32s edgepoint_index_table, // input
@@ -265,7 +265,7 @@ void construct_line( DevEdgeList<int>             edge_indices,       // output
 
     uint32_t write_index;
     if( threadIdx.x == 0 ) {
-        write_index = atomicAdd( edge_indices.size, (int)ct );
+        write_index = atomicAdd( seed_indices.size, (int)ct );
     }
     write_index = __shfl( write_index, 0 );
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) );
@@ -275,9 +275,9 @@ void construct_line( DevEdgeList<int>             edge_indices,       // output
         atomicAdd( &count_choices, 1 );
 #endif
 
-        if( edge_indices.Size() < edge_index_max ) {
+        if( seed_indices.Size() < edge_index_max ) {
             idx = edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
-            edge_indices.ptr[write_index] = idx;
+            seed_indices.ptr[write_index] = idx;
         }
     }
 }
@@ -315,20 +315,20 @@ int count_winners( const int                       chosen_edge_index,
  * inner point.
  *
  * chained_edgecoords is the list of all edges with their chaining info.
- * edge_indices is a list of indices into that list, containing the sorted,
+ * seed_indices is a list of indices into that list, containing the sorted,
  * unique indices of chosen inner points.
  */
 __global__
 void vote_eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input
-                       DevEdgeList<int>         edge_indices        // input
+                       DevEdgeList<int>         seed_indices        // input
                      )
 {
     uint32_t offset = threadIdx.x + blockIdx.x * 32;
-    if( offset >= edge_indices.Size() ) {
+    if( offset >= seed_indices.Size() ) {
         return;
     }
 
-    const int    chosen_edge_index = edge_indices.ptr[offset];
+    const int    chosen_edge_index = seed_indices.ptr[offset];
     TriplePoint* chosen_edge = &chained_edgecoords.ptr[chosen_edge_index];
 #if 1
     vote::count_winners( chosen_edge_index, chosen_edge, chained_edgecoords );
@@ -417,7 +417,7 @@ bool Voting::constructLine( const cctag::Parameters&     params,
     grid.y  = 1;
     grid.z  = 1;
 
-    POP_CUDA_SET0_ASYNC( _edge_indices.dev.size, stream );
+    POP_CUDA_SET0_ASYNC( _seed_indices.dev.size, stream );
 
 #ifndef NDEBUG
     vote::init_choices<<<1,1,0,stream>>>( );
@@ -425,7 +425,7 @@ bool Voting::constructLine( const cctag::Parameters&     params,
 
     vote::construct_line
         <<<grid,block,0,stream>>>
-        ( _edge_indices.dev,        // output
+        ( _seed_indices.dev,        // output
           _chained_edgecoords.dev,  // input
           params._maxEdges,         // input
           _d_edgepoint_index_table, // input
@@ -458,13 +458,13 @@ void Frame::applyVote( const cctag::Parameters& params )
     /* For every chosen, compute the average flow size from all
      * of its voters, and count the number of its voters.
      */
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._edge_indices.host.size, _vote._edge_indices.dev.size, sizeof(int), _stream );
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size, _vote._seed_indices.dev.size, sizeof(int), _stream );
     POP_CUDA_SYNC( _stream );
 
 #ifndef NDEBUG
 #ifdef  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
     {
-        /* _vote._edge_indices contains now the indices of all TriplePoints that
+        /* _vote._seed_indices contains now the indices of all TriplePoints that
          * have received at least one vote.
          * The array has lots of redundant entries. It is not sorted, and the
          * number of voters has not been counted, and it has not been filtered
@@ -476,7 +476,7 @@ void Frame::applyVote( const cctag::Parameters& params )
 #endif //  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
 #endif // NDEBUG
 
-    if( _vote._edge_indices.host.size > 0 ) {
+    if( _vote._seed_indices.host.size > 0 ) {
         /* Note: we use the intermediate picture plane, _d_intermediate, as assist
          *       buffer for CUB algorithms. It is extremely likely that this plane
          *       is large enough in all cases. If there are any problems, call
@@ -486,8 +486,8 @@ void Frame::applyVote( const cctag::Parameters& params )
         void*  assist_buffer = (void*)_d_intermediate.data;
         size_t assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
 
-        cub::DoubleBuffer<int> d_keys( _vote._edge_indices.dev.ptr,
-                                       _vote._edge_indices_2.dev.ptr );
+        cub::DoubleBuffer<int> d_keys( _vote._seed_indices.dev.ptr,
+                                       _vote._seed_indices_2.dev.ptr );
 
         /* After SortKeys, both buffers in d_keys have been altered.
          * The final result is stored in d_keys.d_buffers[d_keys.selector].
@@ -496,29 +496,29 @@ void Frame::applyVote( const cctag::Parameters& params )
         cub::DeviceRadixSort::SortKeys( assist_buffer,
                                         assist_buffer_sz,
                                         d_keys,
-                                        _vote._edge_indices.host.size,
+                                        _vote._seed_indices.host.size,
                                         0,             // begin_bit
                                         sizeof(int)*8, // end_bit
                                         _stream );
         POP_CHK_CALL_IFSYNC;
 
-        if( d_keys.d_buffers[d_keys.selector] == _vote._edge_indices_2.dev.ptr ) {
-            std::swap( _vote._edge_indices.dev.ptr,   _vote._edge_indices_2.dev.ptr );
-            std::swap( _vote._edge_indices.dev.size,  _vote._edge_indices_2.dev.size );
+        if( d_keys.d_buffers[d_keys.selector] == _vote._seed_indices_2.dev.ptr ) {
+            std::swap( _vote._seed_indices.dev.ptr,   _vote._seed_indices_2.dev.ptr );
+            std::swap( _vote._seed_indices.dev.size,  _vote._seed_indices_2.dev.size );
         }
 
         // safety: SortKeys is allowed to alter assist_buffer_sz
         assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
 
         /* Unique ensure that we check every "chosen" point only once.
-         * Output is in _vote._edge_indices_2.dev
+         * Output is in _vote._seed_indices_2.dev
          */
         cub::DeviceSelect::Unique( assist_buffer,
                                    assist_buffer_sz,
-                                   _vote._edge_indices.dev.ptr,     // input
-                                   _vote._edge_indices_2.dev.ptr,   // output
-                                   _vote._edge_indices_2.dev.size,  // output
-                                   _vote._edge_indices.host.size,   // input (unchanged in sort)
+                                   _vote._seed_indices.dev.ptr,     // input
+                                   _vote._seed_indices_2.dev.ptr,   // output
+                                   _vote._seed_indices_2.dev.size,  // output
+                                   _vote._seed_indices.host.size,   // input (unchanged in sort)
                                    _stream );
         POP_CHK_CALL_IFSYNC;
 
@@ -526,8 +526,8 @@ void Frame::applyVote( const cctag::Parameters& params )
          * value d_num_selected_out from the device before the voting
          * step.
          */
-        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._edge_indices_2.host.size,
-                                       _vote._edge_indices_2.dev.size,
+        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices_2.host.size,
+                                       _vote._seed_indices_2.dev.size,
                                        sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
 
@@ -545,14 +545,14 @@ void Frame::applyVote( const cctag::Parameters& params )
         block.x = 32;
         block.y = 1;
         block.z = 1;
-        grid.x  = _vote._edge_indices_2.host.size / 32 + ( _vote._edge_indices_2.host.size % 32 != 0 ? 1 : 0 );
+        grid.x  = grid_divide( _vote._seed_indices_2.host.size, 32 );
         grid.y  = 1;
         grid.z  = 1;
 
         vote_eval_chosen
             <<<grid,block,0,_stream>>>
             ( _vote._chained_edgecoords.dev,
-              _vote._edge_indices_2.dev );
+              _vote._seed_indices_2.dev );
         POP_CHK_CALL_IFSYNC;
 #endif // COMPRESS_VOTING_AND_SELECT
 
@@ -566,10 +566,10 @@ void Frame::applyVote( const cctag::Parameters& params )
                                            _vote._chained_edgecoords.dev );
         cub::DeviceSelect::If( assist_buffer,
                                assist_buffer_sz,
-                               _vote._edge_indices_2.dev.ptr,
-                               _vote._edge_indices.dev.ptr,
-                               _vote._edge_indices.dev.size,
-                               _vote._edge_indices_2.host.size,
+                               _vote._seed_indices_2.dev.ptr,
+                               _vote._seed_indices.dev.ptr,
+                               _vote._seed_indices.dev.size,
+                               _vote._seed_indices_2.host.size,
                                select_op,
                                _stream );
         POP_CHK_CALL_IFSYNC;
@@ -578,10 +578,10 @@ void Frame::applyVote( const cctag::Parameters& params )
          * value d_num_selected_out from the device before the voting
          * step.
          */
-        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._edge_indices.host.size, _vote._edge_indices.dev.size, sizeof(int), _stream );
+        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size, _vote._seed_indices.dev.size, sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
 
-        cout << "  Number of viable inner points: " << _vote._edge_indices.host.size << endl;
+        cout << "  Number of viable inner points: " << _vote._seed_indices.host.size << endl;
     }
     cout << "Leave " << __FUNCTION__ << endl;
 }

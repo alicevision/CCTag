@@ -153,16 +153,16 @@ void Voting::alloc( const cctag::Parameters& params, size_t w, size_t h )
     _chained_edgecoords.dev.size = (int*)ptr;
 
     POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int) );
-    _edge_indices.dev.ptr = (int*)ptr;
+    _seed_indices.dev.ptr = (int*)ptr;
 
     POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _edge_indices.dev.size = (int*)ptr;
+    _seed_indices.dev.size = (int*)ptr;
 
     POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int) );
-    _edge_indices_2.dev.ptr = (int*)ptr;
+    _seed_indices_2.dev.ptr = (int*)ptr;
 
     POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _edge_indices_2.dev.size = (int*)ptr;
+    _seed_indices_2.dev.size = (int*)ptr;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
     assert( p % _d_edgepoint_index_table.elemSize() == 0 );
@@ -184,12 +184,12 @@ void Voting::init( const cctag::Parameters& params, cudaStream_t stream )
                            params._maxEdges*sizeof(TriplePoint),
                            stream );
 
-    POP_CUDA_MEMSET_ASYNC( _edge_indices.dev.ptr,
+    POP_CUDA_MEMSET_ASYNC( _seed_indices.dev.ptr,
                            0,
                            params._maxEdges*sizeof(int),
                            stream );
 
-    POP_CUDA_MEMSET_ASYNC( _edge_indices_2.dev.ptr,
+    POP_CUDA_MEMSET_ASYNC( _seed_indices_2.dev.ptr,
                            0,
                            params._maxEdges*sizeof(int),
                            stream );
@@ -206,10 +206,10 @@ void Voting::release( )
     POP_CUDA_FREE( _all_edgecoords.dev.size );
     POP_CUDA_FREE( _chained_edgecoords.dev.ptr );
     POP_CUDA_FREE( _chained_edgecoords.dev.size );
-    POP_CUDA_FREE( _edge_indices.dev.ptr );
-    POP_CUDA_FREE( _edge_indices.dev.size );
-    POP_CUDA_FREE( _edge_indices_2.dev.ptr );
-    POP_CUDA_FREE( _edge_indices_2.dev.size );
+    POP_CUDA_FREE( _seed_indices.dev.ptr );
+    POP_CUDA_FREE( _seed_indices.dev.size );
+    POP_CUDA_FREE( _seed_indices_2.dev.ptr );
+    POP_CUDA_FREE( _seed_indices_2.dev.size );
     POP_CUDA_FREE( _d_edgepoint_index_table.data );
 }
 
