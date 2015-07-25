@@ -132,8 +132,8 @@ private:
     }
 };
 
-__shared__ int2  edge_buffer[2][EDGE_LINKING_MAX_EDGE_LENGTH]; // convexEdgeSegment
-__shared__ int   edge_buffer_head[2];
+__shared__ int2  edge_buffer[EDGE_LINKING_MAX_EDGE_LENGTH]; // convexEdgeSegment
+__shared__ int   edge_index[2];
 
 struct EdgeBuffer
 {
@@ -141,10 +141,9 @@ struct EdgeBuffer
     void init( int2 start )
     {
         if( threadIdx.x == 0 ) {
-            edge_buffer[Left ][0] = start;
-            edge_buffer[Right][0] = start;
-            edge_buffer_head[Left ] = 0;
-            edge_buffer_head[Right] = 0;
+            edge_buffer[0]    = start;
+            edge_index[Left]  = 1;
+            edge_index[Right] = 0;
         }
         __syncthreads();
     }
@@ -152,20 +151,31 @@ struct EdgeBuffer
     __device__ inline
     const int2& get( Direction d )
     {
-        return edge_buffer[d][edge_buffer_head[d]];
+        return edge_buffer[edge_index[d]];
     }
 
     __device__ inline
     void append( Direction d, int2 val )
     {
-        edge_buffer_head[d]++;
-        edge_buffer[d][edge_buffer_head[d]] = val;
+        if( d == Left ) {
+            edge_buffer[edge_index[Left]] = val;
+            inc( edge_index[Left] );
+            assert( edge_index[Left] != edge_index[Right] );
+        } else {
+            dec( edge_index[Right] );
+            edge_buffer[edge_index[Right]] = val;
+            assert( edge_index[Left] != edge_index[Right] );
+        }
     }
 
     __device__ inline
     int size() const
     {
-        return edge_buffer_head[Left] + edge_buffer_head[Right] + 1;
+        if( edge_index[Left] > edge_index[Right] ) {
+            return edge_index[Left] - edge_index[Right];
+        } else {
+            return edge_index[Left] + ( EDGE_LINKING_MAX_EDGE_LENGTH - edge_index[Right] );
+        }
     }
 
     __device__
@@ -178,14 +188,21 @@ struct EdgeBuffer
         }
         int j = 0;
         int2* ptr = output.ptr(idx);
-        for( int i=edge_buffer_head[Right]; i>=0; i-- ) {
-            ptr[j] = edge_buffer[Right][i];
+        for( int idx=edge_index[Right]; idx!=edge_index[Left]; inc(idx) ) {
+            ptr[j] = edge_buffer[idx];
             j++;
         }
-        for( int i=1; i<=edge_buffer_head[Left]; i++ ) {
-            ptr[j] = edge_buffer[Left][i];
-            j++;
-        }
+    }
+
+private:
+    __device__ inline void inc( size_t& idx )
+    {
+        idx = ( idx >= EDGE_LINKING_MAX_EDGE_LENGTH-1 ) ? 0 : idx + 1;
+    }
+
+    __device__ inline void dec( size_t& idx )
+    {
+        idx = ( idx == 0 ) ? EDGE_LINKING_MAX_EDGE_LENGTH-1 : idx - 1;
     }
 };
 
@@ -302,10 +319,6 @@ void edge_linking_seed( const TriplePoint*           p,
         // This direction still has points.
         // We can identify the highest threadId / lowest rotation value j
         uint32_t computer = __ffs( any_point_found ) - 1;
-        if( computer >= 8 ) {
-            printf("point found by thread %d\n", computer);
-            assert( computer < 8 );
-        }
 
         found = LOW_FLOW;
 
