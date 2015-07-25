@@ -45,73 +45,90 @@ enum StopCondition
     FULL_CIRCLE         =  3
 };
 
-__shared__ float ring_buffer[2][EDGE_LINKING_MAX_RING_BUFFER_SIZE];
-__shared__ int   ring_buffer_front[2];
-__shared__ int   ring_buffer_back[2];
-__shared__ int   ring_buffer_ct;
-__shared__ int   ring_buffer_dir;
-
 struct RingBuffer
 {
     Direction direction;
+    float     ring_buffer[EDGE_LINKING_MAX_RING_BUFFER_SIZE];
     size_t    max_size;
     size_t    front_index;
     size_t    back_index;
     size_t    ct;
+    float     angle_diff;
 
     __device__ RingBuffer( Direction dir, size_t size ) {
+        assert( size < EDGE_LINKING_MAX_RING_BUFFER_SIZE );
+        direction   = dir;
         max_size    = size;
-        if( threadIdx.x == 0 ) {
-            ring_buffer_front[0] = 0;
-            ring_buffer_front[1] = 0;
-            ring_buffer_back[0]  = 0;
-            ring_buffer_back[1]  = 0;
-            ring_buffer_ct       = 0;
-            ring_buffer_dir      = dir;
-        }
-        __syncthreads();
+        front_index = 0;
+        back_index  = 0;
+        ct          = 0;
+        angle_diff  = 0.0f;
     }
 
     __device__ inline void set_direction( Direction dir ) {
         direction = dir;
     }
 
-    __device__ inline void inc( size_t& idx )
-    {
-        idx = ( idx == max_size-1 ) ? 0 : idx + 1;
-    }
-
-    __device__ inline void dec( size_t& idx )
-    {
-        idx = ( idx == 0 ) ? max_size-1 : idx - 1;
-    }
-
     __device__ void push_back( float angle )
     {
-        ring_buffer[direction][back_index] = angle;
-        inc( back_index );
-        if( front_index == back_index )
-            inc( front_index );
-        else
-            ct++;
+        if( threadIdx.x == 0 ) {
+            if( direction == Left ) {
+                ring_buffer[back_index] = angle;
+                inc( back_index );
+                if( front_index == back_index )
+                    inc( front_index );
+                else
+                    ct++:
+            } else {
+                dec( front_index );
+                if( front_index == back_index )
+                    dec( back_index );
+                else
+                    ct++;
+                ring_buffer[front_index] = angle;
+            }
+            angle_diff = back() - front();
+        }
+        angle_diff = __shfl( angle_diff, 0 );
+        ct         = __shfl( ct, 0 );
     }
 
+    __device__ inline float diff( )
+    {
+        // replace in lilian's original code back()-front()
+        return angle_diff;
+    }
+
+    __device__ int  inline size() const {
+        return ct;
+    }
+private:
     __device__ inline float front( )
     {
+        assert( threadIdx.x == 0 );
         assert( front_index != back_index );
         return ring_buffer[direction][front_index];
     }
 
     __device__ inline float back( )
     {
+        assert( threadIdx.x == 0 );
         assert( front_index != back_index );
         size_t lookup = back_index;
         dec( lookup );
         return ring_buffer[direction][lookup];
     }
 
-    __device__ int  inline size() const {
-        return ct;
+    __device__ inline void inc( size_t& idx )
+    {
+        assert( threadIdx.x == 0 );
+        idx = ( idx >= max_size-1 ) ? 0 : idx + 1;
+    }
+
+    __device__ inline void dec( size_t& idx )
+    {
+        assert( threadIdx.x == 0 );
+        idx = ( idx == 0 ) ? max_size-1 : idx - 1;
     }
 };
 
@@ -228,22 +245,15 @@ void edge_linking_seed( const TriplePoint*           p,
             }
         }
 
-        float angle;
+        // Angle refers to the gradient direction angle (might be optimized):
+        short2 tcg; // this cycle gradients
+        tcg.x = d_dx.ptr(tcc.y)[tcc.y];
+        tcg.y = d_dy.ptr(tcc.y)[tcc.y];
+        float atanval = atan2f( tcg.x, tcg.y );
 
-        if( threadIdx.x == 0 ) {
-            // this cycle gradients
-            short2 tcg;
+        float angle = fmodf( atanval + 2.0f * CUDART_PI_F, 2.0f * CUDART_PI_F );
 
-            // Angle refers to the gradient direction angle (might be optimized):
-            tcg.x = d_dx.ptr(tcc.y)[tcc.y];
-            tcg.y = d_dy.ptr(tcc.y)[tcc.y];
-            float atanval = atan2f( tcg.x, tcg.y );
-
-            angle = fmodf( atanval + 2.0f * CUDART_PI_F, 2.0f * CUDART_PI_F );
-
-            phi.push_back( angle );
-        }
-        angle = __shfl( angle, 0 );
+        phi.push_back( angle ); // thread 0 stores and all get the angle diff
 
         int shifting = rintf( ( (angle + CUDART_PI_F / 4.0f)
                               / (2.0f * CUDART_PI_F) ) * 8.0f ) - 1;
@@ -302,7 +312,7 @@ void edge_linking_seed( const TriplePoint*           p,
             //
             float s;
             float c;
-            __sincosf( phi.back() - phi.front(), &s, &c );
+            __sincosf( phi.diff(), &s, &c );
             s = ( direction == Left ) ? s : -s;
 
             //
