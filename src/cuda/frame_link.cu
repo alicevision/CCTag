@@ -12,15 +12,21 @@ namespace popart
 
 namespace linking
 {
+#if 0
 __constant__
 static int xoff_select[8]    =   { 1,  1,  0, -1, -1, -1,  0,  1};
 
 __constant__
 static int yoff_select[2][8] = { { 0, -1, -1, -1,  0,  1,  1,  1},
                                  { 0,  1,  1,  1,  0, -1, -1, -1} };
+#else
+__device__
+static const int xoff_select[8]    =   { 1,  1,  0, -1, -1, -1,  0,  1};
 
-#define EDGE_LINKING_MAX_EDGE_LENGTH    100
-#define MAX_RING_BUFFER_SIZE            40
+__device__
+static const int yoff_select[2][8] = { { 0, -1, -1, -1,  0,  1,  1,  1},
+                                       { 0,  1,  1,  1,  0, -1, -1, -1} };
+#endif
 
 enum Direction
 {
@@ -39,7 +45,11 @@ enum StopCondition
     FULL_CIRCLE         =  3
 };
 
-__shared__ float ring_buffer[2][MAX_RING_BUFFER_SIZE];
+__shared__ float ring_buffer[2][EDGE_LINKING_MAX_RING_BUFFER_SIZE];
+__shared__ int   ring_buffer_front[2];
+__shared__ int   ring_buffer_back[2];
+__shared__ int   ring_buffer_ct;
+__shared__ int   ring_buffer_dir;
 
 struct RingBuffer
 {
@@ -50,33 +60,38 @@ struct RingBuffer
     size_t    ct;
 
     __device__ RingBuffer( Direction dir, size_t size ) {
-        direction   = dir;
         max_size    = size;
-        front_index = 0;
-        back_index  = 0;
-        ct          = 0;
+        if( threadIdx.x == 0 ) {
+            ring_buffer_front[0] = 0;
+            ring_buffer_front[1] = 0;
+            ring_buffer_back[0]  = 0;
+            ring_buffer_back[1]  = 0;
+            ring_buffer_ct       = 0;
+            ring_buffer_dir      = dir;
+        }
+        __syncthreads();
     }
 
     __device__ inline void set_direction( Direction dir ) {
         direction = dir;
     }
 
-    __device__ inline size_t inc( size_t& idx )
+    __device__ inline void inc( size_t& idx )
     {
-        return ( idx == max_size-1 ) ? 0 : idx + 1;
+        idx = ( idx == max_size-1 ) ? 0 : idx + 1;
     }
 
-    __device__ inline size_t dec( size_t& idx )
+    __device__ inline void dec( size_t& idx )
     {
-        return ( idx == 0 ) ? max_size-1 : idx - 1;
+        idx = ( idx == 0 ) ? max_size-1 : idx - 1;
     }
 
     __device__ void push_back( float angle )
     {
-        ring_buffer[direction][front_index].angle = angle;
-        back_index = inc( back_index );
+        ring_buffer[direction][back_index] = angle;
+        inc( back_index );
         if( front_index == back_index )
-            front_index = inc( front_index );
+            inc( front_index );
         else
             ct++;
     }
@@ -84,14 +99,15 @@ struct RingBuffer
     __device__ inline float front( )
     {
         assert( front_index != back_index );
-        return ring_buffer[direction][front_index].angle;
+        return ring_buffer[direction][front_index];
     }
 
     __device__ inline float back( )
     {
         assert( front_index != back_index );
-        size_t lookup = dec( back_index );
-        return ring_buffer[direction][lookup].angle;
+        size_t lookup = back_index;
+        dec( lookup );
+        return ring_buffer[direction][lookup];
     }
 
     __device__ int  inline size() const {
@@ -100,37 +116,39 @@ struct RingBuffer
 };
 
 __shared__ int2  edge_buffer[2][EDGE_LINKING_MAX_EDGE_LENGTH]; // convexEdgeSegment
+__shared__ int   edge_buffer_head[2];
 
 struct EdgeBuffer
 {
-    int head[2];
-
     __device__ inline
     void init( int2 start )
     {
-        edge_buffer[Left ][0] = start;
-        edge_buffer[Right][0] = start;
-        head[Left ] = 0;
-        head[Right] = 0;
+        if( threadIdx.x == 0 ) {
+            edge_buffer[Left ][0] = start;
+            edge_buffer[Right][0] = start;
+            edge_buffer_head[Left ] = 0;
+            edge_buffer_head[Right] = 0;
+        }
+        __syncthreads();
     }
 
     __device__ inline
     const int2& get( Direction d )
     {
-        return edge_buffer[d][head[d]];
+        return edge_buffer[d][edge_buffer_head[d]];
     }
 
     __device__ inline
     void append( Direction d, int2 val )
     {
-        head[d]++;
-        edge_buffer[d][head[d]] = val;
+        edge_buffer_head[d]++;
+        edge_buffer[d][edge_buffer_head[d]] = val;
     }
 
     __device__ inline
     int size() const
     {
-        return head[Left] + head[Right] + 1;
+        return edge_buffer_head[Left] + edge_buffer_head[Right] + 1;
     }
 
     __device__
@@ -140,11 +158,11 @@ struct EdgeBuffer
         assert( size() < output.cols );
         int j = 0;
         int2* ptr = output.ptr(idx);
-        for( int i=head[Right]; i>=0; i-- ) {
+        for( int i=edge_buffer_head[Right]; i>=0; i-- ) {
             ptr[j] = edge_buffer[Right][i];
             j++;
         }
-        for( int i=1; i<=head[Left]; i++ ) {
+        for( int i=1; i<=edge_buffer_head[Left]; i++ ) {
             ptr[j] = edge_buffer[Left][i];
             j++;
         }
@@ -156,6 +174,7 @@ struct EdgeBuffer
  * @param triplepoints          List of all edge points that were potential voters
  * @param edgepoint_index_table Map: map coordinate to triplepoints entry
  * @param edges                 Map: non-0 if edge
+ * @param d_dx, d_dy            Map: gradients
  * @param param_windowSizeOnInnerEllipticSegment
  * @param param_averageVoteMin
  */
@@ -164,31 +183,30 @@ void edge_linking_seed( const TriplePoint*           p,
                         DevEdgeList<TriplePoint>     triplepoints,
                         cv::cuda::PtrStepSz32s       edgepoint_index_table, // coord->triplepoint
                         cv::cuda::PtrStepSzb         edges,
+                        cv::cuda::PtrStepSz16s       d_dx,
+                        cv::cuda::PtrStepSz16s       d_dy,
                         int*                         d_ring_counter,
+                        int                          d_ring_counter_max,
                         cv::cuda::PtrStepSzInt2      d_ring_output,
                         size_t param_windowSizeOnInnerEllipticSegment,
                         float  param_averageVoteMin )
 {
-    const Direction direction       = Left;
-    const Direction other_direction = Right;
+    Direction direction       = Left;
+    Direction other_direction = Right;
 
     float averageVote        = p->_winnerSize;
     float averageVoteCollect = averageVote;
 
     EdgeBuffer buf;
 
-    if( threadIdx.x == 0 ) {
-        buf.init( p->coord );
-    }
-    __syncthreads();
+    buf.init( p->coord );
 
-    RingBuffer<float> phi( Left, param_windowSizeOnInnerEllipticSegment );
+    RingBuffer    phi( Left, param_windowSizeOnInnerEllipticSegment );
     size_t        i     = 0;
     StopCondition found = STILL_SEARCHING;
-    // int           stop  = 0;
 
-    const int* xoff = xoff_select;
-    const int* yoff = yoff_select[direction];
+    // const int* xoff = xoff_select;
+    // const int* yoff = yoff_select[direction];
 
     // int2   this_cycle_coord = p->coord;
     // short2 this_cycle_gradients;
@@ -196,11 +214,11 @@ void edge_linking_seed( const TriplePoint*           p,
     while( (i < EDGE_LINKING_MAX_EDGE_LENGTH) && (found==STILL_SEARCHING) && (averageVote >= param_averageVoteMin) )
     {
         // this cycle coordinates
-        const int2&  tcc = buf.get( direction );
+        int2  tcc = buf.get( direction );
 
         if( i > 0 ) {
             // other direction coordinates
-            const int2& odc = buf.get( other_direction );
+            int2 odc = buf.get( other_direction );
 
             if( odc.x == tcc.x && odc.y == tcc.y ) {
                 // We have gone a full circle.
@@ -217,8 +235,8 @@ void edge_linking_seed( const TriplePoint*           p,
             short2 tcg;
 
             // Angle refers to the gradient direction angle (might be optimized):
-            tcg.x = _d_dx.ptr(tcc.y)[tcc.y];
-            tcg.y = _d_dy.ptr(tcc.y)[tcc.y];
+            tcg.x = d_dx.ptr(tcc.y)[tcc.y];
+            tcg.y = d_dy.ptr(tcc.y)[tcc.y];
             float atanval = atan2f( tcg.x, tcg.y );
 
             angle = fmodf( atanval + 2.0f * CUDART_PI_F, 2.0f * CUDART_PI_F );
@@ -236,8 +254,13 @@ void edge_linking_seed( const TriplePoint*           p,
                                  // at 0
         int  off_index = ( direction == Right ) ?  ( ( 8 - shifting + j ) % 8 )
                                                 :  (     ( shifting + j ) % 8 );
-        int2 new_point = make_int2( tcc.x + xoff[off_index],
-                                    tcc.y + yoff[off_index] );
+        assert( off_index >= 0 );
+        assert( off_index <  8 );
+        int xoffset = xoff_select[off_index];
+        int yoffset = yoff_select[direction][off_index];
+        int2 new_point = make_int2( tcc.x + xoffset, tcc.y + yoffset );
+        // int2 new_point = make_int2( tcc.x + xoff[off_index],
+        //                             tcc.y + yoff[off_index] );
 
         bool point_found = false;
         if( ( new_point.x >= 0 && new_point.x < edges.cols ) &&
@@ -259,7 +282,7 @@ void edge_linking_seed( const TriplePoint*           p,
             found           = STILL_SEARCHING;
             direction       = Right;
             other_direction = Left;
-            ring_buffer.set_direction( Right );
+            phi.set_direction( Right );
             continue;
         }
 
@@ -285,19 +308,21 @@ void edge_linking_seed( const TriplePoint*           p,
             //
             // three conditions to conclude CONVEXITY_LOST
             //
+            bool stop;
+
             stop = ( ( ( phi.size() == param_windowSizeOnInnerEllipticSegment ) &&
                        ( s <  0.0f   ) ) ||
                      ( ( s < -0.707f ) && ( c > 0.0f ) ) ||
                      ( ( s <  0.0f   ) && ( c < 0.0f ) ) );
             
             if( not stop ) {
-                buffer.append( new_point );
+                buf.append( direction, new_point );
                 int idx = edgepoint_index_table.ptr(new_point.y)[new_point.x];
-                float winnerSize = 0.0f;
                 if( idx > 0 ) {
                     // ptr can be any seed or voter candidate, and its _winnerSize
                     // may be 0
-                    TriplePoint* ptr = &triplepoints[idx];
+                    assert( idx < triplepoints.Size() );
+                    TriplePoint* ptr = &triplepoints.ptr[idx];
                     winnerSize = ptr->_winnerSize;
                 }
 
@@ -309,9 +334,9 @@ void edge_linking_seed( const TriplePoint*           p,
         } // end of asynchronous block
 
         // both FOUND_NEXT and CONVEXITY_LOST are > LOW_FLOW
-        found = max( found, __shfl_xor( found, 1 ) );
-        found = max( found, __shfl_xor( found, 2 ) );
-        found = max( found, __shfl_xor( found, 4 ) );
+        found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 1 ) );
+        found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 2 ) );
+        found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 4 ) );
 
         if( found == FOUND_NEXT ) {
             found      = STILL_SEARCHING;
@@ -329,22 +354,22 @@ void edge_linking_seed( const TriplePoint*           p,
             found           = STILL_SEARCHING;
             direction       = Right;
             other_direction = Left;
-            ring_buffer.set_direction( Right );
+            phi.set_direction( Right );
         }
 
         ++i;
 
-        averageVote = averageVoteCollect / buffer.size();
+        averageVote = averageVoteCollect / buf.size();
     } // while
 
     if( threadIdx.x == 0 )
     {
         if( (i == EDGE_LINKING_MAX_EDGE_LENGTH) || (found == CONVEXITY_LOST) ) {
-            int convexEdgeSegmentSize = buffer.size();
+            int convexEdgeSegmentSize = buf.size();
             if (convexEdgeSegmentSize > param_windowSizeOnInnerEllipticSegment) {
-                int write_index = atomicAdd( &d_ring_counter, 1 );
+                int write_index = atomicAdd( d_ring_counter, 1 );
                 if( write_index <= d_ring_counter_max ) {
-                    buffer.copy( d_ring_output, write_index );
+                    buf.copy( d_ring_output, write_index );
                 }
             }
         }
@@ -367,7 +392,10 @@ void edge_linking( DevEdgeList<TriplePoint>     triplepoints,
                    DevEdgeList<int>             seed_indices,
                    cv::cuda::PtrStepSz32s       edgepoint_index_table,
                    cv::cuda::PtrStepSzb         edges,
+                   cv::cuda::PtrStepSz16s       d_dx,
+                   cv::cuda::PtrStepSz16s       d_dy,
                    int*                         d_ring_counter,
+                   int                          d_ring_counter_max,
                    cv::cuda::PtrStepSzInt2      d_ring_output,
                    size_t param_windowSizeOnInnerEllipticSegment,
                    float  param_averageVoteMin )
@@ -386,7 +414,10 @@ void edge_linking( DevEdgeList<TriplePoint>     triplepoints,
                        triplepoints,
                        edgepoint_index_table,
                        edges,
+                       d_dx,
+                       d_dy,
                        d_ring_counter,
+                       d_ring_counter_max,
                        d_ring_output,
                        param_windowSizeOnInnerEllipticSegment,
                        param_averageVoteMin );
@@ -399,11 +430,11 @@ void Frame::applyLink( const cctag::Parameters& params )
 {
     cout << "Enter " << __FUNCTION__ << endl;
 
-    if( param.windowSizeOnInnerEllipticSegment > MAX_RING_BUFFER_SIZE ) {
+    if( params._windowSizeOnInnerEllipticSegment > EDGE_LINKING_MAX_RING_BUFFER_SIZE ) {
         cerr << "Error in " << __FILE__ << ":" << __LINE__ << ":" << endl
              << "    static maximum of parameter ring buffer size is "
-             << MAX_RING_BUFFER_SIZE << "," << endl;
-             << "    parameter file wants " << param.windowSizeOnInnerEllipticSegment << endl
+             << EDGE_LINKING_MAX_RING_BUFFER_SIZE << "," << endl
+             << "    parameter file wants " << params._windowSizeOnInnerEllipticSegment << endl
              << "    edit " << __FILE__ << " and recompile" << endl
              << endl;
         exit( -1 );
@@ -421,6 +452,8 @@ void Frame::applyLink( const cctag::Parameters& params )
      */
     // cv::cuda::PtrStepSz32s edge_cast( _d_intermediate );
 
+    POP_CUDA_SET0_ASYNC( _d_ring_counter, _stream );
+
     dim3 block;
     dim3 grid;
 
@@ -430,7 +463,7 @@ void Frame::applyLink( const cctag::Parameters& params )
      * it is a unique int strictly > 0
      */
     block.x = 8;
-    block.y = 0;
+    block.y = 1;
     block.z = 1;
     grid.x  = _vote._seed_indices.host.size;
     grid.y  = 1;
@@ -442,10 +475,15 @@ void Frame::applyLink( const cctag::Parameters& params )
           _vote._seed_indices.dev,
           _vote._d_edgepoint_index_table,
           _d_edges,
+          _d_dx,
+          _d_dy,
           _d_ring_counter,
+          _d_ring_counter_max,
           _d_ring_output,
-          param.windowSizeOnInnerEllipticSegment,
-          param.averageVoteMin );
+          params._windowSizeOnInnerEllipticSegment,
+          params._averageVoteMin );
+
+    POP_CHK_CALL_IFSYNC;
 
     cout << "Leave " << __FUNCTION__ << endl;
 }
