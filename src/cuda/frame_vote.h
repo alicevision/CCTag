@@ -5,6 +5,7 @@
 
 #include "triple_point.h"
 #include "edge_list.h"
+#include "assist.h"
 
 namespace cv {
     namespace cuda {
