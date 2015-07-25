@@ -54,6 +54,7 @@ namespace cv {
         typedef PtrStep<int16_t>    PtrStep16s;
         typedef PtrStep<uint32_t>   PtrStep32u;
         typedef PtrStep<int32_t>    PtrStep32s;
+        typedef PtrStep<int2>       PtrStepInt2;
     }
 };
 
