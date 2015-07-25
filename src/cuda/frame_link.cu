@@ -159,12 +159,12 @@ struct EdgeBuffer
     {
         if( d == Left ) {
             edge_buffer[edge_index[Left]] = val;
-            inc( edge_index[Left] );
             assert( edge_index[Left] != edge_index[Right] );
+            inc( edge_index[Left] );
         } else {
+            assert( edge_index[Left] != edge_index[Right] );
             dec( edge_index[Right] );
             edge_buffer[edge_index[Right]] = val;
-            assert( edge_index[Left] != edge_index[Right] );
         }
     }
 
@@ -182,9 +182,9 @@ struct EdgeBuffer
     void copy( cv::cuda::PtrStepSzInt2 output, int idx )
     {
         assert( idx < output.rows );
-        if( size() >= output.cols ) {
+        if( size() > output.cols ) {
             printf("error copying link output, columns %d entries %d\n", output.cols, size() );
-            assert( size() < output.cols );
+            assert( size() <= output.cols );
         }
         int j = 0;
         int2* ptr = output.ptr(idx);
@@ -397,7 +397,7 @@ void edge_linking_seed( const TriplePoint*           p,
 
     if( threadIdx.x == 0 )
     {
-        printf("The number of points found on an edge: %d\n", i );
+        // printf("The number of points reached from (%d,%d): %d (averge vote %f)\n", p->coord.x, p->coord.y, i, averageVote );
 
         if( (i == EDGE_LINKING_MAX_EDGE_LENGTH) || (found == CONVEXITY_LOST) ) {
             int convexEdgeSegmentSize = buf.size();
@@ -517,6 +517,15 @@ void Frame::applyLink( const cctag::Parameters& params )
           _d_ring_output,
           params._windowSizeOnInnerEllipticSegment,
           params._averageVoteMin );
+
+    POP_CHK_CALL_IFSYNC;
+
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_ring_output.data, _h_ring_output.step,
+                              _d_ring_output.data, _d_ring_output.step,
+                              _d_ring_output.cols*sizeof(int2),
+                              _d_ring_output.rows,
+                              cudaMemcpyDeviceToHost,
+                              _stream );
 
     POP_CHK_CALL_IFSYNC;
 

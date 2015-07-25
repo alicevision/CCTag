@@ -32,6 +32,7 @@ Frame::Frame( uint32_t width, uint32_t height )
     , _wait_done( 0 )
 {
     cerr << "Allocating frame: " << width << "x" << height << endl;
+    _h_ring_output.data = 0;
 
 #if 0
     _stream = 0;
@@ -64,6 +65,7 @@ Frame::~Frame( )
     delete [] _h_debug_map;
     delete [] _h_debug_hyst_edges;
     delete [] _h_debug_edges;
+    delete [] _h_ring_output.data;
     delete _texture;
 
     POP_CUDA_FREE( _d_hysteresis_block_counter );

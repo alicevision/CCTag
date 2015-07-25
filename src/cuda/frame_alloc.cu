@@ -84,6 +84,11 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     _d_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _d_ring_output.rows = EDGE_LINKING_MAX_ARCS;
 
+    _h_ring_output.data = new int2[EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH];
+    _h_ring_output.step = EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(int2);
+    _h_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
+    _h_ring_output.rows = EDGE_LINKING_MAX_ARCS;
+
     POP_CUDA_MALLOC( &ptr, sizeof(int) );
     _d_hysteresis_block_counter = (int*)ptr;
 

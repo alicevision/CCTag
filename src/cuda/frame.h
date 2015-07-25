@@ -205,14 +205,15 @@ private:
     cv::cuda::PtrStepSzb    _d_edges;
     cv::cuda::PtrStepSzInt2 _d_ring_output;
 
-    unsigned char* _h_debug_plane;
-    float*         _h_debug_smooth;
-    int16_t*       _h_debug_dx;
-    int16_t*       _h_debug_dy;
-    uint32_t*      _h_debug_mag;
-    unsigned char* _h_debug_map;
-    unsigned char* _h_debug_hyst_edges;
-    unsigned char* _h_debug_edges;
+    unsigned char*          _h_debug_plane;
+    float*                  _h_debug_smooth;
+    int16_t*                _h_debug_dx;
+    int16_t*                _h_debug_dy;
+    uint32_t*               _h_debug_mag;
+    unsigned char*          _h_debug_map;
+    unsigned char*          _h_debug_hyst_edges;
+    unsigned char*          _h_debug_edges;
+    cv::cuda::PtrStepSzInt2 _h_ring_output;
 
     Voting _vote;
 
