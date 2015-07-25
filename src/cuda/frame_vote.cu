@@ -493,6 +493,8 @@ void Frame::applyVote( const cctag::Parameters& params )
 {
     cout << "Enter " << __FUNCTION__ << endl;
 
+    bool success;
+
     success = _vote.constructLine( params,
                                    _stream );
 

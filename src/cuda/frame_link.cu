@@ -78,7 +78,7 @@ struct RingBuffer
                 if( front_index == back_index )
                     inc( front_index );
                 else
-                    ct++:
+                    ct++;
             } else {
                 dec( front_index );
                 if( front_index == back_index )
@@ -107,7 +107,7 @@ private:
     {
         assert( threadIdx.x == 0 );
         assert( front_index != back_index );
-        return ring_buffer[direction][front_index];
+        return ring_buffer[front_index];
     }
 
     __device__ inline float back( )
@@ -116,7 +116,7 @@ private:
         assert( front_index != back_index );
         size_t lookup = back_index;
         dec( lookup );
-        return ring_buffer[direction][lookup];
+        return ring_buffer[lookup];
     }
 
     __device__ inline void inc( size_t& idx )
@@ -172,7 +172,10 @@ struct EdgeBuffer
     void copy( cv::cuda::PtrStepSzInt2 output, int idx )
     {
         assert( idx < output.rows );
-        assert( size() < output.cols );
+        if( size() >= output.cols ) {
+            printf("error copying link output, columns %d entries %d\n", output.cols, size() );
+            assert( size() < output.cols );
+        }
         int j = 0;
         int2* ptr = output.ptr(idx);
         for( int i=edge_buffer_head[Right]; i>=0; i-- ) {
@@ -219,7 +222,7 @@ void edge_linking_seed( const TriplePoint*           p,
     buf.init( p->coord );
 
     RingBuffer    phi( Left, param_windowSizeOnInnerEllipticSegment );
-    size_t        i     = 0;
+    size_t        i     = 1;
     StopCondition found = STILL_SEARCHING;
 
     // const int* xoff = xoff_select;
@@ -298,7 +301,11 @@ void edge_linking_seed( const TriplePoint*           p,
 
         // This direction still has points.
         // We can identify the highest threadId / lowest rotation value j
-        uint32_t computer = __ffs( any_point_found );
+        uint32_t computer = __ffs( any_point_found ) - 1;
+        if( computer >= 8 ) {
+            printf("point found by thread %d\n", computer);
+            assert( computer < 8 );
+        }
 
         found = LOW_FLOW;
 
@@ -342,11 +349,14 @@ void edge_linking_seed( const TriplePoint*           p,
                 found = CONVEXITY_LOST;
             }
         } // end of asynchronous block
+        assert( found == LOW_FLOW || found == FOUND_NEXT || found == CONVEXITY_LOST );
 
         // both FOUND_NEXT and CONVEXITY_LOST are > LOW_FLOW
         found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 1 ) );
         found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 2 ) );
         found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 4 ) );
+
+        assert( found == FOUND_NEXT || found == CONVEXITY_LOST );
 
         if( found == FOUND_NEXT ) {
             found      = STILL_SEARCHING;
@@ -374,6 +384,8 @@ void edge_linking_seed( const TriplePoint*           p,
 
     if( threadIdx.x == 0 )
     {
+        printf("The number of points found on an edge: %d\n", i );
+
         if( (i == EDGE_LINKING_MAX_EDGE_LENGTH) || (found == CONVEXITY_LOST) ) {
             int convexEdgeSegmentSize = buf.size();
             if (convexEdgeSegmentSize > param_windowSizeOnInnerEllipticSegment) {

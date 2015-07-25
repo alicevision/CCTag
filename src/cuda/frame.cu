@@ -77,6 +77,7 @@ Frame::~Frame( )
     POP_CUDA_FREE( _d_map.data );
     POP_CUDA_FREE( _d_hyst_edges.data );
     POP_CUDA_FREE( _d_edges.data );
+    POP_CUDA_FREE( _d_ring_output.data );
 
     cerr << "Released frame: " << getWidth() << "x" << getHeight() << endl;
 }

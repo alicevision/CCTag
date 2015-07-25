@@ -37,6 +37,10 @@
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
+#define EDGE_LINKING_MAX_EDGE_LENGTH        100
+#define EDGE_LINKING_MAX_ARCS             10000
+#define EDGE_LINKING_MAX_RING_BUFFER_SIZE    40
+
 /* A table is copied to constant memory containing sigma values
  * for Gauss filtering at the 0-offset, and the derivatives
  * at +16.
@@ -51,6 +55,8 @@ namespace cv {
         typedef PtrStepSz<int16_t>  PtrStepSz16s;
         typedef PtrStepSz<uint32_t> PtrStepSz32u;
         typedef PtrStepSz<int32_t>  PtrStepSz32s;
+        typedef PtrStepSz<int2>     PtrStepSzInt2;
+
         typedef PtrStep<int16_t>    PtrStep16s;
         typedef PtrStep<uint32_t>   PtrStep32u;
         typedef PtrStep<int32_t>    PtrStep32s;
@@ -183,18 +189,21 @@ private:
     Frame( const Frame& );  // forbidden
 
 private:
-    int*                   _d_hysteresis_block_counter;
-    int*                   _d_connect_component_block_counter;
+    int*                    _d_hysteresis_block_counter;
+    int*                    _d_connect_component_block_counter;
+    int*                    _d_ring_counter;
+    int                     _d_ring_counter_max;
 
-    cv::cuda::PtrStepSzb   _d_plane;
-    cv::cuda::PtrStepSzf   _d_intermediate;
-    cv::cuda::PtrStepSzf   _d_smooth;
-    cv::cuda::PtrStepSz16s _d_dx; // cv::cuda::PtrStepSzf _d_dx;
-    cv::cuda::PtrStepSz16s _d_dy; // cv::cuda::PtrStepSzf _d_dy;
-    cv::cuda::PtrStepSz32u _d_mag;
-    cv::cuda::PtrStepSzb   _d_map;
-    cv::cuda::PtrStepSzb   _d_hyst_edges;
-    cv::cuda::PtrStepSzb   _d_edges;
+    cv::cuda::PtrStepSzb    _d_plane;
+    cv::cuda::PtrStepSzf    _d_intermediate;
+    cv::cuda::PtrStepSzf    _d_smooth;
+    cv::cuda::PtrStepSz16s  _d_dx; // cv::cuda::PtrStepSzf _d_dx;
+    cv::cuda::PtrStepSz16s  _d_dy; // cv::cuda::PtrStepSzf _d_dy;
+    cv::cuda::PtrStepSz32u  _d_mag;
+    cv::cuda::PtrStepSzb    _d_map;
+    cv::cuda::PtrStepSzb    _d_hyst_edges;
+    cv::cuda::PtrStepSzb    _d_edges;
+    cv::cuda::PtrStepSzInt2 _d_ring_output;
 
     unsigned char* _h_debug_plane;
     float*         _h_debug_smooth;

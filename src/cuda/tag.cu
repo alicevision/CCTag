@@ -123,6 +123,7 @@ void TagPipe::tagframe( unsigned char* pix,
         success = _frame[i]->applyDesc(  params );  // async
         if( not success ) continue;
         _frame[i]->applyVote(  params );  // async
+        _frame[i]->applyLink(  params );  // async
     }
 
     FrameEvent doneEv[4];
