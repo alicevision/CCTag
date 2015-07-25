@@ -195,12 +195,12 @@ struct EdgeBuffer
     }
 
 private:
-    __device__ inline void inc( size_t& idx )
+    __device__ inline void inc( int& idx )
     {
         idx = ( idx >= EDGE_LINKING_MAX_EDGE_LENGTH-1 ) ? 0 : idx + 1;
     }
 
-    __device__ inline void dec( size_t& idx )
+    __device__ inline void dec( int& idx )
     {
         idx = ( idx == 0 ) ? EDGE_LINKING_MAX_EDGE_LENGTH-1 : idx - 1;
     }
