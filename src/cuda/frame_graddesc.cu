@@ -19,52 +19,6 @@ namespace descent
 {
 
 __device__
-inline
-TriplePoint* find_neigh( const int2&              neigh,
-                         cv::cuda::PtrStepSz32s   edgepoint_index_table,
-                         DevEdgeList<TriplePoint> chained_edgecoords )
-{
-    if( neigh.x != 0 || neigh.y != 0 ) {
-        int idx = edgepoint_index_table.ptr(neigh.y)[neigh.x];
-        if( idx != 0 ) {
-            assert( idx >= 0 && idx < chained_edgecoords.Size() );
-            TriplePoint* neighbour = &chained_edgecoords.ptr[idx];
-#ifndef NDEBUG
-            debug_inner_test_consistency( idx, neighbour, edgepoint_index_table, chained_edgecoords );
-
-            if( neigh.x != neighbour->coord.x || neigh.y != neighbour->coord.y ) {
-                printf("Intended coordinate is (%d,%d) at index %d, looked up coord is (%d,%d)\n",
-                       neigh.x, neigh.y,
-                       idx,
-                       neighbour->coord.x, neighbour->coord.y );
-            }
-#endif // NDEBUG
-            return neighbour;
-        }
-    }
-    return 0;
-}
-
-__device__
-inline
-TriplePoint* find_befor( const TriplePoint*       p,
-                         cv::cuda::PtrStepSz32s   edgepoint_index_table,
-                         DevEdgeList<TriplePoint> chained_edgecoords )
-{
-    return find_neigh( p->descending.befor, edgepoint_index_table, chained_edgecoords );
-}
-
-
-__device__
-inline
-TriplePoint* find_after( const TriplePoint*             p,
-                               cv::cuda::PtrStepSz32s   edgepoint_index_table,
-                               DevEdgeList<TriplePoint> chained_edgecoords )
-{
-    return find_neigh( p->descending.after, edgepoint_index_table, chained_edgecoords );
-}
-
-__device__
 void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, int & stpX, int & stpY)
 {
     float d = dy / dx;
