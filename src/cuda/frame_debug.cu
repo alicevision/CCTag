@@ -326,10 +326,10 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // DEBUG_WRITE_LINKED_AS_ASCII
             for( int y=0; y<EDGE_LINKING_MAX_ARCS; y++ ) {
                 vector<int2> out;
-                for( int x=0; x<EDGE_LINKING_MAX_ARCS; x++ ) {
+                for( int x=0; x<EDGE_LINKING_MAX_EDGE_LENGTH; x++ ) {
                     const int2& ref = _h_ring_output.ptr(y)[x];
                     if( ref.x != 0 || ref.y != 0 ) {
-                        vector.push_back( ref );
+                        out.push_back( ref );
 #ifdef DEBUG_WRITE_LINKED_AS_ASCII
                         debug_ostr << "(" << ref.x << "," << ref.y << ") ";
 #endif // DEBUG_WRITE_LINKED_AS_ASCII
@@ -340,13 +340,15 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                         break;
                     }
                 }
-                DebugImage::plotPoints( out, edgeclone.e, true, color );
-                color++;
-                if( color == DebugImage::WHITE ) color = DebugImage::LAST;
+                if( out.size() != 0 ) {
+                    DebugImage::plotPoints( out, edgeclone.e, false, color );
+                    color++;
+                    if( color == DebugImage::WHITE ) color = DebugImage::LAST;
+                }
             }
             DebugImage::writePPM( filename + "-linked-dots.ppm", edgeclone.e );
 #ifdef DEBUG_WRITE_LINKED_AS_ASCII
-            DebugImage::writePPM( filename + "-linked-dots.txt", debug_ostr.str() );
+            DebugImage::writeASCII( filename + "-linked-dots.txt", debug_ostr.str() );
 #endif // DEBUG_WRITE_LINKED_AS_ASCII
         }
     }

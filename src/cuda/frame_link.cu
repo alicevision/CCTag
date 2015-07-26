@@ -489,7 +489,7 @@ void Frame::applyLink( const cctag::Parameters& params )
 
     POP_CUDA_SET0_ASYNC( _d_ring_counter, _stream );
 
-    POP_CUDA_MEMSET_2D_ASYNC( _d_ring_output.data, 0, _d_ring_output.step*_d_ring_output.rows, _stream );
+    POP_CUDA_MEMSET_ASYNC( _d_ring_output.data, 0, _d_ring_output.step*_d_ring_output.rows, _stream );
 
     dim3 block;
     dim3 grid;

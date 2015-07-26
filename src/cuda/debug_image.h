@@ -36,6 +36,7 @@ public:
         WHITE = 255
     };
 
+
     struct RandomColor
     {
         unsigned char r;
@@ -161,6 +162,20 @@ private:
 
     static void plotOneLine( int2 from, int2 to, cv::cuda::PtrStepSzb img, int color );
 };
+
+inline
+DebugImage::BaseColor operator++( DebugImage::BaseColor& c )
+{
+    c = (DebugImage::BaseColor)( int(c)+1 % 256 );
+    return c;
+}
+
+inline
+DebugImage::BaseColor operator++( DebugImage::BaseColor& c, int )
+{
+    c = (DebugImage::BaseColor)( int(c)+1 % 256 );
+    return c;
+}
 
 }; // namespace popart
 
