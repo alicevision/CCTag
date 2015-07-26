@@ -183,6 +183,15 @@ void DebugImage::writeASCII( const string&                   filename,
         of << endl;
     }
 }
+
+__host__
+void DebugImage::writeASCII( const string& filename,
+                             const string& data )
+{
+    ofstream of( filename.c_str() );
+
+    of << data;
+}
 #endif // NDEBUG
 
 void DebugImage::normalizeImage( cv::cuda::PtrStepSzb img, bool normalize )

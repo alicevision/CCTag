@@ -120,6 +120,8 @@ public:
 #ifndef NDEBUG
     static void writeASCII( const std::string&              filename,
                             const std::vector<TriplePoint>& list );
+    static void writeASCII( const std::string& filename,
+                            const std::string& info );
 #endif // NDEBUG
 
     /* This may draw quite many lines. If there are too many, use skip to

@@ -315,6 +315,43 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     }
 #endif // DEBUG_WRITE_CHOSEN_AS_PPM
 #endif // NDEBUG
+#ifndef NDEBUG
+#ifdef DEBUG_WRITE_LINKED_AS_PPM
+    {
+        if( _vote._chained_edgecoords.host.size > 0 && _vote._seed_indices.host.size > 0) {
+            PtrStepSzbClone edgeclone( edges );
+            DebugImage::BaseColor color = DebugImage::LAST;
+#ifdef DEBUG_WRITE_LINKED_AS_ASCII
+            ostringstream debug_ostr;
+#endif // DEBUG_WRITE_LINKED_AS_ASCII
+            for( int y=0; y<EDGE_LINKING_MAX_ARCS; y++ ) {
+                vector<int2> out;
+                for( int x=0; x<EDGE_LINKING_MAX_ARCS; x++ ) {
+                    const int2& ref = _h_ring_output.ptr(y)[x];
+                    if( ref.x != 0 || ref.y != 0 ) {
+                        vector.push_back( ref );
+#ifdef DEBUG_WRITE_LINKED_AS_ASCII
+                        debug_ostr << "(" << ref.x << "," << ref.y << ") ";
+#endif // DEBUG_WRITE_LINKED_AS_ASCII
+                    } else {
+#ifdef DEBUG_WRITE_LINKED_AS_ASCII
+                        debug_ostr << endl;
+#endif // DEBUG_WRITE_LINKED_AS_ASCII
+                        break;
+                    }
+                }
+                DebugImage::plotPoints( out, edgeclone.e, true, color );
+                color++;
+                if( color == DebugImage::WHITE ) color = DebugImage::LAST;
+            }
+            DebugImage::writePPM( filename + "-linked-dots.ppm", edgeclone.e );
+#ifdef DEBUG_WRITE_LINKED_AS_ASCII
+            DebugImage::writePPM( filename + "-linked-dots.txt", debug_ostr.str() );
+#endif // DEBUG_WRITE_LINKED_AS_ASCII
+        }
+    }
+#endif // DEBUG_WRITE_LINKED_AS_PPM
+#endif // NDEBUG
 }
 
 }; // namespace popart
