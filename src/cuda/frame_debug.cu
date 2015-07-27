@@ -326,6 +326,31 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // DEBUG_WRITE_LINKED_AS_ASCII
             bool do_print = false;
             for( int y=0; y<EDGE_LINKING_MAX_ARCS; y++ ) {
+#ifdef DEBUG_WRITE_LINKED_AS_ASCII
+                debug_ostr << "Arc " << y << ": ";
+#endif // DEBUG_WRITE_LINKED_AS_ASCII
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+                vector<int2> out_blue;
+                vector<int2> out_green;
+                for( int x=0; x<EDGE_LINKING_MAX_EDGE_LENGTH; x++ ) {
+                    const int4& ref = _h_ring_output.ptr(y)[x];
+                    if( ref.x != 0 || ref.y != 0 ) {
+                        int2 dat = make_int2( ref.x, ref.y );
+                        if( ref.z == 0 )
+                            out_blue.push_back( dat );
+                        else
+                            out_blue.push_green( dat );
+#ifdef DEBUG_WRITE_LINKED_AS_ASCII
+                        debug_ostr << "(" << ref.x << "," << ref.y << ":" << (ref.z==0?"L":"R") << ":" << ref.w << ") ";
+#endif // DEBUG_WRITE_LINKED_AS_ASCII
+                    } else {
+#ifdef DEBUG_WRITE_LINKED_AS_ASCII
+                        debug_ostr << endl;
+#endif // DEBUG_WRITE_LINKED_AS_ASCII
+                        break;
+                    }
+                }
+#else // DEBUG_LINKED_USE_INT4_BUFFER
                 vector<int2> out;
                 for( int x=0; x<EDGE_LINKING_MAX_EDGE_LENGTH; x++ ) {
                     const int2& ref = _h_ring_output.ptr(y)[x];
@@ -341,23 +366,32 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                         break;
                     }
                 }
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
                 if( out.size() != 0 ) {
-                    DebugImage::plotPoints( out, edgeclone.e, false, color );
                     do_print = true;
-                    color++;
-                    if( color == DebugImage::WHITE ) color = DebugImage::LAST;
 #ifdef DEBUG_WRITE_LINKED_AS_PPM_INTENSE
                     PtrStepSzbClone e2( edges );
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+                    DebugImage::plotPoints( out_blue,  e2.e, true, DebugImage::BLUE );
+                    DebugImage::plotPoints( out_green, e2.e, false, DebugImage::GREEN );
+#else // DEBUG_LINKED_USE_INT4_BUFFER
                     DebugImage::plotPoints( out, e2.e, true, DebugImage::BLUE );
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
                     ostringstream ostr;
                     ostr << filename << "-linked-dots-" << y << ".ppm";
-                    cerr << "writing to " << ostr.str() << endl;
+                    // cerr << "writing to " << ostr.str() << endl;
                     DebugImage::writePPM( ostr.str(), e2.e );
+#else // DEBUG_WRITE_LINKED_AS_PPM_INTENSE
+                    DebugImage::plotPoints( out, edgeclone.e, false, color );
+                    color++;
+                    if( color == DebugImage::WHITE ) color = DebugImage::LAST;
 #endif // DEBUG_WRITE_LINKED_AS_PPM_INTENSE
                 }
             }
             if( do_print ) {
+#ifndef DEBUG_WRITE_LINKED_AS_PPM_INTENSE
                 DebugImage::writePPM( filename + "-linked-dots.ppm", edgeclone.e );
+#endif // not DEBUG_WRITE_LINKED_AS_PPM_INTENSE
 #ifdef DEBUG_WRITE_LINKED_AS_ASCII
                 DebugImage::writeASCII( filename + "-linked-dots.txt", debug_ostr.str() );
 #endif // DEBUG_WRITE_LINKED_AS_ASCII

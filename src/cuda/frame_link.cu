@@ -140,7 +140,11 @@ private:
 #ifdef ONE_THREAD_ONLY
 // include data in class
 #else // ONE_THREAD_ONLY
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+__shared__ int4  edge_buffer[EDGE_LINKING_MAX_EDGE_LENGTH]; // convexEdgeSegment
+#else // DEBUG_LINKED_USE_INT4_BUFFER
 __shared__ int2  edge_buffer[EDGE_LINKING_MAX_EDGE_LENGTH]; // convexEdgeSegment
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
 __shared__ int   edge_index[2];
 #endif // ONE_THREAD_ONLY
 
@@ -167,30 +171,60 @@ struct EdgeBuffer
 #endif // ONE_THREAD_ONLY
     }
 
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+    __device__ inline
+    int2 get( Direction d )
+    {
+        int2 retval;
+        int  idx;
+        if( d == Left ) {
+            idx = edge_index[Left];
+            dec( idx );
+        } else {
+            idx = edge_index[Right];
+        }
+        retval.x = edge_buffer[idx].x;
+        retval.y = edge_buffer[idx].y;
+        return retval;
+    }
+#else // DEBUG_LINKED_USE_INT4_BUFFER
     __device__ inline
     const int2& get( Direction d )
     {
+        int idx;
         if( d == Left ) {
-            int idx = edge_index[Left];
+            idx = edge_index[Left];
             dec( idx );
-            return edge_buffer[idx];
         } else {
-            int idx = edge_index[Right];
-            return edge_buffer[idx];
+            idx = edge_index[Right];
         }
+        return edge_buffer[idx];
     }
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
 
     __device__ inline
     void append( Direction d, int2 val )
     {
         if( d == Left ) {
-            edge_buffer[edge_index[Left]] = val;
-            assert( edge_index[Left] != edge_index[Right] );
+            const int idx = edge_index[Left];
+            edge_buffer[idx].x = val.x;
+            edge_buffer[idx].y = val.y;
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+            edge_buffer[idx].z = Left;
+            edge_buffer[idx].w = idx;
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
+            assert( idx != edge_index[Right] );
             inc( edge_index[Left] );
         } else {
             assert( edge_index[Left] != edge_index[Right] );
             dec( edge_index[Right] );
-            edge_buffer[edge_index[Right]] = val;
+            const int idx = edge_index[Right];
+            edge_buffer[idx].x = val.x;
+            edge_buffer[idx].y = val.y;
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+            edge_buffer[idx].z = Right;
+            edge_buffer[idx].w = idx;
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
         }
     }
 
@@ -680,7 +714,7 @@ void Frame::applyLink( const cctag::Parameters& params )
 
     POP_CUDA_MEMCPY_2D_ASYNC( _h_ring_output.data, _h_ring_output.step,
                               _d_ring_output.data, _d_ring_output.step,
-                              _d_ring_output.cols*sizeof(int2),
+                              _d_ring_output.cols*sizeof(PtrStepInt2::elem_type),
                               _d_ring_output.rows,
                               cudaMemcpyDeviceToHost,
                               _stream );

@@ -34,9 +34,11 @@
 #define DEBUG_WRITE_LINKED_AS_PPM
 #define DEBUG_WRITE_LINKED_AS_PPM_INTENSE
 #define DEBUG_WRITE_LINKED_AS_ASCII
+#define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
 
 #undef  DEBUG_RETURN_AFTER_GRADIENT_DESCENT
 #undef  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
+#define DEBUG_LINKED_USE_INT4_BUFFER
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
@@ -58,12 +60,18 @@ namespace cv {
         typedef PtrStepSz<int16_t>  PtrStepSz16s;
         typedef PtrStepSz<uint32_t> PtrStepSz32u;
         typedef PtrStepSz<int32_t>  PtrStepSz32s;
-        typedef PtrStepSz<int2>     PtrStepSzInt2;
 
         typedef PtrStep<int16_t>    PtrStep16s;
         typedef PtrStep<uint32_t>   PtrStep32u;
         typedef PtrStep<int32_t>    PtrStep32s;
+
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+        typedef PtrStepSz<int4>     PtrStepSzInt2;
+        typedef PtrStep<int4>       PtrStepInt2;
+#else // DEBUG_LINKED_USE_INT4_BUFFER
+        typedef PtrStepSz<int2>     PtrStepSzInt2;
         typedef PtrStep<int2>       PtrStepInt2;
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
     }
 };
 
