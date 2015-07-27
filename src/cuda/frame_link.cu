@@ -168,7 +168,14 @@ struct EdgeBuffer
     __device__ inline
     const int2& get( Direction d )
     {
-        return edge_buffer[edge_index[d]];
+        if( d == Left ) {
+            int idx = edge_index[Left];
+            dec( idx );
+            return edge_buffer[idx];
+        } else {
+            int idx = edge_index[Right];
+            return edge_buffer[idx];
+        }
     }
 
     __device__ inline
@@ -270,7 +277,7 @@ void edge_linking_seed( const TriplePoint*           p,
         // this cycle coordinates
         int2  tcc = buf.get( direction );
 
-        if( i > 0 ) {
+        if( buf.size() > 1 ) {
             // other direction coordinates
             int2 odc = buf.get( other_direction );
 
