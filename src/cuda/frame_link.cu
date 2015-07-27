@@ -485,9 +485,9 @@ void edge_linking_seed( const TriplePoint*           p,
         uint32_t computer = __ffs( any_point_found ) - 1;
 #else
         if( point_found == false ) j = 8;
-        j = min( __shfl_xor( j, 4 );
-        j = min( __shfl_xor( j, 2 );
-        j = min( __shfl_xor( j, 1 );
+        j = min( j, __shfl_xor( j, 4 ) );
+        j = min( j, __shfl_xor( j, 2 ) );
+        j = min( j, __shfl_xor( j, 1 ) );
         assert( j < 8 );
 #endif
 
