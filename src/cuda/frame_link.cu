@@ -162,7 +162,7 @@ struct EdgeBuffer
         edge_buffer[0].x  = start.x;
         edge_buffer[0].y  = start.y;
         edge_buffer[0].z  = Left;
-        edge_buffer[0].w  = 1;
+        edge_buffer[0].w  = 0;
 #else // DEBUG_LINKED_USE_INT4_BUFFER
         edge_buffer[0]    = start;
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
@@ -174,7 +174,7 @@ struct EdgeBuffer
             edge_buffer[0].x  = start.x;
             edge_buffer[0].y  = start.y;
             edge_buffer[0].z  = Left;
-            edge_buffer[0].w  = 1;
+            edge_buffer[0].w  = 0;
 #else // DEBUG_LINKED_USE_INT4_BUFFER
             edge_buffer[0]    = start;
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
