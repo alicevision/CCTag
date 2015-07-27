@@ -55,7 +55,7 @@ struct RingBuffer
     size_t    ct;
     float     angle_diff;
 
-    __device__ RingBuffer( Direction dir, size_t size ) {
+    __device__ RingBuffer( Direction dir, const size_t size ) {
         assert( size < EDGE_LINKING_MAX_RING_BUFFER_SIZE );
         direction   = dir;
         max_size    = size;
@@ -225,8 +225,8 @@ void edge_linking_seed( const TriplePoint*           p,
                         int*                         d_ring_counter,
                         int                          d_ring_counter_max,
                         cv::cuda::PtrStepSzInt2      d_ring_output,
-                        size_t param_windowSizeOnInnerEllipticSegment,
-                        float  param_averageVoteMin )
+                        const size_t param_windowSizeOnInnerEllipticSegment,
+                        const float  param_averageVoteMin )
 {
     Direction direction       = Left;
     Direction other_direction = Right;
@@ -403,7 +403,7 @@ void edge_linking_seed( const TriplePoint*           p,
             if (convexEdgeSegmentSize > param_windowSizeOnInnerEllipticSegment) {
                 int write_index = atomicAdd( d_ring_counter, 1 );
                 if( write_index <= d_ring_counter_max ) {
-                    printf("The number of points reached from (%d,%d): %d (average vote %f)\n", p->coord.x, p->coord.y, i, averageVote );
+                    printf("From (%d,%d): %d (average vote %f) - accept, edge segment size %d\n", p->coord.x, p->coord.y, i, averageVote, convexEdgeSegmentSize );
                     buf.copy( d_ring_output, write_index );
                 } else {
                     printf("From (%d,%d): %d (average vote %f) - skip, max number of arcs reached (%d)\n", p->coord.x, p->coord.y, i, averageVote, d_ring_counter_max );
@@ -490,6 +490,9 @@ void Frame::applyLink( const cctag::Parameters& params )
 #ifdef NDEBUG
     POP_CUDA_SYNC( _stream );
     cout << "  Searching arcs from " << _vote._seed_indices.host.size << " seeds" << endl;
+    cout << "  Parameters: _windowSizeOnInnerEllipticSegment="
+         << params._windowSizeOnInnerEllipticSegment << endl
+         << "              _averageVoteMin=" << params._averageVoteMin << endl;
 #endif // NDEBUG
 
     /* Both init steps should be done in another stream, earlier. No reason to do
