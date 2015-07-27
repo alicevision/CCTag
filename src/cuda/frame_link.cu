@@ -36,7 +36,8 @@ enum Direction
 
 enum StopCondition
 {
-    LOW_FLOW        =     -3,
+    LOW_FLOW            = -4,
+    VOTE_LOW            = -3,
     CONVEXITY_LOST      = -2,
     EDGE_NOT_FOUND      = -1,
     NONE                =  0,
@@ -395,24 +396,53 @@ void edge_linking_seed( const TriplePoint*           p,
         averageVote = averageVoteCollect / buf.size();
     } // while
 
+    if( found == STILL_SEARCHING && averageVote < param_averageVoteMin ) {
+        found = VOTE_LOW;
+    }
+
     if( threadIdx.x == 0 )
     {
 
-        if( (i == EDGE_LINKING_MAX_EDGE_LENGTH) || (found == CONVEXITY_LOST) ) {
+        if( (i == EDGE_LINKING_MAX_EDGE_LENGTH) || (found == CONVEXITY_LOST) || (found == FULL_CIRCLE) ) {
             int convexEdgeSegmentSize = buf.size();
             if (convexEdgeSegmentSize > param_windowSizeOnInnerEllipticSegment) {
                 int write_index = atomicAdd( d_ring_counter, 1 );
                 if( write_index <= d_ring_counter_max ) {
-                    printf("From (%d,%d): %d (average vote %f) - accept, edge segment size %d\n", p->coord.x, p->coord.y, i, averageVote, convexEdgeSegmentSize );
+                    const char* c;
+                    if( i == EDGE_LINKING_MAX_EDGE_LENGTH ) {
+                        c = "max length";
+                    } if( found == CONVEXITY_LOST ) {
+                        c = "conv lost";
+                    } else {
+                        c = "full circle";
+                    }
+                    printf("From (%d,%d): %d (average vote %f) - accept (%s), edge segment size %d, write pos %d\n",
+                           p->coord.x, p->coord.y,
+                           i, averageVote,
+                           c, convexEdgeSegmentSize,
+                           write_index );
                     buf.copy( d_ring_output, write_index );
                 } else {
                     printf("From (%d,%d): %d (average vote %f) - skip, max number of arcs reached (%d)\n", p->coord.x, p->coord.y, i, averageVote, d_ring_counter_max );
                 }
             } else {
-                printf("From (%d,%d): %d (average vote %f) - skip, edge segment size %d <= %d\n", p->coord.x, p->coord.y, i, averageVote, convexEdgeSegmentSize, param_windowSizeOnInnerEllipticSegment );
+                int d = param_windowSizeOnInnerEllipticSegment;
+                printf("From (%d,%d): %d (average vote %f) - skip, edge segment size %d <= %d\n", p->coord.x, p->coord.y, i, averageVote, convexEdgeSegmentSize, d );
             }
         } else {
-            printf("From (%d,%d): %d (average vote %f) - skip, not max length, not convexity lost, but %d\n", p->coord.x, p->coord.y, i, averageVote, found );
+            const char* c;
+            switch(found) {
+                case LOW_FLOW : c = "LOW_FLOW"; break;
+                case VOTE_LOW : c = "VOTE_LOW"; break;
+                case CONVEXITY_LOST : c = "CONVEXITY_LOST"; break;
+                case EDGE_NOT_FOUND : c = "EDGE_NOT_FOUND"; break;
+                case NONE : c = "NONE"; break;
+                case STILL_SEARCHING : c = "STILL_SEARCHING"; break;
+                case FOUND_NEXT : c = "FOUND_NEXT"; break;
+                case FULL_CIRCLE : c = "FULL_CIRCLE"; break;
+                default: c = "UNKNOWN code"; break;
+            }
+            printf("From (%d,%d): %d (average vote %f) - skip, not max length, not convexity lost, but %s\n", p->coord.x, p->coord.y, i, averageVote, c );
         }
     }
 }
@@ -487,7 +517,7 @@ void Frame::applyLink( const cctag::Parameters& params )
         return;
     }
 
-#ifdef NDEBUG
+#ifndef NDEBUG
     POP_CUDA_SYNC( _stream );
     cout << "  Searching arcs from " << _vote._seed_indices.host.size << " seeds" << endl;
     cout << "  Parameters: _windowSizeOnInnerEllipticSegment="
