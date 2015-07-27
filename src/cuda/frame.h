@@ -68,9 +68,11 @@ namespace cv {
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
         typedef PtrStepSz<int4>     PtrStepSzInt2;
         typedef PtrStep<int4>       PtrStepInt2;
+        typedef int4                PtrStepInt2_base_t;
 #else // DEBUG_LINKED_USE_INT4_BUFFER
         typedef PtrStepSz<int2>     PtrStepSzInt2;
         typedef PtrStep<int2>       PtrStepInt2;
+        typedef int2                PtrStepInt2_base_t;
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
     }
 };

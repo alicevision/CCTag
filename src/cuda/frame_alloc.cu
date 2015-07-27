@@ -77,15 +77,15 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     _d_edges.cols = w;
     _d_edges.rows = h;
 
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(PtrStepInt2::elem_type), EDGE_LINKING_MAX_ARCS );
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t), EDGE_LINKING_MAX_ARCS );
     assert( p % _d_ring_output.elemSize() == 0 );
-    _d_ring_output.data = (PtrStepInt2::elem_type*)ptr;
+    _d_ring_output.data = (cv::cuda::PtrStepInt2_base_t*)ptr;
     _d_ring_output.step = p;
     _d_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _d_ring_output.rows = EDGE_LINKING_MAX_ARCS;
 
-    _h_ring_output.data = new PtrStepInt2::elem_type[EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH];
-    _h_ring_output.step = EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(PtrStepInt2::elem_type);
+    _h_ring_output.data = new cv::cuda::PtrStepInt2_base_t[EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH];
+    _h_ring_output.step = EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t);
     _h_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _h_ring_output.rows = EDGE_LINKING_MAX_ARCS;
 

@@ -158,12 +158,26 @@ struct EdgeBuffer
     void init( int2 start )
     {
 #ifdef ONE_THREAD_ONLY
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+        edge_buffer[0].x  = start.x;
+        edge_buffer[0].y  = start.y;
+        edge_buffer[0].z  = Left;
+        edge_buffer[0].w  = 1;
+#else // DEBUG_LINKED_USE_INT4_BUFFER
         edge_buffer[0]    = start;
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
         edge_index[Left]  = 1;
         edge_index[Right] = 0;
 #else // ONE_THREAD_ONLY
         if( threadIdx.x == 0 ) {
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+            edge_buffer[0].x  = start.x;
+            edge_buffer[0].y  = start.y;
+            edge_buffer[0].z  = Left;
+            edge_buffer[0].w  = 1;
+#else // DEBUG_LINKED_USE_INT4_BUFFER
             edge_buffer[0]    = start;
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
             edge_index[Left]  = 1;
             edge_index[Right] = 0;
         }
@@ -247,7 +261,7 @@ struct EdgeBuffer
             assert( size() <= output.cols );
         }
         int j = 0;
-        int2* ptr = output.ptr(idx);
+        cv::cuda::PtrStepInt2_base_t* ptr = output.ptr(idx);
         for( int idx=edge_index[Right]; idx!=edge_index[Left]; inc(idx) ) {
             ptr[j] = edge_buffer[idx];
             j++;
@@ -714,7 +728,7 @@ void Frame::applyLink( const cctag::Parameters& params )
 
     POP_CUDA_MEMCPY_2D_ASYNC( _h_ring_output.data, _h_ring_output.step,
                               _d_ring_output.data, _d_ring_output.step,
-                              _d_ring_output.cols*sizeof(PtrStepInt2::elem_type),
+                              _d_ring_output.cols*sizeof(cv::cuda::PtrStepInt2_base_t),
                               _d_ring_output.rows,
                               cudaMemcpyDeviceToHost,
                               _stream );

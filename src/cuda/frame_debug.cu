@@ -318,18 +318,19 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #ifndef NDEBUG
 #ifdef DEBUG_WRITE_LINKED_AS_PPM
     {
+#ifdef DEBUG_WRITE_LINKED_AS_ASCII
+        const bool write_linked_as_ascii = true;
+#else // DEBUG_WRITE_LINKED_AS_ASCII
+        const bool write_linked_as_ascii = false;
+#endif // DEBUG_WRITE_LINKED_AS_ASCII
         if( _vote._chained_edgecoords.host.size > 0 && _vote._seed_indices.host.size > 0) {
             PtrStepSzbClone edgeclone( edges );
-            DebugImage::BaseColor color = DebugImage::LAST;
-#ifdef DEBUG_WRITE_LINKED_AS_ASCII
             ostringstream debug_ostr;
-#endif // DEBUG_WRITE_LINKED_AS_ASCII
             bool do_print = false;
-            for( int y=0; y<EDGE_LINKING_MAX_ARCS; y++ ) {
-#ifdef DEBUG_WRITE_LINKED_AS_ASCII
-                debug_ostr << "Arc " << y << ": ";
-#endif // DEBUG_WRITE_LINKED_AS_ASCII
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
+            for( int y=0; y<EDGE_LINKING_MAX_ARCS; y++ ) {
+                if( write_linked_as_ascii )
+                    debug_ostr << "Arc " << y << ": ";
                 vector<int2> out_blue;
                 vector<int2> out_green;
                 for( int x=0; x<EDGE_LINKING_MAX_EDGE_LENGTH; x++ ) {
@@ -339,44 +340,49 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                         if( ref.z == 0 )
                             out_blue.push_back( dat );
                         else
-                            out_blue.push_green( dat );
-#ifdef DEBUG_WRITE_LINKED_AS_ASCII
-                        debug_ostr << "(" << ref.x << "," << ref.y << ":" << (ref.z==0?"L":"R") << ":" << ref.w << ") ";
-#endif // DEBUG_WRITE_LINKED_AS_ASCII
+                            out_green.push_back( dat );
+                        if( write_linked_as_ascii ) {
+                            debug_ostr << "(" << ref.x << "," << ref.y << ":" << (ref.z==0?"L":"R") << ":" << ref.w << ") ";
+                        }
                     } else {
-#ifdef DEBUG_WRITE_LINKED_AS_ASCII
-                        debug_ostr << endl;
-#endif // DEBUG_WRITE_LINKED_AS_ASCII
+                        if( write_linked_as_ascii ) debug_ostr << endl;
                         break;
                     }
                 }
+                if( out_green.size() != 0 || out_blue.size() != 0 ) {
+                    do_print = true;
+                    PtrStepSzbClone e2( edges );
+                    DebugImage::plotPoints( out_blue,  e2.e, true, DebugImage::BLUE );
+                    DebugImage::plotPoints( out_green, e2.e, false, DebugImage::GREEN );
+                    ostringstream ostr;
+                    ostr << filename << "-linked-dots-" << y << ".ppm";
+                    // cerr << "writing to " << ostr.str() << endl;
+                    DebugImage::writePPM( ostr.str(), e2.e );
+                }
+            }
 #else // DEBUG_LINKED_USE_INT4_BUFFER
+            DebugImage::BaseColor color = DebugImage::LAST;
+            for( int y=0; y<EDGE_LINKING_MAX_ARCS; y++ ) {
+                if( write_linked_as_ascii )
+                    debug_ostr << "Arc " << y << ": ";
                 vector<int2> out;
                 for( int x=0; x<EDGE_LINKING_MAX_EDGE_LENGTH; x++ ) {
                     const int2& ref = _h_ring_output.ptr(y)[x];
                     if( ref.x != 0 || ref.y != 0 ) {
                         out.push_back( ref );
-#ifdef DEBUG_WRITE_LINKED_AS_ASCII
-                        debug_ostr << "(" << ref.x << "," << ref.y << ") ";
-#endif // DEBUG_WRITE_LINKED_AS_ASCII
+                        if( write_linked_as_ascii ) {
+                            debug_ostr << "(" << ref.x << "," << ref.y << ") ";
+                        }
                     } else {
-#ifdef DEBUG_WRITE_LINKED_AS_ASCII
-                        debug_ostr << endl;
-#endif // DEBUG_WRITE_LINKED_AS_ASCII
+                        if( write_linked_as_ascii ) debug_ostr << endl;
                         break;
                     }
                 }
-#endif // DEBUG_LINKED_USE_INT4_BUFFER
                 if( out.size() != 0 ) {
                     do_print = true;
 #ifdef DEBUG_WRITE_LINKED_AS_PPM_INTENSE
                     PtrStepSzbClone e2( edges );
-#ifdef DEBUG_LINKED_USE_INT4_BUFFER
-                    DebugImage::plotPoints( out_blue,  e2.e, true, DebugImage::BLUE );
-                    DebugImage::plotPoints( out_green, e2.e, false, DebugImage::GREEN );
-#else // DEBUG_LINKED_USE_INT4_BUFFER
                     DebugImage::plotPoints( out, e2.e, true, DebugImage::BLUE );
-#endif // DEBUG_LINKED_USE_INT4_BUFFER
                     ostringstream ostr;
                     ostr << filename << "-linked-dots-" << y << ".ppm";
                     // cerr << "writing to " << ostr.str() << endl;
@@ -388,13 +394,14 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // DEBUG_WRITE_LINKED_AS_PPM_INTENSE
                 }
             }
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
             if( do_print ) {
 #ifndef DEBUG_WRITE_LINKED_AS_PPM_INTENSE
                 DebugImage::writePPM( filename + "-linked-dots.ppm", edgeclone.e );
 #endif // not DEBUG_WRITE_LINKED_AS_PPM_INTENSE
-#ifdef DEBUG_WRITE_LINKED_AS_ASCII
-                DebugImage::writeASCII( filename + "-linked-dots.txt", debug_ostr.str() );
-#endif // DEBUG_WRITE_LINKED_AS_ASCII
+                if( write_linked_as_ascii ) {
+                    DebugImage::writeASCII( filename + "-linked-dots.txt", debug_ostr.str() );
+                }
             }
         }
     }
