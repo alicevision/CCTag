@@ -255,16 +255,17 @@ struct EdgeBuffer
     __device__
     void copy( cv::cuda::PtrStepSzInt2 output, int idx )
     {
+        int sz = size();
         assert( idx < output.rows );
-        if( size() > output.cols ) {
+        if( sz > output.cols ) {
             printf("error copying link output, columns %d entries %d\n", output.cols, size() );
-            assert( size() <= output.cols );
+            assert( sz <= output.cols );
         }
-        int j = 0;
         cv::cuda::PtrStepInt2_base_t* ptr = output.ptr(idx);
-        for( int idx=edge_index[Right]; idx!=edge_index[Left]; inc(idx) ) {
-            ptr[j] = edge_buffer[idx];
-            j++;
+        int pos=edge_index[Right];
+        for( int loop=0; loop<sz; loop++ ) {
+            ptr[loop] = edge_buffer[pos];
+            inc(pos);
         }
     }
 
