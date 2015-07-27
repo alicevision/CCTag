@@ -216,17 +216,16 @@ struct EdgeBuffer
     }
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
 
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
     __device__ inline
-    void append( Direction d, int2 val )
+    void append( Direction d, int2 val, int j )
     {
         if( d == Left ) {
             const int idx = edge_index[Left];
             edge_buffer[idx].x = val.x;
             edge_buffer[idx].y = val.y;
-#ifdef DEBUG_LINKED_USE_INT4_BUFFER
-            edge_buffer[idx].z = Left;
+            edge_buffer[idx].z = j;
             edge_buffer[idx].w = idx;
-#endif // DEBUG_LINKED_USE_INT4_BUFFER
             assert( idx != edge_index[Right] );
             inc( edge_index[Left] );
         } else {
@@ -235,12 +234,27 @@ struct EdgeBuffer
             const int idx = edge_index[Right];
             edge_buffer[idx].x = val.x;
             edge_buffer[idx].y = val.y;
-#ifdef DEBUG_LINKED_USE_INT4_BUFFER
-            edge_buffer[idx].z = Right;
+            edge_buffer[idx].z = 100+j;
             edge_buffer[idx].w = idx;
-#endif // DEBUG_LINKED_USE_INT4_BUFFER
         }
     }
+#else // DEBUG_LINKED_USE_INT4_BUFFER
+    __device__ inline
+    void append( Direction d, int2 val )
+    {
+        if( d == Left ) {
+            const int idx = edge_index[Left];
+            edge_buffer[idx] = val;
+            assert( idx != edge_index[Right] );
+            inc( edge_index[Left] );
+        } else {
+            assert( edge_index[Left] != edge_index[Right] );
+            dec( edge_index[Right] );
+            const int idx = edge_index[Right];
+            edge_buffer[idx] = val;
+        }
+    }
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
 
     __device__ inline
     int size() const
@@ -492,7 +506,11 @@ void edge_linking_seed( const TriplePoint*           p,
                      ( ( s <  0.0f   ) && ( c < 0.0f ) ) );
             
             if( not stop ) {
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+                buf.append( direction, new_point, j );
+#else // DEBUG_LINKED_USE_INT4_BUFFER
                 buf.append( direction, new_point );
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
                 int idx = edgepoint_index_table.ptr(new_point.y)[new_point.x];
                 if( idx > 0 ) {
                     // ptr can be any seed or voter candidate, and its _winnerSize

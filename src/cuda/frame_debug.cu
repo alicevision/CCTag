@@ -345,7 +345,12 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                                 write_linked_as_ascii_first_entry_in_line_written = true;
                                 debug_ostr << "Arc " << y << ": ";
                             }
-                            debug_ostr << "(" << ref.x << "," << ref.y << ":" << (ref.z==0?"L":"R") << ":" << ref.w << ") ";
+                            debug_ostr << "(" << ref.x << "," << ref.y << ":";
+                            if( ref.z<100 )
+                                debug_ostr << "L" << ref.z;
+                            else
+                                debug_ostr << "R" << (ref.z-100);
+                            debug_ostr << ":" << ref.w << ") ";
                         }
                     } else {
                         if( write_linked_as_ascii && write_linked_as_ascii_first_entry_in_line_written ) {
