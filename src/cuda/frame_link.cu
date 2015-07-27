@@ -397,16 +397,22 @@ void edge_linking_seed( const TriplePoint*           p,
 
     if( threadIdx.x == 0 )
     {
-        // printf("The number of points reached from (%d,%d): %d (averge vote %f)\n", p->coord.x, p->coord.y, i, averageVote );
 
         if( (i == EDGE_LINKING_MAX_EDGE_LENGTH) || (found == CONVEXITY_LOST) ) {
             int convexEdgeSegmentSize = buf.size();
             if (convexEdgeSegmentSize > param_windowSizeOnInnerEllipticSegment) {
                 int write_index = atomicAdd( d_ring_counter, 1 );
                 if( write_index <= d_ring_counter_max ) {
+                    printf("The number of points reached from (%d,%d): %d (average vote %f)\n", p->coord.x, p->coord.y, i, averageVote );
                     buf.copy( d_ring_output, write_index );
+                } else {
+                    printf("From (%d,%d): %d (average vote %f) - skip, max number of arcs reached (%d)\n", p->coord.x, p->coord.y, i, averageVote, d_ring_counter_max );
                 }
+            } else {
+                printf("From (%d,%d): %d (average vote %f) - skip, edge segment size %d <= %d\n", p->coord.x, p->coord.y, i, averageVote, convexEdgeSegmentSize, param_windowSizeOnInnerEllipticSegment );
             }
+        } else {
+            printf("From (%d,%d): %d (average vote %f) - skip, not max length, not convexity lost, but %d\n", p->coord.x, p->coord.y, i, averageVote, found );
         }
     }
 }
@@ -481,12 +487,14 @@ void Frame::applyLink( const cctag::Parameters& params )
         return;
     }
 
-    /* We could re-use edges, but it has only 1-byte cells.
-     * Seeds may have int-valued indices, so we need 4-byte cells.
-     * _d_intermediate is a float image, and can be used.
-     */
-    // cv::cuda::PtrStepSz32s edge_cast( _d_intermediate );
+#ifdef NDEBUG
+    POP_CUDA_SYNC( _stream );
+    cout << "  Searching arcs from " << _vote._seed_indices.host.size << " seeds" << endl;
+#endif // NDEBUG
 
+    /* Both init steps should be done in another stream, earlier. No reason to do
+     * this synchronously.
+     */
     POP_CUDA_SET0_ASYNC( _d_ring_counter, _stream );
 
     POP_CUDA_MEMSET_ASYNC( _d_ring_output.data, 0, _d_ring_output.step*_d_ring_output.rows, _stream );
@@ -530,6 +538,14 @@ void Frame::applyLink( const cctag::Parameters& params )
                               _stream );
 
     POP_CHK_CALL_IFSYNC;
+
+#ifndef NDEBUG
+    int h_ring_counter;
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &h_ring_counter, _d_ring_counter, sizeof(int), _stream );
+    POP_CHK_CALL_IFSYNC;
+    POP_CUDA_SYNC( _stream );
+    cout << "  Found arcs from " << h_ring_counter << " seeds" << endl;
+#endif // NDEBUG
 
     cout << "Leave " << __FUNCTION__ << endl;
 }
