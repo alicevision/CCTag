@@ -439,9 +439,13 @@ void edge_linking_seed( const TriplePoint*           p,
             continue;
         }
 #else // not ONE_THREAD_ONLY
+#if 0
         int j = 7 - threadIdx.x; // counting backwards, so that the winner in __ffs
                                  // is identical to winner in loop code that starts
                                  // at 0
+#else
+        int j = threadIdx.x;
+#endif
         int  off_index = ( direction == Right ) ?  ( ( 8 - shifting + j ) % 8 )
                                                 :  (     ( shifting + j ) % 8 );
         assert( off_index >= 0 );
@@ -461,7 +465,6 @@ void edge_linking_seed( const TriplePoint*           p,
             // point, and has its coordinates in new_point
             point_found = true;
         }
-
         uint32_t any_point_found = __ballot( point_found );
 
         if( not any_point_found ) {
@@ -476,14 +479,26 @@ void edge_linking_seed( const TriplePoint*           p,
             continue;
         }
 
+#if 0
         // This direction still has points.
         // We can identify the highest threadId / lowest rotation value j
         uint32_t computer = __ffs( any_point_found ) - 1;
+#else
+        if( point_found == false ) j = 8;
+        j = min( __shfl_xor( j, 4 );
+        j = min( __shfl_xor( j, 2 );
+        j = min( __shfl_xor( j, 1 );
+        assert( j < 8 );
+#endif
 
         found = LOW_FLOW;
 
         float winnerSize = 0.0f;
+#if 0
         if( threadIdx.x == computer ) {
+#else
+        if( threadIdx.x == j ) {
+#endif
             //
             // The whole if/else block is identical for all j.
             // No reason to do it more than once. Astonishingly,
@@ -529,9 +544,9 @@ void edge_linking_seed( const TriplePoint*           p,
         assert( found == LOW_FLOW || found == FOUND_NEXT || found == CONVEXITY_LOST );
 
         // both FOUND_NEXT and CONVEXITY_LOST are > LOW_FLOW
-        found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 1 ) );
-        found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 2 ) );
         found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 4 ) );
+        found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 2 ) );
+        found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 1 ) );
 
         assert( found == FOUND_NEXT || found == CONVEXITY_LOST );
 
