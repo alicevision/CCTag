@@ -5,7 +5,9 @@
 #include "assist.h"
 #include "recursive_sweep.h"
 
-#define ONE_THREAD_ONLY
+#undef  ONE_THREAD_ONLY // doesn't work?
+#undef  KERNEL_PRINT_ERROR_CAUSE
+#define KERNEL_PRINT_SUCCESS_CAUSE
 
 using namespace std;
 
@@ -506,6 +508,7 @@ void edge_linking_seed( const TriplePoint*           p,
             if (convexEdgeSegmentSize > param_windowSizeOnInnerEllipticSegment) {
                 int write_index = atomicAdd( d_ring_counter, 1 );
                 if( write_index <= d_ring_counter_max ) {
+#ifdef KERNEL_PRINT_SUCCESS_CAUSE
                     const char* c;
                     if( i == EDGE_LINKING_MAX_EDGE_LENGTH ) {
                         c = "max length";
@@ -519,15 +522,24 @@ void edge_linking_seed( const TriplePoint*           p,
                            i, averageVote,
                            c, convexEdgeSegmentSize,
                            write_index );
+#endif // KERNEL_PRINT_SUCCESS_CAUSE
                     buf.copy( d_ring_output, write_index );
-                } else {
+                }
+#ifdef KERNEL_PRINT_ERROR_CAUSE
+                else {
                     printf("From (%d,%d): %d (average vote %f) - skip, max number of arcs reached (%d)\n", p->coord.x, p->coord.y, i, averageVote, d_ring_counter_max );
                 }
-            } else {
+#endif // KERNEL_PRINT_ERROR_CAUSE
+            }
+#ifdef KERNEL_PRINT_ERROR_CAUSE
+            else {
                 int d = param_windowSizeOnInnerEllipticSegment;
                 printf("From (%d,%d): %d (average vote %f) - skip, edge segment size %d <= %d\n", p->coord.x, p->coord.y, i, averageVote, convexEdgeSegmentSize, d );
             }
-        } else {
+#endif // KERNEL_PRINT_ERROR_CAUSE
+        }
+#ifdef KERNEL_PRINT_ERROR_CAUSE
+        else {
             const char* c;
             switch(found) {
                 case LOW_FLOW : c = "LOW_FLOW"; break;
@@ -542,6 +554,7 @@ void edge_linking_seed( const TriplePoint*           p,
             }
             printf("From (%d,%d): %d (average vote %f) - skip, not max length, not convexity lost, but %s\n", p->coord.x, p->coord.y, i, averageVote, c );
         }
+#endif // KERNEL_PRINT_ERROR_CAUSE
     }
 }
 

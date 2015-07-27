@@ -324,6 +324,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #ifdef DEBUG_WRITE_LINKED_AS_ASCII
             ostringstream debug_ostr;
 #endif // DEBUG_WRITE_LINKED_AS_ASCII
+            bool do_print = false;
             for( int y=0; y<EDGE_LINKING_MAX_ARCS; y++ ) {
                 vector<int2> out;
                 for( int x=0; x<EDGE_LINKING_MAX_EDGE_LENGTH; x++ ) {
@@ -342,14 +343,25 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                 }
                 if( out.size() != 0 ) {
                     DebugImage::plotPoints( out, edgeclone.e, false, color );
+                    do_print = true;
                     color++;
                     if( color == DebugImage::WHITE ) color = DebugImage::LAST;
+#ifdef DEBUG_WRITE_LINKED_AS_PPM_INTENSE
+                    PtrStepSzbClone e2( edges );
+                    DebugImage::plotPoints( out, e2.e, true, DebugImage::BLUE );
+                    ostringstream ostr;
+                    ostr << filename << "-linked-dots-" << y << ".ppm";
+                    cerr << "writing to " << ostr.str() << endl;
+                    DebugImage::writePPM( ostr.str(), e2.e );
+#endif // DEBUG_WRITE_LINKED_AS_PPM_INTENSE
                 }
             }
-            DebugImage::writePPM( filename + "-linked-dots.ppm", edgeclone.e );
+            if( do_print ) {
+                DebugImage::writePPM( filename + "-linked-dots.ppm", edgeclone.e );
 #ifdef DEBUG_WRITE_LINKED_AS_ASCII
-            DebugImage::writeASCII( filename + "-linked-dots.txt", debug_ostr.str() );
+                DebugImage::writeASCII( filename + "-linked-dots.txt", debug_ostr.str() );
 #endif // DEBUG_WRITE_LINKED_AS_ASCII
+            }
         }
     }
 #endif // DEBUG_WRITE_LINKED_AS_PPM
