@@ -329,8 +329,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
             bool do_print = false;
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
             for( int y=0; y<EDGE_LINKING_MAX_ARCS; y++ ) {
-                if( write_linked_as_ascii )
-                    debug_ostr << "Arc " << y << ": ";
+                bool write_linked_as_ascii_first_entry_in_line_written = false;
                 vector<int2> out_blue;
                 vector<int2> out_green;
                 for( int x=0; x<EDGE_LINKING_MAX_EDGE_LENGTH; x++ ) {
@@ -342,10 +341,16 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                         else
                             out_green.push_back( dat );
                         if( write_linked_as_ascii ) {
+                            if( not write_linked_as_ascii_first_entry_in_line_written ) {
+                                write_linked_as_ascii_first_entry_in_line_written = true;
+                                debug_ostr << "Arc " << y << ": ";
+                            }
                             debug_ostr << "(" << ref.x << "," << ref.y << ":" << (ref.z==0?"L":"R") << ":" << ref.w << ") ";
                         }
                     } else {
-                        if( write_linked_as_ascii ) debug_ostr << endl;
+                        if( write_linked_as_ascii && write_linked_as_ascii_first_entry_in_line_written ) {
+                            debug_ostr << endl;
+                        }
                         break;
                     }
                 }
