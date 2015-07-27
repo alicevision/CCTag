@@ -5,6 +5,8 @@
 #include "assist.h"
 #include "recursive_sweep.h"
 
+#define ONE_THREAD_ONLY
+
 using namespace std;
 
 namespace popart
@@ -133,20 +135,34 @@ private:
     }
 };
 
+#ifdef ONE_THREAD_ONLY
+// include data in class
+#else // ONE_THREAD_ONLY
 __shared__ int2  edge_buffer[EDGE_LINKING_MAX_EDGE_LENGTH]; // convexEdgeSegment
 __shared__ int   edge_index[2];
+#endif // ONE_THREAD_ONLY
 
 struct EdgeBuffer
 {
+#ifdef ONE_THREAD_ONLY
+    int2  edge_buffer[EDGE_LINKING_MAX_EDGE_LENGTH]; // convexEdgeSegment
+    int   edge_index[2];
+#endif // ONE_THREAD_ONLY
     __device__ inline
     void init( int2 start )
     {
+#ifdef ONE_THREAD_ONLY
+        edge_buffer[0]    = start;
+        edge_index[Left]  = 1;
+        edge_index[Right] = 0;
+#else // ONE_THREAD_ONLY
         if( threadIdx.x == 0 ) {
             edge_buffer[0]    = start;
             edge_index[Left]  = 1;
             edge_index[Right] = 0;
         }
         __syncthreads();
+#endif // ONE_THREAD_ONLY
     }
 
     __device__ inline
@@ -280,6 +296,75 @@ void edge_linking_seed( const TriplePoint*           p,
                               / (2.0f * CUDART_PI_F) ) * 8.0f ) - 1;
 
         // int j = threadIdx.x; // 0..7
+#ifdef ONE_THREAD_ONLY
+        int j = 0;
+        while( j<8 ) {
+            // winner is always the lowest j that finds a point
+            int  off_index = ( direction == Right ) ?  ( ( 8 - shifting + j ) % 8 )
+                                                    :  (     ( shifting + j ) % 8 );
+            assert( off_index >= 0 );
+            assert( off_index <  8 );
+            int xoffset = xoff_select[off_index];
+            int yoffset = yoff_select[direction][off_index];
+            int2 new_point = make_int2( tcc.x + xoffset, tcc.y + yoffset );
+
+            if( ( new_point.x >= 0 && new_point.x < edges.cols ) &&
+                ( new_point.y >= 0 && new_point.y < edges.rows ) &&
+                ( edges.ptr(new_point.y)[new_point.x] > 0 ) )
+            {
+                // This j has found a point.
+
+                float s;
+                float c;
+                __sincosf( phi.diff(), &s, &c );
+                s = ( direction == Left ) ? s : -s;
+
+                //
+                // three conditions to conclude CONVEXITY_LOST
+                //
+                bool stop;
+                stop = ( ( ( phi.size() == param_windowSizeOnInnerEllipticSegment ) &&
+                         ( s <  0.0f   ) ) ||
+                         ( ( s < -0.707f ) && ( c > 0.0f ) ) ||
+                         ( ( s <  0.0f   ) && ( c < 0.0f ) ) );
+                if( stop ) {
+                    if( direction == Right ) {
+                        found = CONVEXITY_LOST;
+                        break;
+                    } else {
+                        found           = STILL_SEARCHING;
+                        direction       = Right;
+                        other_direction = Left;
+                        phi.set_direction( Right );
+                    }
+                } else {
+                    found = STILL_SEARCHING;
+                    buf.append( direction, new_point );
+                    int idx = edgepoint_index_table.ptr(new_point.y)[new_point.x];
+                    if( idx > 0 ) {
+                        assert( idx < triplepoints.Size() );
+                        TriplePoint* ptr = &triplepoints.ptr[idx];
+                        averageVoteCollect += ptr->_winnerSize;
+                    }
+                }
+
+                break;
+            }
+            j++;
+        }
+        if( found == STILL_SEARCHING ) {
+            // checked all 8 directions, but no point found
+            if( direction == Right ) {
+                found = EDGE_NOT_FOUND;
+                continue;
+            }
+            found           = STILL_SEARCHING;
+            direction       = Right;
+            other_direction = Left;
+            phi.set_direction( Right );
+            continue;
+        }
+#else // not ONE_THREAD_ONLY
         int j = 7 - threadIdx.x; // counting backwards, so that the winner in __ffs
                                  // is identical to winner in loop code that starts
                                  // at 0
@@ -390,6 +475,7 @@ void edge_linking_seed( const TriplePoint*           p,
             other_direction = Left;
             phi.set_direction( Right );
         }
+#endif // ONE_THREAD_ONLY
 
         ++i;
 
@@ -400,9 +486,12 @@ void edge_linking_seed( const TriplePoint*           p,
         found = VOTE_LOW;
     }
 
+#ifdef ONE_THREAD_ONLY
+    if( true )
+#else // ONE_THREAD_ONLY
     if( threadIdx.x == 0 )
+#endif // ONE_THREAD_ONLY
     {
-
         if( (i == EDGE_LINKING_MAX_EDGE_LENGTH) || (found == CONVEXITY_LOST) || (found == FULL_CIRCLE) ) {
             int convexEdgeSegmentSize = buf.size();
             if (convexEdgeSegmentSize > param_windowSizeOnInnerEllipticSegment) {
@@ -540,7 +629,11 @@ void Frame::applyLink( const cctag::Parameters& params )
      * This label is their index in the _seed_indices list, because
      * it is a unique int strictly > 0
      */
+#ifdef ONE_THREAD_ONLY
+    block.x = 1;
+#else // ONE_THREAD_ONLY
     block.x = 8;
+#endif // ONE_THREAD_ONLY
     block.y = 1;
     block.z = 1;
     grid.x  = _vote._seed_indices.host.size;
