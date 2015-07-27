@@ -282,6 +282,8 @@ void edge_linking_seed( const TriplePoint*           p,
             }
         }
 
+        assert( not outOfBounds( tcc.x, tcc.y, d_dx ) );
+
         // Angle refers to the gradient direction angle (might be optimized):
         short2 tcg; // this cycle gradients
         tcg.x = d_dx.ptr(tcc.y)[tcc.y];
