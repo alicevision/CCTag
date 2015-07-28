@@ -218,14 +218,14 @@ struct EdgeBuffer
 
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
     __device__ inline
-    void append( Direction d, int2 val, int j )
+    void append( Direction d, int2 val, int offset, float angle )
     {
         if( d == Left ) {
             const int idx = edge_index[Left];
             edge_buffer[idx].x = val.x;
             edge_buffer[idx].y = val.y;
-            edge_buffer[idx].z = j;
-            edge_buffer[idx].w = idx;
+            edge_buffer[idx].z = offset;
+            edge_buffer[idx].w = rintf(angle);
             assert( idx != edge_index[Right] );
             inc( edge_index[Left] );
         } else {
@@ -234,8 +234,8 @@ struct EdgeBuffer
             const int idx = edge_index[Right];
             edge_buffer[idx].x = val.x;
             edge_buffer[idx].y = val.y;
-            edge_buffer[idx].z = 100+j;
-            edge_buffer[idx].w = idx;
+            edge_buffer[idx].z = offset;
+            edge_buffer[idx].w = rintf(angle);
         }
     }
 #else // DEBUG_LINKED_USE_INT4_BUFFER
@@ -522,7 +522,7 @@ void edge_linking_seed( const TriplePoint*           p,
             
             if( not stop ) {
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
-                buf.append( direction, new_point, off_index );
+                buf.append( direction, new_point, shifting, angle );
 #else // DEBUG_LINKED_USE_INT4_BUFFER
                 buf.append( direction, new_point );
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
