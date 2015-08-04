@@ -2,6 +2,8 @@
 
 #include <boost/gil/image_view.hpp>
 
+#include "global.hpp"
+
 //#define USE_CANNY_OCV3
 #ifdef USE_CANNY_OCV3
 #include <opencv2/opencv.hpp>
@@ -27,6 +29,9 @@ void edgesPointsFromCanny(
   std::size_t width = edges.cols;
   std::size_t height = edges.rows;
 
+  edgePointsMap.resize( boost::extents[width][height] );
+  std::fill( edgePointsMap.origin(), edgePointsMap.origin() + edgePointsMap.size(), (EdgePoint*)NULL );
+  
   points.reserve( width * height / 2 ); // todo: allocate that in the memory pool @Lilian
 
   for( int y = 0 ; y < height ; ++y )
