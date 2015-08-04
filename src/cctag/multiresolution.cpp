@@ -257,8 +257,6 @@ void cctagMultiresDetection(
             pyramidMarkers[i],
             points,
             imagePyramid.getLevel(i)->getSrc(),
-            imagePyramid.getLevel(i)->getDx(),
-            imagePyramid.getLevel(i)->getDy(),
             winners,
             seeds,
             vEdgeMaps[i],

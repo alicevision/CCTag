@@ -373,12 +373,10 @@ void flowComponentAssembling(
 
 
 void cctagDetectionFromEdges(
-        CCTag::List& markers,
+        CCTag::List&            markers,
         std::vector<EdgePoint>& points,
-        const cv::Mat & src,
-        const cv::Mat & dx,
-        const cv::Mat & dy,
-        WinnerMap& winners,
+        const cv::Mat&          src,
+        WinnerMap&              winners,
         const std::vector<EdgePoint*>& seeds,
         const EdgePointsImage& edgesMap,
         const std::size_t frame,
@@ -392,15 +390,6 @@ void cctagDetectionFromEdges(
 #endif
   using namespace boost::gil;
 
-#if 0
-  // Get vote winners
-  WinnerMap winners;
-  std::vector<EdgePoint*> seeds;
-
-  // Voting procedure applied on every edge points.
-  vote(points, seeds, edgesMap, winners, dx, dy, params);
-#endif
-  
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d = t1 - t0;
@@ -665,7 +654,6 @@ void createImageForVoteResultDebug(
 {
 #ifdef CCTAG_SERIALIZE 
   {
-    POP_INFO("running optional 'voting' block");
     std::size_t mx = 0;
     
     cv::Mat imgVote(src.rows, src.cols, CV_8UC1, cv::Scalar(0,0,0));
