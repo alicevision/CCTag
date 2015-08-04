@@ -106,7 +106,8 @@ void constructFlowComponentFromSeed(
 }
 
 void completeFlowComponent(
-        Candidate & candidate, WinnerMap & winners,
+        Candidate & candidate,
+        WinnerMap & winners,
         std::vector<EdgePoint> & points,
         const EdgePointsImage& edgesMap,
         std::vector<Candidate> & vCandidateLoopTwo,
@@ -372,11 +373,11 @@ void flowComponentAssembling(
 
 
 void cctagDetectionFromEdges(
-        CCTag::List& markers,
+        CCTag::List&            markers,
         std::vector<EdgePoint>& points,
-        const cv::Mat & src,
-        const cv::Mat & dx,
-        const cv::Mat & dy,
+        const cv::Mat&          src,
+        WinnerMap&              winners,
+        const std::vector<EdgePoint*>& seeds,
         const EdgePointsImage& edgesMap,
         const std::size_t frame,
         int pyramidLevel,
@@ -389,13 +390,6 @@ void cctagDetectionFromEdges(
 #endif
   using namespace boost::gil;
 
-  // Get vote winners
-  WinnerMap winners;
-  std::vector<EdgePoint*> seeds;
-
-  // Voting procedure applied on every edge points.
-  vote(points, seeds, edgesMap, winners, dx, dy, params);
-  
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d = t1 - t0;
@@ -418,11 +412,8 @@ void cctagDetectionFromEdges(
   CCTagFileDebug::instance().newSession(outFlowComponents.str());
 #endif
 
-  // Sort the seeds based on the number of received votes.
-  if( seeds.size() > 0 )
+  if( seeds.size() <= 0 )
   {
-    std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
-  }else{
     // No seeds to process
     return;
   }
@@ -663,7 +654,6 @@ void createImageForVoteResultDebug(
 {
 #ifdef CCTAG_SERIALIZE 
   {
-    POP_INFO("running optional 'voting' block");
     std::size_t mx = 0;
     
     cv::Mat imgVote(src.rows, src.cols, CV_8UC1, cv::Scalar(0,0,0));
@@ -719,16 +709,25 @@ void cctagDetection(CCTag::List& markers,
   {
     popart::TagPipe pipe1;
 
-    uint32_t w = graySrc.size().width;
-    uint32_t h = graySrc.size().height;
+    uint32_t w = imgGraySrc.size().width;
+    uint32_t h = imgGraySrc.size().height;
     pipe1.prepframe( w, h, params );
 
-    unsigned char* pix = frame.data;
+    // unsigned char* pix = frame.data;
+    assert( imgGraySrc.elemSize() == 1 );
+    assert( imgGraySrc.isContinuous() );
+    assert( imgGraySrc.type() == CV_8U );
+    unsigned char* pix = imgGraySrc.data;
 
     pipe1.tagframe( pix, w, h, params );
     pipe1.debug( pix, params );
+
+    // we must continue with cctagMultiresDetection \ vote
+    // but this does not exist yet
+    exit( 0 );
   }
-#else
+#else // not WITH_CUDA
+#endif // not WITH_CUDA
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
 
 #ifdef CCTAG_OPTIM
@@ -744,7 +743,6 @@ void cctagDetection(CCTag::List& markers,
 #endif
   
   cctagMultiresDetection(markers, imgGraySrc, imagePyramid, frame, params);
-#endif
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());

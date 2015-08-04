@@ -31,13 +31,13 @@ void cctagDetection(
         const bool bDisplayEllipses = true );
 
 void cctagDetectionFromEdges(
-        CCTag::List& markers,
+        CCTag::List&            markers,
         std::vector<EdgePoint>& points,
-        const cv::Mat & src,
-        const cv::Mat & dx,
-        const cv::Mat & dy,
-        const EdgePointsImage& edgesMap,
-        const std::size_t frame,
+        const cv::Mat&          src,
+        WinnerMap&              winners,
+        const std::vector<EdgePoint*>& seeds,
+        const EdgePointsImage&  edgesMap,
+        const std::size_t       frame,
         int pyramidLevel,
         double scale,
         const Parameters & params);
