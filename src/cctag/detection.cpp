@@ -719,16 +719,25 @@ void cctagDetection(CCTag::List& markers,
   {
     popart::TagPipe pipe1;
 
-    uint32_t w = graySrc.size().width;
-    uint32_t h = graySrc.size().height;
+    uint32_t w = imgGraySrc.size().width;
+    uint32_t h = imgGraySrc.size().height;
     pipe1.prepframe( w, h, params );
 
-    unsigned char* pix = frame.data;
+    // unsigned char* pix = frame.data;
+    assert( imgGraySrc.elemSize() == 1 );
+    assert( imgGraySrc.isContinuous() );
+    assert( imgGraySrc.type() == CV_8U );
+    unsigned char* pix = imgGraySrc.data;
 
     pipe1.tagframe( pix, w, h, params );
     pipe1.debug( pix, params );
+
+    // we must continue with cctagMultiresDetection \ vote
+    // but this does not exist yet
+    exit( 0 );
   }
-#else
+#else // not WITH_CUDA
+#endif // not WITH_CUDA
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
 
 #ifdef CCTAG_OPTIM
@@ -744,7 +753,6 @@ void cctagDetection(CCTag::List& markers,
 #endif
   
   cctagMultiresDetection(markers, imgGraySrc, imagePyramid, frame, params);
-#endif
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
