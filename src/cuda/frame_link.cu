@@ -522,7 +522,7 @@ void edge_linking_seed( const TriplePoint*           p,
             
             if( not stop ) {
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
-                buf.append( direction, new_point, shifting, angle );
+                buf.append( direction, new_point, shifting, atanval*100 );
 #else // DEBUG_LINKED_USE_INT4_BUFFER
                 buf.append( direction, new_point );
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
