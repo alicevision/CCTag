@@ -7,6 +7,8 @@
 #include <cctag/colors.hpp>
 #include <cctag/CCTag.hpp>
 
+#include <boost/filesystem.hpp>
+
 namespace cctag
 {
 
@@ -27,7 +29,7 @@ public:
 
     void initBackgroundImage(const cv::Mat & back);
     
-    void initializeFolders(const std::string & filename, std::size_t nCrowns = 4);
+    void initializeFolders(const boost::filesystem::path & filename, std::size_t nCrowns = 4);
 
     void newSession(const std::string & sessionName);
 

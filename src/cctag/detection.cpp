@@ -349,7 +349,7 @@ void flowComponentAssembling(
 
     if( isAnotherSegment(outerEllipse, outerEllipsePoints, 
             selectedCandidate._filteredChildrens, selectedCandidate,
-            cctagPoints, params._numCrowns * 2,
+            cctagPoints, params._nCrowns * 2,
             params._thrMedianDistanceEllipse) )
     {
       quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
@@ -521,7 +521,7 @@ void cctagDetectionFromEdges(
       // cctagPoints may be not empty, i.e. when the assembling succeed.
       if (! addCandidateFlowtoCCTag(candidate._filteredChildrens, 
               candidate._outerEllipsePoints, outerEllipse,
-              cctagPoints, params._numCrowns * 2))
+              cctagPoints, params._nCrowns * 2))
       {
         CCTAG_COUT_DEBUG("Points outside the outer ellipse OR CCTag not valid : bad gradient orientations");
         CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTSOUTSIDE_OR_BADGRADORIENT);
@@ -663,7 +663,7 @@ void createImageForVoteResultDebug(
 {
 #ifdef CCTAG_SERIALIZE 
   {
-    POP_INFO << "running optional 'voting' block" << std::endl;
+    POP_INFO("running optional 'voting' block");
     std::size_t mx = 0;
     
     cv::Mat imgVote(src.rows, src.cols, CV_8UC1, cv::Scalar(0,0,0));
@@ -701,7 +701,7 @@ void cctagDetection(CCTag::List& markers,
         const std::size_t frame, 
         const cv::Mat & imgGraySrc,
         const Parameters & params,
-        const std::string & cctagBankFilename,
+        const cctag::CCTagMarkersBank & bank,
         const bool bDisplayEllipses)
 {
   POP_ENTER;
@@ -710,9 +710,7 @@ void cctagDetection(CCTag::List& markers,
   //using namespace boost::gil;
   
   std::srand(1);
-
-  static const CCTagMarkersBank bank(cctagBankFilename);
-
+  
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
 #endif
@@ -723,13 +721,12 @@ void cctagDetection(CCTag::List& markers,
 
     uint32_t w = graySrc.size().width;
     uint32_t h = graySrc.size().height;
-    pipe1.prepframe( w, h );
+    pipe1.prepframe( w, h, params );
 
     unsigned char* pix = frame.data;
 
-    pipe1.tagframe( pix, w, h, params ); // Compute all four levels including smoothing+dx+dy+canny(with thinning))
-                                         // in tag.h (inside applyGauss in farem_gaussian.cu)
-    pipe1.debug( pix );
+    pipe1.tagframe( pix, w, h, params );
+    pipe1.debug( pix, params );
   }
 #else
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);

@@ -1,8 +1,6 @@
 #ifndef VISION_MARKER_CCTAG_MARKERS_BANK_HPP
 #define	VISION_MARKER_CCTAG_MARKERS_BANK_HPP
 
-#include <cctag/global.hpp>
-
 #include <boost/function.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
@@ -21,7 +19,9 @@ namespace cctag
 class CCTagMarkersBank
 {
 public:
+  CCTagMarkersBank( const std::size_t nCrowns );
   CCTagMarkersBank( const std::string & file );
+  
   virtual ~CCTagMarkersBank();
 
   void read( const std::string & file );
@@ -41,13 +41,13 @@ private:
     using namespace boost::spirit::qi;
     using boost::spirit::qi::_1;
     bool r = phrase_parse( first, last,
-                           //  Begin grammar
-                           (
-                             *( ( (uint_[ boost::phoenix::ref( n ) = _1 ] >> '/' >> uint_[ boost::phoenix::ref( n ) = boost::phoenix::ref( n ) / _1 ]) | double_[ boost::phoenix::ref( n ) = _1 ] )[ push_back( boost::phoenix::ref(rr), boost::phoenix::ref( n ) ) ] )
-                           )
-                           ,
-                           //  End grammar
-                           space );
+      //  Begin grammar
+      (
+        *( ( (uint_[ boost::phoenix::ref( n ) = _1 ] >> '/' >> uint_[ boost::phoenix::ref( n ) = boost::phoenix::ref( n ) / _1 ]) | double_[ boost::phoenix::ref( n ) = _1 ] )[ push_back( boost::phoenix::ref(rr), boost::phoenix::ref( n ) ) ] )
+      )
+      ,
+      //  End grammar
+      space );
 
     if ( first != last )
     {
@@ -56,8 +56,10 @@ private:
     }
     return r;
   }
-
-private:
+  
+  static const double idThreeCrowns[32][5];
+  static const double idFourCrowns[128][7];
+  
   std::vector< std::vector<double> > _markers;
 
 };

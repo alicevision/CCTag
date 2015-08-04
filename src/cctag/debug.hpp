@@ -38,7 +38,9 @@
 #define CCTAG_COUT_FATALERROR_DEBUG CCTAG_COUT_FATALERROR
 #define CCTAG_COUT_EXCEPTION_DEBUG CCTAG_COUT_EXCEPTION
 
-#define POP_INFO  std::cerr << __FILE__ << ":" << __LINE__ << " INFO: "
+#ifndef WITH_CUDA
+#define POP_INFO(s)  std::cerr << __FILE__ << ":" << __LINE__ << " INFO: " << s << std::endl
+#endif
 #define POP_ERROR std::cerr << __FILE__ << ":" << __LINE__ << " ERROR: "
 #define POP_ENTER std::cerr << __FILE__ << ":" << __LINE__ << " entering " << __func__ << std::endl
 #define POP_LEAVE std::cerr << __FILE__ << ":" << __LINE__ << " leaving " << __func__ << std::endl

@@ -40,8 +40,9 @@ void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
       const cv::Mat & graySrc,
-      const cctag::Parameters & params,
-      const bool bDisplayEllipses = true );
+      const std::size_t nCrowns = 3,
+      const std::string & parameterFile = "",
+      const std::string & cctagBankFilename = "");
 
 }
 

@@ -13,6 +13,7 @@
 #include <cctag/geometry/ellipseFromPoints.hpp>
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/global.hpp>
+#include <cctag/visualDebug.hpp>
 
 #include <boost/foreach.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
@@ -58,9 +59,17 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         const cv::Mat & dy,
         const Parameters & params)
 {
+#ifdef CCTAG_VOTE_DEBUG
+  std::stringstream outFilenameVote;
+  outFilenameVote << "vote" << CCTagVisualDebug::instance().getPyramidLevel() << ".txt";
+  CCTagFileDebug::instance().newSession(outFilenameVote.str());
+#endif
+
     BOOST_FOREACH(EdgePoint & p, points) {
         p._before = gradientDirectionDescent(edgesMap, p, -1, params._distSearch, dx, dy, params._thrGradientMagInVote);
+        CCTagFileDebug::instance().endVote();
         p._after  = gradientDirectionDescent(edgesMap, p, 1, params._distSearch, dx, dy, params._thrGradientMagInVote);
+        CCTagFileDebug::instance().endVote();
     }
     // Vote
     seeds.reserve(points.size() / 2);
@@ -84,7 +93,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
         // To save all sub-segments length
         std::vector<float> vDist; ///
-        vDist.reserve(params._numCrowns * 2 - 1);
+        vDist.reserve(params._nCrowns * 2 - 1);
         int flagDist = 1;
 
         // Length of the reconstructed field line approximation between the two
@@ -101,7 +110,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 totalDistance += lastDist;
 
                 // Iterate over all crowns
-                while (i < params._numCrowns) {
+                while (i < params._nCrowns) {
                     choosen = NULL;
                     
                     // First in the gradient direction

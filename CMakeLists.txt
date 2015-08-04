@@ -10,12 +10,17 @@ project( CCTag )
 
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
+
 include("${MACHINE_NAME}.cmake")
 
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -pg")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
-set(USE_CUDA false CACHE BOOL "compile code for CUDA processing")
-set(CUDA_FOUND false CACHE BOOL "only true if USE_CUDA and CUDA 7.0 is found")
+if(USE_CUDA)
+# I`m really sorry, but this makes CUDA compilation impossible
+else(USE_CUDA)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif(USE_CUDA)
 
 set(CMAKE_BUILD_TYPE Release)
 
@@ -74,16 +79,22 @@ else(Boost_FOUND)
   message( FATAL_ERROR "Boost not found" )
 endif(Boost_FOUND)
 
+# No matter if we want to use CUDA or not. It's needed for OpenCV.
+find_package(CUDA 7.0)
+
 if(USE_CUDA)
-  find_package(CUDA 7.0)
+  message( STATUS "Try using CUDA" )
   if(CUDA_FOUND)
     include_directories(${CUDA_INCLUDE_DIRS})
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DWITH_CUDA")
     add_definitions("-DWITH_CUDA")
+    set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG} -DTHIS_IS_NVCC_DEBUG_MODE -G -g")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE} -DTHIS_IS_NVCC_RELEASE_MODE -O3")
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS} -DTHIS_IS_NVCC_FLAGS -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52")
   else(CUDA_FOUND)
-    message( STATUS "Failed to find CUDA" )
+    message( FATAL_ERROR "Failed to find CUDA" )
   endif(CUDA_FOUND)
+else(USE_CUDA)
+  message( STATUS "Avoid using CUDA" )
 endif(USE_CUDA)
 
 

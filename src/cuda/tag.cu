@@ -17,12 +17,15 @@ TagPipe::TagPipe( )
 }
 
 __host__
-void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h )
+void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h,
+                         const cctag::Parameters& params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
-    static bool gauss_table_initialized = false;
-    if( not gauss_table_initialized ) {
+    static bool tables_initialized = false;
+    if( not tables_initialized ) {
+        tables_initialized = true;
         Frame::initGaussTable( );
+        Frame::initThinningTable( );
     }
 
     uint32_t w = pix_w;
@@ -37,7 +40,7 @@ void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h )
     _frame[0]->allocUploadEvent( ); // sync
 
     for( int i=0; i<4; i++ ) {
-        _frame[i]->allocDevGaussianPlane(); // sync
+        _frame[i]->allocDevGaussianPlane( params ); // sync
         _frame[i]->allocDoneEvent( ); // sync
     }
     cerr << "Leave " << __FUNCTION__ << endl;
@@ -51,6 +54,41 @@ void TagPipe::tagframe( unsigned char* pix,
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
+#if 0
+    _frame[0]->upload( pix ); // async
+
+    FrameEvent ev = _frame[0]->addUploadEvent( ); // async
+
+    for( int i=1; i<4; i++ ) {
+        _frame[i]->streamSync( ev ); // aysnc
+        _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
+        // _frame[i]->fillFromFrame( *(_frame[0]) );
+    }
+
+    for( int i=0; i<4; i++ ) {
+        _frame[i]->applyGauss( params ); // async
+    }
+
+    KeepTime t( _frame[0]->_stream );
+    t.start();
+
+    for( int i=0; i<4; i++ ) {
+        _frame[i]->applyMag(   params );  // async
+        _frame[i]->applyHyst(  params );  // async
+        _frame[i]->applyThinning(  params );  // async
+        _frame[i]->applyVote(  params );  // async
+    }
+
+    FrameEvent doneEv[4];
+    for( int i=1; i<4; i++ ) {
+        doneEv[i] = _frame[i]->addDoneEvent( ); // async
+    }
+    for( int i=1; i<4; i++ ) {
+        _frame[0]->streamSync( doneEv[i] ); // aysnc
+    }
+    t.stop();
+    t.report( "Time for all frames " );
+#else
     KeepTime t( _frame[0]->_stream );
     t.start();
 
@@ -77,7 +115,15 @@ void TagPipe::tagframe( unsigned char* pix,
     }
 
     for( int i=0; i<4; i++ ) {
+        bool success;
         _frame[i]->applyGauss( params ); // async
+        _frame[i]->applyMag(   params );  // async
+        _frame[i]->applyHyst(  params );  // async
+        _frame[i]->applyThinning(  params );  // async
+        success = _frame[i]->applyDesc(  params );  // async
+        if( not success ) continue;
+        _frame[i]->applyVote(  params );  // async
+        _frame[i]->applyLink(  params );  // async
     }
 
     FrameEvent doneEv[4];
@@ -89,11 +135,12 @@ void TagPipe::tagframe( unsigned char* pix,
     }
     t.stop();
     t.report( "Time for all frames " );
+#endif
     cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 __host__
-void TagPipe::debug( unsigned char* pix )
+void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
@@ -101,7 +148,7 @@ void TagPipe::debug( unsigned char* pix )
         // This is a debug block
 
         for( int i=0; i<4; i++ ) {
-            _frame[i]->hostDebugDownload();
+            _frame[i]->hostDebugDownload( params );
         }
         POP_SYNC_CHK;
 
@@ -110,7 +157,7 @@ void TagPipe::debug( unsigned char* pix )
         for( int i=0; i<4; i++ ) {
             std::ostringstream ostr;
             ostr << "debug-input-plane-" << i;
-            _frame[i]->writeHostDebugPlane( ostr.str() );
+            _frame[i]->writeHostDebugPlane( ostr.str(), params );
         }
         POP_SYNC_CHK;
     }

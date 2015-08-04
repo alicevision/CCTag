@@ -1,13 +1,18 @@
-#include <cctag/fileDebug.hpp>
-#include <cctag/visualDebug.hpp>
-#include <cctag/progBase/exceptions.hpp>
-#include <cctag/progBase/MemoryPool.hpp>
-#include <cctag/detection.hpp>
-#include <cctag/view.hpp>
-#include <cctag/image.hpp>
+#define png_infopp_NULL (png_infopp)NULL
+#define int_p_NULL (int*)NULL
+#include <boost/gil/extension/io/png_io.hpp>
+
+#include "cctag/fileDebug.hpp"
+#include "cctag/visualDebug.hpp"
+#include "cctag/progBase/exceptions.hpp"
+#include "cctag/detection.hpp"
+#include "cctag/view.hpp"
+#include "cctag/image.hpp"
+#include "cctag/cmdline.hpp"
 
 #ifdef WITH_CUDA
 #include "cuda/device_prop.hpp"
+#include "cuda/debug_macros.hpp"
 #endif // WITH_CUDA
 
 #include <boost/filesystem/convenience.hpp>
@@ -21,11 +26,10 @@
 #include <terry/sampler/all.hpp>
 #include <terry/sampler/resample_subimage.hpp>
 
-#include <third_party/cmdLine/cmdLine.h>
-
 #include <opencv/cv.h>
 #include <opencv2/videoio.hpp>
 #include <opencv2/core/core.hpp>
+#include "opencv2/opencv.hpp"
 
 #include <sstream>
 #include <iostream>
@@ -39,14 +43,14 @@ using boost::timer;
 using namespace boost::gil;
 namespace bfs = boost::filesystem;
 
-static const std::string kUsageString = "Usage: detection image_file.png\n";
+// static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const std::string & cctagBankFilename, std::string outputFileName = "")
+void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ofstream & output, std::string debugFileName = "")
 {
     POP_ENTER;
     
-    if (outputFileName == "") {
-      outputFileName = "00000";
+    if (debugFileName == "") {
+      debugFileName = "00000";
     }
     
     // Process markers detection
@@ -54,11 +58,11 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     boost::ptr_list<CCTag> markers;
     
     CCTagVisualDebug::instance().initBackgroundImage(src);
-    CCTagVisualDebug::instance().setImageFileName(outputFileName);
+    CCTagVisualDebug::instance().setImageFileName(debugFileName);
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
 
-    cctagDetection(markers, frameId , src, params, cctagBankFilename, true);
-    
+    cctagDetection(markers, frameId , src, params, bank, true);  
+
     CCTagFileDebug::instance().outPutAllSessions();
     CCTagFileDebug::instance().clearSessions();
     CCTagVisualDebug::instance().outPutAllSessions();
@@ -69,26 +73,19 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     CCTAG_COUT_NOENDL("Id : ");
 
     int i = 0;
+    output << "#frame " << frameId << '\n';
+    output << markers.size() << '\n';
     BOOST_FOREACH(const cctag::CCTag & marker, markers) {
-        if (i == 0) {
-            CCTAG_COUT_NOENDL(marker.id() + 1);
-        } else {
-            CCTAG_COUT_NOENDL(", " << marker.id() + 1);
-        }
-        ++i;
+      output << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
+      if (i == 0) {
+          CCTAG_COUT_NOENDL(marker.id() + 1);
+      } else {
+          CCTAG_COUT_NOENDL(", " << marker.id() + 1);
+      }
+      ++i;
     }
     CCTAG_COUT("");
     POP_LEAVE;
-}
-
-void printUsageErr( const char* const argv0 )
-{
-  std::cerr << "Usage: " << argv0 << '\n'
-  << "[-i|--input path] \n"
-  << "[-b|--bank path] \n"
-  << "\n[Optional]\n"
-  << "[-p|--params path] \n"
-  << std::endl;
 }
 
 /*************************************************************/
@@ -96,80 +93,61 @@ void printUsageErr( const char* const argv0 )
 /*************************************************************/
 int main(int argc, char** argv)
 {
-  cctag::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
-
-  std::string filename = "";
-  std::string  cctagBankFilename = "";
-  std::string paramsFilename = "";
-
-  CmdLine cmd;
-  cmd.add( make_option('i', filename, "input") );
-  cmd.add( make_option('b', cctagBankFilename, "cctagBank") );
-  cmd.add( make_option('p', paramsFilename, "parameters") );
-
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameters.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-    printUsageErr(argv[0]);
+  if( cmdline.parse( argc, argv ) == false ) {
+    cmdline.usage( argv[0] );
     return EXIT_FAILURE;
   }
 
-  std::cout << "You called: " <<std::endl
-      << argv[0] << std::endl
-      << "--input " << filename << std::endl
-      << "--bank " << cctagBankFilename << std::endl
-      << "--params " << paramsFilename << std::endl;
+  cmdline.print( argv[0] );
 
   // Check input path
-  if (filename.compare("") != 0){
-    if (!boost::filesystem::exists(filename)) {
+  if( cmdline._filename.compare("") != 0){
+    if (!boost::filesystem::exists( cmdline._filename )) {
       std::cerr << std::endl
-        << "The input file \""<< filename << "\" is missing" << std::endl;
+        << "The input file \""<< cmdline._filename << "\" is missing" << std::endl;
       return EXIT_FAILURE;
     }
   }else{
     std::cerr << std::endl
         << "An input file is required" << std::endl;
-    printUsageErr(argv[0]);
+    cmdline.usage( argv[0] );
     return EXIT_FAILURE;
   }
 
-  // Check cctag bank path
-  if (cctagBankFilename.compare("") != 0){
-    if (!boost::filesystem::exists(cctagBankFilename)) {
-      std::cerr << std::endl
-        << "The input file \""<< cctagBankFilename << "\" is missing" << std::endl;
-      return EXIT_FAILURE;
-    }
-  }else{
-    std::cerr << std::endl
-        << "An bank file is required" << std::endl;
-    printUsageErr(argv[0]);
-    return EXIT_FAILURE;
-  }
-
+#ifdef WITH_CUDA
+  popart::pop_cuda_only_sync_calls( cmdline._switchSync );
+#endif
   // Check the (optional) parameters path
-  cctag::Parameters params;
+  std::size_t nCrowns = std::atoi(cmdline._nCrowns.c_str());
+  cctag::Parameters params(nCrowns);
   
-  if (paramsFilename != "") {
-    if (!boost::filesystem::exists(paramsFilename)) {
+  if( cmdline._paramsFilename != "" ) {
+    if (!boost::filesystem::exists( cmdline._paramsFilename )) {
       std::cerr << std::endl
-        << "The input file \""<< paramsFilename << "\" is missing" << std::endl;
+        << "The input file \""<< cmdline._paramsFilename << "\" is missing" << std::endl;
       return EXIT_FAILURE;
     }
 
     // Read the parameter file provided by the user
-    std::ifstream ifs(paramsFilename.c_str());
+    std::ifstream ifs( cmdline._paramsFilename.c_str() );
     boost::archive::xml_iarchive ia(ifs);
     ia >> boost::serialization::make_nvp("CCTagsParams", params);
+    CCTAG_COUT(params._nCrowns);
+    CCTAG_COUT(nCrowns);
+    assert( nCrowns == params._nCrowns );
   } else {
     // Use the default parameters and save them in defaultParameters.xml
-    paramsFilename = "defaultParameters.xml";
-    std::ofstream ofs(paramsFilename.c_str());
+    cmdline._paramsFilename = "defaultParameters.xml";
+    std::ofstream ofs( cmdline._paramsFilename.c_str() );
     boost::archive::xml_oarchive oa(ofs);
     oa << boost::serialization::make_nvp("CCTagsParams", params);
     CCTAG_COUT("Parameter file not provided. Default parameters are used.");
+  }
+  
+  CCTagMarkersBank bank(params._nCrowns);
+  if ( !cmdline._cctagBankFilename.empty())
+  {
+    bank = CCTagMarkersBank(cmdline._cctagBankFilename);
   }
 
 #ifdef WITH_CUDA
@@ -177,16 +155,29 @@ int main(int argc, char** argv)
   deviceInfo.print( );
 #endif // WITH_CUDA
 
-  CCTagVisualDebug::instance().initializeFolders(filename, params._numCrowns);
-  bfs::path myPath(filename);
+  bfs::path myPath( cmdline._filename );
   std::string ext(myPath.extension().string());
 
+  const bfs::path subFilenamePath(myPath.filename());
+  const bfs::path parentPath( myPath.parent_path() == "" ? "." : myPath.parent_path());
+  std::string outputFileName;
+  if (!bfs::is_directory(myPath))
+  {
+    CCTagVisualDebug::instance().initializeFolders( parentPath , params._nCrowns );
+    outputFileName = parentPath.string() + "/cctag" + std::to_string(nCrowns) + "CC.out";
+  }else
+  {
+    CCTagVisualDebug::instance().initializeFolders( myPath , params._nCrowns );
+    outputFileName = myPath.string() + "/cctag" + std::to_string(nCrowns) + "CC.out";
+  }
+  std::ofstream outputFile;
+  outputFile.open( outputFileName );
+  
   if ( (ext == ".png") || (ext == ".jpg") ) {
-
-    POP_INFO << "looking at image " << myPath.string() << std::endl;
+    POP_INFO("looking at image " << myPath.string());
     
     // Gray scale convertion
-    cv::Mat src = cv::imread(filename);
+    cv::Mat src = cv::imread(cmdline._filename);
     cv::Mat graySrc;
     cv::cvtColor( src, graySrc, CV_BGR2GRAY );
 
@@ -199,23 +190,23 @@ int main(int argc, char** argv)
     }*/
 
     // Call the CCTag detection
-    detection(0, graySrc, params, cctagBankFilename, myPath.stem().string());
-
-  } else if (ext == ".avi" )
+    detection(0, graySrc, params, bank, outputFile, myPath.stem().string());
+  //detection(0, my_view, params, bank, outputFile, myPath.stem().string());
+} else if (ext == ".avi" )
   {
     CCTAG_COUT("*** Video mode ***");
-    POP_INFO << "looking at video " << myPath.string() << std::endl;
+    POP_INFO( "looking at video " << myPath.string() );
 
     // open video and check
-    cv::VideoCapture video(filename.c_str());
+    cv::VideoCapture video( cmdline._filename.c_str() );
     if(!video.isOpened())
     {
-      CCTAG_COUT("Unable to open the video : " << filename); return -1;
+      CCTAG_COUT("Unable to open the video : " << cmdline._filename); return -1;
     }
 
     // play loop
     int lastFrame = video.get(CV_CAP_PROP_FRAME_COUNT);
-    int frameId = 0;
+    std::size_t frameId = 0;
     while( video.get(CV_CAP_PROP_POS_FRAMES) < lastFrame )
     {
       cv::Mat frame;
@@ -228,13 +219,39 @@ int main(int argc, char** argv)
       outFileName << std::setfill('0') << std::setw(5) << frameId;
 
       // Call the CCTag detection
-      detection(frameId, imgGray, params, cctagBankFilename, outFileName.str());
-
+      detection(frameId, imgGray, params, bank, outputFile, outFileName.str());
       ++frameId; 
     }
-  } else {
+  } else if (bfs::is_directory(myPath)) {
+    CCTAG_COUT("*** Image sequence mode ***");
+
+    std::vector<bfs::path> vFileInFolder;
+
+    std::copy(bfs::directory_iterator(myPath), bfs::directory_iterator(), std::back_inserter(vFileInFolder)); // is directory_entry, which is
+    std::sort(vFileInFolder.begin(), vFileInFolder.end());
+
+    std::size_t frameId = 0;
+
+    for(const auto & fileInFolder : vFileInFolder) {
+      const std::string subExt(bfs::extension(fileInFolder));
+      
+      if ( (subExt == ".png") || (subExt == ".jpg") ) {
+        CCTAG_COUT( "Processing image " << fileInFolder.string() );
+
+		cv::Mat src;
+    	src = cv::imread(fileInFolder.string());
+
+        
+        // Call the CCTag detection
+        detection(frameId, src, params, bank, outputFile, fileInFolder.stem().string());
+++frameId;
+      }
+    }
+  }else
+  {
       throw std::logic_error("Unrecognized input.");
   }
+  outputFile.close();
   return 0;
 }
 

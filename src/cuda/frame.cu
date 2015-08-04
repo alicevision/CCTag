@@ -25,14 +25,20 @@ Frame::Frame( uint32_t width, uint32_t height )
     , _h_debug_dy( 0 )
     , _h_debug_mag( 0 )
     , _h_debug_map( 0 )
+    , _h_debug_hyst_edges( 0 )
     , _h_debug_edges( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
     , _wait_done( 0 )
 {
     cerr << "Allocating frame: " << width << "x" << height << endl;
+    _h_ring_output.data = 0;
 
+#if 0
+    _stream = 0;
+#else
     POP_CUDA_STREAM_CREATE( &_stream );
+#endif
 
     size_t pitch;
     POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width, height );
@@ -51,15 +57,19 @@ Frame::~Frame( )
 {
     deleteUploadEvent( );
 
-    delete _h_debug_plane;
-    delete _h_debug_smooth;
-    delete _h_debug_dx;
-    delete _h_debug_dy;
-    delete _h_debug_mag;
-    delete _h_debug_map;
-    delete _h_debug_edges;
+    delete [] _h_debug_plane;
+    delete [] _h_debug_smooth;
+    delete [] _h_debug_dx;
+    delete [] _h_debug_dy;
+    delete [] _h_debug_mag;
+    delete [] _h_debug_map;
+    delete [] _h_debug_hyst_edges;
+    delete [] _h_debug_edges;
+    delete [] _h_ring_output.data;
     delete _texture;
 
+    POP_CUDA_FREE( _d_hysteresis_block_counter );
+    POP_CUDA_FREE( _d_connect_component_block_counter );
     POP_CUDA_FREE( _d_plane.data );
     POP_CUDA_FREE( _d_intermediate.data );
     POP_CUDA_FREE( _d_smooth.data );
@@ -67,7 +77,10 @@ Frame::~Frame( )
     POP_CUDA_FREE( _d_dy.data );
     POP_CUDA_FREE( _d_mag.data );
     POP_CUDA_FREE( _d_map.data );
+    POP_CUDA_FREE( _d_hyst_edges.data );
     POP_CUDA_FREE( _d_edges.data );
+    POP_CUDA_FREE( _d_ring_output.data );
+
     cerr << "Released frame: " << getWidth() << "x" << getHeight() << endl;
 }
 
@@ -120,6 +133,7 @@ void Frame::fillFromFrame( Frame& src )
     cu_fill_from_frame
         <<<grid,block,0,_stream>>>
         ( _d_plane, getPitch(), getWidth(), getHeight(), src._d_plane, src.getPitch(), src.getWidth(), src.getHeight() );
+    POP_CHK_CALL_IFSYNC;
 }
 
 __global__
@@ -140,13 +154,14 @@ void Frame::fillFromTexture( Frame& src )
     dim3 grid;
     dim3 block;
     block.x = 32;
-    grid.x  = getWidth() / 32;
+    grid.x  = ( getWidth() / 32 ) + ( getWidth() % 32 == 0 ? 0 : 1 );
     grid.y  = getHeight();
 
     cu_fill_from_texture
         <<<grid,block,0,_stream>>>
         // ( _d_plane, getPitch(), getWidth(), getHeight(), src.getTex() );
         ( _d_plane, src.getTex() );
+    POP_CHK_CALL_IFSYNC;
 }
 
 void Frame::deleteTexture( )

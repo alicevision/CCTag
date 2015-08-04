@@ -3,17 +3,77 @@
 #include <cuda_runtime.h>
 #include <assert.h>
 #include <string>
+#include <vector>
 
 #include <opencv2/core/cuda_types.hpp>
 
 #include "../cctag/params.hpp"
+#include "frame_vote.h"
+#include "triple_point.h"
+
+#undef  DEBUG_WRITE_ORIGINAL_AS_PGM
+#undef  DEBUG_WRITE_ORIGINAL_AS_ASCII
+#undef  DEBUG_WRITE_GAUSSIAN_AS_PGM
+#undef  DEBUG_WRITE_GAUSSIAN_AS_ASCII
+#undef  DEBUG_WRITE_DX_AS_PGM
+#undef  DEBUG_WRITE_DX_AS_ASCII
+#undef  DEBUG_WRITE_DY_AS_PGM
+#undef  DEBUG_WRITE_DY_AS_ASCII
+#undef  DEBUG_WRITE_MAG_AS_PGM
+#undef  DEBUG_WRITE_MAG_AS_ASCII
+#undef  DEBUG_WRITE_MAP_AS_PGM
+#undef  DEBUG_WRITE_MAP_AS_ASCII
+#undef  DEBUG_WRITE_HYSTEDGES_AS_PGM
+#define DEBUG_WRITE_EDGES_AS_PGM
+#define DEBUG_WRITE_EDGELIST_AS_PPM
+#undef  DEBUG_WRITE_EDGELIST_AS_ASCII
+#undef  DEBUG_WRITE_VOTERS_AS_PPM
+#define DEBUG_WRITE_CHOSEN_AS_PPM
+#undef  DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
+#undef  DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
+#define DEBUG_WRITE_LINKED_AS_PPM
+#define DEBUG_WRITE_LINKED_AS_PPM_INTENSE
+#define DEBUG_WRITE_LINKED_AS_ASCII
+#define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
+
+#undef  DEBUG_RETURN_AFTER_GRADIENT_DESCENT
+#undef  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
+#define DEBUG_LINKED_USE_INT4_BUFFER
+
+#define RESERVE_MEM_MAX_CROWNS  5
+
+#define EDGE_LINKING_MAX_EDGE_LENGTH        100
+#define EDGE_LINKING_MAX_ARCS             10000
+#define EDGE_LINKING_MAX_RING_BUFFER_SIZE    40
+
+/* A table is copied to constant memory containing sigma values
+ * for Gauss filtering at the 0-offset, and the derivatives
+ * at +16.
+ * Necessary to overcome alignment mess with __constant__
+ * memory.
+ */
+#define GAUSS_TABLE  0 // Gauss parameters
+#define GAUSS_DERIV 16 // first derivative
 
 namespace cv {
     namespace cuda {
         typedef PtrStepSz<int16_t>  PtrStepSz16s;
         typedef PtrStepSz<uint32_t> PtrStepSz32u;
+        typedef PtrStepSz<int32_t>  PtrStepSz32s;
+
         typedef PtrStep<int16_t>    PtrStep16s;
         typedef PtrStep<uint32_t>   PtrStep32u;
+        typedef PtrStep<int32_t>    PtrStep32s;
+
+#ifdef DEBUG_LINKED_USE_INT4_BUFFER
+        typedef PtrStepSz<int4>     PtrStepSzInt2;
+        typedef PtrStep<int4>       PtrStepInt2;
+        typedef int4                PtrStepInt2_base_t;
+#else // DEBUG_LINKED_USE_INT4_BUFFER
+        typedef PtrStepSz<int2>     PtrStepSzInt2;
+        typedef PtrStep<int2>       PtrStepInt2;
+        typedef int2                PtrStepInt2_base_t;
+#endif // DEBUG_LINKED_USE_INT4_BUFFER
     }
 };
 
@@ -56,6 +116,7 @@ private:
  *************************************************************/
 class Frame
 {
+
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
     Frame( uint32_t width, uint32_t height );
@@ -64,6 +125,9 @@ public:
     // Copy manually created Gauss filter tables to constant memory
     // implemented in frame_gaussian.cu
     static void initGaussTable( );
+
+    // Copy manually created LUT tables for thinning
+    static void initThinningTable( );
 
     // copy the upper layer from the host to the device
     void upload( const unsigned char* image ); // implicitly assumed that w/h are the same as above
@@ -101,19 +165,36 @@ public:
     uint32_t getPitch( ) const  { return _d_plane.step; }
 
     // implemented in frame_gaussian.cu
-    void allocDevGaussianPlane( );
+    void allocDevGaussianPlane( const cctag::Parameters& param );
 
     // implemented in frame_gaussian.cu
     void applyGauss( const cctag::Parameters& param );
 
-    void hostDebugDownload( ); // async
+    // implemented in frame_magmap.cu
+    void applyMag( const cctag::Parameters& param );
 
-    static void writeDebugPlane1( const char* filename, const cv::cuda::PtrStepSzb& plane );
+    // implemented in frame_hyst.cu
+    void applyHyst( const cctag::Parameters& param );
 
-    template<class T>
-    static void writeDebugPlane( const char* filename, const cv::cuda::PtrStepSz<T>& plane );
+    // implemented in frame_thin.cu
+    void applyThinning( const cctag::Parameters& param );
 
-    void writeHostDebugPlane( std::string filename );
+    // implemented in frame_graddesc.cu
+    bool applyDesc( const cctag::Parameters& param );
+
+    // implemented in frame_vote.cu
+    void applyVote( const cctag::Parameters& param );
+
+    // implemented in frame_link.cu
+    void applyLink( const cctag::Parameters& param );
+
+    void hostDebugDownload( const cctag::Parameters& params ); // async
+
+    static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
+    static void writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz );
+
+    void writeHostDebugPlane( std::string filename, const cctag::Parameters& params );
+
     void hostDebugCompare( unsigned char* pix );
 
 private:
@@ -121,27 +202,34 @@ private:
     Frame( const Frame& );  // forbidden
 
 private:
-    cv::cuda::PtrStepSzb _d_plane;
-    cv::cuda::PtrStepSzf _d_intermediate;
-    cv::cuda::PtrStepSzf _d_smooth;
-    // cv::cuda::PtrStepSzf _d_dx;
-    // cv::cuda::PtrStepSzf _d_dy;
-    cv::cuda::PtrStepSz16s _d_dx;
-    cv::cuda::PtrStepSz16s _d_dy;
-    cv::cuda::PtrStepSz32u _d_mag;
-    cv::cuda::PtrStepSzb   _d_map;
-    cv::cuda::PtrStepSzb   _d_edges;
-    int2*                  _d_edgelist;
-    int4*                  _d_edgelist_2;
-    uint32_t               _d_edge_counter;
+    int*                    _d_hysteresis_block_counter;
+    int*                    _d_connect_component_block_counter;
+    int*                    _d_ring_counter;
+    int                     _d_ring_counter_max;
 
-    unsigned char* _h_debug_plane;
-    float*         _h_debug_smooth;
-    int16_t*       _h_debug_dx;
-    int16_t*       _h_debug_dy;
-    uint32_t*      _h_debug_mag;
-    unsigned char* _h_debug_map;
-    unsigned char* _h_debug_edges;
+    cv::cuda::PtrStepSzb    _d_plane;
+    cv::cuda::PtrStepSzf    _d_intermediate;
+    cv::cuda::PtrStepSzf    _d_smooth;
+    cv::cuda::PtrStepSz16s  _d_dx; // cv::cuda::PtrStepSzf _d_dx;
+    cv::cuda::PtrStepSz16s  _d_dy; // cv::cuda::PtrStepSzf _d_dy;
+    cv::cuda::PtrStepSz32u  _d_mag;
+    cv::cuda::PtrStepSzb    _d_map;
+    cv::cuda::PtrStepSzb    _d_hyst_edges;
+    cv::cuda::PtrStepSzb    _d_edges;
+    cv::cuda::PtrStepSzInt2 _d_ring_output;
+
+    unsigned char*          _h_debug_plane;
+    float*                  _h_debug_smooth;
+    int16_t*                _h_debug_dx;
+    int16_t*                _h_debug_dy;
+    uint32_t*               _h_debug_mag;
+    unsigned char*          _h_debug_map;
+    unsigned char*          _h_debug_hyst_edges;
+    unsigned char*          _h_debug_edges;
+    cv::cuda::PtrStepSzInt2 _h_ring_output;
+
+    Voting _vote;
+
     FrameTexture*  _texture;
     FrameEvent*    _wait_for_upload;
     FrameEvent*    _wait_done;

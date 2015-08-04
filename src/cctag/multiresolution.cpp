@@ -280,14 +280,12 @@ void cctagMultiresDetection(
     }
   }
   
-  CCTAG_COUT(" ---------------------------------- 3 --------");
-  
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
   CCTagVisualDebug::instance().writeLocalizationView(markers);
 
   // Final step: extraction of the detected markers in the original (scale) image.
   CCTagVisualDebug::instance().newSession("multiresolution");
-  
+
   CCTAG_COUT("---------------------------------- 4 --------");
 
   // Project markers from the top of the pyramid to the bottom (original image).
@@ -297,7 +295,9 @@ void cctagMultiresDetection(
     // if the marker has to be rescaled into the original image
     if (i > 0)
     {
+      CCTAG_COUT("---------------------------------- 41 --------");
       BOOST_ASSERT( i < params._numberOfMultiresLayers );
+      CCTAG_COUT("---------------------------------- 42 --------");
       double scale = marker.scale(); // pow( 2.0, (double)i );
 
       cctag::numerical::geometry::Ellipse rescaledOuterEllipse = marker.rescaledOuterEllipse();
@@ -310,11 +310,9 @@ void cctagMultiresDetection(
       std::vector<EdgePoint*> rescaledOuterEllipsePoints;
 
       double SmFinal = 1e+10;
-
-      CCTAG_COUT("---------------------------------- 5 --------");
       
       cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0);
-
+      
       CCTAG_COUT("---------------------------------- 6 --------");
       
       try
@@ -322,7 +320,7 @@ void cctagMultiresDetection(
         numerical::ellipseFitting(rescaledOuterEllipse, rescaledOuterEllipsePoints);
 
         std::vector< Point2dN<double> > rescaledOuterEllipsePointsDouble;// todo@Lilian : add a reserve
-        std::size_t numCircles = params._numCrowns * 2;
+        std::size_t numCircles = params._nCrowns * 2;
 
         BOOST_FOREACH(EdgePoint * e, rescaledOuterEllipsePoints)
         {
@@ -343,7 +341,7 @@ void cctagMultiresDetection(
       marker.setRescaledOuterEllipsePoints(marker.points().back());
     }
   }
-  
+
   CCTAG_COUT("---------------------------------- 7 --------");
   
   // Log
@@ -352,7 +350,7 @@ void cctagMultiresDetection(
   {
     CCTagFileDebug::instance().outputMarkerInfos(marker);
   }
-  
+
   CCTAG_COUT("---------------------------------- 8 --------");
   
   POP_LEAVE;

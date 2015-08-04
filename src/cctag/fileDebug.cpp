@@ -14,11 +14,13 @@ CCTagFileDebug::CCTagFileDebug()
 
 }
 
-CCTagFileDebug::~CCTagFileDebug() {
+CCTagFileDebug::~CCTagFileDebug()
+{
 
 }
 
-void CCTagFileDebug::setPath(const std::string& folderName) {
+void CCTagFileDebug::setPath(const std::string& folderName)
+{
 #ifdef CCTAG_SERIALIZE
     _path = folderName;
     if (!bfs::exists(_path)) {
@@ -27,7 +29,8 @@ void CCTagFileDebug::setPath(const std::string& folderName) {
 #endif
 }
 
-void CCTagFileDebug::newSession(const std::string& sessionName) {
+void CCTagFileDebug::newSession(const std::string& sessionName)
+{
 #ifdef CCTAG_SERIALIZE
     // Don't erase old sessions
     Sessions::iterator it = _sessions.find(sessionName);
@@ -39,7 +42,8 @@ void CCTagFileDebug::newSession(const std::string& sessionName) {
 #endif
 }
 
-void CCTagFileDebug::outputFlowComponentAssemblingInfos(int status) {
+void CCTagFileDebug::outputFlowComponentAssemblingInfos(int status)
+{
 #if defined CCTAG_SERIALIZE && defined DEBUG
     boost::archive::text_oarchive oa(*_sstream);
 
@@ -54,7 +58,8 @@ void CCTagFileDebug::outputFlowComponentAssemblingInfos(int status) {
 #endif
 }
 
-void CCTagFileDebug::printInfos() {
+void CCTagFileDebug::printInfos()
+{
     CCTAG_COUT("Print infos");
     BOOST_FOREACH(const int index, _vflowComponentIndex) {
         CCTAG_COUT_VAR(index);
@@ -63,7 +68,8 @@ void CCTagFileDebug::printInfos() {
     CCTAG_PAUSE;
 }
 
-void CCTagFileDebug::initFlowComponentsIndex(int size) {
+void CCTagFileDebug::initFlowComponentsIndex(int size)
+{
 #if defined CCTAG_SERIALIZE && defined DEBUG
     _vflowComponentIndex.resize(size);
     for (int i = 0; i < _vflowComponentIndex.size(); ++i) {
@@ -72,7 +78,8 @@ void CCTagFileDebug::initFlowComponentsIndex(int size) {
 #endif            
 }
 
-void CCTagFileDebug::resetFlowComponent() {
+void CCTagFileDebug::resetFlowComponent()
+{
 #if defined CCTAG_SERIALIZE && defined DEBUG
     _isAssembled = false;
     _researchArea = cctag::numerical::geometry::Ellipse();
@@ -85,26 +92,30 @@ void CCTagFileDebug::resetFlowComponent() {
 #endif            
 }
 
-void CCTagFileDebug::incrementFlowComponentIndex(int n) {
+void CCTagFileDebug::incrementFlowComponentIndex(int n)
+{
 #if defined CCTAG_SERIALIZE && defined DEBUG
     (_vflowComponentIndex[n])++;
 #endif            
 }
 
-void CCTagFileDebug::setResearchArea(cctag::numerical::geometry::Ellipse circularResearchArea) {
+void CCTagFileDebug::setResearchArea(cctag::numerical::geometry::Ellipse circularResearchArea)
+{
 #if defined CCTAG_SERIALIZE && defined DEBUG
     _researchArea = circularResearchArea;
 #endif 
 }
 
-void CCTagFileDebug::setFlowComponentAssemblingState(bool isAssembled, int indexSelectedFlowComponent) {
+void CCTagFileDebug::setFlowComponentAssemblingState(bool isAssembled, int indexSelectedFlowComponent)
+{
 #if defined CCTAG_SERIALIZE && defined DEBUG
     _isAssembled = isAssembled;
     _vflowComponentIndex[1] = indexSelectedFlowComponent;
 #endif
 }
 
-void CCTagFileDebug::outputFlowComponentInfos(const cctag::CCTagFlowComponent & flowComponent) {
+void CCTagFileDebug::outputFlowComponentInfos(const cctag::CCTagFlowComponent & flowComponent)
+{
 #ifdef CCTAG_SERIALIZE
     if (_sstream) {
         boost::archive::text_oarchive oa(*_sstream);
@@ -118,7 +129,8 @@ void CCTagFileDebug::outputFlowComponentInfos(const cctag::CCTagFlowComponent & 
 #endif
 }
 
-void CCTagFileDebug::outputMarkerInfos(const cctag::CCTag& marker) {
+void CCTagFileDebug::outputMarkerInfos(const cctag::CCTag& marker)
+{
 #ifdef CCTAG_SERIALIZE
     if (_sstream) {
         boost::archive::text_oarchive oa(*_sstream);
@@ -129,20 +141,58 @@ void CCTagFileDebug::outputMarkerInfos(const cctag::CCTag& marker) {
 #endif
 }
 
-void CCTagFileDebug::outPutAllSessions() const {
+void CCTagFileDebug::outPutAllSessions() const
+{
 #ifdef CCTAG_SERIALIZE
     for (Sessions::const_iterator it = _sessions.begin(), itEnd = _sessions.end(); it != itEnd; ++it) {
         const std::string filename = _path + "/" + it->first; //cctagFileDebug_
-        //const std::string filename = it->first + "/data_v2.txt";
         std::ofstream f(filename.c_str());
         f << it->second->str();
     }
 #endif
 }
 
-void CCTagFileDebug::clearSessions() {
+void CCTagFileDebug::clearSessions()
+{
 #ifdef CCTAG_SERIALIZE
     _sessions.erase(_sessions.begin(), _sessions.end());
+#endif
+}
+
+// Vote debug
+void CCTagFileDebug::newVote(float x, float y, float dx, float dy)
+{
+#if defined(CCTAG_SERIALIZE) && defined(CCTAG_VOTE_DEBUG)
+   if (_sstream) {
+      //boost::archive::text_oarchive oa(*_sstream);
+      *_sstream << x << " " << y << " " << dx << " " << dy;
+  } else {
+      CCTAG_COUT_ERROR("Unable to output vote infos!");
+  }
+#endif
+}
+
+void CCTagFileDebug::addFieldLinePoint(float x, float y)
+{
+#if defined(CCTAG_SERIALIZE) && defined(CCTAG_VOTE_DEBUG)
+   if (_sstream) {
+      //boost::archive::text_oarchive oa(*_sstream);
+      *_sstream << " " << x << " " << y;
+  } else {
+      CCTAG_COUT_ERROR("Unable to output vote infos!");
+  }
+#endif
+}
+
+void CCTagFileDebug::endVote()
+{
+#if defined(CCTAG_SERIALIZE) && defined(CCTAG_VOTE_DEBUG)
+   if (_sstream) {
+      //boost::archive::text_oarchive oa(*_sstream);
+      *_sstream << "\n";
+  } else {
+      CCTAG_COUT_ERROR("Unable to output vote infos!");
+  }
 #endif
 }
 
