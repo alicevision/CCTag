@@ -8,6 +8,8 @@ FILE( GLOB_RECURSE
       ./cctag/*.cpp
 )
 
+SET(COMPILE_STATIC_CCTAG_LIBRARY true)
+
 IF(USE_CUDA)
     FILE( GLOB_RECURSE
           CUDA_cpp
@@ -38,12 +40,21 @@ IF(USE_CUDA)
     CUDA_COMPILE( cuda_files
                   ${CUDA_cu} )
 
-    add_library( CCTag STATIC ${CUDA_cpp} ${CCTag_cpp} )
+    IF( COMPILE_STATIC_CCTAG_LIBRARY )
+    	add_library( CCTag STATIC ${CUDA_cpp} ${CCTag_cpp} )
+    ELSE( COMPILE_STATIC_CCTAG_LIBRARY )
+    	MESSAGE( FATAL_ERROR "We must link CCTag library static with CUDA" )
+    ENDIF( COMPILE_STATIC_CCTAG_LIBRARY )
 ELSE(USE_CUDA)
     SET(CUDA_cpp "")
 
-    add_library( CCTag SHARED ${CCTag_cpp} )
-    #add_library( CCTagStatic STATIC ${CCTag_cpp} )
+    IF( COMPILE_STATIC_CCTAG_LIBRARY )
+    	MESSAGE( STATUS "Compiling static library" )
+    	add_library( CCTag STATIC ${CCTag_cpp} )
+    ELSE( COMPILE_STATIC_CCTAG_LIBRARY )
+    	MESSAGE( STATUS "Compiling shared library" )
+    	add_library( CCTag SHARED ${CCTag_cpp} )
+    ENDIF( COMPILE_STATIC_CCTAG_LIBRARY )
 ENDIF(USE_CUDA)
 
 SET(CCTAG_LINK_LIBRARIES
@@ -63,8 +74,6 @@ SET(CCTAG_LINK_LIBRARIES
     ${Gomp_LIBRARIES} )
 
 target_link_libraries( CCTag PUBLIC ${CCTAG_LINK_LIBRARIES} )
-#target_link_libraries( CCTagStatic PUBLIC ${CCTAG_LINK_LIBRARIES} )
-
 target_include_directories( CCTag PUBLIC .)
 
 set(CCTagDetect_cpp ./applications/detection/main.cpp)
