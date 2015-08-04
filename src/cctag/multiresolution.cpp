@@ -234,12 +234,33 @@ void cctagMultiresDetection(
   const double spendTime = d.total_milliseconds();
   CCTAG_COUT_OPTIM("Time in edge point collection: " << spendTime << " ms");
 #endif
+
+    // Get vote winners
+    WinnerMap winners;
+    std::vector<EdgePoint*> seeds;
+
+    // Voting procedure applied on every edge points.
+    vote( points,
+          seeds,        // output
+          vEdgeMaps[i],
+          winners,      // output
+          imagePyramid.getLevel(i)->getDx(),
+          imagePyramid.getLevel(i)->getDy(),
+          params );
     
+    if( seeds.size() > 1 ) {
+        // Sort the seeds based on the number of received votes.
+        std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
+    }
+
     cctagDetectionFromEdges(
-            pyramidMarkers[i], points,
+            pyramidMarkers[i],
+            points,
             imagePyramid.getLevel(i)->getSrc(),
             imagePyramid.getLevel(i)->getDx(),
             imagePyramid.getLevel(i)->getDy(),
+            winners,
+            seeds,
             vEdgeMaps[i],
             frame, i, std::pow(2.0, (int) i), params);
     

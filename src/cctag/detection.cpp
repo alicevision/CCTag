@@ -106,7 +106,8 @@ void constructFlowComponentFromSeed(
 }
 
 void completeFlowComponent(
-        Candidate & candidate, WinnerMap & winners,
+        Candidate & candidate,
+        WinnerMap & winners,
         std::vector<EdgePoint> & points,
         const EdgePointsImage& edgesMap,
         std::vector<Candidate> & vCandidateLoopTwo,
@@ -377,6 +378,8 @@ void cctagDetectionFromEdges(
         const cv::Mat & src,
         const cv::Mat & dx,
         const cv::Mat & dy,
+        WinnerMap& winners,
+        const std::vector<EdgePoint*>& seeds,
         const EdgePointsImage& edgesMap,
         const std::size_t frame,
         int pyramidLevel,
@@ -389,12 +392,14 @@ void cctagDetectionFromEdges(
 #endif
   using namespace boost::gil;
 
+#if 0
   // Get vote winners
   WinnerMap winners;
   std::vector<EdgePoint*> seeds;
 
   // Voting procedure applied on every edge points.
   vote(points, seeds, edgesMap, winners, dx, dy, params);
+#endif
   
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
@@ -418,11 +423,8 @@ void cctagDetectionFromEdges(
   CCTagFileDebug::instance().newSession(outFlowComponents.str());
 #endif
 
-  // Sort the seeds based on the number of received votes.
-  if( seeds.size() > 0 )
+  if( seeds.size() <= 0 )
   {
-    std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
-  }else{
     // No seeds to process
     return;
   }

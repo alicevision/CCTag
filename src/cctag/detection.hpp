@@ -36,6 +36,8 @@ void cctagDetectionFromEdges(
         const cv::Mat & src,
         const cv::Mat & dx,
         const cv::Mat & dy,
+        WinnerMap&      winners,
+        const std::vector<EdgePoint*>& seeds,
         const EdgePointsImage& edgesMap,
         const std::size_t frame,
         int pyramidLevel,
