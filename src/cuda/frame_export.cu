@@ -16,7 +16,7 @@ using namespace std;
 
 bool Frame::applyExport( cctag::EdgePointsImage& edgesMap )
 {
-    int sz = _vote._all_edgecoords.host.size;
+    int sz = _vote._chained_edgecoords.host.size;
 
     if( sz <= 0 ) return false;
 
@@ -25,17 +25,19 @@ bool Frame::applyExport( cctag::EdgePointsImage& edgesMap )
 
     cctag::EdgePoint* array = new cctag::EdgePoint[ sz ];
     for( int i=0; i<sz; i++ ) {
-        const int2& coord = _vote._all_edgecoords.host.ptr[i];
-        int16_t     dx    = _h_dx.ptr(coord.y)[coord.x];
-        int16_t     dy    = _h_dy.ptr(coord.y)[coord.x];
+        const TriplePoint& pt = _vote._chained_edgecoords.host.ptr[i];
 
-        assert( dx != 0 || dy != 0 );
+        array[i].init( pt.coord.x, pt.coord.y, pt.d.x, pt.d.y );
+        array[i]._flowLength = pt._flowLength;
+        array[i]._isMax      = pt._winnerSize;
 
-        array[i].init( coord.x, coord.y, dx, dy );
-
-        edgesMap[coord.x][coord.y] = &array[i];
+        edgesMap[pt.coord.x][pt.coord.y] = &array[i];
     }
-    // for( int i=0; i<sz; i++ ) { cout << "  " << array[i] << endl; }
+    for( int i=0; i<sz; i++ ) {
+        cout << "  " << array[i] << " FL=" << array[i]._flowLength
+             << " VT=" << array[i]._isMax
+             << endl;
+    }
     return true;
 }
 

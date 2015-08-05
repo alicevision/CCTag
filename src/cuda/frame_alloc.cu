@@ -198,8 +198,8 @@ void Frame::releaseRequiredMem( )
 
 void Voting::alloc( const cctag::Parameters& params, size_t w, size_t h )
 {
-    _all_edgecoords    .alloc( params._maxEdges, EdgeListBoth );
-    _chained_edgecoords.alloc( params._maxEdges, EdgeListDevOnly );
+    _all_edgecoords    .alloc( params._maxEdges, EdgeListDevOnly );
+    _chained_edgecoords.alloc( params._maxEdges, EdgeListBoth );
     _seed_indices      .alloc( params._maxEdges, EdgeListDevOnly );
     _seed_indices_2    .alloc( params._maxEdges, EdgeListDevOnly );
 

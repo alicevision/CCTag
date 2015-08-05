@@ -268,14 +268,14 @@ const TriplePoint* construct_line_inner(
 
 __global__
 void construct_line( DevEdgeList<int>             seed_indices,       // output
-                     DevEdgeList<TriplePoint>     chained_edgecoords, // input (modified)
+                     DevEdgeList<TriplePoint>     chained_edgecoords, // input/output
                      const int                    edge_index_max,     // input
                      const cv::cuda::PtrStepSz32s edgepoint_index_table, // input
                      const size_t                 numCrowns,
                      const float                  ratioVoting )
 {
     const TriplePoint* chosen =
-        construct_line_inner( chained_edgecoords,     // input
+        construct_line_inner( chained_edgecoords,    // input
                               edgepoint_index_table, // input
                               numCrowns,
                               ratioVoting );
@@ -335,7 +335,7 @@ int count_winners( const int                       chosen_edge_index,
  * unique indices of chosen inner points.
  */
 __global__
-void vote_eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input
+void vote_eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
                        DevEdgeList<int>         seed_indices        // input
                      )
 {
@@ -527,6 +527,15 @@ void Frame::applyVote( const cctag::Parameters& params )
               _vote._seed_indices_2.dev );
         POP_CHK_CALL_IFSYNC;
 
+        /* After vote_eval_chosen, _chained_edgecoords is no longer changed
+         * we can copy it to the host for edge linking
+         */
+        _vote._chained_edgecoords.copySizeFromDevice( _stream );
+        POP_CUDA_SYNC( _stream );
+        _vote._chained_edgecoords.copyDataFromDevice( _vote._chained_edgecoords.host.size,
+                                                      _stream );
+        POP_CHK_CALL_IFSYNC;
+
         // safety: SortKeys is allowed to alter assist_buffer_sz
         assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
 
@@ -549,10 +558,12 @@ void Frame::applyVote( const cctag::Parameters& params )
          * value d_num_selected_out from the device before the voting
          * step.
          */
-        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size, _vote._seed_indices.dev.size, sizeof(int), _stream );
+        _vote._seed_indices.copySizeFromDevice( _stream );
+        // POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size, _vote._seed_indices.dev.size, sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
 
         cout << "  Number of viable inner points: " << _vote._seed_indices.host.size << endl;
+
     }
     cout << "Leave " << __FUNCTION__ << endl;
 }

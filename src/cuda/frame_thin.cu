@@ -200,12 +200,6 @@ void Frame::applyThinning( const cctag::Parameters & params )
                               cudaMemcpyDeviceToHost, _stream );
     POP_CHK_CALL_IFSYNC;
 
-    _vote._all_edgecoords.copySizeFromDevice( _stream );
-    POP_CUDA_SYNC( _stream );
-
-    _vote._all_edgecoords.copyDataFromDevice( _vote._all_edgecoords.host.size, _stream );
-    POP_CHK_CALL_IFSYNC;
-
     cerr << "Leave " << __FUNCTION__ << endl;
 }
 
