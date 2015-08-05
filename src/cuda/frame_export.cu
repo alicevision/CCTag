@@ -35,9 +35,7 @@ bool Frame::applyExport( cctag::EdgePointsImage& edgesMap )
 
         edgesMap[coord.x][coord.y] = &array[i];
     }
-    for( int i=0; i<sz; i++ ) {
-        cout << "  " << array[i] << endl;
-    }
+    // for( int i=0; i<sz; i++ ) { cout << "  " << array[i] << endl; }
     return true;
 }
 
