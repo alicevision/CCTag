@@ -19,6 +19,9 @@ IF(USE_CUDA)
           CUDA_cu
           ./cuda/*.cu
     )
+
+    include_directories("${CMAKE_SOURCE_DIR}/src")
+
     set_source_files_properties( ${CUDA_cpp} ${CUDA_cu}
                                  PROPERTIES COMPILE_FLAGS "-g -Wall"
     )
