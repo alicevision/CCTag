@@ -209,6 +209,10 @@ void Frame::applyGauss( const cctag::Parameters & params )
         ( _d_intermediate, _d_dy, GAUSS_DERIV, 1.0f );
     POP_CHK_CALL_IFSYNC;
 
+#ifdef EDGE_LINKING_HOST_SIDE
+    // After these linking operations, dx and dy are created for
+    // all edge points and we can copy them to the host
+
     POP_CUDA_MEMCPY_2D_ASYNC( _h_dx.data, _h_dx.step,
                               _d_dx.data, _d_dx.step,
                               _d_dx.cols * sizeof(int16_t),
@@ -221,6 +225,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
                               _d_dy.rows,
                               cudaMemcpyDeviceToHost, _stream );
     POP_CHK_CALL_IFSYNC;
+#endif // EDGE_LINKING_HOST_SIDE
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }

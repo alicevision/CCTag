@@ -193,12 +193,16 @@ void Frame::applyThinning( const cctag::Parameters & params )
     debugPointIsOnEdge( _d_edges, _vote._all_edgecoords, _stream );
 #endif // NDEBUG
 
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_edges.data, _h_edges.step,
-                              _d_edges.data, _d_edges.step,
-                              _d_edges.cols * sizeof(uint8_t),
-                              _d_edges.rows,
-                              cudaMemcpyDeviceToHost, _stream );
-    POP_CHK_CALL_IFSYNC;
+#ifdef EDGE_LINKING_HOST_SIDE
+        /* After thinning_and_store, _all_edgecoords is no longer changed
+         * we can copy it to the host for edge linking
+         */
+        _vote._all_edgecoords.copySizeFromDevice( _stream );
+        POP_CUDA_SYNC( _stream );
+        _vote._all_edgecoords.copyDataFromDevice( _vote._all_edgecoords.host.size,
+                                                  _stream );
+        POP_CHK_CALL_IFSYNC;
+#endif // EDGE_LINKING_HOST_SIDE
 
     cerr << "Leave " << __FUNCTION__ << endl;
 }

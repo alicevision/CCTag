@@ -529,6 +529,7 @@ void Frame::applyVote( const cctag::Parameters& params )
               _vote._seed_indices_2.dev );
         POP_CHK_CALL_IFSYNC;
 
+#ifdef EDGE_LINKING_HOST_SIDE
         /* After vote_eval_chosen, _chained_edgecoords is no longer changed
          * we can copy it to the host for edge linking
          */
@@ -537,6 +538,7 @@ void Frame::applyVote( const cctag::Parameters& params )
         _vote._chained_edgecoords.copyDataFromDevice( _vote._chained_edgecoords.host.size,
                                                       _stream );
         POP_CHK_CALL_IFSYNC;
+#endif // EDGE_LINKING_HOST_SIDE
 
         // safety: SortKeys is allowed to alter assist_buffer_sz
         assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
@@ -556,13 +558,11 @@ void Frame::applyVote( const cctag::Parameters& params )
                                _stream );
         POP_CHK_CALL_IFSYNC;
 
-        /* Without Dynamic Parallelism, we must block here to retrieve the
-         * value d_num_selected_out from the device before the voting
-         * step.
-         */
         _vote._seed_indices.copySizeFromDevice( _stream );
-        // POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size, _vote._seed_indices.dev.size, sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
+#ifdef EDGE_LINKING_HOST_SIDE
+        _vote._seed_indices.copyDataFromDevice( _vote._seed_indices.host.size, _stream );
+#endif // EDGE_LINKING_HOST_SIDE
 
         cout << "  Number of viable inner points: " << _vote._seed_indices.host.size << endl;
     } else {

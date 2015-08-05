@@ -94,11 +94,13 @@ void TagPipe::tagframe( unsigned char* pix,
     t.report( "Time for all frames " );
 
     {
-        cctag::EdgePointsImage edgeImage;
-
         for( int i=0; i<4; i++ ) {
+            cctag::EdgePointsImage         edgeImage;
+            std::vector<cctag::EdgePoint*> seeds;
+            cctag::WinnerMap               winners;
+
             cout << "Exporting image frame " << i << endl;
-            _frame[i]->applyExport( edgeImage );
+            _frame[i]->applyExport( edgeImage, seeds, winners );
         }
     }
 

@@ -33,12 +33,14 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
     delete [] _h_debug_mag;
     delete [] _h_debug_map;
     delete [] _h_debug_hyst_edges;
+    delete [] _h_debug_edges;
 
     _h_debug_plane      = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_smooth     = new float[ getWidth() * getHeight() ];
     _h_debug_mag        = new uint32_t[ getWidth() * getHeight() ];
     _h_debug_map        = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_hyst_edges = new unsigned char[ getWidth() * getHeight() ];
+    _h_debug_edges      = new unsigned char[ getWidth() * getHeight() ];
 
     POP_SYNC_CHK;
 
@@ -67,6 +69,13 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
                               _d_hyst_edges.cols * sizeof(uint8_t),
                               _d_hyst_edges.rows,
                               cudaMemcpyDeviceToHost, _stream );
+
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_edges, getWidth() * sizeof(uint8_t),
+                              _d_edges.data, _d_edges.step,
+                              _d_edges.cols * sizeof(uint8_t),
+                              _d_edges.rows,
+                              cudaMemcpyDeviceToHost, _stream );
+    POP_CHK_CALL_IFSYNC;
 }
 
 void Frame::hostDebugCompare( unsigned char* pix )
@@ -212,7 +221,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 
     cv::cuda::PtrStepSzb   edges( getHeight(),
                                   getWidth(),
-                                  _h_edges,
+                                  _h_debug_edges,
                                   getWidth()*sizeof(uint8_t) );
 
 #ifdef DEBUG_WRITE_EDGES_AS_PGM
