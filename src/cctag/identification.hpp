@@ -232,6 +232,14 @@ void selectCut(
         const std::size_t numSamplesOuterEdgePointsRefinement,
         const std::size_t cutsSelectionTrials );
 
+void selectCutNaive(
+        std::vector< cctag::ImageCut > & cutSelection,
+        std::vector< cctag::Point2dN<double> > & prSelection,
+        std::size_t selectSize, const std::vector<cctag::ImageCut> & collectedCuts,
+        const cv::Mat & src,
+        const cv::Mat & dx,
+        const cv::Mat & dy );
+
 /**
  * 	
  * @param mH

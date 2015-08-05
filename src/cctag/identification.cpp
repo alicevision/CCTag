@@ -23,6 +23,8 @@
 #include <boost/numeric/ublas/vector_expression.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 
+#define NAIVE_SELECTCUT
+
 #include <cmath>
 #include <vector>
 
@@ -478,7 +480,6 @@ double costSelectCutFun( const std::vector<double> & varCuts,
     sumDeriv(0) += gradient(0)/normGrad;
     sumDeriv(1) += gradient(1)/normGrad;
     sumVar += varCuts[i];
-
   }
 
   const double ndir = ublas::norm_2( sumDeriv );
@@ -601,6 +602,70 @@ void selectCut( std::vector< cctag::ImageCut > & cutSelection,
     {
       break;
     }
+  }
+}
+
+void selectCutNaive(
+        std::vector< cctag::ImageCut > & cutSelection,
+        std::vector< cctag::Point2dN<double> > & prSelection,
+        std::size_t selectSize,
+        const std::vector<cctag::ImageCut> & collectedCuts,
+        const cv::Mat & src,
+        const cv::Mat & dx,
+        const cv::Mat & dy )
+{
+  using namespace boost::numeric;
+  using namespace boost::accumulators;
+
+  selectSize = std::min( selectSize, collectedCuts.size() );
+
+  std::vector<double> vGrads;
+  vGrads.reserve( collectedCuts.size() );
+  for( int i=0 ; i < collectedCuts.size() ; ++i)
+  {
+    ublas::bounded_vector<double,2> gradient;
+    gradient(0) = dx.at<short>( collectedCuts[i]._stop.y(), collectedCuts[i]._stop.x() );
+    gradient(1) = dy.at<short>( collectedCuts[i]._stop.y(), collectedCuts[i]._stop.x() );
+    vGrads.push_back(ublas::norm_2(gradient));
+    //CCTAG_COUT_VAR(vGrads.back());
+  }
+  // Statistics on vGrads
+  accumulator_set< double, features< tag::median > > acc;
+  // Compute the median value
+  acc = std::for_each( vGrads.begin(), vGrads.end(), acc );
+  const double medianValue = boost::accumulators::median( acc );
+  //CCTAG_COUT_VAR(medianValue);
+
+  const std::size_t step = std::max( 1, int( collectedCuts.size()/2 -1 ) / int(selectSize) );
+  
+  // Select all cuts whose stop gradient is greater than the median value
+  std::size_t iStep = 0;
+          
+  for( int i=0 ; i < collectedCuts.size() ; ++i)
+  {
+    ublas::bounded_vector<double,2> gradient;
+    gradient(0) = dx.at<short>( collectedCuts[i]._stop.y(), collectedCuts[i]._stop.x() );
+    gradient(1) = dy.at<short>( collectedCuts[i]._stop.y(), collectedCuts[i]._stop.x() );
+    
+    if ( ublas::norm_2(gradient) > medianValue )
+    {
+      if ( iStep == step )
+      {
+        //cctag::Point2dN<double> refinedPoint(collectedCuts[i]._stop);
+        prSelection.push_back( collectedCuts[i]._stop );
+        cutSelection.push_back( collectedCuts[i] );
+        iStep = 0;
+      }else
+      {
+        ++iStep;
+      }
+      
+    }
+    
+    //if( cutSelection.size() >= selectSize )
+    //{
+    //  break;
+    //}
   }
 }
 
@@ -928,10 +993,15 @@ int identify(
 
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-    
+
+#ifdef NAIVE_SELECTCUT
+    selectCutNaive( cutSelection, prSelection, params._numCutsInIdentStep, cuts, src, 
+          dx, dy );  
+#else
     selectCut( cutSelection, prSelection, params._numCutsInIdentStep, cuts, src, 
             dx, dy, refinedSegSize, params._numSamplesOuterEdgePointsRefinement,
             params._cutsSelectionTrials );
+#endif
     
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
