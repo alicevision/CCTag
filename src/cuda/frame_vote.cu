@@ -428,6 +428,8 @@ void Frame::applyVote( const cctag::Parameters& params )
                                    _stream );
 
     if( not success ) {
+        _vote._seed_indices.host.size       = 0;
+        _vote._chained_edgecoords.host.size = 0;
         cout << "Leave " << __FUNCTION__ << endl;
         return;
     }
@@ -563,7 +565,8 @@ void Frame::applyVote( const cctag::Parameters& params )
         POP_CUDA_SYNC( _stream );
 
         cout << "  Number of viable inner points: " << _vote._seed_indices.host.size << endl;
-
+    } else {
+        _vote._chained_edgecoords.host.size = 0;
     }
     cout << "Leave " << __FUNCTION__ << endl;
 }
