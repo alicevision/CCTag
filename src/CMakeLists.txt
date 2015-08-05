@@ -8,8 +8,6 @@ FILE( GLOB_RECURSE
       ./cctag/*.cpp
 )
 
-SET(COMPILE_STATIC_CCTAG_LIBRARY true)
-
 IF(USE_CUDA)
     FILE( GLOB_RECURSE
           CUDA_cpp
@@ -112,6 +110,7 @@ set( FILES_TO_DEPLOY
       ./cctag/view.hpp
       ./cctag/ICCTag.hpp
       ./cctag/params.hpp
+      ./cctag/CCTagMarkersBank.hpp
       ./cctag/progBase/MemoryPool.hpp
       ./cctag/progBase/IMemoryPool.hpp
       ./cctag/progBase/pattern/Singleton.hpp)
