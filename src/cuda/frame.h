@@ -7,30 +7,31 @@
 
 #include <opencv2/core/cuda_types.hpp>
 
-#include "../cctag/params.hpp"
+#include "cctag/params.hpp"
+#include "cctag/types.hpp"
 #include "frame_vote.h"
 #include "triple_point.h"
 
-#undef  DEBUG_WRITE_ORIGINAL_AS_PGM
-#undef  DEBUG_WRITE_ORIGINAL_AS_ASCII
-#undef  DEBUG_WRITE_GAUSSIAN_AS_PGM
-#undef  DEBUG_WRITE_GAUSSIAN_AS_ASCII
-#undef  DEBUG_WRITE_DX_AS_PGM
-#undef  DEBUG_WRITE_DX_AS_ASCII
-#undef  DEBUG_WRITE_DY_AS_PGM
-#undef  DEBUG_WRITE_DY_AS_ASCII
-#undef  DEBUG_WRITE_MAG_AS_PGM
-#undef  DEBUG_WRITE_MAG_AS_ASCII
-#undef  DEBUG_WRITE_MAP_AS_PGM
-#undef  DEBUG_WRITE_MAP_AS_ASCII
-#undef  DEBUG_WRITE_HYSTEDGES_AS_PGM
+#define DEBUG_WRITE_ORIGINAL_AS_PGM
+#define DEBUG_WRITE_ORIGINAL_AS_ASCII
+#define DEBUG_WRITE_GAUSSIAN_AS_PGM
+#define DEBUG_WRITE_GAUSSIAN_AS_ASCII
+#define DEBUG_WRITE_DX_AS_PGM
+#define DEBUG_WRITE_DX_AS_ASCII
+#define DEBUG_WRITE_DY_AS_PGM
+#define DEBUG_WRITE_DY_AS_ASCII
+#define DEBUG_WRITE_MAG_AS_PGM
+#define DEBUG_WRITE_MAG_AS_ASCII
+#define DEBUG_WRITE_MAP_AS_PGM
+#define DEBUG_WRITE_MAP_AS_ASCII
+#define DEBUG_WRITE_HYSTEDGES_AS_PGM
 #define DEBUG_WRITE_EDGES_AS_PGM
 #define DEBUG_WRITE_EDGELIST_AS_PPM
-#undef  DEBUG_WRITE_EDGELIST_AS_ASCII
-#undef  DEBUG_WRITE_VOTERS_AS_PPM
+#define DEBUG_WRITE_EDGELIST_AS_ASCII
+#define DEBUG_WRITE_VOTERS_AS_PPM
 #define DEBUG_WRITE_CHOSEN_AS_PPM
-#undef  DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
-#undef  DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
+#define DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
+#define DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
 #define DEBUG_WRITE_LINKED_AS_PPM
 #define DEBUG_WRITE_LINKED_AS_PPM_INTENSE
 #define DEBUG_WRITE_LINKED_AS_ASCII
@@ -164,8 +165,10 @@ public:
     uint32_t getHeight( ) const { return _d_plane.rows; }
     uint32_t getPitch( ) const  { return _d_plane.step; }
 
-    // implemented in frame_gaussian.cu
-    void allocDevGaussianPlane( const cctag::Parameters& param );
+    // implemented in frame_alloc.cu
+    void allocRequiredMem( const cctag::Parameters& param );
+    void initRequiredMem( );
+    void releaseRequiredMem( );
 
     // implemented in frame_gaussian.cu
     void applyGauss( const cctag::Parameters& param );
@@ -187,6 +190,9 @@ public:
 
     // implemented in frame_link.cu
     void applyLink( const cctag::Parameters& param );
+
+    // implemented in frame_export.cu
+    bool applyExport( cctag::EdgePointsImage& edgesMap );
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
@@ -220,12 +226,15 @@ private:
 
     unsigned char*          _h_debug_plane;
     float*                  _h_debug_smooth;
-    int16_t*                _h_debug_dx;
-    int16_t*                _h_debug_dy;
     uint32_t*               _h_debug_mag;
     unsigned char*          _h_debug_map;
     unsigned char*          _h_debug_hyst_edges;
-    unsigned char*          _h_debug_edges;
+    // int16_t*                _h_dx;    // needed on host
+    // int16_t*                _h_dy;    // needed on host
+    // unsigned char*          _h_edges; // needed on host
+    cv::cuda::PtrStepSz16s  _h_dx;
+    cv::cuda::PtrStepSz16s  _h_dy;
+    cv::cuda::PtrStepSzb    _h_edges;
     cv::cuda::PtrStepSzInt2 _h_ring_output;
 
     Voting _vote;
