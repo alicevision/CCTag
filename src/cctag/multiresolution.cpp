@@ -197,12 +197,6 @@ void cctagMultiresDetection(
   std::vector<EdgePointsImage> vEdgeMaps;
   vEdgeMaps.reserve(imagePyramid.getNbLevels());
   std::vector<std::vector<EdgePoint > > vPoints;
-  
-  //for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i ) //todo@Lilian : to move
-  //{
-  //  EdgePointsImage edgesMap;
-  //  vEdgeMaps.push_back(edgesMap);
-  //}
 
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
   for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i )
