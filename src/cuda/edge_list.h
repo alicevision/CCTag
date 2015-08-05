@@ -18,6 +18,14 @@ enum EdgeListFilter
 };
 #endif // NDEBUG
 
+enum EdgeListAllocMode
+{
+    EdgeListDevOnly = 0,
+    EdgeListBoth = 1
+};
+
+template <typename T> struct EdgeList;
+
 template <typename T>
 struct DevEdgeList
 {
@@ -37,19 +45,80 @@ struct DevEdgeList
         assert(size);
         *size = sz;
     }
+
+protected:
+    friend class EdgeList<T>;
+
+    __host__
+    void alloc( int sz )
+    {
+        void*  aptr;
+
+        POP_CUDA_MALLOC( &aptr, sz*sizeof(T) );
+        ptr = (T*)aptr;
+
+        POP_CUDA_MALLOC( &aptr, sizeof(int) );
+        size = (int*)aptr;
+    }
+
+    __host__
+    void init( int sz, cudaStream_t stream )
+    {
+        POP_CUDA_MEMSET_ASYNC( ptr,
+                               0,
+                               sz * sizeof(T),
+                               stream );
+    }
+
+    __host__
+    void release( )
+    {
+        POP_CUDA_FREE( ptr );
+        POP_CUDA_FREE( size );
+        ptr = 0;
+        size = 0;
+    }
 };
 
 template <typename T>
 struct HostEdgeList
 {
+    T*  ptr;
     int size;
 
     HostEdgeList()
-        : size(0)
+        : ptr(0)
+        , size(0)
     { }
 
     ~HostEdgeList( )
-    { }
+    {
+        delete [] ptr;
+    }
+
+protected:
+    friend class EdgeList<T>;
+
+    __host__
+    void alloc( int sz )
+    {
+        if( ptr == 0 ) {
+            ptr = new T[sz];
+        }
+    }
+
+    __host__
+    void init( int sz )
+    {
+        if( ptr ) memset( ptr, 0, sz*sizeof(T) );
+    }
+
+    __host__
+    void release( )
+    {
+        delete [] ptr;
+        ptr = 0;
+    }
 };
 
 #ifndef NDEBUG
@@ -94,22 +163,6 @@ inline void writeArray( std::vector<T>& out,
     }
 }
 
-#if 0
-template <typename T>
-inline void writeArray( const char* filename, const T* debug_ptr, int size, const int* indexlist, int indexsize )
-{
-    std::ofstream of( filename );
-
-    for( int idx=0; idx<indexsize; idx++ ) {
-        if( idx < size ) {
-            of << debug_ptr[idx].debug_out( ) << std::endl;
-        } else {
-            of << "index out of range" << std::endl;
-        }
-    }
-}
-#endif
-
 template <typename T>
 inline void writeArray( std::vector<T>& out, const T* debug_ptr, int debug_size, const int* indexlist, int indexsize )
 {
@@ -121,61 +174,89 @@ inline void writeArray( std::vector<T>& out, const T* debug_ptr, int debug_size,
     }
 }
 
-#if 0
-template <typename T>
-inline void writeArray( const char* filename, const T* debug_ptr, int size,
-                        EdgeListFilter  f = EdgeListFilterAny )
-{
-    std::ofstream of( filename );
-
-    if( f == EdgeListFilterAny ) {
-        for( int i=0; i<size; i++ ) {
-            of << debug_ptr[i].debug_out( ) << std::endl;
-        }
-    } else {
-        for( int i=0; i<size; i++ ) {
-            if( writeArrayFilter( debug_ptr[i], f ) ) {
-                of << debug_ptr[i].debug_out( ) << std::endl;
-            }
-        }
-    }
-}
-#endif
 #endif // NDEBUG
 
 template <typename T>
 struct EdgeList
 {
+private:
+    int             alloc_num;
+public:
     DevEdgeList<T>  dev;
     HostEdgeList<T> host;
 
+    EdgeList( ) { }
+    ~EdgeList( ) { }
+
+    __host__
+    void copySizeFromDevice( )
+    {
+        POP_CUDA_MEMCPY_TO_HOST_SYNC( &host.size, dev.size, sizeof(int) );
+    }
+
+    __host__
+    void copySizeFromDevice( cudaStream_t stream )
+    {
+        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &host.size, dev.size, sizeof(int), stream );
+    }
+
+    __host__
+    void copyDataFromDevice( int sz )
+    {
+        POP_CUDA_MEMCPY_SYNC( host.ptr,
+                              dev.ptr,
+                              sz * sizeof(T),
+                              cudaMemcpyDeviceToHost );
+    }
+
+    __host__
+    void copyDataFromDevice( int sz, cudaStream_t stream )
+    {
+        POP_CUDA_MEMCPY_ASYNC( host.ptr,
+                               dev.ptr,
+                               sz * sizeof(T),
+                               cudaMemcpyDeviceToHost,
+                               stream );
+    }
+
+    __host__
+    void alloc( int sz, EdgeListAllocMode mode )
+    {
+        alloc_num = sz;
+        dev.alloc( sz );
+        if( mode == EdgeListBoth ) host.alloc( sz );
+    }
+
+    __host__
+    void init( cudaStream_t stream )
+    {
+        dev .init( alloc_num, stream );
+        host.init( alloc_num );
+    }
+
+    __host__
+    void release( )
+    {
+        dev .release();
+        host.release();
+    }
 #ifndef NDEBUG
-    T* debug_ptr;
-
-    EdgeList( ) : debug_ptr(0) { }
-    ~EdgeList( ) { delete [] debug_ptr; }
-
 private:
     bool get_debug_mem( int maxSize )
     {
-        POP_CUDA_MEMCPY_TO_HOST_SYNC( &host.size, dev.size, sizeof(int) );
+        copySizeFromDevice( );
 
         if( host.size <= 0 ) return false;
 
-        if( debug_ptr == 0 ) {
+        if( host.ptr == 0 ) {
             const int size = min( maxSize, host.size );
 
-            // An nvcc compiler bug requires typedef
-            typedef T T_t;
-            debug_ptr = new T_t [size];
-
-            POP_CUDA_MEMCPY_SYNC( debug_ptr,
-                                  dev.ptr,
-                                  size * sizeof(T),
-                                  cudaMemcpyDeviceToHost );
+            host.alloc( size );
+            copyDataFromDevice( size );
         }
         return true;
     }
+
 public:
     const int* getDebugPtr( const int maxSize, int& size )
     {
@@ -183,19 +264,20 @@ public:
         bool success = get_debug_mem( maxSize );
         if( success ) {
             size = host.size;
-            return debug_ptr;
+            return host.ptr;
         } else {
             return 0;
         }
     }
 
+public:
     void debug_out( int maxSize, std::vector<T>& out, EdgeListFilter f = EdgeListFilterAny )
     {
         bool success = get_debug_mem( maxSize );
         if( not success ) return;
 
         const int size = min( maxSize, host.size );
-        writeArray( out, debug_ptr, size, f );
+        writeArray( out, host.ptr, size, f );
     }
 
     void debug_out( EdgeList<int>& indices, int maxSize, const char* outFilename )
@@ -209,7 +291,7 @@ public:
         if( not success ) return;
 
         const int size = min( maxSize, host.size );
-        writeArray( outFilename, debug_ptr, size, indexlist, indexsize );
+        writeArray( outFilename, host.ptr, size, indexlist, indexsize );
     }
 
     void debug_out( EdgeList<int>& indices, int maxSize, std::vector<T>& out )
@@ -223,7 +305,7 @@ public:
         if( not success ) return;
 
         const int size = min( maxSize, host.size );
-        writeArray( out, debug_ptr, size, indexlist, indexsize );
+        writeArray( out, host.ptr, size, indexlist, indexsize );
     }
 #endif // NDEBUG
 };

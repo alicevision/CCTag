@@ -209,6 +209,19 @@ void Frame::applyGauss( const cctag::Parameters & params )
         ( _d_intermediate, _d_dy, GAUSS_DERIV, 1.0f );
     POP_CHK_CALL_IFSYNC;
 
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_dx.data, _h_dx.step,
+                              _d_dx.data, _d_dx.step,
+                              _d_dx.cols * sizeof(int16_t),
+                              _d_dx.rows,
+                              cudaMemcpyDeviceToHost, _stream );
+
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_dy.data, _h_dy.step,
+                              _d_dy.data, _d_dy.step,
+                              _d_dy.cols * sizeof(int16_t),
+                              _d_dy.rows,
+                              cudaMemcpyDeviceToHost, _stream );
+    POP_CHK_CALL_IFSYNC;
+
     cerr << "Leave " << __FUNCTION__ << endl;
 }
 }; // namespace popart

@@ -30,21 +30,15 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
 {
     delete [] _h_debug_plane;
     delete [] _h_debug_smooth;
-    delete [] _h_debug_dx;
-    delete [] _h_debug_dy;
     delete [] _h_debug_mag;
     delete [] _h_debug_map;
     delete [] _h_debug_hyst_edges;
-    delete [] _h_debug_edges;
 
     _h_debug_plane      = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_smooth     = new float[ getWidth() * getHeight() ];
-    _h_debug_dx         = new int16_t[ getWidth() * getHeight() ];
-    _h_debug_dy         = new int16_t[ getWidth() * getHeight() ];
     _h_debug_mag        = new uint32_t[ getWidth() * getHeight() ];
     _h_debug_map        = new unsigned char[ getWidth() * getHeight() ];
     _h_debug_hyst_edges = new unsigned char[ getWidth() * getHeight() ];
-    _h_debug_edges      = new unsigned char[ getWidth() * getHeight() ];
 
     POP_SYNC_CHK;
 
@@ -57,16 +51,6 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
                               _d_smooth.data, _d_smooth.step,
                               _d_smooth.cols * sizeof(float),
                               _d_smooth.rows,
-                              cudaMemcpyDeviceToHost, _stream );
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_dx, getWidth() * sizeof(int16_t),
-                              _d_dx.data, _d_dx.step,
-                              _d_dx.cols * sizeof(int16_t),
-                              _d_dx.rows,
-                              cudaMemcpyDeviceToHost, _stream );
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_dy, getWidth() * sizeof(int16_t),
-                              _d_dy.data, _d_dy.step,
-                              _d_dy.cols * sizeof(int16_t),
-                              _d_dy.rows,
                               cudaMemcpyDeviceToHost, _stream );
     POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_mag, getWidth() * sizeof(uint32_t),
                               _d_mag.data, _d_mag.step,
@@ -82,11 +66,6 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
                               _d_hyst_edges.data, _d_hyst_edges.step,
                               _d_hyst_edges.cols * sizeof(uint8_t),
                               _d_hyst_edges.rows,
-                              cudaMemcpyDeviceToHost, _stream );
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_edges, getWidth() * sizeof(uint8_t),
-                              _d_edges.data, _d_edges.step,
-                              _d_edges.cols * sizeof(uint8_t),
-                              _d_edges.rows,
                               cudaMemcpyDeviceToHost, _stream );
 }
 
@@ -181,7 +160,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #ifdef DEBUG_WRITE_DX_AS_PGM
     cv::cuda::PtrStepSz16s dx( getHeight(),
                                getWidth(),
-                               _h_debug_dx,
+                               _h_dx,
                                getWidth()*sizeof(int16_t) );
     DebugImage::writePGMscaled( filename + "-dx.pgm", dx );
 #ifdef DEBUG_WRITE_DX_AS_ASCII
@@ -192,7 +171,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #ifdef DEBUG_WRITE_DY_AS_PGM
     cv::cuda::PtrStepSz16s dy( getHeight(),
                                getWidth(),
-                               _h_debug_dy,
+                               _h_dy,
                                getWidth()*sizeof(int16_t) );
     DebugImage::writePGMscaled( filename + "-dy.pgm", dy );
 #ifdef DEBUG_WRITE_DY_AS_ASCII
@@ -233,7 +212,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 
     cv::cuda::PtrStepSzb   edges( getHeight(),
                                   getWidth(),
-                                  _h_debug_edges,
+                                  _h_edges,
                                   getWidth()*sizeof(uint8_t) );
 
 #ifdef DEBUG_WRITE_EDGES_AS_PGM
