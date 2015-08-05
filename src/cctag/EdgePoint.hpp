@@ -62,6 +62,15 @@ public:
     _grad = cctag::Point2dN<double>( (double) vdx , (double) vdy );
   }
 
+  void init( const int vx, const int vy, const float vdx, const float vdy )
+  {
+    this->setX( vx );
+    this->setY( vy );
+    this->setW( 1 );
+    _grad = cctag::Point2dN<double>( (double) vdx , (double) vdy );
+    _normGrad = std::sqrt( vdx * vdx + vdy * vdy );
+  }
+
   virtual ~EdgePoint() {}
 
   inline cctag::Point2dN<double> gradient() const
@@ -84,7 +93,7 @@ public:
   bool _processedIn;
   ssize_t _isMax;
   ssize_t _edgeLinked;
-  std::size_t _nSegmentOut;
+  ssize_t _nSegmentOut; // std::size_t _nSegmentOut;
   float _flowLength;
   bool _processedAux;
 };
