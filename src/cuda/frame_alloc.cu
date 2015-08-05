@@ -12,7 +12,7 @@ namespace popart
 using namespace std;
 
 __host__
-void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
+void Frame::allocRequiredMem( const cctag::Parameters& params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
@@ -84,6 +84,21 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
     _d_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _d_ring_output.rows = EDGE_LINKING_MAX_ARCS;
 
+    _h_dx.data = new int16_t[ w * h ];
+    _h_dx.step = w * sizeof(int16_t);
+    _h_dx.cols = w;
+    _h_dx.rows = h;
+
+    _h_dy.data = new int16_t[ w * h ];
+    _h_dy.step = w * sizeof(int16_t);
+    _h_dy.cols = w;
+    _h_dy.rows = h;
+
+    _h_edges.data = new unsigned char[ w * h ];
+    _h_edges.step = w * sizeof(uint8_t);
+    _h_edges.cols = w;
+    _h_edges.rows = h;
+
     _h_ring_output.data = new cv::cuda::PtrStepInt2_base_t[EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH];
     _h_ring_output.step = EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t);
     _h_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
@@ -101,19 +116,17 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
 
     _vote.alloc( params, w, h );
 
+    cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+__host__
+void Frame::initRequiredMem( )
+{
+    cerr << "Enter " << __FUNCTION__ << endl;
+
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
                            _d_smooth.step * _d_smooth.rows,
-                           _stream );
-
-    POP_CUDA_MEMSET_ASYNC( _d_dx.data,
-                           0,
-                           _d_dx.step * _d_dx.rows,
-                           _stream );
-
-    POP_CUDA_MEMSET_ASYNC( _d_dy.data,
-                           0,
-                           _d_dy.step * _d_dy.rows,
                            _stream );
 
     POP_CUDA_MEMSET_ASYNC( _d_intermediate.data,
@@ -131,54 +144,67 @@ void Frame::allocDevGaussianPlane( const cctag::Parameters& params )
                            _d_map.step * _d_map.rows,
                            _stream );
 
+    POP_CUDA_MEMSET_ASYNC( _d_dx.data,
+                           0,
+                           _d_dx.step * _d_dx.rows,
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _d_dy.data,
+                           0,
+                           _d_dy.step * _d_dy.rows,
+                           _stream );
+
     POP_CUDA_MEMSET_ASYNC( _d_edges.data,
                            0,
                            _d_edges.step * _d_edges.rows,
                            _stream );
 
-    _vote.init( params, _stream );
+    _vote.init( _stream );
 
     // POP_CUDA_MEMSET_ASYNC( _d_next_edge_after.data,
     //                        0,
     //                        _d_next_edge_after.step * _d_next_edge_after.rows,
     //                        _stream );
 
-    // POP_CUDA_MEMSET_ASYNC( _d_next_edge_befor.data,
-    //                        0,
-    //                        _d_next_edge_befor.step * _d_next_edge_befor.rows,
-    //                        _stream );
-
     cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+void Frame::releaseRequiredMem( )
+{
+    POP_CUDA_FREE( _d_plane.data );
+
+    // allocated in allocRequiredMem
+    POP_CUDA_FREE( _d_smooth.data );
+    POP_CUDA_FREE( _d_dx.data );
+    POP_CUDA_FREE( _d_dy.data );
+    POP_CUDA_FREE( _d_intermediate.data );
+    POP_CUDA_FREE( _d_mag.data );
+    POP_CUDA_FREE( _d_map.data );
+    POP_CUDA_FREE( _d_hyst_edges.data );
+    POP_CUDA_FREE( _d_edges.data );
+    POP_CUDA_FREE( _d_ring_output.data );
+
+    POP_CUDA_FREE( _d_hysteresis_block_counter );
+    POP_CUDA_FREE( _d_connect_component_block_counter );
+    POP_CUDA_FREE( _d_ring_counter );
+
+    delete [] _h_dx.data;
+    delete [] _h_dy.data;
+    delete [] _h_edges.data;
+    delete [] _h_ring_output.data;
+
+    _vote.release();
 }
 
 void Voting::alloc( const cctag::Parameters& params, size_t w, size_t h )
 {
+    _all_edgecoords    .alloc( params._maxEdges, EdgeListBoth );
+    _chained_edgecoords.alloc( params._maxEdges, EdgeListDevOnly );
+    _seed_indices      .alloc( params._maxEdges, EdgeListDevOnly );
+    _seed_indices_2    .alloc( params._maxEdges, EdgeListDevOnly );
+
     void*  ptr;
     size_t p;
-
-    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int2) );
-    _all_edgecoords.dev.ptr = (int2*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _all_edgecoords.dev.size = (int*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(TriplePoint) );
-    _chained_edgecoords.dev.ptr = (TriplePoint*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _chained_edgecoords.dev.size = (int*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int) );
-    _seed_indices.dev.ptr = (int*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _seed_indices.dev.size = (int*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, params._maxEdges*sizeof(int) );
-    _seed_indices_2.dev.ptr = (int*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _seed_indices_2.dev.size = (int*)ptr;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
     assert( p % _d_edgepoint_index_table.elemSize() == 0 );
@@ -188,27 +214,12 @@ void Voting::alloc( const cctag::Parameters& params, size_t w, size_t h )
     _d_edgepoint_index_table.rows = h;
 }
 
-void Voting::init( const cctag::Parameters& params, cudaStream_t stream )
+void Voting::init( cudaStream_t stream )
 {
-    POP_CUDA_MEMSET_ASYNC( _all_edgecoords.dev.ptr,
-                           0,
-                           params._maxEdges*sizeof(int2),
-                           stream );
-
-    POP_CUDA_MEMSET_ASYNC( _chained_edgecoords.dev.ptr,
-                           0,
-                           params._maxEdges*sizeof(TriplePoint),
-                           stream );
-
-    POP_CUDA_MEMSET_ASYNC( _seed_indices.dev.ptr,
-                           0,
-                           params._maxEdges*sizeof(int),
-                           stream );
-
-    POP_CUDA_MEMSET_ASYNC( _seed_indices_2.dev.ptr,
-                           0,
-                           params._maxEdges*sizeof(int),
-                           stream );
+    _all_edgecoords    .init( stream );
+    _chained_edgecoords.init( stream );
+    _seed_indices      .init( stream );
+    _seed_indices_2    .init( stream );
 
     POP_CUDA_MEMSET_ASYNC( _d_edgepoint_index_table.data,
                            0,
@@ -218,14 +229,10 @@ void Voting::init( const cctag::Parameters& params, cudaStream_t stream )
 
 void Voting::release( )
 {
-    POP_CUDA_FREE( _all_edgecoords.dev.ptr );
-    POP_CUDA_FREE( _all_edgecoords.dev.size );
-    POP_CUDA_FREE( _chained_edgecoords.dev.ptr );
-    POP_CUDA_FREE( _chained_edgecoords.dev.size );
-    POP_CUDA_FREE( _seed_indices.dev.ptr );
-    POP_CUDA_FREE( _seed_indices.dev.size );
-    POP_CUDA_FREE( _seed_indices_2.dev.ptr );
-    POP_CUDA_FREE( _seed_indices_2.dev.size );
+    _all_edgecoords    .release();
+    _chained_edgecoords.release();
+    _seed_indices      .release();
+    _seed_indices_2    .release();
     POP_CUDA_FREE( _d_edgepoint_index_table.data );
 }
 

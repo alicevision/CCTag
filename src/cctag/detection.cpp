@@ -148,7 +148,7 @@ void completeFlowComponent(
       std::size_t nLabel = -1;
 
       {
-        std::size_t nSegmentCommon = -1;
+        ssize_t nSegmentCommon = -1; // std::size_t nSegmentCommon = -1;
 
         BOOST_FOREACH(EdgePoint * p, filteredChildrens)
         {

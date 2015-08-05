@@ -16,13 +16,12 @@ include("${MACHINE_NAME}.cmake")
 set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -pg")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
-if(USE_CUDA)
+IF(USE_CUDA)
 # I`m really sorry, but this makes CUDA compilation impossible
-else(USE_CUDA)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-endif(USE_CUDA)
-
-set(CMAKE_BUILD_TYPE Release)
+ELSE(USE_CUDA)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  SET(CMAKE_BUILD_TYPE Release)
+ENDIF(USE_CUDA)
 
 # CCTAG_BUILD_MODE set to RELEASE by default (DEBUG,RELEASE)
 IF(DEFINED CCTAG_BUILD_MODE)
