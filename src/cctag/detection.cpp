@@ -25,9 +25,7 @@
 #include <cctag/canny.hpp>
 #include <cctag/global.hpp>
 #include <cctag/fileDebug.hpp>
-#ifdef WITH_CUDA
-  #include "cuda/tag.h"
-#endif // WITH_CUDA
+#include "cuda/tag.h"
 
 #include <boost/foreach.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -705,13 +703,20 @@ void cctagDetection(CCTag::List& markers,
   boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
 #endif
   
-#ifdef WITH_CUDA
-  {
-    popart::TagPipe pipe1;
+  ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
 
+  popart::TagPipe* pipe1 = 0;
+
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
+#endif // CCTAG_OPTIM
+#ifdef WITH_CUDA
+  if( params._useCuda ) {
+    pipe1 = new popart::TagPipe;
+    
     uint32_t w = imgGraySrc.size().width;
     uint32_t h = imgGraySrc.size().height;
-    pipe1.prepframe( w, h, params );
+    pipe1->initialize( w, h, params );
 
     // unsigned char* pix = frame.data;
     assert( imgGraySrc.elemSize() == 1 );
@@ -719,30 +724,24 @@ void cctagDetection(CCTag::List& markers,
     assert( imgGraySrc.type() == CV_8U );
     unsigned char* pix = imgGraySrc.data;
 
-    pipe1.tagframe( pix, w, h, params );
-    pipe1.debug( pix, params );
-
-    // we must continue with cctagMultiresDetection \ vote
-    // but this does not exist yet
-    exit( 0 );
+    pipe1->load( pix );
+    pipe1->tagframe( params ); // pix, w, h, params );
+    // pipe1->debug( pix, params );
+  } else {
+#endif // WITH_CUDA
+    imagePyramid.build(imgGraySrc);
+#ifdef WITH_CUDA
   }
-#else // not WITH_CUDA
-#endif // not WITH_CUDA
-  ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
-
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
-#endif
-  imagePyramid.build(imgGraySrc);
+#endif // WITH_CUDA
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
 
   boost::posix_time::time_duration dBuildPyramid = t10 - t00;
   double spendTimeBuildPyramid = dBuildPyramid.total_milliseconds();
   CCTAG_COUT_OPTIM("Time in buildPyramid: " << spendTimeBuildPyramid << " ms");
-#endif
+#endif // CCTAG_OPTIM
   
-  cctagMultiresDetection(markers, imgGraySrc, imagePyramid, frame, params);
+  cctagMultiresDetection( markers, imgGraySrc, imagePyramid, frame, pipe1, params );
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());

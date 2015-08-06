@@ -10,12 +10,15 @@ bool Frame::applyExport( cctag::EdgePointsImage&         edgesMap,
                          std::vector<cctag::EdgePoint*>& seeds,
                          cctag::WinnerMap&               winners )
 {
+    // cerr << "Enter " << __FUNCTION__ << endl;
+
     int vote_sz = _vote._chained_edgecoords.host.size;
     int all_sz  = _vote._all_edgecoords.host.size;
 
     if( vote_sz <= 0 ) {
         // no voting happened, no need for edge linking,
         // so no need for copying anything
+        // cerr << "Leave " << __FUNCTION__ << endl;
         return false;
     }
 
@@ -38,6 +41,17 @@ bool Frame::applyExport( cctag::EdgePointsImage&         edgesMap,
         assert( ep != 0 );
         assert( ep->_grad.getX() == (double)pt.d.x );
         assert( ep->_grad.getY() == (double)pt.d.y );
+
+        if( pt.descending.after.x != 0 || pt.descending.after.y != 0 ) {
+            cctag::EdgePoint* n = edgesMap[pt.descending.after.x][pt.descending.after.y];
+            if( n != 0 )
+                ep->_after = n;
+        }
+        if( pt.descending.befor.x != 0 || pt.descending.befor.y != 0 ) {
+            cctag::EdgePoint* n = edgesMap[pt.descending.befor.x][pt.descending.befor.y];
+            if( n != 0 )
+                ep->_before = n;
+        }
 
         ep->_flowLength = pt._flowLength;
         ep->_isMax      = pt._winnerSize;
@@ -88,6 +102,7 @@ bool Frame::applyExport( cctag::EdgePointsImage&         edgesMap,
     }
 #endif
 #endif // NDEBUG
+    // cerr << "Leave " << __FUNCTION__ << endl;
     return true;
 }
 

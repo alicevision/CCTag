@@ -11,14 +11,9 @@ namespace popart
 {
 
 __host__
-TagPipe::TagPipe( )
-{
-    for( int i=0; i<4; i++ ) _frame[i] = 0;
-}
-
-__host__
-void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h,
-                         const cctag::Parameters& params )
+void TagPipe::initialize( const uint32_t pix_w,
+                          const uint32_t pix_h,
+                          const cctag::Parameters& params )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
     static bool tables_initialized = false;
@@ -28,10 +23,13 @@ void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h,
         Frame::initThinningTable( );
     }
 
+    int num_layers = params._numberOfMultiresLayers;
+    _frame.reserve( num_layers );
+
     uint32_t w = pix_w;
     uint32_t h = pix_h;
-    for( int i=0; i<4; i++ ) {
-        _frame[i] = new popart::Frame( w, h ); // sync
+    for( int i=0; i<num_layers; i++ ) {
+        _frame.push_back( new popart::Frame( w, h ) ); // sync
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
@@ -39,39 +37,53 @@ void TagPipe::prepframe( const uint32_t pix_w, const uint32_t pix_h,
     _frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float); // sync
     _frame[0]->allocUploadEvent( ); // sync
 
-    for( int i=0; i<4; i++ ) {
+    for( int i=0; i<num_layers; i++ ) {
         _frame[i]->allocRequiredMem( params ); // sync
         _frame[i]->allocDoneEvent( ); // sync
     }
+
     cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 __host__
-void TagPipe::tagframe( unsigned char* pix,
-                        const uint32_t pix_w,
-                        const uint32_t pix_h,
-                        const cctag::Parameters& params )
+void TagPipe::load( unsigned char* pix )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
     KeepTime t( _frame[0]->_stream );
     t.start();
 
-    for( int i=0; i<4; i++ ) {
+    _frame[0]->upload( pix ); // async
+
+    t.stop();
+    t.report( "Time for frame upload " );
+
+    cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+__host__
+void TagPipe::tagframe( const cctag::Parameters& params )
+{
+    // cerr << "Enter " << __FUNCTION__ << endl;
+
+    KeepTime t( _frame[0]->_stream );
+    t.start();
+
+    int num_layers = _frame.size();
+
+    for( int i=0; i<num_layers; i++ ) {
         _frame[i]->initRequiredMem( ); // async
     }
 
-    _frame[0]->upload( pix ); // async
-
     FrameEvent ev = _frame[0]->addUploadEvent( ); // async
 
-    for( int i=1; i<4; i++ ) {
+    for( int i=1; i<num_layers; i++ ) {
         _frame[i]->streamSync( ev ); // aysnc
         _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
         // _frame[i]->fillFromFrame( *(_frame[0]) );
     }
 
-    for( int i=0; i<4; i++ ) {
+    for( int i=0; i<num_layers; i++ ) {
         bool success;
         _frame[i]->applyGauss( params ); // async
         _frame[i]->applyMag(   params );  // async
@@ -83,28 +95,32 @@ void TagPipe::tagframe( unsigned char* pix,
         // _frame[i]->applyLink(  params );  // async
     }
 
-    FrameEvent doneEv[4];
-    for( int i=1; i<4; i++ ) {
+    FrameEvent doneEv[num_layers];
+    for( int i=1; i<num_layers; i++ ) {
         doneEv[i] = _frame[i]->addDoneEvent( ); // async
     }
-    for( int i=1; i<4; i++ ) {
+    for( int i=1; i<num_layers; i++ ) {
         _frame[0]->streamSync( doneEv[i] ); // aysnc
     }
     t.stop();
     t.report( "Time for all frames " );
 
-    {
-        for( int i=0; i<4; i++ ) {
-            cctag::EdgePointsImage         edgeImage;
-            std::vector<cctag::EdgePoint*> seeds;
-            cctag::WinnerMap               winners;
+    // cerr << "Leave " << __FUNCTION__ << endl;
+}
 
-            cout << "Exporting image frame " << i << endl;
-            _frame[i]->applyExport( edgeImage, seeds, winners );
-        }
-    }
+__host__
+void TagPipe::download( size_t                          layer,
+                        cctag::EdgePointsImage&         edgeImage,
+                        std::vector<cctag::EdgePoint*>& seeds,
+                        cctag::WinnerMap&               winners )
+{
+    // cerr << "Enter " << __FUNCTION__ << endl;
 
-    cerr << "Leave " << __FUNCTION__ << endl;
+    assert( layer < _frame.size() );
+
+    _frame[layer]->applyExport( edgeImage, seeds, winners );
+
+    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 __host__
@@ -115,14 +131,16 @@ void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
     if( true ) {
         // This is a debug block
 
-        for( int i=0; i<4; i++ ) {
+        int num_layers = _frame.size();
+
+        for( int i=0; i<num_layers; i++ ) {
             _frame[i]->hostDebugDownload( params );
         }
         POP_SYNC_CHK;
 
         _frame[0]->hostDebugCompare( pix );
 
-        for( int i=0; i<4; i++ ) {
+        for( int i=0; i<num_layers; i++ ) {
             std::ostringstream ostr;
             ostr << "debug-input-plane-" << i;
             _frame[i]->writeHostDebugPlane( ostr.str(), params );
@@ -132,7 +150,7 @@ void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
 
     cerr << "terminating in tagframe" << endl;
     cerr << "Leave " << __FUNCTION__ << endl;
-    exit( 0 );
+    // exit( 0 );
 }
 
 }; // namespace popart

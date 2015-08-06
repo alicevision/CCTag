@@ -112,7 +112,7 @@ void compute_map( const cv::cuda::PtrStepSz16s dx,
 __host__
 void Frame::applyMag( const cctag::Parameters & params )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
+    // cerr << "Enter " << __FUNCTION__ << endl;
 
     dim3 block;
     dim3 grid;
@@ -138,7 +138,7 @@ void Frame::applyMag( const cctag::Parameters & params )
         ( _d_dx, _d_dy, _d_mag, _d_map, 256.0f * params._cannyThrLow, 256.0f * params._cannyThrHigh );
     POP_CHK_CALL_IFSYNC;
 
-    cerr << "Leave " << __FUNCTION__ << endl;
+    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 }; // namespace popart

@@ -188,6 +188,7 @@ void cctagMultiresDetection_inner(
         const std::size_t       frame,
         std::vector<EdgePoint>& vPoints,
         EdgePointsImage&        vEdgeMap,
+        popart::TagPipe*        cuda_pipe,
         const Parameters &      params )
 {
     CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::");
@@ -196,38 +197,56 @@ void cctagMultiresDetection_inner(
     boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
 #endif
     
-    edgesPointsFromCanny( vPoints,
-                          vEdgeMap,
-                          level->getEdges(),
-                          level->getDx(),
-                          level->getDy());
-
-    CCTagVisualDebug::instance().setPyramidLevel(i);
-    
-#ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-    boost::posix_time::time_duration d = t1 - t0;
-    const double spendTime = d.total_milliseconds();
-    CCTAG_COUT_OPTIM("Time in edge point collection: " << spendTime << " ms");
-#endif
-
-    // Get vote winners
+    // Data structure for getting vote winners
     WinnerMap winners;
     std::vector<EdgePoint*> seeds;
 
-    // Voting procedure applied on every edge points.
-    vote( vPoints,
-          seeds,        // output
-          vEdgeMap,
-          winners,      // output
-          level->getDx(),
-          level->getDy(),
-          params );
+#ifdef WITH_CUDA
+    if( cuda_pipe ) {
+        cuda_pipe->download( i, 
+                             vEdgeMap,
+                             seeds,
+                             winners );
+
+#ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
+        boost::posix_time::time_duration d = t1 - t0;
+        const double spendTime = d.total_milliseconds();
+        CCTAG_COUT_OPTIM("Time in edge point collection and voting: " << spendTime << " ms");
+#endif
+    } else {
+#endif // WITH_CUDA
+        edgesPointsFromCanny( vPoints,
+                              vEdgeMap,
+                              level->getEdges(),
+                              level->getDx(),
+                              level->getDy());
+
+        CCTagVisualDebug::instance().setPyramidLevel(i);
     
-    if( seeds.size() > 1 ) {
-        // Sort the seeds based on the number of received votes.
-        std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
+#ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
+        boost::posix_time::time_duration d = t1 - t0;
+        const double spendTime = d.total_milliseconds();
+        CCTAG_COUT_OPTIM("Time in edge point collection: " << spendTime << " ms");
+#endif
+
+        // Voting procedure applied on every edge points.
+        vote( vPoints,
+              seeds,        // output
+              vEdgeMap,
+              winners,      // output
+              level->getDx(),
+              level->getDy(),
+              params );
+    
+        if( seeds.size() > 1 ) {
+            // Sort the seeds based on the number of received votes.
+            std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
+        }
+#ifdef WITH_CUDA
     }
+#endif // WITH_CUDA
 
     cctagDetectionFromEdges(
             pyramidMarkers,
@@ -252,9 +271,10 @@ void cctagMultiresDetection_inner(
 void cctagMultiresDetection(
         CCTag::List& markers,
         const cv::Mat& imgGraySrc,
-        const ImagePyramid & imagePyramid,
-        const std::size_t frame,
-        const Parameters & params)
+        const ImagePyramid& imagePyramid,
+        const std::size_t   frame,
+        popart::TagPipe*    cuda_pipe,
+        const Parameters&   params)
 {
     POP_ENTER;
   //	* For each pyramid level:
@@ -287,6 +307,7 @@ void cctagMultiresDetection(
                                   frame,
                                   vPoints.back(),
                                   vEdgeMaps.back(),
+                                  cuda_pipe,
                                   params );
   }
   

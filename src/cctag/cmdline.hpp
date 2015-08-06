@@ -12,6 +12,7 @@ public:
 #ifdef WITH_CUDA
     bool        _switchSync;
     std::string _debugDir;
+    bool        _useCuda;
 #endif
 
     CmdLine( );

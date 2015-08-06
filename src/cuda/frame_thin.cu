@@ -160,7 +160,7 @@ void Frame::initThinningTable( )
 __host__
 void Frame::applyThinning( const cctag::Parameters & params )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
+    // cerr << "Enter " << __FUNCTION__ << endl;
 
     dim3 block;
     dim3 grid;
@@ -204,7 +204,7 @@ void Frame::applyThinning( const cctag::Parameters & params )
         POP_CHK_CALL_IFSYNC;
 #endif // EDGE_LINKING_HOST_SIDE
 
-    cerr << "Leave " << __FUNCTION__ << endl;
+    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 }; // namespace popart

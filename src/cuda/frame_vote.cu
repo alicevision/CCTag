@@ -374,7 +374,7 @@ __host__
 bool Voting::constructLine( const cctag::Parameters&     params,
                             cudaStream_t                 stream )
 {
-    cout << "  Enter " << __FUNCTION__ << endl;
+    // cout << "  Enter " << __FUNCTION__ << endl;
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_chained_edgecoords.host.size,
@@ -387,7 +387,7 @@ bool Voting::constructLine( const cctag::Parameters&     params,
     cout << "    after gradient descent, edge counter is " << listsize << endl;
 
     if( listsize == 0 ) {
-        cout << "  Leave " << __FUNCTION__ << endl;
+        // cout << "  Leave " << __FUNCTION__ << endl;
         return false;
     }
 
@@ -413,7 +413,7 @@ bool Voting::constructLine( const cctag::Parameters&     params,
           params._ratioVoting );    // input
     POP_CHK_CALL_IFSYNC;
 
-    cout << "  Leave " << __FUNCTION__ << endl;
+    // cout << "  Leave " << __FUNCTION__ << endl;
     return true;
 }
 
