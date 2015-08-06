@@ -12,15 +12,6 @@
 
 using namespace std;
 
-/* The idea of COMPRESS_VOTING_AND_SELECT was to merge
- * voting into the CUB::DeviceSelect::If operation.
- */
-#undef  COMPRESS_VOTING_AND_SELECT
-/* DO NOT USE COMPRESS_VOTING_AND_SELECT
- * This has increased runtime from 9.4ms to 85.6ms !!!
- * Try again if Dynamic Parallelism ever works.
- */
-
 namespace popart
 {
 
@@ -275,32 +266,16 @@ const TriplePoint* construct_line_inner(
     return chosen;
 }
 
-#ifndef NDEBUG
-__device__ int count_choices = 0;
-
-__global__
-void init_choices( )
-{
-    count_choices = 0;
-}
-
-__global__
-void print_choices( )
-{
-    printf("    The number of points chosen is %d\n", count_choices );
-}
-#endif // NDEBUG
-
 __global__
 void construct_line( DevEdgeList<int>             seed_indices,       // output
-                     DevEdgeList<TriplePoint>     chained_edgecoords, // input (modified)
+                     DevEdgeList<TriplePoint>     chained_edgecoords, // input/output
                      const int                    edge_index_max,     // input
                      const cv::cuda::PtrStepSz32s edgepoint_index_table, // input
                      const size_t                 numCrowns,
                      const float                  ratioVoting )
 {
     const TriplePoint* chosen =
-        construct_line_inner( chained_edgecoords,     // input
+        construct_line_inner( chained_edgecoords,    // input
                               edgepoint_index_table, // input
                               numCrowns,
                               ratioVoting );
@@ -317,10 +292,6 @@ void construct_line( DevEdgeList<int>             seed_indices,       // output
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) );
 
     if( chosen ) {
-#ifndef NDEBUG
-        atomicAdd( &count_choices, 1 );
-#endif
-
         if( seed_indices.Size() < edge_index_max ) {
             idx = edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
             seed_indices.ptr[write_index] = idx;
@@ -355,7 +326,6 @@ int count_winners( const int                       chosen_edge_index,
 
 } // namespace vote
 
-#ifndef COMPRESS_VOTING_AND_SELECT
 /* For all chosen inner points, compute the average flow length and the
  * number of voters, and store in the TriplePoint structure of the chosen
  * inner point.
@@ -365,7 +335,7 @@ int count_winners( const int                       chosen_edge_index,
  * unique indices of chosen inner points.
  */
 __global__
-void vote_eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input
+void vote_eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
                        DevEdgeList<int>         seed_indices        // input
                      )
 {
@@ -376,30 +346,8 @@ void vote_eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input
 
     const int    chosen_edge_index = seed_indices.ptr[offset];
     TriplePoint* chosen_edge = &chained_edgecoords.ptr[chosen_edge_index];
-#if 1
     vote::count_winners( chosen_edge_index, chosen_edge, chained_edgecoords );
-#else
-
-    int          winner_size = 0;
-    float        flow_length = 0.0f;
-
-    /* This loop looks dangerous, but it is actually faster than
-     * a manually partially unrolled loop.
-     */
-    const int voter_list_size = chained_edgecoords.Size();
-    for( int i=0; i<voter_list_size; i++ )
-    // for( int i=0; i<chained_edgecoords.Size(); i++ )
-    {
-        if( chained_edgecoords.ptr[i].my_vote == chosen_edge_index ) {
-            winner_size += 1;
-            flow_length += chained_edgecoords.ptr[i].chosen_flow_length;
-        }
-    }
-    chosen_edge->_winnerSize = winner_size;
-    chosen_edge->_flowLength = flow_length / winner_size;
-#endif
 }
-#endif // not COMPRESSED
 
 struct NumVotersIsGreaterEqual
 {
@@ -414,22 +362,12 @@ struct NumVotersIsGreaterEqual
         , _array( _d_array )
     {}
 
-#ifdef COMPRESS_VOTING_AND_SELECT
-    __device__
-    __forceinline__
-    bool operator()(const int &a) const {
-        TriplePoint* chosen_edge = &_array.ptr[a];
-        int winner_size = vote::count_winners( a, chosen_edge, _array );
-        return (winner_size >= _compare);
-    }
-#else // not COMPRESS_VOTING_AND_SELECT
     // CUB_RUNTIME_FUNCTION
     __device__
     __forceinline__
     bool operator()(const int &a) const {
         return (_array.ptr[a]._winnerSize >= _compare);
     }
-#endif // not COMPRESS_VOTING_AND_SELECT
 };
 
 __host__
@@ -465,10 +403,6 @@ bool Voting::constructLine( const cctag::Parameters&     params,
 
     POP_CUDA_SET0_ASYNC( _seed_indices.dev.size, stream );
 
-#ifndef NDEBUG
-    vote::init_choices<<<1,1,0,stream>>>( );
-#endif // NDEBUG
-
     vote::construct_line
         <<<grid,block,0,stream>>>
         ( _seed_indices.dev,        // output
@@ -478,11 +412,6 @@ bool Voting::constructLine( const cctag::Parameters&     params,
           params._nCrowns,          // input
           params._ratioVoting );    // input
     POP_CHK_CALL_IFSYNC;
-
-#ifndef NDEBUG
-    vote::print_choices<<<1,1,0,stream>>>( );
-    POP_CHK_CALL_IFSYNC;
-#endif // NDEBUG
 
     cout << "  Leave " << __FUNCTION__ << endl;
     return true;
@@ -499,6 +428,8 @@ void Frame::applyVote( const cctag::Parameters& params )
                                    _stream );
 
     if( not success ) {
+        _vote._seed_indices.host.size       = 0;
+        _vote._chained_edgecoords.host.size = 0;
         cout << "Leave " << __FUNCTION__ << endl;
         return;
     }
@@ -579,11 +510,6 @@ void Frame::applyVote( const cctag::Parameters& params )
                                        sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
 
-#ifdef COMPRESS_VOTING_AND_SELECT
-        /* The computation of vote_eval_chosen can be
-         * included into NumVotersIsGreaterEqual::operator()
-         */
-#else // COMPRESS_VOTING_AND_SELECT
         /* Add number of voters to chosen inner points, and
          * add average flow length to chosen inner points.
          */
@@ -602,7 +528,17 @@ void Frame::applyVote( const cctag::Parameters& params )
             ( _vote._chained_edgecoords.dev,
               _vote._seed_indices_2.dev );
         POP_CHK_CALL_IFSYNC;
-#endif // COMPRESS_VOTING_AND_SELECT
+
+#ifdef EDGE_LINKING_HOST_SIDE
+        /* After vote_eval_chosen, _chained_edgecoords is no longer changed
+         * we can copy it to the host for edge linking
+         */
+        _vote._chained_edgecoords.copySizeFromDevice( _stream );
+        POP_CUDA_SYNC( _stream );
+        _vote._chained_edgecoords.copyDataFromDevice( _vote._chained_edgecoords.host.size,
+                                                      _stream );
+        POP_CHK_CALL_IFSYNC;
+#endif // EDGE_LINKING_HOST_SIDE
 
         // safety: SortKeys is allowed to alter assist_buffer_sz
         assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
@@ -622,14 +558,15 @@ void Frame::applyVote( const cctag::Parameters& params )
                                _stream );
         POP_CHK_CALL_IFSYNC;
 
-        /* Without Dynamic Parallelism, we must block here to retrieve the
-         * value d_num_selected_out from the device before the voting
-         * step.
-         */
-        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size, _vote._seed_indices.dev.size, sizeof(int), _stream );
+        _vote._seed_indices.copySizeFromDevice( _stream );
         POP_CUDA_SYNC( _stream );
+#ifdef EDGE_LINKING_HOST_SIDE
+        _vote._seed_indices.copyDataFromDevice( _vote._seed_indices.host.size, _stream );
+#endif // EDGE_LINKING_HOST_SIDE
 
         cout << "  Number of viable inner points: " << _vote._seed_indices.host.size << endl;
+    } else {
+        _vote._chained_edgecoords.host.size = 0;
     }
     cout << "Leave " << __FUNCTION__ << endl;
 }

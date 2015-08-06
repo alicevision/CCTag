@@ -43,6 +43,8 @@
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
+#define EDGE_LINKING_HOST_SIDE
+
 #define EDGE_LINKING_MAX_EDGE_LENGTH        100
 #define EDGE_LINKING_MAX_ARCS             10000
 #define EDGE_LINKING_MAX_RING_BUFFER_SIZE    40
@@ -192,7 +194,9 @@ public:
     void applyLink( const cctag::Parameters& param );
 
     // implemented in frame_export.cu
-    bool applyExport( cctag::EdgePointsImage& edgesMap );
+    bool applyExport( cctag::EdgePointsImage&         edgesMap,
+                      std::vector<cctag::EdgePoint*>& seeds,
+                      cctag::WinnerMap&               winners );
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
@@ -229,12 +233,11 @@ private:
     uint32_t*               _h_debug_mag;
     unsigned char*          _h_debug_map;
     unsigned char*          _h_debug_hyst_edges;
+    unsigned char*          _h_debug_edges;
     // int16_t*                _h_dx;    // needed on host
     // int16_t*                _h_dy;    // needed on host
-    // unsigned char*          _h_edges; // needed on host
     cv::cuda::PtrStepSz16s  _h_dx;
     cv::cuda::PtrStepSz16s  _h_dy;
-    cv::cuda::PtrStepSzb    _h_edges;
     cv::cuda::PtrStepSzInt2 _h_ring_output;
 
     Voting _vote;

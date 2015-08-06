@@ -94,11 +94,6 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_dy.cols = w;
     _h_dy.rows = h;
 
-    _h_edges.data = new unsigned char[ w * h ];
-    _h_edges.step = w * sizeof(uint8_t);
-    _h_edges.cols = w;
-    _h_edges.rows = h;
-
     _h_ring_output.data = new cv::cuda::PtrStepInt2_base_t[EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH];
     _h_ring_output.step = EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t);
     _h_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
@@ -190,7 +185,6 @@ void Frame::releaseRequiredMem( )
 
     delete [] _h_dx.data;
     delete [] _h_dy.data;
-    delete [] _h_edges.data;
     delete [] _h_ring_output.data;
 
     _vote.release();
@@ -199,8 +193,8 @@ void Frame::releaseRequiredMem( )
 void Voting::alloc( const cctag::Parameters& params, size_t w, size_t h )
 {
     _all_edgecoords    .alloc( params._maxEdges, EdgeListBoth );
-    _chained_edgecoords.alloc( params._maxEdges, EdgeListDevOnly );
-    _seed_indices      .alloc( params._maxEdges, EdgeListDevOnly );
+    _chained_edgecoords.alloc( params._maxEdges, EdgeListBoth );
+    _seed_indices      .alloc( params._maxEdges, EdgeListBoth );
     _seed_indices_2    .alloc( params._maxEdges, EdgeListDevOnly );
 
     void*  ptr;

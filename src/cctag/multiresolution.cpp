@@ -180,6 +180,75 @@ void update(
   }
 }
 
+void cctagMultiresDetection_inner(
+        size_t                  i,
+        CCTag::List&            pyramidMarkers,
+        const cv::Mat&          imgGraySrc,
+        const Level*            level,
+        const std::size_t       frame,
+        std::vector<EdgePoint>& vPoints,
+        EdgePointsImage&        vEdgeMap,
+        const Parameters &      params )
+{
+    CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::");
+
+#ifdef CCTAG_OPTIM
+    boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+#endif
+    
+    edgesPointsFromCanny( vPoints,
+                          vEdgeMap,
+                          level->getEdges(),
+                          level->getDx(),
+                          level->getDy());
+
+    CCTagVisualDebug::instance().setPyramidLevel(i);
+    
+#ifdef CCTAG_OPTIM
+    boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
+    boost::posix_time::time_duration d = t1 - t0;
+    const double spendTime = d.total_milliseconds();
+    CCTAG_COUT_OPTIM("Time in edge point collection: " << spendTime << " ms");
+#endif
+
+    // Get vote winners
+    WinnerMap winners;
+    std::vector<EdgePoint*> seeds;
+
+    // Voting procedure applied on every edge points.
+    vote( vPoints,
+          seeds,        // output
+          vEdgeMap,
+          winners,      // output
+          level->getDx(),
+          level->getDy(),
+          params );
+    
+    if( seeds.size() > 1 ) {
+        // Sort the seeds based on the number of received votes.
+        std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
+    }
+
+    cctagDetectionFromEdges(
+            pyramidMarkers,
+            vPoints,
+            level->getSrc(),
+            winners,
+            seeds,
+            vEdgeMap,
+            frame, i, std::pow(2.0, (int) i), params);
+    
+    CCTagVisualDebug::instance().initBackgroundImage(level->getSrc());
+    std::stringstream outFilename2;
+    outFilename2 << "viewLevel" << i;
+    CCTagVisualDebug::instance().newSession(outFilename2.str());
+
+    BOOST_FOREACH(const CCTag & marker, pyramidMarkers)
+    {
+        CCTagVisualDebug::instance().drawMarker(marker, false);
+    }
+}
+
 void cctagMultiresDetection(
         CCTag::List& markers,
         const cv::Mat& imgGraySrc,
@@ -199,75 +268,26 @@ void cctagMultiresDetection(
   std::vector<std::vector<EdgePoint > > vPoints;
 
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
-  for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i )
-  {
-    CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::");
+  for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i ) {
+    pyramidMarkers.insert( std::pair<std::size_t, CCTag::List>( i, CCTag::List() ) );
 
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
-#endif
-    
     // Create EdgePoints for every detected edge points in edges.
-    std::vector<EdgePoint> points;
-    vPoints.push_back(points);
+    // std::vector<EdgePoint> points;
+    // vPoints.push_back(points);
+    vPoints.push_back( std::vector<EdgePoint>() );
     
-    EdgePointsImage edgesMap;
-    vEdgeMaps.push_back(edgesMap);
+    // EdgePointsImage edgesMap;
+    // vEdgeMaps.push_back(edgesMap);
+    vEdgeMaps.push_back( EdgePointsImage() );
     
-    edgesPointsFromCanny( vPoints.back(), vEdgeMaps.back(),
-            imagePyramid.getLevel(i)->getEdges(),
-            imagePyramid.getLevel(i)->getDx(),
-            imagePyramid.getLevel(i)->getDy());
-
-    CCTagVisualDebug::instance().setPyramidLevel(i);
-    
-    //cctagDetectionFromEdges(markersList, points,
-    //        multiresSrc.getView(i - 1), cannyGradX, cannyGradY, edgesMap,
-    //        frame, i - 1, std::pow(2.0, (int) i - 1), params);
-    
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-  boost::posix_time::time_duration d = t1 - t0;
-  const double spendTime = d.total_milliseconds();
-  CCTAG_COUT_OPTIM("Time in edge point collection: " << spendTime << " ms");
-#endif
-
-    // Get vote winners
-    WinnerMap winners;
-    std::vector<EdgePoint*> seeds;
-
-    // Voting procedure applied on every edge points.
-    vote( vPoints.back(),
-          seeds,        // output
-          vEdgeMaps.back(),
-          winners,      // output
-          imagePyramid.getLevel(i)->getDx(),
-          imagePyramid.getLevel(i)->getDy(),
-          params );
-    
-    if( seeds.size() > 1 ) {
-        // Sort the seeds based on the number of received votes.
-        std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
-    }
-
-    cctagDetectionFromEdges(
-            pyramidMarkers[i],
-            vPoints.back(),
-            imagePyramid.getLevel(i)->getSrc(),
-            winners,
-            seeds,
-            vEdgeMaps.back(),
-            frame, i, std::pow(2.0, (int) i), params);
-    
-    CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(i)->getSrc());
-    std::stringstream outFilename2;
-    outFilename2 << "viewLevel" << i;
-    CCTagVisualDebug::instance().newSession(outFilename2.str());
-
-    BOOST_FOREACH(const CCTag & marker, pyramidMarkers[i])
-    {
-      CCTagVisualDebug::instance().drawMarker(marker, false);
-    }
+    cctagMultiresDetection_inner( i,
+                                  pyramidMarkers[i],
+                                  imgGraySrc,
+                                  imagePyramid.getLevel(i),
+                                  frame,
+                                  vPoints.back(),
+                                  vEdgeMaps.back(),
+                                  params );
   }
   
   // Delete overlapping markers while keeping the best ones.
