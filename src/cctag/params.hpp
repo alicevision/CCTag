@@ -45,6 +45,7 @@ static const bool kDefaultSearchForAnotherSegment = true;
 static const bool kDefaultWriteOutput = false;
 static const bool kDefaultDoIdentification = true;
 static const uint32_t kDefaultMaxEdges = 20000;
+static const bool kDefaultUseCuda = false;
 
 static const std::string kParamCannyThrLow( "kParamCannyThrLow" );
 static const std::string kParamCannyThrHigh( "kParamCannyThrHigh" );
@@ -74,6 +75,7 @@ static const std::string kParamSearchForAnotherSegment( "kParamSearchForAnotherS
 static const std::string kParamWriteOutput( "kParamWriteOutput" );
 static const std::string kParamDoIdentification( "kParamDoIdentification" );
 static const std::string kParamMaxEdges( "kParamMaxEdges" );
+static const std::string kUseCuda( "kUseCuda" );
 
 static const std::size_t kWeight = INV_GRAD_WEIGHT; // todo@L
 
@@ -109,6 +111,7 @@ struct Parameters
     , _writeOutput( kDefaultWriteOutput )
     , _doIdentification( kDefaultDoIdentification )
     , _maxEdges( kDefaultMaxEdges )
+    , _useCuda( kDefaultUseCuda )
   {
     _nCircles = 2*_nCrowns;
   }
@@ -151,6 +154,7 @@ struct Parameters
   bool _writeOutput;
   bool _doIdentification; // perform the identification step
   uint32_t _maxEdges; // max number of edge point, determines memory allocation
+  bool     _useCuda; // if compiled WITH_CUDA, allow CLI selection, ignore if not
 
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
@@ -183,6 +187,7 @@ struct Parameters
     ar & BOOST_SERIALIZATION_NVP( _writeOutput );
     ar & BOOST_SERIALIZATION_NVP( _doIdentification );
     ar & BOOST_SERIALIZATION_NVP( _maxEdges );
+    ar & BOOST_SERIALIZATION_NVP( _useCuda );
     _nCircles = 2*_nCrowns;
   }
 };

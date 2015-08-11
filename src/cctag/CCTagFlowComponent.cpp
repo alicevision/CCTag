@@ -92,6 +92,7 @@ void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens)
   {
     int dir = -1;
     EdgePoint* p = *it;
+    assert( p );
 
     std::vector<EdgePoint> & vE = _fieldLines[i];
 
@@ -109,6 +110,7 @@ void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens)
         p = p->_after;
       }
 
+      assert( p );
       vE.push_back(EdgePoint(*p));
 
       dir = -dir;

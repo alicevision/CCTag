@@ -286,7 +286,7 @@ void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w
 __host__
 void Frame::applyHyst( const cctag::Parameters & params )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
+    // cerr << "Enter " << __FUNCTION__ << endl;
 
     dim3 block;
     dim3 grid;
@@ -300,7 +300,7 @@ void Frame::applyHyst( const cctag::Parameters & params )
     assert( getHeight() == _d_hyst_edges.rows );
 
 #ifndef NDEBUG
-    cerr << "  Config: grid=" << grid << " block=" << block << endl;
+    // cerr << "  Config: grid=" << grid << " block=" << block << endl;
 
     verify_map_valid
         <<<grid,block,0,_stream>>>
@@ -310,7 +310,7 @@ void Frame::applyHyst( const cctag::Parameters & params )
     bool first_time = true;
     int block_counter;
 #ifndef NDEBUG
-    cerr << "  Blocks remaining:";
+    // cerr << "  Blocks remaining:";
 #endif // NDEBUG
     do
     {
@@ -338,15 +338,15 @@ void Frame::applyHyst( const cctag::Parameters & params )
                                        sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
 #ifndef NDEBUG
-        cerr << " " << block_counter;
+        // cerr << " " << block_counter;
 #endif // NDEBUG
     }
     while( block_counter > 0 );
 #ifndef NDEBUG
-    cerr << endl;
+    // cerr << endl;
 #endif // NDEBUG
 
-    cerr << "Leave " << __FUNCTION__ << endl;
+    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 #else // not ABBREVIATED_HYSTERESIS
 #include "frame_hyst_oldcode.h"

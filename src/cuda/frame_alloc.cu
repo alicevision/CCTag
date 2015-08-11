@@ -14,7 +14,7 @@ using namespace std;
 __host__
 void Frame::allocRequiredMem( const cctag::Parameters& params )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
+    // cerr << "Enter " << __FUNCTION__ << endl;
 
     void* ptr;
     const size_t w = getWidth();
@@ -111,13 +111,13 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
 
     _vote.alloc( params, w, h );
 
-    cerr << "Leave " << __FUNCTION__ << endl;
+    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 __host__
 void Frame::initRequiredMem( )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
+    // cerr << "Enter " << __FUNCTION__ << endl;
 
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
@@ -161,7 +161,7 @@ void Frame::initRequiredMem( )
     //                        _d_next_edge_after.step * _d_next_edge_after.rows,
     //                        _stream );
 
-    cerr << "Leave " << __FUNCTION__ << endl;
+    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 void Frame::releaseRequiredMem( )

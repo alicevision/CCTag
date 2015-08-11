@@ -28,7 +28,7 @@ void debugPointIsOnEdge( const cv::cuda::PtrStepSzb& edge_img,
                          const EdgeList<int2>&       edge_coords,
                          cudaStream_t                stream )
 {
-    cerr << "  Enter " << __FUNCTION__ << endl;
+    // cerr << "  Enter " << __FUNCTION__ << endl;
 
     int sz;
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &sz,
@@ -37,7 +37,7 @@ void debugPointIsOnEdge( const cv::cuda::PtrStepSzb& edge_img,
                                    stream );
     POP_CUDA_SYNC( stream );
 
-    cerr << "    Listlength " << sz << endl;
+    // cerr << "    Listlength " << sz << endl;
     dim3 block;
     dim3 grid;
     block.x = 32;
@@ -48,7 +48,7 @@ void debugPointIsOnEdge( const cv::cuda::PtrStepSzb& edge_img,
           edge_coords.dev );
 
     POP_CUDA_SYNC( stream );
-    cerr << "  Leave " << __FUNCTION__ << endl;
+    // cerr << "  Leave " << __FUNCTION__ << endl;
 }
 #endif // NDEBUG
 

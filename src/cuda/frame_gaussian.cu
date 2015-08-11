@@ -170,7 +170,7 @@ void Frame::initGaussTable( )
 __host__
 void Frame::applyGauss( const cctag::Parameters & params )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
+    // cerr << "Enter " << __FUNCTION__ << endl;
 
     dim3 block;
     dim3 grid;
@@ -227,7 +227,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
     POP_CHK_CALL_IFSYNC;
 #endif // EDGE_LINKING_HOST_SIDE
 
-    cerr << "Leave " << __FUNCTION__ << endl;
+    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 }; // namespace popart
 

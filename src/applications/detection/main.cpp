@@ -117,6 +117,7 @@ int main(int argc, char** argv)
 #ifdef WITH_CUDA
   popart::pop_cuda_only_sync_calls( cmdline._switchSync );
 #endif
+
   // Check the (optional) parameters path
   std::size_t nCrowns = std::atoi(cmdline._nCrowns.c_str());
   cctag::Parameters params(nCrowns);
@@ -151,6 +152,10 @@ int main(int argc, char** argv)
   }
 
 #ifdef WITH_CUDA
+  if( cmdline._useCuda ) {
+    params._useCuda = true;
+  }
+
   popart::device_prop_t deviceInfo;
   deviceInfo.print( );
 #endif // WITH_CUDA
