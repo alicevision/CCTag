@@ -204,6 +204,7 @@ void cctagMultiresDetection_inner(
 #ifdef WITH_CUDA
     if( cuda_pipe ) {
         cuda_pipe->download( i, 
+                             vPoints,
                              vEdgeMap,
                              seeds,
                              winners );
@@ -276,7 +277,7 @@ void cctagMultiresDetection(
         popart::TagPipe*    cuda_pipe,
         const Parameters&   params)
 {
-    POP_ENTER;
+    // POP_ENTER;
   //	* For each pyramid level:
   //	** launch CCTag detection based on the canny edge detection output.
   
@@ -392,7 +393,7 @@ void cctagMultiresDetection(
     CCTagFileDebug::instance().outputMarkerInfos(marker);
   }
   
-  POP_LEAVE;
+  // POP_LEAVE;
   
 }
 

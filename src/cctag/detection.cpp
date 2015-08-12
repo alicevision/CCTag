@@ -382,7 +382,7 @@ void cctagDetectionFromEdges(
         double scale,
         const Parameters & params)
 {
-  POP_ENTER;
+  // POP_ENTER;
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
 #endif
@@ -641,7 +641,7 @@ void cctagDetectionFromEdges(
   //	markers.sort();
 
   CCTAG_COUT_DEBUG("Markers creation time: " << t3.elapsed());
-  POP_LEAVE;
+  // POP_LEAVE;
 }
 
 
@@ -692,7 +692,7 @@ void cctagDetection(CCTag::List& markers,
         const cctag::CCTagMarkersBank & bank,
         const bool bDisplayEllipses)
 {
-  POP_ENTER;
+  // POP_ENTER;
   using namespace cctag;
   using namespace boost::numeric::ublas;
   //using namespace boost::gil;
@@ -812,7 +812,7 @@ void cctagDetection(CCTag::List& markers,
     CCTagFileDebug::instance().outputMarkerInfos(marker);
   }
 
-  POP_LEAVE;
+  // POP_LEAVE;
 }
 
 } // namespace cctag
