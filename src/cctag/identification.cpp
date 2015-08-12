@@ -23,7 +23,7 @@
 #include <boost/numeric/ublas/vector_expression.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 
-#define NAIVE_SELECTCUT
+//#define NAIVE_SELECTCUT
 
 #include <cmath>
 #include <vector>

@@ -750,6 +750,7 @@ void cctagDetection(CCTag::List& markers,
   CCTAG_COUT_OPTIM("TIME IN DETECTION: " << spendTime << " ms");
 #endif
   
+  CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
   // Identification step
   // To decomment -- enable cuts selection, homography computation and identification
   if (params._doIdentification)
