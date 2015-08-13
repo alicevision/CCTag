@@ -729,7 +729,7 @@ void cctagDetection(CCTag::List& markers,
     // pipe1->debug( pix, params );
   } else {
 #endif // WITH_CUDA
-    imagePyramid.build(imgGraySrc);
+    imagePyramid.build(imgGraySrc, params._cannyThrLow, params._cannyThrHigh);
 #ifdef WITH_CUDA
   }
 #endif // WITH_CUDA

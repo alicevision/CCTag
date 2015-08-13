@@ -198,6 +198,74 @@ inline float getPixelBilinear(const cv::Mat & img, float x, float y)
   return (p1 * w1 + p2 * w2 + p3 * w3 + p4 * w4)/4.0f;
 }
 
+inline float getPixelBicubic(const cv::Mat & img, float vX, float vY)
+//(IplImage *img, int newWidth, int newHeight)
+{
+      
+//        IplImage *img2 = createImage(newWidth,newHeight);
+//        img2 = createImage(newWidth,newHeight);
+//        uchar * data = img->imageData;
+//        uchar * Data = img2->imageData;
+//        int a,b,c,d,index;
+//        uchar Ca,Cb,Cc;
+//        uchar C[5];
+//        uchar d0,d2,d3,a0,a1,a2,a3;
+//        int i,j,k,ii,jj;
+//        int x,y;
+//        float dx,dy;
+//        float tx,ty;
+//        
+//        tx = (float)img->width /newWidth ;
+//        ty =  (float)img->height / newHeight;
+//        printf("%d %d", newWidth, newHeight);
+//        
+//        for(i=0; i<newHeight; i++)
+//        for(j=0; j<newWidth; j++)
+//        {
+                  // printf("%d : %d\n",i,j);
+           //x = (int)(tx*j);
+           //y =(int)(ty*i);
+           
+  uchar C[5];
+  uchar d0,d2,d3,a0,a1,a2,a3;
+
+  
+  const int x = (int) vX;
+  const int y = (int) vY;
+
+  const float dx = vX - x;
+  const float dy = vY - y;
+
+  //dx= tx*j-x;
+  //dy=ty*i -y;
+           
+  for(int jj=0;jj<=3;jj++)
+  {
+     d0 = img.data[(y-1+jj)*img.step + (x-1)] - img.data[(y-1+jj)*img.step + (x) ] ;
+     d2 = img.data[(y-1+jj)*img.step + (x+1)] - img.data[(y-1+jj)*img.step + (x) ] ;
+     d3 = img.data[(y-1+jj)*img.step + (x+2)] - img.data[(y-1+jj)*img.step + (x) ] ;
+     a0 = img.data[(y-1+jj)*img.step + (x)];
+     a1 =  -1.0/3*d0 + d2 -1.0/6*d3;
+     a2 = 1.0/2*d0 + 1.0/2*d2;
+     a3 = -1.0/6*d0 - 1.0/2*d2 + 1.0/6*d3;
+     C[jj] = a0 + a1*dx + a2*dx*dx + a3*dx*dx*dx;
+  }
+              
+  d0 = C[0]-C[1];
+  d2 = C[2]-C[1];
+  d3 = C[3]-C[1];
+  a0=C[1];
+  a1 =  -1.0/3*d0 + d2 -1.0/6*d3;
+  a2 = 1.0/2*d0 + 1.0/2*d2;
+  a3 = -1.0/6*d0 - 1.0/2*d2 + 1.0/6*d3;
+  return a0 + a1*dy + a2*dy*dy + a3*dy*dy*dy;
+                 
+                // if((int)Cc>255) Cc=255;
+//                 if((int)Cc<0) Cc=0;
+                 //Data[i*img2->widthStep +j*img2->nChannels +k ] = Cc;  
+}
+
+
 double costSelectCutFun(
         const std::vector<double> & varCuts,
         const boost::numeric::ublas::vector<std::size_t> & randomIdx,
