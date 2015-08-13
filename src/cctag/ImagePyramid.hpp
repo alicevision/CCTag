@@ -24,7 +24,7 @@ public:
   
   std::size_t getNbLevels() const;
   
-  void build(const cv::Mat & src);
+  void build(const cv::Mat & src, const double thrLowCanny, const double thrHighCanny);
   void output();
 
 private:

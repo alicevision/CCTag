@@ -20,12 +20,12 @@ Level::Level( std::size_t width, std::size_t height )
   
 }
 
-void Level::setLevel( const cv::Mat & src )
+void Level::setLevel( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny)
 {
   cv::resize(src, _src, cv::Size(_src.cols,_src.rows));
   // ASSERT TODO : check that the data are allocated here
   // Compute derivative and canny edge extraction.
-  cvRecodedCanny(_src,_edges,_dx,_dy,0, 30, 3 | CV_CANNY_L2_GRADIENT );
+  cvRecodedCanny(_src,_edges,_dx,_dy, thrLowCanny * 256, thrHighCanny * 256, 3 | CV_CANNY_L2_GRADIENT );
   // Perform the thinning.
 
 #ifdef CCTAG_EXTRA_LAYER_DEBUG

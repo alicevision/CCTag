@@ -11,7 +11,7 @@ public:
   
   Level( std::size_t width, std::size_t height );
   
-  void setLevel(const cv::Mat & src);
+  void setLevel(const cv::Mat & src, const double thrLowCanny, const double thrHighCanny);
   const cv::Mat & getSrc() const;
   const cv::Mat & getDx() const;
   const cv::Mat & getDy() const;

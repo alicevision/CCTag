@@ -24,13 +24,13 @@ ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::si
   }
 }
 
-void ImagePyramid::build( const cv::Mat & src )
+void ImagePyramid::build( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny)
 {
-  _levels[0]->setLevel( src );
+  _levels[0]->setLevel( src , thrLowCanny, thrHighCanny);
   
   for(int i = 1; i < _levels.size() ; ++i)
   {
-    _levels[i]->setLevel( _levels[i-1]->getSrc() );
+    _levels[i]->setLevel( _levels[i-1]->getSrc(), thrLowCanny, thrHighCanny);
   }
   
 #ifdef CCTAG_SERIALIZE
