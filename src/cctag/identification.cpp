@@ -381,6 +381,7 @@ void extractSignalUsingHomography( cctag::ImageCut & rectifiedSig,
     {
       // put pixel value to rectified signal
       double pixVal = getPixelBilinear( src, hp.x(), hp.y());
+      //double pixVal = getPixelBicubic( src, hp.x(), hp.y());
       rectifiedSig._imgSignal(i) = pixVal;
       acc( pixVal );
     }
@@ -418,6 +419,7 @@ std::size_t cutInterpolated( cctag::ImageCut & cut,
     {
       // put pixel value to rectified signal
       cut._imgSignal(i) = double(getPixelBilinear( src, x, y));
+      //cut._imgSignal(i) = double(getPixelBicubic( src, x, y));
       ++len;
     }
     else
@@ -428,6 +430,19 @@ std::size_t cutInterpolated( cctag::ImageCut & cut,
     x += kx;
     y += ky;
   }
+  
+  double guassOneD[] = { 0.0044, 0.0540, 0.2420, 0.3991, 0.2420, 0.0540, 0.0044 };
+  ///
+  for( std::size_t i = 3; i < nSteps-3; ++i )
+  {
+    double tmp = 0;
+    for ( std::size_t j=0 ; j<7; ++j)
+    {
+      tmp += cut._imgSignal(i-3+j)*guassOneD[j];
+    }
+    cut._imgSignal(i) = tmp;
+  }
+  ///
   return len;
 }
 
