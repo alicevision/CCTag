@@ -168,12 +168,12 @@ int main(int argc, char** argv)
   std::string outputFileName;
   if (!bfs::is_directory(myPath))
   {
-    CCTagVisualDebug::instance().initializeFolders( parentPath , params._nCrowns );
-    outputFileName = parentPath.string() + "/cctag" + std::to_string(nCrowns) + "CC.out";
+    CCTagVisualDebug::instance().initializeFolders( parentPath , cmdline._outputFolderName , params._nCrowns );
+    outputFileName = parentPath.string() + "/" + cmdline._outputFolderName + "/cctag" + std::to_string(nCrowns) + "CC.out";
   }else
   {
-    CCTagVisualDebug::instance().initializeFolders( myPath , params._nCrowns );
-    outputFileName = myPath.string() + "/cctag" + std::to_string(nCrowns) + "CC.out";
+    CCTagVisualDebug::instance().initializeFolders( myPath , cmdline._outputFolderName , params._nCrowns );
+    outputFileName = myPath.string() + "/" + cmdline._outputFolderName + "/cctag" + std::to_string(nCrowns) + "CC.out";
   }
   std::ofstream outputFile;
   outputFile.open( outputFileName );
