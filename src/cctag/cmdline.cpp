@@ -49,7 +49,7 @@ bool CmdLine::parse( int argc, char* argv[] )
 
   while(iarg != -1)
   {
-    iarg = getopt_long(argc, argv, "i:n:b:p:", longopts, &index);
+    iarg = getopt_long(argc, argv, "i:n:b:p:o:", longopts, &index);
 
     switch (iarg)
     {
@@ -94,6 +94,7 @@ void CmdLine::usage( const char* const argv0 )
           "    Optional:\n"
           "           [-p|--params <confpath>]\n"
           "           [-b|--bank] <bankpath>\n"
+          "           [-o|--output] <outputfoldername>\n"
           "           [--sync]\n"
           "           [--debug-dir <debugdir>]\n"
           "\n"
