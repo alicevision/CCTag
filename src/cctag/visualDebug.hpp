@@ -39,7 +39,7 @@ public:
 #endif
     }
     
-    void initializeFolders(const boost::filesystem::path & filename, std::size_t nCrowns = 4);
+    void initializeFolders(const boost::filesystem::path & filename, const std::string & outputFolder, std::size_t nCrowns = 4);
 
     void newSession(const std::string & sessionName);
 

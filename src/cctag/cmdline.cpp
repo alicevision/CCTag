@@ -17,6 +17,7 @@ static const struct option longopts[] =
     {"nbrings",    required_argument, 0, 'n'},    
     {"bank",       required_argument, 0, 'b'},
     {"parameters", required_argument, 0, 'p'},
+    {"output",     optional_argument, 0, 'o'}, 
     {"sync",       no_argument,       0, 0xd0 },
     {"debug-dir",  required_argument, 0, 0xd1 },
     {0,0,0,0},
@@ -27,6 +28,7 @@ CmdLine::CmdLine( )
     , _nCrowns( "" )
     , _cctagBankFilename( "" )
     , _paramsFilename( "" )
+    , _outputFolderName( "" )
 #ifdef WITH_CUDA
     , _switchSync( false )
     , _debugDir( "" )
@@ -55,6 +57,7 @@ bool CmdLine::parse( int argc, char* argv[] )
       case 'n'  : _nCrowns           = optarg; has_n = true; break;
       case 'b'  : _cctagBankFilename = optarg; break;
       case 'p'  : _paramsFilename    = optarg; break;
+      case 'o'  : _outputFolderName  = optarg; break;
 #ifdef WITH_CUDA
       case 0xd0 : _switchSync        = true;   break;
       case 0xd1 : _debugDir          = optarg; break;
@@ -71,7 +74,8 @@ void CmdLine::print( const char* const argv0 )
          << "    --input     " << _filename << endl
          << "    --nbrings     " << _nCrowns << endl
          << "    --bank      " << _cctagBankFilename << endl
-         << "    --params    " << _paramsFilename << endl;
+         << "    --params    " << _paramsFilename << endl
+         << "    --output    " << _outputFolderName << endl;
 #ifdef WITH_CUDA
     if( _switchSync )
         cout << "    --sync " << endl;
@@ -96,6 +100,7 @@ void CmdLine::usage( const char* const argv0 )
           "    <imgpath>  - path to an image (JPG, PNG) or video\n"
           "    <nbrings>  - number of rings of the CCTags to detect\n"
           "    <bankpath> - path to a bank parameter file, e.g. 4Crowns/ids.txt \n"
+          "    <output>   - output folder name \n"
           "    <confpath> - path to configuration XML file \n"
           "    --sync     - CUDA debug option, run all CUDA ops synchronously\n"
           "    <debugdir> - path storing image to debug intermediate results\n"
