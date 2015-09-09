@@ -99,7 +99,7 @@ void cvRecodedCanny(
 
   {
     
-    bool use1Dkernel = true;
+    bool use1Dkernel = false;
     
     if(use1Dkernel)
     {
@@ -321,17 +321,17 @@ void cvRecodedCanny(
       cvFilter2D( src, dx, kerneldX );
       cvFilter2D( src, dy, kerneldY );
 
-      CCTAG_COUT("DX_DEBUG values");
-      //CCTAG_COUT(dx_debug->rows);
-      for (int i=0; i< dx->rows ; ++i)
-      {
-        for (int j=0; j< dx->cols ; ++j)
-        {
-          std::cout << dx->data.s[ i*dx->step + j] << " ";
-        }
-        std::cout << std::endl;
-      }
-      CCTAG_COUT("END DX_DEBUG values");
+//      CCTAG_COUT("DX_DEBUG values");
+//      CCTAG_COUT(dx_debug->rows);
+//      for (int i=0; i< dx->rows ; ++i)
+//      {
+//        for (int j=0; j< dx->cols ; ++j)
+//        {
+//          std::cout << dx->data.s[ i*dx->step + j] << " ";
+//        }
+//        std::cout << std::endl;
+//      }
+//      CCTAG_COUT("END DX_DEBUG values");
       
       cvReleaseMat( &kerneldX );
       cvReleaseMat( &kerneldY );
