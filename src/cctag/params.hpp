@@ -8,6 +8,8 @@
 #include <cmath>
 #include <cstddef>
 #include <string>
+#include <sys/stat.h>  // needed for stat and mkdir
+#include <sys/types.h> // needed for stat and mkdir
 
 #define NO_WEIGHT 0
 #define INV_GRAD_WEIGHT 1
@@ -111,7 +113,10 @@ struct Parameters
     , _writeOutput( kDefaultWriteOutput )
     , _doIdentification( kDefaultDoIdentification )
     , _maxEdges( kDefaultMaxEdges )
+#ifdef WITH_CUDA
     , _useCuda( kDefaultUseCuda )
+    , _debugDir( "" )
+#endif // WITH_CUDA
   {
     _nCircles = 2*_nCrowns;
   }
@@ -154,7 +159,10 @@ struct Parameters
   bool _writeOutput;
   bool _doIdentification; // perform the identification step
   uint32_t _maxEdges; // max number of edge point, determines memory allocation
-  bool     _useCuda; // if compiled WITH_CUDA, allow CLI selection, ignore if not
+#ifdef WITH_CUDA
+  bool        _useCuda; // if compiled WITH_CUDA, allow CLI selection, ignore if not
+  std::string _debugDir; // prefix for debug output !!!! ONLY ON COMMAND LINE
+#endif // WITH_CUDA
 
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
@@ -187,9 +195,37 @@ struct Parameters
     ar & BOOST_SERIALIZATION_NVP( _writeOutput );
     ar & BOOST_SERIALIZATION_NVP( _doIdentification );
     ar & BOOST_SERIALIZATION_NVP( _maxEdges );
+#ifdef WITH_CUDA
     ar & BOOST_SERIALIZATION_NVP( _useCuda );
+#endif // WITH_CUDA
     _nCircles = 2*_nCrowns;
   }
+
+#ifdef WITH_CUDA
+  inline void setDebugDir( const std::string& debugDir )
+  {
+    struct stat st = {0};
+
+    std::string dir = debugDir;
+    char   dirtail = dir[ dir.size()-1 ];
+    if( dirtail != '/' ) {
+        _debugDir = debugDir + "/";
+    } else {
+        _debugDir = debugDir;
+    }
+
+    if (::stat( _debugDir.c_str(), &st) == -1) {
+        ::mkdir( _debugDir.c_str(), 0700);
+    }
+  }
+#endif // WITH_CUDA
+
+#ifdef WITH_CUDA
+  inline void setUseCuda( bool val )
+  {
+    _useCuda = val;
+  }
+#endif // WITH_CUDA
 };
 
 } // namespace cctag

@@ -1,7 +1,7 @@
 #ifndef _CCTAG_IMAGEPYRAMID_HPP
 #define	_CCTAG_IMAGEPYRAMID_HPP
 
-#include <cctag/Level.hpp>
+#include "cctag/Level.hpp"
 
 #include <opencv2/opencv.hpp>
 
@@ -10,6 +10,8 @@
 #include <vector>
 
 namespace cctag {
+
+class Parameters; // forward declaration
 
 class ImagePyramid
 {
@@ -24,7 +26,7 @@ public:
   
   std::size_t getNbLevels() const;
   
-  void build(const cv::Mat & src, const double thrLowCanny, const double thrHighCanny);
+  void build(const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params );
   void output();
 
 private:

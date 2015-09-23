@@ -42,10 +42,10 @@ void compute_mag_l2( cv::cuda::PtrStepSz16s src_dx,
 
     int16_t dx = src_dx.ptr(idy)[idx];
     int16_t dy = src_dy.ptr(idy)[idx];
-    // --- hypot --
+    // --- rintf( hypot ( ) ) --
     dx *= dx;
     dy *= dy;
-    dst.ptr(idy)[idx] = __fsqrt_rz( (float)( dx + dy ) );
+    dst.ptr(idy)[idx] = __fsqrt_rn( (float)( dx + dy ) );
 }
 
 __global__
@@ -133,10 +133,26 @@ void Frame::applyMag( const cctag::Parameters & params )
         ( _d_dx, _d_dy, _d_mag );
     POP_CHK_CALL_IFSYNC;
 
+#ifdef DEBUG_WRITE_MAG_AS_PGM
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_mag, getWidth() * sizeof(uint32_t),
+                              _d_mag.data, _d_mag.step,
+                              _d_mag.cols * sizeof(uint32_t),
+                              _d_mag.rows,
+                              cudaMemcpyDeviceToHost, _stream );
+#endif // DEBUG_WRITE_MAG_AS_PGM
+
     compute_map
         <<<grid,block,0,_stream>>>
         ( _d_dx, _d_dy, _d_mag, _d_map, 256.0f * params._cannyThrLow, 256.0f * params._cannyThrHigh );
     POP_CHK_CALL_IFSYNC;
+
+#ifdef DEBUG_WRITE_MAP_AS_PGM
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_map, getWidth() * sizeof(uint8_t),
+                              _d_map.data, _d_map.step,
+                              _d_map.cols * sizeof(uint8_t),
+                              _d_map.rows,
+                              cudaMemcpyDeviceToHost, _stream );
+#endif // DEBUG_WRITE_MAP_AS_PGM
 
     // cerr << "Leave " << __FUNCTION__ << endl;
 }

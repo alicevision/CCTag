@@ -153,7 +153,11 @@ int main(int argc, char** argv)
 
 #ifdef WITH_CUDA
   if( cmdline._useCuda ) {
-    params._useCuda = true;
+    params.setUseCuda( true );
+  }
+
+  if( cmdline._debugDir != "" ) {
+    params.setDebugDir( cmdline._debugDir );
   }
 
   popart::device_prop_t deviceInfo;

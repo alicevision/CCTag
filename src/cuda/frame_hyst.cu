@@ -258,7 +258,6 @@ void edge_second( cv::cuda::PtrStepSzb img, int* block_counter )
     }
 }
 
-
 }; // namespace hysteresis
 
 #ifndef NDEBUG
@@ -342,6 +341,7 @@ void Frame::applyHyst( const cctag::Parameters & params )
 #endif // NDEBUG
     }
     while( block_counter > 0 );
+
 #ifndef NDEBUG
     // cerr << endl;
 #endif // NDEBUG

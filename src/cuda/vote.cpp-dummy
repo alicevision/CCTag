@@ -1,0 +1,234 @@
+#define EDGE_NOT_FOUND -1
+#define CONVEXITY_LOST -2
+#define LOW_FLOW -3
+
+namespace popart
+{
+
+namespace vote
+{
+__device__
+TriplePoint* find_befor( TriplePoint* p,
+                         cv::cuda::PtrStepSz32s d_next_edge_befor,
+                         TriplePoint*           d_edgelist_2 )
+{
+    int2&       coord = &p->befor;
+    if( coord.x == 0 && coord.y == 0 ) return 0;
+    int         idx   = d_next_edge_befor.ptr(coord.y)[coord.x];
+    TriplePoint* b    = &d_edgelist_2[idx];
+    return b;
+}
+
+TriplePoint* find_after( TriplePoint* p,
+                         cv::cuda::PtrStepSz32s d_next_edge_after,
+                         TriplePoint*           d_edgelist_2 )
+{
+    int2&       coord = &p->after;
+    if( coord.x == 0 && coord.y == 0 ) return 0;
+    int         idx   = d_next_edge_after.ptr(coord.y)[coord.x];
+    TriplePoint* b    = &d_edgelist_2[idx];
+    return b;
+}
+
+float inner_prod( int2 l_coord,
+                  int2 r_coord,
+                  cv::cuda::PtrStepSz16s d_dx,  // input
+                  cv::cuda::PtrStepSz16s d_dy ) // input
+{
+    float l_dx = d_dx.ptr(l_coord.y)[l_coord.x];
+    float l_dy = d_dy.ptr(l_coord.y)[l_coord.x];
+    float r_dx = d_dx.ptr(r_coord.y)[r_coord.x];
+    float r_dy = d_dy.ptr(r_coord.y)[r_coord.x];
+    float ret  = l_dx * r_dx + l_dy * r_dy;
+    return ret;
+
+    // Point2dN l ( l_dx, l_dy );
+    // Point2dN r ( r_dx, r_dy );
+    // float return = -inner_prod(subrange(l, 0, 2), subrange(r, 0, 2));
+}
+
+} // namespace vote
+
+/*
+ * The voting procedure is modified from the original approach:
+ * On entry:
+ * - One kernel instance per TriplePoint. Each TriplePoint knows its own
+ *   coordinates, as well as "before" and "after" coordinates from
+ *   previous step
+ * Step 1:
+ * - Per each TriplePoint, find out whether it "chooses" a point
+ *   This point is stored in its own "after" coordinate.
+ * - If the point doesn't choose, set "after" to (0,0)
+ * Step 2:
+ * - All TriplePoints set "before" to (0,0)
+ *   set both pointers to 0
+ * Step 3:
+ * - Sorting kernel?
+ * - Create a new TriplePoint index list that contains only points
+ *   with "after" that is not (0,0).
+ * Step 4:
+ * - New kernel, one kernel instance per TriplePoint (or non-null)
+ *   TriplePoint
+ * - For every point, find the TriplePoint indexed by "after" through
+ *   the map of points.
+ * - Use AtomicAdd to increase before.x of the "after" point by 1
+ * - Use AtomicExch to chain self into "after" points' list of voters
+ * Step 5:
+ * - Sorting kernel
+ * - Create a new TriplePoint index list that is sorted by before.x
+ */
+
+/* Brief: Voting procedure. For every edge points, construct the 1st order approximation 
+ * of the field line passing through it which consists in a polygonal line whose
+ * extremities are two edge points.
+ * Input:
+ * points: set of edge points to be processed, i.e. considered as the 1st extremity
+ * of the constructed field line passing through it.
+ * seeds: edge points having received enough votes to be considered as a seed, i.e.
+ * as an edge point belonging on an inner elliptical arc of a cctag.
+ * edgesMap: map of all the edge points
+ * winners: map associating all seeds to their voters
+ * cannyGradX: X derivative of the gray image
+ * cannyGradY: Y derivative of the gray image
+ */
+__device__
+bool vote_inner( WinnerMap& winners,              // output
+                 TriplePoint* d_edgelist_2,     // input
+                 uint32_t     d_edgelist_2_sz,  // input
+                 cv::cuda::PtrStepSz16s d_dx,  // input
+                 cv::cuda::PtrStepSz16s d_dy,  // input
+                 cv::cuda::PtrStepSz32s d_next_edge_coord,
+                 cv::cuda::PtrStepSz32s d_next_edge_after,
+                 cv::cuda::PtrStepSz32s d_next_edge_befor,
+                 const Parameters&      params )    // input
+{
+    int offset = threadIdx.x + blockIdx.x * 32;
+    if( offset > d_edgelist_2_sz ) return;
+
+    TriplePoint* p = d_edgelist_2[offset];
+
+    float dist; // scalar to compute the distance ratio
+    std::size_t i = 1;
+        
+    // Alternate from the edge point found in the direction opposed to the gradient
+    // direction.
+    TriplePoint* current = p._before;
+    // Here current contains the edge point lying on the 2nd ellipse (from outer to inner)
+    TriplePoint* chosen = NULL;
+
+    // To save all sub-segments length
+    std::vector<float> vDist;
+    vDist.reserve(params._numCrowns * 2 - 1);
+    int flagDist = 1;
+
+    // Length of the reconstructed field line approximation between the two
+    // extremities.
+    float totalDistance = 0.0;
+
+    float cosDiffTheta = -inner_prod(subrange(p._grad, 0, 2), subrange(current->_grad, 0, 2)); // difference in subsequent gradients orientation
+    if (cosDiffTheta >= 0.0) {
+        float lastDist = cctag::numerical::distancePoints2D(p, *current);
+        vDist.push_back(lastDist);
+        
+        // Add the sub-segment length to the total distance.
+        totalDistance += lastDist;
+
+        // Iterate over all crowns
+        while (i < params._numCrowns) {
+            chosen = NULL;
+            
+            // First in the gradient direction
+            TriplePoint* target = current->_after;
+            // No edge point was found in that direction
+            if( not target ) {
+                break;
+            }
+            
+            // Check the difference of two consecutive angles
+            cosDiffTheta = -inner_prod(subrange(target->_grad, 0, 2), subrange(current->_grad, 0, 2));
+            if( cosDiffTheta < 0.0 ) {
+                break;
+            } else {
+                dist = cctag::numerical::distancePoints2D(*target, *current);
+                vDist.push_back(dist);
+                totalDistance += dist;
+
+                // Check the distance ratio
+                if (vDist.size() > 1) {
+                    for (int iDist = 0; iDist < vDist.size(); ++iDist) {
+                        for (int jDist = iDist + 1; jDist < vDist.size(); ++jDist) {
+                            flagDist = (vDist[iDist] <= vDist[jDist] * params._ratioVoting) && (vDist[jDist] <= vDist[iDist] * params._ratioVoting) && flagDist;
+                        }
+                    }
+                }
+
+                if( not flagDist ) {
+                    break;
+                } else {
+                    // lastDist = dist;
+                    current = target;
+                    // Second in the opposite gradient direction
+                    target = current->_before;
+                    if( not target ) {
+                        break;
+                    }
+                    cosDiffTheta = -inner_prod(subrange(target->_grad, 0, 2), subrange(current->_grad, 0, 2));
+                    if (cosDiffTheta < 0.0) {
+                        break;
+                    } else {
+                        dist = cctag::numerical::distancePoints2D(*target, *current);
+                        vDist.push_back(dist);
+                        totalDistance += dist;
+
+                        for (int iDist = 0; iDist < vDist.size(); ++iDist) {
+                            for (int jDist = iDist + 1; jDist < vDist.size(); ++jDist) {
+                                flagDist = (vDist[iDist] <= vDist[jDist] * params._ratioVoting) && (vDist[jDist] <= vDist[iDist] * params._ratioVoting) && flagDist;
+                            }
+                        }
+
+                        if( not flagDist ) {
+                            break;
+                        } else {
+                            // lastDist = dist;
+                            current = target;
+                            chosen = current;
+                            if (!current) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            ++i;
+        }
+        /* store totalDistance in p for re-use in future steps */
+    }
+}
+
+#if 0
+    // THIS MUST BE A SEPARATE STEP !
+
+    bool is_a_seed = false;
+    // Check if winner was found
+    if (chosen) {
+        // Associate winner with its voter (add the current point)
+        winners[chosen].push_back(&p);
+
+        // update flow length average scale factor
+        chosen->_flowLength = (chosen->_flowLength * (winners[chosen].size() - 1) + totalDistance) / winners[chosen].size();
+
+        // If chosen has a number of votes greater than one of
+        // the edge points, then update max.
+        if (winners[chosen].size() >= params._minVotesToSelectCandidate) {
+            if (chosen->_isMax == -1) {
+                seeds.push_back(chosen);
+                is_a_seed = true;
+            }
+            chosen->_isMax = winners[chosen].size();
+        }
+    }
+    return is_a_seed;
+#endif
+
+} // namespace popart
+

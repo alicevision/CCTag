@@ -1,5 +1,5 @@
 // #include <iostream>
-// #include <limits>
+#include <fstream>
 #include <cuda_runtime.h>
 // #include <stdio.h>
 #include "debug_macros.hpp"
@@ -22,6 +22,9 @@ using namespace std;
  * Aligning to anything less than 16 floats is a bad idea.
  */
 
+#undef NORMALIZE_GAUSS_VALUES
+
+#ifdef NORMALIZE_GAUSS_VALUES
 static const float sum_of_gauss_values = 0.000053390535453f +
                                          0.001768051711852f +
                                          0.021539279301849f +
@@ -31,6 +34,8 @@ static const float sum_of_gauss_values = 0.000053390535453f +
                                          0.021539279301849f +
                                          0.001768051711852f +
                                          0.000053390535453f;
+static const float normalize_derived = 2.0f * ( 1.213061319425269f + 0.541341132946452f + 0.066653979229454f + 0.002683701023220f );
+#endif // NORMALIZE_GAUSS_VALUES
 
 static const float h_gauss_filter[32] =
 {
@@ -69,11 +74,11 @@ static const float h_gauss_filter[32] =
 };
 
 __device__ __constant__ float d_gauss_filter[32];
-__device__ __constant__ float d_gauss_filter_by_256[16];
+// __device__ __constant__ float d_gauss_filter_by_256[16];
 
-template <class DestType>
+template <class SrcType, class DestType>
 __global__
-void filter_gauss_horiz( cv::cuda::PtrStepSzf          src,
+void filter_gauss_horiz( cv::cuda::PtrStepSz<SrcType>  src,
                          cv::cuda::PtrStepSz<DestType> dst,
                          int                           filter,
                          float                         scale )
@@ -91,16 +96,16 @@ void filter_gauss_horiz( cv::cuda::PtrStepSzf          src,
     }
 
     if( idy >= dst.rows ) return;
-    if( idx*sizeof(float) >= src.step ) return;
+    if( idx*sizeof(DestType) >= src.step ) return;
 
     bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
     out /= scale;
     dst.ptr(idy)[idx] = nix ? 0 : (DestType)out;
 }
 
-template <class DestType>
+template <class SrcType, class DestType>
 __global__
-void filter_gauss_vert( cv::cuda::PtrStepSzf          src,
+void filter_gauss_vert( cv::cuda::PtrStepSz<SrcType>  src,
                         cv::cuda::PtrStepSz<DestType> dst,
                         int                           filter,
                         float                         scale )
@@ -109,7 +114,7 @@ void filter_gauss_vert( cv::cuda::PtrStepSzf          src,
     const int idy     = blockIdx.y;
     float out = 0;
 
-    if( idx*sizeof(float) >= src.step ) return;
+    if( idx*sizeof(SrcType) >= src.step ) return;
 
     for( int offset = 0; offset<9; offset++ ) {
         float g  = d_gauss_filter[filter + offset];
@@ -126,45 +131,12 @@ void filter_gauss_vert( cv::cuda::PtrStepSzf          src,
     dst.ptr(idy)[idx] = nix ? 0 : (DestType)out;
 }
 
-__global__
-void filter_gauss_horiz_from_uchar( cv::cuda::PtrStepSzb src,
-                                    cv::cuda::PtrStepSzf dst,
-                                    float                scale )
-{
-    const int idx     = blockIdx.x * 32 + threadIdx.x;
-    const int idy     = blockIdx.y;
-    float out = 0;
-
-    for( int offset = 0; offset<9; offset++ ) {
-        float g  = d_gauss_filter[offset];
-
-        int lookup = clamp( idx + offset - 4, src.cols );
-        float val = src.ptr(idy)[lookup];
-        out += ( val * g );
-    }
-
-    if( idy >= dst.rows ) return;
-    if( idx * sizeof(float) >= dst.step ) return;
-
-    bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
-    out /= scale;
-    dst.ptr(idy)[idx] = nix ? 0 : out;
-}
-
 __host__
 void Frame::initGaussTable( )
 {
-    float h_gauss_filter_by_256[9];
-    for( int i=0; i<9; i++ ) {
-        h_gauss_filter_by_256[i] = h_gauss_filter[i] / 256.0f;
-    }
-
     POP_CUDA_MEMCPY_HOST_TO_SYMBOL_SYNC( d_gauss_filter,
                                          h_gauss_filter,
                                          32*sizeof(float) );
-    POP_CUDA_MEMCPY_HOST_TO_SYMBOL_SYNC( d_gauss_filter_by_256,
-                                         h_gauss_filter_by_256,
-                                         9*sizeof(float) );
 }
 
 __host__
@@ -172,44 +144,95 @@ void Frame::applyGauss( const cctag::Parameters & params )
 {
     // cerr << "Enter " << __FUNCTION__ << endl;
 
+    POP_CHK_CALL_IFSYNC;
+
     dim3 block;
     dim3 grid;
     block.x = 32;
     grid.x  = ( getWidth() / 32 )  + ( getWidth() % 32 == 0 ? 0 : 1 );
     grid.y  = getHeight();
+    assert( grid.x > 0 && grid.y > 0 && grid.z > 0 );
+    assert( block.x > 0 && block.y > 0 && block.z > 0 );
 
-    filter_gauss_horiz_from_uchar
-        <<<grid,block,0,_stream>>>
-        ( _d_plane, _d_intermediate, sum_of_gauss_values );
+#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
+    // optional download for debugging
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_plane, getWidth(),
+                              _d_plane.data, _d_plane.step,
+                              _d_plane.cols,
+                              _d_plane.rows,
+                              cudaMemcpyDeviceToHost, _stream );
+    POP_CHK_CALL_IFSYNC;
+#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
+
+#ifdef SEPARATE_FIRST_GAUSSIAN_SWEEP
+    /*
+     * This is the original approach, following the explanation in cvRecode.
+     * However, the 1D tables that we use have already been convolved with
+     * an initial Gauss step, and give the wrong results. So, the first sweep
+     * must be removed.
+     * If the goal was to smoothe the picture, that would be a mistake,
+     * because multiple sweeps extend the range of the filter and bring the
+     * result closer to a globally applied Gaussian filter. However, for CCTag,
+     * this is just a strengthening of the edge signal of a single pixel in its
+     * surrounding area. The far distant pixels don't matter.
+     */
+
+    /* horiz and vert sweep for 1D Gaussian transform */
+    filter_gauss_horiz_from_uchar<<<grid,block,0,_stream>>>( _d_plane, _d_intermediate, sum_of_gauss_values );
+    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_intermediate, _d_smooth, GAUSS_TABLE, sum_of_gauss_values );
+#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
+    // optional download for debugging
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_smooth, getWidth() * sizeof(float), _d_smooth.data, _d_smooth.step, _d_smooth.cols * sizeof(float), _d_smooth.rows, cudaMemcpyDeviceToHost, _stream );
+#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
+    /* Vertical sweep for DX computation: use Gaussian table */
+    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_smooth, _d_intermediate, GAUSS_TABLE, 1.0f );
+    /* Compute DX */
+    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_debug_dx, GAUSS_DERIV, 1.0f );
+    /* Horizontal sweep for DY computation: use Gaussian table */
+    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_smooth, _d_intermediate, GAUSS_TABLE, 1.0f );
+    /* Compute DY */
+    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_DERIV, 1.0f );
+
+#else // SEPARATE_FIRST_GAUSSIAN_SWEEP
+
+#ifdef NORMALIZE_GAUSS_VALUES
+    const float normalize   = sum_of_gauss_values;
+    const float normalize_d = normalize_derived;
+#else // NORMALIZE_GAUSS_VALUES
+    const float normalize   = 1.0f;
+    const float normalize_d = 1.0f;
+#endif // NORMALIZE_GAUSS_VALUES
+    /*
+     * Vertical sweep for DX computation: use Gaussian table
+     */
+    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_plane, _d_intermediate, GAUSS_TABLE, normalize );
     POP_CHK_CALL_IFSYNC;
 
-    filter_gauss_vert
-        <<<grid,block,0,_stream>>>
-        ( _d_intermediate, _d_smooth, GAUSS_TABLE, sum_of_gauss_values );
+    /*
+     * Compute DX
+     */
+    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_dx, GAUSS_DERIV, normalize_d );
     POP_CHK_CALL_IFSYNC;
 
-    filter_gauss_vert
-        <<<grid,block,0,_stream>>>
-        ( _d_smooth, _d_intermediate, GAUSS_TABLE, sum_of_gauss_values );
+#if 0
+    /*
+     * Horizontal sweep for DY computation: use Gaussian table
+     */
+    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_plane, _d_intermediate, GAUSS_TABLE, normalize );
     POP_CHK_CALL_IFSYNC;
 
-    filter_gauss_horiz
-        <<<grid,block,0,_stream>>>
-        ( _d_intermediate, _d_dx, GAUSS_DERIV, 1.0f );
+    /*
+     * Compute DY
+     */
+    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_DERIV, normalize_d );
     POP_CHK_CALL_IFSYNC;
+#else
+    filter_gauss_vert <<<grid,block,0,_stream>>>( _d_plane, _d_intermediate, GAUSS_DERIV, normalize_d );
+    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_TABLE, normalize );
+#endif
+#endif // SEPARATE_FIRST_GAUSSIAN_SWEEP
 
-    // possible to split into 2 streams
-    filter_gauss_horiz
-        <<<grid,block,0,_stream>>>
-        ( _d_smooth, _d_intermediate, GAUSS_TABLE, sum_of_gauss_values );
-    POP_CHK_CALL_IFSYNC;
-
-    filter_gauss_vert
-        <<<grid,block,0,_stream>>>
-        ( _d_intermediate, _d_dy, GAUSS_DERIV, 1.0f );
-    POP_CHK_CALL_IFSYNC;
-
-#ifdef EDGE_LINKING_HOST_SIDE
+// #ifdef EDGE_LINKING_HOST_SIDE
     // After these linking operations, dx and dy are created for
     // all edge points and we can copy them to the host
 
@@ -224,8 +247,35 @@ void Frame::applyGauss( const cctag::Parameters & params )
                               _d_dy.cols * sizeof(int16_t),
                               _d_dy.rows,
                               cudaMemcpyDeviceToHost, _stream );
+
     POP_CHK_CALL_IFSYNC;
-#endif // EDGE_LINKING_HOST_SIDE
+#if 1
+    if( true )
+    {
+        POP_CUDA_SYNC( _stream );
+
+        ostringstream dx_i_out_n;
+        dx_i_out_n << params._debugDir << "gpu-dx-" << _layer << "-i.txt";
+        ofstream dx_i_out( dx_i_out_n.str().c_str() );
+        for( int y=0; y<_d_dx.rows; y++ ) {
+            for( int x=0; x<_d_dx.cols; x++ ) {
+                dx_i_out << setw(3) << _h_dx.ptr(y)[x] << " ";
+            }
+            dx_i_out << endl;
+        }
+
+        ostringstream dy_i_out_n;
+        dy_i_out_n << params._debugDir << "gpu-dy-" << _layer << "-i.txt";
+        ofstream dy_i_out( dy_i_out_n.str().c_str() );
+        for( int y=0; y<_d_dx.rows; y++ ) {
+            for( int x=0; x<_d_dx.cols; x++ ) {
+                dy_i_out << setw(3) << _h_dy.ptr(y)[x] << " ";
+            }
+            dy_i_out << endl;
+        }
+    }
+#endif
+// #endif // EDGE_LINKING_HOST_SIDE
 
     // cerr << "Leave " << __FUNCTION__ << endl;
 }

@@ -18,19 +18,19 @@ ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::si
   _levels.clear();
   for(int i = 0; i < nLevels ; ++i)
   {
-    _levels.push_back(new Level( width, height ));
+    _levels.push_back(new Level( width, height, i ));
     width /= 2;
     height /= 2;
   }
 }
 
-void ImagePyramid::build( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny)
+void ImagePyramid::build( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params )
 {
-  _levels[0]->setLevel( src , thrLowCanny, thrHighCanny);
+  _levels[0]->setLevel( src , thrLowCanny, thrHighCanny, params );
   
   for(int i = 1; i < _levels.size() ; ++i)
   {
-    _levels[i]->setLevel( _levels[i-1]->getSrc(), thrLowCanny, thrHighCanny);
+    _levels[i]->setLevel( _levels[i-1]->getSrc(), thrLowCanny, thrHighCanny, params );
   }
   
 #ifdef CCTAG_SERIALIZE

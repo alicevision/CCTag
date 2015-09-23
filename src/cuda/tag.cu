@@ -4,6 +4,9 @@
 #include "keep_time.hpp"
 #include <sstream>
 #include <iostream>
+#include <fstream>
+
+#include "debug_image.h"
 
 using namespace std;
 
@@ -29,7 +32,7 @@ void TagPipe::initialize( const uint32_t pix_w,
     uint32_t w = pix_w;
     uint32_t h = pix_h;
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( new popart::Frame( w, h ) ); // sync
+        _frame.push_back( new popart::Frame( w, h, i ) ); // sync
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
@@ -86,12 +89,18 @@ void TagPipe::tagframe( const cctag::Parameters& params )
     for( int i=0; i<num_layers; i++ ) {
         bool success;
         _frame[i]->applyGauss( params ); // async
+        POP_CHK_CALL_IFSYNC;
         _frame[i]->applyMag(   params );  // async
+        POP_CHK_CALL_IFSYNC;
         _frame[i]->applyHyst(  params );  // async
+        POP_CHK_CALL_IFSYNC;
         _frame[i]->applyThinning(  params );  // async
+        POP_CHK_CALL_IFSYNC;
         success = _frame[i]->applyDesc(  params );  // async
+        POP_CHK_CALL_IFSYNC;
         if( not success ) continue;
         _frame[i]->applyVote(  params );  // async
+        POP_CHK_CALL_IFSYNC;
         // _frame[i]->applyLink(  params );  // async
     }
 
@@ -110,6 +119,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 
 __host__
 void TagPipe::download( size_t                          layer,
+                        std::vector<cctag::EdgePoint>&  vPoints,
                         cctag::EdgePointsImage&         edgeImage,
                         std::vector<cctag::EdgePoint*>& seeds,
                         cctag::WinnerMap&               winners )
@@ -118,7 +128,7 @@ void TagPipe::download( size_t                          layer,
 
     assert( layer < _frame.size() );
 
-    _frame[layer]->applyExport( edgeImage, seeds, winners );
+    _frame[layer]->applyExport( vPoints, edgeImage, seeds, winners );
 
     // cerr << "Leave " << __FUNCTION__ << endl;
 }
@@ -142,7 +152,7 @@ void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
 
         for( int i=0; i<num_layers; i++ ) {
             std::ostringstream ostr;
-            ostr << "debug-input-plane-" << i;
+            ostr << "gpu-" << i;
             _frame[i]->writeHostDebugPlane( ostr.str(), params );
         }
         POP_SYNC_CHK;
@@ -151,6 +161,162 @@ void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
     cerr << "terminating in tagframe" << endl;
     cerr << "Leave " << __FUNCTION__ << endl;
     // exit( 0 );
+}
+
+void TagPipe::debug_cpu_origin( int                      layer,
+                                const cv::Mat&           img,
+                                const cctag::Parameters& params )
+{
+    ostringstream ascname;
+    ascname << params._debugDir << "cpu-" << layer << "-img-ascii.txt";
+    ofstream asc( ascname.str().c_str() );
+
+    int cols = img.size().width;
+    int rows = img.size().height;
+    for( int y=0; y<rows; y++ ) {
+        for( int x=0; x<cols; x++ ) {
+            uint8_t pix = img.at<uint8_t>(y,x);
+            asc << setw(3) << (int)pix << " ";
+        }
+        asc << endl;
+    }
+}
+
+void TagPipe::debug_cpu_edge_out( int                      layer,
+                                  const cv::Mat&           edges,
+                                  const cctag::Parameters& params )
+{
+    ostringstream filename;
+    filename << params._debugDir
+             << "cpu-" << layer << "-edges.ppm";
+
+    cv::cuda::PtrStepSzb plane;
+    plane.step = edges.size().width;
+    plane.cols = edges.size().width;
+    plane.rows = edges.size().height;
+    if( plane.cols == 0 || plane.rows == 0 ) return;
+    plane.data = new uint8_t[ plane.cols * plane.rows ];
+
+    for( int y=0; y<plane.rows; y++ )
+        for( int x=0; x<plane.cols; x++ ) {
+            plane.ptr(y)[x] = edges.at<uint8_t>(y,x);
+        }
+
+    DebugImage::writePGM( filename.str(), plane );
+
+    delete [] plane.data;
+}
+
+static void local_debug_cpu_dxdy_out( const char*                  dxdy,
+                                      size_t                       level,
+                                      const cv::Mat&               cpu,
+                                      const cv::cuda::PtrStepSz16s gpu,
+                                      const cctag::Parameters&     params )
+{
+
+    if( cpu.size().width  != gpu.cols ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << " Error: array width CPU " << cpu.size().width << " vs GPU " << gpu.cols << endl;
+    }
+    if( cpu.size().height != gpu.rows ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << " Error: array height CPU " << cpu.size().height << " vs GPU " << gpu.rows << endl;
+    }
+
+    int cols = min( cpu.size().width, gpu.cols );
+    int rows = min( cpu.size().height, gpu.rows );
+
+    if( cols == 0 || rows == 0 ) return;
+
+    cv::cuda::PtrStepSz16s plane;
+    plane.step = cols * sizeof(int16_t);
+    plane.cols = cols;
+    plane.rows = rows;
+    plane.data = new int16_t[ cols * rows ];
+
+    for( int y=0; y<rows; y++ ) {
+        for( int x=0; x<cols; x++ ) {
+            int16_t cpu_val = cpu.at<int16_t>(y,x);
+            int16_t gpu_val = gpu.ptr(y)[x];
+            plane.ptr(y)[x] = (int16_t)gpu_val - (int16_t)cpu_val;
+#if 0
+            if( y < 4 || x < 4 || y >= rows-4 || x >= cols-4 ) {
+                diffplane.ptr(y)[x] = 0;
+            }
+#endif
+        }
+    }
+    ostringstream asc_f_diff;
+    ostringstream img_f_diff;
+    asc_f_diff << params._debugDir << "diffcpugpu-" << level << "-" << dxdy << "-ascii.txt";
+    img_f_diff << params._debugDir << "diffcpugpu-" << level << "-" << dxdy << ".pgm";
+    DebugImage::writePGMscaled( img_f_diff.str(), plane );
+    DebugImage::writeASCII(     asc_f_diff.str(), plane );
+
+    for( int y=0; y<rows; y++ ) {
+        for( int x=0; x<cols; x++ ) {
+            int16_t cpu_val   = cpu.at<int16_t>(y,x);
+            plane.ptr(y)[x] = min<int16_t>( max<int16_t>( (int16_t)cpu_val, -255 ), 255 );
+        }
+    }
+
+    ostringstream asc_f_cpu;
+    ostringstream img_f_cpu;
+    asc_f_cpu  << params._debugDir << "cpu-" << level << "-" << dxdy << "-ascii.txt";
+    img_f_cpu  << params._debugDir << "cpu-" << level << "-" << dxdy << ".pgm";
+    DebugImage::writePGMscaled( img_f_cpu.str(), plane );
+    DebugImage::writeASCII(     asc_f_cpu.str(), plane );
+
+    delete [] plane.data;
+}
+
+void TagPipe::debug_cpu_dxdy_out( TagPipe*                     pipe,
+                                  int                          layer,
+                                  const cv::Mat&               cpu_dx,
+                                  const cv::Mat&               cpu_dy,
+                                  const cctag::Parameters&     params )
+{
+    const cv::cuda::PtrStepSz16s gpu_dx = pipe->_frame[layer]->_h_dx;
+    const cv::cuda::PtrStepSz16s gpu_dy = pipe->_frame[layer]->_h_dy;
+    size_t                       level  = pipe->_frame[layer]->getLayer();
+
+    local_debug_cpu_dxdy_out( "dx", level, cpu_dx, gpu_dx, params );
+    local_debug_cpu_dxdy_out( "dy", level, cpu_dy, gpu_dy, params );
+}
+
+void TagPipe::debug_cmp_edge_table( int                           layer,
+                                    const cctag::EdgePointsImage& cpu,
+                                    const cctag::EdgePointsImage& gpu,
+                                    const cctag::Parameters&      params )
+{
+    ostringstream filename;
+    filename << params._debugDir
+             << "diffcpugpu-" << layer << "-edge.ppm";
+
+    cv::cuda::PtrStepSzb plane;
+    plane.data = new uint8_t[ cpu.shape()[0] * cpu.shape()[1] ];
+    plane.step = cpu.shape()[0];
+    plane.cols = cpu.shape()[0];
+    plane.rows = cpu.shape()[1];
+
+    if( gpu.size() != 0 && gpu.size() != 0 ) {
+        for( int y=0; y<cpu.shape()[1]; y++ ) {
+            for( int x=0; x<cpu.shape()[0]; x++ ) {
+                if( cpu[x][y] != 0 && gpu[x][y] == 0 )
+                    plane.ptr(y)[x] = DebugImage::BLUE;
+                else if( cpu[x][y] == 0 && gpu[x][y] != 0 )
+                    plane.ptr(y)[x] = DebugImage::GREEN;
+                else if( cpu[x][y] != 0 && gpu[x][y] != 0 )
+                    plane.ptr(y)[x] = DebugImage::GREY1;
+                else
+                    plane.ptr(y)[x] = DebugImage::BLACK;
+            }
+        }
+
+        DebugImage::writePPM( filename.str(), plane );
+    }
+
+    delete [] plane.data;
 }
 
 }; // namespace popart

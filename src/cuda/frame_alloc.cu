@@ -109,6 +109,22 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _d_ring_counter = (int*)ptr;
     _d_ring_counter_max = EDGE_LINKING_MAX_ARCS;
 
+#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
+    _h_debug_plane  = new unsigned char[ w * h ];
+#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
+
+#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
+    _h_debug_smooth = new float[ w * h ];
+#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
+
+#ifdef DEBUG_WRITE_MAG_AS_PGM
+    _h_debug_mag = new uint32_t[ w * h ];
+#endif // DEBUG_WRITE_MAG_AS_PGM
+
+#ifdef DEBUG_WRITE_MAP_AS_PGM
+    _h_debug_map = new unsigned char[ w * h ];
+#endif // DEBUG_WRITE_MAP_AS_PGM
+
     _vote.alloc( params, w, h );
 
     // cerr << "Leave " << __FUNCTION__ << endl;
@@ -186,6 +202,19 @@ void Frame::releaseRequiredMem( )
     delete [] _h_dx.data;
     delete [] _h_dy.data;
     delete [] _h_ring_output.data;
+
+#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
+    delete [] _h_debug_plane;
+#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
+#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
+    delete [] _h_debug_smooth;
+#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
+#ifdef DEBUG_WRITE_MAG_AS_PGM
+    delete [] _h_debug_mag;
+#endif // DEBUG_WRITE_MAG_AS_PGM
+#ifdef DEBUG_WRITE_MAP_AS_PGM
+    delete [] _h_debug_map;
+#endif // DEBUG_WRITE_MAP_AS_PGM
 
     _vote.release();
 }

@@ -18,11 +18,8 @@ using namespace std;
  * Frame
  *************************************************************/
 
-Frame::Frame( uint32_t width, uint32_t height )
-    : _h_debug_plane( 0 )
-    , _h_debug_smooth( 0 )
-    , _h_debug_mag( 0 )
-    , _h_debug_map( 0 )
+Frame::Frame( uint32_t width, uint32_t height, int my_layer )
+    : _layer( my_layer )
     , _h_debug_hyst_edges( 0 )
     , _h_debug_edges( 0 )
     , _texture( 0 )
@@ -54,10 +51,6 @@ Frame::~Frame( )
     releaseRequiredMem( );
 
     // host-side plane for debugging
-    delete [] _h_debug_plane;
-    delete [] _h_debug_smooth;
-    delete [] _h_debug_mag;
-    delete [] _h_debug_map;
     delete [] _h_debug_hyst_edges;
     delete [] _h_debug_edges;
 
