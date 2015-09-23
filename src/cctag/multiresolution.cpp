@@ -292,14 +292,25 @@ void cctagMultiresDetection_inner(
 #endif // WITH_CUDA_COMPARE_MODE
 #endif // WITH_CUDA
 
+#ifdef WITH_CUDA
     cctagDetectionFromEdges(
             pyramidMarkers,
-            vPoints,
+            cuda_debug_vPoints,
             level->getSrc(),
-            winners,
-            seeds,
-            vEdgeMap,
+            cuda_debug_winners,
+            cuda_debug_seeds,
+            cuda_debug_vEdgeMap,
             frame, i, std::pow(2.0, (int) i), params);
+#else
+    cctagDetectionFromEdges(
+        pyramidMarkers,
+        vPoints,
+        level->getSrc(),
+        winners,
+        seeds,
+        vEdgeMap,
+        frame, i, std::pow(2.0, (int) i), params);
+#endif
     
     CCTagVisualDebug::instance().initBackgroundImage(level->getSrc());
     std::stringstream outFilename2;
