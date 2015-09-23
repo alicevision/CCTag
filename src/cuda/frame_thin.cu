@@ -59,7 +59,7 @@ __device__ __constant__ unsigned char d_thinning_lut_t[256];
 __device__
 bool thinning_inner( const int idx, const int idy, cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, bool first_run )
 {
-    if( src.ptr(idy)[idx] == 0 ) {
+    if( src.ptr(idy)[idx] != 2 ) {
         dst.ptr(idy)[idx] = 0;
         return false;
     }
@@ -194,14 +194,20 @@ void Frame::applyThinning( const cctag::Parameters & params )
 #endif // NDEBUG
 
 #ifdef EDGE_LINKING_HOST_SIDE
-        /* After thinning_and_store, _all_edgecoords is no longer changed
-         * we can copy it to the host for edge linking
-         */
-        _vote._all_edgecoords.copySizeFromDevice( _stream );
-        POP_CUDA_SYNC( _stream );
+    /* After thinning_and_store, _all_edgecoords is no longer changed
+     * we can copy it to the host for edge linking
+     */
+    _vote._all_edgecoords.copySizeFromDevice( _stream );
+    POP_CHK_CALL_IFSYNC;
+    POP_CUDA_SYNC( _stream );
+    if( _vote._all_edgecoords.host.size > 0 ) {
         _vote._all_edgecoords.copyDataFromDevice( _vote._all_edgecoords.host.size,
-                                                  _stream );
+                                                      _stream );
         POP_CHK_CALL_IFSYNC;
+    } else {
+        _vote._all_edgecoords.initHost( );
+    }
+    POP_CHK_CALL_IFSYNC;
 #endif // EDGE_LINKING_HOST_SIDE
 
     // cerr << "Leave " << __FUNCTION__ << endl;

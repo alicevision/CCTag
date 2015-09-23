@@ -55,7 +55,7 @@ int main(int argc, char** argv)
       
       ptime tstop1(microsec_clock::local_time());
       
-      cctag::MemoryPool::instance().getImagePyramid().build(edges, 0.002, 0.04);
+      cctag::MemoryPool::instance().getImagePyramid().build(edges, 0.002, 0.04, 0);
       
       cctag::MemoryPool::instance().getImagePyramid().output();
 

@@ -1,7 +1,9 @@
 #ifndef _CCTAG_GLOBAL_HPP_
 #define _CCTAG_GLOBAL_HPP_
 
-//#define CCTAG_NO_COUT
+#define WITH_CUDA_COMPARE_MODE
+
+#undef CCTAG_NO_COUT
 
 #include <cctag/progBase/system/system.hpp>
 
@@ -76,7 +78,7 @@ namespace std {
  * @param[in] ... : all parameters with an operator << defined
  * @brief terminal display
  **/
- #define CCTAG_COUT(... )  ::std::cout << __VA_ARGS__ << ::std::endl
+ #define CCTAG_COUT(... )  ::std::cout << __FUNCTION__ << ":" << __LINE__ << ": " << __VA_ARGS__ << ::std::endl
  #define CCTAG_COUT_NOENDL(... )  ::std::cout << __VA_ARGS__
  #define CCTAG_CERR(... )  ::std::cerr << __VA_ARGS__ << ::std::endl
  #define CCTAG_CERR_NOENDL(... )  ::std::cerr << __VA_ARGS__

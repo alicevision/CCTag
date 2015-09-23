@@ -279,6 +279,9 @@ void construct_line( DevEdgeList<int>             seed_indices,       // output
                               edgepoint_index_table, // input
                               numCrowns,
                               ratioVoting );
+
+    if( chosen && chosen->coord.x == 0 && chosen->coord.y == 0 ) chosen = 0;
+
     int idx = 0;
     uint32_t mask   = __ballot( chosen != 0 );
     uint32_t ct     = __popc( mask );
@@ -430,7 +433,7 @@ void Frame::applyVote( const cctag::Parameters& params )
     if( not success ) {
         _vote._seed_indices.host.size       = 0;
         _vote._chained_edgecoords.host.size = 0;
-        cout << "Leave " << __FUNCTION__ << endl;
+        cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl;
         return;
     }
 
@@ -449,7 +452,7 @@ void Frame::applyVote( const cctag::Parameters& params )
          * number of voters has not been counted, and it has not been filtered
          * by length or voters count.
          */
-        cout << "Leave " << __FUNCTION__ << endl;
+        cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl;
         return;
     }
 #endif //  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
@@ -561,14 +564,16 @@ void Frame::applyVote( const cctag::Parameters& params )
         _vote._seed_indices.copySizeFromDevice( _stream );
         POP_CUDA_SYNC( _stream );
 #ifdef EDGE_LINKING_HOST_SIDE
-        _vote._seed_indices.copyDataFromDevice( _vote._seed_indices.host.size, _stream );
+        if( _vote._seed_indices.host.size != 0 ) {
+            _vote._seed_indices.copyDataFromDevice( _vote._seed_indices.host.size, _stream );
+        }
 #endif // EDGE_LINKING_HOST_SIDE
 
         cout << "  Number of viable inner points: " << _vote._seed_indices.host.size << endl;
     } else {
         _vote._chained_edgecoords.host.size = 0;
     }
-    cout << "Leave " << __FUNCTION__ << endl;
+    cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl;
 }
 
 } // namespace popart

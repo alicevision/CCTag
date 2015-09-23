@@ -5,13 +5,18 @@
 
 namespace cctag {
 
+class Parameters;
+
 class Level
 {
 public:
   
-  Level( std::size_t width, std::size_t height );
+  Level( std::size_t width, std::size_t height, int debug_info_level );
   
-  void setLevel(const cv::Mat & src, const double thrLowCanny, const double thrHighCanny);
+  void setLevel( const cv::Mat & src,
+                 const double thrLowCanny,
+                 const double thrHighCanny,
+                 const cctag::Parameters* params );
   const cv::Mat & getSrc() const;
   const cv::Mat & getDx() const;
   const cv::Mat & getDy() const;
@@ -34,6 +39,7 @@ public:
   
 
 private:
+  int _debug_info_level;
   
   cv::Mat _dx;
   cv::Mat _dy;

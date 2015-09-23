@@ -210,13 +210,18 @@ public:
     }
 
     __host__
-    void copyDataFromDevice( int sz, cudaStream_t stream )
+    bool copyDataFromDevice( int sz, cudaStream_t stream )
     {
+        assert( sz != 0 );
+        if( sz == 0 ) {
+            return false;
+        }
         POP_CUDA_MEMCPY_ASYNC( host.ptr,
                                dev.ptr,
                                sz * sizeof(T),
                                cudaMemcpyDeviceToHost,
                                stream );
+        return true;
     }
 
     __host__
@@ -231,6 +236,12 @@ public:
     void init( cudaStream_t stream )
     {
         dev .init( alloc_num, stream );
+        host.init( alloc_num );
+    }
+
+    __host__
+    void initHost( )
+    {
         host.init( alloc_num );
     }
 

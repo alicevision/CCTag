@@ -40,11 +40,6 @@ __host__
 void DebugImage::writePGMscaled_T( const string&                 filename,
                                    const cv::cuda::PtrStepSz<T>& plane )
 {
-    ofstream of( filename.c_str() );
-    of << "P5" << endl
-       << plane.cols << " " << plane.rows << endl
-       << "255" << endl;
-
     T minval = std::numeric_limits<T>::max();
     T maxval = std::numeric_limits<T>::min();
     // for( uint32_t i=0; i<plane.rows*plane.cols; i++ )
@@ -56,6 +51,11 @@ void DebugImage::writePGMscaled_T( const string&                 filename,
             maxval = max( maxval, f );
         }
     }
+
+    ofstream of( filename.c_str() );
+    of << "P5" << endl
+       << plane.cols << " " << plane.rows << endl
+       << "255" << endl;
 
     float fmaxval = 255.0 / ( (float)maxval - (float)minval );
     for( uint32_t i=0; i<plane.rows*plane.cols; i++ ) {
@@ -107,7 +107,7 @@ void DebugImage::writePPM( const string& filename, const cv::cuda::PtrStepSzb& p
 
 template<class T>
 __host__
-void DebugImage::writeASCII_T( const string& filename, const cv::cuda::PtrStepSz<T>& plane )
+void DebugImage::writeASCII_T( const string& filename, const cv::cuda::PtrStepSz<T>& plane, int width )
 {
     ofstream of( filename.c_str() );
     // for( int y=0; y<getHeight(); y++ ) for( int x=0; x<getWidth(); x++ )
@@ -115,11 +115,15 @@ void DebugImage::writeASCII_T( const string& filename, const cv::cuda::PtrStepSz
         for( int x=0; x<plane.cols; x++ )
         {
             int val = plane.ptr(y)[x];
-            of << val << " ";
+            if( width != 0 )
+                of << setw(width) << val << " ";
+            else
+                of << val << " ";
         }
         of << endl;
     }
 }
+
 __host__
 void DebugImage::writeASCII( const string& filename,
                              const cv::cuda::PtrStepSz<float>& plane )
@@ -130,13 +134,13 @@ __host__
 void DebugImage::writeASCII( const string& filename,
                              const cv::cuda::PtrStepSz<uint8_t>& plane )
 {
-    writeASCII_T( filename, plane );
+    writeASCII_T( filename, plane, 3 );
 }
 __host__
 void DebugImage::writeASCII( const string& filename,
                              const cv::cuda::PtrStepSz<int16_t>& plane )
 {
-    writeASCII_T( filename, plane );
+    writeASCII_T( filename, plane, 3 );
 }
 __host__
 void DebugImage::writeASCII( const string& filename,

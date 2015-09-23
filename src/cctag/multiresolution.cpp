@@ -22,9 +22,14 @@
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-
 #include <cmath>
 #include <sstream>
+
+#ifdef WITH_CUDA
+#ifdef WITH_CUDA_COMPARE_MODE
+#include "cuda/tag.h"
+#endif
+#endif
 
 namespace cctag
 {
@@ -202,6 +207,19 @@ void cctagMultiresDetection_inner(
     std::vector<EdgePoint*> seeds;
 
 #ifdef WITH_CUDA
+#ifdef WITH_CUDA_COMPARE_MODE
+    std::vector<EdgePoint>  cuda_debug_vPoints;
+    EdgePointsImage         cuda_debug_vEdgeMap;
+    WinnerMap               cuda_debug_winners;
+    std::vector<EdgePoint*> cuda_debug_seeds;
+
+    cuda_pipe->download( i, 
+                         cuda_debug_vPoints,
+                         cuda_debug_vEdgeMap,
+                         cuda_debug_seeds,
+                         cuda_debug_winners );
+
+#else // WITH_CUDA_COMPARE_MODE
     if( cuda_pipe ) {
         cuda_pipe->download( i, 
                              vPoints,
@@ -217,6 +235,7 @@ void cctagMultiresDetection_inner(
 #endif
     } else {
 #endif // WITH_CUDA
+#endif // WITH_CUDA_COMPARE_MODE
         edgesPointsFromCanny( vPoints,
                               vEdgeMap,
                               level->getEdges(),
@@ -225,6 +244,28 @@ void cctagMultiresDetection_inner(
 
         CCTagVisualDebug::instance().setPyramidLevel(i);
     
+#ifdef WITH_CUDA
+#ifdef WITH_CUDA_COMPARE_MODE
+    {
+        std::cout << "Number of edge points: "
+                  << vPoints.size() << " (CPU)"
+                  << cuda_debug_vPoints.size() << " (GPU)" << std::endl;
+        std::cout << "X-size: " << vEdgeMap.shape()[0]
+                  << " Y-size: " << vEdgeMap.shape()[1] << " (CPU) "
+                  << "X-size: " << cuda_debug_vEdgeMap.shape()[0]
+                  << " Y-size: " << cuda_debug_vEdgeMap.shape()[1] << " (GPU)"
+                  << std::endl;
+
+        popart::TagPipe::debug_cpu_origin( i, level->getSrc(), params );
+
+        popart::TagPipe::debug_cpu_edge_out( i, level->getEdges(), params );
+
+        popart::TagPipe::debug_cpu_dxdy_out( cuda_pipe, i, level->getDx(), level->getDy(), params );
+
+        popart::TagPipe::debug_cmp_edge_table( i, vEdgeMap, cuda_debug_vEdgeMap, params );
+    }
+#endif // WITH_CUDA_COMPARE_MODE
+#endif // WITH_CUDA
 #ifdef CCTAG_OPTIM
         boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
         boost::posix_time::time_duration d = t1 - t0;
@@ -246,7 +287,9 @@ void cctagMultiresDetection_inner(
             std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
         }
 #ifdef WITH_CUDA
+#ifndef WITH_CUDA_COMPARE_MODE
     }
+#endif // WITH_CUDA_COMPARE_MODE
 #endif // WITH_CUDA
 
     cctagDetectionFromEdges(

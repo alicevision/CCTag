@@ -181,8 +181,8 @@ void pop_cuda_memcpy_2D_sync( void*          dst,
              << (type==cudaMemcpyHostToDevice?"host-to-device":"device-to-host")
              << ": "
              << cudaGetErrorString(err) << endl
-             << "    src ptr=" << hex << (size_t)src << dec << endl
-             << "    dst ptr=" << hex << (size_t)dst << dec << endl;
+             << "    src ptr=" << hex << (size_t)src << dec << " src pitch=" << spitch << endl
+             << "    dst ptr=" << hex << (size_t)dst << dec << " dst pitch=" << dpitch << endl;
         exit( -__LINE__ );
     }
     POP_CUDA_FATAL_TEST( err, "Failed to copy host-to-device: " );

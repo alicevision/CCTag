@@ -4,7 +4,8 @@
 
 namespace cctag {
 
-Level::Level( std::size_t width, std::size_t height )
+Level::Level( std::size_t width, std::size_t height, int debug_info_level )
+    : _debug_info_level( debug_info_level )
 {
   // Allocation
   _src = cv::Mat(height, width, CV_8UC1);
@@ -20,12 +21,13 @@ Level::Level( std::size_t width, std::size_t height )
   
 }
 
-void Level::setLevel( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny)
+void Level::setLevel( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params )
 {
+  std::cerr << "Enter " << __FUNCTION__ << std::endl;
   cv::resize(src, _src, cv::Size(_src.cols,_src.rows));
   // ASSERT TODO : check that the data are allocated here
   // Compute derivative and canny edge extraction.
-  cvRecodedCanny(_src,_edges,_dx,_dy, thrLowCanny * 256, thrHighCanny * 256, 3 | CV_CANNY_L2_GRADIENT );
+  cvRecodedCanny(_src,_edges,_dx,_dy, thrLowCanny * 256, thrHighCanny * 256, 3 | CV_CANNY_L2_GRADIENT, _debug_info_level, params );
   // Perform the thinning.
 
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
@@ -33,6 +35,7 @@ void Level::setLevel( const cv::Mat & src, const double thrLowCanny, const doubl
 #endif
   
   thin(_edges,_temp);
+  std::cerr << "Leave " << __FUNCTION__ << std::endl;
 }
 
 const cv::Mat & Level::getSrc() const

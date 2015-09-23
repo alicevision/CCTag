@@ -6,7 +6,8 @@ namespace popart {
 
 using namespace std;
 
-bool Frame::applyExport( cctag::EdgePointsImage&         edgesMap,
+bool Frame::applyExport( std::vector<cctag::EdgePoint>&  array,
+                         cctag::EdgePointsImage&         edgesMap,
                          std::vector<cctag::EdgePoint*>& seeds,
                          cctag::WinnerMap&               winners )
 {
@@ -14,6 +15,12 @@ bool Frame::applyExport( cctag::EdgePointsImage&         edgesMap,
 
     int vote_sz = _vote._chained_edgecoords.host.size;
     int all_sz  = _vote._all_edgecoords.host.size;
+
+    assert( array.size() == 0 );
+    assert( edgesMap.size() == 0 );
+    assert( seeds.size() == 0 );
+    assert( winners.size() == 0 );
+    assert( vote_sz <= all_sz );
 
     if( vote_sz <= 0 ) {
         // no voting happened, no need for edge linking,
@@ -25,7 +32,9 @@ bool Frame::applyExport( cctag::EdgePointsImage&         edgesMap,
     edgesMap.resize( boost::extents[ _d_plane.cols ][ _d_plane.rows ] );
     std::fill( edgesMap.origin(), edgesMap.origin() + edgesMap.size(), (cctag::EdgePoint*)NULL );
 
-    cctag::EdgePoint* array = new cctag::EdgePoint[ all_sz ];
+    array.resize( all_sz );
+    // cctag::EdgePoint* array = new cctag::EdgePoint[ all_sz ];
+
     for( int i=0; i<all_sz; i++ ) {
         const int2&   pt = _vote._all_edgecoords.host.ptr[i];
         const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
@@ -37,8 +46,18 @@ bool Frame::applyExport( cctag::EdgePointsImage&         edgesMap,
     }
     for( int i=1; i<vote_sz; i++ ) {
         const TriplePoint& pt = _vote._chained_edgecoords.host.ptr[i];
+        if( pt.coord.x == 0 && pt.coord.y == 0 ) {
+            cerr << __FILE__ << ":" << __LINE__ << ": "
+                 << "Error: vote winners contain (0,0), which is forbidden (skip)." << endl;
+            continue;
+        }
         cctag::EdgePoint* ep = edgesMap[pt.coord.x][pt.coord.y];
-        assert( ep != 0 );
+        if( ep == 0 ) {
+            cerr << __FILE__ << ":" << __LINE__ << ": "
+                 << "Error: found a vote winner (" << pt.coord.x << "," << pt.coord.y << ")"
+                 << " that is not an edge point." << endl;
+            return false;
+        }
         assert( ep->_grad.getX() == (double)pt.d.x );
         assert( ep->_grad.getY() == (double)pt.d.y );
 

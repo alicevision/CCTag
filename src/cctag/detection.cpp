@@ -726,10 +726,15 @@ void cctagDetection(CCTag::List& markers,
 
     pipe1->load( pix );
     pipe1->tagframe( params ); // pix, w, h, params );
-    // pipe1->debug( pix, params );
-  } else {
+    pipe1->debug( pix, params );
+  }
+#ifndef WITH_CUDA_COMPARE_MODE
+  // in compare mode, we really want to execute both branches
+  else
+#endif // WITH_CUDA_COMPARE_MODE
+  {
 #endif // WITH_CUDA
-    imagePyramid.build(imgGraySrc, params._cannyThrLow, params._cannyThrHigh);
+    imagePyramid.build(imgGraySrc, params._cannyThrLow, params._cannyThrHigh, &params );
 #ifdef WITH_CUDA
   }
 #endif // WITH_CUDA
