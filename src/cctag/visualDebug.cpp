@@ -17,18 +17,29 @@ CCTagVisualDebug::~CCTagVisualDebug()
 {
 }
 
-void CCTagVisualDebug::initializeFolders(const boost::filesystem::path & rootPath, std::size_t nCrowns)
+void CCTagVisualDebug::initializeFolders(const boost::filesystem::path & rootPath, const std::string & outputFolder, std::size_t nCrowns)
 {
 #ifdef CCTAG_SERIALIZE
   // Create inputImagePath/result if it does not exist
-  std::stringstream resultFolderName, localizationFolderName, identificationFolderName;
-  resultFolderName << rootPath.string() << "/cctag" << nCrowns << "CC";
-  localizationFolderName << resultFolderName.str() << "/localization";
-  identificationFolderName << resultFolderName.str() << "/identification";
-
+  std::stringstream resultFolderName, localizationFolderName, identificationFolderName, absoluteOutputFolderName;
+  
+  resultFolderName << rootPath.string();
+  
+  if( outputFolder != "" ) {
+    resultFolderName << "/" << outputFolder;
+    if (!bfs::exists(resultFolderName.str())) {
+      bfs::create_directory(resultFolderName.str());
+    }
+  }
+  
+  resultFolderName << "/cctag" << nCrowns << "CC";
+  
   if (!bfs::exists(resultFolderName.str())) {
       bfs::create_directory(resultFolderName.str());
   }
+  
+  localizationFolderName << resultFolderName.str() << "/localization";
+  identificationFolderName << resultFolderName.str() << "/identification";
 
   if (!bfs::exists(localizationFolderName.str())) {
       bfs::create_directory(localizationFolderName.str());

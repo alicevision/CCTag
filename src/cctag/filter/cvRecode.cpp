@@ -18,6 +18,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <iostream>
+#include <iomanip>
 
 void cvRecodedCanny(
   const cv::Mat & imgGraySrc,
@@ -148,109 +150,192 @@ void cvRecodedCanny(
       //    dy = imfilter(srcSmooth, gaussian1D, 'conv','replicate');                   % dy = srcSmooth X gaussian1D
       //    dy = imfilter(dy, transpose(dgaussian1D), 'conv','replicate');              % dy = dy X transpose(dgaussian1D)
        
-       // Summary of the two options
-       // - First option using 1D kernels:
-       //     1D convolution, kernel size 9 (6 times)
+      // Summary of the two options
+      // - First option using 1D kernels:
+      //     1D convolution, kernel size 9 (6 times)
 
-       // - Second option using 2D kernels:
-       //     2D convolution, kernel size 9x9 (2 times)
-    }
-       
+      // - Second option using 2D kernels:
+      //     2D convolution, kernel size 9x9 (2 times)
+      
+      CvMat* kernelGau1D = cvCreateMat( 9, 1, CV_32FC1 );
+      CvMat* kernelDGau1D = cvCreateMat( 9, 1, CV_32FC1 );
+
+      CV_MAT_ELEM( *kernelGau1D, float, 0, 0 ) = 0.000053390535453  ;
+      CV_MAT_ELEM( *kernelGau1D, float, 1, 0 ) = 0.001768051711852  ;
+      CV_MAT_ELEM( *kernelGau1D, float, 2, 0 ) = 0.021539279301849  ;
+      CV_MAT_ELEM( *kernelGau1D, float, 3, 0 ) = 0.096532352630054  ;
+      CV_MAT_ELEM( *kernelGau1D, float, 4, 0 ) = 0.159154943091895  ;
+      CV_MAT_ELEM( *kernelGau1D, float, 5, 0 ) = 0.096532352630054  ;
+      CV_MAT_ELEM( *kernelGau1D, float, 6, 0 ) = 0.021539279301849  ;
+      CV_MAT_ELEM( *kernelGau1D, float, 7, 0 ) = 0.001768051711852  ;
+      CV_MAT_ELEM( *kernelGau1D, float, 8, 0 ) = 0.000053390535453  ;
+      
+      CV_MAT_ELEM( *kernelDGau1D, float, 0, 0 ) = -0.002683701023220  ;
+      CV_MAT_ELEM( *kernelDGau1D, float, 1, 0 ) = -0.066653979229454  ;
+      CV_MAT_ELEM( *kernelDGau1D, float, 2, 0 ) = -0.541341132946452  ;
+      CV_MAT_ELEM( *kernelDGau1D, float, 3, 0 ) = -1.213061319425269  ;
+      CV_MAT_ELEM( *kernelDGau1D, float, 4, 0 ) = 0.0  ;
+      CV_MAT_ELEM( *kernelDGau1D, float, 5, 0 ) = 1.213061319425269  ;
+      CV_MAT_ELEM( *kernelDGau1D, float, 6, 0 ) = 0.541341132946452  ;
+      CV_MAT_ELEM( *kernelDGau1D, float, 7, 0 ) = 0.066653979229454  ;
+      CV_MAT_ELEM( *kernelDGau1D, float, 8, 0 ) = 0.002683701023220  ;
+
+      // Transpose guassian filter 
+      CvMat* kernelGau1DT = cvCreateMat( 1, 9, CV_32FC1 );
+      cvTranspose( kernelGau1D, kernelGau1DT );
+      
+      // Transpose derivate of gaussian filter
+      CvMat* kernelDGau1DT = cvCreateMat( 1, 9, CV_32FC1 );
+      cvTranspose( kernelDGau1D, kernelDGau1DT );
+      
+      CvMat* imgSmooth = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
+      CvMat* imgTmp    = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
+      
+      CvMat* dx_debug = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
+      CvMat* dy_debug = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
+      
+      CCTAG_COUT("before cvFilter2D 1");
+      cvFilter2D( src, imgTmp, kernelGau1D );
+      CCTAG_COUT("before cvFilter2D 2");
+      cvFilter2D( imgTmp, imgSmooth, kernelGau1DT );
+      
+      CCTAG_COUT("before cvFilter2D 3");
+      cvFilter2D( imgSmooth, imgTmp, kernelGau1D );
+      
+      CCTAG_COUT("before cvFilter2D 4");
+      cvFilter2D( imgTmp, dx_debug, kernelDGau1DT);
+      
+      CCTAG_COUT("before cvFilter2D 5");
+      cvFilter2D( imgSmooth, imgTmp, kernelGau1DT);
+      CCTAG_COUT("before cvFilter2D 6");
+      cvFilter2D( imgTmp, dy_debug, kernelDGau1D );  
+      CCTAG_COUT("end");
+      
+      
+      CCTAG_COUT("1D version : DX_DEBUG values");
+      //CCTAG_COUT(dx_debug->rows);
+      for (int i=0; i< dx_debug->rows ; ++i)
+      {
+        for (int j=0; j< dx_debug->cols ; ++j)
+        {
+          std::cout << std::fixed << std::setprecision(1) << dx_debug->data.fl[ i*dx_debug->step + j] << " ";
+        }
+        std::cout << std::endl;
+      }
+      CCTAG_COUT("1D version : END DX_DEBUG values");
+      //cvTranspose( kerneldX, kerneldY );
+      //cvFilter2D( src, dy, kernelGau1D );
+      
+    }else
+    {  
     // The second option is to apply the (9x9) 2D following kernel
-       
-    CvMat* kerneldX = cvCreateMat( 9, 9, CV_32FC1 );
-    CvMat* kerneldY = cvCreateMat( 9, 9, CV_32FC1 );
 
-    CV_MAT_ELEM( *kerneldX, float, 0, 0 ) = 0.000000143284235  ;
-    CV_MAT_ELEM( *kerneldX, float, 0, 1 ) = 0.000003558691641  ;
-    CV_MAT_ELEM( *kerneldX, float, 0, 2 ) = 0.000028902492951  ;
-    CV_MAT_ELEM( *kerneldX, float, 0, 3 ) = 0.000064765993382  ;
-    CV_MAT_ELEM( *kerneldX, float, 0, 4 ) = 0  ;
-    CV_MAT_ELEM( *kerneldX, float, 0, 5 ) = -0.000064765993382  ;
-    CV_MAT_ELEM( *kerneldX, float, 0, 6 ) = -0.000028902492951  ;
-    CV_MAT_ELEM( *kerneldX, float, 0, 7 ) = -0.000003558691641  ;
-    CV_MAT_ELEM( *kerneldX, float, 0, 8 ) = -0.000000143284235  ;
-    CV_MAT_ELEM( *kerneldX, float, 1, 0 ) = 0.000004744922188  ;
-    CV_MAT_ELEM( *kerneldX, float, 1, 1 ) = 0.000117847682078  ;
-    CV_MAT_ELEM( *kerneldX, float, 1, 2 ) = 0.000957119116802  ;
-    CV_MAT_ELEM( *kerneldX, float, 1, 3 ) = 0.002144755142391  ;
-    CV_MAT_ELEM( *kerneldX, float, 1, 4 ) = 0  ;
-    CV_MAT_ELEM( *kerneldX, float, 1, 5 ) = -0.002144755142391  ;
-    CV_MAT_ELEM( *kerneldX, float, 1, 6 ) = -0.000957119116802  ;
-    CV_MAT_ELEM( *kerneldX, float, 1, 7 ) = -0.000117847682078  ;
-    CV_MAT_ELEM( *kerneldX, float, 1, 8 ) = -0.000004744922188  ;
-    CV_MAT_ELEM( *kerneldX, float, 2, 0 ) = 0.000057804985902  ;
-    CV_MAT_ELEM( *kerneldX, float, 2, 1 ) = 0.001435678675203  ;
-    CV_MAT_ELEM( *kerneldX, float, 2, 2 ) = 0.011660097860113  ;
-    CV_MAT_ELEM( *kerneldX, float, 2, 3 ) = 0.026128466569370  ;
-    CV_MAT_ELEM( *kerneldX, float, 2, 4 ) = 0  ;
-    CV_MAT_ELEM( *kerneldX, float, 2, 5 ) = -0.026128466569370  ;
-    CV_MAT_ELEM( *kerneldX, float, 2, 6 ) = -0.011660097860113  ;
-    CV_MAT_ELEM( *kerneldX, float, 2, 7 ) = -0.001435678675203  ;
-    CV_MAT_ELEM( *kerneldX, float, 2, 8 ) = -0.000057804985902  ;
-    CV_MAT_ELEM( *kerneldX, float, 3, 0 ) = 0.000259063973527  ;
-    CV_MAT_ELEM( *kerneldX, float, 3, 1 ) = 0.006434265427174  ;
-    CV_MAT_ELEM( *kerneldX, float, 3, 2 ) = 0.052256933138740  ;
-    CV_MAT_ELEM( *kerneldX, float, 3, 3 ) = 0.117099663048638  ;
-    CV_MAT_ELEM( *kerneldX, float, 3, 4 ) = 0  ;
-    CV_MAT_ELEM( *kerneldX, float, 3, 5 ) = -0.117099663048638  ;
-    CV_MAT_ELEM( *kerneldX, float, 3, 6 ) = -0.052256933138740  ;
-    CV_MAT_ELEM( *kerneldX, float, 3, 7 ) = -0.006434265427174  ;
-    CV_MAT_ELEM( *kerneldX, float, 3, 8 ) = -0.000259063973527  ;
-    CV_MAT_ELEM( *kerneldX, float, 4, 0 ) = 0.000427124283626  ;
-    CV_MAT_ELEM( *kerneldX, float, 4, 1 ) = 0.010608310271112  ;
-    CV_MAT_ELEM( *kerneldX, float, 4, 2 ) = 0.086157117207395  ;
-    CV_MAT_ELEM( *kerneldX, float, 4, 3 ) = 0.193064705260108  ;
-    CV_MAT_ELEM( *kerneldX, float, 4, 4 ) = 0  ;
-    CV_MAT_ELEM( *kerneldX, float, 4, 5 ) = -0.193064705260108  ;
-    CV_MAT_ELEM( *kerneldX, float, 4, 6 ) = -0.086157117207395  ;
-    CV_MAT_ELEM( *kerneldX, float, 4, 7 ) = -0.010608310271112  ;
-    CV_MAT_ELEM( *kerneldX, float, 4, 8 ) = -0.000427124283626  ;
-    CV_MAT_ELEM( *kerneldX, float, 5, 0 ) = 0.000259063973527  ;
-    CV_MAT_ELEM( *kerneldX, float, 5, 1 ) = 0.006434265427174  ;
-    CV_MAT_ELEM( *kerneldX, float, 5, 2 ) = 0.052256933138740  ;
-    CV_MAT_ELEM( *kerneldX, float, 5, 3 ) = 0.117099663048638  ;
-    CV_MAT_ELEM( *kerneldX, float, 5, 4 ) = 0  ;
-    CV_MAT_ELEM( *kerneldX, float, 5, 5 ) = -0.117099663048638  ;
-    CV_MAT_ELEM( *kerneldX, float, 5, 6 ) = -0.052256933138740  ;
-    CV_MAT_ELEM( *kerneldX, float, 5, 7 ) = -0.006434265427174  ;
-    CV_MAT_ELEM( *kerneldX, float, 5, 8 ) = -0.000259063973527  ;
-    CV_MAT_ELEM( *kerneldX, float, 6, 0 ) = 0.000057804985902  ;
-    CV_MAT_ELEM( *kerneldX, float, 6, 1 ) = 0.001435678675203  ;
-    CV_MAT_ELEM( *kerneldX, float, 6, 2 ) = 0.011660097860113  ;
-    CV_MAT_ELEM( *kerneldX, float, 6, 3 ) = 0.026128466569370  ;
-    CV_MAT_ELEM( *kerneldX, float, 6, 4 ) = 0  ;
-    CV_MAT_ELEM( *kerneldX, float, 6, 5 ) = -0.026128466569370  ;
-    CV_MAT_ELEM( *kerneldX, float, 6, 6 ) = -0.011660097860113  ;
-    CV_MAT_ELEM( *kerneldX, float, 6, 7 ) = -0.001435678675203  ;
-    CV_MAT_ELEM( *kerneldX, float, 6, 8 ) = -0.000057804985902  ;
-    CV_MAT_ELEM( *kerneldX, float, 7, 0 ) = 0.000004744922188  ;
-    CV_MAT_ELEM( *kerneldX, float, 7, 1 ) = 0.000117847682078  ;
-    CV_MAT_ELEM( *kerneldX, float, 7, 2 ) = 0.000957119116802  ;
-    CV_MAT_ELEM( *kerneldX, float, 7, 3 ) = 0.002144755142391  ;
-    CV_MAT_ELEM( *kerneldX, float, 7, 4 ) = 0  ;
-    CV_MAT_ELEM( *kerneldX, float, 7, 5 ) = -0.002144755142391  ;
-    CV_MAT_ELEM( *kerneldX, float, 7, 6 ) = -0.000957119116802  ;
-    CV_MAT_ELEM( *kerneldX, float, 7, 7 ) = -0.000117847682078  ;
-    CV_MAT_ELEM( *kerneldX, float, 7, 8 ) = -0.000004744922188  ;
-    CV_MAT_ELEM( *kerneldX, float, 8, 0 ) = 0.000000143284235  ;
-    CV_MAT_ELEM( *kerneldX, float, 8, 1 ) = 0.000003558691641  ;
-    CV_MAT_ELEM( *kerneldX, float, 8, 2 ) = 0.000028902492951  ;
-    CV_MAT_ELEM( *kerneldX, float, 8, 3 ) = 0.000064765993382  ;
-    CV_MAT_ELEM( *kerneldX, float, 8, 4 ) = 0  ;
-    CV_MAT_ELEM( *kerneldX, float, 8, 5 ) = -0.000064765993382  ;
-    CV_MAT_ELEM( *kerneldX, float, 8, 6 ) = -0.000028902492951  ;
-    CV_MAT_ELEM( *kerneldX, float, 8, 7 ) = -0.000003558691641  ;
-    CV_MAT_ELEM( *kerneldX, float, 8, 8 ) = -0.000000143284235  ;
+      CvMat* kerneldX = cvCreateMat( 9, 9, CV_32FC1 );
+      CvMat* kerneldY = cvCreateMat( 9, 9, CV_32FC1 );
 
-    cvConvertScale( kerneldX, kerneldX, -1.f );
-    cvTranspose( kerneldX, kerneldY );
+      CV_MAT_ELEM( *kerneldX, float, 0, 0 ) = 0.000000143284235  ;
+      CV_MAT_ELEM( *kerneldX, float, 0, 1 ) = 0.000003558691641  ;
+      CV_MAT_ELEM( *kerneldX, float, 0, 2 ) = 0.000028902492951  ;
+      CV_MAT_ELEM( *kerneldX, float, 0, 3 ) = 0.000064765993382  ;
+      CV_MAT_ELEM( *kerneldX, float, 0, 4 ) = 0  ;
+      CV_MAT_ELEM( *kerneldX, float, 0, 5 ) = -0.000064765993382  ;
+      CV_MAT_ELEM( *kerneldX, float, 0, 6 ) = -0.000028902492951  ;
+      CV_MAT_ELEM( *kerneldX, float, 0, 7 ) = -0.000003558691641  ;
+      CV_MAT_ELEM( *kerneldX, float, 0, 8 ) = -0.000000143284235  ;
+      CV_MAT_ELEM( *kerneldX, float, 1, 0 ) = 0.000004744922188  ;
+      CV_MAT_ELEM( *kerneldX, float, 1, 1 ) = 0.000117847682078  ;
+      CV_MAT_ELEM( *kerneldX, float, 1, 2 ) = 0.000957119116802  ;
+      CV_MAT_ELEM( *kerneldX, float, 1, 3 ) = 0.002144755142391  ;
+      CV_MAT_ELEM( *kerneldX, float, 1, 4 ) = 0  ;
+      CV_MAT_ELEM( *kerneldX, float, 1, 5 ) = -0.002144755142391  ;
+      CV_MAT_ELEM( *kerneldX, float, 1, 6 ) = -0.000957119116802  ;
+      CV_MAT_ELEM( *kerneldX, float, 1, 7 ) = -0.000117847682078  ;
+      CV_MAT_ELEM( *kerneldX, float, 1, 8 ) = -0.000004744922188  ;
+      CV_MAT_ELEM( *kerneldX, float, 2, 0 ) = 0.000057804985902  ;
+      CV_MAT_ELEM( *kerneldX, float, 2, 1 ) = 0.001435678675203  ;
+      CV_MAT_ELEM( *kerneldX, float, 2, 2 ) = 0.011660097860113  ;
+      CV_MAT_ELEM( *kerneldX, float, 2, 3 ) = 0.026128466569370  ;
+      CV_MAT_ELEM( *kerneldX, float, 2, 4 ) = 0  ;
+      CV_MAT_ELEM( *kerneldX, float, 2, 5 ) = -0.026128466569370  ;
+      CV_MAT_ELEM( *kerneldX, float, 2, 6 ) = -0.011660097860113  ;
+      CV_MAT_ELEM( *kerneldX, float, 2, 7 ) = -0.001435678675203  ;
+      CV_MAT_ELEM( *kerneldX, float, 2, 8 ) = -0.000057804985902  ;
+      CV_MAT_ELEM( *kerneldX, float, 3, 0 ) = 0.000259063973527  ;
+      CV_MAT_ELEM( *kerneldX, float, 3, 1 ) = 0.006434265427174  ;
+      CV_MAT_ELEM( *kerneldX, float, 3, 2 ) = 0.052256933138740  ;
+      CV_MAT_ELEM( *kerneldX, float, 3, 3 ) = 0.117099663048638  ;
+      CV_MAT_ELEM( *kerneldX, float, 3, 4 ) = 0  ;
+      CV_MAT_ELEM( *kerneldX, float, 3, 5 ) = -0.117099663048638  ;
+      CV_MAT_ELEM( *kerneldX, float, 3, 6 ) = -0.052256933138740  ;
+      CV_MAT_ELEM( *kerneldX, float, 3, 7 ) = -0.006434265427174  ;
+      CV_MAT_ELEM( *kerneldX, float, 3, 8 ) = -0.000259063973527  ;
+      CV_MAT_ELEM( *kerneldX, float, 4, 0 ) = 0.000427124283626  ;
+      CV_MAT_ELEM( *kerneldX, float, 4, 1 ) = 0.010608310271112  ;
+      CV_MAT_ELEM( *kerneldX, float, 4, 2 ) = 0.086157117207395  ;
+      CV_MAT_ELEM( *kerneldX, float, 4, 3 ) = 0.193064705260108  ;
+      CV_MAT_ELEM( *kerneldX, float, 4, 4 ) = 0  ;
+      CV_MAT_ELEM( *kerneldX, float, 4, 5 ) = -0.193064705260108  ;
+      CV_MAT_ELEM( *kerneldX, float, 4, 6 ) = -0.086157117207395  ;
+      CV_MAT_ELEM( *kerneldX, float, 4, 7 ) = -0.010608310271112  ;
+      CV_MAT_ELEM( *kerneldX, float, 4, 8 ) = -0.000427124283626  ;
+      CV_MAT_ELEM( *kerneldX, float, 5, 0 ) = 0.000259063973527  ;
+      CV_MAT_ELEM( *kerneldX, float, 5, 1 ) = 0.006434265427174  ;
+      CV_MAT_ELEM( *kerneldX, float, 5, 2 ) = 0.052256933138740  ;
+      CV_MAT_ELEM( *kerneldX, float, 5, 3 ) = 0.117099663048638  ;
+      CV_MAT_ELEM( *kerneldX, float, 5, 4 ) = 0  ;
+      CV_MAT_ELEM( *kerneldX, float, 5, 5 ) = -0.117099663048638  ;
+      CV_MAT_ELEM( *kerneldX, float, 5, 6 ) = -0.052256933138740  ;
+      CV_MAT_ELEM( *kerneldX, float, 5, 7 ) = -0.006434265427174  ;
+      CV_MAT_ELEM( *kerneldX, float, 5, 8 ) = -0.000259063973527  ;
+      CV_MAT_ELEM( *kerneldX, float, 6, 0 ) = 0.000057804985902  ;
+      CV_MAT_ELEM( *kerneldX, float, 6, 1 ) = 0.001435678675203  ;
+      CV_MAT_ELEM( *kerneldX, float, 6, 2 ) = 0.011660097860113  ;
+      CV_MAT_ELEM( *kerneldX, float, 6, 3 ) = 0.026128466569370  ;
+      CV_MAT_ELEM( *kerneldX, float, 6, 4 ) = 0  ;
+      CV_MAT_ELEM( *kerneldX, float, 6, 5 ) = -0.026128466569370  ;
+      CV_MAT_ELEM( *kerneldX, float, 6, 6 ) = -0.011660097860113  ;
+      CV_MAT_ELEM( *kerneldX, float, 6, 7 ) = -0.001435678675203  ;
+      CV_MAT_ELEM( *kerneldX, float, 6, 8 ) = -0.000057804985902  ;
+      CV_MAT_ELEM( *kerneldX, float, 7, 0 ) = 0.000004744922188  ;
+      CV_MAT_ELEM( *kerneldX, float, 7, 1 ) = 0.000117847682078  ;
+      CV_MAT_ELEM( *kerneldX, float, 7, 2 ) = 0.000957119116802  ;
+      CV_MAT_ELEM( *kerneldX, float, 7, 3 ) = 0.002144755142391  ;
+      CV_MAT_ELEM( *kerneldX, float, 7, 4 ) = 0  ;
+      CV_MAT_ELEM( *kerneldX, float, 7, 5 ) = -0.002144755142391  ;
+      CV_MAT_ELEM( *kerneldX, float, 7, 6 ) = -0.000957119116802  ;
+      CV_MAT_ELEM( *kerneldX, float, 7, 7 ) = -0.000117847682078  ;
+      CV_MAT_ELEM( *kerneldX, float, 7, 8 ) = -0.000004744922188  ;
+      CV_MAT_ELEM( *kerneldX, float, 8, 0 ) = 0.000000143284235  ;
+      CV_MAT_ELEM( *kerneldX, float, 8, 1 ) = 0.000003558691641  ;
+      CV_MAT_ELEM( *kerneldX, float, 8, 2 ) = 0.000028902492951  ;
+      CV_MAT_ELEM( *kerneldX, float, 8, 3 ) = 0.000064765993382  ;
+      CV_MAT_ELEM( *kerneldX, float, 8, 4 ) = 0  ;
+      CV_MAT_ELEM( *kerneldX, float, 8, 5 ) = -0.000064765993382  ;
+      CV_MAT_ELEM( *kerneldX, float, 8, 6 ) = -0.000028902492951  ;
+      CV_MAT_ELEM( *kerneldX, float, 8, 7 ) = -0.000003558691641  ;
+      CV_MAT_ELEM( *kerneldX, float, 8, 8 ) = -0.000000143284235  ;
 
-    cvFilter2D( src, dx, kerneldX );
-    cvFilter2D( src, dy, kerneldY );
-    
-    cvReleaseMat( &kerneldX );
-    cvReleaseMat( &kerneldY );
+      cvConvertScale( kerneldX, kerneldX, -1.f );
+      cvTranspose( kerneldX, kerneldY );
+
+      cvFilter2D( src, dx, kerneldX );
+      cvFilter2D( src, dy, kerneldY );
+
+//      CCTAG_COUT("DX_DEBUG values");
+//      CCTAG_COUT(dx_debug->rows);
+//      for (int i=0; i< dx->rows ; ++i)
+//      {
+//        for (int j=0; j< dx->cols ; ++j)
+//        {
+//          std::cout << dx->data.s[ i*dx->step + j] << " ";
+//        }
+//        std::cout << std::endl;
+//      }
+//      CCTAG_COUT("END DX_DEBUG values");
+      
+      cvReleaseMat( &kerneldX );
+      cvReleaseMat( &kerneldY );
+    }
   }
 
   if( flags & CV_CANNY_L2_GRADIENT )

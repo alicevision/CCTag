@@ -9,6 +9,7 @@ public:
     std::string _cctagBankFilename;
     std::string _paramsFilename;
     std::string _nCrowns;
+    std::string _outputFolderName;
 #ifdef WITH_CUDA
     bool        _switchSync;
     std::string _debugDir;

@@ -18,5 +18,8 @@ esac
 
 (mkdir -p build &&
 cd build && 
-cmake .. "$@")
+branch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p') &&
+mkdir $branch &&
+cd $branch
+cmake ../.. "$@")
 
