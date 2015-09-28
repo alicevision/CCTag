@@ -249,7 +249,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
                               cudaMemcpyDeviceToHost, _stream );
 
     POP_CHK_CALL_IFSYNC;
-#if 1
+#ifndef NDEBUG
     if( true )
     {
         POP_CUDA_SYNC( _stream );
@@ -274,7 +274,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
             dy_i_out << endl;
         }
     }
-#endif
+#endif // not NDEBUG
 // #endif // EDGE_LINKING_HOST_SIDE
 
     // cerr << "Leave " << __FUNCTION__ << endl;

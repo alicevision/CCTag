@@ -69,10 +69,25 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 {
     // cerr << "Enter " << __FUNCTION__ << endl;
 
+    int num_layers = _frame.size();
+
+    KeepTime* time_gauss[num_layers];
+    KeepTime* time_mag  [num_layers];
+    KeepTime* time_hyst [num_layers];
+    KeepTime* time_thin [num_layers];
+    KeepTime* time_desc [num_layers];
+    KeepTime* time_vote [num_layers];
+    for( int i=0; i<num_layers; i++ ) {
+        time_gauss[i] = new KeepTime( _frame[i]->_stream );
+        time_mag  [i] = new KeepTime( _frame[i]->_stream );
+        time_hyst [i] = new KeepTime( _frame[i]->_stream );
+        time_thin [i] = new KeepTime( _frame[i]->_stream );
+        time_desc [i] = new KeepTime( _frame[i]->_stream );
+        time_vote [i] = new KeepTime( _frame[i]->_stream );
+    }
+
     KeepTime t( _frame[0]->_stream );
     t.start();
-
-    int num_layers = _frame.size();
 
     for( int i=0; i<num_layers; i++ ) {
         _frame[i]->initRequiredMem( ); // async
@@ -88,18 +103,36 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 
     for( int i=0; i<num_layers; i++ ) {
         bool success;
+        time_gauss[i]->start();
         _frame[i]->applyGauss( params ); // async
+        time_gauss[i]->stop();
         POP_CHK_CALL_IFSYNC;
+
+        time_mag[i]->start();
         _frame[i]->applyMag(   params );  // async
+        time_mag[i]->stop();
         POP_CHK_CALL_IFSYNC;
+
+        time_hyst[i]->start();
         _frame[i]->applyHyst(  params );  // async
+        time_hyst[i]->stop();
         POP_CHK_CALL_IFSYNC;
+
+        time_thin[i]->start();
         _frame[i]->applyThinning(  params );  // async
+        time_thin[i]->stop();
         POP_CHK_CALL_IFSYNC;
+
+        time_desc[i]->start();
         success = _frame[i]->applyDesc(  params );  // async
+        time_desc[i]->stop();
         POP_CHK_CALL_IFSYNC;
+
         if( not success ) continue;
+
+        time_vote[i]->start();
         _frame[i]->applyVote(  params );  // async
+        time_vote[i]->stop();
         POP_CHK_CALL_IFSYNC;
         // _frame[i]->applyLink(  params );  // async
     }
@@ -113,6 +146,15 @@ void TagPipe::tagframe( const cctag::Parameters& params )
     }
     t.stop();
     t.report( "Time for all frames " );
+
+    for( int i=0; i<num_layers; i++ ) {
+        time_gauss[i]->report( "time for Gauss " );
+        time_mag  [i]->report( "time for Mag   " );
+        time_hyst [i]->report( "time for Hyst  " );
+        time_thin [i]->report( "time for Thin  " );
+        time_desc [i]->report( "time for Desc  " );
+        time_vote [i]->report( "time for Vote  " );
+    }
 
     // cerr << "Leave " << __FUNCTION__ << endl;
 }
