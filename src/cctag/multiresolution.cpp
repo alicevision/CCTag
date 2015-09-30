@@ -202,6 +202,8 @@ void cctagMultiresDetection_inner(
     WinnerMap winners;
     std::vector<EdgePoint*> seeds;
 
+    boost::posix_time::time_duration d;
+
 #if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
     std::vector<EdgePoint>  cuda_debug_vPoints;
     EdgePointsImage         cuda_debug_vEdgeMap;
@@ -213,7 +215,7 @@ void cctagMultiresDetection_inner(
     // there is no point in measuring time in compare mode
     if( cuda_pipe ) {
         #ifdef CCTAG_OPTIM
-        boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+        boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
         #endif
         cuda_pipe->download( i, 
                              cuda_debug_vPoints,
@@ -221,10 +223,9 @@ void cctagMultiresDetection_inner(
                              cuda_debug_seeds,
                              cuda_debug_winners );
         #ifdef CCTAG_OPTIM
-        boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-        boost::posix_time::time_duration d = t1 - t0;
-        const double spendTime = d.total_milliseconds();
-        CCTAG_COUT_OPTIM("Time in GPU download: " << spendTime << " ms");
+        boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
+        d = t10 - t00;
+        CCTAG_COUT_OPTIM("Time in GPU download: " << d.total_milliseconds() << " ms");
         #endif
     }
 #endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
@@ -233,7 +234,7 @@ void cctagMultiresDetection_inner(
     // there is no point in measuring time in compare mode
     if( cuda_pipe ) {
         #ifdef CCTAG_OPTIM
-        boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+        boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
         #endif
         cuda_pipe->download( i, 
                              vPoints,
@@ -241,10 +242,9 @@ void cctagMultiresDetection_inner(
                              seeds,
                              winners );
         #ifdef CCTAG_OPTIM
-        boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-        boost::posix_time::time_duration d = t1 - t0;
-        const double spendTime = d.total_milliseconds();
-        CCTAG_COUT_OPTIM("Time in GPU download: " << spendTime << " ms");
+        boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
+        boost::posix_time::time_duration d = t11 - t01;
+        CCTAG_COUT_OPTIM("Time in GPU download: " << d.total_milliseconds() << " ms");
         #endif
     }
 #endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
@@ -253,7 +253,7 @@ void cctagMultiresDetection_inner(
     if( not cuda_pipe ) {
 #endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
     #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+    boost::posix_time::ptime t02(boost::posix_time::microsec_clock::local_time());
     #endif
     edgesPointsFromCanny( vPoints,
                           vEdgeMap,
@@ -261,10 +261,9 @@ void cctagMultiresDetection_inner(
                           level->getDx(),
                           level->getDy());
     #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-    boost::posix_time::time_duration d = t1 - t0;
-    const double spendTime = d.total_milliseconds();
-    CCTAG_COUT_OPTIM("Time in GPU Edge extraction: " << spendTime << " ms");
+    boost::posix_time::ptime t12(boost::posix_time::microsec_clock::local_time());
+    d = t12 - t02;
+    CCTAG_COUT_OPTIM("Time in GPU Edge extraction: " << d.total_milliseconds() << " ms");
     #endif
 #if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
     } // not cuda_pipe
@@ -294,7 +293,7 @@ void cctagMultiresDetection_inner(
     if( not cuda_pipe ) {
 #endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
     #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+    boost::posix_time::ptime t03(boost::posix_time::microsec_clock::local_time());
     #endif
     // Voting procedure applied on every edge points.
     vote( vPoints,
@@ -310,10 +309,9 @@ void cctagMultiresDetection_inner(
         std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
     }
     #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-    boost::posix_time::time_duration d = t1 - t0;
-    const double spendTime = d.total_milliseconds();
-    CCTAG_COUT_OPTIM("Time in CPU vote and sort: " << spendTime << " ms");
+    boost::posix_time::ptime t13(boost::posix_time::microsec_clock::local_time());
+    d = t13 - t03;
+    CCTAG_COUT_OPTIM("Time in CPU vote and sort: " << d.total_milliseconds() << " ms");
     #endif
 #if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
     } // not cuda_pipe

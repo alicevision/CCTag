@@ -164,36 +164,25 @@ void Frame::applyGauss( const cctag::Parameters & params )
     POP_CHK_CALL_IFSYNC;
 #endif // DEBUG_WRITE_ORIGINAL_AS_PGM
 
-#ifdef SEPARATE_FIRST_GAUSSIAN_SWEEP
-    /*
-     * This is the original approach, following the explanation in cvRecode.
-     * However, the 1D tables that we use have already been convolved with
-     * an initial Gauss step, and give the wrong results. So, the first sweep
-     * must be removed.
-     * If the goal was to smoothe the picture, that would be a mistake,
-     * because multiple sweeps extend the range of the filter and bring the
-     * result closer to a globally applied Gaussian filter. However, for CCTag,
-     * this is just a strengthening of the edge signal of a single pixel in its
-     * surrounding area. The far distant pixels don't matter.
-     */
-
-    /* horiz and vert sweep for 1D Gaussian transform */
-    filter_gauss_horiz_from_uchar<<<grid,block,0,_stream>>>( _d_plane, _d_intermediate, sum_of_gauss_values );
-    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_intermediate, _d_smooth, GAUSS_TABLE, sum_of_gauss_values );
-#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
-    // optional download for debugging
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_smooth, getWidth() * sizeof(float), _d_smooth.data, _d_smooth.step, _d_smooth.cols * sizeof(float), _d_smooth.rows, cudaMemcpyDeviceToHost, _stream );
-#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
-    /* Vertical sweep for DX computation: use Gaussian table */
-    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_smooth, _d_intermediate, GAUSS_TABLE, 1.0f );
-    /* Compute DX */
-    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_debug_dx, GAUSS_DERIV, 1.0f );
-    /* Horizontal sweep for DY computation: use Gaussian table */
-    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_smooth, _d_intermediate, GAUSS_TABLE, 1.0f );
-    /* Compute DY */
-    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_DERIV, 1.0f );
-
-#else // SEPARATE_FIRST_GAUSSIAN_SWEEP
+//    /*
+//     * This is the original approach, following the explanation in cvRecode.
+//     * However, the 1D tables that we use have already been convolved with
+//     * an initial Gauss step, and give the wrong results. So, the first sweep
+//     * must be removed.
+//     * If the goal was to smoothe the picture, that would be a mistake,
+//     * because multiple sweeps extend the range of the filter and bring the
+//     * result closer to a globally applied Gaussian filter. However, for CCTag,
+//     * this is just a strengthening of the edge signal of a single pixel in its
+//     * surrounding area. The far distant pixels don't matter.
+//     */
+//
+//    filter_gauss_horiz_from_uchar<<<grid,block,0,_stream>>>( _d_plane, _d_intermediate, sum_of_gauss_values );
+//    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_intermediate, _d_smooth, GAUSS_TABLE, sum_of_gauss_values );
+//    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_smooth, _d_intermediate, GAUSS_TABLE, 1.0f );
+//    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_debug_dx, GAUSS_DERIV, 1.0f );
+//    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_smooth, _d_intermediate, GAUSS_TABLE, 1.0f );
+//    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_DERIV, 1.0f );
+//
 
 #ifdef NORMALIZE_GAUSS_VALUES
     const float normalize   = sum_of_gauss_values;
@@ -214,25 +203,16 @@ void Frame::applyGauss( const cctag::Parameters & params )
     filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_dx, GAUSS_DERIV, normalize_d );
     POP_CHK_CALL_IFSYNC;
 
-#if 0
-    /*
-     * Horizontal sweep for DY computation: use Gaussian table
-     */
-    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_plane, _d_intermediate, GAUSS_TABLE, normalize );
-    POP_CHK_CALL_IFSYNC;
-
     /*
      * Compute DY
      */
-    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_DERIV, normalize_d );
-    POP_CHK_CALL_IFSYNC;
-#else
     filter_gauss_vert <<<grid,block,0,_stream>>>( _d_plane, _d_intermediate, GAUSS_DERIV, normalize_d );
-    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_TABLE, normalize );
-#endif
-#endif // SEPARATE_FIRST_GAUSSIAN_SWEEP
 
-// #ifdef EDGE_LINKING_HOST_SIDE
+    /*
+     * Horizontal sweep for DY computation: use Gaussian table
+     */
+    filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_TABLE, normalize );
+
     // After these linking operations, dx and dy are created for
     // all edge points and we can copy them to the host
 
@@ -250,8 +230,13 @@ void Frame::applyGauss( const cctag::Parameters & params )
 
     POP_CHK_CALL_IFSYNC;
 #ifndef NDEBUG
-    if( true )
-    {
+    if( params._debugDir == "" ) {
+        cerr << __FUNCTION__ << ":" << __LINE__
+            << ": debugDir not set, not writing debug output" << endl;
+    } else {
+        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl;
+
         POP_CUDA_SYNC( _stream );
 
         ostringstream dx_i_out_n;
@@ -275,7 +260,6 @@ void Frame::applyGauss( const cctag::Parameters & params )
         }
     }
 #endif // not NDEBUG
-// #endif // EDGE_LINKING_HOST_SIDE
 
     // cerr << "Leave " << __FUNCTION__ << endl;
 }

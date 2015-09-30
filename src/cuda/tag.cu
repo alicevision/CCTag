@@ -215,6 +215,15 @@ void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
     cerr << "Enter " << __FUNCTION__ << endl;
 
     if( true ) {
+        if( params._debugDir == "" ) {
+            cerr << __FUNCTION__ << ":" << __LINE__
+                << ": debugDir not set, not writing debug output" << endl;
+            return;
+        } else {
+            cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+                 << params._debugDir << "] using that directory" << endl;
+        }
+
         // This is a debug block
 
         int num_layers = _frame.size();
@@ -243,6 +252,15 @@ void TagPipe::debug_cpu_origin( int                      layer,
                                 const cv::Mat&           img,
                                 const cctag::Parameters& params )
 {
+    if( params._debugDir == "" ) {
+        cerr << __FUNCTION__ << ":" << __LINE__
+            << ": debugDir not set, not writing debug output" << endl;
+        return;
+    } else {
+        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl;
+    }
+
     ostringstream ascname;
     ascname << params._debugDir << "cpu-" << layer << "-img-ascii.txt";
     ofstream asc( ascname.str().c_str() );
@@ -262,6 +280,15 @@ void TagPipe::debug_cpu_edge_out( int                      layer,
                                   const cv::Mat&           edges,
                                   const cctag::Parameters& params )
 {
+    if( params._debugDir == "" ) {
+        cerr << __FUNCTION__ << ":" << __LINE__
+            << ": debugDir not set, not writing debug output" << endl;
+        return;
+    } else {
+        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl;
+    }
+
     ostringstream filename;
     filename << params._debugDir
              << "cpu-" << layer << "-edges.ppm";
@@ -289,6 +316,14 @@ static void local_debug_cpu_dxdy_out( const char*                  dxdy,
                                       const cv::cuda::PtrStepSz16s gpu,
                                       const cctag::Parameters&     params )
 {
+    if( params._debugDir == "" ) {
+        cerr << __FUNCTION__ << ":" << __LINE__
+            << ": debugDir not set, not writing debug output" << endl;
+        return;
+    } else {
+        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl;
+    }
 
     if( cpu.size().width  != gpu.cols ) {
         cerr << __FILE__ << ":" << __LINE__
@@ -365,6 +400,15 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
                                     const cctag::EdgePointsImage& gpu,
                                     const cctag::Parameters&      params )
 {
+    if( params._debugDir == "" ) {
+        cerr << __FUNCTION__ << ":" << __LINE__
+            << ": debugDir not set, not writing debug output" << endl;
+        return;
+    } else {
+        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl;
+    }
+
     ostringstream filename;
     filename << params._debugDir
              << "diffcpugpu-" << layer << "-edge.ppm";
