@@ -20,6 +20,10 @@ nFrames = length(listing)-5;
 for i=3:nFrames+2
     file{i-2} = listing(i).name;
 end
+nFrames
+if (nFrames <= 0)
+   error('CCTag error: Unable to find any detection result to load'); 
+end
 file = sort(file);
 
 display_ = 0;
