@@ -112,7 +112,7 @@ void CmdLine::usage( const char* const argv0 )
           "    <output>   - output folder name \n"
           "    <confpath> - path to configuration XML file \n"
           "    --sync     - CUDA debug option, run all CUDA ops synchronously\n"
-          "    <debugdir> - path storing image to debug intermediate results\n"
+          "    <debugdir> - path storing image to debug intermediate GPU results\n"
           "    --use-cuda - select GPU code instead of CPU code\n"
           "\n" << endl;
 }

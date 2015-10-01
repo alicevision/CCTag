@@ -52,6 +52,7 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
 
 void Frame::hostDebugCompare( unsigned char* pix )
 {
+#ifndef NDEBUG
 #ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
     bool found_mistake = false;
     size_t mistake_ct = 0;
@@ -76,6 +77,7 @@ void Frame::hostDebugCompare( unsigned char* pix )
         cerr << "Found no difference between original and re-downloaded frame" << endl;
     }
 #endif // DEBUG_WRITE_ORIGINAL_AS_PGM
+#endif // NDEBUG
 }
 
 struct PtrStepSzbClone

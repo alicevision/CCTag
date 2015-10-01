@@ -198,55 +198,81 @@ void cctagMultiresDetection_inner(
 {
     CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::");
 
-#ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
-#endif
-    
     // Data structure for getting vote winners
     WinnerMap winners;
     std::vector<EdgePoint*> seeds;
 
-#ifdef WITH_CUDA
-#ifdef WITH_CUDA_COMPARE_MODE
+    boost::posix_time::time_duration d;
+
+#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
     std::vector<EdgePoint>  cuda_debug_vPoints;
     EdgePointsImage         cuda_debug_vEdgeMap;
     WinnerMap               cuda_debug_winners;
     std::vector<EdgePoint*> cuda_debug_seeds;
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
 
-    cuda_pipe->download( i, 
-                         cuda_debug_vPoints,
-                         cuda_debug_vEdgeMap,
-                         cuda_debug_seeds,
-                         cuda_debug_winners );
-
-#else // WITH_CUDA_COMPARE_MODE
+#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    // there is no point in measuring time in compare mode
     if( cuda_pipe ) {
+        #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
+        #endif
+        cuda_pipe->download( i, 
+                             cuda_debug_vPoints,
+                             cuda_debug_vEdgeMap,
+                             cuda_debug_seeds,
+                             cuda_debug_winners );
+        #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
+        d = t10 - t00;
+        CCTAG_COUT_OPTIM("Time in GPU download: " << d.total_milliseconds() << " ms");
+        #endif
+    }
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+
+#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    // there is no point in measuring time in compare mode
+    if( cuda_pipe ) {
+        #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
+        #endif
         cuda_pipe->download( i, 
                              vPoints,
                              vEdgeMap,
                              seeds,
                              winners );
+        #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
+        boost::posix_time::time_duration d = t11 - t01;
+        CCTAG_COUT_OPTIM("Time in GPU download: " << d.total_milliseconds() << " ms");
+        #endif
+    }
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
 
-#ifdef CCTAG_OPTIM
-        boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-        boost::posix_time::time_duration d = t1 - t0;
-        const double spendTime = d.total_milliseconds();
-        CCTAG_COUT_OPTIM("Time in edge point collection and voting: " << spendTime << " ms");
-#endif
-    } else {
-#endif // WITH_CUDA
-#endif // WITH_CUDA_COMPARE_MODE
-        edgesPointsFromCanny( vPoints,
-                              vEdgeMap,
-                              level->getEdges(),
-                              level->getDx(),
-                              level->getDy());
+#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    if( not cuda_pipe ) {
+#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    #ifdef CCTAG_OPTIM
+    boost::posix_time::ptime t02(boost::posix_time::microsec_clock::local_time());
+    #endif
+    edgesPointsFromCanny( vPoints,
+                          vEdgeMap,
+                          level->getEdges(),
+                          level->getDx(),
+                          level->getDy());
+    #ifdef CCTAG_OPTIM
+    boost::posix_time::ptime t12(boost::posix_time::microsec_clock::local_time());
+    d = t12 - t02;
+    CCTAG_COUT_OPTIM("Time in GPU Edge extraction: " << d.total_milliseconds() << " ms");
+    #endif
+#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    } // not cuda_pipe
+#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
 
-        CCTagVisualDebug::instance().setPyramidLevel(i);
-    
-#ifdef WITH_CUDA
-#ifdef WITH_CUDA_COMPARE_MODE
-    {
+    CCTagVisualDebug::instance().setPyramidLevel(i);
+
+#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    if( cuda_pipe ) {
         std::cout << "Number of edge points: "
                   << vPoints.size() << " (CPU)"
                   << cuda_debug_vPoints.size() << " (GPU)" << std::endl;
@@ -257,49 +283,63 @@ void cctagMultiresDetection_inner(
                   << std::endl;
 
         popart::TagPipe::debug_cpu_origin( i, level->getSrc(), params );
-
         popart::TagPipe::debug_cpu_edge_out( i, level->getEdges(), params );
-
         popart::TagPipe::debug_cpu_dxdy_out( cuda_pipe, i, level->getDx(), level->getDy(), params );
-
         popart::TagPipe::debug_cmp_edge_table( i, vEdgeMap, cuda_debug_vEdgeMap, params );
     }
-#endif // WITH_CUDA_COMPARE_MODE
-#endif // WITH_CUDA
-#ifdef CCTAG_OPTIM
-        boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-        boost::posix_time::time_duration d = t1 - t0;
-        const double spendTime = d.total_milliseconds();
-        CCTAG_COUT_OPTIM("Time in edge point collection: " << spendTime << " ms");
-#endif
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
 
-        // Voting procedure applied on every edge points.
-        vote( vPoints,
-              seeds,        // output
-              vEdgeMap,
-              winners,      // output
-              level->getDx(),
-              level->getDy(),
-              params );
+#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    if( not cuda_pipe ) {
+#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    #ifdef CCTAG_OPTIM
+    boost::posix_time::ptime t03(boost::posix_time::microsec_clock::local_time());
+    #endif
+    // Voting procedure applied on every edge points.
+    vote( vPoints,
+          seeds,        // output
+          vEdgeMap,
+          winners,      // output
+          level->getDx(),
+          level->getDy(),
+          params );
     
-        if( seeds.size() > 1 ) {
-            // Sort the seeds based on the number of received votes.
-            std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
-        }
-#ifdef WITH_CUDA
-#ifndef WITH_CUDA_COMPARE_MODE
+    if( seeds.size() > 1 ) {
+        // Sort the seeds based on the number of received votes.
+        std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
     }
-#endif // WITH_CUDA_COMPARE_MODE
-#endif // WITH_CUDA
+    #ifdef CCTAG_OPTIM
+    boost::posix_time::ptime t13(boost::posix_time::microsec_clock::local_time());
+    d = t13 - t03;
+    CCTAG_COUT_OPTIM("Time in CPU vote and sort: " << d.total_milliseconds() << " ms");
+    #endif
+#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    } // not cuda_pipe
+#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
 
+#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    if( cuda_pipe ) {
+        cctagDetectionFromEdges(
+                pyramidMarkers,
+                cuda_debug_vPoints,
+                level->getSrc(),
+                cuda_debug_winners,
+                cuda_debug_seeds,
+                cuda_debug_vEdgeMap,
+                frame, i, std::pow(2.0, (int) i), params);
+    } else {
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
     cctagDetectionFromEdges(
-            pyramidMarkers,
-            vPoints,
-            level->getSrc(),
-            winners,
-            seeds,
-            vEdgeMap,
-            frame, i, std::pow(2.0, (int) i), params);
+        pyramidMarkers,
+        vPoints,
+        level->getSrc(),
+        winners,
+        seeds,
+        vEdgeMap,
+        frame, i, std::pow(2.0, (int) i), params);
+#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    }
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
     
     CCTagVisualDebug::instance().initBackgroundImage(level->getSrc());
     std::stringstream outFilename2;

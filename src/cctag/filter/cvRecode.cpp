@@ -38,7 +38,7 @@ void cvRecodedCanny(
   int debug_info_level,
   const cctag::Parameters* params )
 {
-    std::cerr << "Enter " << __FUNCTION__ << std::endl;
+  std::cerr << "Enter " << __FUNCTION__ << std::endl;
 
   CvMat srcCvMat = imgGraySrc;
   CvMat *src = &srcCvMat;
@@ -364,25 +364,35 @@ void cvRecodedCanny(
   }
 
 #ifdef DEBUG_MAGMAP_BY_GRIFF
-  std::ostringstream mag_img_name;
-  mag_img_name << params->_debugDir << "cpu-" << debug_info_level << "-mag.pgm";
-  std::ofstream mag_img_file( mag_img_name.str().c_str() );
-  mag_img_file << "P5" << std::endl
-               << size.width << " " << size.height << std::endl
-               << "255" << std::endl;
-
 #ifdef USE_INTEGER_REP
   std::vector<int> mag_collect;
 #else // USE_INTEGER_REP
   std::vector<float> mag_collect;
 #endif // USE_INTEGER_REP
+  std::ofstream* mag_img_file  = 0;
+  std::ofstream* hyst_img_file = 0;
 
-  std::ostringstream hyst_img_name;
-  hyst_img_name << params->_debugDir << "cpu-" << debug_info_level << "-hyst.pgm";
-  std::ofstream hyst_img_file( hyst_img_name.str().c_str() );
-  hyst_img_file << "P5" << std::endl
-                << size.width << " " << size.height << std::endl
-                << "255" << std::endl;
+  if( params->_debugDir == "" ) {
+    std::cerr << __FUNCTION__ << ":" << __LINE__
+              << ": debugDir not set, not writing debug output" << std::endl;
+  } else {
+    std::cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+              << params->_debugDir << "] using that directory" << std::endl;
+
+    std::ostringstream mag_img_name;
+    mag_img_name << params->_debugDir << "cpu-" << debug_info_level << "-mag.pgm";
+    mag_img_file = new std::ofstream( mag_img_name.str().c_str() );
+    *mag_img_file << "P5" << std::endl
+                  << size.width << " " << size.height << std::endl
+                  << "255" << std::endl;
+
+    std::ostringstream hyst_img_name;
+    hyst_img_name << params->_debugDir << "cpu-" << debug_info_level << "-hyst.pgm";
+    hyst_img_file = new std::ofstream( hyst_img_name.str().c_str() );
+    *hyst_img_file << "P5" << std::endl
+                   << size.width << " " << size.height << std::endl
+                   << "255" << std::endl;
+  }
 #endif // DEBUG_MAGMAP_BY_GRIFF
 
   cv::AutoBuffer<char> buffer;
@@ -457,7 +467,8 @@ void cvRecodedCanny(
       memset( _mag - 1, 0, ( size.width + 2 ) * sizeof( int ) );
 
 #ifdef DEBUG_MAGMAP_BY_GRIFF
-    if( i > 0 ) {
+    if( mag_img_file ) {
+      if( i > 0 ) {
         for( int j=0; j<size.width; j++ ) {
 #ifdef USE_INTEGER_REP
             mag_collect.push_back( _mag[j] );
@@ -465,6 +476,7 @@ void cvRecodedCanny(
             mag_collect.push_back( float(_mag[j]) );
 #endif // USE_INTEGER_REP
         }
+      }
     }
 #endif // DEBUG_MAGMAP_BY_GRIFF
 
@@ -569,25 +581,27 @@ void cvRecodedCanny(
   CCTAG_COUT_DEBUG( "Canny 2 took : " << t.elapsed() );
 
 #ifdef DEBUG_MAGMAP_BY_GRIFF
+  if( mag_img_file ) {
 #ifdef USE_INTEGER_REP
-  std::vector<int>::iterator it;
-  it = min_element( mag_collect.begin(), mag_collect.end() );
-  int minval = *it;
-  it = max_element( mag_collect.begin(), mag_collect.end() );
-  int maxval = *it;
+    std::vector<int>::iterator it;
+    it = min_element( mag_collect.begin(), mag_collect.end() );
+    int minval = *it;
+    it = max_element( mag_collect.begin(), mag_collect.end() );
+    int maxval = *it;
 #else // USE_INTEGER_REP
-  std::vector<float>::iterator it;
-  it = min_element( mag_collect.begin(), mag_collect.end() );
-  float minval = *it;
-  it = max_element( mag_collect.begin(), mag_collect.end() );
-  float maxval = *it;
+    std::vector<float>::iterator it;
+    it = min_element( mag_collect.begin(), mag_collect.end() );
+    float minval = *it;
+    it = max_element( mag_collect.begin(), mag_collect.end() );
+    float maxval = *it;
 #endif // USE_INTEGER_REP
-  unsigned char write_mag[size.width * size.height];
-  int idx=0;
-  for( it = mag_collect.begin(); it!=mag_collect.end(); it++ ) {
-    write_mag[idx++] = uint8_t( ( *it - minval ) * 256 / ( maxval - minval ) );
+    unsigned char write_mag[size.width * size.height];
+    int idx=0;
+    for( it = mag_collect.begin(); it!=mag_collect.end(); it++ ) {
+      write_mag[idx++] = uint8_t( ( *it - minval ) * 256 / ( maxval - minval ) );
+    }
+    mag_img_file->write( (const char*)write_mag, size.width*size.height );
   }
-  mag_img_file.write( (const char*)write_mag, size.width*size.height );
 #endif // DEBUG_MAGMAP_BY_GRIFF
   t.restart();
 
@@ -639,10 +653,15 @@ void cvRecodedCanny(
       _dst[j] = ( uchar ) - ( _map[j] >> 1 );
     }
 #ifdef DEBUG_MAGMAP_BY_GRIFF
-    hyst_img_file.write( (const char*)_dst, size.width );
+    if( hyst_img_file )
+        hyst_img_file->write( (const char*)_dst, size.width );
 #endif // DEBUG_MAGMAP_BY_GRIFF
-
   }
+
+#ifdef DEBUG_MAGMAP_BY_GRIFF
+  delete mag_img_file;
+  delete hyst_img_file;
+#endif // DEBUG_MAGMAP_BY_GRIFF
   CCTAG_COUT_DEBUG( "Canny 4 : " << t.elapsed() );
-    std::cerr << "Leave " << __FUNCTION__ << std::endl;
+  std::cerr << "Leave " << __FUNCTION__ << std::endl;
 }

@@ -10,7 +10,11 @@ sample/cctag4CC
 # Ignore output files of optpp
 *.out
 
-# Ignore matlab figures
+# Ignore related to the matlab folder
 matlab/syntheticExperiments/figure
-
 *.m~
+
+# Ignore debug files
+*.txt
+*.ppm
+*.pgm

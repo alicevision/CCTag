@@ -58,12 +58,6 @@
 #define GAUSS_TABLE  0 // Gauss parameters
 #define GAUSS_DERIV 16 // first derivative
 
-/*
- * This must be undefined unless Gauss tables are recomputed.
- * See explanation in frame_gaussian.cu
- */
-#undef  SEPARATE_FIRST_GAUSSIAN_SWEEP
-
 namespace cv {
     namespace cuda {
         typedef PtrStepSz<int16_t>  PtrStepSz16s;
