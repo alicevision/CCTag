@@ -9,3 +9,8 @@ sample/cctag4CC
 
 # Ignore output files of optpp
 *.out
+
+# Ignore matlab figures
+matlab/syntheticExperiments/figure
+
+*.m~
