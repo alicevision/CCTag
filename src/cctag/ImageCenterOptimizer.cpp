@@ -122,7 +122,7 @@ Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double>
 
 	OptQNewton objfcn( this );
 
-	objfcn.setSearchStrategy( LineSearch ); //TrustRegion );
+	objfcn.setSearchStrategy( TrustRegion );//LineSearch ); //TrustRegion );
 	objfcn.setMaxFeval( 200 );
 	objfcn.setFcnTol( 1.0e-4 );
 
