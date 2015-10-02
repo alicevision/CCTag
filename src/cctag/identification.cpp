@@ -9,6 +9,8 @@
 
 #include <terry/sampler/all.hpp>
 
+#include <openMVG/image/sample.hpp>
+
 #include <boost/accumulators/statistics/mean.hpp>
 #include <boost/accumulators/statistics/median.hpp>
 #include <boost/accumulators/statistics/variance.hpp>
@@ -380,8 +382,15 @@ void extractSignalUsingHomography( cctag::ImageCut & rectifiedSig,
          hp.y() >= 1.0 && hp.y() <= src.rows-1 )
     {
       // put pixel value to rectified signal
+      // Optim via bilinear interpolation
       double pixVal = getPixelBilinear( src, hp.x(), hp.y());
-      //double pixVal = getPixelBicubic( src, hp.x(), hp.y());
+      
+      // not working // double pixVal = getPixelBicubic( src, hp.x(), hp.y());
+      
+      //CCTAG_COUT_OPTIM("SamplerSpline64");
+      //openMVG::image::Sampler2d<openMVG::image::SamplerSpline64> sampleFunctor;
+      //double pixVal = sampleFunctor.operator()<double>( src , float(hp.y()), float(hp.x()));
+      
       rectifiedSig._imgSignal(i) = pixVal;
       acc( pixVal );
     }
