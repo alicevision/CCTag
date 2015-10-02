@@ -17,9 +17,16 @@ static const struct option longopts[] =
     {"nbrings",    required_argument, 0, 'n'},    
     {"bank",       required_argument, 0, 'b'},
     {"parameters", required_argument, 0, 'p'},
+<<<<<<< HEAD
     {"output",     optional_argument, 0, 'o'}, 
+=======
+    {"output",     optional_argument, 0, 'o'},   
+#ifdef WITH_CUDA
+>>>>>>> bf8b90fdd66a024901a682e379724254d6ec2fd5
     {"sync",       no_argument,       0, 0xd0 },
     {"debug-dir",  required_argument, 0, 0xd1 },
+    {"use-cuda",   no_argument,       0, 0xd2 },
+#endif
     {0,0,0,0},
 };
 
@@ -32,6 +39,7 @@ CmdLine::CmdLine( )
 #ifdef WITH_CUDA
     , _switchSync( false )
     , _debugDir( "" )
+    , _useCuda( false )
 #endif
 { }
 
@@ -61,6 +69,7 @@ bool CmdLine::parse( int argc, char* argv[] )
 #ifdef WITH_CUDA
       case 0xd0 : _switchSync        = true;   break;
       case 0xd1 : _debugDir          = optarg; break;
+      case 0xd2 : _useCuda           = true;   break;
 #endif
       default : break;
     }
@@ -81,6 +90,8 @@ void CmdLine::print( const char* const argv0 )
         cout << "    --sync " << endl;
     if( _debugDir != "" )
         cout << "    --debug-dir " << _debugDir << endl;
+    if( _useCuda )
+        cout << "    --use-cuda " << endl;
 #endif
     cout << endl;
 }
@@ -97,6 +108,7 @@ void CmdLine::usage( const char* const argv0 )
           "           [-o|--output] <outputfoldername>\n"
           "           [--sync]\n"
           "           [--debug-dir <debugdir>]\n"
+          "           [--use-cuda]\n"
           "\n"
           "    <imgpath>  - path to an image (JPG, PNG) or video\n"
           "    <nbrings>  - number of rings of the CCTags to detect\n"
@@ -104,7 +116,8 @@ void CmdLine::usage( const char* const argv0 )
           "    <output>   - output folder name \n"
           "    <confpath> - path to configuration XML file \n"
           "    --sync     - CUDA debug option, run all CUDA ops synchronously\n"
-          "    <debugdir> - path storing image to debug intermediate results\n"
+          "    <debugdir> - path storing image to debug intermediate GPU results\n"
+          "    --use-cuda - select GPU code instead of CPU code\n"
           "\n" << endl;
 }
 

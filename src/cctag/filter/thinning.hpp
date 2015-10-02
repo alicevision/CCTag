@@ -8,13 +8,11 @@
 
 
 namespace cctag {
-namespace img {
 
-void thin( IplImage* inout, IplImage* temp );
+void thin( cv::Mat & inout, cv::Mat & temp );
 
-void imageIter( IplImage* in, IplImage* out, int* lut );
+void imageIter( cv::Mat & in, cv::Mat & out, int* lut );
 
-}
 }
 
 #endif

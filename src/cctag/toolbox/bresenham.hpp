@@ -2,7 +2,7 @@
 #define	_CCTAG_TOOLBOX_BRESENHAM_HPP_
 
 #include <boost/gil/gil_all.hpp>
-#include <cctag/imageCut.hpp>
+#include <cctag/ImageCut.hpp>
 
 namespace cctag
 {

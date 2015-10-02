@@ -5,32 +5,33 @@
 #include <string>
 #include <vector>
 
-#include <opencv2/core/cuda_types.hpp>
+// #include <opencv2/core/cuda_types.hpp>
 
-#include "../cctag/params.hpp"
+#include "cctag/params.hpp"
+#include "cctag/types.hpp"
 #include "frame_vote.h"
 #include "triple_point.h"
 
-#undef  DEBUG_WRITE_ORIGINAL_AS_PGM
-#undef  DEBUG_WRITE_ORIGINAL_AS_ASCII
-#undef  DEBUG_WRITE_GAUSSIAN_AS_PGM
-#undef  DEBUG_WRITE_GAUSSIAN_AS_ASCII
-#undef  DEBUG_WRITE_DX_AS_PGM
-#undef  DEBUG_WRITE_DX_AS_ASCII
-#undef  DEBUG_WRITE_DY_AS_PGM
-#undef  DEBUG_WRITE_DY_AS_ASCII
-#undef  DEBUG_WRITE_MAG_AS_PGM
-#undef  DEBUG_WRITE_MAG_AS_ASCII
-#undef  DEBUG_WRITE_MAP_AS_PGM
-#undef  DEBUG_WRITE_MAP_AS_ASCII
-#undef  DEBUG_WRITE_HYSTEDGES_AS_PGM
+#define DEBUG_WRITE_ORIGINAL_AS_PGM
+#define DEBUG_WRITE_ORIGINAL_AS_ASCII
+#undef  DEBUG_WRITE_GAUSSIAN_AS_PGM   // no longer computed
+#undef  DEBUG_WRITE_GAUSSIAN_AS_ASCII // no longer computed
+#define DEBUG_WRITE_DX_AS_PGM
+#define DEBUG_WRITE_DX_AS_ASCII
+#define DEBUG_WRITE_DY_AS_PGM
+#define DEBUG_WRITE_DY_AS_ASCII
+#define DEBUG_WRITE_MAG_AS_PGM
+#define DEBUG_WRITE_MAG_AS_ASCII
+#define DEBUG_WRITE_MAP_AS_PGM
+#define DEBUG_WRITE_MAP_AS_ASCII
+#define DEBUG_WRITE_HYSTEDGES_AS_PGM
 #define DEBUG_WRITE_EDGES_AS_PGM
 #define DEBUG_WRITE_EDGELIST_AS_PPM
-#undef  DEBUG_WRITE_EDGELIST_AS_ASCII
-#undef  DEBUG_WRITE_VOTERS_AS_PPM
+#define DEBUG_WRITE_EDGELIST_AS_ASCII
+#define DEBUG_WRITE_VOTERS_AS_PPM
 #define DEBUG_WRITE_CHOSEN_AS_PPM
-#undef  DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
-#undef  DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
+#define DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
+#define DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
 #define DEBUG_WRITE_LINKED_AS_PPM
 #define DEBUG_WRITE_LINKED_AS_PPM_INTENSE
 #define DEBUG_WRITE_LINKED_AS_ASCII
@@ -41,6 +42,8 @@
 #define DEBUG_LINKED_USE_INT4_BUFFER
 
 #define RESERVE_MEM_MAX_CROWNS  5
+
+#define EDGE_LINKING_HOST_SIDE
 
 #define EDGE_LINKING_MAX_EDGE_LENGTH        100
 #define EDGE_LINKING_MAX_ARCS             10000
@@ -76,6 +79,7 @@ namespace cv {
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
     }
 };
+
 
 namespace popart {
 
@@ -119,8 +123,10 @@ class Frame
 
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
-    Frame( uint32_t width, uint32_t height );
+    Frame( uint32_t width, uint32_t height, int my_layer );
     ~Frame( );
+
+    int getLayer() const { return _layer; }
 
     // Copy manually created Gauss filter tables to constant memory
     // implemented in frame_gaussian.cu
@@ -164,8 +170,10 @@ public:
     uint32_t getHeight( ) const { return _d_plane.rows; }
     uint32_t getPitch( ) const  { return _d_plane.step; }
 
-    // implemented in frame_gaussian.cu
-    void allocDevGaussianPlane( const cctag::Parameters& param );
+    // implemented in frame_alloc.cu
+    void allocRequiredMem( const cctag::Parameters& param );
+    void initRequiredMem( );
+    void releaseRequiredMem( );
 
     // implemented in frame_gaussian.cu
     void applyGauss( const cctag::Parameters& param );
@@ -188,6 +196,12 @@ public:
     // implemented in frame_link.cu
     void applyLink( const cctag::Parameters& param );
 
+    // implemented in frame_export.cu
+    bool applyExport( std::vector<cctag::EdgePoint>&  vPoints,
+                      cctag::EdgePointsImage&         edgesMap,
+                      std::vector<cctag::EdgePoint*>& seeds,
+                      cctag::WinnerMap&               winners );
+
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
@@ -202,6 +216,8 @@ private:
     Frame( const Frame& );  // forbidden
 
 private:
+    int                     _layer;
+
     int*                    _d_hysteresis_block_counter;
     int*                    _d_connect_component_block_counter;
     int*                    _d_ring_counter;
@@ -218,14 +234,24 @@ private:
     cv::cuda::PtrStepSzb    _d_edges;
     cv::cuda::PtrStepSzInt2 _d_ring_output;
 
+#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
     unsigned char*          _h_debug_plane;
+#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
+#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
     float*                  _h_debug_smooth;
-    int16_t*                _h_debug_dx;
-    int16_t*                _h_debug_dy;
+#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
+#ifdef DEBUG_WRITE_MAG_AS_PGM
     uint32_t*               _h_debug_mag;
+#endif // DEBUG_WRITE_MAG_AS_PGM
+#ifdef DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_map;
+#endif // DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_hyst_edges;
     unsigned char*          _h_debug_edges;
+public: // HACK FOR DEBUGGING
+    cv::cuda::PtrStepSz16s  _h_dx;
+    cv::cuda::PtrStepSz16s  _h_dy;
+private:
     cv::cuda::PtrStepSzInt2 _h_ring_output;
 
     Voting _vote;

@@ -14,15 +14,10 @@ struct TriplePoint
 {
     int2  coord;
     int2  d;     // hold d.x = dx, d.y = dy
-    union {
-        struct {
-            int2  befor;
-            int2  after;
-        } descending;
-        struct {
-            int processed;
-        } edgeLinking;
-    };
+    struct {
+        int2  befor;
+        int2  after;
+    } descending;
 
     // in the original code, chosen keeps list of voters
     // no possible here; we must invert this

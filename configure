@@ -23,4 +23,3 @@ mkdir $branch &&
 cd $branch
 cmake ../.. "$@")
 
-

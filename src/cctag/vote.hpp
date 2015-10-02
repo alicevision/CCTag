@@ -32,8 +32,8 @@ namespace cctag {
  */
 void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         const EdgePointsImage & edgesMap, WinnerMap& winners,
-        const boost::gil::kth_channel_view_type<1,boost::gil::rgb32f_view_t>::type & cannyGradX,
-        const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY,
+        const cv::Mat & dx,
+        const cv::Mat & dy,
         const Parameters & params);
  
 /** @brief Retrieve all connected edges.

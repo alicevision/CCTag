@@ -4,7 +4,7 @@
 #include <cctag/visualDebug.hpp>
 #include <cctag/global.hpp>
 #include <cctag/geometry/point.hpp>
-#include <cctag/imageCut.hpp>
+#include <cctag/ImageCut.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/algebra/invert.hpp>
@@ -30,9 +30,9 @@ struct TotoFunctor {
 	typedef std::vector< cctag::ImageCut > VecSignals;
 
 
-  TotoFunctor( const VecExtPoints & vecExtPoints, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView,
+  TotoFunctor( const VecExtPoints & vecExtPoints, const std::size_t lengthSig, const cv::Mat & src,
   const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT)
-      : _vecExtPoints(vecExtPoints), _lengthSig(lengthSig), _sView(sView), _ellipse(outerEllipse), _mT(mT) {
+      : _vecExtPoints(vecExtPoints), _lengthSig(lengthSig), _src(src), _ellipse(outerEllipse), _mT(mT) {
 
 	  cctag::numerical::invert_3x3(mT,_mInvT);
   }
@@ -49,7 +49,7 @@ struct TotoFunctor {
 
 	cctag::numerical::BoundedMatrix3x3d mH;
 	VecSignals vecSig;
-	if ( !getSignals( mH, vecSig, _lengthSig, centerExtEllipse, _vecExtPoints, _sView, _ellipse.matrix() ) )
+	if ( !getSignals( mH, vecSig, _lengthSig, centerExtEllipse, _vecExtPoints, _src, _ellipse.matrix() ) )
 	{
 		// We are diverging
 		CCTAG_COUT_DEBUG("divergence!");
@@ -73,10 +73,8 @@ struct TotoFunctor {
 private:
 	const VecExtPoints & _vecExtPoints;
 	std::size_t _lengthSig;
-	boost::gil::gray8_view_t _sView;
-	//cctag::numerical::BoundedMatrix3x3d _matEllipse;
+	cv::Mat _src;
 	cctag::numerical::geometry::Ellipse _ellipse;
-	//std::size_t _numIter;
 	cctag::numerical::BoundedMatrix3x3d _mT;
 	cctag::numerical::BoundedMatrix3x3d _mInvT;
 

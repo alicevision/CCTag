@@ -8,7 +8,7 @@
     <_thrGradientMagInVote>1000000</_thrGradientMagInVote>
 	<_angleVoting>0.0</_angleVoting>
 	<_ratioVoting>4</_ratioVoting>
-    <_averageVoteMin>0</_averageVoteMin>
+    <_averageVoteMin>1</_averageVoteMin>
     <_thrMedianDistanceEllipse>3.0</_thrMedianDistanceEllipse>
     <_maximumNbSeeds>500</_maximumNbSeeds>
     <_maximumNbCandidatesLoopTwo>30</_maximumNbCandidatesLoopTwo>
@@ -30,6 +30,7 @@
 	<_writeOutput>1</_writeOutput>
     <_doIdentification>1</_doIdentification>
     <_maxEdges>40000</_maxEdges>
+    <_useCuda>1</_useCuda>
 </CCTagsParams>
 </boost_serialization>
 

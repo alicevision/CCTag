@@ -35,7 +35,7 @@ public:
 		, _id( _count++ )
 		, _reservedSize( size )
 		, _size( size )
-		, _pData( new char[size] )
+		, _pData( new unsigned char[size] )
 		, _refCount( 0 )
 	{}
 
@@ -53,8 +53,8 @@ public:
 	void addRef();
 	void release();
 
-	char*             data()               { return _pData; }
-	const char*       data() const         { return _pData; }
+	unsigned char*             data()               { return _pData; }
+	const unsigned char*       data() const         { return _pData; }
 	const std::size_t size() const         { return _size; }
 	const std::size_t reservedSize() const { return _reservedSize; }
 
@@ -64,7 +64,7 @@ private:
 	const std::size_t _id; ///< unique id to identify one memory data
 	const std::size_t _reservedSize; ///< memory allocated
 	std::size_t _size; ///< memory requested
-	char* const _pData; ///< own the data
+	unsigned char* const _pData; ///< own the data
 	int _refCount; ///< counter on clients currently using this data
 };
 
@@ -93,8 +93,9 @@ void PoolData::release()
 }
 
 MemoryPool::MemoryPool( const std::size_t maxSize )
-	: _memoryAuthorized( maxSize )
-{}
+        : _memoryAuthorized(maxSize)
+{
+}
 
 MemoryPool::~MemoryPool()
 {
@@ -162,6 +163,22 @@ struct DataFitSize : public std::unary_function<PoolData*, void>
 		PoolData* _pBestMatch;
 };
 
+}
+
+/* brief: allocate size for the image pyramid
+ * input
+ * w: image width
+ * h: image height
+ */
+void MemoryPool::allocateImagePyramid( std::size_t width, std::size_t height, std::size_t nbLevels )
+{
+  _imagePyramid = new ImagePyramid(width, height, nbLevels);
+  // TODO@Lilian need to be deleted somewhere
+}
+
+ImagePyramid & MemoryPool::getImagePyramid()
+{
+  return *_imagePyramid;
 }
 
 boost::intrusive_ptr<IPoolData> MemoryPool::allocate( const std::size_t size )

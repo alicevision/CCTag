@@ -89,7 +89,7 @@ public:
                           const cv::cuda::PtrStepSzb& plane );
 
     template<class T>
-    static void writePGMscaled_T( const std::string& filename,
+    static void writePGMscaled_T( const std::string&            filename,
                                   const cv::cuda::PtrStepSz<T>& plane );
     static void writePGMscaled( const std::string& filename,
                                 const cv::cuda::PtrStepSz<float>& plane );
@@ -104,8 +104,9 @@ public:
                           const cv::cuda::PtrStepSzb& plane );
 
     template<class T>
-    static void writeASCII_T( const std::string& filename,
-                              const cv::cuda::PtrStepSz<T>& plane );
+    static void writeASCII_T( const std::string&            filename,
+                              const cv::cuda::PtrStepSz<T>& plane,
+                              int                           width = 0 );
     static void writeASCII( const std::string& filename,
                             const cv::cuda::PtrStepSz<float>& plane );
     static void writeASCII( const std::string& filename,

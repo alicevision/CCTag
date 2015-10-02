@@ -258,7 +258,6 @@ void edge_second( cv::cuda::PtrStepSzb img, int* block_counter )
     }
 }
 
-
 }; // namespace hysteresis
 
 #ifndef NDEBUG
@@ -286,7 +285,7 @@ void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w
 __host__
 void Frame::applyHyst( const cctag::Parameters & params )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
+    // cerr << "Enter " << __FUNCTION__ << endl;
 
     dim3 block;
     dim3 grid;
@@ -299,9 +298,9 @@ void Frame::applyHyst( const cctag::Parameters & params )
     assert( getWidth()  == _d_hyst_edges.cols );
     assert( getHeight() == _d_hyst_edges.rows );
 
-    cerr << "  Config: grid=" << grid << " block=" << block << endl;
-
 #ifndef NDEBUG
+    // cerr << "  Config: grid=" << grid << " block=" << block << endl;
+
     verify_map_valid
         <<<grid,block,0,_stream>>>
         ( _d_map, _d_hyst_edges, getWidth(), getHeight() );
@@ -309,6 +308,9 @@ void Frame::applyHyst( const cctag::Parameters & params )
 
     bool first_time = true;
     int block_counter;
+#ifndef NDEBUG
+    // cerr << "  Blocks remaining:";
+#endif // NDEBUG
     do
     {
         block_counter = grid.x * grid.y;
@@ -334,11 +336,17 @@ void Frame::applyHyst( const cctag::Parameters & params )
                                        _d_hysteresis_block_counter,
                                        sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
-        cerr << "  Blocks remaining: " << block_counter << endl;
+#ifndef NDEBUG
+        // cerr << " " << block_counter;
+#endif // NDEBUG
     }
     while( block_counter > 0 );
 
-    cerr << "Leave " << __FUNCTION__ << endl;
+#ifndef NDEBUG
+    // cerr << endl;
+#endif // NDEBUG
+
+    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 #else // not ABBREVIATED_HYSTERESIS
 #include "frame_hyst_oldcode.h"
