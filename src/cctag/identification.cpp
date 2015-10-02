@@ -1015,11 +1015,13 @@ int identify(
 
 #ifdef NAIVE_SELECTCUT
     selectCutNaive( cutSelection, prSelection, params._numCutsInIdentStep, cuts, src, 
-          dx, dy );  
+          dx, dy ); 
+    CCTAG_COUT_OPTIM("Naive cut selection");
 #else
     selectCut( cutSelection, prSelection, params._numCutsInIdentStep, cuts, src, 
             dx, dy, refinedSegSize, params._numSamplesOuterEdgePointsRefinement,
             params._cutsSelectionTrials );
+    CCTAG_COUT_OPTIM("Initial cut selection");
 #endif
     
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
