@@ -6,6 +6,7 @@
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/ImageCenterOptimizerCeres.hpp>
+#include <cctag/talk.hpp>
 
 #include <terry/sampler/all.hpp>
 
@@ -383,15 +384,16 @@ void extractSignalUsingHomography( cctag::ImageCut & rectifiedSig,
     {
       // put pixel value to rectified signal
       // Optim via bilinear interpolation
-      //double pixVal = getPixelBilinear( src, hp.x(), hp.y());
+      // double pixVal = getPixelBilinear( src, hp.x(), hp.y());
       
       // not working // double pixVal = getPixelBicubic( src, hp.x(), hp.y());
       
       //CCTAG_COUT_OPTIM("SamplerSpline64");
-      openMVG::image::Sampler2d<openMVG::image::SamplerLinear> sampleFunctor; //SamplerCubic
-      //SamplerSpline64
-      //SamplerCubic
-      //SamplerLinear
+      openMVG::image::Sampler2d<openMVG::image::SamplerLinear> sampleFunctor;
+      // //SamplerCubic
+      // //SamplerSpline64
+      // //SamplerCubic
+      // //SamplerLinear
       double pixVal = sampleFunctor.operator()<double>( src , float(hp.y()), float(hp.x()));
       
       rectifiedSig._imgSignal(i) = pixVal;
@@ -805,7 +807,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
 #ifdef WITH_CMINPACK
   if ( useLmDif )
   {
-    CCTAG_COUT_DEBUG( "Before optimizer: " << oRefined );
+    DO_TALK( CCTAG_COUT_DEBUG( "Before optimizer: " << oRefined ); )
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
     // Old lm optimization
     LMImageCenterOptimizer opt;
@@ -813,7 +815,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
-    CCTAG_COUT_DEBUG( "After optimizer (LmDif) : " << oRefined << ", timer: " << spendTime );
+    DO_TALK( CCTAG_COUT_DEBUG( "After optimizer (LmDif) : " << oRefined << ", timer: " << spendTime ); )
   }
 #else
   if ( useLmDif )
@@ -848,7 +850,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
-    CCTAG_COUT_DEBUG( "After optimizer (optpp+interp2D) : " << oRefined << ", timer: " << spendTime );
+    DO_TALK( CCTAG_COUT_DEBUG( "After optimizer (optpp+interp2D) : " << oRefined << ", timer: " << spendTime ); )
   }
 #endif
   else
@@ -916,7 +918,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
-    CCTAG_COUT_DEBUG( "After optimizer (optpp+interp2D) : " << oRefined << ", timer: " << spendTime );
+    DO_TALK( CCTAG_COUT_DEBUG( "After optimizer (optpp+interp2D) : " << oRefined << ", timer: " << spendTime ); )
   }
 
   {
@@ -1007,10 +1009,13 @@ int identify(
   
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-
   boost::posix_time::time_duration d = t1 - t0;
-  double spendTime = d.total_milliseconds();
-  CCTAG_COUT_OPTIM("Time in collectCuts: " << spendTime << " ms");
+  double spendTime;
+  DO_TALK(
+
+    spendTime = d.total_milliseconds();
+    CCTAG_COUT_OPTIM("Time in collectCuts: " << spendTime << " ms");
+  )
 #endif
 
   if ( cuts.size() == 0 )
@@ -1028,12 +1033,12 @@ int identify(
 #ifdef NAIVE_SELECTCUT
     selectCutNaive( cutSelection, prSelection, params._numCutsInIdentStep, cuts, src, 
           dx, dy ); 
-    CCTAG_COUT_OPTIM("Naive cut selection");
+    DO_TALK( CCTAG_COUT_OPTIM("Naive cut selection"); )
 #else
     selectCut( cutSelection, prSelection, params._numCutsInIdentStep, cuts, src, 
             dx, dy, refinedSegSize, params._numSamplesOuterEdgePointsRefinement,
             params._cutsSelectionTrials );
-    CCTAG_COUT_OPTIM("Initial cut selection");
+    DO_TALK( CCTAG_COUT_OPTIM("Initial cut selection"); )
 #endif
     
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
@@ -1043,10 +1048,12 @@ int identify(
   
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
+  DO_TALK(
 
-  d = t2 - t1;
-  spendTime = d.total_milliseconds();
-  CCTAG_COUT_OPTIM("Time in selectCut: " << spendTime << " ms");
+    d = t2 - t1;
+    spendTime = d.total_milliseconds();
+    CCTAG_COUT_OPTIM("Time in selectCut: " << spendTime << " ms");
+  )
 #endif
 
   if ( prSelection.size() == 0 )
@@ -1062,18 +1069,20 @@ int identify(
     bool hasConverged = refineConicFamily( cctag, fsig, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
     if( !hasConverged )
     {
-      CCTAG_COUT_DEBUG(ellipse);
+      DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
       CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
-      CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." );
+      DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
       return status::opti_has_diverged;
     }
     
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t3(boost::posix_time::microsec_clock::local_time());
+  DO_TALK(
 
-  d = t3 - t2;
-  spendTime = d.total_milliseconds();
-  CCTAG_COUT_OPTIM("Time in refineConicFamily: " << spendTime << " ms");
+    d = t3 - t2;
+    spendTime = d.total_milliseconds();
+    CCTAG_COUT_OPTIM("Time in refineConicFamily: " << spendTime << " ms");
+  )
 #endif
 
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
@@ -1109,7 +1118,7 @@ int identify(
       }
       else
       {
-        CCTAG_COUT_DEBUG("Not enough quality in IDENTIFICATION");
+        DO_TALK( CCTAG_COUT_DEBUG("Not enough quality in IDENTIFICATION"); )
       }
     }
     else

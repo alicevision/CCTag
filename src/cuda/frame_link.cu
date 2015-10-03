@@ -4,6 +4,7 @@
 #include "frame.h"
 #include "assist.h"
 #include "recursive_sweep.h"
+#include "cctag/talk.hpp" // for DO_TALK macro
 
 #undef  ONE_THREAD_ONLY // doesn't work?
 #undef  KERNEL_PRINT_ERROR_CAUSE
@@ -692,7 +693,7 @@ void edge_linking( DevEdgeList<TriplePoint>     triplepoints,
 __host__
 void Frame::applyLink( const cctag::Parameters& params )
 {
-    cout << "Enter " << __FUNCTION__ << endl;
+    DO_TALK( cout << "Enter " << __FUNCTION__ << endl; )
 
     if( params._windowSizeOnInnerEllipticSegment > EDGE_LINKING_MAX_RING_BUFFER_SIZE ) {
         cerr << "Error in " << __FILE__ << ":" << __LINE__ << ":" << endl
@@ -705,7 +706,7 @@ void Frame::applyLink( const cctag::Parameters& params )
     }
 
     if( _vote._seed_indices.host.size <= 0 ) {
-        cout << "Leave " << __FUNCTION__ << endl;
+        DO_TALK( cout << "Leave " << __FUNCTION__ << endl; )
         // We have note found any seed, return
         return;
     }
@@ -777,7 +778,7 @@ void Frame::applyLink( const cctag::Parameters& params )
     cout << "  Found arcs from " << h_ring_counter << " seeds" << endl;
 #endif // NDEBUG
 
-    cout << "Leave " << __FUNCTION__ << endl;
+    DO_TALK( cout << "Leave " << __FUNCTION__ << endl; )
 }
 }; // namespace popart
 

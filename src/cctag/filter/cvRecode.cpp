@@ -9,6 +9,7 @@
 
 #include "cctag/filter/cvRecode.hpp"
 #include "cctag/params.hpp"
+#include "cctag/talk.hpp" // do DO_TALK macro
 
 #include <boost/gil/image_view.hpp>
 #include <boost/timer.hpp>
@@ -38,7 +39,7 @@ void cvRecodedCanny(
   int debug_info_level,
   const cctag::Parameters* params )
 {
-  std::cerr << "Enter " << __FUNCTION__ << std::endl;
+  DO_TALK( std::cerr << "Enter " << __FUNCTION__ << std::endl; )
 
   CvMat srcCvMat = imgGraySrc;
   CvMat *src = &srcCvMat;
@@ -420,7 +421,7 @@ void cvRecodedCanny(
 
   mag_row = cvMat( 1, size.width, CV_32F );
 
-  CCTAG_COUT_DEBUG( "Canny 1 took: " << t.elapsed() );
+  DO_TALK( CCTAG_COUT_DEBUG( "Canny 1 took: " << t.elapsed() ); );
   t.restart();
 
   // calculate magnitude and angle of gradient, perform non-maxima supression.
@@ -580,7 +581,7 @@ void cvRecodedCanny(
     mag_buf[2] = _mag;
   }
 
-  CCTAG_COUT_DEBUG( "Canny 2 took : " << t.elapsed() );
+  DO_TALK( CCTAG_COUT_DEBUG( "Canny 2 took : " << t.elapsed() ); )
 
 #ifdef DEBUG_MAGMAP_BY_GRIFF
   if( mag_img_file ) {
@@ -640,7 +641,7 @@ void cvRecodedCanny(
       CANNY_PUSH( m + mapstep + 1 );
   }
 
-  CCTAG_COUT_DEBUG( "Canny 3 took : " << t.elapsed() );
+  DO_TALK( CCTAG_COUT_DEBUG( "Canny 3 took : " << t.elapsed() ); )
 
   t.restart();
 
@@ -664,6 +665,6 @@ void cvRecodedCanny(
   delete mag_img_file;
   delete hyst_img_file;
 #endif // DEBUG_MAGMAP_BY_GRIFF
-  CCTAG_COUT_DEBUG( "Canny 4 : " << t.elapsed() );
-  std::cerr << "Leave " << __FUNCTION__ << std::endl;
+  DO_TALK( CCTAG_COUT_DEBUG( "Canny 4 : " << t.elapsed() ); )
+  DO_TALK( std::cerr << "Leave " << __FUNCTION__ << std::endl; )
 }

@@ -8,6 +8,7 @@
 #include <cctag/geometry/Cercle.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/global.hpp>
+#include <cctag/talk.hpp> // for DO_TALK macro
 #include <cctag/algebra/invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
@@ -100,7 +101,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
 
   std::list<EdgePoint*> vProcessedEdgePoint;
 
-  CCTAG_COUT_VAR_DEBUG(outerEllipse);
+  DO_TALK( CCTAG_COUT_VAR_DEBUG(outerEllipse); )
 
   bounded_vector<double, 2> gradE(2);
   bounded_vector<double, 2> toto(2);

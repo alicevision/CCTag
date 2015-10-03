@@ -1,6 +1,7 @@
 #include <cctag/Level.hpp>
 #include <cctag/filter/cvRecode.hpp>
 #include <cctag/filter/thinning.hpp>
+#include "cctag/talk.hpp"
 
 namespace cctag {
 
@@ -23,7 +24,7 @@ Level::Level( std::size_t width, std::size_t height, int debug_info_level )
 
 void Level::setLevel( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params )
 {
-  std::cerr << "Enter " << __FUNCTION__ << std::endl;
+  DO_TALK( std::cerr << "Enter " << __FUNCTION__ << std::endl; )
   cv::resize(src, _src, cv::Size(_src.cols,_src.rows));
   // ASSERT TODO : check that the data are allocated here
   // Compute derivative and canny edge extraction.
@@ -35,7 +36,7 @@ void Level::setLevel( const cv::Mat & src, const double thrLowCanny, const doubl
 #endif
   
   thin(_edges,_temp);
-  std::cerr << "Leave " << __FUNCTION__ << std::endl;
+  DO_TALK( std::cerr << "Leave " << __FUNCTION__ << std::endl; )
 }
 
 const cv::Mat & Level::getSrc() const
