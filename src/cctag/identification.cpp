@@ -388,7 +388,7 @@ void extractSignalUsingHomography( cctag::ImageCut & rectifiedSig,
       // not working // double pixVal = getPixelBicubic( src, hp.x(), hp.y());
       
       //CCTAG_COUT_OPTIM("SamplerSpline64");
-      openMVG::image::Sampler2d<openMVG::image::SamplerSpline16> sampleFunctor; //SamplerCubic
+      openMVG::image::Sampler2d<openMVG::image::SamplerLinear> sampleFunctor; //SamplerCubic
       //SamplerSpline64
       //SamplerCubic
       //SamplerLinear
