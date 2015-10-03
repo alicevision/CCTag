@@ -250,9 +250,11 @@ int main(int argc, char** argv)
 		cv::Mat src;
     	src = cv::imread(fileInFolder.string());
 
-        
+        cv::Mat imgGray;
+        cv::cvtColor( src, imgGray, CV_BGR2GRAY );
+      
         // Call the CCTag detection
-        detection(frameId, src, params, bank, outputFile, fileInFolder.stem().string());
+        detection(frameId, imgGray, params, bank, outputFile, fileInFolder.stem().string());
 ++frameId;
       }
     }
