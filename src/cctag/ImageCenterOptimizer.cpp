@@ -77,15 +77,18 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 	}
 
 	double res = 0;
-
+        std::size_t resSize = 0;
 	for( std::size_t i = 0; i < vecSig.size() - 1; ++i )
 	{
 		//CCTAG_TCOUT_VAR(vecSig[i]._imgSignal);
 		for( std::size_t j = i+1; j < vecSig.size(); ++j )
 		{
-			res += std::pow( norm_2( vecSig[i]._imgSignal - vecSig[j]._imgSignal ), 2 );
+			res += std::pow( norm_2( vecSig[i]._imgSignal - vecSig[j]._imgSignal ), 4 );
+                        //res += norm_2( vecSig[i]._imgSignal - vecSig[j]._imgSignal );
+                        ++resSize;
 		}
 	}
+        res /= resSize;
 
 	++this_ptr->_numIter;
 
