@@ -2,6 +2,7 @@
 #define	PONCTUALCCTAG_HPP
 
 #include <cctag/params.hpp>
+#include <cctag/CCTagMarkersBank.hpp>
 
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/gil/gil_all.hpp>
@@ -41,6 +42,13 @@ void cctagDetection(
       const std::size_t nCrowns = 3,
       const std::string & parameterFile = "",
       const std::string & cctagBankFilename = "");
+
+void cctagDetection(
+      boost::ptr_list<ICCTag> & markers,
+      const std::size_t frame,
+      const boost::gil::gray8_view_t & graySrc,
+      const cctag::Parameters & params,
+      const CCTagMarkersBank * bank = NULL);
 
 }
 
