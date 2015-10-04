@@ -42,7 +42,7 @@ IF(USE_CUDA)
                   ${CUDA_cu} )
 
     IF( COMPILE_STATIC_CCTAG_LIBRARY )
-    	add_library( CCTag STATIC ${CUDA_cpp} ${CCTag_cpp} )
+    	add_library( CCTag STATIC ${CUDA_cpp} ${CCTag_cpp} ${cuda_files} )
     ELSE( COMPILE_STATIC_CCTAG_LIBRARY )
     	MESSAGE( FATAL_ERROR "We must link CCTag library static with CUDA" )
     ENDIF( COMPILE_STATIC_CCTAG_LIBRARY )
@@ -83,7 +83,7 @@ if(USE_CUDA)
     set_source_files_properties( ${CCTagDetect_cpp}
                                  PROPERTIES COMPILE_FLAGS "-std=c++11"
     )
-    add_executable( detection ${CCTagDetect_cpp} ${cuda_files} )
+    add_executable( detection ${CCTagDetect_cpp} )
     target_link_libraries( detection CCTag
                                      ${CUDA_LIBRARIES}
                                      ${OPTPP_LIBRARIES}
@@ -110,6 +110,7 @@ set( FILES_TO_DEPLOY
       ./cctag/view.hpp
       ./cctag/ICCTag.hpp
       ./cctag/params.hpp
+      ./cctag/talk.hpp
       ./cctag/CCTagMarkersBank.hpp
       ./cctag/progBase/MemoryPool.hpp
       ./cctag/progBase/IMemoryPool.hpp

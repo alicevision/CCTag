@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"
+#include "cctag/talk.hpp" // for DO_TALK macro
 
 #include "frame.h"
 #include "assist.h"
@@ -377,7 +378,7 @@ __host__
 bool Voting::constructLine( const cctag::Parameters&     params,
                             cudaStream_t                 stream )
 {
-    // cout << "  Enter " << __FUNCTION__ << endl;
+    DO_TALK( cout << "  Enter " << __FUNCTION__ << endl; )
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_chained_edgecoords.host.size,
@@ -387,7 +388,7 @@ bool Voting::constructLine( const cctag::Parameters&     params,
 
     int listsize = _chained_edgecoords.host.size;
 
-    cout << "    after gradient descent, edge counter is " << listsize << endl;
+    DO_TALK( cout << "    after gradient descent, edge counter is " << listsize << endl; )
 
     if( listsize == 0 ) {
         // cout << "  Leave " << __FUNCTION__ << endl;
@@ -416,14 +417,14 @@ bool Voting::constructLine( const cctag::Parameters&     params,
           params._ratioVoting );    // input
     POP_CHK_CALL_IFSYNC;
 
-    // cout << "  Leave " << __FUNCTION__ << endl;
+    DO_TALK( cout << "  Leave " << __FUNCTION__ << endl; )
     return true;
 }
 
 __host__
 void Frame::applyVote( const cctag::Parameters& params )
 {
-    cout << "Enter " << __FUNCTION__ << endl;
+    DO_TALK( cout << "Enter " << __FUNCTION__ << endl; )
 
     bool success;
 
@@ -433,7 +434,7 @@ void Frame::applyVote( const cctag::Parameters& params )
     if( not success ) {
         _vote._seed_indices.host.size       = 0;
         _vote._chained_edgecoords.host.size = 0;
-        cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl;
+        DO_TALK( cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl; )
         return;
     }
 
@@ -452,7 +453,7 @@ void Frame::applyVote( const cctag::Parameters& params )
          * number of voters has not been counted, and it has not been filtered
          * by length or voters count.
          */
-        cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl;
+        DO_TALK( cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl; )
         return;
     }
 #endif //  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
@@ -569,11 +570,11 @@ void Frame::applyVote( const cctag::Parameters& params )
         }
 #endif // EDGE_LINKING_HOST_SIDE
 
-        cout << "  Number of viable inner points: " << _vote._seed_indices.host.size << endl;
+        DO_TALK( cout << "  Number of viable inner points: " << _vote._seed_indices.host.size << endl; )
     } else {
         _vote._chained_edgecoords.host.size = 0;
     }
-    cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl;
+    DO_TALK( cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl; )
 }
 
 } // namespace popart

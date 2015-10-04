@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef VISION_CCTAG_PARAMS_HPP_
 #define VISION_CCTAG_PARAMS_HPP_
 
@@ -47,7 +49,7 @@ static const bool kDefaultSearchForAnotherSegment = true;
 static const bool kDefaultWriteOutput = false;
 static const bool kDefaultDoIdentification = true;
 static const uint32_t kDefaultMaxEdges = 20000;
-static const bool kDefaultUseCuda = false;
+static const bool kDefaultUseCuda = true;
 
 static const std::string kParamCannyThrLow( "kParamCannyThrLow" );
 static const std::string kParamCannyThrHigh( "kParamCannyThrHigh" );
@@ -84,42 +86,8 @@ static const std::size_t kWeight = INV_GRAD_WEIGHT; // todo@L
 struct Parameters
 {
   friend class boost::serialization::access;
-  Parameters(const std::size_t nCrowns)
-    : _cannyThrLow( kDefaultCannyThrLow )
-    , _cannyThrHigh( kDefaultCannyThrHigh )
-    , _distSearch( kDefaultDistSearch )
-    , _thrGradientMagInVote( kDefaultThrGradientMagInVote )
-    , _angleVoting( kDefaultAngleVoting )
-    , _ratioVoting( kDefaultRatioVoting )
-    , _averageVoteMin( kDefaultAverageVoteMin )
-    , _thrMedianDistanceEllipse( kDefaultThrMedianDistanceEllipse )
-    , _maximumNbSeeds( kDefaultMaximumNbSeeds )
-    , _maximumNbCandidatesLoopTwo( kDefaultMaximumNbCandidatesLoopTwo )
-    , _nCrowns( nCrowns )
-    , _minPointsSegmentCandidate( kDefaultMinPointsSegmentCandidate )
-    , _minVotesToSelectCandidate( kDefaultMinVotesToSelectCandidate )
-    , _threshRobustEstimationOfOuterEllipse( kDefaultThreshRobustEstimationOfOuterEllipse )
-    , _ellipseGrowingEllipticHullWidth( kDefaultEllipseGrowingEllipticHullWidth )
-    , _windowSizeOnInnerEllipticSegment( kDefaultWindowSizeOnInnerEllipticSegment )
-    , _numberOfMultiresLayers( kDefaultNumberOfMultiresLayers )
-    , _numberOfProcessedMultiresLayers( kDefaultNumberOfProcessedMultiresLayers )
-    , _numCutsInIdentStep( kDefaultNumCutsInIdentStep )
-    , _numSamplesOuterEdgePointsRefinement( kDefaultNumSamplesOuterEdgePointsRefinement )
-    , _cutsSelectionTrials( kDefaultCutsSelectionTrials )
-    , _sampleCutLength( kDefaultSampleCutLength )
-    , _minIdentProba( kDefaultMinIdentProba )
-    , _useLMDif( kDefaultUseLMDif )
-    , _searchForAnotherSegment( kDefaultSearchForAnotherSegment )
-    , _writeOutput( kDefaultWriteOutput )
-    , _doIdentification( kDefaultDoIdentification )
-    , _maxEdges( kDefaultMaxEdges )
-#ifdef WITH_CUDA
-    , _useCuda( kDefaultUseCuda )
-    , _debugDir( "" )
-#endif // WITH_CUDA
-  {
-    _nCircles = 2*_nCrowns;
-  }
+
+  Parameters(const std::size_t nCrowns);
 
   float _cannyThrLow; // canny low threshold
   float _cannyThrHigh; // canny high threshold
@@ -159,10 +127,8 @@ struct Parameters
   bool _writeOutput;
   bool _doIdentification; // perform the identification step
   uint32_t _maxEdges; // max number of edge point, determines memory allocation
-#ifdef WITH_CUDA
   bool        _useCuda; // if compiled WITH_CUDA, allow CLI selection, ignore if not
   std::string _debugDir; // prefix for debug output !!!! ONLY ON COMMAND LINE
-#endif // WITH_CUDA
 
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
@@ -195,37 +161,13 @@ struct Parameters
     ar & BOOST_SERIALIZATION_NVP( _writeOutput );
     ar & BOOST_SERIALIZATION_NVP( _doIdentification );
     ar & BOOST_SERIALIZATION_NVP( _maxEdges );
-#ifdef WITH_CUDA
     ar & BOOST_SERIALIZATION_NVP( _useCuda );
-#endif // WITH_CUDA
     _nCircles = 2*_nCrowns;
   }
 
-#ifdef WITH_CUDA
-  inline void setDebugDir( const std::string& debugDir )
-  {
-    struct stat st = {0};
+  void setDebugDir( const std::string& debugDir );
 
-    std::string dir = debugDir;
-    char   dirtail = dir[ dir.size()-1 ];
-    if( dirtail != '/' ) {
-        _debugDir = debugDir + "/";
-    } else {
-        _debugDir = debugDir;
-    }
-
-    if (::stat( _debugDir.c_str(), &st) == -1) {
-        ::mkdir( _debugDir.c_str(), 0700);
-    }
-  }
-#endif // WITH_CUDA
-
-#ifdef WITH_CUDA
-  inline void setUseCuda( bool val )
-  {
-    _useCuda = val;
-  }
-#endif // WITH_CUDA
+  void setUseCuda( bool val );
 };
 
 } // namespace cctag

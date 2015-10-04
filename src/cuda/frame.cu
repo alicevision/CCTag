@@ -7,6 +7,7 @@
 #include "debug_macros.hpp"
 
 #include "frame.h"
+#include "cctag/talk.hpp"
 // #include "clamp.h"
 // #include "frame_gaussian.h"
 
@@ -26,7 +27,8 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer )
     , _wait_for_upload( 0 )
     , _wait_done( 0 )
 {
-    cerr << "Allocating frame: " << width << "x" << height << endl;
+#warning This should be unique
+    DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
     _h_ring_output.data = 0;
 
     POP_CUDA_STREAM_CREATE( &_stream );
@@ -60,11 +62,12 @@ Frame::~Frame( )
 
 void Frame::upload( const unsigned char* image )
 {
-    cerr << "source w=" << _d_plane.cols
-         << " source pitch=" << _d_plane.cols
-         << " dest pitch=" << _d_plane.step
-         << " height=" << _d_plane.rows
-         << endl;
+    DO_TALK(
+      cerr << "source w=" << _d_plane.cols
+           << " source pitch=" << _d_plane.cols
+           << " dest pitch=" << _d_plane.step
+           << " height=" << _d_plane.rows
+           << endl;)
     POP_CUDA_MEMCPY_2D_ASYNC( _d_plane.data,
                               getPitch(),
                               image,
@@ -94,9 +97,11 @@ void cu_fill_from_frame( unsigned char* dst, uint32_t pitch, uint32_t width, uin
 
 void Frame::fillFromFrame( Frame& src )
 {
-    cerr << "Entering " << __FUNCTION__ << endl;
-    cerr << "    copying from src frame with " << src.getWidth() << "x" << src.getHeight() << endl;
-    cerr << "    to dst plane           with " << getWidth() << "x" << getHeight() << endl;
+    DO_TALK(
+      cerr << "Entering " << __FUNCTION__ << endl;
+      cerr << "    copying from src frame with " << src.getWidth() << "x" << src.getHeight() << endl;
+      cerr << "    to dst plane           with " << getWidth() << "x" << getHeight() << endl;
+    )
     assert( _d_plane );
     dim3 grid;
     dim3 block;

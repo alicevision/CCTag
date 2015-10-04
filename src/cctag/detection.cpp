@@ -24,6 +24,7 @@
 #include <cctag/image.hpp>
 #include <cctag/canny.hpp>
 #include <cctag/global.hpp>
+#include <cctag/talk.hpp> // for DO_TALK macro
 #include <cctag/fileDebug.hpp>
 #include "cuda/tag.h"
 
@@ -122,8 +123,7 @@ void completeFlowComponent(
 
       if (childrens.size() < params._minPointsSegmentCandidate)
       {
-        CCTAG_COUT_DEBUG(" childrens.size() < minPointsSegmentCandidate ");
-        return;
+        DO_TALK( CCTAG_COUT_DEBUG(" childrens.size() < minPointsSegmentCandidate "); ) return;
       }
 
       candidate._score = childrens.size();
@@ -139,7 +139,7 @@ void completeFlowComponent(
       // where filteredChildrens.size()==0
       if (filteredChildrens.size() < 5)
       {
-        CCTAG_COUT_DEBUG(" filteredChildrens.size() < 5 ");
+        DO_TALK( CCTAG_COUT_DEBUG(" filteredChildrens.size() < 5 "); )
         return;
       }
 
@@ -210,21 +210,21 @@ void completeFlowComponent(
 
       if (SmFinal > params._thrMedianDistanceEllipse)
       {
-        CCTAG_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing");
+        DO_TALK( CCTAG_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing"); )
         return;
       }
 
       double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
       if (quality > 1.1)
       {
-        CCTAG_COUT_DEBUG("Quality too high!");
+        DO_TALK( CCTAG_COUT_DEBUG("Quality too high!"); )
         return;
       }
 
       double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
       if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20))
       {
-        CCTAG_COUT_DEBUG("Too high ratio between semi-axes!");
+        DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
         return;
       }
 
@@ -244,7 +244,7 @@ void completeFlowComponent(
     }
     catch (cv::Exception& e)
     {
-      CCTAG_COUT_DEBUG( "OpenCV exception" );
+      DO_TALK( CCTAG_COUT_DEBUG( "OpenCV exception" ); )
 #ifdef WITH_CUDA
       e.what();
 #else
@@ -254,7 +254,7 @@ void completeFlowComponent(
   }
   catch (...)
   {
-    CCTAG_COUT_DEBUG( "Exception raised in the second main loop." );
+    DO_TALK( CCTAG_COUT_DEBUG( "Exception raised in the second main loop." ); )
   }
 }
 
@@ -283,7 +283,7 @@ void flowComponentAssembling(
 {
   boost::posix_time::ptime tstart(boost::posix_time::microsec_clock::local_time());
   
-  CCTAG_COUT_DEBUG("================= Look for another segment ==================");
+  DO_TALK( CCTAG_COUT_DEBUG("================= Look for another segment =================="); )
 
   int score = -1;
   int iMax = 0;
@@ -338,13 +338,13 @@ void flowComponentAssembling(
 #endif
   }
 
-  CCTAG_COUT_VAR_DEBUG(iMax);
-  CCTAG_COUT_VAR_DEBUG(*(vCandidateLoopTwo[iMax])._seed);
+  DO_TALK( CCTAG_COUT_VAR_DEBUG(iMax); )
+  DO_TALK( CCTAG_COUT_VAR_DEBUG(*(vCandidateLoopTwo[iMax])._seed); )
 
   if (score > 0)
   {
     const Candidate & selectedCandidate = vCandidateLoopTwo[iMax];
-    CCTAG_COUT_VAR_DEBUG(selectedCandidate._outerEllipse);
+    DO_TALK( CCTAG_COUT_VAR_DEBUG(selectedCandidate._outerEllipse); )
 
     if( isAnotherSegment(outerEllipse, outerEllipsePoints, 
             selectedCandidate._filteredChildrens, selectedCandidate,
@@ -392,7 +392,7 @@ void cctagDetectionFromEdges(
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d = t1 - t0;
   const double spendTime = d.total_milliseconds();
-  CCTAG_COUT_OPTIM("Time in vote: " << spendTime << " ms");
+  DO_TALK( CCTAG_COUT_OPTIM("Time in vote: " << spendTime << " ms"); )
 #endif
 
   // Call for debug only. Write the vote result as an image.
@@ -451,17 +451,19 @@ void cctagDetectionFromEdges(
     ++iCandidate;
   }
 
-  CCTAG_COUT_VAR_DEBUG(vCandidateLoopTwo.size());
-  CCTAG_COUT_DEBUG("================= List of seeds =================");
-  BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
-  {
-    CCTAG_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
-  }
+  DO_TALK(
+    CCTAG_COUT_VAR_DEBUG(vCandidateLoopTwo.size());
+    CCTAG_COUT_DEBUG("================= List of seeds =================");
+    BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
+    {
+      CCTAG_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
+    }
+  )
 
   boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d1 = tstop1 - tstart0;
   const double spendTime1 = d1.total_milliseconds();
-  CCTAG_COUT_OPTIM(" Time in the 1st loop " << spendTime1 << " ms");
+  DO_TALK( CCTAG_COUT_OPTIM(" Time in the 1st loop " << spendTime1 << " ms"); )
 
 #if defined CCTAG_SERIALIZE && defined DEBUG
   std::stringstream outFlowComponentsAssembling;
@@ -512,7 +514,7 @@ void cctagDetectionFromEdges(
               candidate._outerEllipsePoints, outerEllipse,
               cctagPoints, params._nCrowns * 2))
       {
-        CCTAG_COUT_DEBUG("Points outside the outer ellipse OR CCTag not valid : bad gradient orientations");
+        DO_TALK( CCTAG_COUT_DEBUG("Points outside the outer ellipse OR CCTag not valid : bad gradient orientations"); )
         CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTSOUTSIDE_OR_BADGRADORIENT);
         CCTagFileDebug::instance().incrementFlowComponentIndex(0);
         continue;
@@ -522,7 +524,7 @@ void cctagDetectionFromEdges(
 #ifdef CCTAG_SERIALIZE
         componentCandidates.push_back(candidate);
 #endif
-        CCTAG_COUT_DEBUG("Points inside the outer ellipse and good gradient orientations");
+        DO_TALK( CCTAG_COUT_DEBUG("Points inside the outer ellipse and good gradient orientations"); )
       }
       // Create ellipse with its real size from original image.
       cctag::numerical::geometry::Ellipse rescaleEllipse(outerEllipse.center(), outerEllipse.a() * scale, outerEllipse.b() * scale, outerEllipse.angle());
@@ -539,7 +541,7 @@ void cctagDetectionFromEdges(
                ( ( quality <= 0.96 ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||//0.96
                ( realSizeOuterEllipsePoints < 50.0  ) )
       {
-              CCTAG_COUT_DEBUG( "Not enough outer ellipse points: realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality );
+              DO_TALK( CCTAG_COUT_DEBUG( "Not enough outer ellipse points: realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality ); )
               continue;
       }
 
@@ -552,7 +554,7 @@ void cctagDetectionFromEdges(
       {
         CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RATIO_SEMIAXIS);
         CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-        CCTAG_COUT_DEBUG("Too high ratio between semi-axes!");
+        DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
         continue;
       }
 
@@ -596,7 +598,7 @@ void cctagDetectionFromEdges(
         CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTS_OUTSIDE_ELLHULL);
         CCTagFileDebug::instance().incrementFlowComponentIndex(0);
 
-        CCTAG_COUT_DEBUG("Distance max to high!");
+        DO_TALK( CCTAG_COUT_DEBUG("Distance max to high!"); )
         continue;
       }
 
@@ -621,7 +623,7 @@ void cctagDetectionFromEdges(
 #endif
 #endif
 
-      CCTAG_COUT_DEBUG("------------------------------Added marker------------------------------");
+      DO_TALK( CCTAG_COUT_DEBUG("------------------------------Added marker------------------------------"); )
     }
     catch (...)
     {
@@ -629,18 +631,18 @@ void cctagDetectionFromEdges(
       CCTagFileDebug::instance().incrementFlowComponentIndex(0);
       // Ellipse fitting don't pass.
       CCTAG_COUT_CURRENT_EXCEPTION;
-      CCTAG_COUT_DEBUG( "Exception raised" );
+      DO_TALK( CCTAG_COUT_DEBUG( "Exception raised" ); )
     }
   }
 
   boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d2 = tstop2 - tstop1;
   const double spendTime2 = d2.total_milliseconds();
-  CCTAG_COUT_OPTIM("Time in the 2nd loop" << spendTime2 << " ms");
+  DO_TALK( CCTAG_COUT_OPTIM("Time in the 2nd loop" << spendTime2 << " ms"); )
 
   //	markers.sort();
 
-  CCTAG_COUT_DEBUG("Markers creation time: " << t3.elapsed());
+  DO_TALK( CCTAG_COUT_DEBUG("Markers creation time: " << t3.elapsed()); )
   // POP_LEAVE;
 }
 
@@ -794,7 +796,7 @@ void cctagDetection(CCTag::List& markers,
   #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t15(boost::posix_time::microsec_clock::local_time());
   duration = t15 - t05;
-  CCTAG_COUT_OPTIM("Time in CPU buildPryamid: " << duration.total_milliseconds() << " ms");
+  DO_TALK( CCTAG_COUT_OPTIM("Time in CPU buildPryamid: " << duration.total_milliseconds() << " ms"); )
   #endif // CCTAG_OPTIM
 #endif // WITH_CUDA
   
@@ -803,7 +805,7 @@ void cctagDetection(CCTag::List& markers,
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
   duration = t1 - t0;
-  CCTAG_COUT_OPTIM("TIME IN DETECTION: " << duration.total_milliseconds() << " ms");
+  DO_TALK( CCTAG_COUT_OPTIM("TIME IN DETECTION: " << duration.total_milliseconds() << " ms"); )
 #endif
   
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
@@ -843,7 +845,7 @@ void cctagDetection(CCTag::List& markers,
         // Push the outer ellipse
         ellipses.push_back(cctag.rescaledOuterEllipse());
 
-        CCTAG_COUT_VAR_DEBUG(cctag.id());
+        DO_TALK( CCTAG_COUT_VAR_DEBUG(cctag.id()); )
         ++it;
       }
       catch (...)

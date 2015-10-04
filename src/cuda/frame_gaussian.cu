@@ -6,6 +6,7 @@
 
 #include "frame.h"
 #include "clamp.h"
+#include "cctag/talk.hpp" // for DO_TALK macro
 
 namespace popart
 {
@@ -231,11 +232,11 @@ void Frame::applyGauss( const cctag::Parameters & params )
     POP_CHK_CALL_IFSYNC;
 #ifndef NDEBUG
     if( params._debugDir == "" ) {
-        cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl;
+        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
+            << ": debugDir not set, not writing debug output" << endl; )
     } else {
-        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl;
+        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl; )
 
         POP_CUDA_SYNC( _stream );
 

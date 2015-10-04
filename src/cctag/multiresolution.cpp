@@ -14,6 +14,7 @@
 #include <cctag/image.hpp>
 #include <cctag/canny.hpp>
 #include <cctag/detection.hpp>
+#include <cctag/talk.hpp> // for DO_TALK macro
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/gil/image_view.hpp>
@@ -196,7 +197,7 @@ void cctagMultiresDetection_inner(
         popart::TagPipe*        cuda_pipe,
         const Parameters &      params )
 {
-    CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::");
+    DO_TALK( CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::"); )
 
     // Data structure for getting vote winners
     WinnerMap winners;
@@ -263,7 +264,7 @@ void cctagMultiresDetection_inner(
     #ifdef CCTAG_OPTIM
     boost::posix_time::ptime t12(boost::posix_time::microsec_clock::local_time());
     d = t12 - t02;
-    CCTAG_COUT_OPTIM("Time in GPU Edge extraction: " << d.total_milliseconds() << " ms");
+    DO_TALK( CCTAG_COUT_OPTIM("Time in CPU Edge extraction: " << d.total_milliseconds() << " ms"); )
     #endif
 #if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
     } // not cuda_pipe
@@ -311,7 +312,7 @@ void cctagMultiresDetection_inner(
     #ifdef CCTAG_OPTIM
     boost::posix_time::ptime t13(boost::posix_time::microsec_clock::local_time());
     d = t13 - t03;
-    CCTAG_COUT_OPTIM("Time in CPU vote and sort: " << d.total_milliseconds() << " ms");
+    DO_TALK( CCTAG_COUT_OPTIM("Time in CPU vote and sort: " << d.total_milliseconds() << " ms"); )
     #endif
 #if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
     } // not cuda_pipe
@@ -321,11 +322,11 @@ void cctagMultiresDetection_inner(
     if( cuda_pipe ) {
         cctagDetectionFromEdges(
                 pyramidMarkers,
-                cuda_debug_vPoints,
+                vPoints, // cuda_debug_vPoints,
                 level->getSrc(),
-                cuda_debug_winners,
-                cuda_debug_seeds,
-                cuda_debug_vEdgeMap,
+                winners, // cuda_debug_winners,
+                seeds, // cuda_debug_seeds,
+                vEdgeMap, // cuda_debug_vEdgeMap,
                 frame, i, std::pow(2.0, (int) i), params);
     } else {
 #endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)

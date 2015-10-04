@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "debug_image.h"
+#include "cctag/talk.hpp"
 
 using namespace std;
 
@@ -18,7 +19,7 @@ void TagPipe::initialize( const uint32_t pix_w,
                           const uint32_t pix_h,
                           const cctag::Parameters& params )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
+    DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
     static bool tables_initialized = false;
     if( not tables_initialized ) {
         tables_initialized = true;
@@ -45,13 +46,13 @@ void TagPipe::initialize( const uint32_t pix_w,
         _frame[i]->allocDoneEvent( ); // sync
     }
 
-    cerr << "Leave " << __FUNCTION__ << endl;
+    DO_TALK( cerr << "Leave " << __FUNCTION__ << endl; )
 }
 
 __host__
 void TagPipe::load( unsigned char* pix )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
+    DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
 
     KeepTime t( _frame[0]->_stream );
     t.start();
@@ -61,7 +62,7 @@ void TagPipe::load( unsigned char* pix )
     t.stop();
     t.report( "Time for frame upload " );
 
-    cerr << "Leave " << __FUNCTION__ << endl;
+    DO_TALK( cerr << "Leave " << __FUNCTION__ << endl; )
 }
 
 __host__
@@ -105,61 +106,52 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 
     for( int i=0; i<num_layers; i++ ) {
         bool success;
-        #ifndef NDEBUG
+#ifndef NDEBUG
         time_gauss[i]->start();
-        #endif // not NDEBUG
         _frame[i]->applyGauss( params ); // async
-        #ifndef NDEBUG
         time_gauss[i]->stop();
-        #endif // not NDEBUG
         POP_CHK_CALL_IFSYNC;
-
-        #ifndef NDEBUG
         time_mag[i]->start();
-        #endif // not NDEBUG
         _frame[i]->applyMag(   params );  // async
-        #ifndef NDEBUG
         time_mag[i]->stop();
-        #endif // not NDEBUG
         POP_CHK_CALL_IFSYNC;
-
-        #ifndef NDEBUG
         time_hyst[i]->start();
-        #endif // not NDEBUG
         _frame[i]->applyHyst(  params );  // async
-        #ifndef NDEBUG
+        POP_CHK_CALL_IFSYNC;
         time_hyst[i]->stop();
-        #endif // not NDEBUG
-        POP_CHK_CALL_IFSYNC;
-
-        #ifndef NDEBUG
         time_thin[i]->start();
-        #endif // not NDEBUG
         _frame[i]->applyThinning(  params );  // async
-        #ifndef NDEBUG
         time_thin[i]->stop();
-        #endif // not NDEBUG
         POP_CHK_CALL_IFSYNC;
-
-        #ifndef NDEBUG
         time_desc[i]->start();
-        #endif // not NDEBUG
         success = _frame[i]->applyDesc(  params );  // async
-        #ifndef NDEBUG
         time_desc[i]->stop();
-        #endif // not NDEBUG
         POP_CHK_CALL_IFSYNC;
 
         if( not success ) continue;
 
-        #ifndef NDEBUG
         time_vote[i]->start();
-        #endif // not NDEBUG
         _frame[i]->applyVote(  params );  // async
-        #ifndef NDEBUG
         time_vote[i]->stop();
-        #endif // not NDEBUG
         POP_CHK_CALL_IFSYNC;
+#else
+        _frame[i]->applyGauss( params ); // async
+        POP_CHK_CALL_IFSYNC;
+        _frame[i]->applyMag(   params );  // async
+        POP_CHK_CALL_IFSYNC;
+        _frame[i]->applyHyst(  params );  // async
+        POP_CHK_CALL_IFSYNC;
+        _frame[i]->applyThinning(  params );  // async
+        POP_CHK_CALL_IFSYNC;
+        success = _frame[i]->applyDesc(  params );  // async
+        POP_CHK_CALL_IFSYNC;
+
+        if( not success ) continue;
+
+        _frame[i]->applyVote(  params );  // async
+        POP_CHK_CALL_IFSYNC;
+#endif // not NDEBUG
+
         // _frame[i]->applyLink(  params );  // async
     }
 
@@ -175,12 +167,14 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 
 #ifndef NDEBUG
     for( int i=0; i<num_layers; i++ ) {
-        time_gauss[i]->report( "time for Gauss " );
-        time_mag  [i]->report( "time for Mag   " );
-        time_hyst [i]->report( "time for Hyst  " );
-        time_thin [i]->report( "time for Thin  " );
-        time_desc [i]->report( "time for Desc  " );
-        time_vote [i]->report( "time for Vote  " );
+        DO_TALK(
+          time_gauss[i]->report( "time for Gauss " );
+          time_mag  [i]->report( "time for Mag   " );
+          time_hyst [i]->report( "time for Hyst  " );
+          time_thin [i]->report( "time for Thin  " );
+          time_desc [i]->report( "time for Desc  " );
+          time_vote [i]->report( "time for Vote  " );
+        )
         delete time_gauss[i];
         delete time_mag  [i];
         delete time_hyst [i];
@@ -212,16 +206,16 @@ void TagPipe::download( size_t                          layer,
 __host__
 void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
+    DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
 
     if( true ) {
         if( params._debugDir == "" ) {
-            cerr << __FUNCTION__ << ":" << __LINE__
-                << ": debugDir not set, not writing debug output" << endl;
+            DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
+                << ": debugDir not set, not writing debug output" << endl; )
             return;
         } else {
-            cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-                 << params._debugDir << "] using that directory" << endl;
+            DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+                 << params._debugDir << "] using that directory" << endl; )
         }
 
         // This is a debug block
@@ -243,8 +237,8 @@ void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
         POP_SYNC_CHK;
     }
 
-    cerr << "terminating in tagframe" << endl;
-    cerr << "Leave " << __FUNCTION__ << endl;
+    DO_TALK( cerr << "terminating in tagframe" << endl; )
+    DO_TALK( cerr << "Leave " << __FUNCTION__ << endl; )
     // exit( 0 );
 }
 
@@ -253,12 +247,12 @@ void TagPipe::debug_cpu_origin( int                      layer,
                                 const cctag::Parameters& params )
 {
     if( params._debugDir == "" ) {
-        cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl;
+        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
+            << ": debugDir not set, not writing debug output" << endl; )
         return;
     } else {
-        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl;
+        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl; )
     }
 
     ostringstream ascname;
@@ -281,12 +275,12 @@ void TagPipe::debug_cpu_edge_out( int                      layer,
                                   const cctag::Parameters& params )
 {
     if( params._debugDir == "" ) {
-        cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl;
+        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
+            << ": debugDir not set, not writing debug output" << endl; )
         return;
     } else {
-        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl;
+        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl; )
     }
 
     ostringstream filename;
@@ -317,12 +311,12 @@ static void local_debug_cpu_dxdy_out( const char*                  dxdy,
                                       const cctag::Parameters&     params )
 {
     if( params._debugDir == "" ) {
-        cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl;
+        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
+            << ": debugDir not set, not writing debug output" << endl; )
         return;
     } else {
-        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl;
+        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl; )
     }
 
     if( cpu.size().width  != gpu.cols ) {
@@ -401,12 +395,12 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
                                     const cctag::Parameters&      params )
 {
     if( params._debugDir == "" ) {
-        cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl;
+        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
+            << ": debugDir not set, not writing debug output" << endl; )
         return;
     } else {
-        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl;
+        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl; )
     }
 
     ostringstream filename;
