@@ -41,9 +41,26 @@ void cctagDetection(
     bank = CCTagMarkersBank(cctagBankFilename);
   }
   
+  cctagDetection(markers, frame, graySrc,params,&bank);
+}
+
+void cctagDetection(
+      boost::ptr_list<ICCTag> & markers,
+      const std::size_t frame,
+      const cv::Mat & graySrc,
+      const cctag::Parameters & params,
+      const CCTagMarkersBank * pBank)
+{
   boost::ptr_list<cctag::CCTag> cctags;
   
-  cctag::cctagDetection(cctags, frame, graySrc, params, bank);
+  if ( pBank == NULL)
+  {
+    CCTagMarkersBank bank(params._nCrowns);
+    cctag::cctagDetection(cctags, frame, graySrc, params, bank);
+  }else
+  {
+    cctag::cctagDetection(cctags, frame, graySrc, params, *pBank);
+  }
   
   markers.clear();
   BOOST_FOREACH(const cctag::CCTag & cctag, cctags)
