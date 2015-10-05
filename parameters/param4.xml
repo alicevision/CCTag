@@ -2,16 +2,16 @@
 <!DOCTYPE boost_serialization>
 <boost_serialization signature="serialization::archive" version="9">
 <CCTagsParams class_id="0" tracking_level="0" version="0">
-	<_cannyThrLow>0.02</_cannyThrLow>
+	<_cannyThrLow>0.01</_cannyThrLow>
 	<_cannyThrHigh>0.04</_cannyThrHigh>
 	<_distSearch>30</_distSearch>
-    <_thrGradientMagInVote>1000000</_thrGradientMagInVote>
+        <_thrGradientMagInVote>2500</_thrGradientMagInVote>
 	<_angleVoting>0.0</_angleVoting>
 	<_ratioVoting>4</_ratioVoting>
-    <_averageVoteMin>1</_averageVoteMin>
-    <_thrMedianDistanceEllipse>3.0</_thrMedianDistanceEllipse>
-    <_maximumNbSeeds>500</_maximumNbSeeds>
-    <_maximumNbCandidatesLoopTwo>30</_maximumNbCandidatesLoopTwo>
+        <_averageVoteMin>0</_averageVoteMin>
+        <_thrMedianDistanceEllipse>3.0</_thrMedianDistanceEllipse>
+        <_maximumNbSeeds>500</_maximumNbSeeds>
+        <_maximumNbCandidatesLoopTwo>30</_maximumNbCandidatesLoopTwo>
 	<_nCrowns>4</_nCrowns>
 	<_minPointsSegmentCandidate>10</_minPointsSegmentCandidate>
 	<_minVotesToSelectCandidate>3</_minVotesToSelectCandidate>
@@ -20,17 +20,17 @@
 	<_windowSizeOnInnerEllipticSegment>20</_windowSizeOnInnerEllipticSegment>
 	<_numberOfMultiresLayers>4</_numberOfMultiresLayers>
 	<_numberOfProcessedMultiresLayers>4</_numberOfProcessedMultiresLayers>
-	<_numCutsInIdentStep>15</_numCutsInIdentStep>
+	<_numCutsInIdentStep>30</_numCutsInIdentStep>
 	<_numSamplesOuterEdgePointsRefinement>20</_numSamplesOuterEdgePointsRefinement>
-	<_cutsSelectionTrials>10000</_cutsSelectionTrials>
+	<_cutsSelectionTrials>500</_cutsSelectionTrials>
 	<_sampleCutLength>100</_sampleCutLength>
 	<_minIdentProba>1e-6</_minIdentProba>
 	<_useLMDif>1</_useLMDif>
 	<_searchForAnotherSegment>1</_searchForAnotherSegment>
-	<_writeOutput>1</_writeOutput>
-    <_doIdentification>1</_doIdentification>
-    <_maxEdges>40000</_maxEdges>
-    <_useCuda>1</_useCuda>
+	<_writeOutput>0</_writeOutput>
+        <_doIdentification>1</_doIdentification>
+        <_maxEdges>20000</_maxEdges>
+        <_useCuda>1</_useCuda>
 </CCTagsParams>
 </boost_serialization>
 
