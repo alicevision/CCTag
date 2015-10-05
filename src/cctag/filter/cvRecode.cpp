@@ -108,10 +108,11 @@ void cvRecodedCanny(
 
   {
     
-    bool use1Dkernel = false;
+     
+    bool use1Dkernel = true;
     
-    if(use1Dkernel)
-    {
+    //if(use1Dkernel)
+    //{
       // ** Matlab code to generate the gaussian 1D kernel, filter size and standard deviation sigma**
       //    width = 4;
       //    sigma = 1;
@@ -203,13 +204,13 @@ void cvRecodedCanny(
       CvMat* dx_debug = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
       CvMat* dy_debug = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
       
-      CCTAG_COUT("before cvFilter2D 1");
-      cvFilter2D( src, imgTmp, kernelGau1D );
-      CCTAG_COUT("before cvFilter2D 2");
-      cvFilter2D( imgTmp, imgSmooth, kernelGau1DT );
+      //CCTAG_COUT("before cvFilter2D 1");
+      //cvFilter2D( src, imgTmp, kernelGau1D );
+      //CCTAG_COUT("before cvFilter2D 2");
+      //cvFilter2D( imgTmp, imgSmooth, kernelGau1DT );
       
       CCTAG_COUT("before cvFilter2D 3");
-      cvFilter2D( imgSmooth, imgTmp, kernelGau1D );
+      cvFilter2D( src, imgTmp, kernelGau1D );
       
       CCTAG_COUT("before cvFilter2D 4");
       cvFilter2D( imgTmp, dx_debug, kernelDGau1DT);
@@ -235,8 +236,8 @@ void cvRecodedCanny(
       //cvTranspose( kerneldX, kerneldY );
       //cvFilter2D( src, dy, kernelGau1D );
       
-    }else
-    {  
+    //}else
+    //{  
     // The second option is to apply the (9x9) 2D following kernel
 
       CvMat* kerneldX = cvCreateMat( 9, 9, CV_32FC1 );
@@ -330,21 +331,22 @@ void cvRecodedCanny(
       cvFilter2D( src, dx, kerneldX );
       cvFilter2D( src, dy, kerneldY );
 
-//      CCTAG_COUT("DX_DEBUG values");
-//      CCTAG_COUT(dx_debug->rows);
-//      for (int i=0; i< dx->rows ; ++i)
-//      {
-//        for (int j=0; j< dx->cols ; ++j)
-//        {
-//          std::cout << dx->data.s[ i*dx->step + j] << " ";
-//        }
-//        std::cout << std::endl;
-//      }
-//      CCTAG_COUT("END DX_DEBUG values");
+      CCTAG_COUT("DX_DEBUG values");
+      CCTAG_COUT(dx_debug->rows);
+      for (int i=0; i< dx->rows ; ++i)
+      {
+        for (int j=0; j< dx->cols ; ++j)
+        {
+          std::cout << dx->data.s[ i*dx->step + j] << " ";
+        }
+        std::cout << std::endl;
+      }
+      CCTAG_COUT("END DX_DEBUG values");
       
       cvReleaseMat( &kerneldX );
       cvReleaseMat( &kerneldY );
-    }
+    //}
+      return;
   }
 
 #ifndef USE_INTEGER_REP
