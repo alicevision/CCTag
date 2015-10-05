@@ -227,6 +227,10 @@ int main(int argc, char** argv)
       std::stringstream outFileName;
       outFileName << std::setfill('0') << std::setw(5) << frameId;
 
+      // Invert the image for the projection scenario
+      //cv::Mat imgGrayInverted;
+      //bitwise_not ( imgGray, imgGrayInverted );
+      
       // Call the CCTag detection
       detection(frameId, imgGray, params, bank, outputFile, outFileName.str());
       ++frameId; 
