@@ -30,7 +30,7 @@
 	<_writeOutput>1</_writeOutput>
 	<_doIdentification>1</_doIdentification>
     <_maxEdges>20000</_maxEdges>
-    <_useCuda>0</_useCuda>
+    <_useCuda>1</_useCuda>
 </CCTagsParams>
 </boost_serialization>
 
