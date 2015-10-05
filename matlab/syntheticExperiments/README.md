@@ -10,5 +10,7 @@ you have to follow the following instructions:
 7. Install octave if not already installed
 8. Go to ./matlab/syntheticExperiments/octaveVersion
 9. Start octave
+10. Run the cctag detection on every branches you want to test via
+    ./script/runSynthetic.sh nbRings idXp branchName
 10. Edit main.m to set which experiments you want to run, for which pattern and on which branch(es)
 11. Save and launch main.m in the octave terminal: main
