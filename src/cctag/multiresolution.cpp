@@ -25,6 +25,8 @@
 
 #include <cmath>
 #include <sstream>
+#include <fstream>
+#include <map>
 
 #ifdef WITH_CUDA
 #ifdef WITH_CUDA_COMPARE_MODE
@@ -32,8 +34,46 @@
 #endif
 #endif
 
+#define LOOK_AT_EDGE_DETAILS
+
 namespace cctag
 {
+
+#ifdef LOOK_AT_EDGE_DETAILS
+struct EdgeDebugIndex
+{
+    int _x;
+    int _y;
+    EdgeDebugIndex( int x, int y )
+        : _x( x )
+        , _y( y )
+    { }
+};
+struct EdgeDebug
+{
+    const EdgePoint* _cpu;
+    const EdgePoint* _gpu;
+
+    EdgeDebug( const EdgePoint* cpu, const EdgePoint* gpu )
+        : _cpu( cpu )
+        , _gpu( gpu )
+    { }
+};
+const bool operator<( const EdgeDebugIndex& l, const EdgeDebugIndex& r )
+{
+    if( l._x < r._x ) return true;
+    if( l._x > r._x ) return false;
+    if( l._y < r._y ) return true;
+    // if( l._y > r._y ) return false;
+    return false;
+}
+
+typedef std::map<EdgeDebugIndex,EdgeDebug>                 EdgeDebugMap;
+typedef std::pair<EdgeDebugIndex,EdgeDebug>                EdgeDebugPair;
+typedef std::map<EdgeDebugIndex,EdgeDebug>::iterator       EdgeDebugIt;
+typedef std::map<EdgeDebugIndex,EdgeDebug>::const_iterator EdgeDebugCit;
+
+#endif // LOOK_AT_EDGE_DETAILS
 
 /* @brief Add markers from a list to another, deleting duplicates.
  *
@@ -320,6 +360,66 @@ void cctagMultiresDetection_inner(
 
 #if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
     if( cuda_pipe ) {
+#ifdef LOOK_AT_EDGE_DETAILS
+        if( params._debugDir != "" ) {
+            EdgeDebugMap theMap;
+
+            std::vector<EdgePoint>::const_iterator it, end;
+
+            it  = vPoints.begin();
+            end = vPoints.end();
+            for( ; it!=end; it++ ) {
+                const EdgePoint& e = *it;
+                theMap.insert(
+                    EdgeDebugPair(
+                        EdgeDebugIndex( e.x(), e.y() ),
+                        EdgeDebug( &e, 0 ) ) );
+            }
+
+            it  = cuda_debug_vPoints.begin();
+            end = cuda_debug_vPoints.end();
+            for( ; it!=end; it++ ) {
+                const EdgePoint& e = *it;
+                EdgeDebugIndex idx( e.x(), e.y() );
+                EdgeDebugIt eit = theMap.find( idx );
+                if( eit == theMap.end() ) {
+                    theMap.insert(
+                        EdgeDebugPair(
+                            idx,
+                            EdgeDebug( 0, &e ) ) );
+                } else {
+                    eit->second._gpu = &e;
+                }
+            }
+
+            std::ostringstream epu;
+            epu << params._debugDir << "vpoints-cpu.txt";
+            std::ofstream epu_out( epu.str() );
+
+            EdgeDebugIt ecit  = theMap.begin();
+            EdgeDebugIt ecend = theMap.end();
+            for( ; ecit != ecend; ecit++ ) {
+                epu_out << "(" << ecit->first._x << "," << ecit->first._y << ")"
+                        << std::endl;
+            }
+            epu_out.close();
+
+            // "(" << e.x() << "," << e.y() << "," << e.w() << ")"
+            // " g=(" << e._grad.x() << "," << e._grad.y() << "," << e._grad.w() << ")"
+            // double _normGrad;
+            // EdgePoint* _before;
+            // EdgePoint* _after;
+            // ssize_t _processed;
+            // bool _processedIn;
+            // ssize_t _isMax;
+            // ssize_t _edgeLinked;
+            // ssize_t _nSegmentOut; // std::size_t _nSegmentOut;
+            // float _flowLength;
+            // bool _processedAux;
+        }
+#endif // LOOK_AT_EDGE_DETAILS
+        
+#if 0
         cctagDetectionFromEdges(
                 pyramidMarkers,
                 vPoints, // cuda_debug_vPoints,
@@ -328,6 +428,16 @@ void cctagMultiresDetection_inner(
                 seeds, // cuda_debug_seeds,
                 vEdgeMap, // cuda_debug_vEdgeMap,
                 frame, i, std::pow(2.0, (int) i), params);
+#else
+        cctagDetectionFromEdges(
+                pyramidMarkers,
+                cuda_debug_vPoints,
+                level->getSrc(),
+                cuda_debug_winners,
+                cuda_debug_seeds,
+                cuda_debug_vEdgeMap,
+                frame, i, std::pow(2.0, (int) i), params);
+#endif
     } else {
 #endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
     cctagDetectionFromEdges(
