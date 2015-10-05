@@ -29,6 +29,7 @@ for iCrown = 1:length(sTypeMarkers)%nCrowns = sTypeMarkers
         
         % Parse and load detection results
         fn = lc_loadMarkers( nCrowns, idXp, branchName);
+        fn
         load( fn.rawDetectionResultPath, 'Markers');
         
         allResultPath{iCrown,iBranch} = fn;

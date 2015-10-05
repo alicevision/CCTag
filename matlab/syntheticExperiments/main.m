@@ -1,5 +1,7 @@
 % For the documentation, cf. the one in lc_displayAllResults.m
 
+setPath;
+
 iXp = 1; % in {1,2,3}
 patterns = { '3Crowns' };% Subset of {'3Crowns','4Crowns','ARTKPlus'}.
                              % Only one must be passed for branches
