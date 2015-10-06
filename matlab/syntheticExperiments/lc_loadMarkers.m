@@ -3,6 +3,7 @@ function fn = lc_loadMarkers(nCrowns, idXp, branchName)
 addpath('..');
 
 fn = lc_syntheticFileNames(nCrowns,idXp,branchName);
+fn
 
 listing = dir(fn.folderName);
 

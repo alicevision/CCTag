@@ -34,7 +34,7 @@
 #endif
 #endif
 
-#define LOOK_AT_EDGE_DETAILS
+#undef LOOK_AT_EDGE_DETAILS
 
 namespace cctag
 {

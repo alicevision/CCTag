@@ -29,6 +29,7 @@ for iCrown = 1:length(sTypeMarkers)%nCrowns = sTypeMarkers
         
         % Parse and load detection results
         fn = lc_loadMarkers( nCrowns, idXp, branchName);
+        fn
         load( fn.rawDetectionResultPath, 'Markers');
         
         allResultPath{iCrown,iBranch} = fn;
@@ -98,7 +99,6 @@ for iCrown = 1:length(sTypeMarkers)%nCrowns = sTypeMarkers
                                         %  norm(imgCenter - normalize(aux.metricHomography*[0;0;1])) )/(nPrec+1);
                                     end
                                     nPrec = nPrec+1;
-                                   
                                 end
                             end
                         end
