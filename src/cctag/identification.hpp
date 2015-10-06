@@ -38,6 +38,12 @@
 
 namespace cctag {
 
+enum NeighborType {
+  GRID,
+  CIRCULAR,
+  COV
+};
+  
 template<typename VecT>
 typename VecT::value_type computeMedian( const VecT& vec )
 {
@@ -350,6 +356,49 @@ bool refineConicFamily(
         const cctag::numerical::geometry::Ellipse & ellipse,
         const std::vector< cctag::Point2dN<double> > & pr,
         const bool useLmDif );
+
+/**
+ * @brief Get signal
+ *
+ * @param[out] cctag cctag to optimize/wrap
+ * @param[out] fsig signal along the cuts at the end of the optimization
+ * @param[in] lengthSig
+ * @param[in] src source image
+ * @param[in] ellipse outer ellipse (todo: is that already in the cctag object?)
+ * @param[in] pr (todo: no clue)
+ */
+bool refineConicFamilyNew(
+        CCTag & cctag,
+        std::vector< cctag::ImageCut > & fsig,
+        const std::size_t lengthSig,
+        const cv::Mat & src,
+        const cctag::numerical::geometry::Ellipse & ellipse,
+        const std::vector< cctag::Point2dN<double> > & pr);
+
+double imageCenterOptimizationNew(
+        cctag::numerical::BoundedMatrix3x3d & mH,
+        std::vector< cctag::ImageCut > & signals,
+        cctag::Point2dN<double> & center,
+        const double neighbourSize,
+        const std::size_t lengthSig,
+        const std::vector< cctag::Point2dN<double> > & vecExtPoint, 
+        const cv::Mat & src, 
+        const cctag::numerical::geometry::Ellipse & ellipse);
+
+void getNearbyPoints(
+          const cctag::numerical::geometry::Ellipse & ellipse,
+          const cctag::Point2dN<double> & center,
+          std::vector<cctag::Point2dN<double> > & nearbyPoints,
+          const double neighbourSize,
+          const NeighborType neighborType);
+
+double costFunctionNew( cctag::numerical::BoundedMatrix3x3d & mH,
+        std::vector< cctag::ImageCut > & signals,
+        const std::size_t lengthSig,
+        const cctag::Point2dN<double> & o,
+        const std::vector< cctag::Point2dN<double> > & vecExtPoint, 
+        const cv::Mat & src, 
+        const cctag::numerical::BoundedMatrix3x3d & matEllipse );
 
 /**
  * Identify a marker (robust way)

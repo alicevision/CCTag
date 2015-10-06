@@ -940,6 +940,168 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
   return true;
 }
 
+bool refineConicFamilyNew( CCTag & cctag, std::vector< cctag::ImageCut > & fsig, 
+        const std::size_t lengthSig, const cv::Mat & src,
+        const cctag::numerical::geometry::Ellipse & ellipse,
+        const std::vector< cctag::Point2dN<double> > & pr)
+{
+  using namespace cctag::numerical;
+  using namespace boost::numeric::ublas;
+
+  cctag::numerical::BoundedMatrix3x3d & mH = cctag.homography();
+  Point2dN<double> & optimalPoint = cctag.centerImg();
+
+
+  BOOST_ASSERT( pr.size() > 0 );
+
+    CCTagVisualDebug::instance().newSession( "refineConicPts" );
+    BOOST_FOREACH(const cctag::Point2dN<double> & pt, pr)
+    {
+      CCTagVisualDebug::instance().drawPoint( pt, cctag::color_red );
+    }
+
+    //center = ellipse.center();
+
+    CCTagVisualDebug::instance().newSession( "centerOpt" );
+    CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_green );
+
+    boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
+
+    // Perform the optimization
+    std::vector<cctag::Point2dN<double> > nearbyPoints;
+    
+    double neighbourSize = 0.10;
+    double residual;
+    
+    while ( neighbourSize > 1e-4 )
+    {
+      residual = imageCenterOptimizationNew(mH,fsig,optimalPoint,neighbourSize,lengthSig,pr,src,ellipse);
+      CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
+      neighbourSize /= 2.0 ;
+    }
+    
+    // Measure the time spent in the optimization
+    boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
+    boost::posix_time::time_duration d = tend - tstart;
+    const double spendTime = d.total_milliseconds();
+    DO_TALK( CCTAG_COUT_DEBUG( "After optimizer (optpp+interp2D) : " << optimalPoint << ", timer: " << spendTime ); )
+
+    CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
+
+    {
+      boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
+      getSignals( mH, fsig, lengthSig, optimalPoint, pr, src, ellipse.matrix() );
+      boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
+      boost::posix_time::time_duration d = tend - tstart;
+      const double spendTime = d.total_milliseconds();
+    }
+    
+    return true;
+}
+
+double imageCenterOptimizationNew(
+        cctag::numerical::BoundedMatrix3x3d & mH,
+        std::vector< cctag::ImageCut > & signals,
+        cctag::Point2dN<double> & center,
+        const double neighbourSize,
+        const std::size_t lengthSig,
+        const std::vector< cctag::Point2dN<double> > & vecExtPoint, 
+        const cv::Mat & src, 
+        const cctag::numerical::geometry::Ellipse & ellipse)
+{
+    std::vector<cctag::Point2dN<double> > nearbyPoints;
+    
+    getNearbyPoints(ellipse, center, nearbyPoints, neighbourSize, GRID);
+    
+    double minRes = 1e13;
+    cctag::Point2dN<double> optimalPoint;
+    cctag::numerical::BoundedMatrix3x3d optimalHomography;
+    
+    for(const auto & point : nearbyPoints)
+    {
+      //CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
+      double res = costFunctionNew( optimalHomography,signals, lengthSig, point, vecExtPoint, src, ellipse.matrix() );
+      if ( res < minRes )
+      {
+        minRes = res;
+        optimalPoint = point;
+      }
+    }
+    center = optimalPoint;
+    CCTAG_COUT_VAR(center);
+    mH = optimalHomography;
+    
+    return minRes;
+}
+  
+  void getNearbyPoints(
+          const cctag::numerical::geometry::Ellipse & ellipse,
+          const cctag::Point2dN<double> & center,
+          std::vector<cctag::Point2dN<double> > & nearbyPoints,
+          const double neighbourSize,
+          const NeighborType neighborType)
+{
+  nearbyPoints.clear();
+
+  cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromEllipse( ellipse );
+
+  cctag::Point2dN<double> condCenter = center;
+  cctag::numerical::optimization::condition(condCenter, mT);
+
+  cctag::numerical::BoundedMatrix3x3d mInvT;
+  cctag::numerical::invert_3x3(mT,mInvT);
+
+  if ( neighborType == GRID )
+  {
+    const std::size_t gridNSample = 4;//5
+    const double gridWidth = neighbourSize;
+    const double halfWidth = gridWidth/2.0;
+    const double stepSize = gridWidth/(gridNSample-1);
+    
+    nearbyPoints.reserve(gridNSample*gridNSample);
+
+    for(int i=0 ; i < gridNSample ; ++i)
+    {
+      for(int j=0 ; j < gridNSample ; ++j)
+      {
+        cctag::Point2dN<double> point(condCenter.x() - halfWidth + i*stepSize, condCenter.y() - halfWidth + j*stepSize );
+        nearbyPoints.push_back(point);
+      }
+    }
+  }
+  
+  cctag::numerical::optimization::condition(nearbyPoints, mInvT);
+}
+
+double costFunctionNew( cctag::numerical::BoundedMatrix3x3d & mH,
+        std::vector< cctag::ImageCut > & signals,
+        const std::size_t lengthSig,
+        const cctag::Point2dN<double> & center,
+        const std::vector< cctag::Point2dN<double> > & vecExtPoint, 
+        const cv::Mat & src, 
+        const cctag::numerical::BoundedMatrix3x3d & matEllipse )
+{
+  std::vector< cctag::ImageCut > vecSig;
+
+  if ( !getSignals( mH, vecSig, lengthSig, center, vecExtPoint, src, matEllipse ) )
+  {
+    CCTAG_COUT_DEBUG("Divergence!");
+    return -1.0;
+  }
+
+  double res = 0;
+  std::size_t resSize = 0;
+  for( std::size_t i = 0; i < vecSig.size() - 1; ++i )
+  {
+    for( std::size_t j = i+1; j < vecSig.size(); ++j )
+    {
+      res += std::pow( norm_2( vecSig[i]._imgSignal - vecSig[j]._imgSignal ), 2 );
+      ++resSize;
+    }
+  }
+  return res /= resSize;
+}
+
 int identify(
   CCTag & cctag,
   const std::vector< std::vector<double> > & radiusRatios, ///@todo directly use the bank
@@ -1065,7 +1227,16 @@ int identify(
 
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-    bool hasConverged = refineConicFamily( cctag, fsig, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
+//    bool hasConverged = refineConicFamily( cctag, fsig, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
+//    if( !hasConverged )
+//    {
+//      DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
+//      CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
+//      DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
+//      return status::opti_has_diverged;
+//    }
+    
+    bool hasConverged = refineConicFamilyNew( cctag, fsig, params._sampleCutLength, src, ellipse, prSelection);
     if( !hasConverged )
     {
       DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
