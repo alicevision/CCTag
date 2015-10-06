@@ -614,10 +614,10 @@ void selectCut( std::vector< cctag::ImageCut > & cutSelection,
 
     //CCTAG_TCOUT_VAR( line._stop ); //don't delete.
 
-    //SubPixEdgeOptimizer optimizer( cut );
+    SubPixEdgeOptimizer optimizer( cut );
 
-    cctag::Point2dN<double> refinedPoint(line._stop);
-    //cctag::Point2dN<double> refinedPoint = optimizer( halfWidth, line._stop.x(), cut._imgSignal[0], cut._imgSignal[ cut._imgSignal.size() - 1 ] );
+    //cctag::Point2dN<double> refinedPoint(line._stop);
+    cctag::Point2dN<double> refinedPoint = optimizer( halfWidth, line._stop.x(), cut._imgSignal[0], cut._imgSignal[ cut._imgSignal.size() - 1 ] );
 
 
     //CCTAG_TCOUT_VAR( refinedPoint ); //don't delete.
@@ -626,7 +626,6 @@ void selectCut( std::vector< cctag::ImageCut > & cutSelection,
     {
 
       prSelection.push_back( refinedPoint );
-      //prSelection.push_back( line._stop );//!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       cutSelection.push_back( line );
     }
