@@ -850,6 +850,7 @@ void cctagDetection(CCTag::List& markers,
       }
       catch (...)
       {
+        ++it;
       }
     }
 #ifdef CCTAG_OPTIM
