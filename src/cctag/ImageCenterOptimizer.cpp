@@ -128,7 +128,7 @@ Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double>
 	objfcn.setSearchStrategy( TrustRegion );//LineSearch ); //TrustRegion );
 	objfcn.setMaxFeval( 200 );
 	objfcn.setFcnTol( 1.0e-4 );
-
+    //objfcn.setMaxStep(0.2);
 #if defined(DEBUG)
 	if ( !objfcn.setOutputFile("example1.out", 0) )
 	{
