@@ -5,21 +5,24 @@
 
 namespace cctag {
 
-Level::Level( std::size_t width, std::size_t height, int debug_info_level )
+Level::Level( std::size_t width, std::size_t height, int debug_info_level, bool cuda_allocates )
     : _debug_info_level( debug_info_level )
+    , _cuda_allocates( cuda_allocates )
 {
-  // Allocation
-  _src = cv::Mat(height, width, CV_8UC1);
-  _dx =  cv::Mat(height, width, CV_16SC1 );
-  _dy = cv::Mat(height, width, CV_16SC1 );
-  _mag = cv::Mat(height, width, CV_16SC1 );
-  _edges = cv::Mat(height, width, CV_8UC1);
-  _temp = cv::Mat(height, width, CV_8UC1);
+    if( _cuda_allocates ) {
+    } else {
+        // Allocation
+        _src = cv::Mat(height, width, CV_8UC1);
+        _dx =  cv::Mat(height, width, CV_16SC1 );
+        _dy = cv::Mat(height, width, CV_16SC1 );
+        _mag = cv::Mat(height, width, CV_16SC1 );
+        _edges = cv::Mat(height, width, CV_8UC1);
+    }
+    _temp = cv::Mat(height, width, CV_8UC1);
   
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
-  _edgesNotThin = cv::Mat(height, width, CV_8UC1);
+    _edgesNotThin = cv::Mat(height, width, CV_8UC1);
 #endif
-  
 }
 
 void Level::setLevel( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params )

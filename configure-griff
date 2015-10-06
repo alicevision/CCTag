@@ -1,0 +1,26 @@
+#! /bin/bash
+
+USAGE="
+Usage: ./`basename $0` [-h] [CMAKE_ARGS]
+See: cmake -h
+
+Example:
+$0
+
+
+"
+
+case $1 in
+ -h) echo "$USAGE"; exit 0 ;;
+  h) echo "$USAGE"; exit 0 ;;
+help) echo "$USAGE"; exit 0 ;;
+esac
+
+(mkdir -p build &&
+cd build && 
+branch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p') &&
+mkdir -p $branch &&
+cd $branch
+cmake ../.. "$@")
+
+

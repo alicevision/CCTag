@@ -11,7 +11,7 @@ class Level
 {
 public:
   
-  Level( std::size_t width, std::size_t height, int debug_info_level );
+  Level( std::size_t width, std::size_t height, int debug_info_level, bool cuda_allocates = false );
   
   void setLevel( const cv::Mat & src,
                  const double thrLowCanny,
@@ -39,7 +39,8 @@ public:
   
 
 private:
-  int _debug_info_level;
+  bool _cuda_allocates;
+  int  _debug_info_level;
   
   cv::Mat _dx;
   cv::Mat _dy;
