@@ -1,6 +1,5 @@
 #pragma once
 
-#ifdef WITH_CUDA
 #include <string>
 #include <vector>
 #include <stdlib.h>
@@ -30,6 +29,16 @@ public:
                    std::vector<cctag::EdgePoint*>& seeds,
                    cctag::WinnerMap&               winners );
 
+    inline std::size_t getNumOctaves( ) const {
+        return _frame.size();
+    }
+
+    cv::Mat* getPlane( size_t layer ) const;
+    cv::Mat* getDx( size_t layer ) const;
+    cv::Mat* getDy( size_t layer ) const;
+    cv::Mat* getMag( size_t layer ) const;
+    cv::Mat* getEdges( size_t layer ) const;
+
     void debug( unsigned char* pix,
                 const cctag::Parameters& params );
 
@@ -55,9 +64,3 @@ public:
 
 }; // namespace popart
 
-#else // WITH_CUDA
-namespace popart
-{
-typedef void* TagPipe;
-};
-#endif // WITH_CUDA

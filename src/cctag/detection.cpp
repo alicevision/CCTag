@@ -245,11 +245,7 @@ void completeFlowComponent(
     catch (cv::Exception& e)
     {
       DO_TALK( CCTAG_COUT_DEBUG( "OpenCV exception" ); )
-#ifdef WITH_CUDA
       e.what();
-#else
-      const char* err_msg = e.what();
-#endif
     }
   }
   catch (...)
@@ -362,11 +358,7 @@ void flowComponentAssembling(
 
   boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d = tstop - tstart;
-#ifdef WITH_CUDA
   d.total_milliseconds();
-#else
-  const double spendTime = d.total_milliseconds();
-#endif
 }
 
 
@@ -711,94 +703,57 @@ void cctagDetection(CCTag::List& markers,
   
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
 
-  popart::TagPipe* pipe1 = 0;
-
-
-#ifdef WITH_CUDA
-  // Case 1: we have compiled with CUDA, and we can use the
-  // command line to switch it on or off.
-  if( params._useCuda ) {
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
-    #endif // CCTAG_OPTIM
-    pipe1 = new popart::TagPipe;
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
+#endif // CCTAG_OPTIM
+  popart::TagPipe* pipe1 = new popart::TagPipe;
     
-    uint32_t w = imgGraySrc.size().width;
-    uint32_t h = imgGraySrc.size().height;
-    pipe1->initialize( w, h, params );
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
-    duration = t10 - t00;
-    CCTAG_COUT_OPTIM("Time in GPU init: " << duration.total_milliseconds() << " ms");
-    #endif // CCTAG_OPTIM
+  uint32_t w = imgGraySrc.size().width;
+  uint32_t h = imgGraySrc.size().height;
+  pipe1->initialize( w, h, params );
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
+  duration = t10 - t00;
+  CCTAG_COUT_OPTIM("Time in GPU init: " << duration.total_milliseconds() << " ms");
+#endif // CCTAG_OPTIM
 
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
-    #endif // CCTAG_OPTIM
-    // unsigned char* pix = frame.data;
-    assert( imgGraySrc.elemSize() == 1 );
-    assert( imgGraySrc.isContinuous() );
-    assert( imgGraySrc.type() == CV_8U );
-    unsigned char* pix = imgGraySrc.data;
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
+#endif // CCTAG_OPTIM
+  // unsigned char* pix = frame.data;
+  assert( imgGraySrc.elemSize() == 1 );
+  assert( imgGraySrc.isContinuous() );
+  assert( imgGraySrc.type() == CV_8U );
+  unsigned char* pix = imgGraySrc.data;
 
-    pipe1->load( pix );
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
-    duration = t11 - t01;
-    CCTAG_COUT_OPTIM("Time in GPU load: " << duration.total_milliseconds() << " ms");
-    #endif // CCTAG_OPTIM
+  pipe1->load( pix );
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
+  duration = t11 - t01;
+  CCTAG_COUT_OPTIM("Time in GPU load: " << duration.total_milliseconds() << " ms");
+#endif // CCTAG_OPTIM
 
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t02(boost::posix_time::microsec_clock::local_time());
-    #endif // CCTAG_OPTIM
-    pipe1->tagframe( params ); // pix, w, h, params );
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t12(boost::posix_time::microsec_clock::local_time());
-    duration = t12 - t02;
-    CCTAG_COUT_OPTIM("Time in GPU tag: " << duration.total_milliseconds() << " ms");
-    #endif // CCTAG_OPTIM
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t02(boost::posix_time::microsec_clock::local_time());
+#endif // CCTAG_OPTIM
+  pipe1->tagframe( params ); // pix, w, h, params );
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t12(boost::posix_time::microsec_clock::local_time());
+  duration = t12 - t02;
+  CCTAG_COUT_OPTIM("Time in GPU tag: " << duration.total_milliseconds() << " ms");
+#endif // CCTAG_OPTIM
 
 #ifndef NDEBUG
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t03(boost::posix_time::microsec_clock::local_time());
-    #endif // CCTAG_OPTIM
-    pipe1->debug( pix, params );
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t13(boost::posix_time::microsec_clock::local_time());
-    duration = t13 - t03;
-    CCTAG_COUT_OPTIM("Time in GPU debug: " << duration.total_milliseconds() << " ms");
-    #endif // CCTAG_OPTIM
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t03(boost::posix_time::microsec_clock::local_time());
+#endif // CCTAG_OPTIM
+  pipe1->debug( pix, params );
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t13(boost::posix_time::microsec_clock::local_time());
+  duration = t13 - t03;
+  CCTAG_COUT_OPTIM("Time in GPU debug: " << duration.total_milliseconds() << " ms");
+#endif // CCTAG_OPTIM
 #endif // not NDEBUG
-  }
-#ifndef WITH_CUDA_COMPARE_MODE
-  // Case 1(a): command line decides whether we use GPU or CPU
-  // Case 1(b): in compare mode, we always execute CPU code
-  else {
-#endif // WITH_CUDA_COMPARE_MODE
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t04(boost::posix_time::microsec_clock::local_time());
-    #endif // CCTAG_OPTIM
-    imagePyramid.build(imgGraySrc, params._cannyThrLow, params._cannyThrHigh, &params );
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t14(boost::posix_time::microsec_clock::local_time());
-    duration = t14 - t04;
-    CCTAG_COUT_OPTIM("Time in CPU buildPryamid: " << duration.total_milliseconds() << " ms");
-    #endif // CCTAG_OPTIM
-#ifndef WITH_CUDA_COMPARE_MODE
-  }
-#endif // WITH_CUDA_COMPARE_MODE
-#else // not WITH_CUDA
-  #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t05(boost::posix_time::microsec_clock::local_time());
-  #endif // CCTAG_OPTIM
-  // Case 1: we don't use CUDA
-  imagePyramid.build(imgGraySrc, params._cannyThrLow, params._cannyThrHigh, &params );
-  #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t15(boost::posix_time::microsec_clock::local_time());
-  duration = t15 - t05;
-  DO_TALK( CCTAG_COUT_OPTIM("Time in CPU buildPryamid: " << duration.total_milliseconds() << " ms"); )
-  #endif // CCTAG_OPTIM
-#endif // WITH_CUDA
   
   cctagMultiresDetection( markers, imgGraySrc, imagePyramid, frame, pipe1, params );
 

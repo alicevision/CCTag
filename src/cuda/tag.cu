@@ -204,6 +204,41 @@ void TagPipe::download( size_t                          layer,
 }
 
 __host__
+cv::Mat* TagPipe::getPlane( size_t layer ) const
+{
+    assert( layer < getNumOctaves() );
+    return _frame[layer]->getPlane();
+}
+
+__host__
+cv::Mat* TagPipe::getDx( size_t layer ) const
+{
+    assert( layer < getNumOctaves() );
+    return _frame[layer]->getDx();
+}
+
+__host__
+cv::Mat* TagPipe::getDy( size_t layer ) const
+{
+    assert( layer < getNumOctaves() );
+    return _frame[layer]->getDy();
+}
+
+__host__
+cv::Mat* TagPipe::getMag( size_t layer ) const
+{
+    assert( layer < getNumOctaves() );
+    return _frame[layer]->getMag();
+}
+
+__host__
+cv::Mat* TagPipe::getEdges( size_t layer ) const
+{
+    assert( layer < getNumOctaves() );
+    return _frame[layer]->getEdges();
+}
+
+__host__
 void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
 {
     DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )

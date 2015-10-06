@@ -22,7 +22,6 @@ using namespace std;
 Frame::Frame( uint32_t width, uint32_t height, int my_layer )
     : _layer( my_layer )
     , _h_debug_hyst_edges( 0 )
-    , _h_debug_edges( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
     , _wait_done( 0 )
@@ -54,7 +53,6 @@ Frame::~Frame( )
 
     // host-side plane for debugging
     delete [] _h_debug_hyst_edges;
-    delete [] _h_debug_edges;
 
     // required host-side planes
     delete _texture;

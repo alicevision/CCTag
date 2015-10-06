@@ -151,18 +151,12 @@ int main(int argc, char** argv)
     bank = CCTagMarkersBank(cmdline._cctagBankFilename);
   }
 
-#ifdef WITH_CUDA
-  if( cmdline._useCuda ) {
-    params.setUseCuda( true );
-  }
-
   if( cmdline._debugDir != "" ) {
     params.setDebugDir( cmdline._debugDir );
   }
 
   popart::device_prop_t deviceInfo;
   deviceInfo.print( );
-#endif // WITH_CUDA
 
   bfs::path myPath( cmdline._filename );
   std::string ext(myPath.extension().string());

@@ -31,17 +31,13 @@ Parameters::Parameters(const std::size_t nCrowns)
     , _writeOutput( kDefaultWriteOutput )
     , _doIdentification( kDefaultDoIdentification )
     , _maxEdges( kDefaultMaxEdges )
-#ifdef WITH_CUDA
-    , _useCuda( kDefaultUseCuda )
     , _debugDir( "" )
-#endif // WITH_CUDA
 {
     _nCircles = 2*_nCrowns;
 }
 
 void Parameters::setDebugDir( const std::string& debugDir )
 {
-#ifdef WITH_CUDA
     struct stat st = {0};
 
     std::string dir = debugDir;
@@ -55,14 +51,6 @@ void Parameters::setDebugDir( const std::string& debugDir )
     if (::stat( _debugDir.c_str(), &st) == -1) {
         ::mkdir( _debugDir.c_str(), 0700);
     }
-#endif // WITH_CUDA
-}
-
-void Parameters::setUseCuda( bool val )
-{
-#ifdef WITH_CUDA
-    _useCuda = val;
-#endif // WITH_CUDA
 }
 
 } // namespace cctag

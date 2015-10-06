@@ -18,11 +18,9 @@ static const struct option longopts[] =
     {"bank",       required_argument, 0, 'b'},
     {"parameters", required_argument, 0, 'p'},
     {"output",     optional_argument, 0, 'o'},   
-#ifdef WITH_CUDA
     {"sync",       no_argument,       0, 0xd0 },
     {"debug-dir",  required_argument, 0, 0xd1 },
     {"use-cuda",   no_argument,       0, 0xd2 },
-#endif
     {0,0,0,0},
 };
 
@@ -32,11 +30,8 @@ CmdLine::CmdLine( )
     , _cctagBankFilename( "" )
     , _paramsFilename( "" )
     , _outputFolderName( "" )
-#ifdef WITH_CUDA
     , _switchSync( false )
     , _debugDir( "" )
-    , _useCuda( false )
-#endif
 { }
 
 bool CmdLine::parse( int argc, char* argv[] )
@@ -62,11 +57,8 @@ bool CmdLine::parse( int argc, char* argv[] )
       case 'b'  : _cctagBankFilename = optarg; break;
       case 'p'  : _paramsFilename    = optarg; break;
       case 'o'  : _outputFolderName  = optarg; break;
-#ifdef WITH_CUDA
       case 0xd0 : _switchSync        = true;   break;
       case 0xd1 : _debugDir          = optarg; break;
-      case 0xd2 : _useCuda           = true;   break;
-#endif
       default : break;
     }
   }
@@ -81,14 +73,10 @@ void CmdLine::print( const char* const argv0 )
          << "    --bank      " << _cctagBankFilename << endl
          << "    --params    " << _paramsFilename << endl
          << "    --output    " << _outputFolderName << endl;
-#ifdef WITH_CUDA
     if( _switchSync )
         cout << "    --sync " << endl;
     if( _debugDir != "" )
         cout << "    --debug-dir " << _debugDir << endl;
-    if( _useCuda )
-        cout << "    --use-cuda " << endl;
-#endif
     cout << endl;
 }
 

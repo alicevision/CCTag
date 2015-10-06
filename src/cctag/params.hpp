@@ -127,7 +127,6 @@ struct Parameters
   bool _writeOutput;
   bool _doIdentification; // perform the identification step
   uint32_t _maxEdges; // max number of edge point, determines memory allocation
-  bool        _useCuda; // if compiled WITH_CUDA, allow CLI selection, ignore if not
   std::string _debugDir; // prefix for debug output !!!! ONLY ON COMMAND LINE
 
   template<class Archive>
@@ -161,13 +160,10 @@ struct Parameters
     ar & BOOST_SERIALIZATION_NVP( _writeOutput );
     ar & BOOST_SERIALIZATION_NVP( _doIdentification );
     ar & BOOST_SERIALIZATION_NVP( _maxEdges );
-    ar & BOOST_SERIALIZATION_NVP( _useCuda );
     _nCircles = 2*_nCrowns;
   }
 
   void setDebugDir( const std::string& debugDir );
-
-  void setUseCuda( bool val );
 };
 
 } // namespace cctag

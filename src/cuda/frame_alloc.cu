@@ -84,6 +84,11 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _d_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _d_ring_output.rows = EDGE_LINKING_MAX_ARCS;
 
+    _h_plane.data = new uint8_t[ w * h ];
+    _h_plane.step = w * sizeof(uint8_t);
+    _h_plane.cols = w;
+    _h_plane.rows = h;
+
     _h_dx.data = new int16_t[ w * h ];
     _h_dx.step = w * sizeof(int16_t);
     _h_dx.cols = w;
@@ -93,6 +98,16 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_dy.step = w * sizeof(int16_t);
     _h_dy.cols = w;
     _h_dy.rows = h;
+
+    _h_mag.data = new uint32_t[ w * h ];
+    _h_mag.step = w * sizeof(uint32_t);
+    _h_mag.cols = w;
+    _h_mag.rows = h;
+
+    _h_edges.data = new uint8_t[ w * h ];
+    _h_edges.step = w * sizeof(uint8_t);
+    _h_edges.cols = w;
+    _h_edges.rows = h;
 
     _h_ring_output.data = new cv::cuda::PtrStepInt2_base_t[EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH];
     _h_ring_output.step = EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t);
@@ -109,17 +124,9 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _d_ring_counter = (int*)ptr;
     _d_ring_counter_max = EDGE_LINKING_MAX_ARCS;
 
-#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
-    _h_debug_plane  = new unsigned char[ w * h ];
-#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
-
 #ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
     _h_debug_smooth = new float[ w * h ];
 #endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
-
-#ifdef DEBUG_WRITE_MAG_AS_PGM
-    _h_debug_mag = new uint32_t[ w * h ];
-#endif // DEBUG_WRITE_MAG_AS_PGM
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     _h_debug_map = new unsigned char[ w * h ];
@@ -199,19 +206,16 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE( _d_connect_component_block_counter );
     POP_CUDA_FREE( _d_ring_counter );
 
+    delete [] _h_plane.data;
     delete [] _h_dx.data;
     delete [] _h_dy.data;
+    delete [] _h_mag.data;
+    delete [] _h_edges.data;
     delete [] _h_ring_output.data;
 
-#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
-    delete [] _h_debug_plane;
-#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
 #ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
     delete [] _h_debug_smooth;
 #endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
-#ifdef DEBUG_WRITE_MAG_AS_PGM
-    delete [] _h_debug_mag;
-#endif // DEBUG_WRITE_MAG_AS_PGM
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     delete [] _h_debug_map;
 #endif // DEBUG_WRITE_MAP_AS_PGM

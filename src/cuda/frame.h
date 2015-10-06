@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string>
 #include <vector>
+#include <opencv2/core/core.hpp>
 
 // #include <opencv2/core/cuda_types.hpp>
 
@@ -202,6 +203,12 @@ public:
                       std::vector<cctag::EdgePoint*>& seeds,
                       cctag::WinnerMap&               winners );
 
+    cv::Mat* getPlane( ) const;
+    cv::Mat* getDx( ) const;
+    cv::Mat* getDy( ) const;
+    cv::Mat* getMag( ) const;
+    cv::Mat* getEdges( ) const;
+
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
@@ -234,23 +241,22 @@ private:
     cv::cuda::PtrStepSzb    _d_edges;
     cv::cuda::PtrStepSzInt2 _d_ring_output;
 
-#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
-    unsigned char*          _h_debug_plane;
-#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
 #ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
     float*                  _h_debug_smooth;
 #endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
-#ifdef DEBUG_WRITE_MAG_AS_PGM
-    uint32_t*               _h_debug_mag;
-#endif // DEBUG_WRITE_MAG_AS_PGM
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_map;
 #endif // DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_hyst_edges;
-    unsigned char*          _h_debug_edges;
 public: // HACK FOR DEBUGGING
+    // unsigned char*          _h_plane;
+    // uint32_t*               _h_debug_mag;
+    // unsigned char*          _h_debug_edges;
+    cv::cuda::PtrStepSzb    _h_plane;
     cv::cuda::PtrStepSz16s  _h_dx;
     cv::cuda::PtrStepSz16s  _h_dy;
+    cv::cuda::PtrStepSz32u  _h_mag;
+    cv::cuda::PtrStepSzb    _h_edges;
 private:
     cv::cuda::PtrStepSzInt2 _h_ring_output;
 

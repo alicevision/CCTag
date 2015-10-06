@@ -19,7 +19,7 @@ ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::si
   _levels.resize(nLevels);
   for(int i = 0; i < nLevels ; ++i)
   {
-    _levels[i] = new Level( width, height, i );
+    _levels[i] = new Level( width, height, i, true );
     width /= 2;
     height /= 2;
   }

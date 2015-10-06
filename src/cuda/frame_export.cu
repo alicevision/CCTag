@@ -129,5 +129,45 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  array,
     return true;
 }
 
+cv::Mat* Frame::getPlane( ) const
+{
+    cv::Mat* ptr = new cv::Mat( _h_plane.rows, _h_plane.cols,
+                                CV_8UC1,
+                                _h_plane.data, _h_plane.step);
+    return ptr;
+}
+
+cv::Mat* Frame::getDx( ) const
+{
+    cv::Mat* ptr = new cv::Mat( _h_dx.rows, _h_dx.cols,
+                                CV_16SC1,
+                                _h_dx.data, _h_dx.step);
+    return ptr;
+}
+
+cv::Mat* Frame::getDy( ) const
+{
+    cv::Mat* ptr = new cv::Mat( _h_dy.rows, _h_dy.cols,
+                                CV_16SC1,
+                                _h_dy.data, _h_dy.step);
+    return ptr;
+}
+
+cv::Mat* Frame::getMag( ) const
+{
+    cv::Mat* ptr = new cv::Mat( _h_mag.rows, _h_mag.cols,
+                                CV_32SC1,
+                                _h_mag.data, _h_mag.step);
+    return ptr;
+}
+
+cv::Mat* Frame::getEdges( ) const
+{
+    cv::Mat* ptr = new cv::Mat( _h_edges.rows, _h_edges.cols,
+                                CV_8UC1,
+                                _h_edges.data, _h_edges.step);
+    return ptr;
+}
+
 }; // namespace popart
 

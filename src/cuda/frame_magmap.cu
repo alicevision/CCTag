@@ -133,13 +133,11 @@ void Frame::applyMag( const cctag::Parameters & params )
         ( _d_dx, _d_dy, _d_mag );
     POP_CHK_CALL_IFSYNC;
 
-#ifdef DEBUG_WRITE_MAG_AS_PGM
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_mag, getWidth() * sizeof(uint32_t),
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_mag.data, _h_mag.step,
                               _d_mag.data, _d_mag.step,
                               _d_mag.cols * sizeof(uint32_t),
                               _d_mag.rows,
                               cudaMemcpyDeviceToHost, _stream );
-#endif // DEBUG_WRITE_MAG_AS_PGM
 
     compute_map
         <<<grid,block,0,_stream>>>

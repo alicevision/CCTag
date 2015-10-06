@@ -29,10 +29,8 @@ using namespace std;
 void Frame::hostDebugDownload( const cctag::Parameters& params )
 {
     delete [] _h_debug_hyst_edges;
-    delete [] _h_debug_edges;
 
     _h_debug_hyst_edges = new unsigned char[ getWidth() * getHeight() ];
-    _h_debug_edges      = new unsigned char[ getWidth() * getHeight() ];
 
     POP_SYNC_CHK;
 
@@ -42,7 +40,7 @@ void Frame::hostDebugDownload( const cctag::Parameters& params )
                               _d_hyst_edges.rows,
                               cudaMemcpyDeviceToHost, _stream );
 
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_edges, getWidth() * sizeof(uint8_t),
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_edges.data, _h_edges.step,
                               _d_edges.data, _d_edges.step,
                               _d_edges.cols * sizeof(uint8_t),
                               _d_edges.rows,
@@ -59,13 +57,14 @@ void Frame::hostDebugCompare( unsigned char* pix )
 
     for( int h=0; h<_d_plane.rows; h++ ) {
         for( int w=0; w<_d_plane.cols; w++ ) {
-            if( pix[h*_d_plane.cols+w] != _h_debug_plane[h*_d_plane.cols+w] ) {
+            size_t pos = h*_d_plane.cols+w;
+            if( pix[pos] != _h_plane.data[pos] ) {
                 mistake_ct++;
                 if( found_mistake == false ) {
                     found_mistake = true;
                     cerr << "Found first error at (" << w << "," << h << "): "
-                         << "orig " << pix[h*_d_plane.cols+w]
-                         << "copy " << _h_debug_plane[h*_d_plane.cols+w]
+                         << "orig " << pix[pos]
+                         << "copy " << _h_plane.data[pos]
                          << endl;
                 }
             }
@@ -109,10 +108,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     string s;
 
 #ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
-    cv::cuda::PtrStepSzb b( getHeight(),
-                            getWidth(),
-                            _h_debug_plane,
-                            getWidth() );
+    const cv::cuda::PtrStepSzb& b = _h_plane;
     DebugImage::writePGM( filename + ".pgm", b );
 #ifdef DEBUG_WRITE_ORIGINAL_AS_ASCII
     DebugImage::writeASCII( filename + "-img-ascii.txt", b );
@@ -154,10 +150,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 
 
 #ifdef DEBUG_WRITE_MAG_AS_PGM
-    cv::cuda::PtrStepSz32u mag( getHeight(),
-                                getWidth(),
-                                _h_debug_mag,
-                                getWidth()*sizeof(uint32_t) );
+    const cv::cuda::PtrStepSz32u& mag = _h_mag;
     DebugImage::writePGMscaled( filename + "-mag.pgm", mag );
 #ifdef DEBUG_WRITE_MAG_AS_ASCII
     DebugImage::writeASCII( filename + "-mag-ascii.txt", mag );
@@ -183,10 +176,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     DebugImage::writePGMscaled( filename + "-hystedges.pgm", hystedges );
 #endif // DEBUG_WRITE_HYSTEDGES_AS_PGM
 
-    cv::cuda::PtrStepSzb   edges( getHeight(),
-                                  getWidth(),
-                                  _h_debug_edges,
-                                  getWidth()*sizeof(uint8_t) );
+    const cv::cuda::PtrStepSzb&  edges = _h_edges;
 
 #ifdef DEBUG_WRITE_EDGES_AS_PGM
     DebugImage::writePGMscaled( filename + "-edges.pgm", edges );
