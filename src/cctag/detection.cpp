@@ -374,18 +374,7 @@ void cctagDetectionFromEdges(
         double scale,
         const Parameters & params)
 {
-  // POP_ENTER;
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
-#endif
-  using namespace boost::gil;
-
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-  boost::posix_time::time_duration d = t1 - t0;
-  const double spendTime = d.total_milliseconds();
-  DO_TALK( CCTAG_COUT_OPTIM("Time in vote: " << spendTime << " ms"); )
-#endif
+  // using namespace boost::gil;
 
   // Call for debug only. Write the vote result as an image.
   createImageForVoteResultDebug(src, winners, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
@@ -698,27 +687,25 @@ void cctagDetection(CCTag::List& markers,
   std::srand(1);
   
 #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
 #endif
   
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
 
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
-#endif // CCTAG_OPTIM
   popart::TagPipe* pipe1 = new popart::TagPipe;
     
   uint32_t w = imgGraySrc.size().width;
   uint32_t h = imgGraySrc.size().height;
   pipe1->initialize( w, h, params );
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
-  duration = t10 - t00;
-  CCTAG_COUT_OPTIM("Time in GPU init: " << duration.total_milliseconds() << " ms");
-#endif // CCTAG_OPTIM
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
+  duration = t01 - t00;
+  CCTAG_COUT_OPTIM("Time to init GPU & CPU: " << duration.total_milliseconds() << " ms");
+#endif // CCTAG_OPTIM
+
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
 #endif // CCTAG_OPTIM
   // unsigned char* pix = frame.data;
   assert( imgGraySrc.elemSize() == 1 );
@@ -729,18 +716,18 @@ void cctagDetection(CCTag::List& markers,
   pipe1->load( pix );
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
-  duration = t11 - t01;
-  CCTAG_COUT_OPTIM("Time in GPU load: " << duration.total_milliseconds() << " ms");
+  duration = t11 - t10;
+  CCTAG_COUT_OPTIM("Time to load img into GPU: " << duration.total_milliseconds() << " ms");
 #endif // CCTAG_OPTIM
 
 #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t02(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::ptime t20(boost::posix_time::microsec_clock::local_time());
 #endif // CCTAG_OPTIM
   pipe1->tagframe( params ); // pix, w, h, params );
 #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t12(boost::posix_time::microsec_clock::local_time());
-  duration = t12 - t02;
-  CCTAG_COUT_OPTIM("Time in GPU tag: " << duration.total_milliseconds() << " ms");
+  boost::posix_time::ptime t21(boost::posix_time::microsec_clock::local_time());
+  duration = t21 - t20;
+  CCTAG_COUT_OPTIM("Time for GPU processing: " << duration.total_milliseconds() << " ms");
 #endif // CCTAG_OPTIM
 
 #ifndef NDEBUG
@@ -759,7 +746,7 @@ void cctagDetection(CCTag::List& markers,
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-  duration = t1 - t0;
+  duration = t1 - t00;
   DO_TALK( CCTAG_COUT_OPTIM("TIME IN DETECTION: " << duration.total_milliseconds() << " ms"); )
 #endif
   

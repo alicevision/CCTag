@@ -378,8 +378,6 @@ __host__
 bool Voting::constructLine( const cctag::Parameters&     params,
                             cudaStream_t                 stream )
 {
-    DO_TALK( cout << "  Enter " << __FUNCTION__ << endl; )
-
     // Note: right here, Dynamic Parallelism would avoid blocking.
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_chained_edgecoords.host.size,
                                    _chained_edgecoords.dev.size,
@@ -388,10 +386,7 @@ bool Voting::constructLine( const cctag::Parameters&     params,
 
     int listsize = _chained_edgecoords.host.size;
 
-    DO_TALK( cout << "    after gradient descent, edge counter is " << listsize << endl; )
-
     if( listsize == 0 ) {
-        // cout << "  Leave " << __FUNCTION__ << endl;
         return false;
     }
 
@@ -417,15 +412,12 @@ bool Voting::constructLine( const cctag::Parameters&     params,
           params._ratioVoting );    // input
     POP_CHK_CALL_IFSYNC;
 
-    DO_TALK( cout << "  Leave " << __FUNCTION__ << endl; )
     return true;
 }
 
 __host__
 void Frame::applyVote( const cctag::Parameters& params )
 {
-    DO_TALK( cout << "Enter " << __FUNCTION__ << endl; )
-
     bool success;
 
     success = _vote.constructLine( params,
@@ -434,7 +426,6 @@ void Frame::applyVote( const cctag::Parameters& params )
     if( not success ) {
         _vote._seed_indices.host.size       = 0;
         _vote._chained_edgecoords.host.size = 0;
-        DO_TALK( cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl; )
         return;
     }
 
@@ -453,7 +444,6 @@ void Frame::applyVote( const cctag::Parameters& params )
          * number of voters has not been counted, and it has not been filtered
          * by length or voters count.
          */
-        DO_TALK( cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl; )
         return;
     }
 #endif //  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
@@ -569,12 +559,9 @@ void Frame::applyVote( const cctag::Parameters& params )
             _vote._seed_indices.copyDataFromDevice( _vote._seed_indices.host.size, _stream );
         }
 #endif // EDGE_LINKING_HOST_SIDE
-
-        DO_TALK( cout << "  Number of viable inner points: " << _vote._seed_indices.host.size << endl; )
     } else {
         _vote._chained_edgecoords.host.size = 0;
     }
-    DO_TALK( cout << "Leave " << __FUNCTION__ << " in line " << __LINE__ << endl; )
 }
 
 } // namespace popart

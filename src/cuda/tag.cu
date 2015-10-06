@@ -19,7 +19,6 @@ void TagPipe::initialize( const uint32_t pix_w,
                           const uint32_t pix_h,
                           const cctag::Parameters& params )
 {
-    DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
     static bool tables_initialized = false;
     if( not tables_initialized ) {
         tables_initialized = true;
@@ -45,15 +44,11 @@ void TagPipe::initialize( const uint32_t pix_w,
         _frame[i]->allocRequiredMem( params ); // sync
         _frame[i]->allocDoneEvent( ); // sync
     }
-
-    DO_TALK( cerr << "Leave " << __FUNCTION__ << endl; )
 }
 
 __host__
 void TagPipe::load( unsigned char* pix )
 {
-    DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
-
     KeepTime t( _frame[0]->_stream );
     t.start();
 
@@ -61,15 +56,11 @@ void TagPipe::load( unsigned char* pix )
 
     t.stop();
     t.report( "Time for frame upload " );
-
-    DO_TALK( cerr << "Leave " << __FUNCTION__ << endl; )
 }
 
 __host__
 void TagPipe::tagframe( const cctag::Parameters& params )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
-
     int num_layers = _frame.size();
 
 #ifndef NDEBUG
@@ -183,8 +174,6 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         delete time_vote [i];
     }
 #endif // not NDEBUG
-
-    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 __host__
