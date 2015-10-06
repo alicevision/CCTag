@@ -330,7 +330,7 @@ cctag::numerical::BoundedMatrix3x3d adjustH(
 /**
  * @brief Get signal
  *
- * @param[out] mH matrix ??? @todo lilian
+ * @param[out] mH matrix
  * @param[out] signals
  * @param[in] lengthSig
  * @param[in] o
