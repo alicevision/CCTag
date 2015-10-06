@@ -1,4 +1,4 @@
-function [] = lc_resultsAnalysis(typeMarkers, iXp, branchNames, allResultPath)
+function [] = lc_resultsAnalysis(typeMarkers, iXp, branchNames, statEvalType)
 
 load('mat/allPath.mat');
 
@@ -136,10 +136,18 @@ if ( iXp == 1 )
                 figure(h3); hold on;
                 iSubPlot = iSubPlot+1;
 
-                plot(resultData.distance,resultData.precision(:,1), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
-                plot(resultData.distance,resultData.precision(:,2), lType{nType*(iLegend-1)+2},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
-                plot(resultData.distance,resultData.precision(:,3), lType{nType*(iLegend-1)+3},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
-                plot(resultData.distance,resultData.precision(:,4), lType{nType*(iLegend-1)+4},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                if strcmp(statEvalType, 'mean')
+                    precision = mean( resultData.precision(:,:,:) , 2);
+                elseif strcmp(statEvalType, 'median')
+                    precision = median( resultData.precision(:,:,:) , 2);
+                else
+                    error('Statistical criterion unknown');
+                end
+                
+                plot(resultData.distance,precision(:,1), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.distance,precision(:,2), lType{nType*(iLegend-1)+2},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.distance,precision(:,3), lType{nType*(iLegend-1)+3},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.distance,precision(:,4), lType{nType*(iLegend-1)+4},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
                 %plot(lengthMotionBlur,nbConfusion(5,:), 'kd-','LineWidth',3,'MarkerEdgeColor','k','MarkerSize',10);
                 %axis([0 10 0.4 1])
                 %%%
@@ -160,7 +168,7 @@ if ( iXp == 1 )
                 Y = ylabel('Imaged center error (pixels)','FontSize',tSize);
                 set(Y,'Interpreter','Latex');
                 
-                axis([ min(resultData.distance) max(resultData.distance)  0 1.5 ]);
+                axis([ min(resultData.distance) max(resultData.distance)  0 2 ]);
                 
             end
         end
@@ -277,11 +285,19 @@ elseif ( iXp == 2 )
                 figure(h3); hold on;
                 iSubPlot = iSubPlot+1;
                 
+                if strcmp(statEvalType, 'mean')
+                    precision = mean( resultData.precision(:,:,:) , 2);
+                elseif strcmp(statEvalType, 'median')
+                    precision = median( resultData.precision(:,:,:) , 2);
+                else
+                    error('Statistical criterion unknown');
+                end
+
                 %h3 = figure(3); hold on;
-                plot(resultData.lengthMotionBlur,resultData.precision(1,:), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
-                plot(resultData.lengthMotionBlur,resultData.precision(2,:), lType{nType*(iLegend-1)+2},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
-                plot(resultData.lengthMotionBlur,resultData.precision(3,:), lType{nType*(iLegend-1)+3},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
-                plot(resultData.lengthMotionBlur,resultData.precision(4,:), lType{nType*(iLegend-1)+4},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.lengthMotionBlur,precision(1,:), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.lengthMotionBlur,precision(2,:), lType{nType*(iLegend-1)+2},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.lengthMotionBlur,precision(3,:), lType{nType*(iLegend-1)+3},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.lengthMotionBlur,precision(4,:), lType{nType*(iLegend-1)+4},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
                 %plot(lengthMotionBlur,nbConfusion(5,:), 'kd-','LineWidth',3,'MarkerEdgeColor','k','MarkerSize',10);
                 %axis([0 10 0.4 1])
                 %%%
@@ -415,11 +431,20 @@ elseif ( iXp == 3 )
                 %subplot(1,nSubPlot,iSubPlot); hold on;
                 figure(h3); hold on;
                 iSubPlot = iSubPlot+1;
+
+                if strcmp(statEvalType, 'mean')
+                    precision = mean( resultData.precision(:,:,:) , 2);
+                elseif strcmp(statEvalType, 'median')
+                    precision = median( resultData.precision(:,:,:) , 2);
+                else
+                    error('Statistical criterion unknown');
+                end
+
                 %h3 = figure(3); hold on;
-                plot(resultData.occlusion,resultData.precision(1,:), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
-                plot(resultData.occlusion,resultData.precision(2,:), lType{nType*(iLegend-1)+2},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
-                plot(resultData.occlusion,resultData.precision(3,:), lType{nType*(iLegend-1)+3},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
-                plot(resultData.occlusion,resultData.precision(4,:), lType{nType*(iLegend-1)+4},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.occlusion, precision(1,:), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.occlusion, precision(2,:), lType{nType*(iLegend-1)+2},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.occlusion, precision(3,:), lType{nType*(iLegend-1)+3},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
+                plot(resultData.occlusion, precision(4,:), lType{nType*(iLegend-1)+4},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
                 %plot(lengthMotionBlur,nbConfusion(5,:), 'kd-','LineWidth',3,'MarkerEdgeColor','k','MarkerSize',10);
                 %axis([0 10 0.4 1])
                 %%%

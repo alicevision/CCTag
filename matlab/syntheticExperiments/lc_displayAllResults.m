@@ -15,13 +15,12 @@
 % WARNING: if length(patterns) > 1, the results will be displayed comparing the
 % results obtained for each patterns AND NOT for every branches. In that
 % case, one branch has to be passed as input in branchNames.
-function [] = lc_displayAllResults(iXp,patterns,branchNames)
+function [] = lc_displayAllResults(iXp,patterns,branchNames, statEvalType)
 
 disp('Read and evaluate the detection results');
 lc_evaluateResultSynthCCTag(patterns, iXp, branchNames);
-
 disp('Evaluation done');
 
 disp('Display results');
-lc_resultsAnalysis(patterns,iXp, branchNames);
+lc_resultsAnalysis(patterns,iXp, branchNames, statEvalType);
 disp('End');
