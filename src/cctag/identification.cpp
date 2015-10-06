@@ -1004,6 +1004,7 @@ double imageCenterOptimizationNew(
         std::vector< cctag::ImageCut > & signals,
         cctag::Point2dN<double> & center,
         const double neighbourSize,
+        const std::size_t gridNSample,
         const std::size_t lengthSig,
         const std::vector< cctag::Point2dN<double> > & vecExtPoint, 
         const cv::Mat & src, 
@@ -1011,7 +1012,7 @@ double imageCenterOptimizationNew(
 {
     std::vector<cctag::Point2dN<double> > nearbyPoints;
     
-    getNearbyPoints(ellipse, center, nearbyPoints, neighbourSize, GRID);
+    getNearbyPoints(ellipse, center, nearbyPoints, neighbourSize, gridNSample, GRID);
     
     double minRes = 1e13;
     cctag::Point2dN<double> optimalPoint;
@@ -1039,6 +1040,7 @@ double imageCenterOptimizationNew(
           const cctag::Point2dN<double> & center,
           std::vector<cctag::Point2dN<double> > & nearbyPoints,
           const double neighbourSize,
+          const std::size_t gridNSample,
           const NeighborType neighborType)
 {
   nearbyPoints.clear();
@@ -1053,7 +1055,6 @@ double imageCenterOptimizationNew(
 
   if ( neighborType == GRID )
   {
-    const std::size_t gridNSample = 4;//5
     const double gridWidth = neighbourSize;
     const double halfWidth = gridWidth/2.0;
     const double stepSize = gridWidth/(gridNSample-1);

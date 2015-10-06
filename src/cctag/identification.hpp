@@ -380,6 +380,7 @@ double imageCenterOptimizationNew(
         std::vector< cctag::ImageCut > & signals,
         cctag::Point2dN<double> & center,
         const double neighbourSize,
+        const std::size_t gridNSample,
         const std::size_t lengthSig,
         const std::vector< cctag::Point2dN<double> > & vecExtPoint, 
         const cv::Mat & src, 
@@ -390,6 +391,7 @@ void getNearbyPoints(
           const cctag::Point2dN<double> & center,
           std::vector<cctag::Point2dN<double> > & nearbyPoints,
           const double neighbourSize,
+          const std::size_t gridNSample,
           const NeighborType neighborType);
 
 double costFunctionNew( cctag::numerical::BoundedMatrix3x3d & mH,
