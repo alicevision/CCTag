@@ -1,4 +1,4 @@
-function allResultPath = lc_evaluateResultSynthCCTag(sTypeMarkers, idXp, branchNames)
+function [] = lc_evaluateResultSynthCCTag(sTypeMarkers, idXp, branchNames)
 
 close all
 
@@ -116,3 +116,5 @@ for iCrown = 1:length(sTypeMarkers)%nCrowns = sTypeMarkers
         
     end
 end
+system('mkdir -p mat');
+save('mat/allPath.mat','allResultPath');

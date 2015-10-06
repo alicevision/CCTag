@@ -9,7 +9,7 @@ patterns = { '3Crowns' };% Subset of {'3Crowns','4Crowns','ARTKPlus'}.
 branchNames = {'cpu_adapt_of_gpu_part', 'optim_identify'};
                              % It can be any of the available branches.
                              % If only one pattern is passed as input, then
-                             % a couple of branches can be passed for
+                             % a couple of branches (a maximum of 2) can be passed for
                              % comparison.
 
 lc_displayAllResults(iXp,patterns,branchNames);

@@ -18,10 +18,10 @@
 function [] = lc_displayAllResults(iXp,patterns,branchNames)
 
 disp('Read and evaluate the detection results');
-allResultPath = lc_evaluateResultSynthCCTag(patterns, iXp, branchNames);
+lc_evaluateResultSynthCCTag(patterns, iXp, branchNames);
 
 disp('Evaluation done');
 
 disp('Display results');
-lc_resultsAnalysis(patterns,iXp, branchNames, allResultPath);
+lc_resultsAnalysis(patterns,iXp, branchNames);
 disp('End');

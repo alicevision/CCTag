@@ -1,10 +1,13 @@
 function [] = lc_resultsAnalysis(typeMarkers, iXp, branchNames, allResultPath)
 
+load('mat/allPath.mat');
+
 lType = { 'rx-.', 'gx-.',  'bx-.', 'mx-.' , 'rs-', 'gs-',  'bs-', 'ms-' };
+
 nType = 4;
 
 % Legend properties: set Title, axis size
-tSize = 20;%20
+tSize = 15;
 % Set Legend size
 lSize = 8;%20
 % Set FontUnit size
@@ -23,7 +26,9 @@ nSubPlot = displayDetectRate + displayDetectPlusIdentRate + displayAccuracy;
 
 %hFig = figure(1);
 %set(hFig, 'Position', [100 100 1400 500]);
-figure('Position',[100 100 1400 500]);
+h1 = figure('Position',[50 50 400 400]);
+h2 = figure('Position',[500 50 400 400]);
+h3 = figure('Position',[950 50 400 400]);
 
 if ( length(branchNames) > 1 ) && ( length(typeMarkers) > 1 )
     error('branchNames or typeMarkers must be of length 1');
@@ -58,7 +63,8 @@ if ( iXp == 1 )
             
             if displayDetectRate
                 
-                subplot(1,nSubPlot,iSubPlot); hold on;
+                %subplot(1,nSubPlot,iSubPlot); hold on;
+                figure(h1); hold on;
                 iSubPlot = iSubPlot+1;
                 plot(resultData.distance,resultData.nbNegatifs(:,1), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
                 plot(resultData.distance,resultData.nbNegatifs(:,2), lType{nType*(iLegend-1)+2},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
@@ -93,9 +99,9 @@ if ( iXp == 1 )
             
             if displayDetectPlusIdentRate
                 
-                subplot(1,nSubPlot,iSubPlot); hold on;
+                %subplot(1,nSubPlot,iSubPlot); hold on;
+                figure(h2); hold on;
                 iSubPlot = iSubPlot+1;
-                %h2 = figure(2); hold on;
                 
                 plot(resultData.distance,resultData.nbConfusion(:,1), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
                 plot(resultData.distance,resultData.nbConfusion(:,2), lType{nType*(iLegend-1)+2},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
@@ -127,9 +133,10 @@ if ( iXp == 1 )
             
             if displayAccuracy
                 
-                subplot(1,nSubPlot,iSubPlot); hold on;
+                %subplot(1,nSubPlot,iSubPlot); hold on;
+                figure(h3); hold on;
                 iSubPlot = iSubPlot+1;
-                %h3 = figure(3); hold on;
+
                 plot(resultData.distance,resultData.precision(:,1), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
                 plot(resultData.distance,resultData.precision(:,2), lType{nType*(iLegend-1)+2},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
                 plot(resultData.distance,resultData.precision(:,3), lType{nType*(iLegend-1)+3},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
@@ -191,7 +198,8 @@ elseif ( iXp == 2 )
             
             if displayDetectRate
                 
-                subplot(1,nSubPlot,iSubPlot); hold on;
+                %subplot(1,nSubPlot,iSubPlot); hold on;
+                figure(h1); hold on;
                 iSubPlot = iSubPlot+1;
                 
                 %h1 = figure(1); hold on;
@@ -231,7 +239,8 @@ elseif ( iXp == 2 )
             
             if displayDetectPlusIdentRate
                 
-                subplot(1,nSubPlot,iSubPlot); hold on;
+                %subplot(1,nSubPlot,iSubPlot); hold on;
+                figure(h2); hold on;
                 iSubPlot = iSubPlot+1;
                 
                 %h2 = figure(2); hold on;
@@ -265,7 +274,8 @@ elseif ( iXp == 2 )
             
             if displayAccuracy
                 
-                subplot(1,nSubPlot,iSubPlot); hold on;
+                %subplot(1,nSubPlot,iSubPlot); hold on;
+                figure(h3); hold on;
                 iSubPlot = iSubPlot+1;
                 
                 %h3 = figure(3); hold on;
@@ -328,7 +338,8 @@ elseif ( iXp == 3 )
             % Detection rate
             if displayDetectRate
                 
-                subplot(1,nSubPlot,iSubPlot); hold on;
+                %subplot(1,nSubPlot,iSubPlot); hold on;
+                figure(h1); hold on;
                 iSubPlot = iSubPlot+1;
 
                 plot(resultData.occlusion,resultData.nbNegatifs(1,:), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
@@ -366,7 +377,8 @@ elseif ( iXp == 3 )
             % Identification rate
             if displayDetectPlusIdentRate
                 
-                subplot(1,nSubPlot,iSubPlot); hold on;
+                %subplot(1,nSubPlot,iSubPlot); hold on;
+                figure(h2); hold on;
                 iSubPlot = iSubPlot+1;
                 %h2 = figure(2); hold on;
                 
@@ -401,7 +413,8 @@ elseif ( iXp == 3 )
             % Precision of the imaged center estimation
             if displayAccuracy
                 
-                subplot(1,nSubPlot,iSubPlot); hold on;
+                %subplot(1,nSubPlot,iSubPlot); hold on;
+                figure(h3); hold on;
                 iSubPlot = iSubPlot+1;
                 %h3 = figure(3); hold on;
                 plot(resultData.occlusion,resultData.precision(1,:), lType{nType*(iLegend-1)+1},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
