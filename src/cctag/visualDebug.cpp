@@ -117,7 +117,12 @@ void CCTagVisualDebug::drawPoint(const cctag::Point2dN<double> & p, const cctag:
   if (p.x() >= 1 && p.x() < _backImage.cols-1 &&
           p.y() >= 1 && p.y() < _backImage.rows-1)
   {
-    cv::rectangle(_backImage, cvPoint(p.x()-1.0,p.y()-1.0), cvPoint(p.x()+1.0,p.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
+    cv::Vec3b cvColor;
+    cvColor.val[0] = 255*color[0];
+    cvColor.val[1] = 255*color[1]; 
+    cvColor.val[2] = 255*color[2]; 
+    _backImage.at<cv::Vec3b>(p.y(),p.x()) = cvColor;
+    //cv::rectangle(_backImage, cvPoint(p.x()-1.0,p.y()-1.0), cvPoint(p.x()+1.0,p.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
   }
 #endif
 }
