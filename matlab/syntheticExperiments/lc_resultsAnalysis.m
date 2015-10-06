@@ -1,6 +1,6 @@
 function [] = lc_resultsAnalysis(typeMarkers, iXp, branchNames, allResultPath)
 
-lType = { 'rs-.', 'gs-.',  'bs-.', 'ms-.' , 'rd-', 'gd-',  'bd-', 'md-' };
+lType = { 'rx-.', 'gx-.',  'bx-.', 'mx-.' , 'rs-', 'gs-',  'bs-', 'ms-' };
 nType = 4;
 
 % Legend properties: set Title, axis size

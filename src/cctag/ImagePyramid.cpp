@@ -16,9 +16,10 @@ ImagePyramid::ImagePyramid()
 ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::size_t nLevels )
 {
   _levels.clear();
+  _levels.resize(nLevels);
   for(int i = 0; i < nLevels ; ++i)
   {
-    _levels.push_back(new Level( width, height, i ));
+    _levels[i] = new Level( width, height, i );
     width /= 2;
     height /= 2;
   }

@@ -1,7 +1,7 @@
 #ifndef _CCTAG_GLOBAL_HPP_
 #define _CCTAG_GLOBAL_HPP_
 
-#define WITH_CUDA_COMPARE_MODE
+#undef WITH_CUDA_COMPARE_MODE
 
 #undef CCTAG_NO_COUT
 

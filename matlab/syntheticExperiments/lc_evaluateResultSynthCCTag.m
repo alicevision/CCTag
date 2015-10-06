@@ -80,26 +80,25 @@ for iCrown = 1:length(sTypeMarkers)%nCrowns = sTypeMarkers
                                     if (markerRes.id ~= aux.id)
                                         nbConfusion(iDistance,iAngle,iFocale, iSigmaNoise, iLengthMotionBlur,iOcclusion) = nbConfusion(iDistance,iAngle,iFocale, iSigmaNoise,iLengthMotionBlur,iOcclusion) + 1;
                                         %nbConfusion(iAngle,iDistance) = nbConfusion(iAngle,iDistance) + 1;
-                                    else
+                                    end
                                         
-                                        if strcmp(nCrowns, '4Crowns') || strcmp(nCrowns, '3Crowns')
-                                            precision(iDistance,iAngle,iFocale,iSigmaNoise, iLengthMotionBlur,iOcclusion) = ...
+                                    if strcmp(nCrowns, '4Crowns') || strcmp(nCrowns, '3Crowns')
+                                    	precision(iDistance,iAngle,iFocale,iSigmaNoise, iLengthMotionBlur,iOcclusion) = ...
                                                 ( precision(iDistance,iAngle,iFocale,iSigmaNoise, iLengthMotionBlur,iOcclusion)*nPrec + ...
                                                 norm(markerRes.imgCenter - normalize(aux.metricHomography*[0;0;1])) )/(nPrec+1);
-                                        elseif strcmp(nCrowns,'ARTKPlus')
-                                            % Compute the intersection of the the v1-v3
-                                            % and v2-v4 segments
-                                            imCenter = cross(...
+                                    elseif strcmp(nCrowns,'ARTKPlus')
+                                        % Compute the intersection of the the v1-v3
+                                        % and v2-v4 segments
+                                        imCenter = cross(...
                                                 cross(markerRes.vertex(:,1),markerRes.vertex(:,3)),...
                                                 cross(markerRes.vertex(:,2),markerRes.vertex(:,4)));
-                                            imgCenter =  normalize(imCenter);
+                                        imgCenter =  normalize(imCenter);
                                             
-                                            precision(iDistance,iAngle,iFocale,iSigmaNoise, iLengthMotionBlur,iOcclusion) = ...
+                                        precision(iDistance,iAngle,iFocale,iSigmaNoise, iLengthMotionBlur,iOcclusion) = ...
                                                 ( precision(iDistance,iAngle,iFocale,iSigmaNoise, iLengthMotionBlur,iOcclusion)*nPrec + ...
                                                 norm(imgCenter - normalize(aux.metricHomography*[0;0;1])) )/(nPrec+1);
-                                        end
-                                        nPrec = nPrec+1;
                                     end
+                                    nPrec = nPrec+1;
                                 end
                             end
                         end
