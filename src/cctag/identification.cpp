@@ -973,11 +973,13 @@ bool refineConicFamilyNew( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     double neighbourSize = 0.10;
     double residual;
     
+    std::size_t gridNSample = 4;
+    
     while ( neighbourSize > 1e-4 )
     {
-      residual = imageCenterOptimizationNew(mH,fsig,optimalPoint,neighbourSize,lengthSig,pr,src,ellipse);
+      residual = imageCenterOptimizationNew(mH,fsig,optimalPoint,neighbourSize,gridNSample,lengthSig,pr,src,ellipse);
       CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
-      neighbourSize /= 2.0 ;
+      neighbourSize /= gridNSample ;
     }
     
     // Measure the time spent in the optimization
