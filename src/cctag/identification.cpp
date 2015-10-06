@@ -384,17 +384,17 @@ void extractSignalUsingHomography( cctag::ImageCut & rectifiedSig,
     {
       // put pixel value to rectified signal
       // Optim via bilinear interpolation
-      // double pixVal = getPixelBilinear( src, hp.x(), hp.y());
+      double pixVal = getPixelBilinear( src, hp.x(), hp.y());
       
       // not working // double pixVal = getPixelBicubic( src, hp.x(), hp.y());
       
       //CCTAG_COUT_OPTIM("SamplerSpline64");
-      openMVG::image::Sampler2d<openMVG::image::SamplerCubic> sampleFunctor;
+      // openMVG::image::Sampler2d<openMVG::image::SamplerCubic> sampleFunctor;
       // //SamplerCubic
       // //SamplerSpline64
       // //SamplerCubic
       // //SamplerLinear
-      double pixVal = sampleFunctor.operator()<double>( src , float(hp.y()), float(hp.x()));
+      // double pixVal = sampleFunctor.operator()<double>( src , float(hp.y()), float(hp.x()));
       
       rectifiedSig._imgSignal(i) = pixVal;
       acc( pixVal );
@@ -970,7 +970,7 @@ bool refineConicFamilyNew( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     // Perform the optimization
     std::vector<cctag::Point2dN<double> > nearbyPoints;
     
-    double neighbourSize = 0.10;
+    double neighbourSize = 0.15;
     double residual;
     
     std::size_t gridNSample = 4;
