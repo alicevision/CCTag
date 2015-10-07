@@ -31,7 +31,7 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer )
     _h_ring_output.data = 0;
 
     POP_CUDA_STREAM_CREATE( &_stream );
-
+    
     size_t pitch;
     POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width, height );
     _d_plane.step = pitch;

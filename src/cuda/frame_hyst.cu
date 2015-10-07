@@ -6,6 +6,7 @@
 #include "assist.h"
 
 #define ABBREVIATED_HYSTERESIS
+#define USE_SEPARABLE_COMPILATION
 
 namespace popart
 {
@@ -78,15 +79,7 @@ void load( cv::cuda::PtrStepSzb img )
     val[2][1] = get( img, srcidx  , srcidy+1 );
     val[2][2] = get( img, srcidx+1, srcidy+1 );
 
-    assert( val[0][0] <= 2 );
-    assert( val[0][1] <= 2 );
-    assert( val[0][2] <= 2 );
-    assert( val[1][0] <= 2 );
-    assert( val[1][1] <= 2 );
-    assert( val[1][2] <= 2 );
-    assert( val[2][0] <= 2 );
-    assert( val[2][1] <= 2 );
-    assert( val[2][2] <= 2 );
+    assert( val[0][0] <= 2 ); assert( val[0][1] <= 2 ); assert( val[0][2] <= 2 ); assert( val[1][0] <= 2 ); assert( val[1][1] <= 2 ); assert( val[1][2] <= 2 ); assert( val[2][0] <= 2 ); assert( val[2][1] <= 2 ); assert( val[2][2] <= 2 );
 
     array[threadIdx.y  ][threadIdx.x  ] = val[0][0];
     array[threadIdx.y  ][threadIdx.x+2] = val[0][2];
@@ -178,7 +171,6 @@ bool update_edge_pixel( )
     }
     __syncthreads();
     array[threadIdx.y+1][threadIdx.x+1] = val[1][1];
-    // __threadfence_block();
 
 #if 0
     uint8_t test = array[threadIdx.y+1][threadIdx.x+1];
@@ -235,7 +227,7 @@ bool edge( int* block_counter )
     return nothing_changed;
 }
 
-__global__
+__global__ __device__
 void edge_first( cv::cuda::PtrStepSzb img, int* block_counter, cv::cuda::PtrStepSzb src )
 {
     // const int idx  = blockIdx.x * HYST_W + threadIdx.x;
@@ -248,7 +240,7 @@ void edge_first( cv::cuda::PtrStepSzb img, int* block_counter, cv::cuda::PtrStep
     store( img );
 }
 
-__global__
+__global__ __device__
 void edge_second( cv::cuda::PtrStepSzb img, int* block_counter )
 {
     load( img );
@@ -282,6 +274,39 @@ void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w
 }
 #endif // NDEBUG
 
+#if defined(USE_SEPARABLE_COMPILATION)
+__global__
+void hyst_outer_loop( dim3 block, dim3 grid, int* block_counter, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src )
+{
+    cudaStream_t childStream;
+    cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
+
+    bool first_time = true;
+    int gridsize = = grid.x * grid.y;
+    do
+    {
+        *block_counter = gridsize;
+        if( first_time ) {
+            hysteresis::edge_first
+                <<<grid,block,0,childStream>>>
+                ( img,
+                  block_counter,
+                  src );
+            first_time = false;
+        } else {
+            hysteresis::edge_second
+                <<<grid,block,0,childStream>>>
+                ( img,
+                  block_counter );
+        }
+        cudaDeviceSynchronize( );
+    }
+    while( *block_counter > 0 );
+
+    cudaStreamDestroy( childStream );
+}
+#endif // USE_SEPARABLE_COMPILATION
+
 __host__
 void Frame::applyHyst( const cctag::Parameters & params )
 {
@@ -306,6 +331,11 @@ void Frame::applyHyst( const cctag::Parameters & params )
         ( _d_map, _d_hyst_edges, getWidth(), getHeight() );
 #endif
 
+#if defined(USE_SEPARABLE_COMPILATION)
+    hyst_outer_loop
+        <<<1,1,0,_stream<<<
+        ( block, grid, _d_hysteresis_block_counter, _d_hyst_edges, _d_map );
+#else // USE_SEPARABLE_COMPILATION
     bool first_time = true;
     int block_counter;
 #ifndef NDEBUG
@@ -341,6 +371,7 @@ void Frame::applyHyst( const cctag::Parameters & params )
 #endif // NDEBUG
     }
     while( block_counter > 0 );
+#endif // USE_SEPARABLE_COMPILATION
 
 #ifndef NDEBUG
     // cerr << endl;

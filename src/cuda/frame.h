@@ -266,9 +266,9 @@ private:
     FrameEvent*    _wait_for_upload;
     FrameEvent*    _wait_done;
 
+public:
     // if we run out of streams (there are 32), we may have to share
     // bool         _stream_inherited;
-public:
     cudaStream_t _stream;
 };
 
