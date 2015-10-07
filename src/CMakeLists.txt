@@ -1,3 +1,7 @@
+# IF(COMMAND cmake_policy)
+cmake_policy(SET CMP0054 OLD) # behaviour keywords in CMake if tests
+# ENDIF(COMMAND cmake_policy)
+
 FILE( GLOB_RECURSE
       CCTag_hpp
       ./cctag/*.hpp
@@ -38,11 +42,11 @@ IF(USE_CUDA)
     # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
     # set(BUILD_SHARED_LIBS ON)
 
-    CUDA_COMPILE( cuda_files
-                  ${CUDA_cu} )
+    # ---- CUDA_COMPILE( cuda_files ${CUDA_cu} )
 
     IF( COMPILE_STATIC_CCTAG_LIBRARY )
-    	add_library( CCTag STATIC ${CUDA_cpp} ${CCTag_cpp} ${cuda_files} )
+    	ADD_LIBRARY( CCTag STATIC ${CCTag_cpp} )
+    	CUDA_ADD_LIBRARY( CCTagCuda STATIC ${CUDA_cpp} ${CUDA_cu} )
     ELSE( COMPILE_STATIC_CCTAG_LIBRARY )
     	MESSAGE( FATAL_ERROR "We must link CCTag library static with CUDA" )
     ENDIF( COMPILE_STATIC_CCTAG_LIBRARY )
@@ -85,24 +89,27 @@ if(USE_CUDA)
     )
     add_executable( detection ${CCTagDetect_cpp} )
     target_link_libraries( detection CCTag
+				     CCTagCuda
                                      ${CUDA_LIBRARIES}
                                      ${OPTPP_LIBRARIES}
-				     ${Ceres_LIBRARIES}
-				     )
+				     ${Ceres_LIBRARIES} )
+    CUDA_ADD_EXECUTABLE( testMemoryPool
+                         applications/test/testMemoryPool.cpp )
+    TARGET_LINK_LIBRARIES( testMemoryPool CCTag
+                                          CCTagCuda
+					  ${CUDA_LIBRARIES} )
 else(USE_CUDA)
-    add_executable( detection ${CCTagDetect_cpp})
+    CUDA_ADD_EXECUTABLE( detection ${CCTagDetect_cpp})
     target_link_libraries( detection CCTag
                                      ${OPTPP_LIBRARIES}
-				     ${Ceres_LIBRARIES}
-				     )
+				     ${Ceres_LIBRARIES} )
+    ADD_EXECUTABLE( testMemoryPool
+                    applications/test/testMemoryPool.cpp )
+    TARGET_LINK_LIBRARIES( testMemoryPool CCTag )
 endif(USE_CUDA)
 
-add_executable( pgmdiff playground/pgmdiff.cc )
-target_link_libraries( pgmdiff PUBLIC ${Boost_LIBRARIES} )
-
-set(testMemoryPool_cpp ./applications/test/testMemoryPool.cpp)
-add_executable( testMemoryPool ${testMemoryPool_cpp})
-target_link_libraries( testMemoryPool CCTag )
+ADD_EXECUTABLE( pgmdiff playground/pgmdiff.cc )
+TARGET_LINK_LIBRARIES( pgmdiff PUBLIC ${Boost_LIBRARIES} )
 
 install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 
@@ -120,3 +127,4 @@ foreach ( file ${FILES_TO_DEPLOY} )
 get_filename_component( dir ${file} DIRECTORY )
 install( FILES ${file} DESTINATION include/${dir} )
 endforeach()
+
