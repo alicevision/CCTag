@@ -1,8 +1,6 @@
-if(APPLE)
-cmake_minimum_required(VERSION 3.0)
-else(APPLE)
-cmake_minimum_required(VERSION 2.8)
-endif(APPLE)
+# Version 3,4 is the first that supports separable compilation on Linux.
+# Windows requires more work, and Mac is probably still hopeless.
+cmake_minimum_required(VERSION 3.4)
 
 include(ExternalProject)
 
@@ -88,20 +86,21 @@ endif(Boost_FOUND)
 # No matter if we want to use CUDA or not. It's needed for OpenCV.
 find_package(CUDA 7.0)
 
-if(USE_CUDA)
+IF(USE_CUDA)
   message( STATUS "Try using CUDA" )
-  if(CUDA_FOUND)
+  IF(CUDA_FOUND)
+    SET(CUDA_SEPARABLE_COMPILATION ON)
     include_directories(${CUDA_INCLUDE_DIRS})
     add_definitions("-DWITH_CUDA")
-    set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG} -DTHIS_IS_NVCC_DEBUG_MODE -G -g")
-    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE} -DTHIS_IS_NVCC_RELEASE_MODE -O3")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS} -DTHIS_IS_NVCC_FLAGS -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52")
-  else(CUDA_FOUND)
+    set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-DTHIS_IS_NVCC_DEBUG_MODE;-G;-g")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-DTHIS_IS_NVCC_RELEASE_MODE;-O3")
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52")
+  ELSE(CUDA_FOUND)
     message( FATAL_ERROR "Failed to find CUDA" )
-  endif(CUDA_FOUND)
-else(USE_CUDA)
+  ENDIF(CUDA_FOUND)
+ELSE(USE_CUDA)
   message( STATUS "Avoid using CUDA" )
-endif(USE_CUDA)
+ENDIF(USE_CUDA)
 
 
 # FIND UBLAS
