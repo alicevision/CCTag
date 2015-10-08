@@ -92,17 +92,19 @@ if(USE_CUDA)
 				     CCTagCuda
                                      ${CUDA_LIBRARIES}
                                      ${OPTPP_LIBRARIES}
-				     ${Ceres_LIBRARIES} )
+				     ${Ceres_LIBRARIES}
+				     -lcudadevrt )
     CUDA_ADD_EXECUTABLE( testMemoryPool
                          applications/test/testMemoryPool.cpp )
     TARGET_LINK_LIBRARIES( testMemoryPool CCTag
                                           CCTagCuda
-					  ${CUDA_LIBRARIES} )
+					  ${CUDA_LIBRARIES} 
+					  -lcudadevrt )
 else(USE_CUDA)
     CUDA_ADD_EXECUTABLE( detection ${CCTagDetect_cpp})
     target_link_libraries( detection CCTag
                                      ${OPTPP_LIBRARIES}
-				     ${Ceres_LIBRARIES} )
+				     ${Ceres_LIBRARIES})
     ADD_EXECUTABLE( testMemoryPool
                     applications/test/testMemoryPool.cpp )
     TARGET_LINK_LIBRARIES( testMemoryPool CCTag )
