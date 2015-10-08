@@ -9,6 +9,12 @@
 #include "debug_image.h"
 #include "cctag/talk.hpp"
 
+#if 1 // #ifndef NDEBUG
+#define SHOW_TIMING
+#else
+#undef  SHOW_TIMING
+#endif
+
 using namespace std;
 
 namespace popart
@@ -63,7 +69,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 {
     int num_layers = _frame.size();
 
-#ifndef NDEBUG
+#ifdef SHOW_TIMING
     KeepTime* time_gauss[num_layers];
     KeepTime* time_mag  [num_layers];
     KeepTime* time_hyst [num_layers];
@@ -97,7 +103,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 
     for( int i=0; i<num_layers; i++ ) {
         bool success;
-#ifndef NDEBUG
+#ifdef SHOW_TIMING
         time_gauss[i]->start();
         _frame[i]->applyGauss( params ); // async
         time_gauss[i]->stop();
@@ -156,7 +162,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
     t.stop();
     t.report( "Time for all frames " );
 
-#ifndef NDEBUG
+#ifdef SHOW_TIMING
     for( int i=0; i<num_layers; i++ ) {
         DO_TALK(
           time_gauss[i]->report( "time for Gauss " );
