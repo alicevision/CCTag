@@ -227,7 +227,7 @@ bool edge( int* block_counter )
     return nothing_changed;
 }
 
-__global__ __device__
+__global__
 void edge_first( cv::cuda::PtrStepSzb img, int* block_counter, cv::cuda::PtrStepSzb src )
 {
     // const int idx  = blockIdx.x * HYST_W + threadIdx.x;
@@ -240,7 +240,7 @@ void edge_first( cv::cuda::PtrStepSzb img, int* block_counter, cv::cuda::PtrStep
     store( img );
 }
 
-__global__ __device__
+__global__
 void edge_second( cv::cuda::PtrStepSzb img, int* block_counter )
 {
     load( img );
@@ -282,7 +282,7 @@ void hyst_outer_loop( dim3 block, dim3 grid, int* block_counter, cv::cuda::PtrSt
     cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
 
     bool first_time = true;
-    int gridsize = = grid.x * grid.y;
+    int gridsize = grid.x * grid.y;
     do
     {
         *block_counter = gridsize;
@@ -333,7 +333,7 @@ void Frame::applyHyst( const cctag::Parameters & params )
 
 #if defined(USE_SEPARABLE_COMPILATION)
     hyst_outer_loop
-        <<<1,1,0,_stream<<<
+        <<<1,1,0,_stream>>>
         ( block, grid, _d_hysteresis_block_counter, _d_hyst_edges, _d_map );
 #else // USE_SEPARABLE_COMPILATION
     bool first_time = true;
