@@ -203,8 +203,8 @@ void CCTagVisualDebug::drawInfos(const cctag::CCTag& marker, bool drawScaledMark
 
   IplImage iplImg = _backImage;
   cvPutText( &iplImg, sId.c_str(),
-          cvPoint(x, y),
-          &font1, CV_RGB(128, 255, 0));
+          cvPoint(x-10, y+10),
+          &font1, CV_RGB(255, 140, 0));
 #endif
 }
 
