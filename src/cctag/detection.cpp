@@ -810,7 +810,6 @@ void cctagDetection(CCTag::List& markers,
   
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
   // Identification step
-  // To decomment -- enable cuts selection, homography computation and identification
   if (params._doIdentification)
   {
     CCTag::List::iterator it = markers.begin();
