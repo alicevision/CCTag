@@ -6,6 +6,7 @@
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/ImageCenterOptimizerCeres.hpp>
+#include <cctag/geometry/Cercle.hpp>
 #include <cctag/talk.hpp>
 
 #include <terry/sampler/all.hpp>
@@ -1332,11 +1333,38 @@ int identify(
         cctag.setIdSet( idSet );
         cctag.setRadiusRatios( radiusRatios[iMax] );
 
+        // Push all the ellipses based on the obtained homography.
+        try
+        {
+          using namespace boost::numeric::ublas;
+          
+          bounded_matrix<double, 3, 3> mInvH;
+          cctag::numerical::invert(cctag.homography(), mInvH);
+          std::vector<cctag::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
+
+          for(const double radiusRatio : cctag.radiusRatios())
+          {
+            cctag::numerical::geometry::Cercle circle(1.0 / radiusRatio);
+            ellipses.push_back(cctag::numerical::geometry::Ellipse(
+                    prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
+          }
+
+          // Push the outer ellipse
+          ellipses.push_back(cctag.rescaledOuterEllipse());
+
+          DO_TALK( CCTAG_COUT_VAR_DEBUG(cctag.id()); )
+        }
+        catch (...) // An exception can be thrown when a degenerate ellipse is computed.
+        {
+          return status::degenerate;
+        }
+        
         idFinal = (score > params._minIdentProba);
 #ifdef GRIFF_DEBUG
       }
 #endif // GRIFF_DEBUG
-    }
+      
+#endif // INITIAL_1D_READING
 
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;

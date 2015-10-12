@@ -826,31 +826,7 @@ void cctagDetection(CCTag::List& markers,
               params);
       
       cctag.setStatus(detected);
-
-      try
-      {
-        std::vector<cctag::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
-
-        bounded_matrix<double, 3, 3> mInvH;
-        cctag::numerical::invert(cctag.homography(), mInvH);
-
-        BOOST_FOREACH(double radiusRatio, cctag.radiusRatios())
-        {
-          cctag::numerical::geometry::Cercle circle(1.0 / radiusRatio);
-          ellipses.push_back(cctag::numerical::geometry::Ellipse(
-                  prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
-        }
-
-        // Push the outer ellipse
-        ellipses.push_back(cctag.rescaledOuterEllipse());
-
-        DO_TALK( CCTAG_COUT_VAR_DEBUG(cctag.id()); )
-        ++it;
-      }
-      catch (...)
-      {
-        ++it;
-      }
+      ++it;
     }
 #ifdef CCTAG_OPTIM
       boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
