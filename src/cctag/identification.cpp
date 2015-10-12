@@ -1278,8 +1278,8 @@ int identify(
     std::vector<std::list<double> > vScore;
     vScore.resize(radiusRatios.size());
 
-    if(0)
-    {
+#ifdef INITIAL_1D_READING // not used anymore: not defined
+                          // v0.0 for the identification: use a single cut, average of the rectified cut, to read the id.
       idFinal = orazioDistance( idSet, radiusRatios, fsig, startOffset, params._minIdentProba, sizeIds);
       // If success
       if ( idFinal )
@@ -1294,9 +1294,8 @@ int identify(
       {
         DO_TALK( CCTAG_COUT_DEBUG("Not enough quality in IDENTIFICATION"); )
       }
-    }
-    else
-    {
+#else // INITIAL_1D_READING // used
+      // v0.1 for the identification: use the most redundant id over all the rectified cut.
       idFinal = orazioDistanceRobust( vScore, radiusRatios, fsig, startOffset, params._minIdentProba, sizeIds);
 #ifdef GRIFF_DEBUG
       if( idFinal )
