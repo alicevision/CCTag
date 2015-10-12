@@ -1119,7 +1119,7 @@ int identify(
   // in the CCTag instance just above _rescaledOuterEllipsePoints.
 
   // Take 50 edge points around outer ellipse.
-  const std::size_t n = std::min( std::size_t(50), outerEllipsePoints.size() );//50
+  const std::size_t n = std::min( std::size_t(100), outerEllipsePoints.size() );//50
   std::size_t step = std::size_t( outerEllipsePoints.size() / ( n - 1 ) );
   std::vector< cctag::Point2dN<double> > ellipsePoints;
 
