@@ -707,7 +707,7 @@ void cctagDetection(CCTag::List& markers,
   
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
-#endif
+#endif // CCTAG_OPTIM
   
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
 
