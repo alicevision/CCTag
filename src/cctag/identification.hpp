@@ -37,6 +37,7 @@
 #include <vector>
 
 namespace cctag {
+namespace identification {
 
 enum NeighborType {
   GRID,
@@ -423,6 +424,8 @@ int identify(
 	const cv::Mat & dx,
 	const cv::Mat & dy,
 	const cctag::Parameters & params);
+
+} // namespace identification
 } // namespace cctag
 
 #endif

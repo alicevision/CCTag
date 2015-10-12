@@ -16,15 +16,8 @@
 #include <cmath>
 #include <ostream>
 
-/* 
- * File:   ImageCenterOptimizerCeres.cpp
- * Author: lcalvet
- *
- * Created on 15 mai 2014, 14:51
- */
-
-
 namespace cctag {
+namespace identification {
 
 
 void optimizeCenterCeres(cctag::Point2dN<double> initCenter, const TotoFunctor::VecExtPoints & vecExtPoints, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView,
@@ -67,4 +60,5 @@ void optimizeCenterCeres(cctag::Point2dN<double> initCenter, const TotoFunctor::
   return;
 }
 
+} // namespace identification
 } // namespace cctag

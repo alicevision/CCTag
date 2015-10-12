@@ -23,6 +23,7 @@
 #include <vector>
 
 namespace cctag {
+namespace identification {
 
 struct TotoFunctor {
 
@@ -82,6 +83,7 @@ private:
 
 void optimizeCenterCeres();
 
+} // namespace identification
 } // namespace cctag
 
 

@@ -31,8 +31,8 @@
 #include <cmath>
 #include <vector>
 
-namespace cctag
-{
+namespace cctag {
+namespace identification {
 
 bool orazioDistance( IdSet& idSet, const RadiusRatioBank & rrBank,
         const std::vector<cctag::ImageCut> & cuts,
@@ -1354,4 +1354,5 @@ int identify(
   }
 }
 
+} // namespace identification
 } // namespace cctag

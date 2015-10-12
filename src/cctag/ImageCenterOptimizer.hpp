@@ -20,6 +20,7 @@
 
 
 namespace cctag {
+namespace identification {
 
 /**
  * @brief Optimizer to find the subpixel position of an edge point from a 1D signal.
@@ -80,6 +81,7 @@ private:
 	cctag::numerical::BoundedMatrix3x3d _mInvT;
 };
 
+} // namespace identification
 } // namespace cctag
 
 #endif

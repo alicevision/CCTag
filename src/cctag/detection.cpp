@@ -818,7 +818,7 @@ void cctagDetection(CCTag::List& markers,
     {
       CCTag & cctag = *it;
 
-      const int detected = cctag::identify(
+      const int detected = cctag::identification::identify(
               cctag,
               bank.getMarkers(),
               imagePyramid.getLevel(0)->getSrc(),
