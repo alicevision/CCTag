@@ -369,11 +369,12 @@ inline CCTag* new_clone(const CCTag& x)
 namespace status
 {
 // List of possible status
+static const int id_reliable = 1;
 static const int no_collected_cuts = -1;
 static const int no_selected_cuts = -2;
 static const int opti_has_diverged = -3;
 static const int id_not_reliable = -4;
-static const int id_reliable = 1;
+static const int degenerate = -5;
 }
 
 } // namespace cctag

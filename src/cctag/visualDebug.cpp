@@ -171,6 +171,9 @@ void CCTagVisualDebug::drawMarker(const cctag::CCTag& marker, bool drawScaledMar
   }else if(marker.getStatus() == status::id_reliable){
     // Green
     color = cv::Scalar(0,255,0);
+  }else if(marker.getStatus() == status::degenerate){
+    // Yellow 1
+    color = cv::Scalar(255,255,0);
   }else if(marker.getStatus() == 0 ){
     // Green
     color = cv::Scalar(0,255,0);
