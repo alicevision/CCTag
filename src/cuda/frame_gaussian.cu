@@ -155,7 +155,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
     assert( grid.x > 0 && grid.y > 0 && grid.z > 0 );
     assert( block.x > 0 && block.y > 0 && block.z > 0 );
 
-    // optional download for debugging
+    // download - layer 0 is mandatory, other layers for debugging
     POP_CUDA_MEMCPY_2D_ASYNC( _h_plane.data, _h_plane.step,
                               _d_plane.data, _d_plane.step,
                               _d_plane.cols,
