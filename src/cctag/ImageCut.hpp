@@ -14,13 +14,21 @@ class ImageCut
 public:
   ImageCut()
   {
-    
+    _outOfBounds = false;
   }
  
-  ImageCut(Point2dN<double> pStart, Point2dN<double> pStop)
+  ImageCut( Point2dN<double> pStart, DirectedPoint2d<double> pStop )
   : _start(pStart), _stop(pStop)
   {
     _imgSignal.resize(cctag::kDefaultSampleCutLength);
+    _outOfBounds = false;
+  }
+  
+    ImageCut( Point2dN<double> pStart, DirectedPoint2d<double> pStop, const std::size_t nSamples)
+  : _start(pStart), _stop(pStop)
+  {
+    _imgSignal.resize(nSamples);
+    _outOfBounds = false;
   }
   
   virtual ~ImageCut()
@@ -28,8 +36,9 @@ public:
   }
   
   Point2dN<double> _start;
-  Point2dN<double> _stop;
+  DirectedPoint2d<double> _stop;
   boost::numeric::ublas::vector<double> _imgSignal; //< image signal
+  bool _outOfBounds;
   
 };
 

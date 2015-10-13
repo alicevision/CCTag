@@ -52,7 +52,7 @@ bool addCandidateFlowtoCCTag(
         const std::vector< EdgePoint* > & filteredChildrens,
         const std::vector< EdgePoint* > & outerEllipsePoints,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
-        std::vector< std::vector< Point2dN<double> > >& cctagPoints,
+        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
         std::size_t numCircles);
 
 bool ellipseGrowingInit(

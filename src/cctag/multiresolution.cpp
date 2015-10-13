@@ -557,12 +557,17 @@ void cctagMultiresDetection(
       {
         numerical::ellipseFitting(rescaledOuterEllipse, rescaledOuterEllipsePoints);
 
-        std::vector< Point2dN<double> > rescaledOuterEllipsePointsDouble;// todo@Lilian : add a reserve
+        std::vector< DirectedPoint2d<double> > rescaledOuterEllipsePointsDouble;// todo@Lilian : add a reserve
         std::size_t numCircles = params._nCrowns * 2;
 
         BOOST_FOREACH(EdgePoint * e, rescaledOuterEllipsePoints)
         {
-          rescaledOuterEllipsePointsDouble.push_back(Point2dN<double>(e->x(), e->y()));
+          rescaledOuterEllipsePointsDouble.push_back(
+                  DirectedPoint2d<double>(e->x(), e->y(),
+                  e->_grad.x(),
+                  e->_grad.y())
+          );
+          
           CCTagVisualDebug::instance().drawPoint(Point2dN<double>(e->x(), e->y()), cctag::color_red);
         }
         marker.setCenterImg(cctag::Point2dN<double>(marker.centerImg().getX() * scale, marker.centerImg().getY() * scale));

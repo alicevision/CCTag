@@ -204,6 +204,67 @@ public:
 	}
 };
 
+/**
+ * @brief A 2D normalized point [x, y, 1] + its gradient bounded_vector<T,2>
+ */
+template<class T>
+class DirectedPoint2d : public Point2dN<T>
+{
+	typedef Point2dN<T> Parent;
+	typedef DirectedPoint2d<T> This;
+
+public:
+	DirectedPoint2d()
+		: Parent()
+	{
+          _grad.clear();   
+        }
+                
+        DirectedPoint2d( const This& p )
+		: Parent(p.x(), p.y())
+	{
+          _grad(0) = p.dX();
+          _grad(1) = p.dY();
+        }
+
+	DirectedPoint2d( const Parent& p, const T dX, const T dY)
+		: Parent( p.x(), p.y() )
+	{
+          _grad(0) = dX;
+          _grad(1) = dY;
+        }
+
+	DirectedPoint2d( const T px, const T py, const T dX, const T dY)
+		: Parent( px, py )
+	{
+          _grad(0) = dX;
+          _grad(1) = dY;
+        }
+        
+        inline T  dX() const { return _grad(0); }
+        inline T  dY() const {return  _grad(1); }
+        
+        inline void  setDX(T dX ) { _grad(0) = dX; }
+        inline void  setDY(T dY ) { _grad(1) = dY; }   
+        
+//        inline T  dX() const { return (*_grad)(0); } // todo: why I have to do that instead of return _grad(0))
+//        inline T& dX()       { return (*_grad)(0); }
+//        
+//        inline T  dY() const {return  (*_grad)(1); }
+//        inline T& dY()       { return (*_grad)(1); }
+        
+        const boost::numeric::ublas::bounded_vector<T,2> & gradient() const 
+        {
+          return _grad;
+        }
+
+	virtual ~DirectedPoint2d()
+	{}
+        
+private:
+        boost::numeric::ublas::bounded_vector<T,2> _grad;
+};
+
 struct UnHomogenizer
 {
 	template<class T>

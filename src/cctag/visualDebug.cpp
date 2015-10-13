@@ -112,26 +112,36 @@ void CCTagVisualDebug::drawText(const cctag::Point2dN<double> & p, const std::st
 #endif
 }
 
-void CCTagVisualDebug::drawPoint(const cctag::Point2dN<double> & p, const cctag::Color & color) {
+void CCTagVisualDebug::drawPoint(const cctag::Point2dN<double> & point, const cctag::Color & color) {
 #ifdef CCTAG_SERIALIZE
-  if (p.x() >= 1 && p.x() < _backImage.cols-1 &&
-          p.y() >= 1 && p.y() < _backImage.rows-1)
+  if (point.x() >= 1 && point.x() < _backImage.cols-1 &&
+          point.y() >= 1 && point.y() < _backImage.rows-1)
   {
     cv::Vec3b cvColor;
     cvColor.val[0] = 255*color[0];
     cvColor.val[1] = 255*color[1]; 
     cvColor.val[2] = 255*color[2]; 
-    _backImage.at<cv::Vec3b>(p.y(),p.x()) = cvColor;
-    //cv::rectangle(_backImage, cvPoint(p.x()-1.0,p.y()-1.0), cvPoint(p.x()+1.0,p.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
+    _backImage.at<cv::Vec3b>(point.y(),point.x()) = cvColor;
+    //cv::rectangle(_backImage, cvPoint(point.x()-1.0,point.y()-1.0), cvPoint(point.x()+1.0,point.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
   }
 #endif
 }
 
-void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2dN<double> > & pts, const cctag::Color & color)
+void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2dN<double> > & points, const cctag::Color & color)
 {
 #ifdef CCTAG_SERIALIZE
-  BOOST_FOREACH(const cctag::Point2dN<double> & p, pts) {
-      CCTagVisualDebug::instance().drawPoint(p, cctag::color_red);
+  BOOST_FOREACH(const cctag::Point2dN<double> & point, points) {
+      CCTagVisualDebug::instance().drawPoint(point, cctag::color_red);
+  }
+#endif
+}
+
+// todo templater la function ci-dessus avec celle ci-dessous
+void CCTagVisualDebug::drawPoints(const std::vector<cctag::DirectedPoint2d<double> > & points, const cctag::Color & color)
+{
+#ifdef CCTAG_SERIALIZE
+  BOOST_FOREACH(const cctag::Point2dN<double> & point, points) {
+      CCTagVisualDebug::instance().drawPoint(cctag::Point2dN<double>(point.x(),point.y()), cctag::color_red);
   }
 #endif
 }

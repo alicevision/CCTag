@@ -78,7 +78,7 @@ bool initMarkerCenter(cctag::Point2dN<double> & markerCenter,
 bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens,
         const std::vector< EdgePoint* > & outerEllipsePoints,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
-        std::vector< std::vector< Point2dN<double> > >& cctagPoints,
+        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
         std::size_t numCircles)
 {
   using namespace boost::numeric::ublas;
@@ -86,12 +86,12 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
   //cctag::numerical::geometry::Ellipse innerBoundEllipse(outerEllipse.center(), outerEllipse.a()/8.0, outerEllipse.b()/8.0, outerEllipse.angle());
   cctagPoints.resize(numCircles);
 
-  std::vector< std::vector< Point2dN<double> > >::reverse_iterator itp = cctagPoints.rbegin();
+  std::vector< std::vector< DirectedPoint2d<double> > >::reverse_iterator itp = cctagPoints.rbegin();
   itp->reserve(outerEllipsePoints.size());
 
   BOOST_FOREACH(EdgePoint * e, outerEllipsePoints)
   {
-    itp->push_back(Point2dN<double>(e->x(), e->y()));
+    itp->push_back(DirectedPoint2d<double>(e->x(), e->y(), e->gradient().x(), e->gradient().y()));
   }
   ++itp;
   for (; itp != cctagPoints.rend(); ++itp)
@@ -153,10 +153,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
         toto(0) /= distancePointToCenter;
         toto(1) /= distancePointToCenter;
 
-        Point2dN<double> pointToAdd(p->x(), p->y());
-
-        //CCTAG_COUT_VAR(double(dir)*inner_prod( gradE, toto ));
-
+        DirectedPoint2d<double> pointToAdd(p->x(), p->y(), p->gradient().x(), p->gradient().y());
 
         if (isInEllipse(outerEllipse, pointToAdd) && isOnTheSameSide(outerPoint, pointToAdd, lineThroughCenter))
           // isInHull( innerBoundEllipse, outerEllipse, pMid ) && isInHull( innerBoundEllipse, outerEllipse, pointToAdd ) &&

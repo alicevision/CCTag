@@ -184,198 +184,199 @@ bool orazioDistanceRobust( std::vector<std::list<double> > & vScore,
   }
 #endif // GRIFF_DEBUG
 
-  BOOST_FOREACH( const cctag::ImageCut & cut, cuts )
+  for( const cctag::ImageCut & cut : cuts )
   {
-    MapT sortedId;
-
-    std::size_t sizeIds = 6;
-    IdSet idSet;
-    idSet.reserve(sizeIds);
-
-    // isig contains 1D signal on line.
-    boost::numeric::ublas::vector<double> isig( cuts.front()._imgSignal.size() );
-    BOOST_ASSERT( isig.size() - startOffset > 0 );
-
-    // Sum all cuts to isig
-    for( std::size_t i = 0; i < isig.size(); ++i )
+    if ( !cut._outOfBounds )
     {
-      double& isigCurrent = isig(i);
-      isig(i) = cut._imgSignal( i );
-    }
 
-    // compute some statitics
-    accumulator_set< double, features< /*tag::median,*/ tag::variance > > acc;
-    // put sub signal into the statistical tool
-    acc = std::for_each( isig.begin()+startOffset, isig.end(), acc );
+      MapT sortedId;
 
-    const double mSig = computeMedian( boost::numeric::ublas::subrange(isig,startOffset, isig.size()) );
+      std::size_t sizeIds = 6;
+      IdSet idSet;
+      idSet.reserve(sizeIds);
 
-    const double varSig = boost::accumulators::variance( acc );
+      // isig contains 1D signal on line.
+      boost::numeric::ublas::vector<double> isig( cuts.front()._imgSignal.size() );
+      BOOST_ASSERT( isig.size() - startOffset > 0 );
 
-    accumulator_set< double, features< tag::mean > > accInf;
-    accumulator_set< double, features< tag::mean > > accSup;
-    for( std::size_t i = startOffset; i < isig.size(); ++i )
-    {
-      if( isig[i] < mSig )
-        accInf( isig[i] );
-      else
-        accSup( isig[i] );
-    }
-    const double muw = boost::accumulators::mean( accSup );
-    const double mub = boost::accumulators::mean( accInf );
-
-    // find the nearest ID in rrBank
-    const double stepXi = 1.0 / ( isig.size() + 1.0 ); /// @todo lilian +1 ??
-    ///@todo vector<char>
-    // vector of 1 or -1 values
-    std::vector<double> digit( isig.size() );
-
-#ifdef GRIFF_DEBUG
-    assert( rrBank.size() > 0 );
-#endif // GRIFF_DEBUG
-    // Loop on isig, compute and sum for each abscissa the distance between 
-    // isig (collected signal) and digit (first generated profile)
-    for( std::size_t idc = 0; idc < rrBank.size(); ++idc )
-    {
-      // compute profile
-      // @todo to be pre-computed
-
-      for( std::size_t i = 0; i < digit.size(); ++i )
+      // Sum all cuts to isig
+      for( std::size_t i = 0; i < isig.size(); ++i )
       {
-        const double xi = (i+1) * stepXi;
-        std::ssize_t ldum = 0;
-        for( std::size_t j = 0; j < rrBank[idc].size(); ++j )
-        {
-          if( 1.0 / rrBank[idc][j] <= xi )
-          {
-            ++ldum;
-          }
-        }
-        BOOST_ASSERT( i < digit.size() );
-
-        // set odd value to -1 and even value to 1
-        digit[i] = - ( ldum % 2 ) * 2 + 1;
+        double& isigCurrent = isig(i);
+        isig(i) = cut._imgSignal( i );
       }
 
-      // compute distance to profile
-      double d = 0;
+      // compute some statitics
+      accumulator_set< double, features< /*tag::median,*/ tag::variance > > acc;
+      // put sub signal into the statistical tool
+      acc = std::for_each( isig.begin()+startOffset, isig.end(), acc ); // todo check if the startOffset is also used in the 
+                                                                        // imaged center optimization.
+
+      const double mSig = computeMedian( boost::numeric::ublas::subrange(isig,startOffset, isig.size()) );
+
+      const double varSig = boost::accumulators::variance( acc );
+
+      accumulator_set< double, features< tag::mean > > accInf;
+      accumulator_set< double, features< tag::mean > > accSup;
       for( std::size_t i = startOffset; i < isig.size(); ++i )
       {
-        d += dis( isig[i], digit[i], mub, muw, varSig );
+        if( isig[i] < mSig )
+          accInf( isig[i] );
+        else
+          accSup( isig[i] );
+      }
+      const double muw = boost::accumulators::mean( accSup );
+      const double mub = boost::accumulators::mean( accInf );
+
+      // find the nearest ID in rrBank
+      const double stepXi = 1.0 / ( isig.size() + 1.0 ); /// @todo lilian +1 ??
+      ///@todo vector<char>
+      // vector of 1 or -1 values
+      std::vector<double> digit( isig.size() );
+
+  #ifdef GRIFF_DEBUG
+      assert( rrBank.size() > 0 );
+  #endif // GRIFF_DEBUG
+      // Loop on isig, compute and sum for each abscissa the distance between 
+      // isig (collected signal) and digit (first generated profile)
+      for( std::size_t idc = 0; idc < rrBank.size(); ++idc )
+      {
+        // compute profile
+        // @todo to be pre-computed
+
+        for( std::size_t i = 0; i < digit.size(); ++i )
+        {
+          const double xi = (i+1) * stepXi;
+          std::ssize_t ldum = 0;
+          for( std::size_t j = 0; j < rrBank[idc].size(); ++j )
+          {
+            if( 1.0 / rrBank[idc][j] <= xi )
+            {
+              ++ldum;
+            }
+          }
+          BOOST_ASSERT( i < digit.size() );
+
+          // set odd value to -1 and even value to 1
+          digit[i] = - ( ldum % 2 ) * 2 + 1;
+        }
+
+        // compute distance to profile
+        double d = 0;
+        for( std::size_t i = startOffset; i < isig.size(); ++i )
+        {
+          d += dis( isig[i], digit[i], mub, muw, varSig );
+        }
+        const double v = std::exp( -d );
+        sortedId[v] = idc;
       }
 
-      const double v = std::exp( -d );
+  #ifdef GRIFF_DEBUG
+      assert( sortedId.size() > 0 );
+  #endif // GRIFF_DEBUG
+      int k = 0;
+      BOOST_REVERSE_FOREACH( const MapT::const_iterator::value_type & v, sortedId )
+      {
+        if( k >= sizeIds ) break;
+        std::pair< MarkerID, double > markerId;
+        markerId.first = v.second;
+        markerId.second = v.first;
+        idSet.push_back(markerId);
+        ++k;
+      }
 
-      sortedId[v] = idc;
-
+  #ifdef GRIFF_DEBUG
+      assert( idSet.size() > 0 );
+      MarkerID _debug_m = idSet.front().first;
+      assert( _debug_m > 0 );
+      assert( vScore.size() > _debug_m );
+  #endif // GRIFF_DEBUG
+      vScore[idSet.front().first].push_back(idSet.front().second);
     }
-
-#ifdef GRIFF_DEBUG
-    assert( sortedId.size() > 0 );
-#endif // GRIFF_DEBUG
-    int k = 0;
-    BOOST_REVERSE_FOREACH( const MapT::const_iterator::value_type & v, sortedId )
-    {
-      if( k >= sizeIds ) break;
-      std::pair< MarkerID, double > markerId;
-      markerId.first = v.second;
-      markerId.second = v.first;
-      idSet.push_back(markerId);
-      ++k;
-    }
-
-#ifdef GRIFF_DEBUG
-    assert( idSet.size() > 0 );
-    MarkerID _debug_m = idSet.front().first;
-    assert( _debug_m > 0 );
-    assert( vScore.size() > _debug_m );
-#endif // GRIFF_DEBUG
-    vScore[idSet.front().first].push_back(idSet.front().second);
   }
 
   //id = iMax;
   return true;//( idSet.front().second > minIdentProba );
 }
 
-cctag::numerical::BoundedMatrix3x3d adjustH( cctag::numerical::BoundedMatrix3x3d & mH,
-    const cctag::Point2dN<double> & o,
-    const cctag::Point2dN<double> & p )
+void centerScaleRotateHomography(
+        cctag::numerical::BoundedMatrix3x3d & mHomography,
+	const cctag::Point2dN<double> & center,
+	const cctag::DirectedPoint2d<double> & point)
 {
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
 
-  cctag::numerical::BoundedMatrix3x3d mInvH;
-
-  invert( mH, mInvH );
-
-  Point2dN<double> bo = prec_prod< BoundedVector3d >( mInvH, o );
+  cctag::numerical::BoundedMatrix3x3d mInvHomography;
+  invert( mHomography, mInvHomography );
+  
+  // Back projection of the image center
+  Point2dN<double> backProjCenter = prec_prod< BoundedVector3d >( mInvHomography, center );
   {
-    BoundedMatrix3x3d mT;
-    mT( 0, 0 ) = 1.0;
-    mT( 0, 1 ) = 0.0;
-    mT( 0, 2 ) = bo.x();
-    mT( 1, 0 ) = 0.0;
-    mT( 1, 1 ) =  1.0;
-    mT( 1, 2 ) = bo.y();
-    mT( 2, 0 ) = 0.0;
-    mT( 2, 1 ) =  0.0;
-    mT( 2, 2 ) = 1.0;
+    BoundedMatrix3x3d mTranslation;
+    mTranslation( 0, 0 ) = 1.0;
+    mTranslation( 0, 1 ) = 0.0;
+    mTranslation( 0, 2 ) = backProjCenter.x();
+    mTranslation( 1, 0 ) = 0.0;
+    mTranslation( 1, 1 ) = 1.0;
+    mTranslation( 1, 2 ) = backProjCenter.y();
+    mTranslation( 2, 0 ) = 0.0;
+    mTranslation( 2, 1 ) = 0.0;
+    mTranslation( 2, 2 ) = 1.0;
 
-    mH = prec_prod( mH, mT );
-    invert( mH, mInvH );
+    mHomography = prec_prod( mHomography, mTranslation );
+    invert( mHomography, mInvHomography );
   }
 
-  Point2dN<double> bp = prec_prod< BoundedVector3d >( mInvH, p );
-
-  const double s = norm_2( subrange( bp, 0, 2 ) );
-
-  BoundedVector3d d  = bp/s;
-
+  // New back projection
+  backProjCenter = (Point2dN<double>) prec_prod< BoundedVector3d >( mInvHomography, cctag::Point2dN<double>(point.x(), point.y()) );
+  const double scale = norm_2( subrange( backProjCenter, 0, 2 ) );
+  BoundedVector3d rescaledBackProjCenter  = backProjCenter/scale;
   {
-    BoundedMatrix3x3d mT;
-    mT( 0, 0 ) = s*d(0);
-    mT( 0, 1 ) = -s*d(1);
-    mT( 0, 2 ) = 0.0;
-    mT( 1, 0 ) = s*d(1);
-    mT( 1, 1 ) =  s*d(0);
-    mT( 1, 2 ) = 0.0;
-    mT( 2, 0 ) = 0.0;
-    mT( 2, 1 ) =  0.0;
-    mT( 2, 2 ) = 1.0;
+    BoundedMatrix3x3d mScaleRotation;
+    mScaleRotation( 0, 0 ) = scale*rescaledBackProjCenter(0);
+    mScaleRotation( 0, 1 ) = -scale*rescaledBackProjCenter(1);
+    mScaleRotation( 0, 2 ) = 0.0;
+    mScaleRotation( 1, 0 ) = scale*rescaledBackProjCenter(1);
+    mScaleRotation( 1, 1 ) = scale*rescaledBackProjCenter(0);
+    mScaleRotation( 1, 2 ) = 0.0;
+    mScaleRotation( 2, 0 ) = 0.0;
+    mScaleRotation( 2, 1 ) = 0.0;
+    mScaleRotation( 2, 2 ) = 1.0;
 
-    mH = prec_prod( mH, mT );
+    mHomography = prec_prod( mHomography, mScaleRotation );
   }
-
-  return mH;
 }
 
-void extractSignalUsingHomography( cctag::ImageCut & rectifiedSig,
+void extractSignalUsingHomography( cctag::ImageCut & rectifiedCut,
         const cv::Mat & src,
         cctag::numerical::BoundedMatrix3x3d & mH,
-        const std::size_t n, const double begin,
-        const double end )
+        std::size_t nSamples,
+        const double begin,
+        const double end)
 {
   using namespace boost;
   using namespace boost::numeric::ublas;
   using namespace cctag::numerical;
 
-  BOOST_ASSERT( rectifiedSig._imgSignal.size() == 0 );
+  BOOST_ASSERT( rectifiedCut._imgSignal.size() == 0 );
   BOOST_ASSERT( end >= begin );
+  
+  // Check wheter the image signal size has been properly allocated.
+  BOOST_ASSERT( nSamples == rectifiedCut._imgSignal.size() );
 
-  // Pour chaque coordonnees dans l image, on recupere le niveau de gris ZI(i), resultat de l'interpolation cubic2D
-  // ( peut-etre peut-on passer la methode d'interpolation en param de la fonction, i.e. qu'on puisse appeler bilinear(linear2D) ou bicubic(cubic2D) )
-  // au voisinage du point de coordonnees ( x = iPT(1,i), y = iPT(2,i) )
-
-  const double stepXi = ( end - begin ) / ( n - 1.0 );
-  rectifiedSig._imgSignal.resize( n );
-  rectifiedSig._start = getHPoint( begin, 0.0, mH );
-  rectifiedSig._stop = getHPoint( end, 0.0, mH );
+  nSamples = rectifiedCut._imgSignal.size();
+  
+  const double stepXi = ( end - begin ) / ( nSamples - 1.0 );
+  //rectifiedCut._imgSignal.resize( nSamples ); // todo: move at the beginning
+  rectifiedCut._start = getHPoint( begin, 0.0, mH );
+  rectifiedCut._stop = cctag::DirectedPoint2d<double>( getHPoint( end, 0.0, mH ), 0.0, 0.0); // todo: here, the gradient information won't be required anymore, which values/design?
 
   // Accumulator for mean value calculator (used when we are going outside the bounds)
   accumulators::accumulator_set< double, accumulators::features< accumulators::tag::mean > > acc;
   std::vector<std::size_t> idxNotInBounds;
-  idxNotInBounds.reserve( n );
-  for( std::size_t i = 0; i < n; ++i )
+  //idxNotInBounds.reserve( nSamples ); // todo to remove, cut rejected
+  for( std::size_t i = 0; i < nSamples; ++i )
   {
     const double xi = i * stepXi + begin;
     const cctag::Point2dN<double> hp = getHPoint( xi, 0.0, mH );
@@ -1110,19 +1111,18 @@ int identify(
   CCTag & cctag,
   const std::vector< std::vector<double> > & radiusRatios, ///@todo directly use the bank
   const cv::Mat & src,
-  const cv::Mat & dx,
-  const cv::Mat & dy,
   const cctag::Parameters & params)
 {
+  // Get the outer ellipse in its orignal scale, i.e. in src.
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
-  const std::vector< cctag::Point2dN<double> > & outerEllipsePoints = cctag.rescaledOuterEllipsePoints();
+  const std::vector< cctag::DirectedPoint2d<double> > & outerEllipsePoints = cctag.rescaledOuterEllipsePoints();
   // outerEllipsePoints can be changed in the edge point refinement - not const - todo@Lilian - save their modifications
   // in the CCTag instance just above _rescaledOuterEllipsePoints.
 
   // Take 50 edge points around outer ellipse.
   const std::size_t n = std::min( std::size_t(100), outerEllipsePoints.size() );//50
   std::size_t step = std::size_t( outerEllipsePoints.size() / ( n - 1 ) );
-  std::vector< cctag::Point2dN<double> > ellipsePoints;
+  std::vector< cctag::DirectedPoint2d<double> > ellipsePoints;
 
   ellipsePoints.reserve( n );
   for( std::size_t i = 0; i < outerEllipsePoints.size(); i += step )
@@ -1189,20 +1189,28 @@ int identify(
     return status::no_collected_cuts;
   }
   
-  std::vector< cctag::ImageCut > cutSelection;
-  std::vector< cctag::Point2dN<double> > prSelection;
+  std::vector< cctag::ImageCut > vSelectedCuts;
+  std::vector< cctag::DirectedPoint2d<double> > prSelection;
 
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
 #ifdef NAIVE_SELECTCUT
-    selectCutNaive( cutSelection, prSelection, params._numCutsInIdentStep, cuts, src, 
+    'depreciated: dx and dy are not accessible anymore -> use DirectedPoint instead'
+    selectCutNaive( vSelectedCuts, prSelection, params._numCutsInIdentStep, cuts, src, 
           dx, dy ); 
     DO_TALK( CCTAG_COUT_OPTIM("Naive cut selection"); )
 #else
-    selectCut( cutSelection, prSelection, params._numCutsInIdentStep, cuts, src, 
-            dx, dy, refinedSegSize, params._numSamplesOuterEdgePointsRefinement,
-            params._cutsSelectionTrials );
+    selectCut(
+            vSelectedCuts,
+            prSelection,
+            params._numCutsInIdentStep,
+            cuts,
+            src,
+            refinedSegSize,
+            params._numSamplesOuterEdgePointsRefinement,
+            params._cutsSelectionTrials
+            );
     DO_TALK( CCTAG_COUT_OPTIM("Initial cut selection"); )
 #endif
     

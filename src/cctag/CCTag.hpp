@@ -56,7 +56,7 @@ public:
 
   CCTag(const MarkerID id,
         const cctag::Point2dN<double> & centerImg,
-        const std::vector< std::vector< Point2dN<double> > > & points,
+        const std::vector< std::vector< DirectedPoint2d<double> > > & points,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::numerical::BoundedMatrix3x3d & homography,
         int pyramidLevel,
@@ -145,12 +145,12 @@ public:
     return _outerEllipse;
   }
 
-  const std::vector< Point2dN<double> > & rescaledOuterEllipsePoints() const
+  const std::vector< DirectedPoint2d<double> > & rescaledOuterEllipsePoints() const
   {
     return _rescaledOuterEllipsePoints;
   }
 
-  const std::vector< std::vector< Point2dN<double> > >& points() const
+  const std::vector< std::vector< DirectedPoint2d<double> > >& points() const
   {
     return _points;
   }
@@ -225,7 +225,7 @@ public:
     _rescaledOuterEllipse = rescaledOuterEllipse;
   }
 
-  void setRescaledOuterEllipsePoints(const std::vector< Point2dN<double> > & outerEllipsePoints)
+  void setRescaledOuterEllipsePoints(const std::vector< DirectedPoint2d<double> > & outerEllipsePoints)
   {
     _rescaledOuterEllipsePoints = outerEllipsePoints;
   }
@@ -347,9 +347,9 @@ protected:
   cctag::Point2dN<double> _centerImg;
   cctag::numerical::geometry::Ellipse _outerEllipse;
   cctag::numerical::geometry::Ellipse _rescaledOuterEllipse;
-  std::vector< Point2dN<double> > _rescaledOuterEllipsePoints;
+  std::vector< DirectedPoint2d<double> > _rescaledOuterEllipsePoints;
   std::vector<cctag::numerical::geometry::Ellipse> _ellipses;
-  std::vector< std::vector< Point2dN<double> > > _points;
+  std::vector< std::vector< DirectedPoint2d<double> > > _points;
   cctag::numerical::BoundedMatrix3x3d _mHomography;
   double _quality;
   int _pyramidLevel;

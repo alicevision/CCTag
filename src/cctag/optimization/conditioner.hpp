@@ -88,24 +88,24 @@ inline void conditionerFromImage( const int c, const int r, const int f,  cctag:
 
 }
 
-
-inline void condition(cctag::Point2dN<double> & pt, const cctag::numerical::BoundedMatrix3x3d & mT)
+template <class T>
+inline void condition(T & point, const cctag::numerical::BoundedMatrix3x3d & mTransformation)
 {
-	using namespace boost::numeric;
-	cctag::numerical::BoundedVector3d cPt = ublas::prec_prod(mT,pt);
-	BOOST_ASSERT( cPt(2) );
-	pt.setX( cPt(0)/cPt(2) );
-	pt.setY( cPt(1)/cPt(2) );
+  using namespace boost::numeric;
+  cctag::numerical::BoundedVector3d conditionedPoint = ublas::prec_prod(mTransformation,point);
+  BOOST_ASSERT( conditionedPoint(2) );
+  point.setX( conditionedPoint(0)/conditionedPoint(2) );
+  point.setY( conditionedPoint(1)/conditionedPoint(2) );
 }
 
-
-inline void condition(std::vector<cctag::Point2dN<double> > & pts, const cctag::numerical::BoundedMatrix3x3d & mT)
+template <class T>
+inline void condition(std::vector<T> & points, const cctag::numerical::BoundedMatrix3x3d & mTransformation)
 {
-	using namespace boost::numeric;
-	BOOST_FOREACH(cctag::Point2dN<double> & pt, pts)
-	{
-		condition(pt, mT);
-	}
+  using namespace boost::numeric;
+  BOOST_FOREACH(T & point, points)
+  {
+    condition(point, mTransformation);
+  }
 }
 
 }

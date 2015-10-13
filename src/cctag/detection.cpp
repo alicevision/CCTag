@@ -273,7 +273,7 @@ void flowComponentAssembling(
         const std::vector<Candidate> & vCandidateLoopTwo,
         numerical::geometry::Ellipse & outerEllipse,
         std::vector<EdgePoint*>& outerEllipsePoints,
-        std::vector< std::vector< Point2dN<double> > >& cctagPoints,
+        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
         const Parameters & params
 #ifndef CCTAG_SERIALIZE
         )
@@ -487,7 +487,7 @@ void cctagDetectionFromEdges(
     cctag::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
     std::vector<EdgePoint*> filteredChildrens = candidate._filteredChildrens;
 
-    std::vector< std::vector< Point2dN<double> > > cctagPoints;
+    std::vector< std::vector< DirectedPoint2d<double> > > cctagPoints;
 
     try
     {

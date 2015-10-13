@@ -38,6 +38,8 @@ public:
     void drawPoint(const cctag::Point2dN<double> & p, const cctag::Color & color);
 
     void drawPoints(const std::vector<cctag::Point2dN<double> > & pts, const cctag::Color & color);
+    // todo templater la function ci-dessus avec celle ci-dessous
+    void drawPoints(const std::vector<cctag::DirectedPoint2d<double> > & points, const cctag::Color & color);
 
     void drawMarker(const cctag::CCTag& marker, bool drawScaledMarker = true);
 
