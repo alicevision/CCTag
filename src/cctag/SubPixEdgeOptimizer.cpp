@@ -17,6 +17,8 @@
 
 namespace cctag {
 
+#ifdef SUBPIX_EDGE_OPTIM // undefined. Depreciated
+
 SubPixEdgeOptimizer::SubPixEdgeOptimizer( const cctag::ImageCut & line )
 : Parent( 4, &SubPixEdgeOptimizer::subPix, NULL, this )
 , _line( line )
@@ -153,5 +155,7 @@ Point2dN<double> SubPixEdgeOptimizer::operator()( const double widthContour, con
 
 	return res;
 }
+
+#endif // SUBPIX_EDGE_OPTIM // undefined. Depreciated
 
 } // namespace cctag

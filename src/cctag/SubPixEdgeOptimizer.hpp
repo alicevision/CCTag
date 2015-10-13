@@ -13,6 +13,8 @@
 
 namespace cctag {
   
+#ifdef SUBPIX_EDGE_OPTIM // undefined. Depreciated
+  
   struct ImageCut;
 
 /**
@@ -66,6 +68,8 @@ private:
 	double _imin;
 	double _imax;
 };
+
+#endif // SUBPIX_EDGE_OPTIM // undefined. Depreciated
 
 } // namespace cctag
 
