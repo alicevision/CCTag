@@ -113,7 +113,7 @@ endif(USE_CUDA)
 ADD_EXECUTABLE( pgmdiff playground/pgmdiff.cc )
 TARGET_LINK_LIBRARIES( pgmdiff PUBLIC ${Boost_LIBRARIES} )
 
-install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+install(TARGETS CCTag CCTagCuda LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 
 set( FILES_TO_DEPLOY
       ./cctag/view.hpp
