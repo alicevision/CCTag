@@ -245,13 +245,7 @@ public:
         inline T  dY() const {return  _grad(1); }
         
         inline void  setDX(T dX ) { _grad(0) = dX; }
-        inline void  setDY(T dY ) { _grad(1) = dY; }   
-        
-//        inline T  dX() const { return (*_grad)(0); } // todo: why I have to do that instead of return _grad(0))
-//        inline T& dX()       { return (*_grad)(0); }
-//        
-//        inline T  dY() const {return  (*_grad)(1); }
-//        inline T& dY()       { return (*_grad)(1); }
+        inline void  setDY(T dY ) { _grad(1) = dY; }
         
         const boost::numeric::ublas::bounded_vector<T,2> & gradient() const 
         {

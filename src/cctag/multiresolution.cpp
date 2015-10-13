@@ -582,7 +582,6 @@ void cctagMultiresDetection(
     else
     {
       marker.setRescaledOuterEllipsePoints(marker.points().back());
-      //for(const )
     }
   }
   
