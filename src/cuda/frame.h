@@ -50,6 +50,13 @@
 #define EDGE_LINKING_MAX_ARCS             10000
 #define EDGE_LINKING_MAX_RING_BUFFER_SIZE    40
 
+/* Separable compilation allows one kernel to instantiate
+ * others. That avoids complexity on the host side when,
+ * e.g., GPU-side counters need to be checked before starting
+ * a new kernel.
+ */
+#undef USE_SEPARABLE_COMPILATION
+
 /* A table is copied to constant memory containing sigma values
  * for Gauss filtering at the 0-offset, and the derivatives
  * at +16.
@@ -121,12 +128,12 @@ private:
  *************************************************************/
 class Frame
 {
-
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
     Frame( uint32_t width, uint32_t height, int my_layer );
     ~Frame( );
 
+public:
     int getLayer() const { return _layer; }
 
     // Copy manually created Gauss filter tables to constant memory
@@ -221,6 +228,7 @@ public:
 private:
     Frame( );  // forbidden
     Frame( const Frame& );  // forbidden
+    Frame& operator=( const Frame& ); // forbidden
 
 private:
     int                     _layer;
