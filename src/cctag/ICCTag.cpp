@@ -1,6 +1,7 @@
 #include <cctag/ICCTag.hpp>
 #include <cctag/CCTag.hpp>
 #include <cctag/detection.hpp>
+#include "cctag/talk.hpp"
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
