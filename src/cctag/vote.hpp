@@ -65,9 +65,13 @@ void outlierRemoval( const std::list<EdgePoint*>& childrens, std::vector<EdgePoi
  * @param points from the first elliptical segment
  * @param points from the candidate segment
  */
-bool isAnotherSegment( numerical::geometry::Ellipse & outerEllipse, std::vector<EdgePoint*>&  outerEllipsePoints,
-        const std::vector<EdgePoint*>& filteredChildrens, const Candidate & anotherCandidate,
-        std::vector< std::vector< Point2dN<double> > >& cctagPoints, std::size_t numCircles,
+bool isAnotherSegment(
+      numerical::geometry::Ellipse & outerEllipse,
+        std::vector<EdgePoint*>&  outerEllipsePoints,
+        const std::vector<EdgePoint*>& filteredChildrens,
+        const Candidate & anotherCandidate,
+        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
+        std::size_t numCircles,
         double thrMedianDistanceEllipse);
 
 } // namespace cctag

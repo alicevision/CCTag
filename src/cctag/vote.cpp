@@ -548,7 +548,15 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         }
     }
 
-    bool isAnotherSegment(numerical::geometry::Ellipse & outerEllipse, std::vector<EdgePoint*>& outerEllipsePoints, const std::vector<EdgePoint*>& filteredChildrens, const Candidate & anotherCandidate, std::vector< std::vector< Point2dN<double> > >& cctagPoints, std::size_t numCircles, double thrMedianDistanceEllipse) {
+    bool isAnotherSegment(
+            numerical::geometry::Ellipse & outerEllipse,
+            std::vector<EdgePoint*>& outerEllipsePoints,
+            const std::vector<EdgePoint*>& filteredChildrens,
+            const Candidate & anotherCandidate,
+            std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
+            std::size_t numCircles,
+            double thrMedianDistanceEllipse)
+    {
 
         using namespace boost::numeric::ublas;
 

@@ -129,7 +129,7 @@ bool orazioDistanceRobust(
  * @param[out] rectifSig rectified signal
  * @param[in] sView source grayscale image
  * @param[in] mH homographie qui permet de passer du plan du support Ã  l'image.
- * @param[in] n signal length
+ * @param[in] nSamples number of sample along the 1D rectified signal.
  * @param begin ?
  * @param end ?
  */
@@ -138,7 +138,7 @@ void extractSignalUsingHomography(
         cctag::ImageCut & rectifiedSig,
         const cv::Mat & src,
         cctag::numerical::BoundedMatrix3x3d & mH,
-        const std::size_t n = 100,
+        std::size_t nSamples = 100,
         const double begin = 0.0,
         const double end = 1.0 );
 
@@ -243,16 +243,16 @@ void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use
 
 /**
  * 	
- * @param mH
+ * @param mHomography
  * @param mEllipse
- * @param o
- * @param p
+ * @param center
+ * @param point
  * @return 
  */
-cctag::numerical::BoundedMatrix3x3d adjustH(
-        cctag::numerical::BoundedMatrix3x3d & mH,
-	const cctag::Point2dN<double> & o,
-	const cctag::Point2dN<double> & p );
+void centerScaleRotateHomography(
+        cctag::numerical::BoundedMatrix3x3d & mHomography,
+	const cctag::Point2dN<double> & center,
+	const cctag::DirectedPoint2d<double> & point );
 
 /**
  * @brief Get signal
@@ -267,13 +267,12 @@ cctag::numerical::BoundedMatrix3x3d adjustH(
  */
 
 bool getSignals(
-        cctag::numerical::BoundedMatrix3x3d & mH,
-        std::vector< cctag::ImageCut > & signals,
-        const std::size_t lengthSig,
-        const cctag::Point2dN<double> & o,
-        const std::vector< cctag::Point2dN<double> > & vecExtPoint,
-        const cv::Mat & src,
-        const cctag::numerical::BoundedMatrix3x3d & matEllipse );
+        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        std::vector< cctag::ImageCut > & vCuts,
+        const std::size_t nSamples,
+        const cctag::Point2dN<double> & center,
+        const cv::Mat & src, 
+        const cctag::numerical::BoundedMatrix3x3d & mEllipse);
 
 bool refineConicFamily(
         CCTag & cctag,
@@ -299,17 +298,15 @@ bool refineConicFamilyNew(
         std::vector< cctag::ImageCut > & fsig,
         const std::size_t lengthSig,
         const cv::Mat & src,
-        const cctag::numerical::geometry::Ellipse & ellipse,
-        const std::vector< cctag::Point2dN<double> > & pr);
+        const cctag::numerical::geometry::Ellipse & ellipse);
 
 double imageCenterOptimizationNew(
         cctag::numerical::BoundedMatrix3x3d & mH,
-        std::vector< cctag::ImageCut > & signals,
+        std::vector< cctag::ImageCut > & vCuts,
         cctag::Point2dN<double> & center,
         const double neighbourSize,
         const std::size_t gridNSample,
-        const std::size_t lengthSig,
-        const std::vector< cctag::Point2dN<double> > & vecExtPoint, 
+        const std::size_t nSamples,
         const cv::Mat & src, 
         const cctag::numerical::geometry::Ellipse & ellipse);
 
@@ -321,20 +318,35 @@ void getNearbyPoints(
           const std::size_t gridNSample,
           const NeighborType neighborType);
 
-double costFunctionNew( cctag::numerical::BoundedMatrix3x3d & mH,
-        std::vector< cctag::ImageCut > & signals,
-        const std::size_t lengthSig,
-        const cctag::Point2dN<double> & o,
-        const std::vector< cctag::Point2dN<double> > & vecExtPoint, 
+/* @brief Compute an homography (up to a 2D rotation) based on its imaged origin [0,0,1]'
+ * and its imaged unit circle (represented as an ellipse, assuming only quasi-affine transformation
+ * PS: this version will be replaced by its analytical formulation (todo)
+ * @param[in] mEllipse ellipse matrix, projection of the unit circle
+ * @param[in] center imaged center, projection of the origin
+ * @param[out] mHomography computed homography
+ */
+void computeHomographyFromEllipseAndImagedCenter(
+        const cctag::numerical::BoundedMatrix3x3d & mEllipse,
+        const cctag::Point2dN<double> & center,
+        cctag::numerical::BoundedMatrix3x3d & mHomography);
+
+double costFunctionNew(
+        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        std::vector< cctag::ImageCut > & vCuts,
+        const std::size_t nSamples,
+        const cctag::Point2dN<double> & center,
         const cv::Mat & src, 
-        const cctag::numerical::BoundedMatrix3x3d & matEllipse );
+        const cctag::numerical::BoundedMatrix3x3d & mEllipse );
 
 /**
- * Identify a marker (robust way)
+ * Identify a marker: i) its imaged center is optimized 
+ *                    ii) the outer ellipse and the obtained center deliver the homography
+ *                    iii) the rectified 1D signal is read and deliver the ID via a nearest neighbour 
+ *                    approach where the metric used is the one described in Orazio et al. 2011
  *
- * @param[out] id
- * @param[out] markerHomography
- * @param[out] centerPoint
+ * @param[in] cctag whose center is to be optimized in conjunction with its associated homography.
+ * @param[in] radiusRatios bank of radius ratios along with their associated IDs.
+ * @param[in] src original image (original scale)
  * @param[in] ellipse outer ellipse of the marker
  * @param[in] ellipsePoints
  * @param[in] radiusRatios
