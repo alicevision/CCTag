@@ -2,8 +2,6 @@
 #define	_CCTAG_CCTAG_IDENTIFICATION_HPP_
 
 #include <cctag/SubPixEdgeOptimizer.hpp>
-#include <cctag/ImageCenterOptimizer.hpp>
-#include <cctag/LMImageCenterOptimizer.hpp>
 #include <cctag/visualDebug.hpp>
 #include <cctag/ellipseGrowing.hpp>
 #include <cctag/ImageCut.hpp>
