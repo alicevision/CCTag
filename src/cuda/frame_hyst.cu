@@ -5,15 +5,10 @@
 #include "clamp.h"
 #include "assist.h"
 
-#define ABBREVIATED_HYSTERESIS
-#define USE_SEPARABLE_COMPILATION
-
 namespace popart
 {
 
 using namespace std;
-
-#ifdef ABBREVIATED_HYSTERESIS
 
 namespace hysteresis
 {
@@ -379,9 +374,6 @@ void Frame::applyHyst( const cctag::Parameters & params )
 
     // cerr << "Leave " << __FUNCTION__ << endl;
 }
-#else // not ABBREVIATED_HYSTERESIS
-#include "frame_hyst_oldcode.h"
-#endif // not ABBREVIATED_HYSTERESIS
 
 }; // namespace popart
 
