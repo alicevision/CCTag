@@ -491,11 +491,10 @@ void collectCuts( std::vector<cctag::ImageCut> & cuts,
   }
 }
 
-double costSelectCutFun( const std::vector<double> & varCuts,
+double costSelectCutFun(
+        const std::vector<double> & varCuts,
+        const std::vector< cctag::DirectedPoint2d<double> > & outerPoints,
         const boost::numeric::ublas::vector<std::size_t> & randomIdx,
-        const std::vector<cctag::ImageCut> & collectedCuts,
-        const cv::Mat & dx,
-        const cv::Mat & dy,
         const double alpha)
 {
   using namespace cctag::numerical;
@@ -504,16 +503,19 @@ double costSelectCutFun( const std::vector<double> & varCuts,
   BoundedVector2d sumDeriv;
   double sumVar = 0;
   sumDeriv.clear();
-  BOOST_FOREACH( const std::size_t i, randomIdx )
+  for( const std::size_t i : randomIdx )
   {
     BOOST_ASSERT( i < varCuts.size() );
 
-    ublas::bounded_vector<double,2> gradient;
-    gradient(0) = dx.at<short>( collectedCuts[i]._stop.y(), collectedCuts[i]._stop.x() );
-    gradient(1) = dy.at<short>( collectedCuts[i]._stop.y(), collectedCuts[i]._stop.x() );
-    double normGrad = ublas::norm_2(gradient);
-    sumDeriv(0) += gradient(0)/normGrad;
-    sumDeriv(1) += gradient(1)/normGrad;
+    //ublas::bounded_vector<double,2> gradient;
+    //gradient(0) = collectedCuts[i]._gradStop.y()
+    //        dx.at<short>( collectedCuts[i]._stop.y(), collectedCuts[i]._stop.x() );
+    //gradient(1) = dy.at<short>( collectedCuts[i]._stop.y(), collectedCuts[i]._stop.x() );
+    //double normGrad = ublas::norm_2(gradient);
+    //sumDeriv(0) += gradient(0)/normGrad;
+    //sumDeriv(1) += gradient(1)/normGrad;
+    
+    sumDeriv += outerPoints[i].gradient(); // must be normalised. This normalisation is done during the CCTag construction.
     sumVar += varCuts[i];
   }
 
@@ -523,12 +525,11 @@ double costSelectCutFun( const std::vector<double> & varCuts,
 }
 
 
-void selectCut( std::vector< cctag::ImageCut > & cutSelection,
-        std::vector< cctag::Point2dN<double> > & prSelection,
-        std::size_t selectSize, const std::vector<cctag::ImageCut> & collectedCuts,
+void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
+        std::vector< cctag::DirectedPoint2d<double> > & prSelection,
+        std::size_t selectSize,
+        const std::vector<cctag::ImageCut> & collectedCuts,
         const cv::Mat & src,
-        const cv::Mat & dx,
-        const cv::Mat & dy,
         const double refinedSegSize,
         const std::size_t numSamplesOuterEdgePointsRefinement,
         const std::size_t cutsSelectionTrials )
@@ -540,28 +541,36 @@ void selectCut( std::vector< cctag::ImageCut > & cutSelection,
 
   std::vector<double> varCuts;
   varCuts.reserve( collectedCuts.size() );
-  BOOST_FOREACH( const cctag::ImageCut & line, collectedCuts )
+  std::vector< cctag::DirectedPoint2d<double> > outerPoints;
+  outerPoints.reserve( collectedCuts.size() );
+  BOOST_FOREACH( const cctag::ImageCut & cut, collectedCuts )
   {
     accumulator_set< double, features< tag::variance > > acc;
-    acc = std::for_each( line._imgSignal.begin(), line._imgSignal.end(), acc );
+    acc = std::for_each( cut._imgSignal.begin(), cut._imgSignal.end(), acc );
 
     varCuts.push_back( variance( acc ) );
+    
+    // Collect the normalized gradient over all outer points
+    cctag::DirectedPoint2d<double> outerPoint( cut._stop );
+    double normGrad = sqrt(outerPoint.dX()*outerPoint.dX()* + outerPoint.dY()*outerPoint.dY());
+    double dX = outerPoint.dX()/normGrad;
+    double dY = outerPoint.dY()/normGrad;
+    outerPoint.setDX(dX);
+    outerPoint.setDY(dY);
+    outerPoints.push_back( outerPoint );
   }
 
-  // On cherche nPT bons points parmi p0 qui maximisent la variance et minimise la norme de la somme des gradients normalisés
-  ublas::vector<std::size_t> randomIdx = boost::numeric::ublas::subrange(
-          cctag::numerical::randperm< ublas::vector<std::size_t> >( collectedCuts.size() ), 0, selectSize );
-  double cost = costSelectCutFun( varCuts, randomIdx, collectedCuts, dx, dy );
-  double Sm = cost;
-  ublas::vector<std::size_t> idxSelected = randomIdx;
-
-  ///@todo 2000 can be higher than the number of combinations, use std::min
+  // Maximize the sum of the variance while minimizing the norm of the sum of the normalized gradients 
+  // over all collected cut stop.
+  double Sm = std::numeric_limits<double>::max();
+  ublas::vector<std::size_t> idxSelected;
+  idxSelected.resize(selectSize);
   for( std::size_t i = 0; i < cutsSelectionTrials; ++i )
   {
     ublas::vector<std::size_t> randomIdx = boost::numeric::ublas::subrange( 
             cctag::numerical::randperm< ublas::vector<std::size_t> >( collectedCuts.size() ), 0, selectSize );
     
-    double cost = costSelectCutFun( varCuts, randomIdx, collectedCuts, dx, dy );
+    double cost = costSelectCutFun( varCuts, outerPoints, randomIdx );
     if ( cost < Sm )
     {
       Sm = cost;
@@ -613,34 +622,32 @@ void selectCut( std::vector< cctag::ImageCut > & cutSelection,
       start,
       stop,
       numSamplesOuterEdgePointsRefinement );
-
-    //CCTAG_TCOUT_VAR( line._stop ); //don't delete.
-
+    
     SubPixEdgeOptimizer optimizer( cut );
-
-    //cctag::Point2dN<double> refinedPoint(line._stop);
     cctag::Point2dN<double> refinedPoint = optimizer( halfWidth, line._stop.x(), cut._imgSignal[0], cut._imgSignal[ cut._imgSignal.size() - 1 ] );
-
-
-    //CCTAG_TCOUT_VAR( refinedPoint ); //don't delete.
+    // todo WARNING: Compilation error here because a DirectedPoint for 'refinedPoint' must be computed, i.e. the gradient direction on the refined point.
+    
     // Take cuts the didn't diverge too much
     if ( cctag::numerical::distancePoints2D( line._stop, refinedPoint ) < halfWidth )
     {
-
       prSelection.push_back( refinedPoint );
-
-      cutSelection.push_back( line );
+      vSelectedCuts.push_back( line );
     }
+#else // SUBPIX_EDGE_OPTIM
+    prSelection.push_back( line._stop );
+    vSelectedCuts.push_back( line );
+#endif // SUBPIX_EDGE_OPTIM
+
     ++i;
-    if( cutSelection.size() >= selectSize )
+    if( vSelectedCuts.size() >= selectSize )
     {
       break;
     }
   }
 }
 
-void selectCutNaive(
-        std::vector< cctag::ImageCut > & cutSelection,
+void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use DirectedPoint instead
+        std::vector< cctag::ImageCut > & vSelectedCuts,
         std::vector< cctag::Point2dN<double> > & prSelection,
         std::size_t selectSize,
         const std::vector<cctag::ImageCut> & collectedCuts,

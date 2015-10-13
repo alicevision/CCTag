@@ -226,19 +226,17 @@ double costSelectCutFun(
  */
 
 void selectCut(
-      std::vector< cctag::ImageCut > & cutSelection,
-        std::vector< cctag::Point2dN<double> > & prSelection,
+      std::vector< cctag::ImageCut > & vSelectedCuts,
+        std::vector< cctag::DirectedPoint2d<double> > & prSelection,
         std::size_t selectSize,
         const std::vector<cctag::ImageCut> & collectedCuts,
         const cv::Mat & src,
-        const cv::Mat & dx,
-        const cv::Mat & dy,
         const double refinedSegSize,
         const std::size_t numSamplesOuterEdgePointsRefinement,
         const std::size_t cutsSelectionTrials );
 
-void selectCutNaive(
-        std::vector< cctag::ImageCut > & cutSelection,
+void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use DirectedPoint instead
+        std::vector< cctag::ImageCut > & vSelectedCuts,
         std::vector< cctag::Point2dN<double> > & prSelection,
         std::size_t selectSize, const std::vector<cctag::ImageCut> & collectedCuts,
         const cv::Mat & src,
@@ -349,10 +347,8 @@ double costFunctionNew( cctag::numerical::BoundedMatrix3x3d & mH,
  */
 int identify(
 	CCTag & cctag,
-	const std::vector< std::vector<double> > & radiusRatios, ///@todo directly use the bank
+	const std::vector< std::vector<double> > & radiusRatios,
 	const cv::Mat & src,
-	const cv::Mat & dx,
-	const cv::Mat & dy,
 	const cctag::Parameters & params);
 
 } // namespace identification

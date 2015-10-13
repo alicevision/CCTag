@@ -821,8 +821,6 @@ void cctagDetection(CCTag::List& markers,
               cctag,
               bank.getMarkers(),
               imagePyramid.getLevel(0)->getSrc(),
-              imagePyramid.getLevel(0)->getDx(),
-              imagePyramid.getLevel(0)->getDy(),
               params);
       
       cctag.setStatus(detected);
