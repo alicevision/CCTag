@@ -1,3 +1,5 @@
+#ifdef USE_IMAGE_CENTER_OPT_MINPACK // undefined. Depreciated
+
 #ifdef WITH_CMINPACK
 #include <cctag/LMImageCenterOptimizer.hpp>
 #include <cctag/optimization/conditioner.hpp>
@@ -164,3 +166,4 @@ int LMImageCenterOptimizer::homology( void* p, int m, int n, const double* x, do
 
 #endif
 
+#endif // USE_IMAGE_CENTER_OPT_MINPACK // undefined. Depreciated

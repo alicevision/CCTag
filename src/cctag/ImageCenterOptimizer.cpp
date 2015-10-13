@@ -1,3 +1,5 @@
+#ifdef USE_IMAGE_CENTER_OPT // undefined. Depreciated
+
 #include <cctag/ImageCenterOptimizer.hpp>
 #include <cctag/identification.hpp>
 #include <cctag/visualDebug.hpp>
@@ -157,3 +159,5 @@ Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double>
 
 } // namespace identification
 } // namespace cctag
+
+#endif // USE_IMAGE_CENTER_OPT

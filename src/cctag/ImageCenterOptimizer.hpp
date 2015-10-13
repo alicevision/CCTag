@@ -1,3 +1,5 @@
+#ifdef USE_IMAGE_CENTER_OPT // undefined. Depreciated
+
 #ifndef VISION_IMAGECENTEROPTIMIZER_HPP_
 #define	VISION_IMAGECENTEROPTIMIZER_HPP_
 
@@ -85,3 +87,6 @@ private:
 } // namespace cctag
 
 #endif
+
+
+#endif // USE_IMAGE_CENTER_OPT // undefined. Depreciated

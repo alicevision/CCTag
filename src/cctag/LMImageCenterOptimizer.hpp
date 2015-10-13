@@ -1,3 +1,5 @@
+#ifdef USE_IMAGE_CENTER_OPT_MINPACK // undefined. Depreciated
+
 #ifndef _CCTAG_LMIMAGECENTEROPTIMIZER_HPP_
 #define	_CCTAG_LMIMAGECENTEROPTIMIZER_HPP_
 
@@ -36,3 +38,5 @@ private:
 #endif
 
 #endif
+
+#endif //USE_IMAGE_CENTER_OPT_MINPACK // undefined. Depreciated

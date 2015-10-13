@@ -1,3 +1,5 @@
+#ifdef USE_IMAGE_CENTER_OPT_CERES // undefined. Depreciated
+
 #include <cctag/ImageCenterOptimizerCeres.hpp>
 #include <cctag/visualDebug.hpp>
 #include <cctag/geometry/point.hpp>
@@ -62,3 +64,5 @@ void optimizeCenterCeres(cctag::Point2dN<double> initCenter, const TotoFunctor::
 
 } // namespace identification
 } // namespace cctag
+
+#endif // USE_IMAGE_CENTER_OPT_CERES // undefined. Depreciated

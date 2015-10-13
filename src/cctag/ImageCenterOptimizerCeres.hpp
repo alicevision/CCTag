@@ -1,3 +1,5 @@
+#ifdef USE_IMAGE_CENTER_OPT_CERES // undefined. Depreciated
+
 #ifndef VISION_IMAGECENTEROPTIMIZERCERES_HPP
 #define	VISION_IMAGECENTEROPTIMIZERCERES_HPP
 
@@ -90,3 +92,4 @@ void optimizeCenterCeres();
 
 #endif	/* VISION_IMAGECENTEROPTIMIZERCERES_HPP */
 
+#endif // undefined. Depreciated
