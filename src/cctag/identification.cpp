@@ -1172,9 +1172,10 @@ int identify(
   ///@todo Check if a & b sorted (cf. ellipse2param)
   const double refinedSegSize = std::min( ellipse.a(), ellipse.b() ) * 0.12;
 
-  BOOST_FOREACH(const cctag::Point2dN<double> & pt, ellipsePoints)
+  BOOST_FOREACH(const cctag::DirectedPoint2d<double> & point, ellipsePoints)
   {
-    CCTagVisualDebug::instance().drawPoint( pt, cctag::color_green );
+    CCTagVisualDebug::instance().drawPoint( Point2dN<double>(point.x(), point.y()), cctag::color_green );
+    //todo: templater la fonction draw au lieu de reconstruire
   }
 
   std::size_t startOffset = 0;
