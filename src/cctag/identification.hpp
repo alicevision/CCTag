@@ -1,7 +1,6 @@
 #ifndef _CCTAG_CCTAG_IDENTIFICATION_HPP_
 #define	_CCTAG_CCTAG_IDENTIFICATION_HPP_
 
-#include <cctag/SubPixEdgeOptimizer.hpp>
 #include <cctag/visualDebug.hpp>
 #include <cctag/ellipseGrowing.hpp>
 #include <cctag/ImageCut.hpp>

@@ -6,6 +6,9 @@
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/optimization/conditioner.hpp>
 
+#undef SUBPIX_EDGE_OPTIM
+#include <cctag/SubPixEdgeOptimizer.hpp>
+
 #ifdef USE_IMAGE_CENTER_OPT // undefined. Depreciated
 #include <cctag/ImageCenterOptimizerCeres.hpp>
 #include <cctag/ImageCenterOptimizer.hpp>
@@ -439,28 +442,29 @@ void extractSignalUsingHomography( cctag::ImageCut & rectifiedCut,
 ///
 }
 
-std::size_t cutInterpolated( cctag::ImageCut & cut,
+std::size_t cutInterpolated(
+        cctag::ImageCut & cut,
         const cv::Mat & src,
         const cctag::Point2dN<double> & pStart,
         const cctag::DirectedPoint2d<double> & pStop,
-        const std::size_t nSteps )
+        const std::size_t nSamples)
 {
-  const double kx = ( pStop.x() - pStart.x() ) / ( nSteps - 1 );
-  const double ky = ( pStop.y() - pStart.y() ) / ( nSteps - 1 );
-  cut._imgSignal.resize( nSteps );
+  // Step along x and y.
+  const double kx = ( pStop.x() - pStart.x() ) / ( nSamples - 1 );
+  const double ky = ( pStop.y() - pStart.y() ) / ( nSamples - 1 );
+  cut._imgSignal.resize( nSamples );
   cut._start = pStart;
   cut._stop = pStop;
   double x = pStart.x();
   double y = pStart.y();
   std::size_t len = 0;
-  for( std::size_t i = 0; i < nSteps; ++i )
+  for( std::size_t i = 0; i < nSamples; ++i )
   {
     if ( x >= 1.0 && x < src.cols-1 &&
          y >= 1.0 && y < src.rows-1 )
     {
       // put pixel value to rectified signal
       cut._imgSignal(i) = double(getPixelBilinear( src, x, y));
-      //cut._imgSignal(i) = double(getPixelBicubic( src, x, y));
       ++len;
     }
     else
@@ -468,6 +472,7 @@ std::size_t cutInterpolated( cctag::ImageCut & cut,
       // push black
       cut._imgSignal(i) = 0.0;
     }
+    // Modify x and y to the next element.
     x += kx;
     y += ky;
   }
@@ -491,7 +496,6 @@ void collectCuts( std::vector<cctag::ImageCut> & cuts,
                           src,
                           center,
                           outerPoint,
-            
                           sampleCutLength ) < ( sampleCutLength - startOffset ) )
     {
       cuts.pop_back();
@@ -536,9 +540,9 @@ double costSelectCutFun(
 
 void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
         std::size_t selectSize,
-        const std::vector<cctag::ImageCut> & collectedCuts,
+        std::vector<cctag::ImageCut> & collectedCuts,
         const cv::Mat & src,
-        const double refinedSegSize,
+        const double cutLengthOuterPointRefine,
         const std::size_t numSamplesOuterEdgePointsRefinement,
         const std::size_t cutsSelectionTrials )
 {
@@ -591,60 +595,67 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
   }
   
   // Ordered map to get variance from the higher value to the lower
-  typedef std::multimap< double, const cctag::ImageCut *, std::greater<double> > MapT;
+  typedef std::multimap< double, cctag::ImageCut *, std::greater<double> > MapT;
   MapT mapVar;
 
   BOOST_FOREACH( const std::size_t i, idxSelected )
   {
-    const cctag::ImageCut & line = collectedCuts[i];
-    std::pair<double, const cctag::ImageCut*> v( varCuts[i], &line );
+    cctag::ImageCut & line = collectedCuts[i];
+    std::pair<double, cctag::ImageCut*> v( varCuts[i], &line );
     mapVar.insert( v );
   }
 
 #ifdef SUBPIX_EDGE_OPTIM // undefined. Depreciated
   // half size of the segment used to refine the external point of cut
-  const double halfWidth = refinedSegSize / 2.0;
+  //const double halfWidth = cutLengthOuterPointRefine / 2.0;
 #endif // SUBPIX_EDGE_OPTIM
 
   std::size_t i = 0;
   vSelectedCuts.reserve( selectSize );
-  BOOST_FOREACH( const MapT::value_type & v, mapVar )
+  BOOST_FOREACH( MapT::value_type & v, mapVar )
   {
-    const cctag::ImageCut & line = *v.second;
+    cctag::ImageCut & line = *v.second;
     BOOST_ASSERT( line._stop.x() >= 0 && line._stop.x() < src.cols );
     BOOST_ASSERT( line._stop.y() >= 0 && line._stop.y() < src.rows );
     BOOST_ASSERT( line._stop.x() >= 0 && line._stop.x() < src.cols );
     BOOST_ASSERT( line._stop.y() >= 0 && line._stop.y() < src.rows );
 
-#ifdef SUBPIX_EDGE_OPTIM // undefined. Not used. // depreciated: use DirectedPoint, dx and dy not available anymore.
-    cctag::numerical::BoundedVector3d gradDirection;
-    gradDirection( 0 ) = dx.at<short>(line._stop.y(), line._stop.x());
-    gradDirection( 1 ) = dy.at<short>(line._stop.y(), line._stop.x());
-    gradDirection( 2 ) = 0.0;
-    gradDirection = cctag::numerical::unit( gradDirection );
-
+#ifdef SUBPIX_EDGE_OPTIM
+    const double halfWidth = cutLengthOuterPointRefine / 2.0;
+    cctag::ImageCut cutOnOuterPoint;
+    cctag::numerical::BoundedVector2d gradDirection = cctag::numerical::unit( line._stop.gradient() );
     BOOST_ASSERT( norm_2( gradDirection ) != 0 );
 
-    const Point2dN<double> start( line._stop - halfWidth * gradDirection );
-    const Point2dN<double> stop( line._stop + halfWidth * gradDirection );
-
-    // collect signal from e1 to e2
-    cctag::ImageCut cut;
-    cutInterpolated(
-      cut,
-      src,
-      start,
-      stop,
-      numSamplesOuterEdgePointsRefinement );
+    const Point2dN<double> pStart( Point2dN<double>(line._stop) - halfWidth * gradDirection);
+    const DirectedPoint2d<double> pStop(
+                                          Point2dN<double>(
+                                                  line._stop.x() + halfWidth*gradDirection(0),
+                                                  line._stop.y() + halfWidth*gradDirection(1)),
+                                          line._stop.dX(),
+                                          line._stop.dY());
     
-    SubPixEdgeOptimizer optimizer( cut );
-    cctag::Point2dN<double> refinedPoint = optimizer( halfWidth, line._stop.x(), cut._imgSignal[0], cut._imgSignal[ cut._imgSignal.size() - 1 ] );
-    // todo WARNING: Compilation error here because a DirectedPoint for 'refinedPoint' must be computed, i.e. the gradient direction on the refined point.
+    cutInterpolated(
+            cutOnOuterPoint,
+            src,
+            pStart,
+            pStop,
+            numSamplesOuterEdgePointsRefinement );
+    
+    SubPixEdgeOptimizer optimizer( cutOnOuterPoint );
+    cctag::Point2dN<double> refinedPoint = 
+      optimizer(
+              halfWidth,
+              line._stop.x(),
+              cutOnOuterPoint._imgSignal[0],
+              cutOnOuterPoint._imgSignal[cutOnOuterPoint._imgSignal.size()-1] );
     
     // Take cuts the didn't diverge too much
     if ( cctag::numerical::distancePoints2D( line._stop, refinedPoint ) < halfWidth )
     {
-      prSelection.push_back( refinedPoint );
+      // x and y are refined. The gradient is kept as it was because the refinement.
+      line._stop.setX( refinedPoint.x() );
+      line._stop.setY( refinedPoint.y() );
+      //line._stop = cctag::DirectedPoint2d<double>(refinedPoint.x(),refinedPoint.y(),line._stop.dX(), line._stop.dY());
       vSelectedCuts.push_back( line );
     }
 #else // SUBPIX_EDGE_OPTIM
@@ -1184,7 +1195,7 @@ int identify(
   }
 
   ///@todo Check if a & b sorted (cf. ellipse2param)
-  const double refinedSegSize = std::min( ellipse.a(), ellipse.b() ) * 0.12;
+  const double cutLengthOuterPointRefine = std::min( ellipse.a(), ellipse.b() ) * 0.12;
 
   for(const cctag::DirectedPoint2d<double> & point : ellipsePoints)
   {
@@ -1256,7 +1267,7 @@ int identify(
             params._numCutsInIdentStep,
             cuts,
             src,
-            refinedSegSize,
+            cutLengthOuterPointRefine,
             params._numSamplesOuterEdgePointsRefinement,
             params._cutsSelectionTrials
             );
