@@ -1310,10 +1310,6 @@ int identify(
     CCTAG_COUT_OPTIM("Time in refineConicFamily: " << spendTime << " ms");
   )
 #endif
-
-    boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
-    boost::posix_time::time_duration d = tend - tstart;
-    const double spendTime = d.total_milliseconds();
   }
   
   MarkerID id = -1;
