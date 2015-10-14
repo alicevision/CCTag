@@ -149,9 +149,6 @@ if ( iXp == 1 )
                 plot(resultData.distance,precision(:,2), lType{nType*(iLegend-1)+2},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
                 plot(resultData.distance,precision(:,3), lType{nType*(iLegend-1)+3},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
                 plot(resultData.distance,precision(:,4), lType{nType*(iLegend-1)+4},'LineWidth',lWidth,'MarkerEdgeColor','k','MarkerSize',mSize);
-                %plot(lengthMotionBlur,nbConfusion(5,:), 'kd-','LineWidth',3,'MarkerEdgeColor','k','MarkerSize',10);
-                %axis([0 10 0.4 1])
-                %%%
                 set(gca,'FontSize',uSize);
                 
                 textLegendPrecision{iTextLegPrecision} = [ '$' textLeg ' - \theta = 0$' ];  iTextLegPrecision = iTextLegPrecision + 1;
