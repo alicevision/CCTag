@@ -1168,21 +1168,21 @@ int identify(
   // outerEllipsePoints can be changed in the edge point refinement - not const - todo@Lilian - save their modifications
   // in the CCTag instance just above _rescaledOuterEllipsePoints.
 
-  // Take 50 edge points around outer ellipse.
-  const std::size_t n = std::min( std::size_t(100), outerEllipsePoints.size() );//50
-  std::size_t step = std::size_t( outerEllipsePoints.size() / ( n - 1 ) );
+  // Take 100 edge points around outer ellipse.
+  const std::size_t nOuterPoints = std::min( std::size_t(100), outerEllipsePoints.size() );
+  std::size_t step = std::size_t( outerEllipsePoints.size() / ( nOuterPoints - 1 ) );
   std::vector< cctag::DirectedPoint2d<double> > ellipsePoints;
 
-  ellipsePoints.reserve( n );
+  ellipsePoints.reserve( nOuterPoints );
   for( std::size_t i = 0; i < outerEllipsePoints.size(); i += step )
   {
-    ellipsePoints.push_back( outerEllipsePoints[ i ] );
+    ellipsePoints.push_back( outerEllipsePoints[i] );
   }
 
   ///@todo Check if a & b sorted (cf. ellipse2param)
   const double refinedSegSize = std::min( ellipse.a(), ellipse.b() ) * 0.12;
 
-  BOOST_FOREACH(const cctag::DirectedPoint2d<double> & point, ellipsePoints)
+  for(const cctag::DirectedPoint2d<double> & point : ellipsePoints)
   {
     CCTagVisualDebug::instance().drawPoint( Point2dN<double>(point.x(), point.y()), cctag::color_green );
     //todo: templater la fonction draw au lieu de reconstruire
@@ -1210,16 +1210,13 @@ int identify(
   
   std::vector<cctag::ImageCut> cuts;
   {
-    //CCTAG_TCOUT( "Before collectCuts" );
-    // Collect cuts around the extern ellipse with the interval [startOffset;1.0] not outside the image
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-    // Collect cuts around the extern ellipse with the interval [startOffset;1.0] not outside the image
+    // Collect cuts whose the image signal is in [startOffset;1.0].
     collectCuts( cuts, src, ellipse.center(), ellipsePoints, params._sampleCutLength, startOffset);
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
-    //CCTAG_TCOUT( "After collectCuts, timer: " << spendTime );
-    //CCTAG_TCOUT_VAR( cuts.size() );
+    //CCTAG_TCOUT( "CollectCuts, duration: " << spendTime );
   }
   
 #ifdef CCTAG_OPTIM
