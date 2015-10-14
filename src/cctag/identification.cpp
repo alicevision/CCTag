@@ -535,7 +535,6 @@ double costSelectCutFun(
 
 
 void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
-        std::vector< cctag::DirectedPoint2d<double> > & prSelection,
         std::size_t selectSize,
         const std::vector<cctag::ImageCut> & collectedCuts,
         const cv::Mat & src,
@@ -604,7 +603,6 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
 #endif // SUBPIX_EDGE_OPTIM
 
   std::size_t i = 0;
-  prSelection.reserve( selectSize );
   vSelectedCuts.reserve( selectSize );
   BOOST_FOREACH( const MapT::value_type & v, mapVar )
   {
@@ -646,7 +644,6 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
       vSelectedCuts.push_back( line );
     }
 #else // SUBPIX_EDGE_OPTIM
-    prSelection.push_back( line._stop );
     vSelectedCuts.push_back( line );
 #endif // SUBPIX_EDGE_OPTIM
 
