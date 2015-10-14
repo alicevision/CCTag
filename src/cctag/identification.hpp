@@ -157,7 +157,7 @@ std::size_t cutInterpolated(
         const cv::Mat & src,
         const cctag::Point2dN<double> & pStart,
         const cctag::DirectedPoint2d<double> & pStop,
-        const std::size_t nSteps );
+        const std::size_t nSamples);
 
 /**
  * Collect signal from center to external ellipse point
@@ -226,7 +226,7 @@ double costSelectCutFun(
 void selectCut(
       std::vector< cctag::ImageCut > & vSelectedCuts,
         std::size_t selectSize,
-        const std::vector<cctag::ImageCut> & collectedCuts,
+        std::vector<cctag::ImageCut> & collectedCuts,
         const cv::Mat & src,
         const double refinedSegSize,
         const std::size_t numSamplesOuterEdgePointsRefinement,
