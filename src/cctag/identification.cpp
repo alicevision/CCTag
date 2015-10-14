@@ -585,7 +585,11 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
       idxSelected = randomIdx;
     }
   }
-
+  
+  for(auto i: idxSelected){
+    CCTAG_COUT_VAR(i);
+  }
+  
   // Ordered map to get variance from the higher value to the lower
   typedef std::multimap< double, const cctag::ImageCut *, std::greater<double> > MapT;
   MapT mapVar;
