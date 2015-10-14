@@ -225,7 +225,6 @@ double costSelectCutFun(
 
 void selectCut(
       std::vector< cctag::ImageCut > & vSelectedCuts,
-        std::vector< cctag::DirectedPoint2d<double> > & prSelection,
         std::size_t selectSize,
         const std::vector<cctag::ImageCut> & collectedCuts,
         const cv::Mat & src,
