@@ -8,6 +8,8 @@
 #include <cmath>
 #include <cstddef>
 #include <string>
+#include <sys/stat.h>  // needed for stat and mkdir
+#include <sys/types.h> // needed for stat and mkdir
 
 #define NO_WEIGHT 0
 #define INV_GRAD_WEIGHT 1
@@ -26,8 +28,8 @@ static const float kDefaultAverageVoteMin        = 0.f;
 static const double kDefaultThrMedianDistanceEllipse = 3.0;
 static const std::size_t kDefaultMaximumNbSeeds = 500;
 static const std::size_t kDefaultMaximumNbCandidatesLoopTwo = 30;
-static const float kDefaultCannyThrLow      =  0.01f ;
-static const float kDefaultCannyThrHigh     =  0.04f ;
+static const float kDefaultCannyThrLow      =  0.002f ;//0.002
+static const float kDefaultCannyThrHigh     =  0.04f ;// 0.04
 static const std::size_t kDefaultMinPointsSegmentCandidate =  10;
 static const std::size_t kDefaultMinVotesToSelectCandidate =  3;
 static const double kDefaultThreshRobustEstimationOfOuterEllipse =  30.0;
@@ -35,9 +37,9 @@ static const double kDefaultEllipseGrowingEllipticHullWidth =  2.3;
 static const std::size_t kDefaultWindowSizeOnInnerEllipticSegment =  20;
 static const std::size_t kDefaultNumberOfMultiresLayers = 4;
 static const std::size_t kDefaultNumberOfProcessedMultiresLayers = 4;
-static const std::size_t kDefaultNumCutsInIdentStep = 15;
+static const std::size_t kDefaultNumCutsInIdentStep = 30;//100;//15;
 static const std::size_t kDefaultNumSamplesOuterEdgePointsRefinement = 20;
-static const std::size_t kDefaultCutsSelectionTrials = 10000;
+static const std::size_t kDefaultCutsSelectionTrials = 500;//10000;
 static const std::size_t kDefaultSampleCutLength = 100;
 static const double kDefaultMinIdentProba = 1e-6;
 static const bool kDefaultUseLMDif = true;
@@ -45,6 +47,7 @@ static const bool kDefaultSearchForAnotherSegment = true;
 static const bool kDefaultWriteOutput = false;
 static const bool kDefaultDoIdentification = true;
 static const uint32_t kDefaultMaxEdges = 20000;
+static const bool kDefaultUseCuda = false;
 
 static const std::string kParamCannyThrLow( "kParamCannyThrLow" );
 static const std::string kParamCannyThrHigh( "kParamCannyThrHigh" );
@@ -74,6 +77,7 @@ static const std::string kParamSearchForAnotherSegment( "kParamSearchForAnotherS
 static const std::string kParamWriteOutput( "kParamWriteOutput" );
 static const std::string kParamDoIdentification( "kParamDoIdentification" );
 static const std::string kParamMaxEdges( "kParamMaxEdges" );
+static const std::string kUseCuda( "kUseCuda" );
 
 static const std::size_t kWeight = INV_GRAD_WEIGHT; // todo@L
 
@@ -109,6 +113,10 @@ struct Parameters
     , _writeOutput( kDefaultWriteOutput )
     , _doIdentification( kDefaultDoIdentification )
     , _maxEdges( kDefaultMaxEdges )
+#ifdef WITH_CUDA
+    , _useCuda( kDefaultUseCuda )
+    , _debugDir( "" )
+#endif // WITH_CUDA
   {
     _nCircles = 2*_nCrowns;
   }
@@ -151,6 +159,10 @@ struct Parameters
   bool _writeOutput;
   bool _doIdentification; // perform the identification step
   uint32_t _maxEdges; // max number of edge point, determines memory allocation
+#ifdef WITH_CUDA
+  bool        _useCuda; // if compiled WITH_CUDA, allow CLI selection, ignore if not
+  std::string _debugDir; // prefix for debug output !!!! ONLY ON COMMAND LINE
+#endif // WITH_CUDA
 
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
@@ -183,8 +195,37 @@ struct Parameters
     ar & BOOST_SERIALIZATION_NVP( _writeOutput );
     ar & BOOST_SERIALIZATION_NVP( _doIdentification );
     ar & BOOST_SERIALIZATION_NVP( _maxEdges );
+#ifdef WITH_CUDA
+    ar & BOOST_SERIALIZATION_NVP( _useCuda );
+#endif // WITH_CUDA
     _nCircles = 2*_nCrowns;
   }
+
+#ifdef WITH_CUDA
+  inline void setDebugDir( const std::string& debugDir )
+  {
+    struct stat st = {0};
+
+    std::string dir = debugDir;
+    char   dirtail = dir[ dir.size()-1 ];
+    if( dirtail != '/' ) {
+        _debugDir = debugDir + "/";
+    } else {
+        _debugDir = debugDir;
+    }
+
+    if (::stat( _debugDir.c_str(), &st) == -1) {
+        ::mkdir( _debugDir.c_str(), 0700);
+    }
+  }
+#endif // WITH_CUDA
+
+#ifdef WITH_CUDA
+  inline void setUseCuda( bool val )
+  {
+    _useCuda = val;
+  }
+#endif // WITH_CUDA
 };
 
 } // namespace cctag

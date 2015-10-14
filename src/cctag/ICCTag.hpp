@@ -7,6 +7,8 @@
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/gil/gil_all.hpp>
 
+#include <opencv2/core/core.hpp>
+
 namespace cctag {
   
 typedef int MarkerID;
@@ -38,7 +40,7 @@ protected:
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
-      const boost::gil::gray8_view_t& graySrc,
+      const cv::Mat & graySrc,
       const std::size_t nCrowns = 3,
       const std::string & parameterFile = "",
       const std::string & cctagBankFilename = "");

@@ -19,9 +19,17 @@
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
 #include <boost/gil/image_view_factory.hpp>
+#include <boost/timer.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <cmath>
 #include <sstream>
+
+#ifdef WITH_CUDA
+#ifdef WITH_CUDA_COMPARE_MODE
+#include "cuda/tag.h"
+#endif
+#endif
 
 namespace cctag
 {
@@ -177,184 +185,220 @@ void update(
   }
 }
 
-void cctagMultiresDetection(
-        CCTag::List& markers,
-        const boost::gil::gray8_view_t& graySrc,
-        const boost::gil::rgb32f_view_t & cannyRGB,
-        const std::size_t frame,
-        const Parameters & params)
+void cctagMultiresDetection_inner(
+        size_t                  i,
+        CCTag::List&            pyramidMarkers,
+        const cv::Mat&          imgGraySrc,
+        const Level*            level,
+        const std::size_t       frame,
+        std::vector<EdgePoint>& vPoints,
+        EdgePointsImage&        vEdgeMap,
+        popart::TagPipe*        cuda_pipe,
+        const Parameters &      params )
 {
-  POP_ENTER;
-  bool doUpdate = true;
+    CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::");
 
-  using namespace boost::gil;
+    // Data structure for getting vote winners
+    WinnerMap winners;
+    std::vector<EdgePoint*> seeds;
 
-  typedef kth_channel_view_type<0, rgb32f_view_t>::type CannyView;
-  typedef kth_channel_view_type<1, rgb32f_view_t>::type GradXView;
-  typedef kth_channel_view_type<2, rgb32f_view_t>::type GradYView;
+    boost::posix_time::time_duration d;
 
-  //	* create all pyramid levels
-  //gray8_image_t grayImg;
-  //gray8_view_t graySrc = img::toGray(grayImg, grayImg);
+#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    std::vector<EdgePoint>  cuda_debug_vPoints;
+    EdgePointsImage         cuda_debug_vEdgeMap;
+    WinnerMap               cuda_debug_winners;
+    std::vector<EdgePoint*> cuda_debug_seeds;
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
 
-  PyramidImage<gray8_view_t> multiresSrc(
-          graySrc,
-          params._numberOfMultiresLayers);
-  
-  PyramidImage<rgb32f_view_t> multiresCanny(
-          graySrc.width(),
-          graySrc.height(),
-          params._numberOfMultiresLayers);
+#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    // there is no point in measuring time in compare mode
+    if( cuda_pipe ) {
+        #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
+        #endif
+        cuda_pipe->download( i, 
+                             cuda_debug_vPoints,
+                             cuda_debug_vEdgeMap,
+                             cuda_debug_seeds,
+                             cuda_debug_winners );
+        #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
+        d = t10 - t00;
+        CCTAG_COUT_OPTIM("Time in GPU download: " << d.total_milliseconds() << " ms");
+        #endif
+    }
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
 
-  // todo@Lilian: add more description
-  //	* for each pyramid level (except full image)
-  //	** launch CCTag detection (from canny)
-  //	** fill canny with ellipses in black
-  //
-  //	* for the full image
-  //	** scale all previously detected ellipses
-  //	** compute ellipse hull
-  //	** collect outer edge points inside ellipse hull (ellipseHull)
-  //	*** intersecter chaque ligne et parcours de ce fragment
-  //	** erase canny under ellipse
-  //	*** we can reuse previous intersections
-  //	** launch CCTag detection (from canny)
+#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    // there is no point in measuring time in compare mode
+    if( cuda_pipe ) {
+        #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
+        #endif
+        cuda_pipe->download( i, 
+                             vPoints,
+                             vEdgeMap,
+                             seeds,
+                             winners );
+        #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
+        boost::posix_time::time_duration d = t11 - t01;
+        CCTAG_COUT_OPTIM("Time in GPU download: " << d.total_milliseconds() << " ms");
+        #endif
+    }
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
 
-  typedef rgb32f_pixel_t Pixel;
+#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    if( not cuda_pipe ) {
+#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    #ifdef CCTAG_OPTIM
+    boost::posix_time::ptime t02(boost::posix_time::microsec_clock::local_time());
+    #endif
+    edgesPointsFromCanny( vPoints,
+                          vEdgeMap,
+                          level->getEdges(),
+                          level->getDx(),
+                          level->getDy());
+    #ifdef CCTAG_OPTIM
+    boost::posix_time::ptime t12(boost::posix_time::microsec_clock::local_time());
+    d = t12 - t02;
+    CCTAG_COUT_OPTIM("Time in GPU Edge extraction: " << d.total_milliseconds() << " ms");
+    #endif
+#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    } // not cuda_pipe
+#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
 
-  Pixel pixelZero;
-  terry::numeric::pixel_zeros_t<Pixel>()(pixelZero);
-  std::map<std::size_t, CCTag::List> pyramidMarkers;
+    CCTagVisualDebug::instance().setPyramidLevel(i);
 
-  BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
-  for ( std::size_t i = params._numberOfMultiresLayers;
-          i > std::max<size_t>(params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers, 1);
-            --i)
-  {
+#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    if( cuda_pipe ) {
+        std::cout << "Number of edge points: "
+                  << vPoints.size() << " (CPU)"
+                  << cuda_debug_vPoints.size() << " (GPU)" << std::endl;
+        std::cout << "X-size: " << vEdgeMap.shape()[0]
+                  << " Y-size: " << vEdgeMap.shape()[1] << " (CPU) "
+                  << "X-size: " << cuda_debug_vEdgeMap.shape()[0]
+                  << " Y-size: " << cuda_debug_vEdgeMap.shape()[1] << " (GPU)"
+                  << std::endl;
 
-    CCTAG_COUT_OPTIM(":::::::::::::::: Multiresolution level " << i - 1 <<
-             " :::::::::::::::::::");
+        popart::TagPipe::debug_cpu_origin( i, level->getSrc(), params );
+        popart::TagPipe::debug_cpu_edge_out( i, level->getEdges(), params );
+        popart::TagPipe::debug_cpu_dxdy_out( cuda_pipe, i, level->getDx(), level->getDy(), params );
+        popart::TagPipe::debug_cmp_edge_table( i, vEdgeMap, cuda_debug_vEdgeMap, params );
+    }
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
 
-    CCTag::List & markersList = pyramidMarkers[i - 1];
-
-    rgb32f_view_t subCannyRGB = multiresCanny.getView(i - 1);
-
-    CannyView cannyView;
-    GradXView cannyGradX;
-    GradYView cannyGradY;
-
-    cannyView = kth_channel_view<0>(subCannyRGB);
-    // x gradient
-    cannyGradX = kth_channel_view<1>(subCannyRGB);
-    // y gradient
-    cannyGradY = kth_channel_view<2>(subCannyRGB);
-
-    cannyCv(multiresSrc.getView(i - 1), subCannyRGB, cannyView,
-            // cannyGradX,
-            // cannyGradY,
-            params._cannyThrLow, params._cannyThrHigh);
-
-#ifdef CCTAG_SERIALIZE
-    std::stringstream outFilenameCanny;
-    outFilenameCanny << "cannyLevel" << i - 1;
+#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    if( not cuda_pipe ) {
+#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    #ifdef CCTAG_OPTIM
+    boost::posix_time::ptime t03(boost::posix_time::microsec_clock::local_time());
+    #endif
+    // Voting procedure applied on every edge points.
+    vote( vPoints,
+          seeds,        // output
+          vEdgeMap,
+          winners,      // output
+          level->getDx(),
+          level->getDy(),
+          params );
     
-    CCTagVisualDebug::instance().initBackgroundImage(
-            boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>(cannyView));
+    if( seeds.size() > 1 ) {
+        // Sort the seeds based on the number of received votes.
+        std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
+    }
+    #ifdef CCTAG_OPTIM
+    boost::posix_time::ptime t13(boost::posix_time::microsec_clock::local_time());
+    d = t13 - t03;
+    CCTAG_COUT_OPTIM("Time in CPU vote and sort: " << d.total_milliseconds() << " ms");
+    #endif
+#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+    } // not cuda_pipe
+#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+
+#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    if( cuda_pipe ) {
+        cctagDetectionFromEdges(
+                pyramidMarkers,
+                cuda_debug_vPoints,
+                level->getSrc(),
+                cuda_debug_winners,
+                cuda_debug_seeds,
+                cuda_debug_vEdgeMap,
+                frame, i, std::pow(2.0, (int) i), params);
+    } else {
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    cctagDetectionFromEdges(
+        pyramidMarkers,
+        vPoints,
+        level->getSrc(),
+        winners,
+        seeds,
+        vEdgeMap,
+        frame, i, std::pow(2.0, (int) i), params);
+#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    }
+#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
     
-    CCTagVisualDebug::instance().newSession(outFilenameCanny.str());
-
-#endif
-
-    std::vector<EdgePoint> points;
-    EdgePointsImage edgesMap;
-    edgesPointsFromCanny(points, edgesMap, cannyView, cannyGradX, cannyGradY);
-
-    CCTagVisualDebug::instance().setPyramidLevel(i - 1);
-
-    cctagDetectionFromEdges(markersList, points,
-            multiresSrc.getView(i - 1), cannyGradX, cannyGradY, edgesMap,
-            frame, i - 1, std::pow(2.0, (int) i - 1), params);
-
-    CCTAG_COUT("cctagDetection on layer 1:");
-    CCTAG_COUT_VAR(markersList.size());
-
-    CCTagVisualDebug::instance().initBackgroundImage(multiresSrc.getView(i - 1));
+    CCTagVisualDebug::instance().initBackgroundImage(level->getSrc());
     std::stringstream outFilename2;
-    outFilename2 << "viewLevel" << i - 1;
+    outFilename2 << "viewLevel" << i;
     CCTagVisualDebug::instance().newSession(outFilename2.str());
 
-    //update(markers, markersList);
-
-    BOOST_FOREACH(const CCTag & marker, markersList)
+    BOOST_FOREACH(const CCTag & marker, pyramidMarkers)
     {
-      CCTagVisualDebug::instance().drawMarker(marker, false);
-      //update(markers, marker);
+        CCTagVisualDebug::instance().drawMarker(marker, false);
     }
-  }
+}
 
-  CCTAG_COUT_OPTIM(":::::::::::::::: Multiresolution level 0 :::::::::::::::::::");
+void cctagMultiresDetection(
+        CCTag::List& markers,
+        const cv::Mat& imgGraySrc,
+        const ImagePyramid& imagePyramid,
+        const std::size_t   frame,
+        popart::TagPipe*    cuda_pipe,
+        const Parameters&   params)
+{
+    // POP_ENTER;
+  //	* For each pyramid level:
+  //	** launch CCTag detection based on the canny edge detection output.
+  
+  bool doUpdate = true; // todo@Lilian: add in the parameter file.
 
-  rgb32f_view_t subCannyRGB = multiresCanny.getView(0);
-  CannyView cannyView;
-  GradXView cannyGradX;
-  GradYView cannyGradY;
-
-  cannyView = kth_channel_view<0>(cannyRGB);
-  // x gradient
-  cannyGradX = kth_channel_view<1>(cannyRGB);
-  // y gradient
-  cannyGradY = kth_channel_view<2>(cannyRGB);
-
-  cannyCv(multiresSrc.getView(0), subCannyRGB, cannyView,
-          // cannyGradX,
-          // cannyGradY,
-          params._cannyThrLow, params._cannyThrHigh);
-
-#ifdef CCTAG_SERIALIZE
-  CCTagVisualDebug::instance().initBackgroundImage(
-          boost::gil::color_converted_view<boost::gil::rgb8_pixel_t>(cannyView));
-  CCTagVisualDebug::instance().newSession("cannyLevel0");
-#endif
-
-  std::vector<EdgePoint> points;
-  EdgePointsImage edgesMap;
-  edgesPointsFromCanny(points, edgesMap, cannyView, cannyGradX, cannyGradY);
-
-  if (params._numberOfMultiresLayers == params._numberOfProcessedMultiresLayers)
-  {
-
-    CCTag::List & markersList = pyramidMarkers[0];
-
-    CCTagVisualDebug::instance().setPyramidLevel(0);
-
-    cctagDetectionFromEdges(markersList, points, multiresSrc.getView(0),
-            cannyGradX, cannyGradY, edgesMap, frame, 0, 1.0, params);
-    CCTAG_COUT_OPTIM("After 2st cctagDetection");
-    CCTAG_COUT_VAR_OPTIM(markersList.size());
-
-    CCTagVisualDebug::instance().initBackgroundImage(multiresSrc.getView(0));
-    CCTagVisualDebug::instance().newSession("viewLevel0");
-
-    BOOST_FOREACH(const CCTag & marker, markersList)
-    {
-      CCTagVisualDebug::instance().drawMarker(marker, false);
-
-      if (doUpdate)
-      {
-        CCTAG_COUT_DEBUG("Update Level 0");
-        update(markers, marker);
-      }
-      else
-      {
-        markers.push_back(new CCTag(marker));
-      }
-    }
-  }
+  std::map<std::size_t, CCTag::List> pyramidMarkers;
+  std::vector<EdgePointsImage> vEdgeMaps;
+  vEdgeMaps.reserve(imagePyramid.getNbLevels());
+  std::vector<std::vector<EdgePoint > > vPoints;
 
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
-  for (std::size_t i = params._numberOfMultiresLayers - 1 ;
-          i >= std::max<size_t>(params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers, 1);
-            --i)
+  for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i ) {
+    pyramidMarkers.insert( std::pair<std::size_t, CCTag::List>( i, CCTag::List() ) );
+
+    // Create EdgePoints for every detected edge points in edges.
+    // std::vector<EdgePoint> points;
+    // vPoints.push_back(points);
+    vPoints.push_back( std::vector<EdgePoint>() );
+    
+    // EdgePointsImage edgesMap;
+    // vEdgeMaps.push_back(edgesMap);
+    vEdgeMaps.push_back( EdgePointsImage() );
+    
+    cctagMultiresDetection_inner( i,
+                                  pyramidMarkers[i],
+                                  imgGraySrc,
+                                  imagePyramid.getLevel(i),
+                                  frame,
+                                  vPoints.back(),
+                                  vEdgeMaps.back(),
+                                  cuda_pipe,
+                                  params );
+  }
+  
+  // Delete overlapping markers while keeping the best ones.
+  BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
+  for (std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers ; ++i)
+  // set the _numberOfProcessedMultiresLayers <= _numberOfMultiresLayers todo@Lilian
   {
     CCTag::List & markersList = pyramidMarkers[i];
 
@@ -362,7 +406,6 @@ void cctagMultiresDetection(
     {
       if (doUpdate)
       {
-        CCTAG_COUT_DEBUG("Update Level " << i);
         update(markers, marker);
       }
       else
@@ -371,66 +414,46 @@ void cctagMultiresDetection(
       }
     }
   }
-
+  
+  CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
   CCTagVisualDebug::instance().writeLocalizationView(markers);
 
   // Final step: extraction of the detected markers in the original (scale) image.
-
   CCTagVisualDebug::instance().newSession("multiresolution");
 
   // Project markers from the top of the pyramid to the bottom (original image).
-  //for (std::size_t i = params._numberOfMultiresLayers - 1; i >= max(params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers, 1); --i) {
-
-  //CCTag::List & markersList = pyramidMarkers[i];
-
   BOOST_FOREACH(CCTag & marker, markers)
   {
-
     int i = marker.pyramidLevel();
-
     // if the marker has to be rescaled into the original image
-    if ((i > 0) && (i < params._numberOfMultiresLayers))
+    if (i > 0)
     {
-
-      double scale = marker.scale(); //std::pow( 2.0, (double)i );
+      BOOST_ASSERT( i < params._numberOfMultiresLayers );
+      double scale = marker.scale(); // pow( 2.0, (double)i );
 
       cctag::numerical::geometry::Ellipse rescaledOuterEllipse = marker.rescaledOuterEllipse();
 
       std::list<EdgePoint*> pointsInHull;
-      selectEdgePointInEllipticHull(edgesMap, rescaledOuterEllipse, scale, pointsInHull);
+      selectEdgePointInEllipticHull(vEdgeMaps[0], rescaledOuterEllipse, scale, pointsInHull);
 
       std::vector<EdgePoint*> rescaledOuterEllipsePoints;
 
       double SmFinal = 1e+10;
-
+      
       cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0);
-
-      // Optional
-      //std::vector<EdgePoint*> outerEllipsePointsGrowing;
-      //{
-      //cctag::ellipseGrowing( edgesMap, outerEllipsePoints, outerEllipsePointsGrowing, outerEllipse, scale );
-      //outerEllipsePoints.clear();
-      //cctag::outlierRemoval( outerEllipsePointsGrowing, outerEllipsePoints, 20.0 ); // PB, move list to vector in this function or inverse in ellipseGrowing @Lilian
-      //}
-
-
+      
       try
       {
         numerical::ellipseFitting(rescaledOuterEllipse, rescaledOuterEllipsePoints);
 
         std::vector< Point2dN<double> > rescaledOuterEllipsePointsDouble;// todo@Lilian : add a reserve
         std::size_t numCircles = params._nCrowns * 2;
-        //pointsCCTag.resize(numCircles);
 
         BOOST_FOREACH(EdgePoint * e, rescaledOuterEllipsePoints)
         {
-
           rescaledOuterEllipsePointsDouble.push_back(Point2dN<double>(e->x(), e->y()));
-          //pointsCCTag[numCircles - 1].push_back(Point2dN<double>(e->x(), e->y()));
-
           CCTagVisualDebug::instance().drawPoint(Point2dN<double>(e->x(), e->y()), cctag::color_red);
         }
-
         marker.setCenterImg(cctag::Point2dN<double>(marker.centerImg().getX() * scale, marker.centerImg().getY() * scale));
         marker.setRescaledOuterEllipse(rescaledOuterEllipse);
         marker.setRescaledOuterEllipsePoints(rescaledOuterEllipsePointsDouble);
@@ -445,17 +468,16 @@ void cctagMultiresDetection(
       marker.setRescaledOuterEllipsePoints(marker.points().back());
     }
   }
-
-  //CCTagVisualDebug::instance().newSession("FinalMultiRes");
-
+  
+  // Log
   CCTagFileDebug::instance().newSession("data.txt");
-
   BOOST_FOREACH(const CCTag & marker, markers)
   {
     CCTagFileDebug::instance().outputMarkerInfos(marker);
   }
-
-  POP_LEAVE;
+  
+  // POP_LEAVE;
+  
 }
 
 void clearDetectedMarkers(

@@ -373,16 +373,19 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
 	return;
 }
 
-EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & canny, 
-        const EdgePoint& p, int dir, const std::size_t nmax, 
-        const boost::gil::kth_channel_view_type<1, boost::gil::rgb32f_view_t>::type & cannyGradX, 
-        const boost::gil::kth_channel_view_type<2, boost::gil::rgb32f_view_t>::type & cannyGradY, 
+EdgePoint* gradientDirectionDescent(
+        const boost::multi_array<EdgePoint*, 2> & canny, 
+        const EdgePoint& p,
+        int dir,
+        const std::size_t nmax, 
+        const cv::Mat & imgDx, 
+        const cv::Mat & imgDy, 
         int thrGradient)
 {
     EdgePoint* ret = NULL;
     float e        = 0.0f;
-    float dx       = dir * (*(cannyGradX.xy_at(p.x(),p.y())))[0];
-    float dy       = dir * (*(cannyGradY.xy_at(p.x(),p.y())))[0];
+    float dx       = dir * imgDx.at<short>(p.y(),p.x());
+    float dy       = dir * imgDy.at<short>(p.y(),p.x());
 
     float dx2 = 0;
     float dy2 = 0;
@@ -413,8 +416,8 @@ EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & c
 
         if ( dx*dx+dy*dy > thrGradient )
         {
-            dx2 = (*(cannyGradX.xy_at(p.x(),p.y())))[0];
-            dy2 = (*(cannyGradY.xy_at(p.x(),p.y())))[0];
+            dx2 = imgDx.at<short>(p.y(),p.x());
+            dy2 = imgDy.at<short>(p.y(),p.x());
             dir = boost::math::sign<float>( dx2*dxRef+dy2*dyRef );
             dx = dir*dx2;
             dy = dir*dy2;
@@ -483,8 +486,8 @@ EdgePoint* gradientDirectionDescent( const boost::multi_array<EdgePoint*, 2> & c
 
         if ( dx*dx+dy*dy > thrGradient )
         {
-            dx2 = (*(cannyGradX.xy_at(p.x(),p.y())))[0];
-            dy2 = (*(cannyGradY.xy_at(p.x(),p.y())))[0];
+            dx2 = imgDx.at<short>(p.y(),p.x());
+            dy2 = imgDy.at<short>(p.y(),p.x());
             dir = boost::math::sign<float>( dx2*dxRef+dy2*dyRef );
             dx = dir*dx2;
             dy = dir*dy2;

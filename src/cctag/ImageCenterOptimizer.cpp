@@ -29,13 +29,13 @@ ImageCenterOptimizer::ImageCenterOptimizer( const VecExtPoints & vecExtPoints )
 
 void ImageCenterOptimizer::initOpt( int ndim, NEWMAT::ColumnVector& x )
 {
-	if ( ndim != 2 )
-	{
-		BOOST_THROW_EXCEPTION( exception::Bug() << exception::dev() + "Unable to init minimizer!" );
-	}
+  if ( ndim != 2 )
+  {
+          BOOST_THROW_EXCEPTION( exception::Bug() << exception::dev() + "Unable to init minimizer!" );
+  }
 
-	x(1) = _pToRefine.x();
-	x(2) = _pToRefine.y();
+  x(1) = _pToRefine.x();// todo@Lilian: why not (0) and (1) instead ?!
+  x(2) = _pToRefine.y();
 }
 
 /**
@@ -69,7 +69,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 
 	cctag::numerical::BoundedMatrix3x3d mH;
 	VecSignals vecSig;
-	if ( !getSignals( mH, vecSig, this_ptr->_lengthSig, centerExtEllipse, this_ptr->_vecExtPoints, this_ptr->_sView, this_ptr->_ellipse.matrix() ) )
+	if ( !getSignals( mH, vecSig, this_ptr->_lengthSig, centerExtEllipse, this_ptr->_vecExtPoints, this_ptr->_src, this_ptr->_ellipse.matrix() ) )
 	{
 		// We are diverging
 		CCTAG_COUT_DEBUG("divergence!");
@@ -100,7 +100,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 	result = NLPFunction;
 }
 
-Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double> & pToRefine, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView, const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT)
+Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double> & pToRefine, const std::size_t lengthSig, const cv::Mat & src, const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT)
 {
 	using namespace OPTPP;
 	using namespace NEWMAT;
@@ -112,7 +112,7 @@ Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double>
 	cctag::numerical::optimization::condition(_pToRefine, mT);
 	
 	_lengthSig = lengthSig;
-	_sView = sView;
+	_src = src;
 	_ellipse = outerEllipse;
 	_numIter = 0;
 	// 2D conditioning matrix

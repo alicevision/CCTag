@@ -278,7 +278,7 @@ bool Voting::gradientDescent( const cctag::Parameters&     params,
                               const cv::cuda::PtrStepSz16s d_dy,
                               cudaStream_t                 stream )
 {
-    cout << "  Enter " << __FUNCTION__ << endl;
+    // cout << "  Enter " << __FUNCTION__ << endl;
 
     int listsize;
 
@@ -288,7 +288,7 @@ bool Voting::gradientDescent( const cctag::Parameters&     params,
 
     if( listsize == 0 ) {
         cerr << "    I have not found any edges!" << endl;
-        cerr << "  Leave " << __FUNCTION__ << endl;
+        // cerr << "  Leave " << __FUNCTION__ << endl;
         return false;
     }
 
@@ -332,14 +332,14 @@ bool Voting::gradientDescent( const cctag::Parameters&     params,
           edge_image, nmax, d_dx, d_dy, threshold );
     POP_CHK_CALL_IFSYNC;
 
-    cout << "  Leave " << __FUNCTION__ << endl;
+    // cout << "  Leave " << __FUNCTION__ << endl;
     return true;
 }
 
 __host__
 bool Frame::applyDesc( const cctag::Parameters& params )
 {
-    cout << "Enter " << __FUNCTION__ << endl;
+    // cout << "Enter " << __FUNCTION__ << endl;
 
     if( params._nCrowns > RESERVE_MEM_MAX_CROWNS ) {
         cerr << "Error in " << __FILE__ << ":" << __LINE__ << ":" << endl
@@ -360,10 +360,10 @@ bool Frame::applyDesc( const cctag::Parameters& params )
                                      _stream );
 
     if( not success ) {
-        cout << "Leave " << __FUNCTION__ << endl;
+        // cout << "Leave " << __FUNCTION__ << endl;
         return false;
     }
-    cout << "Leave " << __FUNCTION__ << endl;
+    // cout << "Leave " << __FUNCTION__ << endl;
 #ifdef NDEBUG
     return true;
 #else // NDEBUG

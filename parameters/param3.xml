@@ -2,7 +2,7 @@
 <!DOCTYPE boost_serialization>
 <boost_serialization signature="serialization::archive" version="9">
 <CCTagsParams class_id="0" tracking_level="0" version="0">
-	<_cannyThrLow>0.01</_cannyThrLow>
+	<_cannyThrLow>0.002</_cannyThrLow>
 	<_cannyThrHigh>0.04</_cannyThrHigh>
 	<_distSearch>30</_distSearch>
     <_thrGradientMagInVote>2500</_thrGradientMagInVote>
@@ -22,7 +22,7 @@
 	<_numberOfProcessedMultiresLayers>4</_numberOfProcessedMultiresLayers>
 	<_numCutsInIdentStep>15</_numCutsInIdentStep>
 	<_numSamplesOuterEdgePointsRefinement>20</_numSamplesOuterEdgePointsRefinement>
-	<_cutsSelectionTrials>10000</_cutsSelectionTrials>
+	<_cutsSelectionTrials>500</_cutsSelectionTrials>
 	<_sampleCutLength>100</_sampleCutLength>
 	<_minIdentProba>1e-6</_minIdentProba>
 	<_useLMDif>1</_useLMDif>
@@ -30,6 +30,7 @@
 	<_writeOutput>1</_writeOutput>
 	<_doIdentification>1</_doIdentification>
     <_maxEdges>20000</_maxEdges>
+    <_useCuda>0</_useCuda>
 </CCTagsParams>
 </boost_serialization>
 

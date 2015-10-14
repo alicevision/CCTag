@@ -13,7 +13,7 @@ namespace cctag {
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
-      const boost::gil::gray8_view_t& graySrc,
+      const cv::Mat & graySrc,
       const std::size_t nCrowns,
       const std::string & parameterFilename,
       const std::string & cctagBankFilename)

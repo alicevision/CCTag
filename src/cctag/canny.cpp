@@ -2,6 +2,8 @@
 
 #include <boost/gil/image_view.hpp>
 
+#include "global.hpp"
+
 //#define USE_CANNY_OCV3
 #ifdef USE_CANNY_OCV3
 #include <opencv2/opencv.hpp>
@@ -17,81 +19,35 @@
 namespace cctag
 {
 
-/**
- * @param[out] cannyView output gray view
- * @param[in] srcImage gray source image
- */
-void cvCanny(
-        boost::gil::rgb32f_view_t & cannyView,
-        const IplImage* srcImage,
-        const double thrLow,
-        const double thrHigh )
+void edgesPointsFromCanny(
+        std::vector<EdgePoint>& points,
+        EdgePointsImage & edgePointsMap,
+        const cv::Mat & edges,
+        const cv::Mat & dx,
+        const cv::Mat & dy )
 {
-  using namespace boost::gil;
+  std::size_t width = edges.cols;
+  std::size_t height = edges.rows;
 
-  typedef boost::gil::rgb32f_view_t CannyView;
-  typedef CannyView::value_type CannyPixel;
-  typedef channel_type<CannyPixel>::type CannyChannel;
+  edgePointsMap.resize( boost::extents[width][height] );
+  std::fill( edgePointsMap.origin(), edgePointsMap.origin() + edgePointsMap.size(), (EdgePoint*)NULL );
+  
+  points.reserve( width * height / 2 ); // todo: allocate that in the memory pool @Lilian
 
-  BOOST_ASSERT( cannyView.width() == srcImage->width );
-  BOOST_ASSERT( cannyView.height() == srcImage->height );
-
-  // Compute canny
-  try
+  for( int y = 0 ; y < height ; ++y )
   {
-    // TODO: Use global allocation (memory pool) or hack with static variable.
-    //gray16_image_t<poolAllocator> dxImg( cannyView.width(), cannyView.height() );
-    CvMat* dx = NULL;
-    CvMat* dy = NULL;
-    // opencv works only on gray 8bits images...
-    // TODO: no local image allocation without using memory pool.
-    gray8_image_t cannyImgBuffer( cannyView.width(), cannyView.height() );
-    gray8_view_t cannyViewBuffer( view(cannyImgBuffer) );
-    boostCv::CvImageView cannyImg( cannyViewBuffer );
-
-    //boost::timer t;
-    cvRecodedCanny( const_cast<IplImage*>(srcImage), cannyImg.get(), dx, dy, thrLow * 256, thrHigh * 256, /*7*/ 3 | CV_CANNY_L2_GRADIENT );
-    //CCTAG_COUT( "Time for cvRecodedCanny " << t.elapsed() );
-    
-#ifdef USE_CANNY_OCV3
-	cv::Mat matSrc(cv::cvarrToMat( const_cast<IplImage*>(srcImage) ));
-	cv::Mat matCanny(cv::cvarrToMat( const_cast<IplImage*>(cannyImg.get()) ));
-	t.restart();
-	cv::Canny( matSrc, matCanny, thrLow * 256, thrHigh * 256, 7 );
-	CCTAG_COUT( "Time for cv::Canny " << t.elapsed() );
-	//cv::imwrite("/home/lilian/data/toto.png",matCanny);
-#endif
-    
-    
-    //cvRecodedCannyGPUFilter2D( simg, cannyImg, dx, dy, thrLow * 256, thrHigh * 256, 7 | CV_CANNY_L2_GRADIENT );
-    BOOST_ASSERT( dx && dy );
-
-    boost::int16_t *pdx = dx->data.s;
-    boost::int16_t *pdy = dy->data.s;
-
-    for( int y = 0; y < cannyView.height(); ++y )
+    for( int x = 0 ; x < width ; ++x )
     {
-      CannyView::x_iterator it = cannyView.row_begin( y );
-      gray8_view_t::x_iterator itcv = cannyViewBuffer.row_begin( y );
-      for( int x = 0; x < cannyView.width(); ++x )
+      if ( edges.at<uchar>(y,x) == 255 )
       {
-        (*it)[0] = channel_convert<CannyChannel, boost::gil::bits8>( (*itcv)[0] );
-        (*it)[1] = *pdx;
-        (*it)[2] = *pdy;
-        ++it;
-        ++pdx;
-        ++pdy;
-        ++itcv;
+        points.push_back( EdgePoint( x, y, (float) dx.at<short>(y,x), (float) dy.at<short>(y,x) ) );
+        
+        EdgePoint* p = &points.back();
+        edgePointsMap[x][y] = p;
       }
     }
+  }
 
-    cvReleaseMat( &dx );
-    cvReleaseMat( &dy );
-  }
-  catch( std::exception & e )
-  {
-    std::cerr << e.what() << std::endl;
-  }
 }
 
 } // namespace cctag

@@ -6,9 +6,7 @@
 #include <cctag/geometry/point.hpp>
 #include <cctag/colors.hpp>
 #include <cctag/CCTag.hpp>
-#include <cctag/boostCv/cvImage.hpp>
 
-#include <boost/gil/image_view.hpp>
 #include <boost/filesystem.hpp>
 
 namespace cctag
@@ -18,7 +16,7 @@ class CCTagVisualDebug : public Singleton<CCTagVisualDebug> {
     MAKE_SINGLETON_WITHCONSTRUCTORS(CCTagVisualDebug)
 
 public:
-    typedef std::map<std::string, boost::gil::rgb8_image_t> Sessions;
+    typedef std::map<std::string, cv::Mat> Sessions;
 public:
 
     void setPyramidLevel(int level);
@@ -29,21 +27,11 @@ public:
 
     void setImageFileName(const std::string& imageFileName);
 
-    template<class SView>
-    void initBackgroundImage(const SView & backView) {
-#ifdef CCTAG_SERIALIZE
-        using namespace boost::gil;
-        _backImage.recreate(backView.width(), backView.height());
-        _backView = boost::gil::view(_backImage);
-        copy_and_convert_pixels(backView, _backView);
-#endif
-    }
+    void initBackgroundImage(const cv::Mat & back);
     
     void initializeFolders(const boost::filesystem::path & filename, const std::string & outputFolder, std::size_t nCrowns = 4);
 
     void newSession(const std::string & sessionName);
-
-    void changeSession(const std::string & sessionName);
 
     void drawText(const cctag::Point2dN<double> & p, const std::string & text, const cctag::Color & color);
 
@@ -64,15 +52,28 @@ public:
     void writeIdentificationView(cctag::CCTag::List & markers) const;
 
     std::string getImageFileName() const;
+    
+#ifdef CCTAG_EXTRA_LAYER_DEBUG
+    template<typename T>
+    void coutImage(cv::Mat src) const
+    {
+      for (int i=0 ; i < src.rows ; ++i)
+      {
+        for (int j=0 ; j < src.cols ; ++j)
+        {
+          std::cout << (int) src.at<T>(i,j) << " ";
+        }
+        std::cout << std::endl;
+      }
+    }
+#endif
 
     void clearSessions();
 
 private:
     Sessions _sessions; ///< Sessions map
 
-    boost::gil::rgb8_view_t _view; ///< Current view
-    boost::gil::rgb8_image_t _backImage; ///< Background image
-    boost::gil::rgb8_view_t _backView; ///< Background view
+    cv::Mat _backImage; // Background image
     int _pyramidLevel;
     std::string _imageFileName;
     std::string _pathRoot;
