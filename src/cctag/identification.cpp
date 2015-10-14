@@ -961,8 +961,11 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
 /* @brief ...
  * @param[in] nSamples number of sample points used along a cut.
  */
-bool refineConicFamilyNew( CCTag & cctag, std::vector< cctag::ImageCut > & vCuts, 
-        const std::size_t nSamples, const cv::Mat & src,
+bool refineConicFamilyNew(
+        CCTag & cctag,
+        std::vector< cctag::ImageCut > & vCuts, 
+        const std::size_t nSamples,
+        const cv::Mat & src,
         const cctag::numerical::geometry::Ellipse & ellipse)
 {
   using namespace cctag::numerical;
