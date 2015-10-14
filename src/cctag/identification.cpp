@@ -1249,7 +1249,6 @@ int identify(
 #else
     selectCut(
             vSelectedCuts,
-            prSelection,
             params._numCutsInIdentStep,
             cuts,
             src,
@@ -1275,16 +1274,15 @@ int identify(
   )
 #endif
 
-  if ( prSelection.size() == 0 )
+  if ( vSelectedCuts.size() == 0 )
   {
-    // Can happen when the refined edge point estimation is diverging for all cuts.
-    return status::no_selected_cuts;
+    // Can happen when ? todo ?
+    return status::no_selected_cuts; // todo: is class attributes the best option?
   }
 
   std::vector< cctag::ImageCut > vCuts;
   
   {
-    boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 //    bool hasConverged = refineConicFamily( cctag, vCuts, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
 //    if( !hasConverged )
 //    {
