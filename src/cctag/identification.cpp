@@ -1237,7 +1237,6 @@ int identify(
   }
   
   std::vector< cctag::ImageCut > vSelectedCuts;
-  std::vector< cctag::DirectedPoint2d<double> > prSelection;
 
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
