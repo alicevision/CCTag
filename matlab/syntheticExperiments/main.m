@@ -13,6 +13,6 @@ branchNames = {'glob_center_optim', 'glob_center_optim_clean' }; %'optim_identif
                              % a couple of branches (a maximum of 2) can be passed for
                              % comparison.
 
-statEvalType = 'median';     % 'mean' or 'median'
+statEvalType = 'mean';     % 'mean' or 'median'
 
 lc_displayAllResults(iXp, patterns, branchNames, statEvalType);
