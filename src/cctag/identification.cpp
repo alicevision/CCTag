@@ -1002,9 +1002,13 @@ bool refineConicFamilyNew(
   // cost function within it.
   while ( neighbourSize > 1e-4 )
   {
-    residual = imageCenterOptimizationNew(mHomography,vCuts,optimalPoint,neighbourSize,gridNSample,nSamples,src,ellipse);
-    CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
-    neighbourSize /= gridNSample ;
+    if ( imageCenterOptimizationNew(mHomography,vCuts,optimalPoint,residual,neighbourSize,gridNSample,nSamples,src,ellipse) )
+    {
+      CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
+      neighbourSize /= gridNSample ;
+    }else{
+      return false;
+    }
   }
 
   // Measure the time spent in the optimization
@@ -1023,14 +1027,14 @@ bool refineConicFamilyNew(
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
   }
-  
   return true;
 }
 
-double imageCenterOptimizationNew(
+bool imageCenterOptimizationNew(
         cctag::numerical::BoundedMatrix3x3d & mH,
         std::vector< cctag::ImageCut > & signals,
         cctag::Point2dN<double> & center,
+        double & minRes,
         const double neighbourSize,
         const std::size_t gridNSample,
         const std::size_t nSamples, 
@@ -1040,25 +1044,31 @@ double imageCenterOptimizationNew(
     std::vector<cctag::Point2dN<double> > nearbyPoints;
     getNearbyPoints(ellipse, center, nearbyPoints, neighbourSize, gridNSample, GRID);
     
-    double minRes = 1e13;
+    minRes = std::numeric_limits<double>::max();
     cctag::Point2dN<double> optimalPoint;
     cctag::numerical::BoundedMatrix3x3d optimalHomography;
+    
+    bool hasASolution = false;
     
     for(const auto & point : nearbyPoints)
     {
       //CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
       double res = costFunctionNew( optimalHomography,signals, nSamples, point, src, ellipse.matrix() );
-      if ( res < minRes )
+      if (res > 0)
       {
-        minRes = res;
-        optimalPoint = point;
+        hasASolution = true;
+        if ( res < minRes )
+        {
+          minRes = res;
+          optimalPoint = point;
+        }
       }
     }
     center = optimalPoint;
     CCTAG_COUT_VAR(center);
     mH = optimalHomography;
     
-    return minRes;
+    return hasASolution;
 }
   
 void getNearbyPoints(

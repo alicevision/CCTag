@@ -300,10 +300,11 @@ bool refineConicFamilyNew(
         const cv::Mat & src,
         const cctag::numerical::geometry::Ellipse & ellipse);
 
-double imageCenterOptimizationNew(
+bool imageCenterOptimizationNew(
         cctag::numerical::BoundedMatrix3x3d & mH,
         std::vector< cctag::ImageCut > & vCuts,
         cctag::Point2dN<double> & center,
+        double & minRes,
         const double neighbourSize,
         const std::size_t gridNSample,
         const std::size_t nSamples,
