@@ -247,6 +247,49 @@ void extractSignalUsingHomography(
         cctag::ImageCut & rectifiedCut,
         const cv::Mat & src,
         cctag::numerical::BoundedMatrix3x3d & mHomography,
+        std::size_t nSamples)
+{
+  using namespace boost;
+  using namespace boost::numeric::ublas;
+  using namespace cctag::numerical;
+
+  BOOST_ASSERT( rectifiedCut._imgSignal.size() == 0 );
+  BOOST_ASSERT( end >= begin );
+  
+  // Check wheter the image signal size has been properly allocated.
+  BOOST_ASSERT( nSamples == rectifiedCut._imgSignal.size() );
+
+  nSamples = rectifiedCut._imgSignal.size();
+  
+  const double stepXi = ( end - begin ) / ( nSamples - 1.0 );
+
+  rectifiedCut._start = getHPoint( begin, 0.0, mHomography );
+  rectifiedCut._stop = cctag::DirectedPoint2d<double>( getHPoint( end, 0.0, mHomography ), 0.0, 0.0); // todo: here, the gradient information won't be required anymore.
+
+  std::vector<std::size_t> idxNotInBounds;
+  for( std::size_t i = 0; i < nSamples; ++i )
+  {
+    const double xi = i * stepXi + begin;
+    const cctag::Point2dN<double> hp = getHPoint( xi, 0.0, mHomography );
+
+    if ( hp.x() >= 1.0 && hp.x() <= src.cols-1 &&
+         hp.y() >= 1.0 && hp.y() <= src.rows-1 )
+    {
+      // Bilinear interpolation
+      rectifiedCut._imgSignal(i) = getPixelBilinear( src, hp.x(), hp.y());
+    }
+    else
+    {
+      rectifiedCut._outOfBounds = true;
+    }
+  }
+}
+
+/* depreciated */
+void extractSignalUsingHomographyDeprec(
+        cctag::ImageCut & rectifiedCut,
+        const cv::Mat & src,
+        cctag::numerical::BoundedMatrix3x3d & mHomography,
         std::size_t nSamples,
         const double begin,
         const double end)

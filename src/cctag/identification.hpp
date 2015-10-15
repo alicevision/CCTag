@@ -130,6 +130,15 @@ void extractSignalUsingHomography(
         const double begin = 0.0,
         const double end = 1.0 );
 
+/* depreciated */
+void extractSignalUsingHomographyDeprec(
+        cctag::ImageCut & rectifiedSig,
+        const cv::Mat & src,
+        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        std::size_t nSamples = 100,
+        const double begin = 0.0,
+        const double end = 1.0 );
+
 /**
  * @brief Extract a regularly sampled 1D signal along an image cut.
  * 
