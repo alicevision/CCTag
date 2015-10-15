@@ -235,53 +235,67 @@ void centerScaleRotateHomography(
 
 
 /**
- * @brief (rectifSignal) Extract a rectified 1D signal along an image cut based on an homography.
+ * @brief Extract a rectified 1D signal along an image cut based on an homography.
  * 
- * @param[out] rectifSig image signal holding the rectified image signal
+ * @param[out] cut image cut holding the rectified image signal
  * @param[in] src source grayscale (uchar) image
  * @param[in] mHomography image->cctag homography
- * @param[in] nSamples number of sample along the image cut
- * @param begin scalar value representing the beginning of the signal rectification in the eucliean space (from 0 to 1)
- * @param end scalar value representing the end of the signal rectification in the eucliean space (from 0 to 1)
  */
 void extractSignalUsingHomography(
-        cctag::ImageCut & rectifiedCut,
+        cctag::ImageCut & cut,
         const cv::Mat & src,
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
-        std::size_t nSamples)
+        cctag::numerical::BoundedMatrix3x3d & mHomography)
 {
   using namespace boost;
   using namespace boost::numeric::ublas;
   using namespace cctag::numerical;
-
-  BOOST_ASSERT( rectifiedCut._imgSignal.size() == 0 );
-  BOOST_ASSERT( end >= begin );
   
-  // Check wheter the image signal size has been properly allocated.
-  BOOST_ASSERT( nSamples == rectifiedCut._imgSignal.size() );
-
-  nSamples = rectifiedCut._imgSignal.size();
+  double xStart, xStop, yStart, yStop;
   
-  const double stepXi = ( end - begin ) / ( nSamples - 1.0 );
+  // Check whether the signal to be collected start at 0.0 and stop at 1.0
+  if ( ( cut.beginSig() != 0.0) || ( cut.endSig() != 1.0) )
+  {
+    if ( cut.beginSig() != 0.0)
+    {
+      xStart = cut.start().x() + (cut.stop().x() - cut.start().x()) * cut.beginSig();
+      yStart = cut.start().y() + (cut.stop().y() - cut.start().y()) * cut.beginSig();
+    }
+    if ( cut.endSig() != 1.0)
+    {
+      xStop = cut.start().x() + (cut.stop().x() - cut.start().x()) * cut.endSig();
+      yStop = cut.start().y() + (cut.stop().y() - cut.start().y()) * cut.endSig();
+    }
+  }else{
+    xStart = cut.start().x();
+    yStart = cut.start().y();
+    xStop  = cut.stop().x();
+    yStop  = cut.stop().y();
+  }
+  
+  // Compute the steps stepX and stepY along x and y.
+  const std::size_t nSamples = cut.imgSignal().size();
+  const double stepX = ( xStop - xStart ) / ( nSamples - 1.0 );
+  const double stepY = ( yStop - yStart ) / ( nSamples - 1.0 );
 
-  rectifiedCut._start = getHPoint( begin, 0.0, mHomography );
-  rectifiedCut._stop = cctag::DirectedPoint2d<double>( getHPoint( end, 0.0, mHomography ), 0.0, 0.0); // todo: here, the gradient information won't be required anymore.
+  double xRes, yRes;
 
-  std::vector<std::size_t> idxNotInBounds;
   for( std::size_t i = 0; i < nSamples; ++i )
   {
-    const double xi = i * stepXi + begin;
-    const cctag::Point2dN<double> hp = getHPoint( xi, 0.0, mHomography );
+    const double x = i * stepX + begin;
+    const double y = i * stepY + begin;
+    
+    // [xRes;yRes;1] ~= mHomography*[x;y;1.0]
+    applyHomography(xRes, yRes, mHomography, x, y);
 
-    if ( hp.x() >= 1.0 && hp.x() <= src.cols-1 &&
-         hp.y() >= 1.0 && hp.y() <= src.rows-1 )
+    if ( xRes >= 1.0 && xRes <= src.cols-1 &&
+         yRes >= 1.0 && yRes <= src.rows-1 )
     {
       // Bilinear interpolation
-      rectifiedCut._imgSignal(i) = getPixelBilinear( src, hp.x(), hp.y());
+      cut.imgSignal()(i) = getPixelBilinear( src, xRes, yRes);
     }
     else
     {
-      rectifiedCut._outOfBounds = true;
+      cut.setOutOfBounds(true);
     }
   }
 }
@@ -952,20 +966,23 @@ double costFunctionGlob(
   {
     for( std::size_t j = i+1; j < vCuts.size(); ++j )
     {
-      if ( !vCuts[i]._outOfBounds && !vCuts[j]._outOfBounds )
+      if ( !vCuts[i].outOfBounds() && !vCuts[j].outOfBounds() )
       {
+        //  += (signalCutI(0)-signalCutJ(0))*(signalCutI(0)-signalCutJ(0)) + ... + (signalCutI(end)-signalCutJ(end))*(signalCutI(end)-signalCutJ(end)) // GPU
         res += std::pow( norm_2( vCuts[i]._imgSignal - vCuts[j]._imgSignal ), 2 );
         ++resSize;
       }
     }
   }
-  // If no cut-pair has been found within the bounds.
+  // If no cut-pair has been found within the image bounds.
   if ( resSize == 0)
   {
-    CCTAG_COUT_DEBUG("Image center out of bounds.");
-    return -1.0;
+    flag = false;
+    return std::numeric_limits<double>::max();
+  }else{
+    // normalize, dividing by the total number of pairs in the image bounds.
+    return res /= resSize;
   }
-  return res /= resSize;
 }
 
 /**

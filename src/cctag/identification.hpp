@@ -113,22 +113,16 @@ bool orazioDistanceRobust(
 
 
 /**
- * @brief (rectifSignal) Extract a rectified 1D signal along an image cut based on an homography.
+ * @brief Extract a rectified 1D signal along an image cut based on an homography.
  * 
- * @param[out] rectifSig image signal holding the rectified image signal
+ * @param[out] cut image cut holding the rectified image signal
  * @param[in] src source grayscale (uchar) image
  * @param[in] mHomography image->cctag homography
- * @param[in] nSamples number of sample along the image cut
- * @param begin scalar value representing the beginning of the signal rectification in the eucliean space (from 0 to 1)
- * @param end scalar value representing the end of the signal rectification in the eucliean space (from 0 to 1)
  */
 void extractSignalUsingHomography(
-        cctag::ImageCut & rectifiedSig,
+        cctag::ImageCut & cut,
         const cv::Mat & src,
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
-        std::size_t nSamples = 100,
-        const double begin = 0.0,
-        const double end = 1.0 );
+        cctag::numerical::BoundedMatrix3x3d & mHomography);
 
 /* depreciated */
 void extractSignalUsingHomographyDeprec(
