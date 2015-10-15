@@ -147,8 +147,8 @@ void Frame::applyGauss( const cctag::Parameters & params )
 
     POP_CHK_CALL_IFSYNC;
 
-    cudaEventRecord( &_download_ready_event.plane, _stream );
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.plane );
+    cudaEventRecord( _download_ready_event.plane, _stream );
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.plane, 0 );
 
     // download - layer 0 is mandatory, other layers for debugging
     POP_CUDA_MEMCPY_2D_ASYNC( _h_plane.data, _h_plane.step,
@@ -206,7 +206,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
     POP_CHK_CALL_IFSYNC;
 
     /* generate event when DX is ready */
-    cudaEventRecord( &_download_ready_event.dx, _stream );
+    cudaEventRecord( _download_ready_event.dx, _stream );
 
     /*
      * Compute DY
@@ -219,10 +219,10 @@ void Frame::applyGauss( const cctag::Parameters & params )
     filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_TABLE, normalize );
 
     /* generate event when DY is ready */
-    cudaEventRecord( &_download_ready_event.dy, _stream );
+    cudaEventRecord( _download_ready_event.dy, _stream );
 
     /* block download until DX is ready */
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.dx );
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.dx, 0 );
 
     // After these linking operations, dx and dy are created for
     // all edge points and we can copy them to the host
@@ -234,7 +234,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
                               cudaMemcpyDeviceToHost, _download_stream );
 
     /* block download until DY is ready */
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.dy );
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.dy, 0 );
 
     POP_CUDA_MEMCPY_2D_ASYNC( _h_dy.data, _h_dy.step,
                               _d_dy.data, _d_dy.step,

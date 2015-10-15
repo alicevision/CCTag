@@ -134,8 +134,8 @@ void Frame::applyMag( const cctag::Parameters & params )
     POP_CHK_CALL_IFSYNC;
 
     /* block download until MAG is ready */
-    cudaEventRecord( &_download_ready_event.mag, _stream );
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.mag );
+    cudaEventRecord( _download_ready_event.mag, _stream );
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.mag, 0 );
 
     POP_CUDA_MEMCPY_2D_ASYNC( _h_mag.data, _h_mag.step,
                               _d_mag.data, _d_mag.step,
@@ -149,8 +149,8 @@ void Frame::applyMag( const cctag::Parameters & params )
     POP_CHK_CALL_IFSYNC;
 
     /* block download until MAG is ready */
-    cudaEventRecord( &_download_ready_event.map, _stream );
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.map );
+    cudaEventRecord( _download_ready_event.map, _stream );
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.map, 0 );
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_map, getWidth() * sizeof(uint8_t),

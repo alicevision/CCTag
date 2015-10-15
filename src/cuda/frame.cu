@@ -31,16 +31,16 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer )
     _h_ring_output.data = 0;
 
     POP_CUDA_STREAM_CREATE( &_stream );
-    POP_CUDA_STREAM_CREATE( &_download_streams.plane );
+    POP_CUDA_STREAM_CREATE( &_download_stream );
 
     // POP_CUDA_EVENT_CREATE( &_download_ready_event );
     // at least in older CUDA versions, events blocked parallelism
-    cudaEventCreateWithFlags( &_download_ready_event.plane,      cudaEventDisableTiming) 
-    cudaEventCreateWithFlags( &_download_ready_event.dx,         cudaEventDisableTiming) 
-    cudaEventCreateWithFlags( &_download_ready_event.dy,         cudaEventDisableTiming) 
-    cudaEventCreateWithFlags( &_download_ready_event.mag,        cudaEventDisableTiming) 
-    cudaEventCreateWithFlags( &_download_ready_event.map,        cudaEventDisableTiming) 
-    cudaEventCreateWithFlags( &_download_ready_event.edgecoords, cudaEventDisableTiming) 
+    cudaEventCreateWithFlags( &_download_ready_event.plane,      cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.dx,         cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.dy,         cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.mag,        cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.map,        cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.edgecoords, cudaEventDisableTiming);
     
     size_t pitch;
     POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width, height );
@@ -67,12 +67,12 @@ Frame::~Frame( )
     // required host-side planes
     delete _texture;
 
-    POP_CUDA_EVENT_DESTROY( _download_ready_event.plane );
-    POP_CUDA_EVENT_DESTROY( _download_ready_event.dx );
-    POP_CUDA_EVENT_DESTROY( _download_ready_event.dy );
-    POP_CUDA_EVENT_DESTROY( _download_ready_event.mag );
-    POP_CUDA_EVENT_DESTROY( _download_ready_event.map );
-    POP_CUDA_EVENT_DESTROY( _download_ready_event.edgecoords );
+    cudaEventDestroy( _download_ready_event.plane );
+    cudaEventDestroy( _download_ready_event.dx );
+    cudaEventDestroy( _download_ready_event.dy );
+    cudaEventDestroy( _download_ready_event.mag );
+    cudaEventDestroy( _download_ready_event.map );
+    cudaEventDestroy( _download_ready_event.edgecoords );
     POP_CUDA_STREAM_DESTROY( _download_stream );
     POP_CUDA_STREAM_DESTROY( _stream );
 }

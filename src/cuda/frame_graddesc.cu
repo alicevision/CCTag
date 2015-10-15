@@ -232,7 +232,7 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
     if( threadIdx.x == leader ) {
         // leader gets warp's offset from global value and increases it
         // not that it is initialized with 1 to ensure that 0 represents a NULL pointer
-        write_index = atomicAdd( chained_edgecoords.size, (int)ct );
+        write_index = atomicAdd( chained_edgecoords.getSizePtr(), (int)ct );
 
         if( chained_edgecoords.Size() > 2*all_edgecoords.Size() ) {
             printf( "max offset: (%d x %d)=%d\n"
@@ -285,14 +285,14 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     /* No need to start more child kernels than the number of points found by
      * the Thinning stage.
      */
-    int listsize = edgeCoords.size;
+    int listsize = edgeCoords.getSize();
 
     /* Note: the initial _chained_edgecoords.dev.size is set to 1 because it is used
      * as an index for writing points into an array. Starting the counter
      * at 1 allows to distinguish unchained points (0) from chained
      * points non-0.
      */
-    chainedEdgeCoords.size = 1;
+    chainedEdgeCoords.setSize( 1 );
 
     /* The list of edge candidates is empty. Do nothing. */
     if( listsize == 0 ) return;
@@ -355,9 +355,9 @@ bool Frame::applyDesc( const cctag::Parameters& params )
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &listsize,
-                                   _vote._all_edgecoords.dev.size,
+                                   _vote._all_edgecoords.dev.getSizePtr(),
                                    sizeof(int), _stream );
-    POP_CUDA_SYNC( stream );
+    POP_CUDA_SYNC( _stream );
 
     if( listsize == 0 ) {
         cerr << "    I have not found any edges!" << endl;
@@ -378,7 +378,7 @@ bool Frame::applyDesc( const cctag::Parameters& params )
      * at 1 allows to distinguish unchained points (0) from chained
      * points non-0.
      */
-    POP_CUDA_SETX_ASYNC( _vote._chained_edgecoords.dev.size, (int)1, _stream );
+    POP_CUDA_SETX_ASYNC( _vote._chained_edgecoords.dev.getSizePtr(), (int)1, _stream );
 
 #ifndef NDEBUG
     debugPointIsOnEdge( _d_edges, _vote._all_edgecoords, _stream );

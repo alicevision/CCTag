@@ -14,6 +14,7 @@ namespace popart
 /* This computation is needed very frequently when a dim3 grid block is
  * initialized. It ensure that the tail is not forgotten.
  */
+__device__ __host__
 inline int grid_divide( int size, int divider )
 {
     return size / divider + ( size % divider != 0 ? 1 : 0 );

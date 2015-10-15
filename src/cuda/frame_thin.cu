@@ -119,7 +119,7 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
     uint32_t write_index;
     if( threadIdx.x == leader ) {
         // leader gets warp's offset from global value and increases it
-        write_index = atomicAdd( edgeCoords.size, int(ct) );
+        write_index = atomicAdd( edgeCoords.getSizePtr(), int(ct) );
     }
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
@@ -148,7 +148,7 @@ void dp_caller( const size_t         width,          // input
                 cv::cuda::PtrStepSzb intermediate,   // intermediate
                 uint32_t             param_edgeMax ) // input param
 {
-    edgeCoords.size = 0;
+    edgeCoords.setSize( 0 );
 
     dim3 block;
     dim3 grid;
@@ -208,9 +208,9 @@ void Frame::applyThinning( const cctag::Parameters & params )
         ( _d_hyst_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
     POP_CHK_CALL_IFSYNC;
 
-    POP_CUDA_SET0_ASYNC( _vote._all_edgecoords.dev.size, _stream );
+    POP_CUDA_SET0_ASYNC( _vote._all_edgecoords.dev.getSizePtr(), _stream );
 
-    thinning::secound_round
+    thinning::second_round
         <<<grid,block,0,_stream>>>
         ( cv::cuda::PtrStepSzb(_d_intermediate), // input
           _d_edges,                              // output
@@ -234,7 +234,7 @@ void Frame::applyThinning( const cctag::Parameters & params )
      * Make a non-blocking copy the number of items in the list to the host.
      */
     _vote._all_edgecoords.copySizeFromDevice( _stream );
-    cudaEventRecord( &_download_ready_event.edgecoords, _stream );
+    cudaEventRecord( _download_ready_event.edgecoords, _stream );
     POP_CHK_CALL_IFSYNC;
 #endif // EDGE_LINKING_HOST_SIDE
 }
