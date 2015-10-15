@@ -47,11 +47,11 @@ public:
   const Point2dN<double> & start() const { return _start; }
   Point2dN<double> & start() { return _start; }
   
-  const Point2dN<double> & stop() const { return _stop; }
-  Point2dN<double> & stop() { return _stop; }
+  const DirectedPoint2d<double> & stop() const { return _stop; }
+  DirectedPoint2d<double> & stop() { return _stop; }
   
-  const boost::numeric::ublas::vector<double> & imgSignal() const { return imgSignal; }
-  boost::numeric::ublas::vector<double> & imgSignal() { return imgSignal; }
+  const boost::numeric::ublas::vector<double> & imgSignal() const { return _imgSignal; }
+  boost::numeric::ublas::vector<double> & imgSignal() { return _imgSignal; }
   
   double beginSig() { return _beginSig; }
   
