@@ -57,6 +57,8 @@ public:
   
   double endSig() { return _endSig; }
   
+  bool outOfBounds() const { return _outOfBounds; }
+  
   void setOutOfBounds(const bool outOfBounds) { _outOfBounds = outOfBounds; }
   
   virtual ~ImageCut() {}
