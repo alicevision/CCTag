@@ -122,7 +122,7 @@ bool orazioDistanceRobust(
 void extractSignalUsingHomography(
         cctag::ImageCut & cut,
         const cv::Mat & src,
-        cctag::numerical::BoundedMatrix3x3d & mHomography);
+        const cctag::numerical::BoundedMatrix3x3d & mHomography);
 
 /* depreciated */
 void extractSignalUsingHomographyDeprec(
@@ -256,7 +256,7 @@ void centerScaleRotateHomography(
 void getSignals(
         std::vector< cctag::ImageCut > & vCuts,
         const cctag::numerical::BoundedMatrix3x3d & mHomography,
-        const cv::Mat & src)
+        const cv::Mat & src);
 
 /**
  * @brief Compute the optimal homography/imaged center based on the 
@@ -279,17 +279,16 @@ bool refineConicFamilyGlob(
         const cctag::numerical::geometry::Ellipse & ellipse);
 
 /**
- * @brief Convex optimization of the imaged center over a neighbourhood.
+ * @brief Convex optimization of the imaged center within a point's neighbourhood.
  * 
  * @param[out] mHomography optimal homography from the pixel plane to the cctag plane.
  * @param[out] vCuts vector of the image cuts whose the signal has been rectified w.r.t. the computed mHomography
  * @param[out] center optimal imaged center
- * @param[out] obtained residual
+ * @param[out] neighbourSize obtained residual
  * @param[in] neighbourSize size of the neighbourhood to consider relatively to the outer ellipse dimensions
  * @param[in] gridNSample number of sample points along one dimension of the neighbourhood (e.g. grid)
- * @param[in] nSamples number of samples on an image cut
  * @param[in] src source gray (uchar) image
- * @param[in] ellipse outer ellipse
+ * @param[in] outerEllipse outer ellipse
  */
 bool imageCenterOptimizationGlob(
         cctag::numerical::BoundedMatrix3x3d & mHomography,
@@ -298,9 +297,8 @@ bool imageCenterOptimizationGlob(
         double & minRes,
         const double neighbourSize,
         const std::size_t gridNSample,
-        const std::size_t nSamples,
         const cv::Mat & src, 
-        const cctag::numerical::geometry::Ellipse & ellipse);
+        const cctag::numerical::geometry::Ellipse & outerEllipse);
 
 /**
  * @brief Compute a set of point locations nearby a given center following
@@ -349,8 +347,8 @@ void computeHomographyFromEllipseAndImagedCenter(
 double costFunctionGlob(
         const cctag::numerical::BoundedMatrix3x3d & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
-        const cv::Mat & src
-        bool & flag)
+        const cv::Mat & src,
+        bool & flag);
 
 
 template<typename VecT>
