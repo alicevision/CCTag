@@ -374,6 +374,9 @@ struct NumVotersIsGreaterEqual
     }
 };
 
+#ifdef USE_SEPARABLE_COMPILATION
+// this is called in frame_desc.cu by descent::dp_caller
+#else // USE_SEPARABLE_COMPILATION
 __host__
 bool Voting::constructLine( const cctag::Parameters&     params,
                             cudaStream_t                 stream )
@@ -414,10 +417,12 @@ bool Voting::constructLine( const cctag::Parameters&     params,
 
     return true;
 }
+#endif // USE_SEPARABLE_COMPILATION
 
 __host__
 void Frame::applyVote( const cctag::Parameters& params )
 {
+#ifdef USE_SEPARABLE_COMPILATION
     bool success;
 
     success = _vote.constructLine( params,
@@ -428,6 +433,7 @@ void Frame::applyVote( const cctag::Parameters& params )
         _vote._chained_edgecoords.host.size = 0;
         return;
     }
+#endif // USE_SEPARABLE_COMPILATION
 
     /* For every chosen, compute the average flow size from all
      * of its voters, and count the number of its voters.

@@ -277,10 +277,12 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSz16s   dy, // input
                 DevEdgeList<TriplePoint> chainedEdgeCoords, // output
                 cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
+                DevEdgeList<int>         seedIndices, // output
                 const uint32_t           param_nmax, // input param
                 const int32_t            param_thrGradient, // input param
                 const uint32_t           param_edgeMax // input param
-              )
+                const size_t             param_numCrowns, // input param
+                const float              param_ratioVoting ) // input param
 {
     /* No need to start more child kernels than the number of points found by
      * the Thinning stage.
@@ -317,6 +319,31 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
           param_edgeMax,
           param_nmax,
           param_thrGradient );
+
+    cudaDeviceSynchronize( );
+
+    listsize = chainedEdgeCoords.getSize();
+
+    if( listsize == 0 ) return;
+
+    block.x = 32;
+    block.y = 1;
+    block.z = 1;
+    grid.x  = grid_divide( listsize, 32 );
+    grid.y  = 1;
+    grid.z  = 1;
+
+    seedIndices.setSize( 0 );
+
+    vote::construct_line
+        <<<grid,block,0,stream>>>
+        ( seedIndices,        // output
+          chainedEdgeCoords,  // input
+          param_edgeMax,  // input
+          edgepointIndexTable,  // input
+          param_numCrowns,          // input
+          param_ratioVoting );    // input
+
 }
 #endif // USE_SEPARABLE_COMPILATION
 
@@ -344,9 +371,12 @@ bool Frame::applyDesc( const cctag::Parameters& params )
           _d_dy,                          // input
           _vote._chained_edgecoords.dev,  // output
           _vote._d_edgepoint_index_table, // output
+          _vote._seed_indices.dev,        // output
           params._distSearch,             // input param
           params._thrGradientMagInVote,   // input param
-          params._maxEdges );             // input param
+          params._maxEdges,               // input param
+          params._nCrowns,                // input param
+          params._ratioVoting );          // input param
 
     // we will check eventually whether the call succeeds
     return true;

@@ -20,6 +20,18 @@ namespace cv {
 
 namespace popart {
 
+namespace vote {
+
+__global__
+void construct_line( DevEdgeList<int>             seed_indices,       // output
+                     DevEdgeList<TriplePoint>     chained_edgecoords, // input/output
+                     const int                    edge_index_max,     // input
+                     const cv::cuda::PtrStepSz32s edgepoint_index_table, // input
+                     const size_t                 numCrowns,
+                     const float                  ratioVoting );
+
+}; // namespace vote
+
 struct Voting
 {
     EdgeList<int2>         _all_edgecoords;
