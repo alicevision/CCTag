@@ -273,9 +273,6 @@ void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w
 __global__
 void hyst_outer_loop( dim3 block, dim3 grid, int* block_counter, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src )
 {
-    cudaStream_t childStream;
-    cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
-
     bool first_time = true;
     int gridsize = grid.x * grid.y;
     do
@@ -283,22 +280,20 @@ void hyst_outer_loop( dim3 block, dim3 grid, int* block_counter, cv::cuda::PtrSt
         *block_counter = gridsize;
         if( first_time ) {
             hysteresis::edge_first
-                <<<grid,block,0,childStream>>>
+                <<<grid,block>>>
                 ( img,
                   block_counter,
                   src );
             first_time = false;
         } else {
             hysteresis::edge_second
-                <<<grid,block,0,childStream>>>
+                <<<grid,block>>>
                 ( img,
                   block_counter );
         }
         cudaDeviceSynchronize( );
     }
     while( *block_counter > 0 );
-
-    cudaStreamDestroy( childStream );
 }
 #endif // USE_SEPARABLE_COMPILATION
 

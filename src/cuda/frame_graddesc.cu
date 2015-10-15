@@ -305,6 +305,9 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     /* The list of edge candidates is empty. Do nothing. */
     if( listsize == 0 ) return;
 
+    cudaStream_t childStream;
+    cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
+
     dim3           block;
     dim3           grid;
     block.x = 32;
@@ -315,7 +318,7 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     grid.z  = 1;
 
     gradient_descent
-        <<<grid,block>>>
+        <<<grid,block,0,childStream>>>
         ( edgeCoords,         // input
           edgeImage,
           dx,
@@ -342,7 +345,7 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     seedIndices.setSize( 0 );
 
     vote::construct_line
-        <<<grid,block>>>
+        <<<grid,block,0,childStream>>>
         ( seedIndices,        // output
           chainedEdgeCoords,  // input
           param_edgeMax,  // input
@@ -380,7 +383,7 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
                                     listsize,
                                     0,             // begin_bit
                                     sizeof(int)*8, // end_bit
-                                    0,             // use stream 0
+                                    childStream,   // use stream 0
                                     false );        // synchronous for debugging
 
     cudaDeviceSynchronize( );
@@ -410,7 +413,7 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
                                seedIndices2.ptr,   // output
                                seedIndices2.getSizePtr(),  // output
                                seedIndices.getSize(), // input (unchanged in sort)
-                               0,  // use stream 0
+                               childStream,  // use stream 0
                                false ); // synchronous for debugging
 
     cudaDeviceSynchronize( );
@@ -425,7 +428,7 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     grid.z  = 1;
 
     vote::eval_chosen
-        <<<grid,block>>>
+        <<<grid,block,0,childStream>>>
         ( chainedEdgeCoords,
           seedIndices2 );
 
@@ -446,8 +449,10 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
                            seedIndices.getSizePtr(),
                            seedIndices2.getSize(),
                            select_op,
-                           0,     // use stream 0
+                           childStream,     // use stream 0
                            false ); // synchronous for debugging
+
+    cudaStreamDestroy( childStream );
 }
 #endif // USE_SEPARABLE_COMPILATION
 

@@ -69,10 +69,12 @@ namespace cv {
         typedef PtrStepSz<int16_t>  PtrStepSz16s;
         typedef PtrStepSz<uint32_t> PtrStepSz32u;
         typedef PtrStepSz<int32_t>  PtrStepSz32s;
+        typedef PtrStepSz<uchar4>   PtrStepSzb4;
 
         typedef PtrStep<int16_t>    PtrStep16s;
         typedef PtrStep<uint32_t>   PtrStep32u;
         typedef PtrStep<int32_t>    PtrStep32s;
+        typedef PtrStep<uchar4>     PtrStepb4;
 
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
         typedef PtrStepSz<int4>     PtrStepSzInt2;
