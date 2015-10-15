@@ -356,6 +356,8 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
 
     if( listsize == 0 ) return;
 
+    assert( seedIndices.getSize() > 0 );
+
     /* Note: we use the intermediate picture plane, _d_intermediate, as assist
      *       buffer for CUB algorithms. It is extremely likely that this plane
      *       is large enough in all cases. If there are any problems, call
@@ -375,18 +377,26 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     cub::DeviceRadixSort::SortKeys( assist_buffer,
                                     assist_buffer_sz,
                                     keys,
-                                    seedIndices.getSize(),
+                                    listsize,
                                     0,             // begin_bit
-                                    sizeof(int)*8 ); // end_bit
+                                    sizeof(int)*8, // end_bit
+                                    0,             // use stream 0
+                                    false );        // synchronous for debugging
 
-    if( keys.d_buffers[keys.selector] == seedIndices2.ptr ) {
+    cudaDeviceSynchronize( );
+    assert( seedIndices.getSize() > 0 );
+
+    if( keys.Current() == seedIndices2.ptr ) {
         int* swap_ptr    = seedIndices2.ptr;
         seedIndices2.ptr = seedIndices.ptr;
         seedIndices.ptr  = swap_ptr;
-        int  swap_sz     = seedIndices2.getSize();
-        seedIndices2.setSize( seedIndices.getSize() );
-        seedIndices. setSize( swap_sz );
     }
+
+    seedIndices2.setSize( listsize );
+
+    assert( seedIndices2.ptr != 0 );
+    assert( seedIndices.ptr != 0 );
+    assert( seedIndices.getSize() > 0 );
 
     // safety: SortKeys is allowed to alter assist_buffer_sz
     assist_buffer_sz = intermediate.step * intermediate.rows;
@@ -399,7 +409,9 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
                                seedIndices.ptr,     // input
                                seedIndices2.ptr,   // output
                                seedIndices2.getSizePtr(),  // output
-                               seedIndices.getSize() ); // input (unchanged in sort)
+                               seedIndices.getSize(), // input (unchanged in sort)
+                               0,  // use stream 0
+                               false ); // synchronous for debugging
 
     cudaDeviceSynchronize( );
 
@@ -417,6 +429,8 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
         ( chainedEdgeCoords,
           seedIndices2 );
 
+    cudaDeviceSynchronize( );
+
     // safety: SortKeys is allowed to alter assist_buffer_sz
     assist_buffer_sz = intermediate.step * intermediate.rows;
 
@@ -431,7 +445,9 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
                            seedIndices.ptr,
                            seedIndices.getSizePtr(),
                            seedIndices2.getSize(),
-                           select_op );
+                           select_op,
+                           0,     // use stream 0
+                           false ); // synchronous for debugging
 }
 #endif // USE_SEPARABLE_COMPILATION
 
@@ -526,6 +542,26 @@ bool Frame::applyDesc( const cctag::Parameters& params )
     // cout << "  Leave " << __FUNCTION__ << endl;
     return true;
 #endif // USE_SEPARABLE_COMPILATION
+}
+
+
+__host__
+void Frame::applyDescDownload( const cctag::Parameters& )
+{
+#ifdef EDGE_LINKING_HOST_SIDE
+        /* After vote_eval_chosen, _chained_edgecoords is no longer changed
+         * we can copy it to the host for edge linking
+         */
+    if( _vote._chained_edgecoords.host.size > 0 ) {
+        _vote._chained_edgecoords.copyDataFromDevice( _vote._chained_edgecoords.host.size,
+                                                      _stream );
+    }
+
+    if( _vote._seed_indices.host.size > 0 ) {
+        _vote._seed_indices.copyDataFromDevice( _vote._seed_indices.host.size, _stream );
+    }
+
+#endif // EDGE_LINKING_HOST_SIDE
 }
 
 } // namespace popart

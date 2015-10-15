@@ -131,7 +131,8 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         time_vote[i]->stop();
         POP_CHK_CALL_IFSYNC;
 
-        _frame[i]->applyThinDownload(  params ); // has a sync step
+        _frame[i]->applyThinDownload( params ); // has a sync step
+        _frame[i]->applyDescDownload( params );
         POP_CHK_CALL_IFSYNC;
 #else
         _frame[i]->applyGauss( params ); // async
@@ -149,7 +150,8 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 
         _frame[i]->applyVote(  params );  // async
         // POP_CHK_CALL_IFSYNC;
-        _frame[i]->applyThinDownload(  params ); // has a sync step
+        _frame[i]->applyThinDownload( params ); // has a sync step
+        _frame[i]->applyDescDownload( params );  // async
         // POP_CHK_CALL_IFSYNC;
 #endif // not NDEBUG
 

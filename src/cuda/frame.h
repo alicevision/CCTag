@@ -195,6 +195,9 @@ public:
     // implemented in frame_graddesc.cu
     bool applyDesc( const cctag::Parameters& param );
 
+    // implemented in frame_graddesc.cu
+    void applyDescDownload( const cctag::Parameters& param );
+
     // implemented in frame_vote.cu
     void applyVote( const cctag::Parameters& param );
 
