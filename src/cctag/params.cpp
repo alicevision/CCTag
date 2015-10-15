@@ -95,7 +95,8 @@ void Parameters::serialize(boost::archive::xml_iarchive & ar, const unsigned int
     try {
         private_serialize( ar, version );
     } catch( boost::archive::archive_exception& e ) {
-        cerr << "Caught an archive exception " << e.what() << endl;
+        cerr << "Caught an archive exception " << e.what() << " in " << __FILE__ << ":" << __LINE__ << endl;
+        exit( -1 );
     }
 }
 
@@ -104,7 +105,8 @@ void Parameters::serialize(boost::archive::xml_oarchive & ar, const unsigned int
     try {
         private_serialize( ar, version );
     } catch( boost::archive::archive_exception& e ) {
-        cerr << "Caught an archive exception " << e.what() << endl;
+        cerr << "Caught an archive exception " << e.what() << " in " << __FILE__ << ":" << __LINE__ << endl;
+        exit( -1 );
     }
 }
 
