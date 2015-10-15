@@ -247,22 +247,16 @@ void centerScaleRotateHomography(
 	const cctag::DirectedPoint2d<double> & point);
 
 /**
- * @brief Collect and compute the rectified 1D signals along image cuts based on the imaged center and
- * the outer ellipse from which is computed the image->cctag homography.
+ * @brief Collect and compute the rectified 1D signals along image cuts.
  * 
- * @param[out] mHomography computed transformation used to rectified the 1D signal from the pixel plane to the cctag plane.
  * @param[out] vCuts vector of the image cuts whose the rectified signal is to be to computed
- * @param[in] nSamples number of samples along the image cut
- * @param[in] center imaged center
- * @param[in] mEllipse outer ellipse matrix
+ * @param[in] mHomography transformation used to rectified the 1D signal from the pixel plane to the cctag plane.
+ * @param[in] src source grayscale image (uchar)
  */
-bool getSignals(
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
+void getSignals(
         std::vector< cctag::ImageCut > & vCuts,
-        const std::size_t nSamples,
-        const cctag::Point2dN<double> & center,
-        const cv::Mat & src, 
-        const cctag::numerical::BoundedMatrix3x3d & mEllipse);
+        const cctag::numerical::BoundedMatrix3x3d & mHomography,
+        const cv::Mat & src)
 
 /**
  * @brief Compute the optimal homography/imaged center based on the 
@@ -347,19 +341,16 @@ void computeHomographyFromEllipseAndImagedCenter(
  * of image cuts in vCuts.
  * 
  * @param[in] mHomography transformation used to rectified the 1D signal from the pixel plane to the cctag plane.
- * @param[in] vCuts vector of the image cuts
- * @param[in] nSamples number of sample along the image cut
- * @param[in] center imaged center (used to compute the image->cctag homography)
- * @param[in] mEllipse ellipse matrix
- * @param[out] mHomography computed homography
+ * @param[out] vCuts vector of the image cuts holding the rectified signal according to mHomography
+ * @param[in] src source gray scale image (uchar)
+ * @param[out] flag: true if at least one image cut has been readable (within the image bounds), false otherwise.
+ * @return residual
  */
 double costFunctionGlob(
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        const cctag::numerical::BoundedMatrix3x3d & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
-        const std::size_t nSamples,
-        const cctag::Point2dN<double> & center,
-        const cv::Mat & src, 
-        const cctag::numerical::BoundedMatrix3x3d & mEllipse );
+        const cv::Mat & src
+        bool & flag)
 
 
 template<typename VecT>
