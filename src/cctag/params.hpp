@@ -6,6 +6,8 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/nvp.hpp>
+#include <boost/archive/xml_iarchive.hpp>
+#include <boost/archive/xml_oarchive.hpp>
 
 #include <cmath>
 #include <cstddef>
@@ -129,41 +131,14 @@ struct Parameters
   uint32_t _maxEdges; // max number of edge point, determines memory allocation
   std::string _debugDir; // prefix for debug output !!!! ONLY ON COMMAND LINE
 
-  template<class Archive>
-  void serialize(Archive & ar, const unsigned int version)
-  {
-    ar & BOOST_SERIALIZATION_NVP( _cannyThrLow );
-    ar & BOOST_SERIALIZATION_NVP( _cannyThrHigh );
-    ar & BOOST_SERIALIZATION_NVP( _distSearch );
-    ar & BOOST_SERIALIZATION_NVP( _thrGradientMagInVote );
-    ar & BOOST_SERIALIZATION_NVP( _angleVoting );
-    ar & BOOST_SERIALIZATION_NVP( _ratioVoting );
-    ar & BOOST_SERIALIZATION_NVP( _averageVoteMin);
-    ar & BOOST_SERIALIZATION_NVP( _thrMedianDistanceEllipse);
-    ar & BOOST_SERIALIZATION_NVP( _maximumNbSeeds);
-    ar & BOOST_SERIALIZATION_NVP( _maximumNbCandidatesLoopTwo);
-    ar & BOOST_SERIALIZATION_NVP( _nCrowns );
-    ar & BOOST_SERIALIZATION_NVP( _minPointsSegmentCandidate );
-    ar & BOOST_SERIALIZATION_NVP( _minVotesToSelectCandidate );
-    ar & BOOST_SERIALIZATION_NVP( _threshRobustEstimationOfOuterEllipse );
-    ar & BOOST_SERIALIZATION_NVP( _ellipseGrowingEllipticHullWidth );
-    ar & BOOST_SERIALIZATION_NVP( _windowSizeOnInnerEllipticSegment );
-    ar & BOOST_SERIALIZATION_NVP( _numberOfMultiresLayers );
-    ar & BOOST_SERIALIZATION_NVP( _numberOfProcessedMultiresLayers );
-    ar & BOOST_SERIALIZATION_NVP( _numCutsInIdentStep );
-    ar & BOOST_SERIALIZATION_NVP( _numSamplesOuterEdgePointsRefinement );
-    ar & BOOST_SERIALIZATION_NVP( _cutsSelectionTrials );
-    ar & BOOST_SERIALIZATION_NVP( _sampleCutLength );
-    ar & BOOST_SERIALIZATION_NVP( _minIdentProba );
-    ar & BOOST_SERIALIZATION_NVP( _useLMDif );
-    ar & BOOST_SERIALIZATION_NVP( _searchForAnotherSegment );
-    ar & BOOST_SERIALIZATION_NVP( _writeOutput );
-    ar & BOOST_SERIALIZATION_NVP( _doIdentification );
-    ar & BOOST_SERIALIZATION_NVP( _maxEdges );
-    _nCircles = 2*_nCrowns;
-  }
+  void serialize(boost::archive::xml_iarchive & ar, const unsigned int version);
+  void serialize(boost::archive::xml_oarchive & ar, const unsigned int version);
 
   void setDebugDir( const std::string& debugDir );
+
+private:
+  template<class Archive>
+  void private_serialize(Archive & ar, const unsigned int version);
 };
 
 } // namespace cctag

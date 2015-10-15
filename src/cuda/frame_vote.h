@@ -40,12 +40,6 @@ struct Voting
     void init( cudaStream_t stream );
     void release( );
 
-    bool gradientDescent( const cctag::Parameters&     params,
-                          const cv::cuda::PtrStepSzb   edges,
-                          const cv::cuda::PtrStepSz16s d_dx,
-                          const cv::cuda::PtrStepSz16s d_dy,
-                          cudaStream_t                 stream );
-
     bool constructLine( const cctag::Parameters&     params,
                         cudaStream_t                 stream );
 };

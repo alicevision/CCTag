@@ -133,23 +133,31 @@ void Frame::applyMag( const cctag::Parameters & params )
         ( _d_dx, _d_dy, _d_mag );
     POP_CHK_CALL_IFSYNC;
 
+    /* block download until MAG is ready */
+    cudaEventRecord( _download_ready_event.mag, _stream );
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.mag, 0 );
+
     POP_CUDA_MEMCPY_2D_ASYNC( _h_mag.data, _h_mag.step,
                               _d_mag.data, _d_mag.step,
                               _d_mag.cols * sizeof(uint32_t),
                               _d_mag.rows,
-                              cudaMemcpyDeviceToHost, _stream );
+                              cudaMemcpyDeviceToHost, _download_stream );
 
     compute_map
         <<<grid,block,0,_stream>>>
         ( _d_dx, _d_dy, _d_mag, _d_map, 256.0f * params._cannyThrLow, 256.0f * params._cannyThrHigh );
     POP_CHK_CALL_IFSYNC;
 
+    /* block download until MAG is ready */
+    cudaEventRecord( _download_ready_event.map, _stream );
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.map, 0 );
+
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_map, getWidth() * sizeof(uint8_t),
                               _d_map.data, _d_map.step,
                               _d_map.cols * sizeof(uint8_t),
                               _d_map.rows,
-                              cudaMemcpyDeviceToHost, _stream );
+                              cudaMemcpyDeviceToHost, _download_stream );
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
     // cerr << "Leave " << __FUNCTION__ << endl;

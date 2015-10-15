@@ -131,8 +131,14 @@ int main(int argc, char** argv)
 
     // Read the parameter file provided by the user
     std::ifstream ifs( cmdline._paramsFilename.c_str() );
-    boost::archive::xml_iarchive ia(ifs);
-    ia >> boost::serialization::make_nvp("CCTagsParams", params);
+    boost::archive::xml_iarchive ia( ifs );
+    try {
+        ia >> boost::serialization::make_nvp("CCTagsParams", params);
+    } catch( boost::archive::archive_exception e ) {
+        std::cerr << "Caught exception when parsing parameter file " << cmdline._paramsFilename << std::endl
+                  << "Exception " << e.what() << std::endl
+                  << "Continuing." << std::endl;
+    }
     CCTAG_COUT(params._nCrowns);
     CCTAG_COUT(nCrowns);
     assert( nCrowns == params._nCrowns );

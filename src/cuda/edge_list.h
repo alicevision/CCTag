@@ -30,8 +30,10 @@ template <typename T>
 struct DevEdgeList
 {
     T*   ptr;
+private:
     int* size;
 
+public:
     __device__
     int Size() const
     {
@@ -44,6 +46,17 @@ struct DevEdgeList
     {
         assert(size);
         *size = sz;
+    }
+
+    __device__
+    int getSize( ) const {
+        assert(size);
+        return *size;
+    }
+
+    __device__ __host__
+    int*& getSizePtr( ) {
+        return size;
     }
 
 protected:

@@ -38,8 +38,6 @@
 #define DEBUG_WRITE_LINKED_AS_ASCII
 #define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
 
-#undef  DEBUG_RETURN_AFTER_GRADIENT_DESCENT
-#undef  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
 #define DEBUG_LINKED_USE_INT4_BUFFER
 
 #define RESERVE_MEM_MAX_CROWNS  5
@@ -49,6 +47,13 @@
 #define EDGE_LINKING_MAX_EDGE_LENGTH        100
 #define EDGE_LINKING_MAX_ARCS             10000
 #define EDGE_LINKING_MAX_RING_BUFFER_SIZE    40
+
+/* Separable compilation allows one kernel to instantiate
+ * others. That avoids complexity on the host side when,
+ * e.g., GPU-side counters need to be checked before starting
+ * a new kernel.
+ */
+#define USE_SEPARABLE_COMPILATION
 
 /* A table is copied to constant memory containing sigma values
  * for Gauss filtering at the 0-offset, and the derivatives
@@ -121,12 +126,12 @@ private:
  *************************************************************/
 class Frame
 {
-
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
     Frame( uint32_t width, uint32_t height, int my_layer );
     ~Frame( );
 
+public:
     int getLayer() const { return _layer; }
 
     // Copy manually created Gauss filter tables to constant memory
@@ -188,6 +193,9 @@ public:
     // implemented in frame_thin.cu
     void applyThinning( const cctag::Parameters& param );
 
+    // implemented in frame_thin.cu
+    void applyThinDownload( const cctag::Parameters& param );
+
     // implemented in frame_graddesc.cu
     bool applyDesc( const cctag::Parameters& param );
 
@@ -221,6 +229,7 @@ public:
 private:
     Frame( );  // forbidden
     Frame( const Frame& );  // forbidden
+    Frame& operator=( const Frame& ); // forbidden
 
 private:
     int                     _layer;
@@ -266,10 +275,20 @@ private:
     FrameEvent*    _wait_for_upload;
     FrameEvent*    _wait_done;
 
+public:
     // if we run out of streams (there are 32), we may have to share
     // bool         _stream_inherited;
-public:
     cudaStream_t _stream;
+    cudaStream_t _download_stream;
+
+    struct {
+        cudaEvent_t  plane;
+        cudaEvent_t  dx;
+        cudaEvent_t  dy;
+        cudaEvent_t  mag;
+        cudaEvent_t  map;
+        cudaEvent_t  edgecoords;
+    }            _download_ready_event;
 };
 
 }; // namespace popart

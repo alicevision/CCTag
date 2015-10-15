@@ -92,12 +92,14 @@ if(USE_CUDA)
 				     CCTagCuda
                                      ${CUDA_LIBRARIES}
                                      ${OPTPP_LIBRARIES}
-				     ${Ceres_LIBRARIES} )
+				     ${Ceres_LIBRARIES}
+				     -lcudadevrt )
     CUDA_ADD_EXECUTABLE( testMemoryPool
                          applications/test/testMemoryPool.cpp )
     TARGET_LINK_LIBRARIES( testMemoryPool CCTag
                                           CCTagCuda
-					  ${CUDA_LIBRARIES} )
+					  ${CUDA_LIBRARIES} 
+					  -lcudadevrt )
 else(USE_CUDA)
     CUDA_ADD_EXECUTABLE( detection ${CCTagDetect_cpp})
     target_link_libraries( detection CCTag
@@ -111,7 +113,7 @@ endif(USE_CUDA)
 ADD_EXECUTABLE( pgmdiff playground/pgmdiff.cc )
 TARGET_LINK_LIBRARIES( pgmdiff PUBLIC ${Boost_LIBRARIES} )
 
-install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+install(TARGETS CCTag CCTagCuda LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 
 set( FILES_TO_DEPLOY
       ./cctag/view.hpp

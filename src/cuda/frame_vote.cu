@@ -290,7 +290,7 @@ void construct_line( DevEdgeList<int>             seed_indices,       // output
 
     uint32_t write_index;
     if( threadIdx.x == 0 ) {
-        write_index = atomicAdd( seed_indices.size, (int)ct );
+        write_index = atomicAdd( seed_indices.getSizePtr(), (int)ct );
     }
     write_index = __shfl( write_index, 0 );
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) );
@@ -380,7 +380,7 @@ bool Voting::constructLine( const cctag::Parameters&     params,
 {
     // Note: right here, Dynamic Parallelism would avoid blocking.
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_chained_edgecoords.host.size,
-                                   _chained_edgecoords.dev.size,
+                                   _chained_edgecoords.dev.getSizePtr(),
                                    sizeof(int), stream );
     POP_CUDA_SYNC( stream );
 
@@ -400,7 +400,7 @@ bool Voting::constructLine( const cctag::Parameters&     params,
     grid.y  = 1;
     grid.z  = 1;
 
-    POP_CUDA_SET0_ASYNC( _seed_indices.dev.size, stream );
+    POP_CUDA_SET0_ASYNC( _seed_indices.dev.getSizePtr(), stream );
 
     vote::construct_line
         <<<grid,block,0,stream>>>
@@ -432,22 +432,8 @@ void Frame::applyVote( const cctag::Parameters& params )
     /* For every chosen, compute the average flow size from all
      * of its voters, and count the number of its voters.
      */
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size, _vote._seed_indices.dev.size, sizeof(int), _stream );
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size, _vote._seed_indices.dev.getSizePtr(), sizeof(int), _stream );
     POP_CUDA_SYNC( _stream );
-
-#ifndef NDEBUG
-#ifdef  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
-    {
-        /* _vote._seed_indices contains now the indices of all TriplePoints that
-         * have received at least one vote.
-         * The array has lots of redundant entries. It is not sorted, and the
-         * number of voters has not been counted, and it has not been filtered
-         * by length or voters count.
-         */
-        return;
-    }
-#endif //  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
-#endif // NDEBUG
 
     if( _vote._seed_indices.host.size > 0 ) {
         /* Note: we use the intermediate picture plane, _d_intermediate, as assist
@@ -477,7 +463,7 @@ void Frame::applyVote( const cctag::Parameters& params )
 
         if( d_keys.d_buffers[d_keys.selector] == _vote._seed_indices_2.dev.ptr ) {
             std::swap( _vote._seed_indices.dev.ptr,   _vote._seed_indices_2.dev.ptr );
-            std::swap( _vote._seed_indices.dev.size,  _vote._seed_indices_2.dev.size );
+            std::swap( _vote._seed_indices.dev.getSizePtr(),  _vote._seed_indices_2.dev.getSizePtr() );
         }
 
         // safety: SortKeys is allowed to alter assist_buffer_sz
@@ -490,7 +476,7 @@ void Frame::applyVote( const cctag::Parameters& params )
                                    assist_buffer_sz,
                                    _vote._seed_indices.dev.ptr,     // input
                                    _vote._seed_indices_2.dev.ptr,   // output
-                                   _vote._seed_indices_2.dev.size,  // output
+                                   _vote._seed_indices_2.dev.getSizePtr(),  // output
                                    _vote._seed_indices.host.size,   // input (unchanged in sort)
                                    _stream );
         POP_CHK_CALL_IFSYNC;
@@ -500,7 +486,7 @@ void Frame::applyVote( const cctag::Parameters& params )
          * step.
          */
         POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices_2.host.size,
-                                       _vote._seed_indices_2.dev.size,
+                                       _vote._seed_indices_2.dev.getSizePtr(),
                                        sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
 
@@ -546,7 +532,7 @@ void Frame::applyVote( const cctag::Parameters& params )
                                assist_buffer_sz,
                                _vote._seed_indices_2.dev.ptr,
                                _vote._seed_indices.dev.ptr,
-                               _vote._seed_indices.dev.size,
+                               _vote._seed_indices.dev.getSizePtr(),
                                _vote._seed_indices_2.host.size,
                                select_op,
                                _stream );
