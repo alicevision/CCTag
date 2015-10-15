@@ -328,8 +328,6 @@ int count_winners( const int                       chosen_edge_index,
     return winner_size;
 }
 
-} // namespace vote
-
 /* For all chosen inner points, compute the average flow length and the
  * number of voters, and store in the TriplePoint structure of the chosen
  * inner point.
@@ -339,9 +337,9 @@ int count_winners( const int                       chosen_edge_index,
  * unique indices of chosen inner points.
  */
 __global__
-void vote_eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
-                       DevEdgeList<int>         seed_indices        // input
-                     )
+void eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
+                  DevEdgeList<int>         seed_indices        // input
+                )
 {
     uint32_t offset = threadIdx.x + blockIdx.x * 32;
     if( offset >= seed_indices.Size() ) {
@@ -353,26 +351,7 @@ void vote_eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-out
     vote::count_winners( chosen_edge_index, chosen_edge, chained_edgecoords );
 }
 
-struct NumVotersIsGreaterEqual
-{
-    DevEdgeList<TriplePoint> _array;
-    int                      _compare;
-
-    CUB_RUNTIME_FUNCTION
-    __host__ __device__
-    __forceinline__
-    NumVotersIsGreaterEqual( int compare, DevEdgeList<TriplePoint> _d_array )
-        : _compare(compare)
-        , _array( _d_array )
-    {}
-
-    // CUB_RUNTIME_FUNCTION
-    __device__
-    __forceinline__
-    bool operator()(const int &a) const {
-        return (_array.ptr[a]._winnerSize >= _compare);
-    }
-};
+} // namespace vote
 
 #ifdef USE_SEPARABLE_COMPILATION
 // this is called in frame_desc.cu by descent::dp_caller
@@ -423,6 +402,8 @@ __host__
 void Frame::applyVote( const cctag::Parameters& params )
 {
 #ifdef USE_SEPARABLE_COMPILATION
+// this is called in frame_desc.cu by descent::dp_caller
+#else // USE_SEPARABLE_COMPILATION
     bool success;
 
     success = _vote.constructLine( params,
@@ -433,7 +414,6 @@ void Frame::applyVote( const cctag::Parameters& params )
         _vote._chained_edgecoords.host.size = 0;
         return;
     }
-#endif // USE_SEPARABLE_COMPILATION
 
     /* For every chosen, compute the average flow size from all
      * of its voters, and count the number of its voters.
@@ -509,22 +489,11 @@ void Frame::applyVote( const cctag::Parameters& params )
         grid.y  = 1;
         grid.z  = 1;
 
-        vote_eval_chosen
+        vote::eval_chosen
             <<<grid,block,0,_stream>>>
             ( _vote._chained_edgecoords.dev,
               _vote._seed_indices_2.dev );
         POP_CHK_CALL_IFSYNC;
-
-#ifdef EDGE_LINKING_HOST_SIDE
-        /* After vote_eval_chosen, _chained_edgecoords is no longer changed
-         * we can copy it to the host for edge linking
-         */
-        _vote._chained_edgecoords.copySizeFromDevice( _stream );
-        POP_CUDA_SYNC( _stream );
-        _vote._chained_edgecoords.copyDataFromDevice( _vote._chained_edgecoords.host.size,
-                                                      _stream );
-        POP_CHK_CALL_IFSYNC;
-#endif // EDGE_LINKING_HOST_SIDE
 
         // safety: SortKeys is allowed to alter assist_buffer_sz
         assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
@@ -547,6 +516,15 @@ void Frame::applyVote( const cctag::Parameters& params )
         _vote._seed_indices.copySizeFromDevice( _stream );
         POP_CUDA_SYNC( _stream );
 #ifdef EDGE_LINKING_HOST_SIDE
+        /* After vote_eval_chosen, _chained_edgecoords is no longer changed
+         * we can copy it to the host for edge linking
+         */
+        _vote._chained_edgecoords.copySizeFromDevice( _stream );
+        POP_CUDA_SYNC( _stream );
+        _vote._chained_edgecoords.copyDataFromDevice( _vote._chained_edgecoords.host.size,
+                                                      _stream );
+        POP_CHK_CALL_IFSYNC;
+
         if( _vote._seed_indices.host.size != 0 ) {
             _vote._seed_indices.copyDataFromDevice( _vote._seed_indices.host.size, _stream );
         }
@@ -554,6 +532,7 @@ void Frame::applyVote( const cctag::Parameters& params )
     } else {
         _vote._chained_edgecoords.host.size = 0;
     }
+#endif // USE_SEPARABLE_COMPILATION
 }
 
 } // namespace popart

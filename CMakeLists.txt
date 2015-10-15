@@ -36,6 +36,8 @@ ELSE(DEFINED CCTAG_BUILD_MODE)
   message( FATAL_ERROR "Variable CCTAG_BUILD_MODE must be defined" )
 ENDIF(DEFINED CCTAG_BUILD_MODE)
 
+add_definitions("-DCUB_CDP")
+
 # Store all the output
 if(CCTAG_SERIALIZE)
   add_definitions("-DCCTAG_SERIALIZE")

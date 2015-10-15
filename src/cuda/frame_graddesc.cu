@@ -278,11 +278,14 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
                 DevEdgeList<TriplePoint> chainedEdgeCoords, // output
                 cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
                 DevEdgeList<int>         seedIndices, // output
+                DevEdgeList<int>         seedIndices2, // output
+                cv::cuda::PtrStepSzb     intermediate, // buffer
                 const uint32_t           param_nmax, // input param
                 const int32_t            param_thrGradient, // input param
-                const uint32_t           param_edgeMax // input param
+                const uint32_t           param_edgeMax, // input param
                 const size_t             param_numCrowns, // input param
-                const float              param_ratioVoting ) // input param
+                const float              param_ratioVoting, // input param
+                const int                param_minVotesToSelectCandidate ) // input param
 {
     /* No need to start more child kernels than the number of points found by
      * the Thinning stage.
@@ -295,6 +298,9 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
      * points non-0.
      */
     chainedEdgeCoords.setSize( 1 );
+
+    /* dummy: in case we return early */
+    seedIndices.setSize( 0 );
 
     /* The list of edge candidates is empty. Do nothing. */
     if( listsize == 0 ) return;
@@ -336,7 +342,7 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     seedIndices.setSize( 0 );
 
     vote::construct_line
-        <<<grid,block,0,stream>>>
+        <<<grid,block>>>
         ( seedIndices,        // output
           chainedEdgeCoords,  // input
           param_edgeMax,  // input
@@ -344,6 +350,88 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
           param_numCrowns,          // input
           param_ratioVoting );    // input
 
+    cudaDeviceSynchronize( );
+
+    listsize = seedIndices.getSize();
+
+    if( listsize == 0 ) return;
+
+    /* Note: we use the intermediate picture plane, _d_intermediate, as assist
+     *       buffer for CUB algorithms. It is extremely likely that this plane
+     *       is large enough in all cases. If there are any problems, call
+     *       the function with assist_buffer=0, and the function will return
+     *       the required size in assist_buffer_sz (call by reference).
+     */
+    void*  assist_buffer = (void*)intermediate.data;
+    size_t assist_buffer_sz = intermediate.step * intermediate.rows;
+
+    cub::DoubleBuffer<int> keys( seedIndices.ptr,
+                                 seedIndices2.ptr );
+
+    /* After SortKeys, both buffers in d_keys have been altered.
+     * The final result is stored in d_keys.d_buffers[d_keys.selector].
+     * The other buffer is invalid.
+     */
+    cub::DeviceRadixSort::SortKeys( assist_buffer,
+                                    assist_buffer_sz,
+                                    keys,
+                                    seedIndices.getSize(),
+                                    0,             // begin_bit
+                                    sizeof(int)*8 ); // end_bit
+
+    if( keys.d_buffers[keys.selector] == seedIndices2.ptr ) {
+        int* swap_ptr    = seedIndices2.ptr;
+        seedIndices2.ptr = seedIndices.ptr;
+        seedIndices.ptr  = swap_ptr;
+        int  swap_sz     = seedIndices2.getSize();
+        seedIndices2.setSize( seedIndices.getSize() );
+        seedIndices. setSize( swap_sz );
+    }
+
+    // safety: SortKeys is allowed to alter assist_buffer_sz
+    assist_buffer_sz = intermediate.step * intermediate.rows;
+
+    /* Unique ensure that we check every "chosen" point only once.
+     * Output is in _vote._seed_indices_2.dev
+     */
+    cub::DeviceSelect::Unique( assist_buffer,
+                               assist_buffer_sz,
+                               seedIndices.ptr,     // input
+                               seedIndices2.ptr,   // output
+                               seedIndices2.getSizePtr(),  // output
+                               seedIndices.getSize() ); // input (unchanged in sort)
+
+    cudaDeviceSynchronize( );
+
+    listsize = seedIndices2.getSize();
+
+    block.x = 32;
+    block.y = 1;
+    block.z = 1;
+    grid.x  = grid_divide( listsize, 32 );
+    grid.y  = 1;
+    grid.z  = 1;
+
+    vote::eval_chosen
+        <<<grid,block>>>
+        ( chainedEdgeCoords,
+          seedIndices2 );
+
+    // safety: SortKeys is allowed to alter assist_buffer_sz
+    assist_buffer_sz = intermediate.step * intermediate.rows;
+
+    /* Filter all chosen inner points that have fewer
+     * voters than required by Parameters.
+     */
+    NumVotersIsGreaterEqual select_op( param_minVotesToSelectCandidate,
+                                       chainedEdgeCoords );
+    cub::DeviceSelect::If( assist_buffer,
+                           assist_buffer_sz,
+                           seedIndices2.ptr,
+                           seedIndices.ptr,
+                           seedIndices.getSizePtr(),
+                           seedIndices2.getSize(),
+                           select_op );
 }
 #endif // USE_SEPARABLE_COMPILATION
 
@@ -372,11 +460,19 @@ bool Frame::applyDesc( const cctag::Parameters& params )
           _vote._chained_edgecoords.dev,  // output
           _vote._d_edgepoint_index_table, // output
           _vote._seed_indices.dev,        // output
+          _vote._seed_indices_2.dev,      // buffer
+          cv::cuda::PtrStepSzb(_d_intermediate), // buffer
           params._distSearch,             // input param
           params._thrGradientMagInVote,   // input param
           params._maxEdges,               // input param
           params._nCrowns,                // input param
-          params._ratioVoting );          // input param
+          params._ratioVoting,            // input param
+          params._minVotesToSelectCandidate ); // input param
+
+    _vote._seed_indices.copySizeFromDevice( _stream );
+#ifdef EDGE_LINKING_HOST_SIDE
+    _vote._chained_edgecoords.copySizeFromDevice( _stream );
+#endif // EDGE_LINKING_HOST_SIDE
 
     // we will check eventually whether the call succeeds
     return true;

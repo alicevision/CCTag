@@ -2,6 +2,7 @@
 
 #include <cuda_runtime.h>
 #include <opencv2/core/cuda_types.hpp>
+#include <thrust/system/cuda/detail/cub/cub.cuh>
 
 #include "triple_point.h"
 #include "edge_list.h"
@@ -20,6 +21,27 @@ namespace cv {
 
 namespace popart {
 
+struct NumVotersIsGreaterEqual
+{
+    DevEdgeList<TriplePoint> _array;
+    int                      _compare;
+
+    CUB_RUNTIME_FUNCTION
+    __host__ __device__
+    __forceinline__
+    NumVotersIsGreaterEqual( int compare, DevEdgeList<TriplePoint> _d_array )
+        : _compare(compare)
+        , _array( _d_array )
+    {}
+
+    // CUB_RUNTIME_FUNCTION
+    __device__
+    __forceinline__
+    bool operator()(const int &a) const {
+        return (_array.ptr[a]._winnerSize >= _compare);
+    }
+};
+
 namespace vote {
 
 __global__
@@ -29,6 +51,11 @@ void construct_line( DevEdgeList<int>             seed_indices,       // output
                      const cv::cuda::PtrStepSz32s edgepoint_index_table, // input
                      const size_t                 numCrowns,
                      const float                  ratioVoting );
+
+__global__
+void eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
+                  DevEdgeList<int>         seed_indices        // input
+                );
 
 }; // namespace vote
 
