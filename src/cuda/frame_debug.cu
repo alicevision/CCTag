@@ -212,7 +212,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
          * The size of this list has not been copied to the host yet.
          */
         POP_CUDA_MEMCPY_TO_HOST_SYNC( &_vote._chained_edgecoords.host.size,
-                                      _vote._chained_edgecoords.dev.size,
+                                      _vote._chained_edgecoords.dev.getSizePtr(),
                                       sizeof(int) );
 
         vector<TriplePoint> out;

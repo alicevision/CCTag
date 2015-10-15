@@ -24,7 +24,6 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer )
     , _h_debug_hyst_edges( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
-    , _wait_done( 0 )
 {
 #warning This should be unique
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
@@ -35,6 +34,8 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer )
 
     // POP_CUDA_EVENT_CREATE( &_download_ready_event );
     // at least in older CUDA versions, events blocked parallelism
+    cudaEventCreateWithFlags( &_stream_done,                     cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_stream_done,            cudaEventDisableTiming);
     cudaEventCreateWithFlags( &_download_ready_event.plane,      cudaEventDisableTiming);
     cudaEventCreateWithFlags( &_download_ready_event.dx,         cudaEventDisableTiming);
     cudaEventCreateWithFlags( &_download_ready_event.dy,         cudaEventDisableTiming);
@@ -67,6 +68,8 @@ Frame::~Frame( )
     // required host-side planes
     delete _texture;
 
+    cudaEventDestroy( _stream_done );
+    cudaEventDestroy( _download_stream_done );
     cudaEventDestroy( _download_ready_event.plane );
     cudaEventDestroy( _download_ready_event.dx );
     cudaEventDestroy( _download_ready_event.dy );
@@ -168,7 +171,7 @@ void Frame::deleteTexture( )
 
 void Frame::allocUploadEvent( )
 {
-    _wait_for_upload = new FrameEvent;
+    _wait_for_upload = new cudaEvent_t;
 
     cudaError_t err;
     err = cudaEventCreateWithFlags( _wait_for_upload, cudaEventDisableTiming );
@@ -182,7 +185,7 @@ void Frame::deleteUploadEvent( )
     delete _wait_for_upload;
 }
 
-FrameEvent Frame::addUploadEvent( )
+cudaEvent_t Frame::addUploadEvent( )
 {
     cudaError_t err;
     err = cudaEventRecord( *_wait_for_upload, _stream );
@@ -190,36 +193,12 @@ FrameEvent Frame::addUploadEvent( )
     return *_wait_for_upload;
 }
 
-void Frame::allocDoneEvent( )
-{
-    _wait_done = new FrameEvent;
-
-    cudaError_t err;
-    err = cudaEventCreateWithFlags( _wait_done, cudaEventDisableTiming );
-    POP_CUDA_FATAL_TEST( err, "Could not create a non-timing event: " );
-}
-
-void Frame::deleteDoneEvent( )
-{
-    if( not _wait_done ) return;
-    cudaEventDestroy( *_wait_done );
-    delete _wait_done;
-}
-
-FrameEvent Frame::addDoneEvent( )
-{
-    cudaError_t err;
-    err = cudaEventRecord( *_wait_done, _stream );
-    POP_CUDA_FATAL_TEST( err, "Could not insert an event into a stream: " );
-    return *_wait_done;
-}
-
 void Frame::streamSync( )
 {
     cudaStreamSynchronize( _stream );
 }
 
-void Frame::streamSync( FrameEvent ev )
+void Frame::streamSync( cudaEvent_t ev )
 {
     cudaStreamWaitEvent( _stream, ev, 0 );
 }

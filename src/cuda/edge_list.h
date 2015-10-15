@@ -59,6 +59,11 @@ public:
         return size;
     }
 
+    __device__ __host__
+    const int* getSizePtr( ) const {
+        return size;
+    }
+
 protected:
     friend class EdgeList<T>;
 

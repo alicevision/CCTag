@@ -9,10 +9,10 @@
 #include "debug_image.h"
 #include "cctag/talk.hpp"
 
-#if 1 // #ifndef NDEBUG
-#define SHOW_TIMING
+#if 0 // #ifndef NDEBUG
+#define SHOW_DETAILED_TIMING
 #else
-#undef  SHOW_TIMING
+#undef  SHOW_DETAILED_TIMING
 #endif
 
 using namespace std;
@@ -48,7 +48,6 @@ void TagPipe::initialize( const uint32_t pix_w,
 
     for( int i=0; i<num_layers; i++ ) {
         _frame[i]->allocRequiredMem( params ); // sync
-        _frame[i]->allocDoneEvent( ); // sync
     }
 }
 
@@ -69,7 +68,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 {
     int num_layers = _frame.size();
 
-#ifdef SHOW_TIMING
+#ifdef SHOW_DETAILED_TIMING
     KeepTime* time_gauss[num_layers];
     KeepTime* time_mag  [num_layers];
     KeepTime* time_hyst [num_layers];
@@ -93,7 +92,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         _frame[i]->initRequiredMem( ); // async
     }
 
-    FrameEvent ev = _frame[0]->addUploadEvent( ); // async
+    cudaEvent_t ev = _frame[0]->addUploadEvent( ); // async
 
     for( int i=1; i<num_layers; i++ ) {
         _frame[i]->streamSync( ev ); // aysnc
@@ -103,7 +102,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 
     for( int i=0; i<num_layers; i++ ) {
         bool success;
-#ifdef SHOW_TIMING
+#ifdef SHOW_DETAILED_TIMING
         time_gauss[i]->start();
         _frame[i]->applyGauss( params ); // async
         time_gauss[i]->stop();
@@ -136,38 +135,43 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         POP_CHK_CALL_IFSYNC;
 #else
         _frame[i]->applyGauss( params ); // async
-        POP_CHK_CALL_IFSYNC;
+        // POP_CHK_CALL_IFSYNC;
         _frame[i]->applyMag(   params );  // async
-        POP_CHK_CALL_IFSYNC;
+        // POP_CHK_CALL_IFSYNC;
         _frame[i]->applyHyst(  params );  // async
-        POP_CHK_CALL_IFSYNC;
+        // POP_CHK_CALL_IFSYNC;
         _frame[i]->applyThinning(  params );  // async
-        POP_CHK_CALL_IFSYNC;
+        // POP_CHK_CALL_IFSYNC;
         success = _frame[i]->applyDesc(  params );  // async
-        POP_CHK_CALL_IFSYNC;
+        // POP_CHK_CALL_IFSYNC;
 
-        if( not success ) continue;
+        if( not success ) continue; // this async test will be eliminated
 
         _frame[i]->applyVote(  params );  // async
-        POP_CHK_CALL_IFSYNC;
+        // POP_CHK_CALL_IFSYNC;
         _frame[i]->applyThinDownload(  params ); // has a sync step
-        POP_CHK_CALL_IFSYNC;
+        // POP_CHK_CALL_IFSYNC;
 #endif // not NDEBUG
 
         // _frame[i]->applyLink(  params );  // async
     }
 
-    FrameEvent doneEv[num_layers];
     for( int i=1; i<num_layers; i++ ) {
-        doneEv[i] = _frame[i]->addDoneEvent( ); // async
+        cudaEventRecord( _frame[i]->_download_stream_done, _frame[i]->_download_stream );
+        cudaStreamWaitEvent( _frame[i]->_stream, _frame[i]->_download_stream_done, 0 );
+        cudaEventRecord( _frame[i]->_stream_done, _frame[i]->_stream );
     }
+    cudaEventRecord( _frame[0]->_download_stream_done, _frame[0]->_download_stream );
+    cudaStreamWaitEvent( _frame[0]->_stream, _frame[0]->_download_stream_done, 0 );
     for( int i=1; i<num_layers; i++ ) {
-        _frame[0]->streamSync( doneEv[i] ); // aysnc
+        cudaStreamWaitEvent( _frame[0]->_stream, _frame[i]->_stream_done, 0 );
     }
+    cudaEventRecord( _frame[0]->_stream_done, _frame[0]->_stream );
+
     t.stop();
     t.report( "Time for all frames " );
 
-#ifdef SHOW_TIMING
+#ifdef SHOW_DETAILED_TIMING
     for( int i=0; i<num_layers; i++ ) {
         DO_TALK(
           time_gauss[i]->report( "time for Gauss " );

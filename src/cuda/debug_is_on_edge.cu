@@ -32,7 +32,7 @@ void debugPointIsOnEdge( const cv::cuda::PtrStepSzb& edge_img,
 
     int sz;
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &sz,
-                                   edge_coords.dev.size,
+                                   edge_coords.dev.getSizePtr(),
                                    sizeof(int),
                                    stream );
     POP_CUDA_SYNC( stream );

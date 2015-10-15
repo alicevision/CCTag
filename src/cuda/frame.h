@@ -89,8 +89,6 @@ namespace cv {
 
 namespace popart {
 
-typedef cudaEvent_t FrameEvent;
-
 /*************************************************************
  * FrameTexture
  * Used by Frame to perform scaling with bilinear interpolation
@@ -161,12 +159,10 @@ public:
 
     void allocUploadEvent( );
     void deleteUploadEvent( );
-    FrameEvent addUploadEvent( );
-    void allocDoneEvent( );
-    void deleteDoneEvent( );
-    FrameEvent addDoneEvent( );
+    cudaEvent_t addUploadEvent( );
+
     void streamSync( ); // Wait for the asynchronous ops to finish
-    void streamSync( FrameEvent ev ); // Wait for ev to happen (in another stream)
+    void streamSync( cudaEvent_t ev ); // Wait for ev to happen (in another stream)
 
     // return the downscaled sibling "scale". The count it 0-based, 0 is this Frame
     Frame* getScale( uint32_t scale );
@@ -272,14 +268,16 @@ private:
     Voting _vote;
 
     FrameTexture*  _texture;
-    FrameEvent*    _wait_for_upload;
-    FrameEvent*    _wait_done;
+    cudaEvent_t*   _wait_for_upload;
 
 public:
     // if we run out of streams (there are 32), we may have to share
     // bool         _stream_inherited;
     cudaStream_t _stream;
     cudaStream_t _download_stream;
+
+    cudaEvent_t  _stream_done;
+    cudaEvent_t  _download_stream_done;
 
     struct {
         cudaEvent_t  plane;
