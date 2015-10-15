@@ -147,20 +147,15 @@ void Frame::applyGauss( const cctag::Parameters & params )
 
     POP_CHK_CALL_IFSYNC;
 
-    dim3 block;
-    dim3 grid;
-    block.x = 32;
-    grid.x  = ( getWidth() / 32 )  + ( getWidth() % 32 == 0 ? 0 : 1 );
-    grid.y  = getHeight();
-    assert( grid.x > 0 && grid.y > 0 && grid.z > 0 );
-    assert( block.x > 0 && block.y > 0 && block.z > 0 );
+    cudaEventRecord( &_download_ready_event.plane, _stream );
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.plane );
 
     // download - layer 0 is mandatory, other layers for debugging
     POP_CUDA_MEMCPY_2D_ASYNC( _h_plane.data, _h_plane.step,
                               _d_plane.data, _d_plane.step,
                               _d_plane.cols,
                               _d_plane.rows,
-                              cudaMemcpyDeviceToHost, _stream );
+                              cudaMemcpyDeviceToHost, _download_stream );
     POP_CHK_CALL_IFSYNC;
 
 //    /*
@@ -183,6 +178,14 @@ void Frame::applyGauss( const cctag::Parameters & params )
 //    filter_gauss_vert<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_DERIV, 1.0f );
 //
 
+    dim3 block;
+    dim3 grid;
+    block.x = 32;
+    grid.x  = ( getWidth() / 32 )  + ( getWidth() % 32 == 0 ? 0 : 1 );
+    grid.y  = getHeight();
+    assert( grid.x > 0 && grid.y > 0 && grid.z > 0 );
+    assert( block.x > 0 && block.y > 0 && block.z > 0 );
+
 #ifdef NORMALIZE_GAUSS_VALUES
     const float normalize   = sum_of_gauss_values;
     const float normalize_d = normalize_derived;
@@ -202,6 +205,9 @@ void Frame::applyGauss( const cctag::Parameters & params )
     filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_dx, GAUSS_DERIV, normalize_d );
     POP_CHK_CALL_IFSYNC;
 
+    /* generate event when DX is ready */
+    cudaEventRecord( &_download_ready_event.dx, _stream );
+
     /*
      * Compute DY
      */
@@ -212,6 +218,12 @@ void Frame::applyGauss( const cctag::Parameters & params )
      */
     filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_TABLE, normalize );
 
+    /* generate event when DY is ready */
+    cudaEventRecord( &_download_ready_event.dy, _stream );
+
+    /* block download until DX is ready */
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.dx );
+
     // After these linking operations, dx and dy are created for
     // all edge points and we can copy them to the host
 
@@ -219,13 +231,16 @@ void Frame::applyGauss( const cctag::Parameters & params )
                               _d_dx.data, _d_dx.step,
                               _d_dx.cols * sizeof(int16_t),
                               _d_dx.rows,
-                              cudaMemcpyDeviceToHost, _stream );
+                              cudaMemcpyDeviceToHost, _download_stream );
+
+    /* block download until DY is ready */
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.dy );
 
     POP_CUDA_MEMCPY_2D_ASYNC( _h_dy.data, _h_dy.step,
                               _d_dy.data, _d_dy.step,
                               _d_dy.cols * sizeof(int16_t),
                               _d_dy.rows,
-                              cudaMemcpyDeviceToHost, _stream );
+                              cudaMemcpyDeviceToHost, _download_stream );
 
     POP_CHK_CALL_IFSYNC;
 #ifndef NDEBUG
@@ -236,7 +251,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
         DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
             << params._debugDir << "] using that directory" << endl; )
 
-        POP_CUDA_SYNC( _stream );
+        POP_CUDA_SYNC( _download_stream );
 
         ostringstream dx_i_out_n;
         dx_i_out_n << params._debugDir << "gpu-dx-" << _layer << "-i.txt";

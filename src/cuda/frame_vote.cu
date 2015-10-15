@@ -435,20 +435,6 @@ void Frame::applyVote( const cctag::Parameters& params )
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size, _vote._seed_indices.dev.size, sizeof(int), _stream );
     POP_CUDA_SYNC( _stream );
 
-#ifndef NDEBUG
-#ifdef  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
-    {
-        /* _vote._seed_indices contains now the indices of all TriplePoints that
-         * have received at least one vote.
-         * The array has lots of redundant entries. It is not sorted, and the
-         * number of voters has not been counted, and it has not been filtered
-         * by length or voters count.
-         */
-        return;
-    }
-#endif //  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
-#endif // NDEBUG
-
     if( _vote._seed_indices.host.size > 0 ) {
         /* Note: we use the intermediate picture plane, _d_intermediate, as assist
          *       buffer for CUB algorithms. It is extremely likely that this plane

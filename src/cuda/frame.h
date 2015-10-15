@@ -38,8 +38,6 @@
 #define DEBUG_WRITE_LINKED_AS_ASCII
 #define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
 
-#undef  DEBUG_RETURN_AFTER_GRADIENT_DESCENT
-#undef  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
 #define DEBUG_LINKED_USE_INT4_BUFFER
 
 #define RESERVE_MEM_MAX_CROWNS  5
@@ -55,7 +53,7 @@
  * e.g., GPU-side counters need to be checked before starting
  * a new kernel.
  */
-#undef USE_SEPARABLE_COMPILATION
+#define USE_SEPARABLE_COMPILATION
 
 /* A table is copied to constant memory containing sigma values
  * for Gauss filtering at the 0-offset, and the derivatives
@@ -195,6 +193,9 @@ public:
     // implemented in frame_thin.cu
     void applyThinning( const cctag::Parameters& param );
 
+    // implemented in frame_thin.cu
+    void applyThinDownload( const cctag::Parameters& param );
+
     // implemented in frame_graddesc.cu
     bool applyDesc( const cctag::Parameters& param );
 
@@ -278,6 +279,16 @@ public:
     // if we run out of streams (there are 32), we may have to share
     // bool         _stream_inherited;
     cudaStream_t _stream;
+    cudaStream_t _download_stream;
+
+    struct {
+        cudaEvent_t  plane;
+        cudaEvent_t  dx;
+        cudaEvent_t  dy;
+        cudaEvent_t  mag;
+        cudaEvent_t  map;
+        cudaEvent_t  edgecoords;
+    }            _download_ready_event;
 };
 
 }; // namespace popart
