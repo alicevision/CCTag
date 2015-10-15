@@ -81,6 +81,28 @@ inline cctag::Point2dN<double> getHPoint(
   return cctag::Point2dN<double>( prec_prod<BoundedVector3d>( mH, vh ) );
 }
 
+/**
+ * Apply an planar homography to a 2D point.
+ * @param[out] xRes x coordinate of the transformed point
+ * @param[out] yRes y coordinate of the transformed point
+ * @param[in] mHomography the transformation represented by a 3x3 matrix
+ * @param[in] x coordinate of the point
+ * @param[in] y coordinate of the point
+ */
+inline void applyHomography(
+        double & xRes,
+        double & yRes,
+        const cctag::numerical::BoundedMatrix3x3d & mHomography,
+        const double x,
+        const double y)
+{
+  double u = mHomography(0,0)*x + mHomography(0,1)*y + mHomography(0,2);
+  double v = mHomography(1,0)*x + mHomography(1,1)*y + mHomography(1,2);
+  double w = mHomography(2,0)*x + mHomography(2,1)*y + mHomography(2,2);
+  xRes = u/w;
+  yRes = v/w;
+}
+
 bool orazioDistanceRobust(
         std::vector<std::list<double> > & vScore,
         const RadiusRatioBank & rrBank,
