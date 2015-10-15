@@ -233,6 +233,7 @@ void centerScaleRotateHomography(
   }
 }
 
+
 /**
  * @brief (rectifSignal) Extract a rectified 1D signal along an image cut based on an homography.
  * 
@@ -689,8 +690,8 @@ bool getSignals(
   
   for( cctag::ImageCut & cut : vCuts )
   {
-    centerScaleRotateHomography( mHomography, center, cut._stop );
-    cctag::numerical::normalizeDet1( mHomography );
+    //centerScaleRotateHomography( mHomography, center, cut._stop );
+    //cctag::numerical::normalizeDet1( mHomography );
     extractSignalUsingHomography( cut, src, mHomography, nSamples );
   }
   return true;
