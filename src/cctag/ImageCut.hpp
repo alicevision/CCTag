@@ -31,10 +31,9 @@ public:
   }
   
   ImageCut( Point2dN<double> pStart, DirectedPoint2d<double> pStop, const std::size_t nSamples)
-  : _start(pStart), _stop(pStop)
+  : _start(pStart), _stop(pStop), _beginSig(0.0), _endSig(1.0), _outOfBounds(false)
   {
     _imgSignal.resize(nSamples);
-    _outOfBounds = false;
   }
     
   ImageCut( Point2dN<double> pStart, DirectedPoint2d<double> pStop, const double start, const double stop, const std::size_t nSamples)
