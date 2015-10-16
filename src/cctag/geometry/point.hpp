@@ -178,6 +178,11 @@ public:
 //		p.y = Parent::y();
 //		return p;
 //	}
+        
+        T norm() const
+        {
+          return sqrt(this->x()*this->x()+this->y()*this->y());
+        }
 
 	template<typename TT>
 	This& operator=( const Point2dN<TT>& p )
