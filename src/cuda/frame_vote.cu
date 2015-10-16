@@ -398,12 +398,18 @@ bool Voting::constructLine( const cctag::Parameters&     params,
 }
 #endif // USE_SEPARABLE_COMPILATION
 
+#ifdef USE_SEPARABLE_COMPILATION
+__host__
+void Frame::applyVote( const cctag::Parameters& )
+{
+    // everything that was in here is called frame_desc.cu by
+    // descent::dp_caller when USE_SEPARABLE_COMPILATION is
+    // used
+}
+#else // USE_SEPARABLE_COMPILATION
 __host__
 void Frame::applyVote( const cctag::Parameters& params )
 {
-#ifdef USE_SEPARABLE_COMPILATION
-// this is called in frame_desc.cu by descent::dp_caller
-#else // USE_SEPARABLE_COMPILATION
     bool success;
 
     success = _vote.constructLine( params,
@@ -532,8 +538,8 @@ void Frame::applyVote( const cctag::Parameters& params )
     } else {
         _vote._chained_edgecoords.host.size = 0;
     }
-#endif // USE_SEPARABLE_COMPILATION
 }
+#endif // USE_SEPARABLE_COMPILATION
 
 } // namespace popart
 

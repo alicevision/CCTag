@@ -143,20 +143,7 @@ void Frame::initGaussTable( )
 __host__
 void Frame::applyGauss( const cctag::Parameters & params )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
-
-    POP_CHK_CALL_IFSYNC;
-
     cudaEventRecord( _download_ready_event.plane, _stream );
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.plane, 0 );
-
-    // download - layer 0 is mandatory, other layers for debugging
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_plane.data, _h_plane.step,
-                              _d_plane.data, _d_plane.step,
-                              _d_plane.cols,
-                              _d_plane.rows,
-                              cudaMemcpyDeviceToHost, _download_stream );
-    POP_CHK_CALL_IFSYNC;
 
 //    /*
 //     * This is the original approach, following the explanation in cvRecode.
@@ -197,16 +184,11 @@ void Frame::applyGauss( const cctag::Parameters & params )
      * Vertical sweep for DX computation: use Gaussian table
      */
     filter_gauss_vert<<<grid,block,0,_stream>>>( _d_plane, _d_intermediate, GAUSS_TABLE, normalize );
-    POP_CHK_CALL_IFSYNC;
 
     /*
      * Compute DX
      */
     filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_dx, GAUSS_DERIV, normalize_d );
-    POP_CHK_CALL_IFSYNC;
-
-    /* generate event when DX is ready */
-    cudaEventRecord( _download_ready_event.dx, _stream );
 
     /*
      * Compute DY
@@ -218,31 +200,8 @@ void Frame::applyGauss( const cctag::Parameters & params )
      */
     filter_gauss_horiz<<<grid,block,0,_stream>>>( _d_intermediate, _d_dy, GAUSS_TABLE, normalize );
 
-    /* generate event when DY is ready */
-    cudaEventRecord( _download_ready_event.dy, _stream );
-
-    /* block download until DX is ready */
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.dx, 0 );
-
-    // After these linking operations, dx and dy are created for
-    // all edge points and we can copy them to the host
-
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_dx.data, _h_dx.step,
-                              _d_dx.data, _d_dx.step,
-                              _d_dx.cols * sizeof(int16_t),
-                              _d_dx.rows,
-                              cudaMemcpyDeviceToHost, _download_stream );
-
-    /* block download until DY is ready */
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.dy, 0 );
-
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_dy.data, _h_dy.step,
-                              _d_dy.data, _d_dy.step,
-                              _d_dy.cols * sizeof(int16_t),
-                              _d_dy.rows,
-                              cudaMemcpyDeviceToHost, _download_stream );
-
-    POP_CHK_CALL_IFSYNC;
+    /* generate event when DX and DY are ready */
+    cudaEventRecord( _download_ready_event.dxdy, _stream );
 #ifndef NDEBUG
     if( params._debugDir == "" ) {
         DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
@@ -274,8 +233,38 @@ void Frame::applyGauss( const cctag::Parameters & params )
         }
     }
 #endif // not NDEBUG
-
-    // cerr << "Leave " << __FUNCTION__ << endl;
 }
+
+__host__
+void Frame::applyGaussDownload( const cctag::Parameters& )
+{
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.plane, 0 );
+
+    // download - layer 0 is mandatory, other layers for debugging
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_plane.data, _h_plane.step,
+                              _d_plane.data, _d_plane.step,
+                              _d_plane.cols,
+                              _d_plane.rows,
+                              cudaMemcpyDeviceToHost, _download_stream );
+
+    /* block download until DX and DY are ready */
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.dxdy, 0 );
+
+    // After these linking operations, dx and dy are created for
+    // all edge points and we can copy them to the host
+
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_dx.data, _h_dx.step,
+                              _d_dx.data, _d_dx.step,
+                              _d_dx.cols * sizeof(int16_t),
+                              _d_dx.rows,
+                              cudaMemcpyDeviceToHost, _download_stream );
+
+    POP_CUDA_MEMCPY_2D_ASYNC( _h_dy.data, _h_dy.step,
+                              _d_dy.data, _d_dy.step,
+                              _d_dy.cols * sizeof(int16_t),
+                              _d_dy.rows,
+                              cudaMemcpyDeviceToHost, _download_stream );
+}
+
 }; // namespace popart
 

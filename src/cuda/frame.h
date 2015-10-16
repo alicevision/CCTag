@@ -182,8 +182,14 @@ public:
     // implemented in frame_gaussian.cu
     void applyGauss( const cctag::Parameters& param );
 
+    // implemented in frame_gaussian.cu
+    void applyGaussDownload( const cctag::Parameters& param );
+
     // implemented in frame_magmap.cu
     void applyMag( const cctag::Parameters& param );
+
+    // implemented in frame_magmap.cu
+    void applyMagDownload( const cctag::Parameters& param );
 
     // implemented in frame_hyst.cu
     void applyHyst( const cctag::Parameters& param );
@@ -286,11 +292,12 @@ public:
 
     struct {
         cudaEvent_t  plane;
-        cudaEvent_t  dx;
-        cudaEvent_t  dy;
-        cudaEvent_t  mag;
-        cudaEvent_t  map;
-        cudaEvent_t  edgecoords;
+        cudaEvent_t  dxdy;
+        cudaEvent_t  magmap;
+        cudaEvent_t  edgecoords1;
+        cudaEvent_t  edgecoords2;
+        cudaEvent_t  descent1;
+        cudaEvent_t  descent2;
     }            _download_ready_event;
 };
 

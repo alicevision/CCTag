@@ -100,9 +100,9 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         // _frame[i]->fillFromFrame( *(_frame[0]) );
     }
 
+#ifdef SHOW_DETAILED_TIMING
     for( int i=0; i<num_layers; i++ ) {
         bool success;
-#ifdef SHOW_DETAILED_TIMING
         time_gauss[i]->start();
         _frame[i]->applyGauss( params ); // async
         time_gauss[i]->stop();
@@ -131,32 +131,33 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         time_vote[i]->stop();
         POP_CHK_CALL_IFSYNC;
 
-        _frame[i]->applyThinDownload( params ); // has a sync step
+        _frame[i]->applyGaussDownload( params );
+        _frame[i]->applyMagDownload( params );
+        _frame[i]->applyThinDownload( params );
         _frame[i]->applyDescDownload( params );
         POP_CHK_CALL_IFSYNC;
-#else
-        _frame[i]->applyGauss( params ); // async
-        // POP_CHK_CALL_IFSYNC;
-        _frame[i]->applyMag(   params );  // async
-        // POP_CHK_CALL_IFSYNC;
-        _frame[i]->applyHyst(  params );  // async
-        // POP_CHK_CALL_IFSYNC;
-        _frame[i]->applyThinning(  params );  // async
-        // POP_CHK_CALL_IFSYNC;
-        success = _frame[i]->applyDesc(  params );  // async
-        // POP_CHK_CALL_IFSYNC;
-
-        if( not success ) continue; // this async test will be eliminated
-
-        _frame[i]->applyVote(  params );  // async
-        // POP_CHK_CALL_IFSYNC;
-        _frame[i]->applyThinDownload( params ); // has a sync step
-        _frame[i]->applyDescDownload( params );  // async
-        // POP_CHK_CALL_IFSYNC;
-#endif // not NDEBUG
-
         // _frame[i]->applyLink(  params );  // async
     }
+#else
+    for( int i=0; i<num_layers; i++ )
+        _frame[i]->applyGauss( params ); // async
+    for( int i=0; i<num_layers; i++ )
+        _frame[i]->applyMag(   params );  // async
+    for( int i=0; i<num_layers; i++ )
+        _frame[i]->applyHyst(  params );  // async
+    for( int i=0; i<num_layers; i++ )
+        _frame[i]->applyThinning(  params );  // async
+    for( int i=0; i<num_layers; i++ )
+        _frame[i]->applyDesc(  params );  // async
+    for( int i=0; i<num_layers; i++ )
+        _frame[i]->applyVote(  params );  // async
+    for( int i=0; i<num_layers; i++ ) {
+        _frame[i]->applyGaussDownload( params );
+        _frame[i]->applyMagDownload( params );
+        _frame[i]->applyThinDownload( params );
+        _frame[i]->applyDescDownload( params );
+    }
+#endif // not NDEBUG
 
     for( int i=1; i<num_layers; i++ ) {
         cudaEventRecord( _frame[i]->_download_stream_done, _frame[i]->_download_stream );

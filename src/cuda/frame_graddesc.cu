@@ -490,9 +490,12 @@ bool Frame::applyDesc( const cctag::Parameters& params )
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
 
-    _vote._seed_indices.copySizeFromDevice( _stream );
+    cudaEventRecord( _download_ready_event.descent1, _stream );
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.descent1, 0 );
+    _vote._seed_indices.copySizeFromDevice( _download_stream );
 #ifdef EDGE_LINKING_HOST_SIDE
-    _vote._chained_edgecoords.copySizeFromDevice( _stream );
+    _vote._chained_edgecoords.copySizeFromDevice( _download_stream );
+    cudaEventRecord( _download_ready_event.descent2, _download_stream );
 #endif // EDGE_LINKING_HOST_SIDE
 
     // we will check eventually whether the call succeeds
@@ -557,13 +560,15 @@ void Frame::applyDescDownload( const cctag::Parameters& )
         /* After vote_eval_chosen, _chained_edgecoords is no longer changed
          * we can copy it to the host for edge linking
          */
+    cudaEventSynchronize( _download_ready_event.descent2 );
     if( _vote._chained_edgecoords.host.size > 0 ) {
         _vote._chained_edgecoords.copyDataFromDevice( _vote._chained_edgecoords.host.size,
-                                                      _stream );
+                                                      _download_stream );
     }
 
     if( _vote._seed_indices.host.size > 0 ) {
-        _vote._seed_indices.copyDataFromDevice( _vote._seed_indices.host.size, _stream );
+        _vote._seed_indices.copyDataFromDevice( _vote._seed_indices.host.size,
+                                                _download_stream );
     }
 
 #endif // EDGE_LINKING_HOST_SIDE

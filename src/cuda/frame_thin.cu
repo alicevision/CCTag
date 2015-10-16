@@ -153,7 +153,7 @@ void dp_caller( const size_t         width,          // input
     dim3 block;
     dim3 grid;
     block.x = 32;
-    grid.x  = ( width / 32 ) + ( width % 32 == 0 ? 0 : 1 );
+    grid.x  = grid_divide( width, 32 );
     grid.y  = height;
 
     first_round
@@ -195,7 +195,6 @@ void Frame::applyThinning( const cctag::Parameters & params )
           _vote._all_edgecoords.dev,             // output
           cv::cuda::PtrStepSzb(_d_intermediate), // intermediate
           params._maxEdges );                    // input param
-    POP_CHK_CALL_IFSYNC;
 #else // USE_SEPARABLE_COMPILATION
     dim3 block;
     dim3 grid;
@@ -216,14 +215,12 @@ void Frame::applyThinning( const cctag::Parameters & params )
           _d_edges,                              // output
           _vote._all_edgecoords.dev,             // output
           params._maxEdges );                    // input
-    POP_CHK_CALL_IFSYNC;
 #endif // USE_SEPARABLE_COMPILATION
 
     thinning::set_edgemax
         <<<1,1,0,_stream>>>
         ( _vote._all_edgecoords.dev,
           params._maxEdges );
-    POP_CHK_CALL_IFSYNC;
 
 #ifndef NDEBUG
     debugPointIsOnEdge( _d_edges, _vote._all_edgecoords, _stream );
@@ -233,9 +230,10 @@ void Frame::applyThinning( const cctag::Parameters & params )
     /* After thinning_and_store, _all_edgecoords is no longer changed.
      * Make a non-blocking copy the number of items in the list to the host.
      */
-    _vote._all_edgecoords.copySizeFromDevice( _stream );
-    cudaEventRecord( _download_ready_event.edgecoords, _stream );
-    POP_CHK_CALL_IFSYNC;
+    cudaEventRecord( _download_ready_event.edgecoords1, _stream );
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.edgecoords1, 0 );
+    _vote._all_edgecoords.copySizeFromDevice( _download_stream );
+    cudaEventRecord( _download_ready_event.edgecoords2, _download_stream );
 #endif // EDGE_LINKING_HOST_SIDE
 }
 
@@ -248,7 +246,7 @@ void Frame::applyThinDownload( const cctag::Parameters& )
      */
 
     /* CPU must wait for counter _vote._all_edgecoords.host.size */
-    cudaEventSynchronize( _download_ready_event.edgecoords );
+    cudaEventSynchronize( _download_ready_event.edgecoords2 );
     POP_CHK_CALL_IFSYNC;
     if( _vote._all_edgecoords.host.size > 0 ) {
         _vote._all_edgecoords.copyDataFromDevice( _vote._all_edgecoords.host.size,

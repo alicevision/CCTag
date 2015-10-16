@@ -34,14 +34,15 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer )
 
     // POP_CUDA_EVENT_CREATE( &_download_ready_event );
     // at least in older CUDA versions, events blocked parallelism
-    cudaEventCreateWithFlags( &_stream_done,                     cudaEventDisableTiming);
-    cudaEventCreateWithFlags( &_download_stream_done,            cudaEventDisableTiming);
-    cudaEventCreateWithFlags( &_download_ready_event.plane,      cudaEventDisableTiming);
-    cudaEventCreateWithFlags( &_download_ready_event.dx,         cudaEventDisableTiming);
-    cudaEventCreateWithFlags( &_download_ready_event.dy,         cudaEventDisableTiming);
-    cudaEventCreateWithFlags( &_download_ready_event.mag,        cudaEventDisableTiming);
-    cudaEventCreateWithFlags( &_download_ready_event.map,        cudaEventDisableTiming);
-    cudaEventCreateWithFlags( &_download_ready_event.edgecoords, cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_stream_done,                      cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_stream_done,             cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.plane,       cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.dxdy,        cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.magmap,      cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.edgecoords1, cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.edgecoords2, cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.descent1,    cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.descent2,    cudaEventDisableTiming);
     
     size_t pitch;
     POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width, height );
@@ -71,11 +72,12 @@ Frame::~Frame( )
     cudaEventDestroy( _stream_done );
     cudaEventDestroy( _download_stream_done );
     cudaEventDestroy( _download_ready_event.plane );
-    cudaEventDestroy( _download_ready_event.dx );
-    cudaEventDestroy( _download_ready_event.dy );
-    cudaEventDestroy( _download_ready_event.mag );
-    cudaEventDestroy( _download_ready_event.map );
-    cudaEventDestroy( _download_ready_event.edgecoords );
+    cudaEventDestroy( _download_ready_event.dxdy );
+    cudaEventDestroy( _download_ready_event.magmap );
+    cudaEventDestroy( _download_ready_event.edgecoords1 );
+    cudaEventDestroy( _download_ready_event.edgecoords2 );
+    cudaEventDestroy( _download_ready_event.descent1 );
+    cudaEventDestroy( _download_ready_event.descent2 );
     POP_CUDA_STREAM_DESTROY( _download_stream );
     POP_CUDA_STREAM_DESTROY( _stream );
 }

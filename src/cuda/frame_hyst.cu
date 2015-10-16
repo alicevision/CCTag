@@ -300,8 +300,6 @@ void hyst_outer_loop( dim3 block, dim3 grid, int* block_counter, cv::cuda::PtrSt
 __host__
 void Frame::applyHyst( const cctag::Parameters & params )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
-
     dim3 block;
     dim3 grid;
     block.x = HYST_W;
@@ -314,8 +312,6 @@ void Frame::applyHyst( const cctag::Parameters & params )
     assert( getHeight() == _d_hyst_edges.rows );
 
 #ifndef NDEBUG
-    // cerr << "  Config: grid=" << grid << " block=" << block << endl;
-
     verify_map_valid
         <<<grid,block,0,_stream>>>
         ( _d_map, _d_hyst_edges, getWidth(), getHeight() );
@@ -328,9 +324,6 @@ void Frame::applyHyst( const cctag::Parameters & params )
 #else // USE_SEPARABLE_COMPILATION
     bool first_time = true;
     int block_counter;
-#ifndef NDEBUG
-    // cerr << "  Blocks remaining:";
-#endif // NDEBUG
     do
     {
         block_counter = grid.x * grid.y;
@@ -356,18 +349,9 @@ void Frame::applyHyst( const cctag::Parameters & params )
                                        _d_hysteresis_block_counter,
                                        sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
-#ifndef NDEBUG
-        // cerr << " " << block_counter;
-#endif // NDEBUG
     }
     while( block_counter > 0 );
 #endif // USE_SEPARABLE_COMPILATION
-
-#ifndef NDEBUG
-    // cerr << endl;
-#endif // NDEBUG
-
-    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 }; // namespace popart

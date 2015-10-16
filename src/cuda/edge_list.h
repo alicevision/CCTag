@@ -206,11 +206,13 @@ public:
     EdgeList( ) { }
     ~EdgeList( ) { }
 
+#ifndef NDEBUG
     __host__
     void copySizeFromDevice( )
     {
         POP_CUDA_MEMCPY_TO_HOST_SYNC( &host.size, dev.size, sizeof(int) );
     }
+#endif // NDEBUG
 
     __host__
     void copySizeFromDevice( cudaStream_t stream )
@@ -218,6 +220,7 @@ public:
         POP_CUDA_MEMCPY_TO_HOST_ASYNC( &host.size, dev.size, sizeof(int), stream );
     }
 
+#ifndef NDEBUG
     __host__
     void copyDataFromDevice( int sz )
     {
@@ -226,6 +229,8 @@ public:
                               sz * sizeof(T),
                               cudaMemcpyDeviceToHost );
     }
+#error dont use this
+#endif // NDEBUG
 
     __host__
     bool copyDataFromDevice( int sz, cudaStream_t stream )

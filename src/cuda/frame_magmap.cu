@@ -112,45 +112,35 @@ void compute_map( const cv::cuda::PtrStepSz16s dx,
 __host__
 void Frame::applyMag( const cctag::Parameters & params )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
-
     dim3 block;
     dim3 grid;
     block.x = 32;
-    grid.x  = ( getWidth() / 32 ) + ( getWidth() % 32 == 0 ? 0 : 1 );
+    grid.x  = grid_divide( getWidth(), 32 );
     grid.y  = getHeight();
-
-    dim3 big_block;
-    dim3 big_grid;
-    big_block.x = 32;
-    big_block.y = 32;
-    big_grid.x  = ( getWidth()  / 32 ) + ( getWidth()  % 32 == 0 ? 0 : 1 );
-    big_grid.y  = ( getHeight() / 32 ) + ( getHeight() % 32 == 0 ? 0 : 1 );
 
     // necessary to merge into 1 stream
     compute_mag_l2
         <<<grid,block,0,_stream>>>
         ( _d_dx, _d_dy, _d_mag );
-    POP_CHK_CALL_IFSYNC;
 
-    /* block download until MAG is ready */
-    cudaEventRecord( _download_ready_event.mag, _stream );
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.mag, 0 );
+    compute_map
+        <<<grid,block,0,_stream>>>
+        ( _d_dx, _d_dy, _d_mag, _d_map, 256.0f * params._cannyThrLow, 256.0f * params._cannyThrHigh );
+
+    /* block download until MAG and MAP are ready */
+    cudaEventRecord( _download_ready_event.magmap, _stream );
+}
+
+__host__
+void Frame::applyMagDownload( const cctag::Parameters& )
+{
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.magmap, 0 );
 
     POP_CUDA_MEMCPY_2D_ASYNC( _h_mag.data, _h_mag.step,
                               _d_mag.data, _d_mag.step,
                               _d_mag.cols * sizeof(uint32_t),
                               _d_mag.rows,
                               cudaMemcpyDeviceToHost, _download_stream );
-
-    compute_map
-        <<<grid,block,0,_stream>>>
-        ( _d_dx, _d_dy, _d_mag, _d_map, 256.0f * params._cannyThrLow, 256.0f * params._cannyThrHigh );
-    POP_CHK_CALL_IFSYNC;
-
-    /* block download until MAG is ready */
-    cudaEventRecord( _download_ready_event.map, _stream );
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.map, 0 );
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_map, getWidth() * sizeof(uint8_t),
@@ -159,8 +149,6 @@ void Frame::applyMag( const cctag::Parameters & params )
                               _d_map.rows,
                               cudaMemcpyDeviceToHost, _download_stream );
 #endif // DEBUG_WRITE_MAP_AS_PGM
-
-    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 }; // namespace popart
