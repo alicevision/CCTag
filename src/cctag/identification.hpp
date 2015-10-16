@@ -107,9 +107,7 @@ bool orazioDistanceRobust(
         std::vector<std::list<double> > & vScore,
         const RadiusRatioBank & rrBank,
         const std::vector<cctag::ImageCut> & cuts,
-        const std::size_t startOffset,
-        const double minIdentProba,
-        std::size_t sizeIds);
+        const double minIdentProba);
 
 
 /**
@@ -118,11 +116,13 @@ bool orazioDistanceRobust(
  * @param[out] cut image cut holding the rectified image signal
  * @param[in] src source grayscale (uchar) image
  * @param[in] mHomography image->cctag homography
+ * @param[in] mInvHomography cctag>image homography
  */
 void extractSignalUsingHomography(
         cctag::ImageCut & cut,
         const cv::Mat & src,
-        const cctag::numerical::BoundedMatrix3x3d & mHomography);
+        const cctag::numerical::BoundedMatrix3x3d & mHomography,
+        const cctag::numerical::BoundedMatrix3x3d & mInvHomography);
 
 /* depreciated */
 void extractSignalUsingHomographyDeprec(
@@ -136,20 +136,13 @@ void extractSignalUsingHomographyDeprec(
 /**
  * @brief Extract a regularly sampled 1D signal along an image cut.
  * 
- * @param[out] cut image cut holding the 1D image signal collected
- * @param[in] src source grayscale (uchar) image
- * @param[in] mHomography image->cctag homography
- * @param[in] pStart starting point of the cut
- * @param[in] pStop stopping point of the cut
- * @param[in] nSamples number of sample along the image cut
- * @return ? todo
+ * @param[out] cut image cut that will hold the 1D image signal regularly 
+ *             collected from cut.start() to cut.stop()
+ * @param[in] src source gray scale image (uchar)
  */
-std::size_t cutInterpolated(
+void cutInterpolated(
         cctag::ImageCut & cut,
-        const cv::Mat & src,
-        const cctag::Point2dN<double> & pStart,
-        const cctag::DirectedPoint2d<double> & pStop,
-        const std::size_t nSamples);
+        const cv::Mat & src);
 
 /**
  * Collect signals (image cuts) from center to outer ellipse points
@@ -175,7 +168,7 @@ inline float getPixelBilinear(const cv::Mat & img, float x, float y)
   int px = (int)x; // floor of x
   int py = (int)y; // floor of y
   const uchar* p0 = img.data + px + py * img.step; // pointer to first pixel
-
+  
   // load the four neighboring pixels
   const uchar & p1 = p0[0 + 0 * img.step];
   const uchar & p2 = p0[1 + 0 * img.step];
@@ -194,7 +187,7 @@ inline float getPixelBilinear(const cv::Mat & img, float x, float y)
   float w4 = fx  * fy;
 
   // Calculate the weighted sum of pixels (for each color channel)
-  return (p1 * w1 + p2 * w2 + p3 * w3 + p4 * w4)/4.0f;
+  return (p1 * w1 + p2 * w2 + p3 * w3 + p4 * w4)/2; // /2 todo initial /4 implementation: make sense for a storage back in uchar;
 }
 
 double costSelectCutFun(
