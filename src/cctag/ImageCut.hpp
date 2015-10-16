@@ -52,9 +52,9 @@ public:
   const boost::numeric::ublas::vector<double> & imgSignal() const { return _imgSignal; }
   boost::numeric::ublas::vector<double> & imgSignal() { return _imgSignal; }
   
-  double beginSig() { return _beginSig; }
+  double beginSig() const { return _beginSig; }
   
-  double endSig() { return _endSig; }
+  double endSig() const { return _endSig; }
   
   bool outOfBounds() const { return _outOfBounds; }
   
