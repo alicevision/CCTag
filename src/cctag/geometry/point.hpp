@@ -247,7 +247,7 @@ public:
         }
         
         inline T  dX() const { return _grad(0); }
-        inline T  dY() const {return  _grad(1); }
+        inline T  dY() const { return _grad(1); }
         
         inline void  setDX(T dX ) { _grad(0) = dX; }
         inline void  setDY(T dY ) { _grad(1) = dY; }
