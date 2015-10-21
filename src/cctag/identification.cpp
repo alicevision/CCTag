@@ -39,14 +39,21 @@
 #include <boost/numeric/ublas/vector_expression.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
 
-#undef NAIVE_SELECTCUT
-
 #include <cmath>
 #include <vector>
 
 namespace cctag {
 namespace identification {
 
+/**
+ * @brief Read and identify a 1D rectified image signal.
+ * 
+ * @param[out] vScore ordered set of the probability of the k nearest IDs
+ * @param[in] rrBank Set of vector of radius ratio describing the 1D profile of the cctag library
+ * @param[in] cuts image cuts holding the rectified 1D signal
+ * @param[in] minIdentProba minimal probability to considered a cctag as correctly identified
+ * @return true if the cctag has been correctly identified, false otherwise
+ */
 bool orazioDistanceRobust(
         std::vector<std::list<double> > & vScore,
         const RadiusRatioBank & rrBank,
@@ -174,56 +181,6 @@ bool orazioDistanceRobust(
   return true;
 }
 
-void centerScaleRotateHomography(
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
-	const cctag::Point2dN<double> & center,
-	const cctag::DirectedPoint2d<double> & point)
-{
-  using namespace cctag::numerical;
-  using namespace boost::numeric::ublas;
-
-  cctag::numerical::BoundedMatrix3x3d mInvHomography;
-  invert( mHomography, mInvHomography );
-  
-  // Back projection of the image center
-  Point2dN<double> backProjCenter = prec_prod< BoundedVector3d >( mInvHomography, center );
-  {
-    BoundedMatrix3x3d mTranslation;
-    mTranslation( 0, 0 ) = 1.0;
-    mTranslation( 0, 1 ) = 0.0;
-    mTranslation( 0, 2 ) = backProjCenter.x();
-    mTranslation( 1, 0 ) = 0.0;
-    mTranslation( 1, 1 ) = 1.0;
-    mTranslation( 1, 2 ) = backProjCenter.y();
-    mTranslation( 2, 0 ) = 0.0;
-    mTranslation( 2, 1 ) = 0.0;
-    mTranslation( 2, 2 ) = 1.0;
-
-    mHomography = prec_prod( mHomography, mTranslation );
-    invert( mHomography, mInvHomography );
-  }
-
-  // New back projection
-  backProjCenter = (Point2dN<double>) prec_prod< BoundedVector3d >( mInvHomography, cctag::Point2dN<double>(point.x(), point.y()) );
-  const double scale = norm_2( subrange( backProjCenter, 0, 2 ) );
-  BoundedVector3d rescaledBackProjCenter  = backProjCenter/scale;
-  {
-    BoundedMatrix3x3d mScaleRotation;
-    mScaleRotation( 0, 0 ) = scale*rescaledBackProjCenter(0);
-    mScaleRotation( 0, 1 ) = -scale*rescaledBackProjCenter(1);
-    mScaleRotation( 0, 2 ) = 0.0;
-    mScaleRotation( 1, 0 ) = scale*rescaledBackProjCenter(1);
-    mScaleRotation( 1, 1 ) = scale*rescaledBackProjCenter(0);
-    mScaleRotation( 1, 2 ) = 0.0;
-    mScaleRotation( 2, 0 ) = 0.0;
-    mScaleRotation( 2, 1 ) = 0.0;
-    mScaleRotation( 2, 2 ) = 1.0;
-
-    mHomography = prec_prod( mHomography, mScaleRotation );
-  }
-}
-
-
 void createRectifiedCutImage(const std::vector<ImageCut> & vCuts, cv::Mat & output)
 {
   output = cv::Mat(vCuts.size(), vCuts.front().imgSignal().size(), CV_8UC1);
@@ -241,10 +198,11 @@ void createRectifiedCutImage(const std::vector<ImageCut> & vCuts, cv::Mat & outp
  * @brief Extract a rectified 1D signal along an image cut based on an homography.
  * 
  * @param[out] cut image cut holding the rectified image signal
- * @param[in] src source grayscale (uchar) image
+ * @param[in] src source grayscale image (uchar)
  * @param[in] mHomography image->cctag homography
  * @param[in] mInvHomography cctag>image homography
  */
+// Expensive (GPU) @Carsten
 void extractSignalUsingHomography(
         cctag::ImageCut & cut,
         const cv::Mat & src,
@@ -259,8 +217,6 @@ void extractSignalUsingHomography(
   
   double backProjStopX, backProjStopY;
   applyHomography(backProjStopX, backProjStopY, mInvHomography, cut.stop().x(), cut.stop().y());
-  
-  //CCTAG_COUT_VAR(Point2dN<double>(backProjStopX, backProjStopY).norm());
   
   // Check whether the signal to be collected start at 0.0 and stop at 1.0
   if ( cut.beginSig() != 0.0)
@@ -304,6 +260,14 @@ void extractSignalUsingHomography(
     {
       // Bilinear interpolation
       cut.imgSignal()(i) = getPixelBilinear( src, xRes, yRes);
+      
+      //openMVG::image::Sampler2d<openMVG::image::SamplerCubic> sampleFunctor;
+      // //SamplerCubic
+      // //SamplerSpline64
+      // //SamplerCubic
+      // //SamplerLinear
+      // cut.imgSignal()(i) = sampleFunctor.operator()<double>( src , float(xRes), float(yRes));
+      
     }
     else
     {
@@ -390,7 +354,7 @@ void extractSignalUsingHomographyDeprec(
  * @brief Extract a regularly sampled 1D signal along an image cut.
  * 
  * @param[out] cut image cut that will hold the 1D image signal regularly 
- *             collected from cut.start() to cut.stop()
+ *             collected from cut.beginSig() to cut.endSig()
  * @param[in] src source gray scale image (uchar)
  */
 void cutInterpolated(
@@ -459,10 +423,10 @@ void cutInterpolated(
 }
 
 /**
- * Collect signals (image cuts) from center to outer ellipse points
+ * @brief Collect signals (image cuts) from center to outer ellipse points
  * 
  * @param[out] cuts collected cuts
- * @param[in] src source image (gray)
+ * @param[in] src source gray scale image (uchar)
  * @param[in] center outer ellipse center
  * @param[in] outerPoints outer ellipse points
  * @param[in] nSamplesInCut number of samples collected in an image cut
@@ -495,6 +459,16 @@ void collectCuts(
   }
 }
 
+/**
+ * @brief Compute a cost (score) for the cut selection based on the variance and the gradient orientation
+ * of the outer point (cut.stop()) over all outer points.
+ * 
+ * @param[in] varCuts variance of the signal over all image cuts
+ * @param[in] outerPoints cut.stop(), i.e. outer ellipse point, stop points of the considered image cuts
+ * @param[in] randomIdx random index subsample in [0 , outerPoints.size()[
+ * @param[in] alpha magic hyper parameter
+ * @return score
+ */
 double costSelectCutFun(
         const std::vector<double> & varCuts,
         const std::vector< cctag::DirectedPoint2d<double> > & outerPoints,
@@ -511,6 +485,10 @@ double costSelectCutFun(
   {
     BOOST_ASSERT( i < varCuts.size() );
     
+    //CCTAG_COUT_VAR(outerPoints[i].gradient());
+    //CCTAG_COUT_VAR(sqrt(outerPoints[i].gradient()(0)*outerPoints[i].gradient()(0)
+    //                  + outerPoints[i].gradient()(1)*outerPoints[i].gradient()(1)));
+    
     sumDeriv += outerPoints[i].gradient(); // must be normalised. This normalisation is done during the CCTag construction.
     sumVar += varCuts[i];
   }
@@ -520,7 +498,19 @@ double costSelectCutFun(
   return ndir - alpha * sumVar;
 }
 
-
+/**
+ * @brief Select a subset of image cuts appropriate for the image center optimisation.
+ * This selection aims at maximizing the variance of the image signal over all the 
+ * selected cuts while minimizing the norm of the sum of the normalized gradient over
+ * all outer points, i.e. all cut.stop().
+ *
+ * @param[out] vSelectedCuts selected image cuts
+ * @param[in] selectSize number of desired cuts to select
+ * @param[in] collectedCuts all the collected cuts
+ * @param[in] src source gray scale image (uchar)
+ * @param[in] refinedSegSize deprec (do not remove)
+ * @param[in] cutsSelectionTrials number of random draw
+ */
 void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
         std::size_t selectSize,
         std::vector<cctag::ImageCut> & collectedCuts,
@@ -547,7 +537,7 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     
     // Collect the normalized gradient over all outer points
     cctag::DirectedPoint2d<double> outerPoint( cut.stop() );
-    double normGrad = sqrt(outerPoint.dX()*outerPoint.dX()* + outerPoint.dY()*outerPoint.dY());
+    double normGrad = sqrt(outerPoint.dX()*outerPoint.dX() + outerPoint.dY()*outerPoint.dY());
     double dX = outerPoint.dX()/normGrad;
     double dY = outerPoint.dY()/normGrad;
     outerPoint.setDX(dX);
@@ -562,6 +552,7 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
   idxSelected.resize(selectSize);
   for( std::size_t i = 0; i < cutsSelectionTrials; ++i )
   {
+    // Get a random draw
     ublas::vector<std::size_t> randomIdx = boost::numeric::ublas::subrange( 
             cctag::numerical::randperm< ublas::vector<std::size_t> >( collectedCuts.size() ), 0, selectSize );
     
@@ -647,86 +638,24 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
   }
 }
 
-void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use DirectedPoint instead
-        std::vector< cctag::ImageCut > & vSelectedCuts,
-        std::vector< cctag::Point2dN<double> > & prSelection,
-        std::size_t selectSize,
-        const std::vector<cctag::ImageCut> & collectedCuts,
-        const cv::Mat & src,
-        const cv::Mat & dx,
-        const cv::Mat & dy )
-{
-  using namespace boost::numeric;
-  using namespace boost::accumulators;
-
-  selectSize = std::min( selectSize, collectedCuts.size() );
-
-  std::vector<double> vGrads;
-  vGrads.reserve( collectedCuts.size() );
-  for( int i=0 ; i < collectedCuts.size() ; ++i)
-  {
-    ublas::bounded_vector<double,2> gradient;
-    gradient(0) = dx.at<short>( collectedCuts[i].stop().y(), collectedCuts[i].stop().x() );
-    gradient(1) = dy.at<short>( collectedCuts[i].stop().y(), collectedCuts[i].stop().x() );
-    vGrads.push_back(ublas::norm_2(gradient));
-    //CCTAG_COUT_VAR(vGrads.back());
-  }
-  // Statistics on vGrads
-  accumulator_set< double, features< tag::median > > acc;
-  // Compute the median value
-  acc = std::for_each( vGrads.begin(), vGrads.end(), acc );
-  const double medianValue = boost::accumulators::median( acc );
-  //CCTAG_COUT_VAR(medianValue);
-
-  const std::size_t step = std::max( 1, int( collectedCuts.size()/2 -1 ) / int(selectSize) );
-  
-  // Select all cuts whose stop gradient is greater than the median value
-  std::size_t iStep = 0;
-          
-  for( int i=0 ; i < collectedCuts.size() ; ++i)
-  {
-    ublas::bounded_vector<double,2> gradient;
-    gradient(0) = dx.at<short>( collectedCuts[i].stop().y(), collectedCuts[i].stop().x() );
-    gradient(1) = dy.at<short>( collectedCuts[i].stop().y(), collectedCuts[i].stop().x() );
-    
-    if ( ublas::norm_2(gradient) > medianValue )
-    {
-      if ( iStep == step )
-      {
-        //cctag::Point2dN<double> refinedPoint(collectedCuts[i].stop());
-        prSelection.push_back( collectedCuts[i].stop() );
-        vSelectedCuts.push_back( collectedCuts[i] );
-        iStep = 0;
-      }else
-      {
-        ++iStep;
-      }
-      
-    }
-    
-    //if( vSelectedCuts.size() >= selectSize )
-    //{
-    //  break;
-    //}
-  }
-}
-
 /**
- * @brief Collect and compute the rectified 1D signals along image cuts.
+ * @brief Collect rectified 1D signals along image cuts.
  * 
- * @param[out] vCuts vector of the image cuts whose the rectified signal is to be to computed
- * @param[in] mHomography transformation used to rectified the 1D signal from the pixel plane to the cctag plane.
- * @param[in] src source grayscale image (uchar)
+ * @param[out] vCuts set of the image cuts whose the rectified signal is to be to computed
+ * @param[in] mHomography transformation image->cctag used to rectified the 1D signal
+ * @param[in] src source gray scale image (uchar)
  */
+// Expensive (GPU) @Carsten
 void getSignals(
         std::vector< cctag::ImageCut > & vCuts,
         const cctag::numerical::BoundedMatrix3x3d & mHomography,
         const cv::Mat & src)
 {
   cctag::numerical::BoundedMatrix3x3d mInvHomography;
-  cctag::numerical::invert(mHomography, mInvHomography);
+  cctag::numerical::invert(mHomography, mInvHomography); // closed form: invert_3x3( const Matrix& A, Matrix& result ) is actually called which call det(const ublas::bounded_matrix<T,3,3> & m)
   for( cctag::ImageCut & cut : vCuts )
   {
+    // Expensive (GPU) @Carsten
     extractSignalUsingHomography( cut, src, mHomography, mInvHomography);
   }
 }
@@ -843,16 +772,15 @@ void computeHomographyFromEllipseAndImagedCenter(
 
 /**
  * @brief Compute the optimal homography/imaged center based on the 
- * signal in the image, the cctag symmetry constraints and also the outer ellipse,
- * image the unit circle, which is supposed to be known.
+ * signal in the image and  the outer ellipse, supposed to be image the unit circle.
  * 
  * @param[out] cctag cctag to optimize in order to find its imaged center in conjunction 
  * with the image->cctag homography
  * @param[out] vCuts cuts holding the rectified 1D signals at the end of the optimization
  * @param[in] nSamples number of samples on image cuts
  * @param[in] src source image
- * @param[in] outerEllipse outer ellipse (todo: is that already in the cctag object?)
- * @return true if the optimization has converged, false otherwise.
+ * @param[in] ellipse outer ellipse (todo: is that already in the cctag object?)
+ * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
         CCTag & cctag,
@@ -864,32 +792,30 @@ bool refineConicFamilyGlob(
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
 
+  // Get the mHomography (empty) and the imaged center to be optimized
   cctag::numerical::BoundedMatrix3x3d & mHomography = cctag.homography();
   Point2dN<double> & optimalPoint = cctag.centerImg();
 
   BOOST_ASSERT( vOuterPoints.size() > 0 );
 
-  // Debug
+  // Visual debug
   CCTagVisualDebug::instance().newSession( "refineConicPts" );
   for(const cctag::ImageCut & cut : vCuts)
   {
-    CCTagVisualDebug::instance().drawPoint( cctag::Point2dN<double>(cut.stop().x(), cut.stop().y()), cctag::color_red );
+    CCTagVisualDebug::instance().drawPoint( cut.stop(), cctag::color_red );
   }
-
-  //center = outerEllipse.center(); // todo: might be better instead of the center of the rescaled one.
-
   CCTagVisualDebug::instance().newSession( "centerOpt" );
   CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_green );
 
   boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
-  // Perform the optimization
-  std::vector<cctag::Point2dN<double> > nearbyPoints;
+  // A. Perform the optimization ///////////////////////////////////////////////
 
-  double neighbourSize = 0.15;
+  // The neighbourhood size is 0.20*max(ellipse.a(),ellipse.b()), i.e. the max ellipse semi-axis
+  double neighbourSize = 0.20;
   double residual;
 
-  std::size_t gridNSample = 4;
+  std::size_t gridNSample = 5; // todo: check must be odd 
 
   // The neighbourhood size is iteratively decreased, assuming the convexity of the 
   // cost function within it.
@@ -898,7 +824,7 @@ bool refineConicFamilyGlob(
     if ( imageCenterOptimizationGlob(mHomography,vCuts,optimalPoint,residual,neighbourSize,gridNSample,src,outerEllipse) )
     {
       CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
-      neighbourSize /= gridNSample ;
+      neighbourSize /= double((gridNSample-1)/2) ;
     }else{
       return false;
     }
@@ -915,7 +841,7 @@ bool refineConicFamilyGlob(
   CCTAG_COUT_VAR(optimalPoint);
   CCTAG_COUT_VAR(cctag.centerImg());
   
-  // Get the signal associated to the optimal homography/imaged center.
+  // B. Get the signal associated to the optimal homography/imaged center //////
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
     getSignals(vCuts,mHomography,src);
@@ -932,7 +858,7 @@ bool refineConicFamilyGlob(
  * @param[out] mHomography optimal homography from the pixel plane to the cctag plane.
  * @param[out] vCuts vector of the image cuts whose the signal has been rectified w.r.t. the computed mHomography
  * @param[out] center optimal imaged center
- * @param[out] neighbourSize obtained residual
+ * @param[out] minRes residual after optimization
  * @param[in] neighbourSize size of the neighbourhood to consider relatively to the outer ellipse dimensions
  * @param[in] gridNSample number of sample points along one dimension of the neighbourhood (e.g. grid)
  * @param[in] src source gray (uchar) image
@@ -952,6 +878,7 @@ bool imageCenterOptimizationGlob(
   using namespace boost::numeric::ublas;
   
     std::vector<cctag::Point2dN<double> > nearbyPoints;
+    // A. Get all the grid point nearby the center /////////////////////////////
     getNearbyPoints(outerEllipse, center, nearbyPoints, neighbourSize, gridNSample, GRID);
     
     minRes = std::numeric_limits<double>::max();
@@ -961,33 +888,35 @@ bool imageCenterOptimizationGlob(
     
     bool hasASolution = false;
 
-#ifdef OPTIM_CENTER_VISUAL_DEBUG
+#ifdef OPTIM_CENTER_VISUAL_DEBUG // Visual debug durign the optim
     int k = 0;
-#endif // OPTIM_CENTER_VISUAL_DEBUG    
+#endif // OPTIM_CENTER_VISUAL_DEBUG   
+    // For all points nearby the center ////////////////////////////////////////
     for(const cctag::Point2dN<double> & point : nearbyPoints)
     {
       CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
+      
+      // B. Compute the homography so that the back projection of 'point' is the
+      // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
       computeHomographyFromEllipseAndImagedCenter( outerEllipse.matrix(), point, mTempHomography);
       
-      // Back projection of the image center
-      BoundedMatrix3x3d mInvHomography;
-      invert( mTempHomography, mInvHomography );
-      Point2dN<double> backProjCenter = prec_prod< BoundedVector3d >( mInvHomography, center );
-      //CCTAG_COUT_VAR(backProjCenter);
-      
       bool readable = true;
-      
+      // C. Compute the 1D rectified signals of vCuts image cut based on the 
+      // transformation mTempHomography.
+      // Expensive (GPU) @Carsten
       double res = costFunctionGlob(mTempHomography, vCuts, src, readable);
       
+      // If at least one image cut has been properly read
       if ( readable )
       {
-#ifdef OPTIM_CENTER_VISUAL_DEBUG
+#ifdef OPTIM_CENTER_VISUAL_DEBUG // todo: write a proper function in visual debug
         cv::Mat output;
         createRectifiedCutImage(vCuts, output);
         cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
         ++k;
 #endif // OPTIM_CENTER_VISUAL_DEBUG        
         
+        // Update the residual and the optimized parameters
         hasASolution = true;
         if ( res < minRes )
         {
@@ -1009,32 +938,35 @@ bool imageCenterOptimizationGlob(
   
 /**
  * @brief Compute a set of point locations nearby a given center following
- * a given type of pattern (e.g. regularly sampled points)
+ * a given type of pattern (e.g. regularly sampled points over a grid)
  * 
  * @param[in] ellipse outer ellipse providing the absolute scale.
  * @param[in] center the center around which point locations are computed
+ * @param[out] nearbyPoints computed 2D points
  * @param[in] neighbourSize provide the scale of the pattern relatively to the ellipse dimensions
  * @param[in] gridNSample number of sampled points along a dimension of the pattern
  * @param[in] neighborType type of pattern (e.g. a grid)
- * @param[out] nearbyPoints computed 2D points
  */
 void getNearbyPoints(
         const cctag::numerical::geometry::Ellipse & ellipse,
         const cctag::Point2dN<double> & center,
         std::vector<cctag::Point2dN<double> > & nearbyPoints,
-        const double neighbourSize,
+        double neighbourSize,
         const std::size_t gridNSample,
         const NeighborType neighborType)
 {
   nearbyPoints.clear();
 
   cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromEllipse( ellipse );
+  cctag::numerical::BoundedMatrix3x3d mInvT;
+  cctag::numerical::invert_3x3(mT,mInvT);
+  
+  cctag::numerical::geometry::Ellipse transformedEllipse(ellipse);
+  cctag::viewGeometry::projectiveTransform( mInvT, transformedEllipse );
+  neighbourSize *= std::max(transformedEllipse.a(),transformedEllipse.b()); // todo: these last 3 lines compute exactly the same info, should be done only once.
 
   cctag::Point2dN<double> condCenter = center;
   cctag::numerical::optimization::condition(condCenter, mT);
-
-  cctag::numerical::BoundedMatrix3x3d mInvT;
-  cctag::numerical::invert_3x3(mT,mInvT);
 
   if ( neighborType == GRID )
   {
@@ -1058,8 +990,8 @@ void getNearbyPoints(
 
 /**
  * @brief Compute the residual of the optimization which is the average of the square of the 
- * differences between two rectified image signals/cuts over all possible cut-pair in the set 
- * of image cuts in vCuts.
+ * differences between two rectified image signals/cuts over all possible cut-pair in a set 
+ * of image cuts.
  * 
  * @param[in] mHomography transformation used to rectified the 1D signal from the pixel plane to the cctag plane.
  * @param[out] vCuts vector of the image cuts holding the rectified signal according to mHomography
@@ -1067,6 +999,7 @@ void getNearbyPoints(
  * @param[out] flag: true if at least one image cut has been readable (within the image bounds), false otherwise.
  * @return residual
  */
+// Expensive (GPU) @Carsten
 double costFunctionGlob(
         const cctag::numerical::BoundedMatrix3x3d & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
@@ -1075,6 +1008,8 @@ double costFunctionGlob(
 {
   flag = true;
   
+  // Get the rectified signals along the image cuts
+  // Expensive (GPU) @Carsten
   getSignals( vCuts, mHomography, src);
 
   double res = 0;
@@ -1085,8 +1020,9 @@ double costFunctionGlob(
     {
       if ( !vCuts[i].outOfBounds() && !vCuts[j].outOfBounds() )
       {
-        //  += (signalCutI(0)-signalCutJ(0))*(signalCutI(0)-signalCutJ(0)) + ... + (signalCutI(end)-signalCutJ(end))*(signalCutI(end)-signalCutJ(end)) // GPU
         res += std::pow( norm_2( vCuts[i].imgSignal() - vCuts[j].imgSignal() ), 2 );
+        // i.e.
+        // += (signalCutI(0)-signalCutJ(0))*(signalCutI(0)-signalCutJ(0)) + ... + (signalCutI(end)-signalCutJ(end))*(signalCutI(end)-signalCutJ(end)) // GPU
         ++resSize;
       }
     }
@@ -1103,74 +1039,84 @@ double costFunctionGlob(
 }
 
 /**
- * Identify a marker: i) its imaged center is optimized 
- *                    ii) the outer ellipse + the obtained imaged center deliver the image->cctag homography
- *                    iii) the rectified 1D signal(s) is(are) read and deliver the ID via a nearest neighbour 
- *                    approach where the metric used is the one described in Orazio et al. 2011
+ * @brief Identify a marker:
+ *   i) its imaged center is optimized: A. 1D image cuts are selected ; B. the optimization is performed 
+ *   ii) the outer ellipse + the obtained imaged center delivers the image->cctag homography
+ *   iii) the rectified 1D signals are read and deliver the ID via a nearest neighbour
+ *        approach where the distance to the cctag bank's profiles used is the one described in [Orazio et al. 2011]
  * @param[in] cctag whose center is to be optimized in conjunction with its associated homography.
  * @param[in] radiusRatios bank of radius ratios along with their associated IDs.
- * @param[in] src original image (original scale)
+ * @param[in] src original gray scale image (original scale, uchar)
  * @param[in] params set of parameters
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
 int identify(
   CCTag & cctag,
-  const std::vector< std::vector<double> > & radiusRatios, ///@todo directly use the bank
+  const std::vector< std::vector<double> > & radiusRatios, // todo: directly use the CCTagBank
   const cv::Mat & src,
   const cctag::Parameters & params)
 {
-  // Get the outer ellipse in its orignal scale, i.e. in src.
+  // Get the outer ellipse in its original scale, i.e. in src.
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
+  // Get the outer points in their original scale, i.e. in src.
   const std::vector< cctag::DirectedPoint2d<double> > & outerEllipsePoints = cctag.rescaledOuterEllipsePoints();
-  // outerEllipsePoints can be changed in the edge point refinement - not const - todo@Lilian - save their modifications
-  // in the CCTag instance just above _rescaledOuterEllipsePoints.
 
-  // Take 100 edge points around outer ellipse.
-  const std::size_t nOuterPoints = std::min( std::size_t(100), outerEllipsePoints.size() );
+  // A. Pick a subsample of outer points ///////////////////////////////////////
+  // Cheap (CPU only)
+  
+  // Take 100 edge points around outer ellipse. //todo: 1. must be in params 2. order outer points by angle
+  const std::size_t nOuterPoints = std::min( std::size_t(400), outerEllipsePoints.size() );
   std::size_t step = std::size_t( outerEllipsePoints.size() / ( nOuterPoints - 1 ) );
   std::vector< cctag::DirectedPoint2d<double> > outerPoints;
-
+  
   outerPoints.reserve( nOuterPoints );
   for( std::size_t i = 0; i < outerEllipsePoints.size(); i += step )
   {
     outerPoints.push_back( outerEllipsePoints[i] );
   }
-
-  ///@todo Check if a & b sorted (cf. ellipse2param)
+  // todo: next line deprec, associated to SUBPIX_EDGE_OPTIM, do not remove.
   const double cutLengthOuterPointRefine = std::min( ellipse.a(), ellipse.b() ) * 0.12;
 
+  // Visual debug
   for(const cctag::DirectedPoint2d<double> & point : outerPoints)
   {
     CCTagVisualDebug::instance().drawPoint( Point2dN<double>(point.x(), point.y()), cctag::color_green );
-    //todo: templater la fonction draw au lieu de reconstruire
   }
 
+  // Set from where the rectified 1D signal should be read.
+  // In fact, the white area located inside the inner ellipse does not hold
+  // any information neither for the optimization nor for the reading.
   double startSig = 0.0;
-
   if (params._nCrowns == 3)
   {
     // Signal begin at 25% of the unit radius (for 3 black rings markers).
     // startOffset
-    startSig = 1 - (2*params._nCrowns-1)*0.15;	// Considering 6 radius.
+    startSig = 1 - (2*params._nCrowns-1)*0.15;
   }
   else if (params._nCrowns == 4)
   {
-    startSig = 0.26;
+    startSig = 0.26; // todo: write the analytical formulation based on the latest 4 rings version
   }
   else
   {
     CCTAG_COUT("Error : unknown number of crowns");
   }
+  // The "signal of interest" is located between startSig and 1.0 (endSig in ImageCut)
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
 #endif
   
+  // B. Collect all cuts associated to all outer points ////////////////////////
   std::vector<cctag::ImageCut> cuts;
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
     
     collectCuts( cuts, src, ellipse.center(), outerPoints, params._sampleCutLength, startSig);
+    
+    //cv::Mat output; // todo: write a proper function in the visual debug mode
+    //createRectifiedCutImage(cuts, output);
+    //cv::imwrite("/home/lilian/data/temp/collectCuts.png", output);
     
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
@@ -1195,12 +1141,13 @@ int identify(
     return status::no_collected_cuts;
   }
   
+  // C. Select a sub sample of image cuts //////////////////////////////////////
+  // Cheap in near future (CPU only)
   std::vector< cctag::ImageCut > vSelectedCuts;
-
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
-#ifdef NAIVE_SELECTCUT
+#ifdef NAIVE_SELECTCUT // undefined, deprec
     'depreciated: dx and dy are not accessible anymore -> use DirectedPoint instead'
     selectCutNaive( vSelectedCuts, prSelection, params._numCutsInIdentStep, cuts, src, 
           dx, dy ); 
@@ -1252,14 +1199,16 @@ int identify(
 //      return status::opti_has_diverged;
 //    }
     
-    bool hasConverged = refineConicFamilyGlob( cctag, vSelectedCuts, params._sampleCutLength, src, ellipse);
-    if( !hasConverged )
-    {
-      DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
-      CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
-      DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
-      return status::opti_has_diverged;
-    }
+  // C. Imaged center optimization /////////////////////////////////////////////
+  // Expensive (CPU & GPU)
+  bool hasConverged = refineConicFamilyGlob( cctag, vSelectedCuts, params._sampleCutLength, src, ellipse);
+  if( !hasConverged )
+  {
+    DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
+    CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
+    DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
+    return status::opti_has_diverged;
+  }
     
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t3(boost::posix_time::microsec_clock::local_time());
@@ -1278,96 +1227,100 @@ int identify(
   IdSet idSet;
   idSet.reserve(sizeIds);
 
-  bool idFinal = false;
+  bool identSuccessful = false;
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
     std::vector<std::list<double> > vScore;
     vScore.resize(radiusRatios.size());
 
-#ifdef INITIAL_1D_READING // not used anymore: not defined
+  // D. Read the rectified 1D signals and retrieve the nearest ID(s) ///////////
+  // Cheap (CPU only)
+#ifdef INITIAL_1D_READING // deprec, unused
                           // v0.0 for the identification: use a single cut, average of the rectified cut, to read the id.
-      idFinal = orazioDistance( idSet, radiusRatios, vSelectedCuts, startOffset, params._minIdentProba, sizeIds);
-      // If success
-      if ( idFinal )
-      {
-        // Set CCTag id
-        id = idSet.front().first;
-        cctag.setId( id );
-        cctag.setIdSet( idSet );
-        cctag.setRadiusRatios( radiusRatios[id] );
-      }
-      else
-      {
-        DO_TALK( CCTAG_COUT_DEBUG("Not enough quality in IDENTIFICATION"); )
-      }
-#else // INITIAL_1D_READING // used
-      // v0.1 for the identification: use the most redundant id over all the rectified cut.
-      idFinal = orazioDistanceRobust( vScore, radiusRatios, vSelectedCuts, params._minIdentProba);
+    identSuccessful = orazioDistance( idSet, radiusRatios, vSelectedCuts, startOffset, params._minIdentProba, sizeIds);
+    // If success
+    if ( identSuccessful )
+    {
+      // Set CCTag id
+      id = idSet.front().first;
+      cctag.setId( id );
+      cctag.setIdSet( idSet );
+      cctag.setRadiusRatios( radiusRatios[id] );
+    }
+    else
+    {
+      DO_TALK( CCTAG_COUT_DEBUG("Not enough quality in IDENTIFICATION"); )
+    }
+#else // INITIAL_1D_READING
+    // used
+    // v0.1 for the identification: use the most redundant id over all the rectified cut.
+    identSuccessful = orazioDistanceRobust( vScore, radiusRatios, vSelectedCuts, params._minIdentProba);
 #ifdef GRIFF_DEBUG
-      if( idFinal )
-      {
+    // todo: clean and mode this block into a dedicated function.
+    if( identSuccessful )
+    {
 #endif // GRIFF_DEBUG
 
-        int maxSize = 0;
-        int i = 0;
-        int iMax = 0;
+      int maxSize = 0;
+      int i = 0;
+      int iMax = 0;
 
-        BOOST_FOREACH(const std::list<double> & lResult, vScore)
+      BOOST_FOREACH(const std::list<double> & lResult, vScore)
+      {
+        if (lResult.size() > maxSize)
         {
-          if (lResult.size() > maxSize)
-          {
-            iMax = i;
-            maxSize = lResult.size();
-          }
-          ++i;
+          iMax = i;
+          maxSize = lResult.size();
         }
-
-        double score = 0;
-#ifdef GRIFF_DEBUG
-        assert( vScore.size() > 0 );
-        assert( vScore.size() > iMax );
-#endif // GRIFF_DEBUG
-        BOOST_FOREACH(const double & proba, vScore[iMax])
-        {
-          score += proba;
-        }
-        score /= vScore[iMax].size();
-
-        // Set CCTag id
-        cctag.setId( iMax );
-        cctag.setIdSet( idSet );
-        cctag.setRadiusRatios( radiusRatios[iMax] );
-
-        // Push all the ellipses based on the obtained homography.
-        try
-        {
-          using namespace boost::numeric::ublas;
-          
-          bounded_matrix<double, 3, 3> mInvH;
-          cctag::numerical::invert(cctag.homography(), mInvH);
-          std::vector<cctag::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
-
-          for(const double radiusRatio : cctag.radiusRatios())
-          {
-            cctag::numerical::geometry::Cercle circle(1.0 / radiusRatio);
-            ellipses.push_back(cctag::numerical::geometry::Ellipse(
-                    prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
-          }
-
-          // Push the outer ellipse
-          ellipses.push_back(cctag.rescaledOuterEllipse());
-
-          DO_TALK( CCTAG_COUT_VAR_DEBUG(cctag.id()); )
-        }
-        catch (...) // An exception can be thrown when a degenerate ellipse is computed.
-        {
-          return status::degenerate;
-        }
-        
-        idFinal = (score > params._minIdentProba);
-#ifdef GRIFF_DEBUG
+        ++i;
       }
+
+      double score = 0;
+#ifdef GRIFF_DEBUG
+      assert( vScore.size() > 0 );
+      assert( vScore.size() > iMax );
+#endif // GRIFF_DEBUG
+      BOOST_FOREACH(const double & proba, vScore[iMax])
+      {
+        score += proba;
+      }
+      score /= vScore[iMax].size();
+
+      // Set CCTag id
+      cctag.setId( iMax );
+      cctag.setIdSet( idSet );
+      cctag.setRadiusRatios( radiusRatios[iMax] );
+
+      // Push all the ellipses based on the obtained homography.
+      try
+      {
+        using namespace boost::numeric::ublas;
+
+        bounded_matrix<double, 3, 3> mInvH;
+        cctag::numerical::invert(cctag.homography(), mInvH);
+        std::vector<cctag::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
+
+        for(const double radiusRatio : cctag.radiusRatios())
+        {
+          cctag::numerical::geometry::Cercle circle(1.0 / radiusRatio);
+          ellipses.push_back(cctag::numerical::geometry::Ellipse(
+                  prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
+        }
+
+        // Push the outer ellipse
+        ellipses.push_back(cctag.rescaledOuterEllipse());
+
+        DO_TALK( CCTAG_COUT_VAR_DEBUG(cctag.id()); )
+      }
+      catch (...) // An exception can be thrown when a degenerate ellipse is computed.
+      {
+        return status::degenerate;
+      }
+
+      identSuccessful = (score > params._minIdentProba);
+#ifdef GRIFF_DEBUG
+    }
 #endif // GRIFF_DEBUG
       
 #endif // INITIAL_1D_READING
@@ -1378,13 +1331,126 @@ int identify(
   }
 
   // Tell if the identification is reliable or not.
-  if (idFinal)
+  if (identSuccessful)
   {
     return status::id_reliable;
   }
   else
   {
     return status::id_not_reliable;
+  }
+}
+
+#ifdef NAIVE_SELECTCUT
+void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use DirectedPoint instead
+        std::vector< cctag::ImageCut > & vSelectedCuts,
+        std::vector< cctag::Point2dN<double> > & prSelection,
+        std::size_t selectSize,
+        const std::vector<cctag::ImageCut> & collectedCuts,
+        const cv::Mat & src)
+{
+  using namespace boost::numeric;
+  using namespace boost::accumulators;
+
+  selectSize = std::min( selectSize, collectedCuts.size() );
+
+  std::vector<double> vGrads;
+  vGrads.reserve( collectedCuts.size() );
+  for( int i=0 ; i < collectedCuts.size() ; ++i)
+  {
+    ublas::bounded_vector<double,2> gradient;
+    gradient(0) = dx.at<short>( collectedCuts[i].stop().y(), collectedCuts[i].stop().x() );
+    gradient(1) = dy.at<short>( collectedCuts[i].stop().y(), collectedCuts[i].stop().x() );
+    vGrads.push_back(ublas::norm_2(gradient));
+    //CCTAG_COUT_VAR(vGrads.back());
+  }
+  // Statistics on vGrads
+  accumulator_set< double, features< tag::median > > acc;
+  // Compute the median value
+  acc = std::for_each( vGrads.begin(), vGrads.end(), acc );
+  const double medianValue = boost::accumulators::median( acc );
+  //CCTAG_COUT_VAR(medianValue);
+
+  const std::size_t step = std::max( 1, int( collectedCuts.size()/2 -1 ) / int(selectSize) );
+  
+  // Select all cuts whose stop gradient is greater than the median value
+  std::size_t iStep = 0;
+          
+  for( int i=0 ; i < collectedCuts.size() ; ++i)
+  {
+    ublas::bounded_vector<double,2> gradient;
+    gradient(0) = dx.at<short>( collectedCuts[i].stop().y(), collectedCuts[i].stop().x() );
+    gradient(1) = dy.at<short>( collectedCuts[i].stop().y(), collectedCuts[i].stop().x() );
+    
+    if ( ublas::norm_2(gradient) > medianValue )
+    {
+      if ( iStep == step )
+      {
+        //cctag::Point2dN<double> refinedPoint(collectedCuts[i].stop());
+        prSelection.push_back( collectedCuts[i].stop() );
+        vSelectedCuts.push_back( collectedCuts[i] );
+        iStep = 0;
+      }else
+      {
+        ++iStep;
+      }
+      
+    }
+    
+    //if( vSelectedCuts.size() >= selectSize )
+    //{
+    //  break;
+    //}
+  }
+}
+#endif // NAIVE_SELECTCUT
+
+void centerScaleRotateHomography(
+        cctag::numerical::BoundedMatrix3x3d & mHomography,
+	const cctag::Point2dN<double> & center,
+	const cctag::DirectedPoint2d<double> & point)
+{
+  using namespace cctag::numerical;
+  using namespace boost::numeric::ublas;
+
+  cctag::numerical::BoundedMatrix3x3d mInvHomography;
+  invert( mHomography, mInvHomography );
+  
+  // Back projection of the image center
+  Point2dN<double> backProjCenter = prec_prod< BoundedVector3d >( mInvHomography, center );
+  {
+    BoundedMatrix3x3d mTranslation;
+    mTranslation( 0, 0 ) = 1.0;
+    mTranslation( 0, 1 ) = 0.0;
+    mTranslation( 0, 2 ) = backProjCenter.x();
+    mTranslation( 1, 0 ) = 0.0;
+    mTranslation( 1, 1 ) = 1.0;
+    mTranslation( 1, 2 ) = backProjCenter.y();
+    mTranslation( 2, 0 ) = 0.0;
+    mTranslation( 2, 1 ) = 0.0;
+    mTranslation( 2, 2 ) = 1.0;
+
+    mHomography = prec_prod( mHomography, mTranslation );
+    invert( mHomography, mInvHomography );
+  }
+
+  // New back projection
+  backProjCenter = (Point2dN<double>) prec_prod< BoundedVector3d >( mInvHomography, cctag::Point2dN<double>(point.x(), point.y()) );
+  const double scale = norm_2( subrange( backProjCenter, 0, 2 ) );
+  BoundedVector3d rescaledBackProjCenter  = backProjCenter/scale;
+  {
+    BoundedMatrix3x3d mScaleRotation;
+    mScaleRotation( 0, 0 ) = scale*rescaledBackProjCenter(0);
+    mScaleRotation( 0, 1 ) = -scale*rescaledBackProjCenter(1);
+    mScaleRotation( 0, 2 ) = 0.0;
+    mScaleRotation( 1, 0 ) = scale*rescaledBackProjCenter(1);
+    mScaleRotation( 1, 1 ) = scale*rescaledBackProjCenter(0);
+    mScaleRotation( 1, 2 ) = 0.0;
+    mScaleRotation( 2, 0 ) = 0.0;
+    mScaleRotation( 2, 1 ) = 0.0;
+    mScaleRotation( 2, 2 ) = 1.0;
+
+    mHomography = prec_prod( mHomography, mScaleRotation );
   }
 }
 
