@@ -50,27 +50,30 @@ void load( cv::cuda::PtrStepSz32u img )
     const int srcidx = blockIdx.x * HYST_W + threadIdx.x;
     const int srcidy = blockIdx.y * HYST_H + threadIdx.y;
 
-    uint32_t* reinterpret_array = reinterpret_cast<uint32_t*>(array);
-
     uint32_t val_0_0;
     val_0_0 = get( img, srcidx-1, srcidy-1 );
-    reinterpret_array[threadIdx.y  ][threadIdx.x  ] = val_0_0;
+
+    volatile uint32_t* reinterpret_array;
+    reinterpret_array = reinterpret_cast<volatile uint32_t*>(&array[threadIdx.y][0]);
+    reinterpret_array[threadIdx.x  ] = val_0_0;
 
     if( threadIdx.y >= HYST_H - 2 ) {
         uint32_t val_2_0;
         val_2_0 = get( img, srcidx-1, srcidy+1 );
-        reinterpret_array[threadIdx.y+2][threadIdx.x  ] = val_2_0;
+        reinterpret_array = reinterpret_cast<volatile uint32_t*>(&array[threadIdx.y+2][0]);
+        reinterpret_array[threadIdx.x  ] = val_2_0;
         if( threadIdx.x >= HYST_W - 2 ) {
             uint32_t val_2_2;
             val_2_2 = get( img, srcidx+1, srcidy+1 );
-            reinterpret_array[threadIdx.y+2][threadIdx.x+2] = val_2_2;
+            reinterpret_array[threadIdx.x+2] = val_2_2;
         }
     }
     __syncthreads();
     if( threadIdx.x >= HYST_W - 2 ) {
         uint32_t val_0_2;
         val_0_2 = get( img, srcidx+1, srcidy-1 );
-        reinterpret_array[threadIdx.y  ][threadIdx.x+2] = val_0_2;
+        reinterpret_array = reinterpret_cast<volatile uint32_t*>(&array[threadIdx.y][0]);
+        reinterpret_array[threadIdx.x+2] = val_0_2;
     }
     __syncthreads();
 }
@@ -81,10 +84,11 @@ void store( cv::cuda::PtrStepSz32u img )
     const int dstidx  = blockIdx.x * HYST_W + threadIdx.x;
     const int dstidy  = blockIdx.y * HYST_H + threadIdx.y;
 
-    uint32_t* reinterpret_array = reinterpret_cast<uint32_t*>(array);
+    volatile uint32_t* reinterpret_array;
 
     volatile uint32_t val;
-    val = reinterpret_array[threadIdx.y+1][threadIdx.x+1];
+    reinterpret_array = reinterpret_cast<volatile uint32_t*>(&array[threadIdx.y+1][0]);
+    val = reinterpret_array[threadIdx.x+1];
 
     if( dstidx < img.cols && dstidy < img.rows ) {
         img.ptr(dstidy)[dstidx] =  val;
@@ -96,6 +100,7 @@ inline
 bool update_edge_pixel( int y, int x )
 {
     uint8_t val[3][3];
+    volatile uint8_t debug_v;
     val[0][0] = array[y  ][x  ];
     val[0][1] = array[y  ][x+1];
     val[0][2] = array[y  ][x+2];
@@ -119,6 +124,7 @@ bool update_edge_pixel( int y, int x )
     bool inc = false;
     bool dec = false;
 
+    debug_v = val[1][1];
     if( val[1][1] == 1 ) {
         inc = ( val[0][0] == 2 || val[0][1] == 2 || val[0][2] == 2 ||
                 val[1][0] == 2 ||                   val[1][2] == 2 ||
@@ -126,9 +132,10 @@ bool update_edge_pixel( int y, int x )
         dec = ( val[0][0] == 0 && val[0][1] == 0 && val[0][2] == 0 &&
                 val[1][0] == 0 &&                   val[1][2] == 0 &&
                 val[2][0] == 0 && val[2][1] == 0 && val[2][2] == 0 );
-        val[1][1] = inc ? 2 : dec ? 0 : 1 ;
+        debug_v = val[1][1] = inc ? 2 : dec ? 0 : 1 ;
     }
     __syncthreads();
+    assert( debug_v == val[1][1] );
     array[y+1][x+1] = val[1][1];
 
     return ( inc || dec );
@@ -139,17 +146,17 @@ bool edge_block_loop( )
 {
     __shared__ volatile bool continuation[HYST_H];
     bool            again = true;
-    bool            nothing_changed = true;
+    bool            something_changed = false;
     bool            line_changed = false;
     int ct = 0;
 
-    while( again ) {
+    while( again && ct < 10 ) {
         assert( ct <= HYST_W*HYST_H );
         bool mark = false;
-        mark = mark || update_edge_pixel( threadIdx.y, x    );
-        mark = mark || update_edge_pixel( threadIdx.y, x+32 );
-        mark = mark || update_edge_pixel( threadIdx.y, x+64 );
-        mark = mark || update_edge_pixel( threadIdx.y, x+96 );
+        mark = mark || update_edge_pixel( threadIdx.y, threadIdx.x    );
+        mark = mark || update_edge_pixel( threadIdx.y, threadIdx.x+32 );
+        mark = mark || update_edge_pixel( threadIdx.y, threadIdx.x+64 );
+        mark = mark || update_edge_pixel( threadIdx.y, threadIdx.x+96 );
 
         /* make sure all updated pixel are written back to
          * shared memory before continuation[] is modified */
@@ -159,7 +166,7 @@ bool edge_block_loop( )
         line_changed = __any( mark );
 
         /* the first thread of each row write the result to continuation[] */
-        if( threadIdx.x == 0 ) continuation[y] = line_changed;
+        if( threadIdx.x == 0 ) continuation[threadIdx.y] = line_changed;
 
         /* wait for all rows to fulfill the operation (and to assure that
          * results in continuation[] are visible to all threads, because
@@ -181,26 +188,25 @@ bool edge_block_loop( )
         /* Every threads needs to know whether any pixel was changed in
          * any round of the loop because egde_second() uses this return
          * value to write back to global memory using a different alignment. */
-        if( again ) nothing_changed = false;
+        if( again ) something_changed = true;
 
         /* this should not be necessary ... */
         ct++;
     }
 
-    return nothing_changed;
+    return something_changed;
 }
 
 __device__
 bool edge( int* block_counter )
 {
-    bool nothing_changed = edge_block_loop( );
+    bool something_changed = edge_block_loop( );
     if( threadIdx.x == 0 && threadIdx.y == 0 ) {
-        if( nothing_changed ) {
-            atomicSub( block_counter, 1 );
+        if( something_changed ) {
+            atomicAdd( block_counter, 1 );
         }
     }
-    __syncthreads();
-    return nothing_changed;
+    return something_changed;
 }
 
 __global__
@@ -211,27 +217,40 @@ void edge_first( cv::cuda::PtrStepSzb img, int* block_counter, cv::cuda::PtrStep
     // if( outOfBounds( idx, idy, img ) ) return;
     // uint8_t val = src.ptr(idy)[idx];
     // img.ptr(idy)[idx] = val;
-    PtrStepSz32u input( src );
+    cv::cuda::PtrStepSz32u input;
+    input.data = reinterpret_cast<uint32_t*>(src.data);
+    input.step = src.step;
+    input.rows = src.rows;
     input.cols = src.cols / 4;
-    load( src );
+    load( input );
 
     edge( block_counter );
 
-    PtrStepSz32u output( img );
+    __syncthreads();
+
+    cv::cuda::PtrStepSz32u output;
+    output.data = reinterpret_cast<uint32_t*>(img.data);
+    output.step = img.step;
+    output.rows = img.rows;
     output.cols = img.cols / 4;
-    store( img );
+    store( output );
 }
 
 __global__
 void edge_second( cv::cuda::PtrStepSzb img, int* block_counter )
 {
-    PtrStepSz32u input( src );
-    input.cols = src.cols / 4;
-    load( img );
+    cv::cuda::PtrStepSz32u input;
+    input.data = reinterpret_cast<uint32_t*>(img.data);
 
-    bool nothing_changed = edge( block_counter );
-    if( not nothing_changed ) {
-        store( img );
+    input.step = img.step;
+    input.rows = img.rows;
+    input.cols = img.cols / 4;
+    load( input );
+
+    bool something_changed = edge( block_counter );
+
+    if( __any( something_changed ) ) {
+        store( input );
     }
 }
 
@@ -263,18 +282,23 @@ void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w
 __global__
 void hyst_outer_loop( int width, int height, int* block_counter, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src )
 {
+    printf( "Enter %s\n", __FUNCTION__ );
+
     dim3 block;
     dim3 grid;
     block.x = HYST_W;
     block.y = HYST_H;
-    grid.x  = grid_divide( width,   HYST_W / 4 );
+    grid.x  = grid_divide( width,   HYST_W * 4 );
     grid.y  = grid_divide( height,  HYST_H );
 
+    printf( "Starting (%d,%d,%d)-grid of (%d,%d,%d) threads\n",
+            grid.x, grid.y, grid.z, block.x, block.y, block.z );
+
     bool first_time = true;
-    int gridsize = grid.x * grid.y;
+    int loopcount = 0;
     do
     {
-        *block_counter = gridsize;
+        *block_counter = 0;
         if( first_time ) {
             hysteresis::edge_first
                 <<<grid,block>>>
@@ -289,14 +313,18 @@ void hyst_outer_loop( int width, int height, int* block_counter, cv::cuda::PtrSt
                   block_counter );
         }
         cudaDeviceSynchronize( );
+        printf( "block_counter=%d\n", *block_counter);
+        assert( *block_counter <= grid.x * grid.y );
     }
-    while( *block_counter > 0 );
+    while( loopcount++ < 30 ); // *block_counter > 0 );
+    printf( "Leave %s\n", __FUNCTION__ );
 }
 #endif // USE_SEPARABLE_COMPILATION
 
 __host__
 void Frame::applyHyst( const cctag::Parameters & params )
 {
+    cerr << "Enter " << __FUNCTION__ << endl;
     assert( getWidth()  == _d_map.cols );
     assert( getHeight() == _d_map.rows );
     assert( getWidth()  == _d_hyst_edges.cols );
@@ -319,17 +347,20 @@ void Frame::applyHyst( const cctag::Parameters & params )
     cudaEvent_t before_hyst, after_hyst;
     float ms;
 
-    cudaCreateEvent( &before_hyst );
-    cudaCreateEvent( &after_hyst );
+    cudaEventCreate( &before_hyst );
+    cudaEventCreate( &after_hyst );
     cudaEventRecord( before_hyst, _stream );
+    cerr << "0" << endl;
     hyst_outer_loop
         <<<1,1,0,_stream>>>
         ( getWidth(), getHeight(), _d_hysteresis_block_counter, _d_hyst_edges, _d_map );
     cudaEventRecord( after_hyst, _stream );
+    cerr << "0.1" << endl;
     cudaEventSynchronize( after_hyst );
+    cerr << "0.2" << endl;
     cudaEventElapsedTime( &ms, before_hyst, after_hyst );
-    cudaEventDestory( before_hyst );
-    cudaEventDestory( after_hyst );
+    cudaEventDestroy( before_hyst );
+    cudaEventDestroy( after_hyst );
     std::cerr << "Hyst took " << ms << " ms" << std::endl;
 #else // USE_SEPARABLE_COMPILATION
     bool first_time = true;
@@ -341,6 +372,7 @@ void Frame::applyHyst( const cctag::Parameters & params )
                                          &block_counter,
                                          sizeof(int), _stream );
         if( first_time ) {
+            cerr << "1" << endl;
             hysteresis::edge_first
                 <<<grid,block,0,_stream>>>
                 ( _d_hyst_edges,
@@ -348,6 +380,7 @@ void Frame::applyHyst( const cctag::Parameters & params )
                   _d_map );
             first_time = false;
         } else {
+            cerr << "2" << endl;
             hysteresis::edge_second
                 <<<grid,block,0,_stream>>>
                 ( _d_hyst_edges,
@@ -359,9 +392,11 @@ void Frame::applyHyst( const cctag::Parameters & params )
                                        _d_hysteresis_block_counter,
                                        sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
+        cerr << "block_counter=" << block_counter << endl;
     }
     while( block_counter > 0 );
 #endif // USE_SEPARABLE_COMPILATION
+    cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 }; // namespace popart
