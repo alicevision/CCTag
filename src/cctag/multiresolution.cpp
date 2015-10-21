@@ -570,7 +570,8 @@ void cctagMultiresDetection(
           
           CCTagVisualDebug::instance().drawPoint(Point2dN<double>(e->x(), e->y()), cctag::color_red);
         }
-        marker.setCenterImg(cctag::Point2dN<double>(marker.centerImg().getX() * scale, marker.centerImg().getY() * scale));
+        //marker.setCenterImg(rescaledOuterEllipse.center());                                                                // todo
+        marker.setCenterImg(cctag::Point2dN<double>(marker.centerImg().getX() * scale, marker.centerImg().getY() * scale));  // decide between these two lines
         marker.setRescaledOuterEllipse(rescaledOuterEllipse);
         marker.setRescaledOuterEllipsePoints(rescaledOuterEllipsePointsDouble);
       }
