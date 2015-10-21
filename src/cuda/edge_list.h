@@ -229,7 +229,6 @@ public:
                               sz * sizeof(T),
                               cudaMemcpyDeviceToHost );
     }
-#error dont use this
 #endif // NDEBUG
 
     __host__
