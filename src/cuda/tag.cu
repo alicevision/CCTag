@@ -139,24 +139,21 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         // _frame[i]->applyLink(  params );  // async
     }
 #else
-    for( int i=0; i<num_layers; i++ )
-        _frame[i]->applyGauss( params ); // async
-    for( int i=0; i<num_layers; i++ )
-        _frame[i]->applyMag(   params );  // async
-    for( int i=0; i<num_layers; i++ )
-        _frame[i]->applyHyst(  params );  // async
-    for( int i=0; i<num_layers; i++ )
-        _frame[i]->applyThinning(  params );  // async
-    for( int i=0; i<num_layers; i++ )
-        _frame[i]->applyDesc(  params );  // async
-    for( int i=0; i<num_layers; i++ )
-        _frame[i]->applyVote(  params );  // async
-    for( int i=0; i<num_layers; i++ ) {
-        _frame[i]->applyGaussDownload( params );
-        _frame[i]->applyMagDownload( params );
-        _frame[i]->applyThinDownload( params );
-        _frame[i]->applyDescDownload( params );
-    }
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyGauss( params ); // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyGaussDownload( params ); // async
+
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyMag(   params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyMagDownload( params );
+
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyHyst(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinning(  params );  // async
+
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc(  params );  // async
+
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVote(  params );  // async
+
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinDownload( params ); // sync
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDescDownload( params ); // sync
 #endif // not NDEBUG
 
     for( int i=1; i<num_layers; i++ ) {

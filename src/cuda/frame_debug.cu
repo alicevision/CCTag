@@ -115,17 +115,6 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // DEBUG_WRITE_ORIGINAL_AS_ASCII
 #endif // WRITE_ORIGINAL_AS_PGM
 
-#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
-    cv::cuda::PtrStepSzf smooth( getHeight(),
-                                 getWidth(),
-                                 _h_debug_smooth,
-                                 getWidth()*sizeof(float) );
-    DebugImage::writePGMscaled( filename + "-gauss.pgm", smooth );
-#ifdef DEBUG_WRITE_GAUSSIAN_AS_ASCII
-    DebugImage::writeASCII( filename + "-gauss-ascii.txt", smooth );
-#endif // DEBUG_WRITE_GAUSSIAN_AS_ASCII
-#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
-
 #ifdef DEBUG_WRITE_DX_AS_PGM
     cv::cuda::PtrStepSz16s dx( getHeight(),
                                getWidth(),

@@ -282,6 +282,9 @@ void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w
 __global__
 void hyst_outer_loop( int width, int height, int* block_counter, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src )
 {
+    cudaStream_t childStream;
+    cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
+
     dim3 block;
     dim3 grid;
     block.x = HYST_W;
@@ -295,14 +298,14 @@ void hyst_outer_loop( int width, int height, int* block_counter, cv::cuda::PtrSt
         *block_counter = 0;
         if( first_time ) {
             hysteresis::edge_first
-                <<<grid,block>>>
+                <<<grid,block,0,childStream>>>
                 ( img,
                   block_counter,
                   src );
             first_time = false;
         } else {
             hysteresis::edge_second
-                <<<grid,block>>>
+                <<<grid,block,0,childStream>>>
                 ( img,
                   block_counter );
         }
@@ -310,6 +313,8 @@ void hyst_outer_loop( int width, int height, int* block_counter, cv::cuda::PtrSt
         assert( *block_counter <= grid.x * grid.y );
     }
     while( *block_counter > 0 );
+
+    cudaStreamDestroy( childStream );
 }
 #endif // USE_SEPARABLE_COMPILATION
 

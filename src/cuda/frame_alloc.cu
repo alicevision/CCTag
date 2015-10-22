@@ -84,27 +84,32 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _d_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _d_ring_output.rows = EDGE_LINKING_MAX_ARCS;
 
-    _h_plane.data = new uint8_t[ w * h ];
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(uint8_t) );
+    _h_plane.data = (uint8_t*)ptr;
     _h_plane.step = w * sizeof(uint8_t);
     _h_plane.cols = w;
     _h_plane.rows = h;
 
-    _h_dx.data = new int16_t[ w * h ];
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int16_t) );
+    _h_dx.data = (int16_t*)ptr;
     _h_dx.step = w * sizeof(int16_t);
     _h_dx.cols = w;
     _h_dx.rows = h;
 
-    _h_dy.data = new int16_t[ w * h ];
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int16_t) );
+    _h_dy.data = (int16_t*)ptr;
     _h_dy.step = w * sizeof(int16_t);
     _h_dy.cols = w;
     _h_dy.rows = h;
 
-    _h_mag.data = new uint32_t[ w * h ];
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int32_t) );
+    _h_mag.data = (uint32_t*)ptr;
     _h_mag.step = w * sizeof(uint32_t);
     _h_mag.cols = w;
     _h_mag.rows = h;
 
-    _h_edges.data = new uint8_t[ w * h ];
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(uint8_t) );
+    _h_edges.data = (uint8_t*)ptr;
     _h_edges.step = w * sizeof(uint8_t);
     _h_edges.cols = w;
     _h_edges.rows = h;
@@ -124,12 +129,9 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _d_ring_counter = (int*)ptr;
     _d_ring_counter_max = EDGE_LINKING_MAX_ARCS;
 
-#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
-    _h_debug_smooth = new float[ w * h ];
-#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
-
 #ifdef DEBUG_WRITE_MAP_AS_PGM
-    _h_debug_map = new unsigned char[ w * h ];
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(unsigned char) );
+    _h_debug_map = (unsigned char*)ptr;
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
     _vote.alloc( params, w, h );
@@ -206,18 +208,15 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE( _d_connect_component_block_counter );
     POP_CUDA_FREE( _d_ring_counter );
 
-    delete [] _h_plane.data;
-    delete [] _h_dx.data;
-    delete [] _h_dy.data;
-    delete [] _h_mag.data;
-    delete [] _h_edges.data;
+    cudaFreeHost( _h_plane.data );
+    cudaFreeHost( _h_dx.data );
+    cudaFreeHost( _h_dy.data );
+    cudaFreeHost( _h_mag.data );
+    cudaFreeHost( _h_edges.data );
     delete [] _h_ring_output.data;
 
-#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
-    delete [] _h_debug_smooth;
-#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
 #ifdef DEBUG_WRITE_MAP_AS_PGM
-    delete [] _h_debug_map;
+    cudaFreeHost( _h_debug_map );
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
     _vote.release();

@@ -15,8 +15,6 @@
 
 #define DEBUG_WRITE_ORIGINAL_AS_PGM
 #define DEBUG_WRITE_ORIGINAL_AS_ASCII
-#undef  DEBUG_WRITE_GAUSSIAN_AS_PGM   // no longer computed
-#undef  DEBUG_WRITE_GAUSSIAN_AS_ASCII // no longer computed
 #define DEBUG_WRITE_DX_AS_PGM
 #define DEBUG_WRITE_DX_AS_ASCII
 #define DEBUG_WRITE_DY_AS_PGM
@@ -257,9 +255,6 @@ private:
     cv::cuda::PtrStepSzb    _d_edges;
     cv::cuda::PtrStepSzInt2 _d_ring_output;
 
-#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
-    float*                  _h_debug_smooth;
-#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_map;
 #endif // DEBUG_WRITE_MAP_AS_PGM
