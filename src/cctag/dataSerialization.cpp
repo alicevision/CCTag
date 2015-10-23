@@ -31,6 +31,15 @@ void serializePoint(boost::archive::text_oarchive & ar, const Point2dN<double> &
     ar & BOOST_SERIALIZATION_NVP(y);
 }
 
+// todo templater function above and bellow.
+void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<double> & point) {
+    const double x = point.x();
+    const double y = point.y();
+
+    ar & BOOST_SERIALIZATION_NVP(x);
+    ar & BOOST_SERIALIZATION_NVP(y);
+}
+
 void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e) {
     const int x = e.x();
     const int y = e.y();
@@ -43,20 +52,20 @@ void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e)
     ar & BOOST_SERIALIZATION_NVP(gy);
 }
 
-void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< Point2dN<double> > & points) {
+void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< DirectedPoint2d<double> > & points) {
     const int sizePoints = points.size();
     ar & BOOST_SERIALIZATION_NVP(sizePoints);
 
-    BOOST_FOREACH(const Point2dN<double> & point, points) {
+    BOOST_FOREACH(const DirectedPoint2d<double> & point, points) {
         serializePoint(ar, point);
     }
 }
 
-void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< Point2dN<double> > > & points) {
+void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< DirectedPoint2d<double> > > & points) {
     const int sizePoints = points.size();
     ar & BOOST_SERIALIZATION_NVP(sizePoints);
 
-    BOOST_FOREACH(const std::vector< Point2dN<double> > & subPoints, points) {
+    BOOST_FOREACH(const std::vector< DirectedPoint2d<double> > & subPoints, points) {
         serializeVecPoint(ar, subPoints);
     }
 }

@@ -1,3 +1,5 @@
+#ifdef USE_IMAGE_CENTER_OPT // undefined. Depreciated
+
 #include <cctag/ImageCenterOptimizer.hpp>
 #include <cctag/identification.hpp>
 #include <cctag/visualDebug.hpp>
@@ -20,6 +22,7 @@
 #include <ostream>
 
 namespace cctag {
+namespace identification {
 
 ImageCenterOptimizer::ImageCenterOptimizer( const VecExtPoints & vecExtPoints )
 : Parent( 2, &ImageCenterOptimizer::optimizePointFun, NULL, this )
@@ -128,7 +131,7 @@ Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double>
 	objfcn.setSearchStrategy( TrustRegion );//LineSearch ); //TrustRegion );
 	objfcn.setMaxFeval( 200 );
 	objfcn.setFcnTol( 1.0e-4 );
-
+    //objfcn.setMaxStep(0.2);
 #if defined(DEBUG)
 	if ( !objfcn.setOutputFile("example1.out", 0) )
 	{
@@ -154,4 +157,7 @@ Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double>
 	return res;
 }
 
+} // namespace identification
 } // namespace cctag
+
+#endif // USE_IMAGE_CENTER_OPT

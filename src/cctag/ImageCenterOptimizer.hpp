@@ -1,3 +1,5 @@
+#ifdef USE_IMAGE_CENTER_OPT // undefined. Depreciated
+
 #ifndef VISION_IMAGECENTEROPTIMIZER_HPP_
 #define	VISION_IMAGECENTEROPTIMIZER_HPP_
 
@@ -20,6 +22,7 @@
 
 
 namespace cctag {
+namespace identification {
 
 /**
  * @brief Optimizer to find the subpixel position of an edge point from a 1D signal.
@@ -80,6 +83,10 @@ private:
 	cctag::numerical::BoundedMatrix3x3d _mInvT;
 };
 
+} // namespace identification
 } // namespace cctag
 
 #endif
+
+
+#endif // USE_IMAGE_CENTER_OPT // undefined. Depreciated

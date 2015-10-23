@@ -70,7 +70,8 @@ inline cctag::numerical::BoundedVector3d cross(const V & vX, const V & vY)
 	return res;
 }
 
-inline cctag::numerical::BoundedVector3d unit(const cctag::numerical::BoundedVector3d & v)
+template<class T>
+inline cctag::numerical::BoundedVector3d unit(const T & v)
 {
 	using namespace boost::numeric::ublas;
 	return v/norm_2(v);

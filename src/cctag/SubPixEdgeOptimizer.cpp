@@ -17,12 +17,14 @@
 
 namespace cctag {
 
+#ifdef SUBPIX_EDGE_OPTIM // undefined. Depreciated
+
 SubPixEdgeOptimizer::SubPixEdgeOptimizer( const cctag::ImageCut & line )
 : Parent( 4, &SubPixEdgeOptimizer::subPix, NULL, this )
 , _line( line )
 {
-	_a = ( line._stop.y() - line._start.y() ) / ( line._stop.x() - line._start.x() );
-	_b = line._start.y() - _a * line._start.x();
+	_a = ( line.stop().y() - line.start().y() ) / ( line.stop().x() - line.start().x() );
+	_b = line.start().y() - _a * line.start().x();
 }
 
 void SubPixEdgeOptimizer::initSubPix( int ndim, NEWMAT::ColumnVector& x )
@@ -58,9 +60,9 @@ void SubPixEdgeOptimizer::subPix( int n, const NEWMAT::ColumnVector& x, double& 
 
 	This *this_ptr = static_cast<This*>( objPtr );
 
-	const double normDir = cctag::numerical::distancePoints2D( this_ptr->_line._start, this_ptr->_line._stop );
-	const double dirx = ( this_ptr->_line._stop.x() - this_ptr->_line._start.x() ) / normDir;
-	const double diry = ( this_ptr->_line._stop.y() - this_ptr->_line._start.y() ) / normDir;
+	const double normDir = cctag::numerical::distancePoints2D( this_ptr->_line.start(), this_ptr->_line.stop() );
+	const double dirx = ( this_ptr->_line.stop().x() - this_ptr->_line.start().x() ) / normDir;
+	const double diry = ( this_ptr->_line.stop().y() - this_ptr->_line.start().y() ) / normDir;
 
 	const double width = x(1);
 	const double p0x = x(2);
@@ -71,13 +73,13 @@ void SubPixEdgeOptimizer::subPix( int n, const NEWMAT::ColumnVector& x, double& 
 
 	double res = 0;
 
-	const std::size_t signalLength = this_ptr->_line._imgSignal.size();
-	const double kx = ( this_ptr->_line._stop.x() - this_ptr->_line._start.x() ) / ( signalLength - 1.0 );
-	const double ky = ( this_ptr->_line._stop.y() - this_ptr->_line._start.y() ) / ( signalLength - 1.0 );
-	double pindx = this_ptr->_line._start.x();
-	double pindy = this_ptr->_line._start.y();
+	const std::size_t signalLength = this_ptr->_line.imgSignal().size();
+	const double kx = ( this_ptr->_line.stop().x() - this_ptr->_line.start().x() ) / ( signalLength - 1.0 );
+	const double ky = ( this_ptr->_line.stop().y() - this_ptr->_line.start().y() ) / ( signalLength - 1.0 );
+	double pindx = this_ptr->_line.start().x();
+	double pindy = this_ptr->_line.start().y();
 
-	const boost::numeric::ublas::vector<double> & sig = this_ptr->_line._imgSignal;
+	const boost::numeric::ublas::vector<double> & sig = this_ptr->_line.imgSignal();
 
 	for( std::size_t i = 0 ; i < signalLength ; ++i )
 	{
@@ -153,5 +155,7 @@ Point2dN<double> SubPixEdgeOptimizer::operator()( const double widthContour, con
 
 	return res;
 }
+
+#endif // SUBPIX_EDGE_OPTIM // undefined. Depreciated
 
 } // namespace cctag

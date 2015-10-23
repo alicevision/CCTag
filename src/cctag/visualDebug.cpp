@@ -112,21 +112,55 @@ void CCTagVisualDebug::drawText(const cctag::Point2dN<double> & p, const std::st
 #endif
 }
 
-void CCTagVisualDebug::drawPoint(const cctag::Point2dN<double> & p, const cctag::Color & color) {
+void CCTagVisualDebug::drawPoint(const cctag::Point2dN<double> & point, const cctag::Color & color) {
 #ifdef CCTAG_SERIALIZE
-  if (p.x() >= 1 && p.x() < _backImage.cols-1 &&
-          p.y() >= 1 && p.y() < _backImage.rows-1)
+  if (point.x() >= 1 && point.x() < _backImage.cols-1 &&
+          point.y() >= 1 && point.y() < _backImage.rows-1)
   {
-    cv::rectangle(_backImage, cvPoint(p.x()-1.0,p.y()-1.0), cvPoint(p.x()+1.0,p.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
+    cv::Vec3b cvColor;
+    cvColor.val[0] = 255*color[0];
+    cvColor.val[1] = 255*color[1]; 
+    cvColor.val[2] = 255*color[2]; 
+    _backImage.at<cv::Vec3b>(point.y(),point.x()) = cvColor;
+    //cv::rectangle(_backImage, cvPoint(point.x()-1.0,point.y()-1.0), cvPoint(point.x()+1.0,point.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
   }
 #endif
 }
 
-void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2dN<double> > & pts, const cctag::Color & color)
+void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<double> & point, const cctag::Color & color) {
+#ifdef CCTAG_SERIALIZE
+  if (point.x() >= 1 && point.x() < _backImage.cols-1 &&
+          point.y() >= 1 && point.y() < _backImage.rows-1)
+  {
+    //cv::Vec3b cvColor;
+    //cvColor.val[0] = 255*color[0];
+    //cvColor.val[1] = 255*color[1]; 
+    //cvColor.val[2] = 255*color[2]; 
+    //_backImage.at<cv::Vec3b>(point.y(),point.x()) = cvColor;
+    cv::Point p1(point.x(),point.y());
+    cv::Point p2(point.x() + point.dX(),point.y() + point.dY());
+    cv::arrowedLine( _backImage, p1, p2, cv::Scalar(255*color[0], 255*color[1], 255*color[2]) );
+    
+    //cv::rectangle(_backImage, cvPoint(point.x()-1.0,point.y()-1.0), cvPoint(point.x()+1.0,point.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
+  }
+#endif
+}
+
+void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2dN<double> > & points, const cctag::Color & color)
 {
 #ifdef CCTAG_SERIALIZE
-  BOOST_FOREACH(const cctag::Point2dN<double> & p, pts) {
-      CCTagVisualDebug::instance().drawPoint(p, cctag::color_red);
+  BOOST_FOREACH(const cctag::Point2dN<double> & point, points) {
+      CCTagVisualDebug::instance().drawPoint(point, cctag::color_red);
+  }
+#endif
+}
+
+// todo templater la function ci-dessus avec celle ci-dessous
+void CCTagVisualDebug::drawPoints(const std::vector<cctag::DirectedPoint2d<double> > & points, const cctag::Color & color)
+{
+#ifdef CCTAG_SERIALIZE
+  BOOST_FOREACH(const cctag::Point2dN<double> & point, points) {
+      CCTagVisualDebug::instance().drawPoint(cctag::Point2dN<double>(point.x(),point.y()), cctag::color_red);
   }
 #endif
 }
@@ -166,6 +200,9 @@ void CCTagVisualDebug::drawMarker(const cctag::CCTag& marker, bool drawScaledMar
   }else if(marker.getStatus() == status::id_reliable){
     // Green
     color = cv::Scalar(0,255,0);
+  }else if(marker.getStatus() == status::degenerate){
+    // Yellow 1
+    color = cv::Scalar(255,255,0);
   }else if(marker.getStatus() == 0 ){
     // Green
     color = cv::Scalar(0,255,0);
@@ -198,8 +235,8 @@ void CCTagVisualDebug::drawInfos(const cctag::CCTag& marker, bool drawScaledMark
 
   IplImage iplImg = _backImage;
   cvPutText( &iplImg, sId.c_str(),
-          cvPoint(x, y),
-          &font1, CV_RGB(128, 255, 0));
+          cvPoint(x-10, y+10),
+          &font1, CV_RGB(255, 140, 0));
 #endif
 }
 

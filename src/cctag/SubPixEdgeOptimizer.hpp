@@ -1,6 +1,8 @@
 #ifndef _CCTAG_SUBPIXELEDGEOPTIMIZER_HPP_
 #define	_CCTAG_SUBPIXELEDGEOPTIMIZER_HPP_
 
+#define SUBPIX_EDGE_OPTIM
+
 #include <cctag/geometry/point.hpp>
 #include <cctag/global.hpp>
 
@@ -12,6 +14,8 @@
 #include <newmat.h>
 
 namespace cctag {
+  
+#ifdef SUBPIX_EDGE_OPTIM // undefined. Depreciated
   
   struct ImageCut;
 
@@ -66,6 +70,8 @@ private:
 	double _imin;
 	double _imax;
 };
+
+#endif // SUBPIX_EDGE_OPTIM // undefined. Depreciated
 
 } // namespace cctag
 

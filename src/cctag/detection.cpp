@@ -269,7 +269,7 @@ void flowComponentAssembling(
         const std::vector<Candidate> & vCandidateLoopTwo,
         numerical::geometry::Ellipse & outerEllipse,
         std::vector<EdgePoint*>& outerEllipsePoints,
-        std::vector< std::vector< Point2dN<double> > >& cctagPoints,
+        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
         const Parameters & params
 #ifndef CCTAG_SERIALIZE
         )
@@ -468,7 +468,7 @@ void cctagDetectionFromEdges(
     cctag::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
     std::vector<EdgePoint*> filteredChildrens = candidate._filteredChildrens;
 
-    std::vector< std::vector< Point2dN<double> > > cctagPoints;
+    std::vector< std::vector< DirectedPoint2d<double> > > cctagPoints;
 
     try
     {
@@ -688,7 +688,7 @@ void cctagDetection(CCTag::List& markers,
   
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
-#endif
+#endif // CCTAG_OPTIM
   
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
 
@@ -752,7 +752,6 @@ void cctagDetection(CCTag::List& markers,
   
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
   // Identification step
-  // To decomment -- enable cuts selection, homography computation and identification
   if (params._doIdentification)
   {
     CCTag::List::iterator it = markers.begin();
@@ -760,39 +759,14 @@ void cctagDetection(CCTag::List& markers,
     {
       CCTag & cctag = *it;
 
-      const int detected = cctag::identify(
+      const int detected = cctag::identification::identify(
               cctag,
               bank.getMarkers(),
               imagePyramid.getLevel(0)->getSrc(),
-              imagePyramid.getLevel(0)->getDx(),
-              imagePyramid.getLevel(0)->getDy(),
               params);
       
       cctag.setStatus(detected);
-
-      try
-      {
-        std::vector<cctag::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
-
-        bounded_matrix<double, 3, 3> mInvH;
-        cctag::numerical::invert(cctag.homography(), mInvH);
-
-        BOOST_FOREACH(double radiusRatio, cctag.radiusRatios())
-        {
-          cctag::numerical::geometry::Cercle circle(1.0 / radiusRatio);
-          ellipses.push_back(cctag::numerical::geometry::Ellipse(
-                  prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
-        }
-
-        // Push the outer ellipse
-        ellipses.push_back(cctag.rescaledOuterEllipse());
-
-        DO_TALK( CCTAG_COUT_VAR_DEBUG(cctag.id()); )
-        ++it;
-      }
-      catch (...)
-      {
-      }
+      ++it;
     }
 #ifdef CCTAG_OPTIM
       boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());

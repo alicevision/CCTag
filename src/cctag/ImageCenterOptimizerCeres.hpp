@@ -1,3 +1,5 @@
+#ifdef USE_IMAGE_CENTER_OPT_CERES // undefined. Depreciated
+
 #ifndef VISION_IMAGECENTEROPTIMIZERCERES_HPP
 #define	VISION_IMAGECENTEROPTIMIZERCERES_HPP
 
@@ -23,6 +25,7 @@
 #include <vector>
 
 namespace cctag {
+namespace identification {
 
 struct TotoFunctor {
 
@@ -82,9 +85,11 @@ private:
 
 void optimizeCenterCeres();
 
+} // namespace identification
 } // namespace cctag
 
 
 
 #endif	/* VISION_IMAGECENTEROPTIMIZERCERES_HPP */
 
+#endif // undefined. Depreciated

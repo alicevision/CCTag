@@ -61,9 +61,9 @@ void CCTag::condition(const cctag::numerical::BoundedMatrix3x3d & mT, const ccta
     cctag::numerical::normalizeDet1(ellipse.matrix());
   }
 
-  BOOST_FOREACH(std::vector<cctag::Point2dN<double> > & pts, _points)
+  BOOST_FOREACH(std::vector<cctag::DirectedPoint2d<double> > & points, _points)
   {
-    cctag::numerical::optimization::condition(pts, mT);
+    cctag::numerical::optimization::condition(points, mT);
   }
 
   cctag::numerical::optimization::condition(_centerImg, mT);
@@ -72,10 +72,10 @@ void CCTag::condition(const cctag::numerical::BoundedMatrix3x3d & mT, const ccta
 void CCTag::scale(const double s)
 {
 
-  BOOST_FOREACH(std::vector< Point2dN<double> > &vp, _points)
+  BOOST_FOREACH(std::vector< DirectedPoint2d<double> > &vp, _points)
   {
 
-    BOOST_FOREACH(Point2dN<double> &p, vp)
+    BOOST_FOREACH(DirectedPoint2d<double> & p, vp)
     {
       p.setX(p.x() * s);
       p.setY(p.y() * s);

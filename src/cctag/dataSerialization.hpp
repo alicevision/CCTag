@@ -18,12 +18,14 @@ namespace cctag {
   void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet);
 
   void serializePoint(boost::archive::text_oarchive & ar, const Point2dN<double> & point);
+// todo templater function above and bellow.
+  void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<double> & point);
 
   void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e);
 
-  void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< Point2dN<double> > & points);
+  void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< DirectedPoint2d<double> > & points);
 
-  void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< Point2dN<double> > > & points);
+  void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< DirectedPoint2d<double> > > & points);
 
   void serializeEllipse(boost::archive::text_oarchive & ar, const cctag::numerical::geometry::Ellipse & ellipse);
 

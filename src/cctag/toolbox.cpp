@@ -150,7 +150,7 @@ namespace cctag {
 
             e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
         }
-
+        
 void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points )
 {
 	std::vector<cv::Point2f> cvPoints;
