@@ -1007,7 +1007,15 @@ bool imageCenterOptimizationGlob(
       
       // B. Compute the homography so that the back projection of 'point' is the
       // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
-      computeHomographyFromEllipseAndImagedCenter( outerEllipse.matrix(), point, mTempHomography);
+      
+      try
+      {
+        computeHomographyFromEllipseAndImagedCenter( outerEllipse.matrix(), point, mTempHomography);
+      }catch(...)
+      {
+        continue; 
+      }
+
       
       bool readable = true;
       // C. Compute the 1D rectified signals of vCuts image cut based on the 
