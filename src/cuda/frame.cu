@@ -19,7 +19,7 @@ using namespace std;
  * Frame
  *************************************************************/
 
-Frame::Frame( uint32_t width, uint32_t height, int my_layer )
+Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream )
     : _layer( my_layer )
     , _h_debug_hyst_edges( 0 )
     , _texture( 0 )
@@ -29,8 +29,15 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer )
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
     _h_ring_output.data = 0;
 
+    if( download_stream != 0 ) {
+        _private_download_stream = false;
+        _download_stream = download_stream;
+    } else {
+        _private_download_stream = true;
+        cudaStreamCreateWithFlags( &_download_stream, cudaStreamNonBlocking );
+        // POP_CUDA_STREAM_CREATE( &_download_stream );
+    }
     POP_CUDA_STREAM_CREATE( &_stream );
-    POP_CUDA_STREAM_CREATE( &_download_stream );
 
     // POP_CUDA_EVENT_CREATE( &_download_ready_event );
     // at least in older CUDA versions, events blocked parallelism
@@ -43,7 +50,7 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer )
     cudaEventCreateWithFlags( &_download_ready_event.edgecoords2, cudaEventDisableTiming);
     cudaEventCreateWithFlags( &_download_ready_event.descent1,    cudaEventDisableTiming);
     cudaEventCreateWithFlags( &_download_ready_event.descent2,    cudaEventDisableTiming);
-    
+
     size_t pitch;
     POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width, height );
     _d_plane.step = pitch;
@@ -78,7 +85,10 @@ Frame::~Frame( )
     cudaEventDestroy( _download_ready_event.edgecoords2 );
     cudaEventDestroy( _download_ready_event.descent1 );
     cudaEventDestroy( _download_ready_event.descent2 );
-    POP_CUDA_STREAM_DESTROY( _download_stream );
+
+    if( _private_download_stream ) {
+        POP_CUDA_STREAM_DESTROY( _download_stream );
+    }
     POP_CUDA_STREAM_DESTROY( _stream );
 }
 

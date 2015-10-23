@@ -126,7 +126,7 @@ class Frame
 {
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
-    Frame( uint32_t width, uint32_t height, int my_layer );
+    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream );
     ~Frame( );
 
 public:
@@ -181,6 +181,9 @@ public:
     void applyGauss( const cctag::Parameters& param );
 
     // implemented in frame_gaussian.cu
+    void applyPlaneDownload( const cctag::Parameters& param );
+
+    // implemented in frame_gaussian.cu
     void applyGaussDownload( const cctag::Parameters& param );
 
     // implemented in frame_magmap.cu
@@ -199,7 +202,17 @@ public:
     void applyThinDownload( const cctag::Parameters& param );
 
     // implemented in frame_graddesc.cu
+#ifdef USE_SEPARABLE_COMPILATION
+    bool applyDesc0( const cctag::Parameters& param );
+    bool applyDesc1( const cctag::Parameters& param );
+    bool applyDesc2( const cctag::Parameters& param );
+    bool applyDesc3( const cctag::Parameters& param );
+    bool applyDesc4( const cctag::Parameters& param );
+    bool applyDesc5( const cctag::Parameters& param );
+    bool applyDesc6( const cctag::Parameters& param );
+#else // USE_SEPARABLE_COMPILATION
     bool applyDesc( const cctag::Parameters& param );
+#endif // USE_SEPARABLE_COMPILATION
 
     // implemented in frame_graddesc.cu
     void applyDescDownload( const cctag::Parameters& param );
@@ -280,6 +293,7 @@ public:
     // if we run out of streams (there are 32), we may have to share
     // bool         _stream_inherited;
     cudaStream_t _stream;
+    bool         _private_download_stream;
     cudaStream_t _download_stream;
 
     cudaEvent_t  _stream_done;

@@ -15,6 +15,8 @@
 #undef  SHOW_DETAILED_TIMING
 #endif
 
+#define USE_ONE_DOWNLOAD_STREAM
+
 using namespace std;
 
 namespace popart
@@ -37,11 +39,22 @@ void TagPipe::initialize( const uint32_t pix_w,
 
     uint32_t w = pix_w;
     uint32_t h = pix_h;
+    popart::Frame* f;
+#ifdef USE_ONE_DOWNLOAD_STREAM
+    cudaStream_t download_stream = 0;
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( new popart::Frame( w, h, i ) ); // sync
+        _frame.push_back( f = new popart::Frame( w, h, i, download_stream ) ); // sync
+        if( i==0 ) { download_stream = f->_download_stream; assert( download_stream != 0 ); }
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
+#else
+    for( int i=0; i<num_layers; i++ ) {
+        _frame.push_back( f = new popart::Frame( w, h, i, 0 ) ); // sync
+        w = ( w >> 1 ) + ( w & 1 );
+        h = ( h >> 1 ) + ( h & 1 );
+    }
+#endif
 
     _frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float); // sync
     _frame[0]->allocUploadEvent( ); // sync
@@ -139,21 +152,28 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         // _frame[i]->applyLink(  params );  // async
     }
 #else
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyPlaneDownload( params ); // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyGauss( params ); // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyGaussDownload( params ); // async
 
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyMag(   params );  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyMagDownload( params );
 
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyHyst(  params );  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinning(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyMagDownload( params );
 
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinning(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinDownload( params ); // sync
+
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc0(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc1(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc2(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc3(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc4(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc5(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc6(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDescDownload( params ); // sync
 
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVote(  params );  // async
-
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinDownload( params ); // sync
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDescDownload( params ); // sync
 #endif // not NDEBUG
 
     for( int i=1; i<num_layers; i++ ) {

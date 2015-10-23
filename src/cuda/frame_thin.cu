@@ -130,6 +130,12 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
 }
 
 __global__
+void set_null( DevEdgeList<int2> edgeCoords )
+{
+    edgeCoords.setSize( 0 );
+}
+
+__global__
 void set_edgemax( DevEdgeList<int2> edgeCoords,
                   uint32_t          param_edgeMax )
 {
@@ -185,7 +191,8 @@ void Frame::initThinningTable( )
 __host__
 void Frame::applyThinning( const cctag::Parameters & params )
 {
-#ifdef USE_SEPARABLE_COMPILATION
+// #ifdef USE_SEPARABLE_COMPILATION
+#if 0
     thinning::dp_caller
         <<<1,1,0,_stream>>>
         ( getWidth(),
@@ -207,7 +214,11 @@ void Frame::applyThinning( const cctag::Parameters & params )
         ( _d_hyst_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
     POP_CHK_CALL_IFSYNC;
 
-    POP_CUDA_SET0_ASYNC( _vote._all_edgecoords.dev.getSizePtr(), _stream );
+    thinning::set_null
+        <<<1,1,0,_stream>>>
+        ( _vote._all_edgecoords.dev );
+
+    // POP_CUDA_SET0_ASYNC( _vote._all_edgecoords.dev.getSizePtr(), _stream );
 
     thinning::second_round
         <<<grid,block,0,_stream>>>
@@ -224,6 +235,7 @@ void Frame::applyThinning( const cctag::Parameters & params )
 
 #ifndef NDEBUG
     debugPointIsOnEdge( _d_edges, _vote._all_edgecoords, _stream );
+#error dont call
 #endif // NDEBUG
 
 #ifdef EDGE_LINKING_HOST_SIDE
@@ -231,9 +243,6 @@ void Frame::applyThinning( const cctag::Parameters & params )
      * Make a non-blocking copy the number of items in the list to the host.
      */
     cudaEventRecord( _download_ready_event.edgecoords1, _stream );
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.edgecoords1, 0 );
-    _vote._all_edgecoords.copySizeFromDevice( _download_stream );
-    cudaEventRecord( _download_ready_event.edgecoords2, _download_stream );
 #endif // EDGE_LINKING_HOST_SIDE
 }
 
@@ -244,6 +253,9 @@ void Frame::applyThinDownload( const cctag::Parameters& )
     /* After thinning_and_store, _all_edgecoords is no longer changed
      * we can copy it to the host for edge linking
      */
+    cudaStreamWaitEvent( _download_stream, _download_ready_event.edgecoords1, 0 );
+    _vote._all_edgecoords.copySizeFromDevice( _download_stream );
+    cudaEventRecord( _download_ready_event.edgecoords2, _download_stream );
 
     /* CPU must wait for counter _vote._all_edgecoords.host.size */
     cudaEventSynchronize( _download_ready_event.edgecoords2 );

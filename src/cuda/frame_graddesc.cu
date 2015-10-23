@@ -271,7 +271,7 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
 
 #ifdef USE_SEPARABLE_COMPILATION
 __global__
-void dp_caller( DevEdgeList<int2>        edgeCoords, // input
+void dp_caller_step_1( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     edgeImage, // input
                 cv::cuda::PtrStepSz16s   dx, // input
                 cv::cuda::PtrStepSz16s   dy, // input
@@ -305,9 +305,6 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     /* The list of edge candidates is empty. Do nothing. */
     if( listsize == 0 ) return;
 
-    cudaStream_t childStream;
-    cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
-
     dim3           block;
     dim3           grid;
     block.x = 32;
@@ -318,7 +315,7 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     grid.z  = 1;
 
     gradient_descent
-        <<<grid,block,0,childStream>>>
+        <<<grid,block>>>
         ( edgeCoords,         // input
           edgeImage,
           dx,
@@ -328,13 +325,31 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
           param_edgeMax,
           param_nmax,
           param_thrGradient );
+}
 
-    cudaDeviceSynchronize( );
-
-    listsize = chainedEdgeCoords.getSize();
+__global__
+void dp_caller_step_2( DevEdgeList<int2>        edgeCoords, // input
+                cv::cuda::PtrStepSzb     edgeImage, // input
+                cv::cuda::PtrStepSz16s   dx, // input
+                cv::cuda::PtrStepSz16s   dy, // input
+                DevEdgeList<TriplePoint> chainedEdgeCoords, // output
+                cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
+                DevEdgeList<int>         seedIndices, // output
+                DevEdgeList<int>         seedIndices2, // output
+                cv::cuda::PtrStepSzb     intermediate, // buffer
+                const uint32_t           param_nmax, // input param
+                const int32_t            param_thrGradient, // input param
+                const uint32_t           param_edgeMax, // input param
+                const size_t             param_numCrowns, // input param
+                const float              param_ratioVoting, // input param
+                const int                param_minVotesToSelectCandidate ) // input param
+{
+    int listsize = chainedEdgeCoords.getSize();
 
     if( listsize == 0 ) return;
 
+    dim3           block;
+    dim3           grid;
     block.x = 32;
     block.y = 1;
     block.z = 1;
@@ -345,17 +360,36 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     seedIndices.setSize( 0 );
 
     vote::construct_line
-        <<<grid,block,0,childStream>>>
+        <<<grid,block>>>
         ( seedIndices,        // output
           chainedEdgeCoords,  // input
           param_edgeMax,  // input
           edgepointIndexTable,  // input
           param_numCrowns,          // input
           param_ratioVoting );    // input
+}
 
-    cudaDeviceSynchronize( );
+__global__
+void dp_caller_step_3( DevEdgeList<int2>        edgeCoords, // input
+                cv::cuda::PtrStepSzb     edgeImage, // input
+                cv::cuda::PtrStepSz16s   dx, // input
+                cv::cuda::PtrStepSz16s   dy, // input
+                DevEdgeList<TriplePoint> chainedEdgeCoords, // output
+                cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
+                DevEdgeList<int>         seedIndices, // output
+                DevEdgeList<int>         seedIndices2, // output
+                cv::cuda::PtrStepSzb     intermediate, // buffer
+                const uint32_t           param_nmax, // input param
+                const int32_t            param_thrGradient, // input param
+                const uint32_t           param_edgeMax, // input param
+                const size_t             param_numCrowns, // input param
+                const float              param_ratioVoting, // input param
+                const int                param_minVotesToSelectCandidate ) // input param
+{
+    cudaStream_t childStream;
+    cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
 
-    listsize = seedIndices.getSize();
+    int listsize = seedIndices.getSize();
 
     if( listsize == 0 ) return;
 
@@ -416,10 +450,30 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
                                childStream,  // use stream 0
                                false ); // synchronous for debugging
 
-    cudaDeviceSynchronize( );
+    cudaStreamDestroy( childStream );
+}
 
-    listsize = seedIndices2.getSize();
+__global__
+void dp_caller_step_4( DevEdgeList<int2>        edgeCoords, // input
+                cv::cuda::PtrStepSzb     edgeImage, // input
+                cv::cuda::PtrStepSz16s   dx, // input
+                cv::cuda::PtrStepSz16s   dy, // input
+                DevEdgeList<TriplePoint> chainedEdgeCoords, // output
+                cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
+                DevEdgeList<int>         seedIndices, // output
+                DevEdgeList<int>         seedIndices2, // output
+                cv::cuda::PtrStepSzb     intermediate, // buffer
+                const uint32_t           param_nmax, // input param
+                const int32_t            param_thrGradient, // input param
+                const uint32_t           param_edgeMax, // input param
+                const size_t             param_numCrowns, // input param
+                const float              param_ratioVoting, // input param
+                const int                param_minVotesToSelectCandidate ) // input param
+{
+    int listsize = seedIndices2.getSize();
 
+    dim3 block;
+    dim3 grid;
     block.x = 32;
     block.y = 1;
     block.z = 1;
@@ -428,14 +482,34 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
     grid.z  = 1;
 
     vote::eval_chosen
-        <<<grid,block,0,childStream>>>
+        <<<grid,block>>>
         ( chainedEdgeCoords,
           seedIndices2 );
+}
 
-    cudaDeviceSynchronize( );
+__global__
+void dp_caller_step_5( DevEdgeList<int2>        edgeCoords, // input
+                cv::cuda::PtrStepSzb     edgeImage, // input
+                cv::cuda::PtrStepSz16s   dx, // input
+                cv::cuda::PtrStepSz16s   dy, // input
+                DevEdgeList<TriplePoint> chainedEdgeCoords, // output
+                cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
+                DevEdgeList<int>         seedIndices, // output
+                DevEdgeList<int>         seedIndices2, // output
+                cv::cuda::PtrStepSzb     intermediate, // buffer
+                const uint32_t           param_nmax, // input param
+                const int32_t            param_thrGradient, // input param
+                const uint32_t           param_edgeMax, // input param
+                const size_t             param_numCrowns, // input param
+                const float              param_ratioVoting, // input param
+                const int                param_minVotesToSelectCandidate ) // input param
+{
+    cudaStream_t childStream;
+    cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
 
     // safety: SortKeys is allowed to alter assist_buffer_sz
-    assist_buffer_sz = intermediate.step * intermediate.rows;
+    void*  assist_buffer = (void*)intermediate.data;
+    size_t assist_buffer_sz = intermediate.step * intermediate.rows;
 
     /* Filter all chosen inner points that have fewer
      * voters than required by Parameters.
@@ -459,7 +533,7 @@ void dp_caller( DevEdgeList<int2>        edgeCoords, // input
 } // namespace descent
 
 __host__
-bool Frame::applyDesc( const cctag::Parameters& params )
+bool Frame::applyDesc0( const cctag::Parameters& params )
 {
     if( params._nCrowns > RESERVE_MEM_MAX_CROWNS ) {
         cerr << "Error in " << __FILE__ << ":" << __LINE__ << ":" << endl
@@ -470,9 +544,14 @@ bool Frame::applyDesc( const cctag::Parameters& params )
              << endl;
         exit( -1 );
     }
+    return true;
+}
 
 #ifdef USE_SEPARABLE_COMPILATION
-    descent::dp_caller
+__host__
+bool Frame::applyDesc1( const cctag::Parameters& params )
+{
+    descent::dp_caller_step_1
         <<<1,1,0,_stream>>>
         ( _vote._all_edgecoords.dev,      // input
           _d_edges,                       // input
@@ -489,7 +568,104 @@ bool Frame::applyDesc( const cctag::Parameters& params )
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
+    return true;
+}
 
+__host__
+bool Frame::applyDesc2( const cctag::Parameters& params )
+{
+    descent::dp_caller_step_2
+        <<<1,1,0,_stream>>>
+        ( _vote._all_edgecoords.dev,      // input
+          _d_edges,                       // input
+          _d_dx,                          // input
+          _d_dy,                          // input
+          _vote._chained_edgecoords.dev,  // output
+          _vote._d_edgepoint_index_table, // output
+          _vote._seed_indices.dev,        // output
+          _vote._seed_indices_2.dev,      // buffer
+          cv::cuda::PtrStepSzb(_d_intermediate), // buffer
+          params._distSearch,             // input param
+          params._thrGradientMagInVote,   // input param
+          params._maxEdges,               // input param
+          params._nCrowns,                // input param
+          params._ratioVoting,            // input param
+          params._minVotesToSelectCandidate ); // input param
+    return true;
+}
+
+__host__
+bool Frame::applyDesc3( const cctag::Parameters& params )
+{
+    descent::dp_caller_step_3
+        <<<1,1,0,_stream>>>
+        ( _vote._all_edgecoords.dev,      // input
+          _d_edges,                       // input
+          _d_dx,                          // input
+          _d_dy,                          // input
+          _vote._chained_edgecoords.dev,  // output
+          _vote._d_edgepoint_index_table, // output
+          _vote._seed_indices.dev,        // output
+          _vote._seed_indices_2.dev,      // buffer
+          cv::cuda::PtrStepSzb(_d_intermediate), // buffer
+          params._distSearch,             // input param
+          params._thrGradientMagInVote,   // input param
+          params._maxEdges,               // input param
+          params._nCrowns,                // input param
+          params._ratioVoting,            // input param
+          params._minVotesToSelectCandidate ); // input param
+    return true;
+}
+
+__host__
+bool Frame::applyDesc4( const cctag::Parameters& params )
+{
+    descent::dp_caller_step_4
+        <<<1,1,0,_stream>>>
+        ( _vote._all_edgecoords.dev,      // input
+          _d_edges,                       // input
+          _d_dx,                          // input
+          _d_dy,                          // input
+          _vote._chained_edgecoords.dev,  // output
+          _vote._d_edgepoint_index_table, // output
+          _vote._seed_indices.dev,        // output
+          _vote._seed_indices_2.dev,      // buffer
+          cv::cuda::PtrStepSzb(_d_intermediate), // buffer
+          params._distSearch,             // input param
+          params._thrGradientMagInVote,   // input param
+          params._maxEdges,               // input param
+          params._nCrowns,                // input param
+          params._ratioVoting,            // input param
+          params._minVotesToSelectCandidate ); // input param
+    return true;
+}
+
+__host__
+bool Frame::applyDesc5( const cctag::Parameters& params )
+{
+    descent::dp_caller_step_5
+        <<<1,1,0,_stream>>>
+        ( _vote._all_edgecoords.dev,      // input
+          _d_edges,                       // input
+          _d_dx,                          // input
+          _d_dy,                          // input
+          _vote._chained_edgecoords.dev,  // output
+          _vote._d_edgepoint_index_table, // output
+          _vote._seed_indices.dev,        // output
+          _vote._seed_indices_2.dev,      // buffer
+          cv::cuda::PtrStepSzb(_d_intermediate), // buffer
+          params._distSearch,             // input param
+          params._thrGradientMagInVote,   // input param
+          params._maxEdges,               // input param
+          params._nCrowns,                // input param
+          params._ratioVoting,            // input param
+          params._minVotesToSelectCandidate ); // input param
+    return true;
+}
+
+__host__
+bool Frame::applyDesc6( const cctag::Parameters& params )
+{
     cudaEventRecord( _download_ready_event.descent1, _stream );
     cudaStreamWaitEvent( _download_stream, _download_ready_event.descent1, 0 );
     _vote._seed_indices.copySizeFromDevice( _download_stream );
@@ -500,7 +676,11 @@ bool Frame::applyDesc( const cctag::Parameters& params )
 
     // we will check eventually whether the call succeeds
     return true;
+}
 #else // USE_SEPARABLE_COMPILATION
+__host__
+bool Frame::applyDesc( const cctag::Parameters& params )
+{
     int listsize;
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
@@ -549,8 +729,8 @@ bool Frame::applyDesc( const cctag::Parameters& params )
 
     // cout << "  Leave " << __FUNCTION__ << endl;
     return true;
-#endif // USE_SEPARABLE_COMPILATION
 }
+#endif // USE_SEPARABLE_COMPILATION
 
 
 __host__

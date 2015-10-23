@@ -121,7 +121,10 @@ protected:
     void alloc( int sz )
     {
         if( ptr == 0 ) {
-            ptr = new T[sz];
+            void* a;
+            POP_CUDA_MALLOC_HOST( &a, sz * sizeof(T) );
+            ptr = (T*)a;
+            // ptr = new T[sz];
         }
     }
 
@@ -134,7 +137,8 @@ protected:
     __host__
     void release( )
     {
-        delete [] ptr;
+        cudaFreeHost( ptr );
+        // delete [] ptr;
         ptr = 0;
     }
 };
@@ -217,7 +221,8 @@ public:
     __host__
     void copySizeFromDevice( cudaStream_t stream )
     {
-        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &host.size, dev.size, sizeof(int), stream );
+        // POP_CUDA_MEMCPY_TO_HOST_ASYNC( &host.size, dev.size, sizeof(int), stream );
+        cudaMemcpyAsync( &host.size, dev.size, sizeof(int), cudaMemcpyDeviceToHost, stream );
     }
 
 #ifndef NDEBUG

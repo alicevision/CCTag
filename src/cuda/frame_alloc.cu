@@ -115,6 +115,8 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_edges.rows = h;
 
     _h_ring_output.data = new cv::cuda::PtrStepInt2_base_t[EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH];
+    // POP_CUDA_MALLOC_HOST( &ptr, EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t) );
+    // _h_ring_output.data = (cv::cuda::PtrStepInt2_base_t*)ptr;
     _h_ring_output.step = EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t);
     _h_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _h_ring_output.rows = EDGE_LINKING_MAX_ARCS;
@@ -213,6 +215,7 @@ void Frame::releaseRequiredMem( )
     cudaFreeHost( _h_dy.data );
     cudaFreeHost( _h_mag.data );
     cudaFreeHost( _h_edges.data );
+    // cudaFreeHost( _h_ring_output.data );
     delete [] _h_ring_output.data;
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
