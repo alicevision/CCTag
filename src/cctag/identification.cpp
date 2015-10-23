@@ -669,6 +669,7 @@ void getSignals(
  * @param[in] center imaged center, projection of the origin
  * @param[out] mHomography computed homography
  */
+/* depreciated */
 void computeHomographyFromEllipseAndImagedCenter(
         const cctag::numerical::BoundedMatrix3x3d & mEllipse,
         const cctag::Point2dN<double> & center,
@@ -769,6 +770,114 @@ void computeHomographyFromEllipseAndImagedCenter(
   // Normalize
   mHomography = mHomography/mHomography(2,2);
 }
+
+
+
+/**
+ * @brief Compute an homography (up to a 2D rotation) based on its imaged origin [0,0,1]'
+ * and its imaged unit circle (represented as an ellipse, assuming only quasi-affine transformation.
+ *
+ * @param[in] mEllipse ellipse matrix, projection of the unit circle
+ * @param[in] center imaged center, projection of the origin
+ * @param[out] mHomography computed homography
+ */
+
+//void computeHomographyFromEllipseAndImagedCenter(
+//        const cctag::numerical::geometry::Ellipse & ellipse,
+//        const cctag::Point2dN<double> & center,
+//        cctag::numerical::BoundedMatrix3x3d & mHomography)
+// {
+//    using namespace cctag::numerical;
+//    using namespace boost::numeric::ublas;
+//    
+//    cctag::numerical::BoundedMatrix3x3d mTranslation = ublas::identity_matrix<double>( 3 );
+//    mTranslation( 0, 2 ) = ellipse.center().x();
+//    mTranslation( 1, 2 ) = ellipse.center().y();
+//    
+//    
+//    
+//      // Back projection of the image center
+//  //Point2dN<double> backProjCenter = prec_prod< BoundedVector3d >( mInvHomography, center );
+//
+//
+//    
+//  cctag::numerical::BoundedMatrix3x3d mA;
+//  invert( mEllipse, mA );
+//  cctag::numerical::BoundedMatrix3x3d mO = outer_prod( center, center );
+//  diagonal_matrix<double> vpg;
+//
+//  cctag::numerical::BoundedMatrix3x3d mVG;
+//  // Compute eig(inv(A),center*center')
+//  eig( mA, mO, mVG, vpg ); // Warning : compute GENERALIZED eigvalues, take 4 parameters !
+//                           // eig(a,b,c) compute eigenvalues of a, call a different 
+//                           // routine in lapack.
+//
+//  cctag::numerical::Matrixd u, v;
+//  diagonal_matrix<double> s( 3, 3 );
+//  double vmin = std::abs( vpg( 0, 0 ) );
+//  std::size_t imin = 0;
+//
+//  // Find minimum of the generalized eigen values
+//  for( std::size_t i = 1; i < vpg.size1(); ++i )
+//  {
+//    double v = std::abs( vpg( i, i ) );
+//    if ( v < vmin )
+//    {
+//      vmin = v;
+//      imin = i;
+//    }
+//  }
+//
+//  svd( mA - vpg( imin, imin ) * mO, u, v, s );
+//
+//  for( std::size_t i = 0; i < s.size1(); ++i )
+//  {
+//    BOOST_ASSERT( s( i, i ) >= 0.0 );
+//    s( i, i ) = std::sqrt( s( i, i ) );
+//  }
+//
+//  cctag::numerical::BoundedMatrix3x3d mU = prec_prod( u, s );
+//
+//  column( mHomography, 0 ) = column( mU, 0 );
+//  column( mHomography, 1 ) = column( mU, 1 );
+//  column( mHomography, 2 ) = cross( column( mU, 0 ), column( mU, 1 ) );
+//  
+//  // The circular points have been computed.
+//  // The following ensures that the back projection is at the origin (through a translation)
+//  // and the the back projected outer ellipse is of unit radius.
+//  
+//
+//  // Closed-form solution
+//
+//  // H : plan->image
+//H =
+//[ [     Q33,        Q22*xc*yc, -Q33*xc];
+//  [       0,      - Q11*xc^2 - Q33, -Q33*yc];
+//  [ -Q11*xc,        Q22*yc,    -Q33] ] ...
+//* diag([ ((Q22*Q33/Q11*(Q11*xc^2 + Q22*yc^2 + Q33)))^(1/2);Q33;(-Q22*(Q11*xc^2 + Q33))^(1/2)]);
+//
+//  // 
+//  cctag::numerical::BoundedMatrix3x3d & Q = mCanonicEllipse;
+//  
+//  mHomography(0,0) = Q(2,2);
+//  mHomography(1,0) = 0.0;
+//  mHomography(2,0) = -Q(0,0)*xc;
+//  
+//  mHomography(0,1) = Q(1,1)*xc*yc;
+//  mHomography(1,1) = -Q(0,0)*xc^2-Q(2,2);
+//  mHomography(2,1) = Q(1,1)*yc;
+//  
+//  mHomography(0,1) = -Q(2,2)*xc;
+//  mHomography(1,1) = -Q(2,2)*yc;
+//  mHomography(2,1) = -Q(2,2);
+//  
+//  // 
+//  cctag::numerical::BoundedMatrix3x3d mColRescale = ublas::identity_matrix<double>( 3 );
+//  mColRescale.clear();
+//  mColRescale(0,0) = sqrt((Q(1,1)*Q(2,2)/Q(0,0)*(Q(0,0)*xc^2 + Q(1,1)*yc^2 + Q(2,2))));
+//  mColRescale(1,1) = Q(2,2);
+//  mColRescale(2,2) = sqrt(-Q(1,1)*(Q(0,0)*xc^2 + Q(2,2)));
+//}
 
 /**
  * @brief Compute the optimal homography/imaged center based on the 
