@@ -39,8 +39,6 @@ void cvRecodedCanny(
   int debug_info_level,
   const cctag::Parameters* params )
 {
-  DO_TALK( std::cerr << "Enter " << __FUNCTION__ << std::endl; )
-
   CvMat srcCvMat = imgGraySrc;
   CvMat *src = &srcCvMat;
   
@@ -666,5 +664,4 @@ void cvRecodedCanny(
   delete hyst_img_file;
 #endif // DEBUG_MAGMAP_BY_GRIFF
   DO_TALK( CCTAG_COUT_DEBUG( "Canny 4 : " << t.elapsed() ); )
-  DO_TALK( std::cerr << "Leave " << __FUNCTION__ << std::endl; )
 }

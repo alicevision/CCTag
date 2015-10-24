@@ -947,8 +947,8 @@ bool refineConicFamilyGlob(
 
   CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
 
-  CCTAG_COUT_VAR(optimalPoint);
-  CCTAG_COUT_VAR(cctag.centerImg());
+  CCTAG_COUT_VAR_OPTIM(optimalPoint);
+  CCTAG_COUT_VAR_OPTIM(cctag.centerImg());
   
   // B. Get the signal associated to the optimal homography/imaged center //////
   {
@@ -1043,11 +1043,11 @@ bool imageCenterOptimizationGlob(
         }
       }else
       {
-        CCTAG_COUT_VAR(readable);
+        CCTAG_COUT_VAR_OPTIM(readable);
       }
     }
     center = optimalPoint;
-    CCTAG_COUT_VAR(center);
+    CCTAG_COUT_VAR_OPTIM(center);
     mHomography = optimalHomography;
     
     return hasASolution;
