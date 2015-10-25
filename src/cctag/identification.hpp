@@ -260,17 +260,17 @@ void getSignals(
  * @param[out] cctag cctag to optimize in order to find its imaged center in conjunction 
  * with the image->cctag homography
  * @param[out] vCuts cuts holding the rectified 1D signals at the end of the optimization
- * @param[in] nSamples number of samples on image cuts
  * @param[in] src source image
  * @param[in] ellipse outer ellipse (todo: is that already in the cctag object?)
+ * @param[in] params parameters of the cctag algorithm
  * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
         CCTag & cctag,
-        std::vector< cctag::ImageCut > & vCuts,
-        const std::size_t nSamples,
+        std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
-        const cctag::numerical::geometry::Ellipse & ellipse);
+        const cctag::numerical::geometry::Ellipse & outerEllipse,
+        const cctag::Parameters params);
 
 /**
  * @brief Convex optimization of the imaged center within a point's neighbourhood.

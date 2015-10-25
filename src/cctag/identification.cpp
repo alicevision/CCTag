@@ -886,17 +886,17 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @param[out] cctag cctag to optimize in order to find its imaged center in conjunction 
  * with the image->cctag homography
  * @param[out] vCuts cuts holding the rectified 1D signals at the end of the optimization
- * @param[in] nSamples number of samples on image cuts
  * @param[in] src source image
  * @param[in] ellipse outer ellipse (todo: is that already in the cctag object?)
+ * @param[in] params parameters of the cctag algorithm
  * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
         CCTag & cctag,
         std::vector< cctag::ImageCut > & vCuts, 
-        const std::size_t nSamples,
         const cv::Mat & src,
-        const cctag::numerical::geometry::Ellipse & outerEllipse)
+        const cctag::numerical::geometry::Ellipse & outerEllipse,
+        const cctag::Parameters params)
 {
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
@@ -921,10 +921,10 @@ bool refineConicFamilyGlob(
   // A. Perform the optimization ///////////////////////////////////////////////
 
   // The neighbourhood size is 0.20*max(ellipse.a(),ellipse.b()), i.e. the max ellipse semi-axis
-  double neighbourSize = 0.20;
+  double neighbourSize = params._imagedCenterNeighbourSize;
   double residual;
 
-  std::size_t gridNSample = 5; // todo: check must be odd 
+  std::size_t gridNSample = params._imagedCenterNGridSample; // todo: check must be odd 
 
   // The neighbourhood size is iteratively decreased, assuming the convexity of the 
   // cost function within it.
@@ -1182,7 +1182,7 @@ int identify(
   // Cheap (CPU only)
   
   // Take 100 edge points around outer ellipse. //todo: 1. must be in params 2. order outer points by angle
-  const std::size_t nOuterPoints = std::min( std::size_t(400), outerEllipsePoints.size() );
+  const std::size_t nOuterPoints = std::min( std::size_t(params._nSamplesOuterEllipse), outerEllipsePoints.size() );
   std::size_t step = std::size_t( outerEllipsePoints.size() / ( nOuterPoints - 1 ) );
   std::vector< cctag::DirectedPoint2d<double> > outerPoints;
   
@@ -1318,7 +1318,7 @@ int identify(
     
   // C. Imaged center optimization /////////////////////////////////////////////
   // Expensive (CPU & GPU)
-  bool hasConverged = refineConicFamilyGlob( cctag, vSelectedCuts, params._sampleCutLength, src, ellipse);
+  bool hasConverged = refineConicFamilyGlob( cctag, vSelectedCuts, src, ellipse, params);
   if( !hasConverged )
   {
     DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
