@@ -1186,6 +1186,8 @@ int identify(
   std::size_t step = std::size_t( outerEllipsePoints.size() / ( nOuterPoints - 1 ) );
   std::vector< cctag::DirectedPoint2d<double> > outerPoints;
   
+  assert(nOuterPoints >= 5);
+  
   outerPoints.reserve( nOuterPoints );
   for( std::size_t i = 0; i < outerEllipsePoints.size(); i += step )
   {
