@@ -124,7 +124,7 @@ void CCTagVisualDebug::drawPoint(const cctag::Point2dN<double> & point, const cc
     _backImage.at<cv::Vec3b>(point.y(),point.x()) = cvColor;
     //cv::rectangle(_backImage, cvPoint(point.x()-1.0,point.y()-1.0), cvPoint(point.x()+1.0,point.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
   }
-#endif
+#endif // CCTAG_SERIALIZE
 }
 
 void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<double> & point, const cctag::Color & color) {
@@ -143,7 +143,7 @@ void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<double> & point, c
     
     //cv::rectangle(_backImage, cvPoint(point.x()-1.0,point.y()-1.0), cvPoint(point.x()+1.0,point.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
   }
-#endif
+#endif // CCTAG_SERIALIZE
 }
 
 void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2dN<double> > & points, const cctag::Color & color)
