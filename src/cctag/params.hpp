@@ -41,10 +41,13 @@ static const double kDefaultEllipseGrowingEllipticHullWidth =  2.3;
 static const std::size_t kDefaultWindowSizeOnInnerEllipticSegment =  20;
 static const std::size_t kDefaultNumberOfMultiresLayers = 4;
 static const std::size_t kDefaultNumberOfProcessedMultiresLayers = 4;
+static const std::size_t kDefaultNSamplesOuterEllipse = 400;
 static const std::size_t kDefaultNumCutsInIdentStep = 30;//100;//15;
 static const std::size_t kDefaultNumSamplesOuterEdgePointsRefinement = 20;
 static const std::size_t kDefaultCutsSelectionTrials = 500;//10000;
 static const std::size_t kDefaultSampleCutLength = 100;
+static const std::size_t kDefaultImagedCenterNGridSample = 5;
+static const double kDefaultImagedCenterNeighbourSize = 0.20;
 static const double kDefaultMinIdentProba = 1e-6;
 static const bool kDefaultUseLMDif = true;
 static const bool kDefaultSearchForAnotherSegment = true;
@@ -71,10 +74,13 @@ static const std::string kParamEllipseGrowingEllipticHullWidth( "kParamEllipseGr
 static const std::string kParamWindowSizeOnInnerEllipticSegment( "kParamWindowSizeOnInnerEllipticSegment" );
 static const std::string kParamNumberOfMultiresLayers( "kParamNumberOfMultiresLayers" );
 static const std::string kParamNumberOfProcessedMultiresLayers( "kParamNumberOfProcessedMultiresLayers" );
+static const std::string kParamNSamplesOuterEllipse( "kParamNSamplesOuterEllipse" );
 static const std::string kParamNumCutsInIdentStep( "kParamNumCutsInIdentStep" );
 static const std::string kParamNumSamplesOuterEdgePointsRefinement( "kParamNumSamplesOuterEdgePointsRefinement" );
 static const std::string kParamCutsSelectionTrials( "kParamCutsSelectionTrials" );
 static const std::string kParamSampleCutLength( "kParamSampleCutLength" );
+static const std::string kParamImagedCenterNGridSample( "kParamImagedCenterNGridSample" );
+static const std::string kParamImagedCenterNeighbourSize( "kParamImagedCenterNeighbourSize" );
 static const std::string kParamMinIdentProba( "kParamMinIdentProba" );
 static const std::string kParamUseLMDif( "kParamUseLMDif" );
 static const std::string kParamSearchForAnotherSegment( "kParamSearchForAnotherSegment" );
@@ -116,10 +122,13 @@ struct Parameters
   std::size_t _windowSizeOnInnerEllipticSegment; // window size on the inner elliptic segment
   std::size_t _numberOfMultiresLayers; // number of multi-resolution layers
   std::size_t _numberOfProcessedMultiresLayers; // number of processed layers in multi-resolution
+  std::size_t _nSamplesOuterEllipse; // Number of points considered in the preliminary sampling in identification
   std::size_t _numCutsInIdentStep; // number of cuts in the identification step
   std::size_t _numSamplesOuterEdgePointsRefinement; // number of sample for the outer edge points refinement in identification
   std::size_t _cutsSelectionTrials; // number of trials in cuts selection
   std::size_t _sampleCutLength; // sample cut length
+  std::size_t  _imagedCenterNGridSample; // number of point sample along the square grid side (e.g. 5 for a grid of 5x5=25 points)
+  double _imagedCenterNeighbourSize; // grid width relatively to the length of longest semi-axis of the outer ellipse
   double _minIdentProba; // minimal probability of delivered by the identification algorithm
   // to consider a candidate as a CCTag
   bool _useLMDif;
@@ -130,9 +139,45 @@ struct Parameters
   bool _doIdentification; // perform the identification step
   uint32_t _maxEdges; // max number of edge point, determines memory allocation
   std::string _debugDir; // prefix for debug output !!!! ONLY ON COMMAND LINE
+  bool _useCuda;
 
-  void serialize(boost::archive::xml_iarchive & ar, const unsigned int version);
-  void serialize(boost::archive::xml_oarchive & ar, const unsigned int version);
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+    ar & BOOST_SERIALIZATION_NVP( _cannyThrLow );
+    ar & BOOST_SERIALIZATION_NVP( _cannyThrHigh );
+    ar & BOOST_SERIALIZATION_NVP( _distSearch );
+    ar & BOOST_SERIALIZATION_NVP( _thrGradientMagInVote );
+    ar & BOOST_SERIALIZATION_NVP( _angleVoting );
+    ar & BOOST_SERIALIZATION_NVP( _ratioVoting );
+    ar & BOOST_SERIALIZATION_NVP( _averageVoteMin);
+    ar & BOOST_SERIALIZATION_NVP( _thrMedianDistanceEllipse);
+    ar & BOOST_SERIALIZATION_NVP( _maximumNbSeeds);
+    ar & BOOST_SERIALIZATION_NVP( _maximumNbCandidatesLoopTwo);
+    ar & BOOST_SERIALIZATION_NVP( _nCrowns );
+    ar & BOOST_SERIALIZATION_NVP( _minPointsSegmentCandidate );
+    ar & BOOST_SERIALIZATION_NVP( _minVotesToSelectCandidate );
+    ar & BOOST_SERIALIZATION_NVP( _threshRobustEstimationOfOuterEllipse );
+    ar & BOOST_SERIALIZATION_NVP( _ellipseGrowingEllipticHullWidth );
+    ar & BOOST_SERIALIZATION_NVP( _windowSizeOnInnerEllipticSegment );
+    ar & BOOST_SERIALIZATION_NVP( _numberOfMultiresLayers );
+    ar & BOOST_SERIALIZATION_NVP( _numberOfProcessedMultiresLayers );
+    ar & BOOST_SERIALIZATION_NVP( _nSamplesOuterEllipse );
+    ar & BOOST_SERIALIZATION_NVP( _numCutsInIdentStep );
+    ar & BOOST_SERIALIZATION_NVP( _numSamplesOuterEdgePointsRefinement );
+    ar & BOOST_SERIALIZATION_NVP( _cutsSelectionTrials );
+    ar & BOOST_SERIALIZATION_NVP( _sampleCutLength );
+    ar & BOOST_SERIALIZATION_NVP( _imagedCenterNGridSample );
+    ar & BOOST_SERIALIZATION_NVP( _imagedCenterNeighbourSize );
+    ar & BOOST_SERIALIZATION_NVP( _minIdentProba );
+    ar & BOOST_SERIALIZATION_NVP( _useLMDif );
+    ar & BOOST_SERIALIZATION_NVP( _searchForAnotherSegment );
+    ar & BOOST_SERIALIZATION_NVP( _writeOutput );
+    ar & BOOST_SERIALIZATION_NVP( _doIdentification );
+    ar & BOOST_SERIALIZATION_NVP( _maxEdges );
+    ar & BOOST_SERIALIZATION_NVP( _useCuda );
+    _nCircles = 2*_nCrowns;
+  }
 
   void setDebugDir( const std::string& debugDir );
 

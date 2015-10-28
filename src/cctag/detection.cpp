@@ -397,7 +397,9 @@ void cctagDetectionFromEdges(
     return;
   }
 
-  const std::size_t nSeedsToProcess = std::min(seeds.size(), params._maximumNbSeeds);
+  const std::size_t nMaximumNbSeeds = std::max(src.rows/2, (int) params._maximumNbSeeds);
+  
+  const std::size_t nSeedsToProcess = std::min(seeds.size(), nMaximumNbSeeds);
 
   std::list<Candidate> vCandidateLoopOne;
 

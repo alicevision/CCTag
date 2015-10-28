@@ -176,7 +176,7 @@ int main(int argc, char** argv)
   std::ofstream outputFile;
   outputFile.open( outputFileName );
   
-  if ( (ext == ".png") || (ext == ".jpg") ) {
+  if ( (ext == ".png") || (ext == ".jpg") || (ext == ".PNG") || (ext == ".JPG")) {
     POP_INFO("looking at image " << myPath.string());
     
     // Gray scale convertion

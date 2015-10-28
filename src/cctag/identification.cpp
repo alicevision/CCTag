@@ -669,6 +669,7 @@ void getSignals(
  * @param[in] center imaged center, projection of the origin
  * @param[out] mHomography computed homography
  */
+/* depreciated */
 void computeHomographyFromEllipseAndImagedCenter(
         const cctag::numerical::BoundedMatrix3x3d & mEllipse,
         const cctag::Point2dN<double> & center,
@@ -770,6 +771,114 @@ void computeHomographyFromEllipseAndImagedCenter(
   mHomography = mHomography/mHomography(2,2);
 }
 
+
+
+/**
+ * @brief Compute an homography (up to a 2D rotation) based on its imaged origin [0,0,1]'
+ * and its imaged unit circle (represented as an ellipse, assuming only quasi-affine transformation.
+ *
+ * @param[in] mEllipse ellipse matrix, projection of the unit circle
+ * @param[in] center imaged center, projection of the origin
+ * @param[out] mHomography computed homography
+ */
+
+//void computeHomographyFromEllipseAndImagedCenter(
+//        const cctag::numerical::geometry::Ellipse & ellipse,
+//        const cctag::Point2dN<double> & center,
+//        cctag::numerical::BoundedMatrix3x3d & mHomography)
+// {
+//    using namespace cctag::numerical;
+//    using namespace boost::numeric::ublas;
+//    
+//    cctag::numerical::BoundedMatrix3x3d mTranslation = ublas::identity_matrix<double>( 3 );
+//    mTranslation( 0, 2 ) = ellipse.center().x();
+//    mTranslation( 1, 2 ) = ellipse.center().y();
+//    
+//    
+//    
+//      // Back projection of the image center
+//  //Point2dN<double> backProjCenter = prec_prod< BoundedVector3d >( mInvHomography, center );
+//
+//
+//    
+//  cctag::numerical::BoundedMatrix3x3d mA;
+//  invert( mEllipse, mA );
+//  cctag::numerical::BoundedMatrix3x3d mO = outer_prod( center, center );
+//  diagonal_matrix<double> vpg;
+//
+//  cctag::numerical::BoundedMatrix3x3d mVG;
+//  // Compute eig(inv(A),center*center')
+//  eig( mA, mO, mVG, vpg ); // Warning : compute GENERALIZED eigvalues, take 4 parameters !
+//                           // eig(a,b,c) compute eigenvalues of a, call a different 
+//                           // routine in lapack.
+//
+//  cctag::numerical::Matrixd u, v;
+//  diagonal_matrix<double> s( 3, 3 );
+//  double vmin = std::abs( vpg( 0, 0 ) );
+//  std::size_t imin = 0;
+//
+//  // Find minimum of the generalized eigen values
+//  for( std::size_t i = 1; i < vpg.size1(); ++i )
+//  {
+//    double v = std::abs( vpg( i, i ) );
+//    if ( v < vmin )
+//    {
+//      vmin = v;
+//      imin = i;
+//    }
+//  }
+//
+//  svd( mA - vpg( imin, imin ) * mO, u, v, s );
+//
+//  for( std::size_t i = 0; i < s.size1(); ++i )
+//  {
+//    BOOST_ASSERT( s( i, i ) >= 0.0 );
+//    s( i, i ) = std::sqrt( s( i, i ) );
+//  }
+//
+//  cctag::numerical::BoundedMatrix3x3d mU = prec_prod( u, s );
+//
+//  column( mHomography, 0 ) = column( mU, 0 );
+//  column( mHomography, 1 ) = column( mU, 1 );
+//  column( mHomography, 2 ) = cross( column( mU, 0 ), column( mU, 1 ) );
+//  
+//  // The circular points have been computed.
+//  // The following ensures that the back projection is at the origin (through a translation)
+//  // and the the back projected outer ellipse is of unit radius.
+//  
+//
+//  // Closed-form solution
+//
+//  // H : plan->image
+//H =
+//[ [     Q33,        Q22*xc*yc, -Q33*xc];
+//  [       0,      - Q11*xc^2 - Q33, -Q33*yc];
+//  [ -Q11*xc,        Q22*yc,    -Q33] ] ...
+//* diag([ ((Q22*Q33/Q11*(Q11*xc^2 + Q22*yc^2 + Q33)))^(1/2);Q33;(-Q22*(Q11*xc^2 + Q33))^(1/2)]);
+//
+//  // 
+//  cctag::numerical::BoundedMatrix3x3d & Q = mCanonicEllipse;
+//  
+//  mHomography(0,0) = Q(2,2);
+//  mHomography(1,0) = 0.0;
+//  mHomography(2,0) = -Q(0,0)*xc;
+//  
+//  mHomography(0,1) = Q(1,1)*xc*yc;
+//  mHomography(1,1) = -Q(0,0)*xc^2-Q(2,2);
+//  mHomography(2,1) = Q(1,1)*yc;
+//  
+//  mHomography(0,1) = -Q(2,2)*xc;
+//  mHomography(1,1) = -Q(2,2)*yc;
+//  mHomography(2,1) = -Q(2,2);
+//  
+//  // 
+//  cctag::numerical::BoundedMatrix3x3d mColRescale = ublas::identity_matrix<double>( 3 );
+//  mColRescale.clear();
+//  mColRescale(0,0) = sqrt((Q(1,1)*Q(2,2)/Q(0,0)*(Q(0,0)*xc^2 + Q(1,1)*yc^2 + Q(2,2))));
+//  mColRescale(1,1) = Q(2,2);
+//  mColRescale(2,2) = sqrt(-Q(1,1)*(Q(0,0)*xc^2 + Q(2,2)));
+//}
+
 /**
  * @brief Compute the optimal homography/imaged center based on the 
  * signal in the image and  the outer ellipse, supposed to be image the unit circle.
@@ -777,17 +886,17 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @param[out] cctag cctag to optimize in order to find its imaged center in conjunction 
  * with the image->cctag homography
  * @param[out] vCuts cuts holding the rectified 1D signals at the end of the optimization
- * @param[in] nSamples number of samples on image cuts
  * @param[in] src source image
  * @param[in] ellipse outer ellipse (todo: is that already in the cctag object?)
+ * @param[in] params parameters of the cctag algorithm
  * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
         CCTag & cctag,
         std::vector< cctag::ImageCut > & vCuts, 
-        const std::size_t nSamples,
         const cv::Mat & src,
-        const cctag::numerical::geometry::Ellipse & outerEllipse)
+        const cctag::numerical::geometry::Ellipse & outerEllipse,
+        const cctag::Parameters params)
 {
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
@@ -812,10 +921,10 @@ bool refineConicFamilyGlob(
   // A. Perform the optimization ///////////////////////////////////////////////
 
   // The neighbourhood size is 0.20*max(ellipse.a(),ellipse.b()), i.e. the max ellipse semi-axis
-  double neighbourSize = 0.20;
+  double neighbourSize = params._imagedCenterNeighbourSize;
   double residual;
 
-  std::size_t gridNSample = 5; // todo: check must be odd 
+  std::size_t gridNSample = params._imagedCenterNGridSample; // todo: check must be odd 
 
   // The neighbourhood size is iteratively decreased, assuming the convexity of the 
   // cost function within it.
@@ -838,8 +947,8 @@ bool refineConicFamilyGlob(
 
   CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
 
-  CCTAG_COUT_VAR(optimalPoint);
-  CCTAG_COUT_VAR(cctag.centerImg());
+  CCTAG_COUT_VAR_OPTIM(optimalPoint);
+  CCTAG_COUT_VAR_OPTIM(cctag.centerImg());
   
   // B. Get the signal associated to the optimal homography/imaged center //////
   {
@@ -898,7 +1007,15 @@ bool imageCenterOptimizationGlob(
       
       // B. Compute the homography so that the back projection of 'point' is the
       // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
-      computeHomographyFromEllipseAndImagedCenter( outerEllipse.matrix(), point, mTempHomography);
+      
+      try
+      {
+        computeHomographyFromEllipseAndImagedCenter( outerEllipse.matrix(), point, mTempHomography);
+      }catch(...)
+      {
+        continue; 
+      }
+
       
       bool readable = true;
       // C. Compute the 1D rectified signals of vCuts image cut based on the 
@@ -926,11 +1043,11 @@ bool imageCenterOptimizationGlob(
         }
       }else
       {
-        CCTAG_COUT_VAR(readable);
+        CCTAG_COUT_VAR_OPTIM(readable);
       }
     }
     center = optimalPoint;
-    CCTAG_COUT_VAR(center);
+    CCTAG_COUT_VAR_OPTIM(center);
     mHomography = optimalHomography;
     
     return hasASolution;
@@ -1065,9 +1182,11 @@ int identify(
   // Cheap (CPU only)
   
   // Take 100 edge points around outer ellipse. //todo: 1. must be in params 2. order outer points by angle
-  const std::size_t nOuterPoints = std::min( std::size_t(400), outerEllipsePoints.size() );
+  const std::size_t nOuterPoints = std::min( std::size_t(params._nSamplesOuterEllipse), outerEllipsePoints.size() );
   std::size_t step = std::size_t( outerEllipsePoints.size() / ( nOuterPoints - 1 ) );
   std::vector< cctag::DirectedPoint2d<double> > outerPoints;
+  
+  assert(nOuterPoints >= 5);
   
   outerPoints.reserve( nOuterPoints );
   for( std::size_t i = 0; i < outerEllipsePoints.size(); i += step )
@@ -1201,7 +1320,7 @@ int identify(
     
   // C. Imaged center optimization /////////////////////////////////////////////
   // Expensive (CPU & GPU)
-  bool hasConverged = refineConicFamilyGlob( cctag, vSelectedCuts, params._sampleCutLength, src, ellipse);
+  bool hasConverged = refineConicFamilyGlob( cctag, vSelectedCuts, src, ellipse, params);
   if( !hasConverged )
   {
     DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
