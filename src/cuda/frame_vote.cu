@@ -411,6 +411,7 @@ __host__
 void Frame::applyVote( const cctag::Parameters& params )
 {
     bool success;
+    cudaError_t err;
 
     success = _vote.constructLine( params,
                                    _stream );
@@ -444,14 +445,15 @@ void Frame::applyVote( const cctag::Parameters& params )
          * The final result is stored in d_keys.d_buffers[d_keys.selector].
          * The other buffer is invalid.
          */
-        cub::DeviceRadixSort::SortKeys( assist_buffer,
-                                        assist_buffer_sz,
-                                        d_keys,
-                                        _vote._seed_indices.host.size,
-                                        0,             // begin_bit
-                                        sizeof(int)*8, // end_bit
-                                        _stream );
+        err = cub::DeviceRadixSort::SortKeys( assist_buffer,
+                                              assist_buffer_sz,
+                                              d_keys,
+                                              _vote._seed_indices.host.size,
+                                              0,             // begin_bit
+                                              sizeof(int)*8, // end_bit
+                                              _stream );
         POP_CHK_CALL_IFSYNC;
+        POP_CUDA_FATAL_TEST( err, "CUB SortKeys failed" );
 
         if( d_keys.d_buffers[d_keys.selector] == _vote._seed_indices_2.dev.ptr ) {
             std::swap( _vote._seed_indices.dev.ptr,   _vote._seed_indices_2.dev.ptr );
@@ -464,14 +466,15 @@ void Frame::applyVote( const cctag::Parameters& params )
         /* Unique ensure that we check every "chosen" point only once.
          * Output is in _vote._seed_indices_2.dev
          */
-        cub::DeviceSelect::Unique( assist_buffer,
-                                   assist_buffer_sz,
-                                   _vote._seed_indices.dev.ptr,     // input
-                                   _vote._seed_indices_2.dev.ptr,   // output
-                                   _vote._seed_indices_2.dev.getSizePtr(),  // output
-                                   _vote._seed_indices.host.size,   // input (unchanged in sort)
-                                   _stream );
+        err = cub::DeviceSelect::Unique( assist_buffer,
+                                         assist_buffer_sz,
+                                         _vote._seed_indices.dev.ptr,     // input
+                                         _vote._seed_indices_2.dev.ptr,   // output
+                                         _vote._seed_indices_2.dev.getSizePtr(),  // output
+                                         _vote._seed_indices.host.size,   // input (unchanged in sort)
+                                         _stream );
         POP_CHK_CALL_IFSYNC;
+        POP_CUDA_FATAL_TEST( err, "CUB Unique failed" );
 
         /* Without Dynamic Parallelism, we must block here to retrieve the
          * value d_num_selected_out from the device before the voting
@@ -509,15 +512,16 @@ void Frame::applyVote( const cctag::Parameters& params )
          */
         NumVotersIsGreaterEqual select_op( params._minVotesToSelectCandidate,
                                            _vote._chained_edgecoords.dev );
-        cub::DeviceSelect::If( assist_buffer,
-                               assist_buffer_sz,
-                               _vote._seed_indices_2.dev.ptr,
-                               _vote._seed_indices.dev.ptr,
-                               _vote._seed_indices.dev.getSizePtr(),
-                               _vote._seed_indices_2.host.size,
-                               select_op,
-                               _stream );
+        err = cub::DeviceSelect::If( assist_buffer,
+                                     assist_buffer_sz,
+                                     _vote._seed_indices_2.dev.ptr,
+                                     _vote._seed_indices.dev.ptr,
+                                     _vote._seed_indices.dev.getSizePtr(),
+                                     _vote._seed_indices_2.host.size,
+                                     select_op,
+                                     _stream );
         POP_CHK_CALL_IFSYNC;
+        POP_CUDA_FATAL_TEST( err, "CUB DeviceSelect::If failed" );
 
         _vote._seed_indices.copySizeFromDevice( _stream );
         POP_CUDA_SYNC( _stream );

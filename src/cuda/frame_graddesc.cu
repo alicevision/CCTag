@@ -386,6 +386,7 @@ void dp_caller_step_3( DevEdgeList<int2>        edgeCoords, // input
                 const float              param_ratioVoting, // input param
                 const int                param_minVotesToSelectCandidate ) // input param
 {
+    cudaError_t  err;
     cudaStream_t childStream;
     cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
 
@@ -411,16 +412,21 @@ void dp_caller_step_3( DevEdgeList<int2>        edgeCoords, // input
      * The final result is stored in d_keys.d_buffers[d_keys.selector].
      * The other buffer is invalid.
      */
-    cub::DeviceRadixSort::SortKeys( assist_buffer,
-                                    assist_buffer_sz,
-                                    keys,
-                                    listsize,
-                                    0,             // begin_bit
-                                    sizeof(int)*8, // end_bit
-                                    childStream,   // use stream 0
-                                    false );        // synchronous for debugging
+    err = cub::DeviceRadixSort::SortKeys( assist_buffer,
+                                          assist_buffer_sz,
+                                          keys,
+                                          listsize,
+                                          0,             // begin_bit
+                                          sizeof(int)*8, // end_bit
+                                          childStream,   // use stream 0
+                                          false );        // synchronous for debugging
 
     cudaDeviceSynchronize( );
+    err = cudaGetLastError();
+    if( err != cudaSuccess ) {
+        return;
+    }
+
     assert( seedIndices.getSize() > 0 );
 
     if( keys.Current() == seedIndices2.ptr ) {
@@ -441,14 +447,14 @@ void dp_caller_step_3( DevEdgeList<int2>        edgeCoords, // input
     /* Unique ensure that we check every "chosen" point only once.
      * Output is in _vote._seed_indices_2.dev
      */
-    cub::DeviceSelect::Unique( assist_buffer,
-                               assist_buffer_sz,
-                               seedIndices.ptr,     // input
-                               seedIndices2.ptr,   // output
-                               seedIndices2.getSizePtr(),  // output
-                               seedIndices.getSize(), // input (unchanged in sort)
-                               childStream,  // use stream 0
-                               false ); // synchronous for debugging
+    err = cub::DeviceSelect::Unique( assist_buffer,
+                                     assist_buffer_sz,
+                                     seedIndices.ptr,     // input
+                                     seedIndices2.ptr,   // output
+                                     seedIndices2.getSizePtr(),  // output
+                                     seedIndices.getSize(), // input (unchanged in sort)
+                                     childStream,  // use stream 0
+                                     false ); // synchronous for debugging
 
     cudaStreamDestroy( childStream );
 }
@@ -504,6 +510,11 @@ void dp_caller_step_5( DevEdgeList<int2>        edgeCoords, // input
                 const float              param_ratioVoting, // input param
                 const int                param_minVotesToSelectCandidate ) // input param
 {
+    if( seedIndices.getSize() == 0 ) {
+        seedIndices2.setSize(0);
+        return;
+    }
+
     cudaStream_t childStream;
     cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
 
@@ -568,6 +579,7 @@ bool Frame::applyDesc1( const cctag::Parameters& params )
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
+    POP_CHK_CALL_IFSYNC;
     return true;
 }
 
@@ -591,6 +603,7 @@ bool Frame::applyDesc2( const cctag::Parameters& params )
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
+    POP_CHK_CALL_IFSYNC;
     return true;
 }
 
@@ -614,6 +627,7 @@ bool Frame::applyDesc3( const cctag::Parameters& params )
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
+    POP_CHK_CALL_IFSYNC;
     return true;
 }
 
@@ -637,6 +651,7 @@ bool Frame::applyDesc4( const cctag::Parameters& params )
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
+    POP_CHK_CALL_IFSYNC;
     return true;
 }
 
@@ -660,6 +675,7 @@ bool Frame::applyDesc5( const cctag::Parameters& params )
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
+    POP_CHK_CALL_IFSYNC;
     return true;
 }
 

@@ -352,27 +352,9 @@ void Frame::applyHyst( const cctag::Parameters & params )
 #endif
 
 #if defined(USE_SEPARABLE_COMPILATION)
-#if 1
     hyst_outer_loop
         <<<1,1,0,_stream>>>
         ( getWidth(), getHeight(), _d_hysteresis_block_counter, _d_hyst_edges, _d_map );
-#else
-    cudaEvent_t before_hyst, after_hyst;
-    float ms;
-
-    cudaEventCreate( &before_hyst );
-    cudaEventCreate( &after_hyst );
-    cudaEventRecord( before_hyst, _stream );
-    hyst_outer_loop
-        <<<1,1,0,_stream>>>
-        ( getWidth(), getHeight(), _d_hysteresis_block_counter, _d_hyst_edges, _d_map );
-    cudaEventRecord( after_hyst, _stream );
-    cudaEventSynchronize( after_hyst );
-    cudaEventElapsedTime( &ms, before_hyst, after_hyst );
-    cudaEventDestroy( before_hyst );
-    cudaEventDestroy( after_hyst );
-    std::cerr << "Hyst took " << ms << " ms" << std::endl;
-#endif
 #else // USE_SEPARABLE_COMPILATION
     bool first_time = true;
     int block_counter;

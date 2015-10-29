@@ -1211,6 +1211,8 @@ int identify(
   popart::TagPipe* cudaPipe,
   const cctag::Parameters & params)
 {
+    cerr << "Enter " << __FUNCTION__ << " in " << __FILE__ << endl;
+
   // Get the outer ellipse in its original scale, i.e. in src.
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
   // Get the outer points in their original scale, i.e. in src.
@@ -1295,6 +1297,7 @@ int identify(
   if ( cuts.size() == 0 )
   {
     // Can happen when an object or the image frame is occluding a part of all available cuts.
+    cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (1)" << endl;
     return status::no_collected_cuts;
   }
   
@@ -1341,6 +1344,7 @@ int identify(
   {
     //
     CCTAG_COUT_DEBUG("Unable to select any cut.");
+    cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (2)" << endl;
     return status::no_selected_cuts; // todo: is class attributes the best option?
   }
 
@@ -1364,6 +1368,7 @@ int identify(
     DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
     CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
     DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
+    cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (3)" << endl;
     return status::opti_has_diverged;
   }
     
@@ -1472,6 +1477,7 @@ int identify(
       }
       catch (...) // An exception can be thrown when a degenerate ellipse is computed.
       {
+        cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (4)" << endl;
         return status::degenerate;
       }
 
@@ -1490,10 +1496,12 @@ int identify(
   // Tell if the identification is reliable or not.
   if (identSuccessful)
   {
+    cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (5)" << endl;
     return status::id_reliable;
   }
   else
   {
+    cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (6)" << endl;
     return status::id_not_reliable;
   }
 }
