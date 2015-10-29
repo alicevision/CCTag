@@ -21,7 +21,21 @@ device_prop_t::device_prop_t( )
         err = cudaGetDeviceProperties( p, n );
         POP_CUDA_FATAL_TEST( err, "Cannot get properties for a device" );
     }
-    err = cudaSetDevice( 0 );
+
+    int chosenDevice = 0;
+    for( int n=1; n<_num_devices; n++ ) {
+        assert( _properties[chosenDevice] );
+        assert( _properties[n] );
+        if( _properties[chosenDevice]->major < _properties[n]->major ||
+            ( _properties[chosenDevice]->major == _properties[n]->major &&
+              _properties[chosenDevice]->minor < _properties[n]->minor ) ) {
+            chosenDevice = n;
+        }
+    }
+
+    cerr << "Choosing CUDA device " << chosenDevice << endl;
+
+    err = cudaSetDevice( chosenDevice );
     POP_CUDA_FATAL_TEST( err, "Cannot set device 0" );
 }
 

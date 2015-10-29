@@ -25,7 +25,6 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     , _texture( 0 )
     , _wait_for_upload( 0 )
 {
-#warning This should be unique
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
     _h_ring_output.data = 0;
 

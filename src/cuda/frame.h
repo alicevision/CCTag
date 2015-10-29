@@ -10,6 +10,7 @@
 
 #include "cctag/params.hpp"
 #include "cctag/types.hpp"
+#include "cctag/ImageCut.hpp"
 #include "frame_vote.h"
 #include "triple_point.h"
 
@@ -235,6 +236,18 @@ public:
     cv::Mat* getMag( ) const;
     cv::Mat* getEdges( ) const;
 
+    // implemented in frame_ident.cu
+    /* to reuse _d_intermediate in cctag:identification, we must ensure that the
+     * ImageCut structs fit into the allocated space.
+     */
+    size_t   getIntermediatePlaneByteSize( ) const;
+
+    // implemented in frame_ident.cu
+    void uploadCuts( std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen );
+
+    // implemented in frame_ident.cu
+    double idCostFunction( const float hom[3][3], const int vCutsSize, const int vCutMaxVecLen, bool& cuda_readable );
+
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
@@ -281,6 +294,8 @@ public: // HACK FOR DEBUGGING
     cv::cuda::PtrStepSz16s  _h_dy;
     cv::cuda::PtrStepSz32u  _h_mag;
     cv::cuda::PtrStepSzb    _h_edges;
+
+    cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
 private:
     cv::cuda::PtrStepSzInt2 _h_ring_output;
 

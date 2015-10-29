@@ -492,5 +492,20 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
     delete [] plane.data;
 }
 
+size_t TagPipe::getIntermediatePlaneByteSize( int level ) const
+{
+    return _frame[0]->getIntermediatePlaneByteSize();
+}
+
+void TagPipe::uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen )
+{
+    _frame[level]->uploadCuts( vCuts, vCutMaxVecLen );
+}
+
+double TagPipe::idCostFunction( int level, const float hom[3][3], const int vCutsSize, const int vCutMaxVecLen, bool& cuda_readable )
+{
+    return _frame[level]->idCostFunction( hom, vCutsSize, vCutMaxVecLen, cuda_readable );
+}
+
 }; // namespace popart
 

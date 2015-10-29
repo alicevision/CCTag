@@ -46,6 +46,8 @@
 #include <list>
 #include <utility>
 
+using namespace std;
+
 namespace cctag
 {
 
@@ -765,6 +767,7 @@ void cctagDetection(CCTag::List& markers,
               cctag,
               bank.getMarkers(),
               imagePyramid.getLevel(0)->getSrc(),
+              pipe1,
               params);
       
       cctag.setStatus(detected);

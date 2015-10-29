@@ -8,6 +8,7 @@
 
 #include "cctag/params.hpp"
 #include "cctag/types.hpp"
+#include "cctag/ImageCut.hpp"
 
 namespace popart
 {
@@ -38,6 +39,10 @@ public:
     cv::Mat* getDy( size_t layer ) const;
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
+
+    size_t   getIntermediatePlaneByteSize( int level ) const;
+    void     uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen );
+    double   idCostFunction( int level, const float hom[3][3], const int vCutsSize, const int vCutMaxVecLen, bool& cuda_readable );
 
     void debug( unsigned char* pix,
                 const cctag::Parameters& params );

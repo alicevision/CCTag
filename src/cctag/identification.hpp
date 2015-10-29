@@ -35,6 +35,10 @@
 
 //#define NAIVE_SELECTCUT
 
+namespace popart {
+class TagPipe;
+};
+
 namespace cctag {
 namespace identification {
 
@@ -60,6 +64,7 @@ int identify(
 	CCTag & cctag,
 	const std::vector< std::vector<double> > & radiusRatios,
 	const cv::Mat & src,
+    popart::TagPipe* pipe,
 	const cctag::Parameters & params);
 
 typedef std::vector< std::vector<double> > RadiusRatioBank;
@@ -269,6 +274,7 @@ bool refineConicFamilyGlob(
         CCTag & cctag,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
+        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params);
 
@@ -292,6 +298,7 @@ bool imageCenterOptimizationGlob(
         const double neighbourSize,
         const std::size_t gridNSample,
         const cv::Mat & src, 
+        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse);
 
 

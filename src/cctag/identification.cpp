@@ -19,6 +19,8 @@
 #include <cctag/geometry/Cercle.hpp>
 #include <cctag/talk.hpp>
 
+#include "cuda/tag.h"
+
 #include <terry/sampler/all.hpp>
 
 #include <openMVG/image/sample.hpp>
@@ -895,6 +897,7 @@ bool refineConicFamilyGlob(
         CCTag & cctag,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
+        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params)
 {
@@ -905,7 +908,7 @@ bool refineConicFamilyGlob(
   cctag::numerical::BoundedMatrix3x3d & mHomography = cctag.homography();
   Point2dN<double> & optimalPoint = cctag.centerImg();
 
-  BOOST_ASSERT( vOuterPoints.size() > 0 );
+  // BOOST_ASSERT( vOuterPoints.size() > 0 );
 
   // Visual debug
   CCTagVisualDebug::instance().newSession( "refineConicPts" );
@@ -930,7 +933,7 @@ bool refineConicFamilyGlob(
   // cost function within it.
   while ( neighbourSize > 1e-4 )
   {
-    if ( imageCenterOptimizationGlob(mHomography,vCuts,optimalPoint,residual,neighbourSize,gridNSample,src,outerEllipse) )
+    if ( imageCenterOptimizationGlob(mHomography,vCuts,optimalPoint,residual,neighbourSize,gridNSample,src,cudaPipe,outerEllipse) )
     {
       CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
       neighbourSize /= double((gridNSample-1)/2) ;
@@ -981,6 +984,7 @@ bool imageCenterOptimizationGlob(
         const double neighbourSize,
         const std::size_t gridNSample,
         const cv::Mat & src, 
+        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse)
 {
   using namespace cctag::numerical;
@@ -1017,7 +1021,40 @@ bool imageCenterOptimizationGlob(
       }
 
       
+      if( cudaPipe ) {
+        size_t vCutMaxVecLen = 100;
+        // step 1: find the largest vector in all the Cuts in this round
+        for( const ImageCut& cut : vCuts ) {
+            vCutMaxVecLen = std::max<size_t>( vCutMaxVecLen, cut.imgSignal().size() );
+        }
+        // step 2: add 8 (double values) for overhead of the ImageCut structure
+        vCutMaxVecLen += 8;
+        assert( sizeof(size_t) == 8 );        // size_t has 64 bits
+        assert( sizeof(unsigned long) == 8 ); // unsigned long has 64 bits
+        // step 3: is the number a power of two?
+        if( ( vCutMaxVecLen & ( ~vCutMaxVecLen + 1 ) ) != vCutMaxVecLen ) {
+            // no: find next largest power of 2
+            vCutMaxVecLen = ( 1 << ( 64 - __builtin_clzl(vCutMaxVecLen) ) );
+        }
+        size_t vCutRequiredByteSize = vCuts.size() * vCutMaxVecLen * sizeof(float);
+        size_t iMemAvailByteSize    = cudaPipe->getIntermediatePlaneByteSize( 0 );
+        // cerr << "total byte size for Cuts: " << vCutRequiredByteSize << endl;
+        // cerr << "total byte size of intermediate plane: " << iMemAvailByteSize << endl;
+        assert( vCutRequiredByteSize < iMemAvailByteSize );
+        cudaPipe->uploadCuts( 0, vCuts, vCutMaxVecLen );
+
+        float hom[3][3];
+        for( int row=0; row<3; row++ )
+            for( int col=0; col<3; col++ )
+                hom[row][col] = mTempHomography(row,col);
+
+        double cuda_res;
+        bool   cuda_readable = true;
+        cuda_res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), vCutMaxVecLen, cuda_readable );
+      }
+
       bool readable = true;
+
       // C. Compute the 1D rectified signals of vCuts image cut based on the 
       // transformation mTempHomography.
       // Expensive (GPU) @Carsten
@@ -1170,7 +1207,8 @@ double costFunctionGlob(
 int identify(
   CCTag & cctag,
   const std::vector< std::vector<double> > & radiusRatios, // todo: directly use the CCTagBank
-  const cv::Mat & src,
+  const cv::Mat &  src,
+  popart::TagPipe* cudaPipe,
   const cctag::Parameters & params)
 {
   // Get the outer ellipse in its original scale, i.e. in src.
@@ -1306,7 +1344,7 @@ int identify(
     return status::no_selected_cuts; // todo: is class attributes the best option?
   }
 
-  std::vector< cctag::ImageCut > vCuts;
+  // std::vector< cctag::ImageCut > vCuts;
   
   {
 //    bool hasConverged = refineConicFamily( cctag, vCuts, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
@@ -1320,7 +1358,7 @@ int identify(
     
   // C. Imaged center optimization /////////////////////////////////////////////
   // Expensive (CPU & GPU)
-  bool hasConverged = refineConicFamilyGlob( cctag, vSelectedCuts, src, ellipse, params);
+  bool hasConverged = refineConicFamilyGlob( cctag, vSelectedCuts, src, cudaPipe, ellipse, params);
   if( !hasConverged )
   {
     DO_TALK( CCTAG_COUT_DEBUG(ellipse); )

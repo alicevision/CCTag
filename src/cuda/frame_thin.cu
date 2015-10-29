@@ -233,9 +233,8 @@ void Frame::applyThinning( const cctag::Parameters & params )
         ( _vote._all_edgecoords.dev,
           params._maxEdges );
 
-#ifndef NDEBUG
+#if 0
     debugPointIsOnEdge( _d_edges, _vote._all_edgecoords, _stream );
-#error dont call
 #endif // NDEBUG
 
 #ifdef EDGE_LINKING_HOST_SIDE
