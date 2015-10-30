@@ -1286,7 +1286,7 @@ int identify(
   //       ii) _imgSignal in all ImageCut of vSelectedCuts do not need to be transfert,
   //       these signals will be collected inside the function.
   //       iii) cctag.homography(): 3x3 float homography, cctag.centerImg(): 2 floats (x,y), ellipse: (see Ellipse.hpp)
-  // Begin GPU
+  // Begin GPU //////
   bool hasConverged = refineConicFamilyGlob( cctag.homography(), cctag.centerImg(), vSelectedCuts, src, ellipse, params);
   // Note Outputs (GPU->CPU):
   //        The main amount of data to transfert is only that way and is 'vSelectedCuts', 
@@ -1294,7 +1294,7 @@ int identify(
   //        All the ImageCut in vSelectedCuts including their attribute _imgSignal have to be transfer back to CPU.
   //        This operation is done once per marker. A maximum of 30 markers will be processed per frame. The 
   //        maximum number of cuts will be of 50. The maximum length of each _imgSignal will of 100*float.
-  // End GPU
+  // End GPU ////////
   if( !hasConverged )
   {
     DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
