@@ -1041,7 +1041,7 @@ void getNearbyPoints(
   
   cctag::numerical::geometry::Ellipse transformedEllipse(ellipse);
   cctag::viewGeometry::projectiveTransform( mInvT, transformedEllipse );
-  neighbourSize *= std::max(transformedEllipse.a(),transformedEllipse.b()); // todo: these last 3 lines compute exactly the same info, should be done only once.
+  neighbourSize *= std::max(transformedEllipse.a(),transformedEllipse.b());
 
   cctag::Point2dN<double> condCenter = center;
   cctag::numerical::optimization::condition(condCenter, mT);
