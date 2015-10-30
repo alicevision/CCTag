@@ -102,8 +102,8 @@ void Ellipse::setAngle( const double angle )
 Ellipse Ellipse::transform(const Matrix& mT) const
 {
 	using namespace boost::numeric::ublas;
-	const Matrix a = boost::numeric::ublas::prec_prod( boost::numeric::ublas::trans(mT), _matrix );
-	const Matrix mET = boost::numeric::ublas::prec_prod( a, mT );
+	const Matrix a = prec_prod( boost::numeric::ublas::trans(mT), _matrix );
+	const Matrix mET = prec_prod( a, mT );
 	return Ellipse( mET );
 }
 
@@ -225,43 +225,43 @@ void Ellipse::getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual)
 
 void Ellipse::computeMatrix()
 {
-	bounded_matrix<double, 3, 3> tmp;
-	tmp( 0, 0 ) = std::cos( _angle ); tmp( 0, 1 ) = -std::sin( _angle ); tmp( 0, 2 ) = _center.x();
-	tmp( 1, 0 ) = std::sin( _angle ); tmp( 1, 1 ) =  std::cos( _angle ); tmp( 1, 2 ) = _center.y();
-	tmp( 2, 0 ) =             0.0; tmp( 2, 1 ) =              0.0; tmp( 2, 2 ) =        1.0;
+  bounded_matrix<double, 3, 3> tmp;
+  tmp( 0, 0 ) = std::cos( _angle ); tmp( 0, 1 ) = -std::sin( _angle ); tmp( 0, 2 ) = _center.x();
+  tmp( 1, 0 ) = std::sin( _angle ); tmp( 1, 1 ) =  std::cos( _angle ); tmp( 1, 2 ) = _center.y();
+  tmp( 2, 0 ) =             0.0; tmp( 2, 1 ) =              0.0; tmp( 2, 2 ) =        1.0;
 
-	bounded_matrix<double, 3, 3> tmpInv;
-	diagonal_matrix<double> diag( 3, 3 );
-	diag( 0, 0 ) =  1.0 / ( _a * _a );
-	diag( 1, 1 ) =  1.0 / ( _b * _b );
-	diag( 2, 2 ) = -1.0;
+  bounded_matrix<double, 3, 3> tmpInv;
+  diagonal_matrix<double> diag( 3, 3 );
+  diag( 0, 0 ) =  1.0 / ( _a * _a );
+  diag( 1, 1 ) =  1.0 / ( _b * _b );
+  diag( 2, 2 ) = -1.0;
 
-	if( invert( tmp, tmpInv ) )
-	{
-		_matrix = prec_prod( diag, tmpInv );
-		_matrix = prec_prod( trans( tmpInv ), _matrix );
-	}
-	else
-	{
-		CCTAG_THROW( exception::Bug()
-				<< exception::dev( "Singular matrix!" ) );
-	}
+  if( invert( tmp, tmpInv ) )
+  {
+          _matrix = prec_prod( diag, tmpInv );
+          _matrix = prec_prod( trans( tmpInv ), _matrix );
+  }
+  else
+  {
+          CCTAG_THROW( exception::Bug()
+                          << exception::dev( "Singular matrix!" ) );
+  }
 }
 
 void scale(const Ellipse & ellipse, Ellipse & rescaleEllipse, double scale)
 {
-	rescaleEllipse.setCenter(Point2dN<double>( ellipse.center().x() * scale, ellipse.center().y() * scale ));
-	rescaleEllipse.setA(ellipse.a() * scale);
-	rescaleEllipse.setB(ellipse.b() * scale);
-	rescaleEllipse.setAngle(ellipse.angle());
+  rescaleEllipse.setCenter(Point2dN<double>( ellipse.center().x() * scale, ellipse.center().y() * scale ));
+  rescaleEllipse.setA(ellipse.a() * scale);
+  rescaleEllipse.setB(ellipse.b() * scale);
+  rescaleEllipse.setAngle(ellipse.angle());
 }
 
 std::ostream& operator<<(std::ostream& os, const Ellipse& e)
 {
-	os << "e = [ " << e.matrix()(0,0) << " " << e.matrix()(0,1) << " " << e.matrix()(0,2) << " ; "
-				   << e.matrix()(1,0) << " " << e.matrix()(1,1) << " " << e.matrix()(1,2) << " ; "
-				   << e.matrix()(2,0) << " " << e.matrix()(2,1) << " " << e.matrix()(2,2) << " ] ";
-	return os;
+  os  << "e = [ " << e.matrix()(0,0) << " " << e.matrix()(0,1) << " " << e.matrix()(0,2) << " ; "
+      << e.matrix()(1,0) << " " << e.matrix()(1,1) << " " << e.matrix()(1,2) << " ; "
+      << e.matrix()(2,0) << " " << e.matrix()(2,1) << " " << e.matrix()(2,2) << " ] ";
+  return os;
 }
 
 }
