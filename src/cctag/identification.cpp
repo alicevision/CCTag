@@ -453,7 +453,7 @@ void collectCuts(
     // Remove the cut from the vector if out of the image bounds.
     if ( cut.outOfBounds() )
     {
-      CCTAG_COUT_VAR(cut.outOfBounds());
+      CCTAG_COUT_VAR_OPTIM(cut.outOfBounds());
       cuts.pop_back();
     }
   }
@@ -961,28 +961,6 @@ bool imageCenterOptimizationGlob(
   BoundedMatrix3x3d mTempHomography;
 
   bool hasASolution = false;
-    
-//  cctag::numerical::BoundedMatrix3x3d toto(3,3);
-//  
-//  toto(0,0) = 1.309155016693802e-03;
-//  toto(0,1) = -1.142981587719118e-03;
-//  toto(0,2) = -4.317039912542719e-02;
-//  toto(1,0) = -1.142981587719118e-03;
-//  toto(1,1) = 6.999445357343172e-03;
-//  toto(1,2) = -1.145286626794469e+00;
-//  toto(2,0) = -4.317039912542719e-02;
-//  toto(2,1) = -1.145286626794469e+00;
-//  toto(2,2) = 2.345892530517704e+02;
-//  
-//  cctag::Point2dN<double> pointToto(2.050397293063406e+02, 1.969686628831671e+02);
-//  cctag::numerical::geometry::Ellipse ellipseToto(toto);
-//  
-//  computeHomographyFromEllipseAndImagedCenter( ellipseToto, pointToto, mTempHomography);
-//    
-//  cctag::viewGeometry::projectiveTransform( mTempHomography, ellipseToto );
-//  CCTAG_COUT_VAR( ellipseToto );
-  
-//  exit (EXIT_FAILURE);
   
 #ifdef OPTIM_CENTER_VISUAL_DEBUG // Visual debug durign the optim
     int k = 0;
@@ -1002,7 +980,6 @@ bool imageCenterOptimizationGlob(
       {
         continue; 
       }
-
       
       bool readable = true;
       // C. Compute the 1D rectified signals of vCuts image cut based on the 
