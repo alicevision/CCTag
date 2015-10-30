@@ -28,7 +28,8 @@ TriplePoint* find_neigh( const int2&              neigh,
     if( neigh.x != 0 || neigh.y != 0 ) {
         int idx = edgepoint_index_table.ptr(neigh.y)[neigh.x];
         if( idx != 0 ) {
-            assert( idx >= 0 && idx < chained_edgecoords.Size() );
+            assert( idx > 0 );
+            assert( idx < chained_edgecoords.Size() );
             TriplePoint* neighbour = &chained_edgecoords.ptr[idx];
 #ifndef NDEBUG
             debug_inner_test_consistency( idx, neighbour, edgepoint_index_table, chained_edgecoords );
@@ -52,7 +53,10 @@ TriplePoint* find_befor( const TriplePoint*       p,
                          cv::cuda::PtrStepSz32s   edgepoint_index_table,
                          DevEdgeList<TriplePoint> chained_edgecoords )
 {
-    return find_neigh( p->descending.befor, edgepoint_index_table, chained_edgecoords );
+    assert( p );
+    return find_neigh( p->descending.befor,
+                       edgepoint_index_table,
+                       chained_edgecoords );
 }
 
 
@@ -62,7 +66,10 @@ TriplePoint* find_after( const TriplePoint*             p,
                                cv::cuda::PtrStepSz32s   edgepoint_index_table,
                                DevEdgeList<TriplePoint> chained_edgecoords )
 {
-    return find_neigh( p->descending.after, edgepoint_index_table, chained_edgecoords );
+    assert( p );
+    return find_neigh( p->descending.after,
+                       edgepoint_index_table,
+                       chained_edgecoords );
 }
 
 __device__
@@ -353,9 +360,9 @@ void eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
 
 } // namespace vote
 
-#ifdef USE_SEPARABLE_COMPILATION
+#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
 // this is called in frame_desc.cu by descent::dp_caller
-#else // USE_SEPARABLE_COMPILATION
+#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
 __host__
 bool Voting::constructLine( const cctag::Parameters&     params,
                             cudaStream_t                 stream )
@@ -396,9 +403,9 @@ bool Voting::constructLine( const cctag::Parameters&     params,
 
     return true;
 }
-#endif // USE_SEPARABLE_COMPILATION
+#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
 
-#ifdef USE_SEPARABLE_COMPILATION
+#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
 __host__
 void Frame::applyVote( const cctag::Parameters& )
 {
@@ -406,7 +413,7 @@ void Frame::applyVote( const cctag::Parameters& )
     // descent::dp_caller when USE_SEPARABLE_COMPILATION is
     // used
 }
-#else // USE_SEPARABLE_COMPILATION
+#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
 __host__
 void Frame::applyVote( const cctag::Parameters& params )
 {
@@ -543,7 +550,7 @@ void Frame::applyVote( const cctag::Parameters& params )
         _vote._chained_edgecoords.host.size = 0;
     }
 }
-#endif // USE_SEPARABLE_COMPILATION
+#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
 
 } // namespace popart
 

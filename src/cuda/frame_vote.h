@@ -71,8 +71,12 @@ struct Voting
 
     void debug_download( const cctag::Parameters& params );
 
+#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
+    // constructLine is called from within the graddesc DP kernel
+#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
     bool constructLine( const cctag::Parameters&     params,
                         cudaStream_t                 stream );
+#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
 };
 
 #ifndef NDEBUG

@@ -205,6 +205,11 @@ void Frame::initRequiredMem( )
     _vote._seed_indices      .init( _stream );
     _vote._seed_indices_2    .init( _stream );
 
+    POP_CUDA_MEMSET_ASYNC( _vote._d_edgepoint_index_table.data,
+                           0,
+                           _vote._d_edgepoint_index_table.step * _vote._d_edgepoint_index_table.rows,
+                           _stream );
+
     // POP_CUDA_MEMSET_ASYNC( _d_next_edge_after.data,
     //                        0,
     //                        _d_next_edge_after.step * _d_next_edge_after.rows,

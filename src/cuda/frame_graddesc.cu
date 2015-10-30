@@ -37,6 +37,24 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
     }
 }
 
+/* functions cannot be __global__ __device__ */
+__device__
+inline void initChainedEdgeCoords_2( DevEdgeList<TriplePoint>& chained_edgecoords )
+{
+    /* Note: the initial _chained_edgecoords.dev.size is set to 1 because it is used
+     * as an index for writing points into an array. Starting the counter
+     * at 1 allows to distinguish unchained points (0) from chained
+     * points non-0.
+     */
+    chained_edgecoords.setSize( 1 );
+}
+
+__global__
+void initChainedEdgeCoords( DevEdgeList<TriplePoint> chained_edgecoords )
+{
+    initChainedEdgeCoords_2( chained_edgecoords );
+}
+
 __device__
 bool gradient_descent_inner( int4&                  out_edge_info,
                              short2&                out_edge_d,
@@ -218,6 +236,8 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
     out_edge._flowLength        = 0.0f;
 
     uint32_t mask = __ballot( keep );  // bitfield of warps with results
+
+    // keep is false for all 32 threads
     if( mask == 0 ) return;
 
     uint32_t ct   = __popc( mask );    // horizontal reduce
@@ -228,7 +248,7 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
 #else
     uint32_t leader = 0;
 #endif
-    uint32_t write_index;
+    int write_index = -1;
     if( threadIdx.x == leader ) {
         // leader gets warp's offset from global value and increases it
         // not that it is initialized with 1 to ensure that 0 represents a NULL pointer
@@ -251,6 +271,8 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
+    assert( write_index >= 0 );
+
     if( keep && write_index < param_edgeMax ) {
         assert( out_edge.coord.x != out_edge.descending.befor.x ||
                 out_edge.coord.y != out_edge.descending.befor.y );
@@ -269,7 +291,7 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
     }
 }
 
-#ifdef USE_SEPARABLE_COMPILATION
+#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
 __global__
 void dp_caller_step_1( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     edgeImage, // input
@@ -287,17 +309,12 @@ void dp_caller_step_1( DevEdgeList<int2>        edgeCoords, // input
                 const float              param_ratioVoting, // input param
                 const int                param_minVotesToSelectCandidate ) // input param
 {
+    initChainedEdgeCoords_2( chainedEdgeCoords );
+
     /* No need to start more child kernels than the number of points found by
      * the Thinning stage.
      */
     int listsize = edgeCoords.getSize();
-
-    /* Note: the initial _chained_edgecoords.dev.size is set to 1 because it is used
-     * as an index for writing points into an array. Starting the counter
-     * at 1 allows to distinguish unchained points (0) from chained
-     * points non-0.
-     */
-    chainedEdgeCoords.setSize( 1 );
 
     /* dummy: in case we return early */
     seedIndices.setSize( 0 );
@@ -539,7 +556,7 @@ void dp_caller_step_5( DevEdgeList<int2>        edgeCoords, // input
 
     cudaStreamDestroy( childStream );
 }
-#endif // USE_SEPARABLE_COMPILATION
+#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
 
 } // namespace descent
 
@@ -558,7 +575,7 @@ bool Frame::applyDesc0( const cctag::Parameters& params )
     return true;
 }
 
-#ifdef USE_SEPARABLE_COMPILATION
+#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
 __host__
 bool Frame::applyDesc1( const cctag::Parameters& params )
 {
@@ -693,10 +710,14 @@ bool Frame::applyDesc6( const cctag::Parameters& params )
     // we will check eventually whether the call succeeds
     return true;
 }
-#else // USE_SEPARABLE_COMPILATION
+#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
 __host__
 bool Frame::applyDesc( const cctag::Parameters& params )
 {
+    descent::initChainedEdgeCoords
+        <<<1,1,0,_stream>>>
+        ( _vote._chained_edgecoords.dev );
+
     int listsize;
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
@@ -719,13 +740,6 @@ bool Frame::applyDesc( const cctag::Parameters& params )
     grid.y  = 1;
     grid.z  = 1;
 
-    /* Note: the initial _chained_edgecoords.dev.size is set to 1 because it is used
-     * as an index for writing points into an array. Starting the counter
-     * at 1 allows to distinguish unchained points (0) from chained
-     * points non-0.
-     */
-    POP_CUDA_SETX_ASYNC( _vote._chained_edgecoords.dev.getSizePtr(), (int)1, _stream );
-
 #ifndef NDEBUG
     debugPointIsOnEdge( _d_edges, _vote._all_edgecoords, _stream );
 #endif
@@ -746,7 +760,7 @@ bool Frame::applyDesc( const cctag::Parameters& params )
     // cout << "  Leave " << __FUNCTION__ << endl;
     return true;
 }
-#endif // USE_SEPARABLE_COMPILATION
+#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
 
 
 __host__

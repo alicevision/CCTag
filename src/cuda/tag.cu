@@ -168,12 +168,16 @@ void TagPipe::tagframe( const cctag::Parameters& params )
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinDownload( params ); // sync
 
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc0(  params );  // async
+#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc1(  params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc2(  params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc3(  params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc4(  params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc5(  params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc6(  params );  // async
+#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc(  params );  // async
+#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDescDownload( params ); // sync
 
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVote(  params );  // async

@@ -171,8 +171,8 @@ public:
     void applyThinDownload( const cctag::Parameters& param );
 
     // implemented in frame_graddesc.cu
-#ifdef USE_SEPARABLE_COMPILATION
     bool applyDesc0( const cctag::Parameters& param );
+#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
     bool applyDesc1( const cctag::Parameters& param );
     bool applyDesc2( const cctag::Parameters& param );
     bool applyDesc3( const cctag::Parameters& param );
