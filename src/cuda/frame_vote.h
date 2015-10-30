@@ -4,6 +4,8 @@
 #include <opencv2/core/cuda_types.hpp>
 #include <thrust/system/cuda/detail/cub/cub.cuh>
 
+#include "onoff.h"
+
 #include "triple_point.h"
 #include "edge_list.h"
 #include "assist.h"

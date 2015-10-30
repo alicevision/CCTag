@@ -6,38 +6,13 @@
 #include <vector>
 #include <opencv2/core/core.hpp>
 
-// #include <opencv2/core/cuda_types.hpp>
+#include "onoff.h"
 
 #include "cctag/params.hpp"
 #include "cctag/types.hpp"
 #include "cctag/ImageCut.hpp"
 #include "frame_vote.h"
 #include "triple_point.h"
-
-#define DEBUG_WRITE_ORIGINAL_AS_PGM
-#define DEBUG_WRITE_ORIGINAL_AS_ASCII
-#define DEBUG_WRITE_DX_AS_PGM
-#define DEBUG_WRITE_DX_AS_ASCII
-#define DEBUG_WRITE_DY_AS_PGM
-#define DEBUG_WRITE_DY_AS_ASCII
-#define DEBUG_WRITE_MAG_AS_PGM
-#define DEBUG_WRITE_MAG_AS_ASCII
-#define DEBUG_WRITE_MAP_AS_PGM
-#define DEBUG_WRITE_MAP_AS_ASCII
-#define DEBUG_WRITE_HYSTEDGES_AS_PGM
-#define DEBUG_WRITE_EDGES_AS_PGM
-#define DEBUG_WRITE_EDGELIST_AS_PPM
-#define DEBUG_WRITE_EDGELIST_AS_ASCII
-#define DEBUG_WRITE_VOTERS_AS_PPM
-#define DEBUG_WRITE_CHOSEN_AS_PPM
-#define DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
-#define DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
-#define DEBUG_WRITE_LINKED_AS_PPM
-#define DEBUG_WRITE_LINKED_AS_PPM_INTENSE
-#define DEBUG_WRITE_LINKED_AS_ASCII
-#define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
-
-#define DEBUG_LINKED_USE_INT4_BUFFER
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
@@ -46,13 +21,6 @@
 #define EDGE_LINKING_MAX_EDGE_LENGTH        100
 #define EDGE_LINKING_MAX_ARCS             10000
 #define EDGE_LINKING_MAX_RING_BUFFER_SIZE    40
-
-/* Separable compilation allows one kernel to instantiate
- * others. That avoids complexity on the host side when,
- * e.g., GPU-side counters need to be checked before starting
- * a new kernel.
- */
-#define USE_SEPARABLE_COMPILATION
 
 /* A table is copied to constant memory containing sigma values
  * for Gauss filtering at the 0-offset, and the derivatives
