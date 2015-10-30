@@ -27,6 +27,9 @@ void TagPipe::initialize( const uint32_t pix_w,
                           const uint32_t pix_h,
                           const cctag::Parameters& params )
 {
+    cudaError_t err = cudaSetDeviceFlags( cudaDeviceMapHost );
+    POP_CUDA_FATAL_TEST( err, "Failed to set CUDA device into mappable mode." );
+
     static bool tables_initialized = false;
     if( not tables_initialized ) {
         tables_initialized = true;
