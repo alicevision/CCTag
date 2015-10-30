@@ -1270,18 +1270,24 @@ int identify(
   std::vector< cctag::ImageCut > vCuts;
   
   {
-//    bool hasConverged = refineConicFamily( cctag, vCuts, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
-//    if( !hasConverged )
-//    {
-//      DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
-//      CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
-//      DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
-//      return status::opti_has_diverged;
-//    }
+  //    bool hasConverged = refineConicFamily( cctag, vCuts, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
+  //    if( !hasConverged )
+  //    {
+  //      DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
+  //      CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
+  //      DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
+  //      return status::opti_has_diverged;
+  //    }
     
   // C. Imaged center optimization /////////////////////////////////////////////
-  // Expensive (GPU)
+  // Expensive (GPU) Time bottleneck, the only function (including its sub functions) to be implemented on GPU
+  // Note: i) src is already on GPU
+  //       ii) _imgSignal in all ImageCut of vSelectedCuts do not need to be transfert,
+  //       these signals will be collected inside the function.
+  //       iii) cctag.homography(): 3x3 float homography, cctag.centerImg(): 2 floats (x,y), ellipse: (see Ellipse.hpp)
+  // Begin GPU
   bool hasConverged = refineConicFamilyGlob( cctag.homography(), cctag.centerImg(), vSelectedCuts, src, ellipse, params);
+  // End GPU
   if( !hasConverged )
   {
     DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
