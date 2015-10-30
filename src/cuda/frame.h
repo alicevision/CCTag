@@ -98,7 +98,7 @@ struct FrameMeta
     int   connect_component_block_counter;
     int   ring_counter;
     int   ring_counter_max;
-    float identification_results;
+    float identification_result;
     int   identification_resct;
 
     static void alloc( FrameMeta** host, FrameMeta** device );

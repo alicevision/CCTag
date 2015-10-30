@@ -1020,7 +1020,7 @@ bool imageCenterOptimizationGlob(
         continue; 
       }
 
-#if 0 
+#if 1
       if( cudaPipe ) {
         size_t vCutMaxVecLen = 100;
         // step 1: find the largest vector in all the Cuts in this round
@@ -1036,11 +1036,17 @@ bool imageCenterOptimizationGlob(
             // no: find next largest power of 2
             vCutMaxVecLen = ( 1 << ( 64 - __builtin_clzl(vCutMaxVecLen) ) );
         }
+        // step 4: make sure that enough power-of-2-aligned blocks fit into
+        //         the GPU mem block that is already allocated (_d_intermediate)
         size_t vCutRequiredByteSize = vCuts.size() * vCutMaxVecLen * sizeof(float);
         size_t iMemAvailByteSize    = cudaPipe->getIntermediatePlaneByteSize( 0 );
-        // cerr << "total byte size for Cuts: " << vCutRequiredByteSize << endl;
-        // cerr << "total byte size of intermediate plane: " << iMemAvailByteSize << endl;
-        assert( vCutRequiredByteSize < iMemAvailByteSize );
+        if( vCutRequiredByteSize >= iMemAvailByteSize ) {
+            cerr << __FILE__ << ":" << __LINE__ << endl
+                 << "ERROR: cannot reuse GPU-sided intermediate memory for ImageCuts (too small)" << endl
+                 << "       use cudaMalloc and recomplile" << endl;
+            exit( -1 );
+        }
+
         cudaPipe->uploadCuts( 0, vCuts, vCutMaxVecLen );
 
         float hom[3][3];
@@ -1169,6 +1175,7 @@ double costFunctionGlob(
 
   double res = 0;
   std::size_t resSize = 0;
+  int debug_loops = 0;
   for( std::size_t i = 0; i < vCuts.size() - 1; ++i )
   {
     for( std::size_t j = i+1; j < vCuts.size(); ++j )
@@ -1180,8 +1187,12 @@ double costFunctionGlob(
         // += (signalCutI(0)-signalCutJ(0))*(signalCutI(0)-signalCutJ(0)) + ... + (signalCutI(end)-signalCutJ(end))*(signalCutI(end)-signalCutJ(end)) // GPU
         ++resSize;
       }
+      debug_loops++;
     }
   }
+
+  cerr << "CPU: result=" << res << " resSize=" << resSize << " in " << debug_loops << " loops" << endl;
+
   // If no cut-pair has been found within the image bounds.
   if ( resSize == 0)
   {

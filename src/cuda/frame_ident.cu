@@ -180,7 +180,9 @@ void idGetSignals( matrix3x3 mHomography, matrix3x3 mInvHomography, cv::cuda::Pt
 {
     int myCut = blockIdx.x * 32 + threadIdx.y;
 
-    if( myCut >= vCutsSize ) return; // out of bounds
+    if( myCut >= vCutsSize ) {
+        return; // out of bounds
+    }
 
     float* cut = &d[myCut * vCutMaxVecLen];
 
@@ -188,68 +190,72 @@ void idGetSignals( matrix3x3 mHomography, matrix3x3 mInvHomography, cv::cuda::Pt
 }
 
 __global__
-void idComputeResult( float* result, int* resCt, float* d, const int vCutsSize, const int vCutMaxVecLen )
+void idComputeResult( FrameMeta* meta, float* d, const int vCutsSize, const int vCutMaxVecLen )
 {
-    __shared__ float signal_sum[32];
-    __shared__ int   count_sum[32];
-
-    if( threadIdx.y == 0 ) {
-        signal_sum[threadIdx.x] = 0;
-    }
     __syncthreads();
 
     int myPair = blockIdx.x * 32 + threadIdx.y;
     int j      = __float2int_rd( 1.0f + __fsqrt_rd(1.0f+8.0f*myPair) ) / 2;
     int i      = myPair - j*(j-1)/2;
 
-    if( i >= vCutsSize || j >= vCutsSize ) return;
+    int   ct   = 0;
+    float val  = 0.0f;
+    bool  comp = true;
 
-    float val    = 0.0f;
-    float* l     = &d[i * vCutMaxVecLen];
-    float* r     = &d[j * vCutMaxVecLen];
-    bool   comp  = ( threadIdx.x < vCutMaxVecLen ) &&
-                   not reinterpret_cast<CutStruct*>(l)->outOfBounds &&
-                   not reinterpret_cast<CutStruct*>(r)->outOfBounds;
-    int    limit = comp ? reinterpret_cast<CutStruct*>(l)->sigSize : 0;
-    for( int offset = threadIdx.x; offset < limit; offset += 32 ) {
-        float square = comp ? l[8+offset]-r[8+offset] : 0.0f;
-        val = __fmaf_rn( square, square, val ); // val += ( square * square );
+    comp = ( j < vCutsSize && i < j );
+
+    if( comp ) {
+        float* l     = &d[i * vCutMaxVecLen];
+        float* r     = &d[j * vCutMaxVecLen];
+        comp  = ( threadIdx.x < vCutMaxVecLen ) &&
+                not reinterpret_cast<CutStruct*>(l)->outOfBounds &&
+                not reinterpret_cast<CutStruct*>(r)->outOfBounds;
+        if( comp ) {
+            int    limit = reinterpret_cast<CutStruct*>(l)->sigSize;
+            for( int offset = threadIdx.x; offset < limit; offset += 32 ) {
+                float square = l[8+offset]-r[8+offset];
+                // val = __fmaf_rn( square, square, val );
+                val += ( square * square );
+            }
+            ct = 1;
+        }
     }
-    int   ct = comp ? 1 : 0;
-    __syncthreads();
-    val += __shfl_down( 16, val );
-    val += __shfl_down(  8, val );
-    val += __shfl_down(  4, val );
-    val += __shfl_down(  2, val );
-    val += __shfl_down(  1, val );
-    ct  += __shfl_down( 16, ct );
-    ct  += __shfl_down(  8, ct );
-    ct  += __shfl_down(  4, ct );
-    ct  += __shfl_down(  2, ct );
-    ct  += __shfl_down(  1, ct );
+
+    val += __shfl_down( val, 16 );
+    val += __shfl_down( val,  8 );
+    val += __shfl_down( val,  4 );
+    val += __shfl_down( val,  2 );
+    val += __shfl_down( val,  1 );
+
+    __shared__ float signal_sum[32];
+    __shared__ int   count_sum[32];
+
     if( threadIdx.x == 0 ) {
         signal_sum[threadIdx.y] = val;
         count_sum [threadIdx.y] = ct;
     }
     __syncthreads();
+
     if( threadIdx.y == 0 ) {
         val = signal_sum[threadIdx.x];
-        val += __shfl_down( 16, val );
-        val += __shfl_down(  8, val );
-        val += __shfl_down(  4, val );
-        val += __shfl_down(  2, val );
-        val += __shfl_down(  1, val );
+        val += __shfl_down( val, 16 );
+        val += __shfl_down( val,  8 );
+        val += __shfl_down( val,  4 );
+        val += __shfl_down( val,  2 );
+        val += __shfl_down( val,  1 );
         ct  = count_sum[threadIdx.x];
-        ct  += __shfl_down( 16, ct );
-        ct  += __shfl_down(  8, ct );
-        ct  += __shfl_down(  4, ct );
-        ct  += __shfl_down(  2, ct );
-        ct  += __shfl_down(  1, ct );
+        ct  += __shfl_down( ct, 16 );
+        ct  += __shfl_down( ct,  8 );
+        ct  += __shfl_down( ct,  4 );
+        ct  += __shfl_down( ct,  2 );
+        ct  += __shfl_down( ct,  1 );
+
         if( threadIdx.x == 0 ) {
-            atomicAdd( result, val );
-            atomicAdd( resCt, ct );
+            atomicAdd( &meta->identification_result, val );
+            atomicAdd( &meta->identification_resct,  ct );
         }
     }
+    __threadfence();
 }
 
 } // namespace identification
@@ -269,36 +275,42 @@ double Frame::idCostFunction( const float hom[3][3], const int vCutsSize, const 
     dim3 grid;
     block.x = 32; // we use this to sum up signals
     block.y = 32; // we can use some shared memory/warp magic for summing
-    block.z = 0;
+    block.z = 1;
     grid.x  = grid_divide( vCutsSize, 32 );
-    grid.y  = 0;
-    grid.z  = 0;
+    grid.y  = 1;
+    grid.z  = 1;
 
+    // cerr << "GPU: #vCuts=" << vCutsSize << " vCutMaxLen=" << vCutMaxVecLen
+    //      << " grid=(" << grid.x << "," << grid.y << "," << grid.z << ")"
+    //      << " block=(" << block.x << "," << block.y << "," << block.z << ")"
+    //      << endl;
+    cudaDeviceSynchronize();
     identification::idGetSignals
         <<<grid,block,0,_stream>>>
         ( mHomography, mInvHomography, _d_plane, _d_intermediate.data, vCutsSize, vCutMaxVecLen );
+    cudaDeviceSynchronize();
 
-    int numPairs = vCutsSize*(vCutsSize+1)/2;
+    int numPairs = vCutsSize*(vCutsSize-1)/2;
+    cerr << "Number of pairs required: " << numPairs << endl;
     block.x = 32; // we use this to sum up signals
     block.y = 32; // we can use some shared memory/warp magic for summing
-    block.z = 0;
+    block.z = 1;
     grid.x  = grid_divide( numPairs, 32 );
-    grid.y  = 0;
-    grid.z  = 0;
+    grid.y  = 1;
+    grid.z  = 1;
+    cerr << "GPU: checked pairs: " << block.y*grid.x << endl;
 
-    // float* device_result = MUSTBEALLOCATED;
-    // int*   device_resct  = MUSTBEALLOCATED;
-    float* device_result = 0;
-    int*   device_resct  = 0;
+    _h_meta->identification_result = 0.0f;
+    _h_meta->identification_resct  = 0;
 
     identification::idComputeResult
         <<<grid,block,0,_stream>>>
-        ( device_result, device_resct, _d_intermediate.data, vCutsSize, vCutMaxVecLen );
+        ( _d_meta, _d_intermediate.data, vCutsSize, vCutMaxVecLen );
 
-    float res     = 0;
-    int   resSize = 0;
-    // float res     = COPYFROMDEVICE( device_result );
-    // int   resSize = COPYFROMDEVICE( device_resct );
+    cudaStreamSynchronize( _stream );
+    float res     = _h_meta->identification_result;
+    int   resSize = _h_meta->identification_resct;
+    cerr << "GPU: result=" << res << " resSize=" << resSize << endl;
 
     // If no cut-pair has been found within the image bounds.
     if ( resSize == 0) {
@@ -306,7 +318,8 @@ double Frame::idCostFunction( const float hom[3][3], const int vCutsSize, const 
         return std::numeric_limits<double>::max();
     } else {
         // normalize, dividing by the total number of pairs in the image bounds.
-        return res /= resSize;
+        res /= resSize;
+        return res;
     }
 }
 
@@ -319,6 +332,8 @@ size_t Frame::getIntermediatePlaneByteSize( ) const
 __host__
 void Frame::uploadCuts( std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen )
 {
+    cerr << "GPU: uploading " << vCuts.size() << " cuts to GPU" << endl;
+
     using namespace popart::identification;
 
     float* d = _h_intermediate.data;
