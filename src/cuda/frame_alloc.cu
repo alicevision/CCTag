@@ -1,7 +1,4 @@
-// #include <iostream>
-// #include <limits>
 #include <cuda_runtime.h>
-// #include <stdio.h>
 #include "debug_macros.hpp"
 
 #include "frame.h"
@@ -12,9 +9,31 @@ namespace popart
 using namespace std;
 
 __host__
+void FrameMeta::alloc( FrameMeta** host, FrameMeta** device )
+{
+    cudaError_t err;
+    void* ptr;
+    err = cudaHostAlloc( &ptr, sizeof(FrameMeta), cudaHostAllocMapped );
+    POP_CUDA_FATAL_TEST( err, "Could not allocate Frame meta info as mapped memory" );
+    *host = (FrameMeta*)ptr;
+
+    (*host)->ring_counter_max = EDGE_LINKING_MAX_ARCS;
+
+    err = cudaHostGetDevicePointer( &ptr, *host, 0 );
+    POP_CUDA_FATAL_TEST( err, "Could not allocate Frame meta info as mapped memory" );
+    *device = (FrameMeta*)ptr;
+}
+
+__host__
+void FrameMeta::release( FrameMeta* host )
+{
+    cudaFreeHost( host );
+}
+
+__host__
 void Frame::allocRequiredMem( const cctag::Parameters& params )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
+    FrameMeta::alloc( &_h_meta, &_d_meta );
 
     void* ptr;
     const size_t w = getWidth();
@@ -127,16 +146,6 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _h_ring_output.rows = EDGE_LINKING_MAX_ARCS;
 
-    POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _d_hysteresis_block_counter = (int*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _d_connect_component_block_counter = (int*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _d_ring_counter = (int*)ptr;
-    _d_ring_counter_max = EDGE_LINKING_MAX_ARCS;
-
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(unsigned char) );
     _h_debug_map = (unsigned char*)ptr;
@@ -147,24 +156,17 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _vote._seed_indices      .alloc( params._maxEdges, EdgeListBoth );
     _vote._seed_indices_2    .alloc( params._maxEdges, EdgeListDevOnly );
 
-    // void*  ptr;
-    // size_t p;
-
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
     assert( p % _vote._d_edgepoint_index_table.elemSize() == 0 );
     _vote._d_edgepoint_index_table.data = (int32_t*)ptr;
     _vote._d_edgepoint_index_table.step = p;
     _vote._d_edgepoint_index_table.cols = w;
     _vote._d_edgepoint_index_table.rows = h;
-
-    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 __host__
 void Frame::initRequiredMem( )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
-
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
                            _d_smooth.step * _d_smooth.rows,
@@ -209,13 +211,6 @@ void Frame::initRequiredMem( )
                            0,
                            _vote._d_edgepoint_index_table.step * _vote._d_edgepoint_index_table.rows,
                            _stream );
-
-    // POP_CUDA_MEMSET_ASYNC( _d_next_edge_after.data,
-    //                        0,
-    //                        _d_next_edge_after.step * _d_next_edge_after.rows,
-    //                        _stream );
-
-    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 void Frame::releaseRequiredMem( )
@@ -232,10 +227,6 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE( _d_hyst_edges.data );
     POP_CUDA_FREE( _d_edges.data );
     POP_CUDA_FREE( _d_ring_output.data );
-
-    POP_CUDA_FREE( _d_hysteresis_block_counter );
-    POP_CUDA_FREE( _d_connect_component_block_counter );
-    POP_CUDA_FREE( _d_ring_counter );
 
     cudaFreeHost( _h_plane.data );
     cudaFreeHost( _h_dx.data );
@@ -255,6 +246,8 @@ void Frame::releaseRequiredMem( )
     _vote._seed_indices      .release();
     _vote._seed_indices_2    .release();
     POP_CUDA_FREE( _vote._d_edgepoint_index_table.data );
+
+    FrameMeta::release( _h_meta );
 }
 
 }; // namespace popart

@@ -198,21 +198,21 @@ bool edge_block_loop( )
 }
 
 __device__
-bool edge( int* block_counter )
+bool edge( FrameMeta* meta )
 {
     bool something_changed = edge_block_loop( );
     if( threadIdx.x == 0 && threadIdx.y == 0 ) {
         if( something_changed ) {
-            atomicAdd( block_counter, 1 );
+            atomicAdd( &meta->hysteresis_block_counter, 1 );
         }
     }
     return something_changed;
 }
 
 __global__
-void edge_first( cv::cuda::PtrStepSzb img, int* block_counter, cv::cuda::PtrStepSzb src )
+void edge_first( cv::cuda::PtrStepSzb img, FrameMeta* meta, cv::cuda::PtrStepSzb src )
 {
-    *block_counter = 0;
+    meta->hysteresis_block_counter = 0;
 
     // const int idx  = blockIdx.x * HYST_W + threadIdx.x;
     // const int idy  = blockIdx.y * HYST_H + threadIdx.y;
@@ -226,7 +226,7 @@ void edge_first( cv::cuda::PtrStepSzb img, int* block_counter, cv::cuda::PtrStep
     input.cols = src.cols / 4;
     load( input );
 
-    edge( block_counter );
+    edge( meta );
 
     __syncthreads();
 
@@ -239,9 +239,9 @@ void edge_first( cv::cuda::PtrStepSzb img, int* block_counter, cv::cuda::PtrStep
 }
 
 __global__
-void edge_second( cv::cuda::PtrStepSzb img, int* block_counter )
+void edge_second( cv::cuda::PtrStepSzb img, FrameMeta* meta )
 {
-    *block_counter = 0;
+    meta->hysteresis_block_counter = 0;
 
     cv::cuda::PtrStepSz32u input;
     input.data = reinterpret_cast<uint32_t*>(img.data);
@@ -251,7 +251,7 @@ void edge_second( cv::cuda::PtrStepSzb img, int* block_counter )
     input.cols = img.cols / 4;
     load( input );
 
-    bool something_changed = edge( block_counter );
+    bool something_changed = edge( meta );
 
     if( __any( something_changed ) ) {
         store( input, false );
@@ -284,9 +284,9 @@ void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w
 
 #if defined(USE_SEPARABLE_COMPILATION)
 __global__
-void hyst_outer_loop_recurse( int width, int height, int* block_counter, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src, int depth )
+void hyst_outer_loop_recurse( int width, int height, FrameMeta* meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src, int depth )
 {
-    if( *block_counter == 0 ) return;
+    if( meta->hysteresis_block_counter == 0 ) return;
 
     dim3 block;
     dim3 grid;
@@ -295,21 +295,20 @@ void hyst_outer_loop_recurse( int width, int height, int* block_counter, cv::cud
     grid.x  = grid_divide( width,   HYST_W * 4 );
     grid.y  = grid_divide( height,  HYST_H );
 
-    *block_counter = 1; // anything non-null will allow the grid to start
+    meta->hysteresis_block_counter = 1; // anything non-null will allow the grid to start
 
     for( int i=0; i<depth*2; i++ ) {
         hysteresis::edge_second
             <<<grid,block>>>
-            ( img,
-              block_counter );
+            ( img, meta );
     }
     hyst_outer_loop_recurse
         <<<1,1>>>
-        ( width, height, block_counter, img, src, depth+1 );
+        ( width, height, meta, img, src, depth+1 );
 }
 
 __global__
-void hyst_outer_loop( int width, int height, int* block_counter, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src )
+void hyst_outer_loop( int width, int height, FrameMeta* meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src )
 {
     dim3 block;
     dim3 grid;
@@ -320,13 +319,13 @@ void hyst_outer_loop( int width, int height, int* block_counter, cv::cuda::PtrSt
 
     hysteresis::edge_first
         <<<grid,block>>>
-        ( img,
-          block_counter,
-          src );
+        ( img, meta, src );
 
     hyst_outer_loop_recurse
         <<<1,1>>>
-        ( width, height, block_counter, img, src, 1 );
+        ( width, height, meta, img, src, 1 );
+
+    __threadfence(); // meant to push the children's atomic meta data to CPU
 }
 #endif // USE_SEPARABLE_COMPILATION
 
@@ -354,38 +353,30 @@ void Frame::applyHyst( const cctag::Parameters & params )
 #if defined(USE_SEPARABLE_COMPILATION)
     hyst_outer_loop
         <<<1,1,0,_stream>>>
-        ( getWidth(), getHeight(), _d_hysteresis_block_counter, _d_hyst_edges, _d_map );
+        ( getWidth(), getHeight(), _d_meta, _d_hyst_edges, _d_map );
 #else // USE_SEPARABLE_COMPILATION
     bool first_time = true;
-    int block_counter;
     do
     {
-        block_counter = grid.x * grid.y;
-        POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( _d_hysteresis_block_counter,
-                                         &block_counter,
-                                         sizeof(int), _stream );
+        _h_meta->hysteresis_block_counter = grid.x * grid.y;
         if( first_time ) {
             hysteresis::edge_first
                 <<<grid,block,0,_stream>>>
                 ( _d_hyst_edges,
-                  _d_hysteresis_block_counter,
+                  _d_meta,
                   _d_map );
             first_time = false;
         } else {
             hysteresis::edge_second
                 <<<grid,block,0,_stream>>>
                 ( _d_hyst_edges,
-                  _d_hysteresis_block_counter );
+                  _d_meta );
         }
         POP_CHK_CALL_IFSYNC;
-
-        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &block_counter,
-                                       _d_hysteresis_block_counter,
-                                       sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
-        cerr << "block_counter=" << block_counter << endl;
+        cerr << "hysteresis_block_counter=" << _h_meta->hysteresis_block_counter << endl;
     }
-    while( block_counter > 0 );
+    while( _h_meta->hysteresis_block_counter > 0 );
 #endif // USE_SEPARABLE_COMPILATION
 }
 

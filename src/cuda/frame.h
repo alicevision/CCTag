@@ -88,6 +88,24 @@ private:
 };
 
 /*************************************************************
+ * FrameTexture
+ * Every from has one of these structures. It is allocated in
+ * pinned host memory, but is also mapped to the device.
+ */
+struct FrameMeta
+{
+    int   hysteresis_block_counter;
+    int   connect_component_block_counter;
+    int   ring_counter;
+    int   ring_counter_max;
+    float identification_results;
+    int   identification_resct;
+
+    static void alloc( FrameMeta** host, FrameMeta** device );
+    static void release( FrameMeta* host );
+};
+
+/*************************************************************
  * Frame
  * The basic structure for managing data stored on the GPU
  *************************************************************/
@@ -233,10 +251,8 @@ private:
 private:
     int                     _layer;
 
-    int*                    _d_hysteresis_block_counter;
-    int*                    _d_connect_component_block_counter;
-    int*                    _d_ring_counter;
-    int                     _d_ring_counter_max;
+    FrameMeta*              _h_meta; // pointer to pinned mem
+    FrameMeta*              _d_meta; // mapping to device mem
 
     cv::cuda::PtrStepSzb    _d_plane;
     cv::cuda::PtrStepSzf    _d_intermediate;

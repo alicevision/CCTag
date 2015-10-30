@@ -1020,7 +1020,7 @@ bool imageCenterOptimizationGlob(
         continue; 
       }
 
-      
+#if 0 
       if( cudaPipe ) {
         size_t vCutMaxVecLen = 100;
         // step 1: find the largest vector in all the Cuts in this round
@@ -1052,6 +1052,7 @@ bool imageCenterOptimizationGlob(
         bool   cuda_readable = true;
         cuda_res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), vCutMaxVecLen, cuda_readable );
       }
+#endif
 
       bool readable = true;
 

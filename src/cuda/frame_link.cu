@@ -312,8 +312,7 @@ void edge_linking_seed( const TriplePoint*           p,
                         cv::cuda::PtrStepSzb         edges,
                         cv::cuda::PtrStepSz16s       d_dx,
                         cv::cuda::PtrStepSz16s       d_dy,
-                        int*                         d_ring_counter,
-                        int                          d_ring_counter_max,
+                        FrameMeta*                   meta,
                         cv::cuda::PtrStepSzInt2      d_ring_output,
                         const size_t param_windowSizeOnInnerEllipticSegment,
                         const float  param_averageVoteMin )
@@ -589,8 +588,8 @@ void edge_linking_seed( const TriplePoint*           p,
         if( (i == EDGE_LINKING_MAX_EDGE_LENGTH) || (found == CONVEXITY_LOST) || (found == FULL_CIRCLE) ) {
             int convexEdgeSegmentSize = buf.size();
             if (convexEdgeSegmentSize > param_windowSizeOnInnerEllipticSegment) {
-                int write_index = atomicAdd( d_ring_counter, 1 );
-                if( write_index <= d_ring_counter_max ) {
+                int write_index = atomicAdd( &meta->ring_counter, 1 );
+                if( write_index <= meta->ring_counter_max ) {
 #ifdef KERNEL_PRINT_SUCCESS_CAUSE
                     const char* c;
                     if( i == EDGE_LINKING_MAX_EDGE_LENGTH ) {
@@ -610,7 +609,7 @@ void edge_linking_seed( const TriplePoint*           p,
                 }
 #ifdef KERNEL_PRINT_ERROR_CAUSE
                 else {
-                    printf("From (%d,%d): %d (average vote %f) - skip, max number of arcs reached (%d)\n", p->coord.x, p->coord.y, i, averageVote, d_ring_counter_max );
+                    printf("From (%d,%d): %d (average vote %f) - skip, max number of arcs reached (%d)\n", p->coord.x, p->coord.y, i, averageVote, meta->ring_counter_max );
                 }
 #endif // KERNEL_PRINT_ERROR_CAUSE
             }
@@ -659,8 +658,7 @@ void edge_linking( DevEdgeList<TriplePoint>     triplepoints,
                    cv::cuda::PtrStepSzb         edges,
                    cv::cuda::PtrStepSz16s       d_dx,
                    cv::cuda::PtrStepSz16s       d_dy,
-                   int*                         d_ring_counter,
-                   int                          d_ring_counter_max,
+                   FrameMeta*                   meta,
                    cv::cuda::PtrStepSzInt2      d_ring_output,
                    size_t param_windowSizeOnInnerEllipticSegment,
                    float  param_averageVoteMin )
@@ -681,11 +679,11 @@ void edge_linking( DevEdgeList<TriplePoint>     triplepoints,
                        edges,
                        d_dx,
                        d_dy,
-                       d_ring_counter,
-                       d_ring_counter_max,
+                       meta,
                        d_ring_output,
                        param_windowSizeOnInnerEllipticSegment,
                        param_averageVoteMin );
+    __threadfence(); // should push the atomic meta values to CPU
 }
 
 }; // namespace linking
@@ -722,7 +720,7 @@ void Frame::applyLink( const cctag::Parameters& params )
     /* Both init steps should be done in another stream, earlier. No reason to do
      * this synchronously.
      */
-    POP_CUDA_SET0_ASYNC( _d_ring_counter, _stream );
+    _h_meta->ring_counter = 0;
 
     POP_CUDA_MEMSET_ASYNC( _d_ring_output.data, 0, _d_ring_output.step*_d_ring_output.rows, _stream );
 
@@ -753,8 +751,7 @@ void Frame::applyLink( const cctag::Parameters& params )
           _d_edges,
           _d_dx,
           _d_dy,
-          _d_ring_counter,
-          _d_ring_counter_max,
+          _d_meta,
           _d_ring_output,
           params._windowSizeOnInnerEllipticSegment,
           params._averageVoteMin );
@@ -771,11 +768,8 @@ void Frame::applyLink( const cctag::Parameters& params )
     POP_CHK_CALL_IFSYNC;
 
 #ifndef NDEBUG
-    int h_ring_counter;
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &h_ring_counter, _d_ring_counter, sizeof(int), _stream );
-    POP_CHK_CALL_IFSYNC;
     POP_CUDA_SYNC( _stream );
-    cout << "  Found arcs from " << h_ring_counter << " seeds" << endl;
+    cout << "  Found arcs from " << _h_meta->ring_counter << " seeds" << endl;
 #endif // NDEBUG
 
     DO_TALK( cout << "Leave " << __FUNCTION__ << endl; )
