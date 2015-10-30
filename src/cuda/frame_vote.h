@@ -67,17 +67,7 @@ struct Voting
     EdgeList<int>          _seed_indices_2;
     cv::cuda::PtrStepSz32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
 
-    Voting( )
-    { }
-
-    ~Voting( )
-    { }
-
     void debug_download( const cctag::Parameters& params );
-
-    void alloc( const cctag::Parameters& params, size_t w, size_t h );
-    void init( cudaStream_t stream );
-    void release( );
 
     bool constructLine( const cctag::Parameters&     params,
                         cudaStream_t                 stream );
