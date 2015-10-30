@@ -1281,12 +1281,19 @@ int identify(
     
   // C. Imaged center optimization /////////////////////////////////////////////
   // Expensive (GPU) Time bottleneck, the only function (including its sub functions) to be implemented on GPU
-  // Note: i) src is already on GPU
+  // Note Inputs (CPU->GPU):
+  //       i) src is already on GPU
   //       ii) _imgSignal in all ImageCut of vSelectedCuts do not need to be transfert,
   //       these signals will be collected inside the function.
   //       iii) cctag.homography(): 3x3 float homography, cctag.centerImg(): 2 floats (x,y), ellipse: (see Ellipse.hpp)
   // Begin GPU
   bool hasConverged = refineConicFamilyGlob( cctag.homography(), cctag.centerImg(), vSelectedCuts, src, ellipse, params);
+  // Note Outputs (GPU->CPU):
+  //        The main amount of data to transfert is only that way and is 'vSelectedCuts', 
+  //        the other outputs are of negligible size.
+  //        All the ImageCut in vSelectedCuts including their attribute _imgSignal have to be transfer back to CPU.
+  //        This operation is done once per marker. A maximum of 30 markers will be processed per frame. The 
+  //        maximum number of cuts will be of 50. The maximum length of each _imgSignal will of 100*float.
   // End GPU
   if( !hasConverged )
   {
