@@ -59,6 +59,8 @@ public:
 	void computeParameters();
 
 	void computeMatrix();
+        
+        void getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual) const;
 
 	void init( const Point2dN<double>& center, const double a, const double b, const double angle );
 

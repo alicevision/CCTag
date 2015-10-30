@@ -670,6 +670,7 @@ void getSignals(
  * @param[out] mHomography computed homography
  */
 /* depreciated */
+#if 0
 void computeHomographyFromEllipseAndImagedCenter(
         const cctag::numerical::BoundedMatrix3x3d & mEllipse,
         const cctag::Point2dN<double> & center,
@@ -770,7 +771,7 @@ void computeHomographyFromEllipseAndImagedCenter(
   // Normalize
   mHomography = mHomography/mHomography(2,2);
 }
-
+#endif
 
 
 /**
@@ -782,102 +783,66 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @param[out] mHomography computed homography
  */
 
-//void computeHomographyFromEllipseAndImagedCenter(
-//        const cctag::numerical::geometry::Ellipse & ellipse,
-//        const cctag::Point2dN<double> & center,
-//        cctag::numerical::BoundedMatrix3x3d & mHomography)
-// {
-//    using namespace cctag::numerical;
-//    using namespace boost::numeric::ublas;
-//    
-//    cctag::numerical::BoundedMatrix3x3d mTranslation = ublas::identity_matrix<double>( 3 );
-//    mTranslation( 0, 2 ) = ellipse.center().x();
-//    mTranslation( 1, 2 ) = ellipse.center().y();
-//    
-//    
-//    
-//      // Back projection of the image center
-//  //Point2dN<double> backProjCenter = prec_prod< BoundedVector3d >( mInvHomography, center );
-//
-//
-//    
-//  cctag::numerical::BoundedMatrix3x3d mA;
-//  invert( mEllipse, mA );
-//  cctag::numerical::BoundedMatrix3x3d mO = outer_prod( center, center );
-//  diagonal_matrix<double> vpg;
-//
-//  cctag::numerical::BoundedMatrix3x3d mVG;
-//  // Compute eig(inv(A),center*center')
-//  eig( mA, mO, mVG, vpg ); // Warning : compute GENERALIZED eigvalues, take 4 parameters !
-//                           // eig(a,b,c) compute eigenvalues of a, call a different 
-//                           // routine in lapack.
-//
-//  cctag::numerical::Matrixd u, v;
-//  diagonal_matrix<double> s( 3, 3 );
-//  double vmin = std::abs( vpg( 0, 0 ) );
-//  std::size_t imin = 0;
-//
-//  // Find minimum of the generalized eigen values
-//  for( std::size_t i = 1; i < vpg.size1(); ++i )
-//  {
-//    double v = std::abs( vpg( i, i ) );
-//    if ( v < vmin )
-//    {
-//      vmin = v;
-//      imin = i;
-//    }
-//  }
-//
-//  svd( mA - vpg( imin, imin ) * mO, u, v, s );
-//
-//  for( std::size_t i = 0; i < s.size1(); ++i )
-//  {
-//    BOOST_ASSERT( s( i, i ) >= 0.0 );
-//    s( i, i ) = std::sqrt( s( i, i ) );
-//  }
-//
-//  cctag::numerical::BoundedMatrix3x3d mU = prec_prod( u, s );
-//
-//  column( mHomography, 0 ) = column( mU, 0 );
-//  column( mHomography, 1 ) = column( mU, 1 );
-//  column( mHomography, 2 ) = cross( column( mU, 0 ), column( mU, 1 ) );
-//  
-//  // The circular points have been computed.
-//  // The following ensures that the back projection is at the origin (through a translation)
-//  // and the the back projected outer ellipse is of unit radius.
-//  
-//
-//  // Closed-form solution
-//
-//  // H : plan->image
-//H =
-//[ [     Q33,        Q22*xc*yc, -Q33*xc];
-//  [       0,      - Q11*xc^2 - Q33, -Q33*yc];
-//  [ -Q11*xc,        Q22*yc,    -Q33] ] ...
-//* diag([ ((Q22*Q33/Q11*(Q11*xc^2 + Q22*yc^2 + Q33)))^(1/2);Q33;(-Q22*(Q11*xc^2 + Q33))^(1/2)]);
-//
-//  // 
-//  cctag::numerical::BoundedMatrix3x3d & Q = mCanonicEllipse;
-//  
-//  mHomography(0,0) = Q(2,2);
-//  mHomography(1,0) = 0.0;
-//  mHomography(2,0) = -Q(0,0)*xc;
-//  
-//  mHomography(0,1) = Q(1,1)*xc*yc;
-//  mHomography(1,1) = -Q(0,0)*xc^2-Q(2,2);
-//  mHomography(2,1) = Q(1,1)*yc;
-//  
-//  mHomography(0,1) = -Q(2,2)*xc;
-//  mHomography(1,1) = -Q(2,2)*yc;
-//  mHomography(2,1) = -Q(2,2);
-//  
-//  // 
-//  cctag::numerical::BoundedMatrix3x3d mColRescale = ublas::identity_matrix<double>( 3 );
-//  mColRescale.clear();
-//  mColRescale(0,0) = sqrt((Q(1,1)*Q(2,2)/Q(0,0)*(Q(0,0)*xc^2 + Q(1,1)*yc^2 + Q(2,2))));
-//  mColRescale(1,1) = Q(2,2);
-//  mColRescale(2,2) = sqrt(-Q(1,1)*(Q(0,0)*xc^2 + Q(2,2)));
-//}
+void computeHomographyFromEllipseAndImagedCenter(
+        const cctag::numerical::geometry::Ellipse & ellipse,
+        const cctag::Point2dN<double> & center,
+        cctag::numerical::BoundedMatrix3x3d & mHomography)
+ {
+    using namespace cctag::numerical;
+    using namespace boost::numeric::ublas;
+
+    cctag::numerical::BoundedMatrix3x3d mCanonic(3,3);
+    cctag::numerical::BoundedMatrix3x3d mTCan(3,3);
+    cctag::numerical::BoundedMatrix3x3d mTInvCan(3,3);
+    
+    ellipse.getCanonicForm(mCanonic, mTCan, mTInvCan);
+    
+    // Get the center coordinates in the new canonical representation.
+    double xc, yc;
+    applyHomography(xc,yc, mTCan,center.x(), center.y());
+            
+    // Closed-form solution for the homography plan->image computation
+    // The ellipse is supposed to be in its canonical representation
+
+    // Matlab closed-form
+    //H =
+    //[ [     Q33,        Q22*xc*yc, -Q33*xc];
+    //  [       0,      - Q11*xc^2 - Q33, -Q33*yc];
+    //  [ -Q11*xc,        Q22*yc,    -Q33] ] ...
+    // * diag([ ((Q22*Q33/Q11*(Q11*xc^2 + Q22*yc^2 + Q33)))^(1/2);Q33;(-Q22*(Q11*xc^2 + Q33))^(1/2)]);
+    
+
+    double Q11 = mCanonic(0,0);
+    double Q22 = mCanonic(1,1);
+    double Q33 = mCanonic(2,2);
+
+    mHomography(0,0) = Q33;
+    mHomography(1,0) = 0.0;
+    mHomography(2,0) = -Q11*xc;
+
+    mHomography(0,1) = Q22*xc*yc;
+    mHomography(1,1) = -Q11*xc*xc-Q33;
+    mHomography(2,1) = Q22*yc;
+
+    mHomography(0,2) = -Q33*xc;
+    mHomography(1,2) = -Q33*yc;
+    mHomography(2,2) = -Q33;
+
+    cctag::numerical::BoundedMatrix3x3d mDiag = identity_matrix<double>( 3 );
+    mDiag(0,0) = sqrt((Q22*Q33/Q11*(Q11*xc*xc + Q22*yc*yc + Q33)));
+    mDiag(1,1) = Q33;
+    mDiag(2,2) = sqrt(-Q22*(Q11*xc*xc + Q33));
+
+    for(int i=0; i < 3 ; ++i)
+    {
+      for(int j=0; j < 3 ; ++j)
+      {
+          mHomography(i,j) *= mDiag(j,j);
+      }
+    }
+
+    mHomography = prec_prod( mTInvCan, mHomography ); // mHomography = mTInvCan*mHomography
+}
 
 /**
  * @brief Compute the optimal homography/imaged center based on the 
@@ -986,17 +951,39 @@ bool imageCenterOptimizationGlob(
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
   
-    std::vector<cctag::Point2dN<double> > nearbyPoints;
-    // A. Get all the grid point nearby the center /////////////////////////////
-    getNearbyPoints(outerEllipse, center, nearbyPoints, neighbourSize, gridNSample, GRID);
-    
-    minRes = std::numeric_limits<double>::max();
-    cctag::Point2dN<double> optimalPoint;
-    BoundedMatrix3x3d optimalHomography;
-    BoundedMatrix3x3d mTempHomography;
-    
-    bool hasASolution = false;
+  std::vector<cctag::Point2dN<double> > nearbyPoints;
+  // A. Get all the grid point nearby the center /////////////////////////////
+  getNearbyPoints(outerEllipse, center, nearbyPoints, neighbourSize, gridNSample, GRID);
 
+  minRes = std::numeric_limits<double>::max();
+  cctag::Point2dN<double> optimalPoint;
+  BoundedMatrix3x3d optimalHomography;
+  BoundedMatrix3x3d mTempHomography;
+
+  bool hasASolution = false;
+    
+//  cctag::numerical::BoundedMatrix3x3d toto(3,3);
+//  
+//  toto(0,0) = 1.309155016693802e-03;
+//  toto(0,1) = -1.142981587719118e-03;
+//  toto(0,2) = -4.317039912542719e-02;
+//  toto(1,0) = -1.142981587719118e-03;
+//  toto(1,1) = 6.999445357343172e-03;
+//  toto(1,2) = -1.145286626794469e+00;
+//  toto(2,0) = -4.317039912542719e-02;
+//  toto(2,1) = -1.145286626794469e+00;
+//  toto(2,2) = 2.345892530517704e+02;
+//  
+//  cctag::Point2dN<double> pointToto(2.050397293063406e+02, 1.969686628831671e+02);
+//  cctag::numerical::geometry::Ellipse ellipseToto(toto);
+//  
+//  computeHomographyFromEllipseAndImagedCenter( ellipseToto, pointToto, mTempHomography);
+//    
+//  cctag::viewGeometry::projectiveTransform( mTempHomography, ellipseToto );
+//  CCTAG_COUT_VAR( ellipseToto );
+  
+//  exit (EXIT_FAILURE);
+  
 #ifdef OPTIM_CENTER_VISUAL_DEBUG // Visual debug durign the optim
     int k = 0;
 #endif // OPTIM_CENTER_VISUAL_DEBUG   
@@ -1010,7 +997,7 @@ bool imageCenterOptimizationGlob(
       
       try
       {
-        computeHomographyFromEllipseAndImagedCenter( outerEllipse.matrix(), point, mTempHomography);
+        computeHomographyFromEllipseAndImagedCenter( outerEllipse, point, mTempHomography);
       }catch(...)
       {
         continue; 

@@ -163,6 +163,66 @@ void Ellipse::computeParameters()
 	}
 }
 
+/*
+ * @brief Compute 
+ */
+void Ellipse::getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual) const 
+{
+
+  double q1 = _matrix(0,0);
+  double q2 = _matrix(0,1);
+  double q3 = _matrix(0,2);
+  double q4 = _matrix(1,1);
+  double q5 = _matrix(1,2);
+  double q6 = _matrix(2,2);
+  
+  double par1 = q1;
+  double par2 = 2*q2;
+  double par3 = q4;
+  double par4 = 2*q3;
+  double par5 = 2*q5;
+  double par6 = q6;
+  
+  double thetarad    = 0.5*atan2(par2,par1 - par3);
+  double cost        = cos(thetarad);
+  double sint        = sin(thetarad);
+  double sin_squared = sint * sint;
+  double cos_squared = cost * cost;
+  double cos_sin     = sint * cost;
+
+  double Ao          = par6;
+  double Au          = par4 * cost + par5 * sint;
+  double Av          = -par4 * sint + par5 * cost;
+  double Auu         = par1 * cos_squared + par3 * sin_squared + par2 * cos_sin;
+  double Avv         = par1 * sin_squared + par3 * cos_squared - par2 * cos_sin;
+
+  double tuCentre    = - Au/(2*Auu);
+  double tvCentre    = - Av/(2*Avv);
+
+  double uCentre     = tuCentre * cost - tvCentre * sint;
+  double vCentre     = tuCentre * sint + tvCentre * cost;
+  
+  double qt1 = cost*(cost*q1 + q2*sint) + sint*(cost*q2 + q4*sint);
+  double qt2 = cost*(cost*q2 + q4*sint) - sint*(cost*q1 + q2*sint);
+  double qt3 = cost*q3 + q5*sint + uCentre*(cost*q1 + q2*sint) + vCentre*(cost*q2 + q4*sint);
+  double qt4 = cost*(cost*q4 - q2*sint) - sint*(cost*q2 - q1*sint);
+  double qt5 = cost*q5 - q3*sint + uCentre*(cost*q2 - q1*sint) + vCentre*(cost*q4 - q2*sint);
+  double qt6 =  q6 + uCentre*(q3 + q1*uCentre + q2*vCentre) + vCentre*(q5 + q2*uCentre + q4*vCentre) + q3*uCentre + q5*vCentre;
+  
+  mCanonic(0,0) = qt1;    mCanonic(0,1) = qt2;   mCanonic(0,2) = qt3;
+  mCanonic(1,0) = qt2;    mCanonic(1,1) = qt4;   mCanonic(1,2) = qt5;
+  mCanonic(2,0) = qt3;    mCanonic(2,1) = qt5;   mCanonic(2,2) = qt6;
+
+  mTprimal(0,0) = cost;   mTprimal(0,1) = sint;  mTprimal(0,2) = - cost*uCentre - sint*vCentre;
+  mTprimal(1,0) = -sint;  mTprimal(1,1) = cost;  mTprimal(1,2) = sint*uCentre - cost*vCentre;
+  mTprimal(2,0) = 0;      mTprimal(2,1) = 0;     mTprimal(2,2) = cost*cost + sint*sint;
+  
+  mTdual(0,0) = cost;     mTdual(0,1) = -sint;   mTdual(0,2) = uCentre;
+  mTdual(1,0) = sint;     mTdual(1,1) = cost;    mTdual(1,2) = vCentre;
+  mTdual(2,0) = 0;        mTdual(2,1) = 0;       mTdual(2,2) = 1.0;
+  
+}
+
 void Ellipse::computeMatrix()
 {
 	bounded_matrix<double, 3, 3> tmp;

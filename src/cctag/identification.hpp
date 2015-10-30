@@ -319,12 +319,12 @@ void getNearbyPoints(
  * and its imaged unit circle (represented as an ellipse, assuming only quasi-affine transformation
  * PS: this version will be replaced by its closed-form formulation (todo)
  * 
- * @param[in] mEllipse ellipse matrix, projection of the unit circle
+ * @param[in] ellipse ellipse image of the unit circle
  * @param[in] center imaged center, projection of the origin
  * @param[out] mHomography computed homography
  */
 void computeHomographyFromEllipseAndImagedCenter(
-        const cctag::numerical::BoundedMatrix3x3d & mEllipse,
+        const cctag::numerical::geometry::Ellipse & ellipse,
         const cctag::Point2dN<double> & center,
         cctag::numerical::BoundedMatrix3x3d & mHomography);
 
