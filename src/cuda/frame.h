@@ -286,9 +286,6 @@ private:
 #endif // DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_hyst_edges;
 public: // HACK FOR DEBUGGING
-    // unsigned char*          _h_plane;
-    // uint32_t*               _h_debug_mag;
-    // unsigned char*          _h_debug_edges;
     cv::cuda::PtrStepSzb    _h_plane;
     cv::cuda::PtrStepSz16s  _h_dx;
     cv::cuda::PtrStepSz16s  _h_dy;
