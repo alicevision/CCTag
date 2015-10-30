@@ -125,7 +125,8 @@ void completeFlowComponent(
 
       if (childrens.size() < params._minPointsSegmentCandidate)
       {
-        DO_TALK( CCTAG_COUT_DEBUG(" childrens.size() < minPointsSegmentCandidate "); ) return;
+        DO_TALK( CCTAG_COUT_DEBUG(" childrens.size() < minPointsSegmentCandidate "); )
+        return;
       }
 
       candidate._score = childrens.size();
