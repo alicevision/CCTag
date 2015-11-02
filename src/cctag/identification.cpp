@@ -1022,14 +1022,12 @@ bool imageCenterOptimizationGlob(
         }
 #endif
 
-        // OLD OLD
-        // OLD bool readable = true;
-        // OLD 
-        // OLD // C. Compute the 1D rectified signals of vCuts image cut based on the 
-        // OLD // transformation mTempHomography.
-        // OLD // Expensive (GPU) @Carsten
+        bool readable = true;
+
+        // C. Compute the 1D rectified signals of vCuts image cut based on the 
+        // transformation mTempHomography.
+        // Expensive (GPU) @Carsten
         double res = costFunctionGlob(mTempHomography, vCuts, src, readable);
-        // OLD OLD
       
         // If at least one image cut has been properly read
         if ( readable )
