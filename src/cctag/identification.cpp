@@ -969,21 +969,23 @@ bool imageCenterOptimizationGlob(
     // For all points nearby the center ////////////////////////////////////////
     for(const cctag::Point2dN<double> & point : nearbyPoints)
     {
-      CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
+        CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
       
-      // B. Compute the homography so that the back projection of 'point' is the
-      // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
+        // B. Compute the homography so that the back projection of 'point' is the
+        // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
       
-      try
-      {
-        computeHomographyFromEllipseAndImagedCenter( outerEllipse, point, mTempHomography);
-      }catch(...)
-      {
-        continue; 
-      }
+        try
+        {
+            computeHomographyFromEllipseAndImagedCenter( outerEllipse,
+                                                         point,
+                                                         mTempHomography );
+        }catch(...)
+        {
+            continue; 
+        }
 
 #if 1
-      if( cudaPipe ) {
+        if( cudaPipe ) {
             size_t vCutMaxVecLen = 100;
             // step 1: find the largest vector in all the Cuts in this round
             for( const ImageCut& cut : vCuts ) {
@@ -1050,7 +1052,7 @@ bool imageCenterOptimizationGlob(
         } else {
             CCTAG_COUT_VAR_OPTIM(readable);
         }
-    }
+    } // for(point : nearbyPoints)
     center = optimalPoint;
     CCTAG_COUT_VAR_OPTIM(center);
     mHomography = optimalHomography;
