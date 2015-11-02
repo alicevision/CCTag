@@ -262,8 +262,8 @@ void getSignals(
  * @brief Compute the optimal homography/imaged center based on the 
  * signal in the image and  the outer ellipse, supposed to be image the unit circle.
  * 
- * @param[out] cctag cctag to optimize in order to find its imaged center in conjunction 
- * with the image->cctag homography
+ * @param[out] mHomography image->cctag homography to optimize
+ * @param[out] optimalPoint imaged center to optimize
  * @param[out] vCuts cuts holding the rectified 1D signals at the end of the optimization
  * @param[in] src source image
  * @param[in] ellipse outer ellipse (todo: is that already in the cctag object?)
@@ -271,7 +271,8 @@ void getSignals(
  * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
-        CCTag & cctag,
+        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        Point2dN<double> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
         popart::TagPipe* cudaPipe,
@@ -326,12 +327,12 @@ void getNearbyPoints(
  * and its imaged unit circle (represented as an ellipse, assuming only quasi-affine transformation
  * PS: this version will be replaced by its closed-form formulation (todo)
  * 
- * @param[in] mEllipse ellipse matrix, projection of the unit circle
+ * @param[in] ellipse ellipse image of the unit circle
  * @param[in] center imaged center, projection of the origin
  * @param[out] mHomography computed homography
  */
 void computeHomographyFromEllipseAndImagedCenter(
-        const cctag::numerical::BoundedMatrix3x3d & mEllipse,
+        const cctag::numerical::geometry::Ellipse & ellipse,
         const cctag::Point2dN<double> & center,
         cctag::numerical::BoundedMatrix3x3d & mHomography);
 
