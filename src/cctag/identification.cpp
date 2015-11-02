@@ -984,8 +984,10 @@ bool imageCenterOptimizationGlob(
             continue; 
         }
 
-#if 1
-      if( cudaPipe ) {
+        bool   readable = true;
+        double res;
+
+        if( cudaPipe ) {
             size_t vCutMaxVecLen = 100;
             // step 1: find the largest vector in all the Cuts in this round
             for( const ImageCut& cut : vCuts ) {
@@ -1018,18 +1020,14 @@ bool imageCenterOptimizationGlob(
                 for( int col=0; col<3; col++ )
                     hom[row][col] = mTempHomography(row,col);
 
-            double cuda_res;
-            bool   cuda_readable = true;
-            cuda_res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), vCutMaxVecLen, cuda_readable );
+            res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), vCutMaxVecLen, readable );
+            // cerr << "cuda cost function returns " << res << ", readable " << readable << endl;
+        } else {
+            // C. Compute the 1D rectified signals of vCuts image cut based on the 
+            // transformation mTempHomography.
+            res = costFunctionGlob(mTempHomography, vCuts, src, readable );
+            // cerr << "host cost function returns " << res << ", readable " << readable << endl;
         }
-#endif
-
-        bool readable = true;
-
-        // C. Compute the 1D rectified signals of vCuts image cut based on the 
-        // transformation mTempHomography.
-        // Expensive (GPU) @Carsten
-        double res = costFunctionGlob(mTempHomography, vCuts, src, readable);
       
         // If at least one image cut has been properly read
         if ( readable )
