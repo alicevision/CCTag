@@ -1,41 +1,14 @@
 #include <cuda_runtime.h>
 
 #include "frame.h"
+#include "clamp.h"
+#include "geom_matrix.h"
 
 using namespace std;
 
 namespace popart {
 
 namespace identification {
-
-struct matrix3x3
-{
-    float val[3][3];
-
-    __host__ __device__
-    matrix3x3( ) { }
-
-    __host__ __device__
-    matrix3x3( const float mx[3][3] ) {
-        #pragma unroll
-        for( int i=0; i<3; i++ ) {
-            #pragma unroll
-            for( int j=0; j<3; j++ ) {
-                val[i][j] = mx[i][j];
-            }
-        }
-    }
-
-    __host__ __device__
-    inline float& operator()(int y, int x) {
-        return val[y][x];
-    }
-
-    __host__ __device__
-    inline const float& operator()(int y, int x) const {
-        return val[y][x];
-    }
-};
 
 struct CutStruct
 {
@@ -47,124 +20,89 @@ struct CutStruct
     int    sigSize;
 };
 
-__host__ __device__
-float det( const matrix3x3& m )
+__device__
+inline float getPixelBilinear( cv::cuda::PtrStepSzb src, float2 xy )
 {
-    float det =  m(0,0) * ( m(1,1) * m(2,2) - m(2,1) * m(1,2) )
-               - m(0,1) * ( m(1,0) * m(2,2) - m(1,2) * m(2,0) )
-               + m(0,2) * ( m(1,0) * m(2,1) - m(1,1) * m(2,0) ) ;
-
-    return det;
-}
-
-__host__ __device__
-bool invert_3x3( const matrix3x3& A, matrix3x3& result )
-{
-    float determinant =  popart::identification::det(A);
-
-    if( determinant == 0 )
-    {
-        return false;
+    int px = (int)xy.x; // floor of x
+    int py = (int)xy.y; // floor of y
+#if 1
+    if( px != clamp( px, src.cols-1 ) ) {
+        printf("Should clamp px from %d to %d\n", px, clamp( px, src.cols-1 ) );
     }
+    if( py != clamp( py, src.rows-1 ) ) {
+        printf("Should clamp py from %d to %d\n", py, clamp( py, src.rows-1 ) );
+    }
+    px = clamp( px, src.cols-1 );
+    py = clamp( py, src.rows-1 );
+#endif
 
-    result(0,0) = (  A(1,1) * A(2,2) - A(1,2) * A(2,1) ) / determinant;
-    result(1,0) = ( -A(1,0) * A(2,2) + A(2,0) * A(1,2) ) / determinant;
-    result(2,0) = (  A(1,0) * A(2,1) - A(2,0) * A(1,1) ) / determinant;
-    result(0,1) = ( -A(0,1) * A(2,2) + A(2,1) * A(0,2) ) / determinant;
-    result(1,1) = (  A(0,0) * A(2,2) - A(2,0) * A(0,2) ) / determinant;
-    result(2,1) = ( -A(0,0) * A(2,1) + A(2,0) * A(0,1) ) / determinant;
-    result(0,2) = (  A(0,1) * A(1,2) - A(1,1) * A(0,2) ) / determinant;
-    result(1,2) = ( -A(0,0) * A(1,2) + A(1,0) * A(0,2) ) / determinant;
-    result(2,2) = (  A(0,0) * A(1,1) - A(1,0) * A(0,1) ) / determinant;
-    return true;
+    // uint8_t p0 = src.ptr(py  )[px  ];
+    uint8_t p1 = src.ptr(py  )[px  ];
+    uint8_t p2 = src.ptr(py  )[px+1];
+    uint8_t p3 = src.ptr(py+1)[px  ];
+    uint8_t p4 = src.ptr(py+1)[px+1];
+
+    // Calculate the weights for each pixel
+    float fx  = xy.x - (float)px;
+    float fy  = xy.y - (float)py;
+    float fx1 = 1.0f - fx;
+    float fy1 = 1.0f - fy;
+
+    float w1 = fx1 * fy1;
+    float w2 = fx  * fy1;
+    float w3 = fx1 * fy;
+    float w4 = fx  * fy;
+
+    // Calculate the weighted sum of pixels (for each color channel)
+    return ( p1 * w1 + p2 * w2 + p3 * w3 + p4 * w4 ) / 2.0f;
 }
 
 __device__
-void applyHomography( float& xRes, float& yRes, const matrix3x3& mHomography, const float x, const float y )
-{
-  float u = mHomography(0,0)*x + mHomography(0,1)*y + mHomography(0,2);
-  float v = mHomography(1,0)*x + mHomography(1,1)*y + mHomography(1,2);
-  float w = mHomography(2,0)*x + mHomography(2,1)*y + mHomography(2,2);
-  xRes = u/w;
-  yRes = v/w;
-}
-
-__device__
-inline float getPixelBilinear( cv::cuda::PtrStepSzb src, float x, float y )
-{
-  int px = (int)x; // floor of x
-  int py = (int)y; // floor of y
-
-  // uint8_t p0 = src.ptr(py  )[px  ];
-  uint8_t p1 = src.ptr(py  )[px  ];
-  uint8_t p2 = src.ptr(py  )[px+1];
-  uint8_t p3 = src.ptr(py+1)[px  ];
-  uint8_t p4 = src.ptr(py+1)[px+1];
-
-  // Calculate the weights for each pixel
-  float fx  = x - (float)px;
-  float fy  = y - (float)py;
-  float fx1 = 1.0f - fx;
-  float fy1 = 1.0f - fy;
-
-  float w1 = fx1 * fy1;
-  float w2 = fx  * fy1;
-  float w3 = fx1 * fy;
-  float w4 = fx  * fy;
-
-  // Calculate the weighted sum of pixels (for each color channel)
-  return ( p1 * w1 + p2 * w2 + p3 * w3 + p4 * w4 ) / 2.0f;
-}
-
-__device__
-void extractSignalUsingHomography( float*               cut_ptr,
-                                   cv::cuda::PtrStepSzb src,
-                                   const matrix3x3&     mHomography,
-                                   const matrix3x3&     mInvHomography )
+void extractSignalUsingHomography( float*                             cut_ptr,
+                                   cv::cuda::PtrStepSzb               src,
+                                   const popart::geometry::matrix3x3& mHomography,
+                                   const popart::geometry::matrix3x3& mInvHomography )
 {
     CutStruct* cut = reinterpret_cast<CutStruct*>( cut_ptr );
     float*     cut_signals = &cut_ptr[8];
 
     if( threadIdx.x == 0 ) {
         cut->outOfBounds = 0;
+#if 0
+        for( int i=0; i<cut->sigSize; i++ ) {
+            cut_signals[i] = 0.0f;
+        }
+#endif
     }
     __syncthreads();
 
-    float backProjStopX;
-    float backProjStopY;
+    float2 backProjStop;
 
-    popart::identification::applyHomography( backProjStopX, backProjStopY, mInvHomography, cut->stop.x, cut->stop.y );
+    backProjStop = mInvHomography.applyHomography( cut->stop );
   
-    // Check whether the signal to be collected start at 0.0 and stop at 1.0
-    bool comp;
-    comp         = ( cut->beginSig != 0.0 );
-    const float xStart = comp ? backProjStopX * cut->beginSig : 0.0f;
-    const float yStart = comp ? backProjStopY * cut->beginSig : 0.0f;
-    comp         = ( cut->endSig != 1.0 );
-    const float xStop  = comp ? backProjStopX * cut->endSig : backProjStopX; // xStop and yStop must not be normalised but the 
-    const float yStop  = comp ? backProjStopY * cut->endSig : backProjStopY; // norm([xStop;yStop]) is supposed to be close to 1.
+    const float xStart = backProjStop.x * cut->beginSig;
+    const float yStart = backProjStop.y * cut->beginSig;
+    const float xStop  = backProjStop.x * cut->endSig; // xStop and yStop must not be normalised but the 
+    const float yStop  = backProjStop.y * cut->endSig; // norm([xStop;yStop]) is supposed to be close to 1.
 
     // Compute the steps stepX and stepY along x and y.
     const std::size_t nSamples = cut->sigSize;
-    // const float stepX = ( xStop - xStart ) / ( nSamples - 1.0f ); - serial code
-    // const float stepY = ( yStop - yStart ) / ( nSamples - 1.0f ); - serial code
+    const float stepX = ( xStop - xStart ) / ( nSamples - 1.0f );
+    const float stepY = ( yStop - yStart ) / ( nSamples - 1.0f );
+    const float stepX32 = 32.0f * stepX;
+    const float stepY32 = 32.0f * stepY;
 
     // float x =  xStart; - serial code
     // float y =  yStart; - serial code
-    const float firststepX = ( xStop - xStart ) / ( nSamples - 1.0f );
-    const float firststepY = ( yStop - yStart ) / ( nSamples - 1.0f );
-    const float stepX      = 32.0f * firststepX;
-    const float stepY      = 32.0f * firststepY;
-    float       x          =  xStart + threadIdx.x * firststepX;
-    float       y          =  yStart + threadIdx.x * firststepY;
+    float x =  xStart + threadIdx.x * stepX;
+    float y =  yStart + threadIdx.x * stepY;
     for( std::size_t i = threadIdx.x; i < nSamples; i += 32 ) {
-        float xRes;
-        float yRes;
+        float2 xyRes;
 
         // [xRes;yRes;1] ~= mHomography*[x;y;1.0]
-        popart::identification::applyHomography( xRes, yRes, mHomography, x, y );
+        xyRes = mHomography.applyHomography( x, y );
 
-        bool breaknow = ( xRes < 1.0f && xRes > src.cols-1 && yRes < 1.0f && yRes > src.rows-1 );
+        bool breaknow = ( xyRes.x < 1.0f && xyRes.x > src.cols-1 && xyRes.y < 1.0f && xyRes.y > src.rows-1 );
 
         if( __any( breaknow ) )
         {
@@ -173,15 +111,15 @@ void extractSignalUsingHomography( float*               cut_ptr,
         }
 
         // Bilinear interpolation
-        cut_signals[i] = popart::identification::getPixelBilinear( src, xRes, yRes );
+        cut_signals[i] = popart::identification::getPixelBilinear( src, xyRes );
 
-        x += stepX;
-        y += stepY;
+        x += stepX32;
+        y += stepY32;
     }
 }
 
 __global__
-void idGetSignals( matrix3x3 mHomography, matrix3x3 mInvHomography, cv::cuda::PtrStepSzb src, float* d, const int vCutsSize, const int vCutMaxVecLen )
+void idGetSignals( popart::geometry::matrix3x3 mHomography, popart::geometry::matrix3x3 mInvHomography, cv::cuda::PtrStepSzb src, float* d, const int vCutsSize, const int vCutMaxVecLen )
 {
     int myCut = blockIdx.x * 32 + threadIdx.y;
 
@@ -272,9 +210,9 @@ double Frame::idCostFunction( const float hom[3][3], const int vCutsSize, const 
     readable  = true;
 
     // Get the rectified signals along the image cuts
-    popart::identification::matrix3x3 mHomography( hom );
-    popart::identification::matrix3x3 mInvHomography;
-    popart::identification::invert_3x3( mHomography, mInvHomography );
+    popart::geometry::matrix3x3 mHomography( hom );
+    popart::geometry::matrix3x3 mInvHomography;
+    mHomography.invert( mInvHomography );
 
     dim3 block;
     dim3 grid;
