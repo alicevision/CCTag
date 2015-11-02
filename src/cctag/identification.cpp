@@ -597,7 +597,10 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     cctag::numerical::BoundedVector2d gradDirection = cctag::numerical::unit( cut.stop().gradient() );
     BOOST_ASSERT( norm_2( gradDirection ) != 0 );
 
-    const Point2dN<double> pStart( Point2dN<double>(cut.stop()) - halfWidth * gradDirection);
+    DirectedPoint2d<double> cstop = cut.stop();
+    cctag::numerical::BoundedVector2d hwgd = halfWidth * gradDirection;
+    Point2dN<double> pStart( cstop(0)-hwgd(0), cstop(1)-hwgd(1) );
+    // const Point2dN<double> pStart( Point2dN<double>(cut.stop()) - halfWidth * gradDirection);
     const DirectedPoint2d<double> pStop(
                                           Point2dN<double>(
                                                   cut.stop().x() + halfWidth*gradDirection(0),
@@ -870,7 +873,7 @@ bool refineConicFamilyGlob(
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
 
-  BOOST_ASSERT( vOuterPoints.size() > 0 );
+  // BOOST_ASSERT( vOuterPoints.size() > 0 );
 
   // Visual debug
   CCTagVisualDebug::instance().newSession( "refineConicPts" );
