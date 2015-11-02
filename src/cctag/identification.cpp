@@ -952,19 +952,19 @@ bool imageCenterOptimizationGlob(
         popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse)
 {
-  using namespace cctag::numerical;
-  using namespace boost::numeric::ublas;
+    using namespace cctag::numerical;
+    using namespace boost::numeric::ublas;
   
-  std::vector<cctag::Point2dN<double> > nearbyPoints;
-  // A. Get all the grid point nearby the center /////////////////////////////
-  getNearbyPoints(outerEllipse, center, nearbyPoints, neighbourSize, gridNSample, GRID);
+    std::vector<cctag::Point2dN<double> > nearbyPoints;
+    // A. Get all the grid point nearby the center /////////////////////////////
+    getNearbyPoints(outerEllipse, center, nearbyPoints, neighbourSize, gridNSample, GRID);
 
-  minRes = std::numeric_limits<double>::max();
-  cctag::Point2dN<double> optimalPoint;
-  BoundedMatrix3x3d optimalHomography;
-  BoundedMatrix3x3d mTempHomography;
+    minRes = std::numeric_limits<double>::max();
+    cctag::Point2dN<double> optimalPoint;
+    BoundedMatrix3x3d optimalHomography;
+    BoundedMatrix3x3d mTempHomography;
 
-  bool hasASolution = false;
+    bool hasASolution = false;
   
 #ifdef OPTIM_CENTER_VISUAL_DEBUG // Visual debug durign the optim
     int k = 0;
@@ -972,18 +972,17 @@ bool imageCenterOptimizationGlob(
     // For all points nearby the center ////////////////////////////////////////
     for(const cctag::Point2dN<double> & point : nearbyPoints)
     {
-      CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
+        CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
       
-      // B. Compute the homography so that the back projection of 'point' is the
-      // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
+        // B. Compute the homography so that the back projection of 'point' is the
+        // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
       
-      try
-      {
-        computeHomographyFromEllipseAndImagedCenter( outerEllipse, point, mTempHomography);
-      }catch(...)
-      {
-        continue; 
-      }
+        try
+        {
+            computeHomographyFromEllipseAndImagedCenter( outerEllipse, point, mTempHomography);
+        } catch(...) {
+            continue; 
+        }
 
 #if 1
       if( cudaPipe ) {
