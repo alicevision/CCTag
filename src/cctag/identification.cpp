@@ -597,7 +597,10 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     cctag::numerical::BoundedVector2d gradDirection = cctag::numerical::unit( cut.stop().gradient() );
     BOOST_ASSERT( norm_2( gradDirection ) != 0 );
 
-    const Point2dN<double> pStart( Point2dN<double>(cut.stop()) - halfWidth * gradDirection);
+    DirectedPoint2d<double> cstop = cut.stop();
+    cctag::numerical::BoundedVector2d hwgd = halfWidth * gradDirection;
+    Point2dN<double> pStart( cstop(0)-hwgd(0), cstop(1)-hwgd(1) );
+    // const Point2dN<double> pStart( Point2dN<double>(cut.stop()) - halfWidth * gradDirection);
     const DirectedPoint2d<double> pStop(
                                           Point2dN<double>(
                                                   cut.stop().x() + halfWidth*gradDirection(0),
@@ -870,7 +873,7 @@ bool refineConicFamilyGlob(
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
 
-  BOOST_ASSERT( vOuterPoints.size() > 0 );
+  // BOOST_ASSERT( vOuterPoints.size() > 0 );
 
   // Visual debug
   CCTagVisualDebug::instance().newSession( "refineConicPts" );
@@ -949,19 +952,19 @@ bool imageCenterOptimizationGlob(
         popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse)
 {
-  using namespace cctag::numerical;
-  using namespace boost::numeric::ublas;
+    using namespace cctag::numerical;
+    using namespace boost::numeric::ublas;
   
-  std::vector<cctag::Point2dN<double> > nearbyPoints;
-  // A. Get all the grid point nearby the center /////////////////////////////
-  getNearbyPoints(outerEllipse, center, nearbyPoints, neighbourSize, gridNSample, GRID);
+    std::vector<cctag::Point2dN<double> > nearbyPoints;
+    // A. Get all the grid point nearby the center /////////////////////////////
+    getNearbyPoints(outerEllipse, center, nearbyPoints, neighbourSize, gridNSample, GRID);
 
-  minRes = std::numeric_limits<double>::max();
-  cctag::Point2dN<double> optimalPoint;
-  BoundedMatrix3x3d optimalHomography;
-  BoundedMatrix3x3d mTempHomography;
+    minRes = std::numeric_limits<double>::max();
+    cctag::Point2dN<double> optimalPoint;
+    BoundedMatrix3x3d optimalHomography;
+    BoundedMatrix3x3d mTempHomography;
 
-  bool hasASolution = false;
+    bool hasASolution = false;
   
 #ifdef OPTIM_CENTER_VISUAL_DEBUG // Visual debug durign the optim
     int k = 0;
@@ -976,15 +979,14 @@ bool imageCenterOptimizationGlob(
       
         try
         {
-            computeHomographyFromEllipseAndImagedCenter( outerEllipse,
-                                                         point,
-                                                         mTempHomography );
-        }catch(...)
-        {
+            computeHomographyFromEllipseAndImagedCenter( outerEllipse, point, mTempHomography);
+        } catch(...) {
             continue; 
         }
 
-#if 1
+        bool   readable = true;
+        double res;
+
         if( cudaPipe ) {
             size_t vCutMaxVecLen = 100;
             // step 1: find the largest vector in all the Cuts in this round
@@ -1018,18 +1020,14 @@ bool imageCenterOptimizationGlob(
                 for( int col=0; col<3; col++ )
                     hom[row][col] = mTempHomography(row,col);
 
-            double cuda_res;
-            bool   cuda_readable = true;
-            cuda_res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), vCutMaxVecLen, cuda_readable );
+            res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), vCutMaxVecLen, readable );
+            // cerr << "cuda cost function returns " << res << ", readable " << readable << endl;
+        } else {
+            // C. Compute the 1D rectified signals of vCuts image cut based on the 
+            // transformation mTempHomography.
+            res = costFunctionGlob(mTempHomography, vCuts, src, readable );
+            // cerr << "host cost function returns " << res << ", readable " << readable << endl;
         }
-#endif
-
-        bool readable = true;
-
-        // C. Compute the 1D rectified signals of vCuts image cut based on the 
-        // transformation mTempHomography.
-        // Expensive (GPU) @Carsten
-        double res = costFunctionGlob(mTempHomography, vCuts, src, readable);
       
         // If at least one image cut has been properly read
         if ( readable )
