@@ -138,20 +138,25 @@ void extractSignalUsingHomography( float*               cut_ptr,
     // Check whether the signal to be collected start at 0.0 and stop at 1.0
     bool comp;
     comp         = ( cut->beginSig != 0.0 );
-    float xStart = comp ? backProjStopX * cut->beginSig : 0.0f;
-    float yStart = comp ? backProjStopY * cut->beginSig : 0.0f;
+    const float xStart = comp ? backProjStopX * cut->beginSig : 0.0f;
+    const float yStart = comp ? backProjStopY * cut->beginSig : 0.0f;
     comp         = ( cut->endSig != 1.0 );
-    float xStop  = comp ? backProjStopX * cut->endSig : backProjStopX; // xStop and yStop must not be normalised but the 
-    float yStop  = comp ? backProjStopY * cut->endSig : backProjStopY; // norm([xStop;yStop]) is supposed to be close to 1.
+    const float xStop  = comp ? backProjStopX * cut->endSig : backProjStopX; // xStop and yStop must not be normalised but the 
+    const float yStop  = comp ? backProjStopY * cut->endSig : backProjStopY; // norm([xStop;yStop]) is supposed to be close to 1.
 
     // Compute the steps stepX and stepY along x and y.
     const std::size_t nSamples = cut->sigSize;
-    const float stepX = ( xStop - xStart ) / ( nSamples - 1.0f );
-    const float stepY = ( yStop - yStart ) / ( nSamples - 1.0f );
+    // const float stepX = ( xStop - xStart ) / ( nSamples - 1.0f ); - serial code
+    // const float stepY = ( yStop - yStart ) / ( nSamples - 1.0f ); - serial code
 
-    float x =  xStart;
-    float y =  yStart;
-  
+    // float x =  xStart; - serial code
+    // float y =  yStart; - serial code
+    const float firststepX = ( xStop - xStart ) / ( nSamples - 1.0f );
+    const float firststepY = ( yStop - yStart ) / ( nSamples - 1.0f );
+    const float stepX      = 32.0f * firststepX;
+    const float stepY      = 32.0f * firststepY;
+    float       x          =  xStart + threadIdx.x * firststepX;
+    float       y          =  yStart + threadIdx.x * firststepY;
     for( std::size_t i = threadIdx.x; i < nSamples; i += 32 ) {
         float xRes;
         float yRes;
@@ -159,7 +164,7 @@ void extractSignalUsingHomography( float*               cut_ptr,
         // [xRes;yRes;1] ~= mHomography*[x;y;1.0]
         popart::identification::applyHomography( xRes, yRes, mHomography, x, y );
 
-        bool breaknow = ( xRes < 1.0 && xRes > src.cols-1 && yRes < 1.0 && yRes > src.rows-1 );
+        bool breaknow = ( xRes < 1.0f && xRes > src.cols-1 && yRes < 1.0f && yRes > src.rows-1 );
 
         if( __any( breaknow ) )
         {
@@ -169,7 +174,7 @@ void extractSignalUsingHomography( float*               cut_ptr,
 
         // Bilinear interpolation
         cut_signals[i] = popart::identification::getPixelBilinear( src, xRes, yRes );
-    
+
         x += stepX;
         y += stepY;
     }
@@ -280,25 +285,25 @@ double Frame::idCostFunction( const float hom[3][3], const int vCutsSize, const 
     grid.y  = 1;
     grid.z  = 1;
 
-    // cerr << "GPU: #vCuts=" << vCutsSize << " vCutMaxLen=" << vCutMaxVecLen
-    //      << " grid=(" << grid.x << "," << grid.y << "," << grid.z << ")"
-    //      << " block=(" << block.x << "," << block.y << "," << block.z << ")"
-    //      << endl;
-    cudaDeviceSynchronize();
+#if 0
+    cerr << "GPU: #vCuts=" << vCutsSize << " vCutMaxLen=" << vCutMaxVecLen
+         << " grid=(" << grid.x << "," << grid.y << "," << grid.z << ")"
+         << " block=(" << block.x << "," << block.y << "," << block.z << ")"
+         << endl;
+#endif
+    // cudaDeviceSynchronize(); // NOTE: only for printf in kernel
     identification::idGetSignals
         <<<grid,block,0,_stream>>>
         ( mHomography, mInvHomography, _d_plane, _d_intermediate.data, vCutsSize, vCutMaxVecLen );
-    cudaDeviceSynchronize();
+    // cudaDeviceSynchronize(); // NOTE: only for printf in kernel
 
     int numPairs = vCutsSize*(vCutsSize-1)/2;
-    cerr << "Number of pairs required: " << numPairs << endl;
     block.x = 32; // we use this to sum up signals
     block.y = 32; // we can use some shared memory/warp magic for summing
     block.z = 1;
     grid.x  = grid_divide( numPairs, 32 );
     grid.y  = 1;
     grid.z  = 1;
-    cerr << "GPU: checked pairs: " << block.y*grid.x << endl;
 
     _h_meta->identification_result = 0.0f;
     _h_meta->identification_resct  = 0;
@@ -310,7 +315,7 @@ double Frame::idCostFunction( const float hom[3][3], const int vCutsSize, const 
     cudaStreamSynchronize( _stream );
     float res     = _h_meta->identification_result;
     int   resSize = _h_meta->identification_resct;
-    cerr << "GPU: result=" << res << " resSize=" << resSize << endl;
+    // cerr << "GPU: result=" << res << " resSize=" << resSize << endl;
 
     // If no cut-pair has been found within the image bounds.
     if ( resSize == 0) {
@@ -332,7 +337,7 @@ size_t Frame::getIntermediatePlaneByteSize( ) const
 __host__
 void Frame::uploadCuts( std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen )
 {
-    cerr << "GPU: uploading " << vCuts.size() << " cuts to GPU" << endl;
+    // cerr << "GPU: uploading " << vCuts.size() << " cuts to GPU" << endl;
 
     using namespace popart::identification;
 

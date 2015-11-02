@@ -1022,73 +1022,72 @@ bool imageCenterOptimizationGlob(
 
 #if 1
       if( cudaPipe ) {
-        size_t vCutMaxVecLen = 100;
-        // step 1: find the largest vector in all the Cuts in this round
-        for( const ImageCut& cut : vCuts ) {
-            vCutMaxVecLen = std::max<size_t>( vCutMaxVecLen, cut.imgSignal().size() );
-        }
-        // step 2: add 8 (double values) for overhead of the ImageCut structure
-        vCutMaxVecLen += 8;
-        assert( sizeof(size_t) == 8 );        // size_t has 64 bits
-        assert( sizeof(unsigned long) == 8 ); // unsigned long has 64 bits
-        // step 3: is the number a power of two?
-        if( ( vCutMaxVecLen & ( ~vCutMaxVecLen + 1 ) ) != vCutMaxVecLen ) {
-            // no: find next largest power of 2
-            vCutMaxVecLen = ( 1 << ( 64 - __builtin_clzl(vCutMaxVecLen) ) );
-        }
-        // step 4: make sure that enough power-of-2-aligned blocks fit into
-        //         the GPU mem block that is already allocated (_d_intermediate)
-        size_t vCutRequiredByteSize = vCuts.size() * vCutMaxVecLen * sizeof(float);
-        size_t iMemAvailByteSize    = cudaPipe->getIntermediatePlaneByteSize( 0 );
-        if( vCutRequiredByteSize >= iMemAvailByteSize ) {
-            cerr << __FILE__ << ":" << __LINE__ << endl
-                 << "ERROR: cannot reuse GPU-sided intermediate memory for ImageCuts (too small)" << endl
-                 << "       use cudaMalloc and recomplile" << endl;
-            exit( -1 );
-        }
+            size_t vCutMaxVecLen = 100;
+            // step 1: find the largest vector in all the Cuts in this round
+            for( const ImageCut& cut : vCuts ) {
+                vCutMaxVecLen = std::max<size_t>( vCutMaxVecLen, cut.imgSignal().size() );
+            }
+            // step 2: add 8 (double values) for overhead of the ImageCut structure
+            vCutMaxVecLen += 8;
+            assert( sizeof(size_t) == 8 );        // size_t has 64 bits
+            assert( sizeof(unsigned long) == 8 ); // unsigned long has 64 bits
+            // step 3: is the number a power of two?
+            if( ( vCutMaxVecLen & ( ~vCutMaxVecLen + 1 ) ) != vCutMaxVecLen ) {
+                // no: find next largest power of 2
+                vCutMaxVecLen = ( 1 << ( 64 - __builtin_clzl(vCutMaxVecLen) ) );
+            }
+            // step 4: make sure that enough power-of-2-aligned blocks fit into
+            //         the GPU mem block that is already allocated (_d_intermediate)
+            const size_t vCutRequiredByteSize = vCuts.size() * vCutMaxVecLen * sizeof(float);
+            const size_t iMemAvailByteSize    = cudaPipe->getIntermediatePlaneByteSize( 0 );
+            if( vCutRequiredByteSize >= iMemAvailByteSize ) {
+                cerr << __FILE__ << ":" << __LINE__ << endl
+                    << "ERROR: cannot reuse GPU-sided intermediate memory for ImageCuts (too small)" << endl
+                    << "       use cudaMalloc and recomplile" << endl;
+                exit( -1 );
+            }
 
-        cudaPipe->uploadCuts( 0, vCuts, vCutMaxVecLen );
+            cudaPipe->uploadCuts( 0, vCuts, vCutMaxVecLen );
 
-        float hom[3][3];
-        for( int row=0; row<3; row++ )
-            for( int col=0; col<3; col++ )
-                hom[row][col] = mTempHomography(row,col);
+            float hom[3][3];
+            for( int row=0; row<3; row++ )
+                for( int col=0; col<3; col++ )
+                    hom[row][col] = mTempHomography(row,col);
 
-        double cuda_res;
-        bool   cuda_readable = true;
-        cuda_res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), vCutMaxVecLen, cuda_readable );
-      }
+            double cuda_res;
+            bool   cuda_readable = true;
+            cuda_res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), vCutMaxVecLen, cuda_readable );
+        }
 #endif
 
-      bool readable = true;
+        bool readable = true;
 
-      // C. Compute the 1D rectified signals of vCuts image cut based on the 
-      // transformation mTempHomography.
-      // Expensive (GPU) @Carsten
-      double res = costFunctionGlob(mTempHomography, vCuts, src, readable);
+        // C. Compute the 1D rectified signals of vCuts image cut based on the 
+        // transformation mTempHomography.
+        // Expensive (GPU) @Carsten
+        double res = costFunctionGlob(mTempHomography, vCuts, src, readable);
       
-      // If at least one image cut has been properly read
-      if ( readable )
-      {
+        // If at least one image cut has been properly read
+        if ( readable )
+        {
 #ifdef OPTIM_CENTER_VISUAL_DEBUG // todo: write a proper function in visual debug
-        cv::Mat output;
-        createRectifiedCutImage(vCuts, output);
-        cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
-        ++k;
+            cv::Mat output;
+            createRectifiedCutImage(vCuts, output);
+            cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
+            ++k;
 #endif // OPTIM_CENTER_VISUAL_DEBUG        
         
-        // Update the residual and the optimized parameters
-        hasASolution = true;
-        if ( res < minRes )
-        {
-          minRes = res;
-          optimalPoint = point;
-          optimalHomography = mTempHomography;
+            // Update the residual and the optimized parameters
+            hasASolution = true;
+            if ( res < minRes )
+            {
+                minRes = res;
+                optimalPoint = point;
+                optimalHomography = mTempHomography;
+            }
+        } else {
+            CCTAG_COUT_VAR_OPTIM(readable);
         }
-      }else
-      {
-        CCTAG_COUT_VAR_OPTIM(readable);
-      }
     }
     center = optimalPoint;
     CCTAG_COUT_VAR_OPTIM(center);
@@ -1191,7 +1190,7 @@ double costFunctionGlob(
     }
   }
 
-  cerr << "CPU: result=" << res << " resSize=" << resSize << " in " << debug_loops << " loops" << endl;
+  // cerr << "CPU: result=" << res << " resSize=" << resSize << " in " << debug_loops << " loops" << endl;
 
   // If no cut-pair has been found within the image bounds.
   if ( resSize == 0)
