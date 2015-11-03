@@ -13,6 +13,7 @@
 #include "cctag/ImageCut.hpp"
 #include "frame_vote.h"
 #include "triple_point.h"
+#include "cuda/geom_ellipse.h"
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
@@ -232,7 +233,20 @@ public:
     void uploadCuts( std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen );
 
     // implemented in frame_ident.cu
-    double idCostFunction( const float hom[3][3], const int vCutsSize, const int vCutMaxVecLen, bool& cuda_readable );
+#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
+    __host__
+    double idCostFunction( const popart::geometry::ellipse& ellipse,
+                           const float2                     center,
+                           const int                        vCutsSize,
+                           const int                        vCutMaxVecLen,
+                           bool&                            readable );
+#else // not COMPUTE_HOMOGRAPHY_ON_GPU
+    __host__
+    double idCostFunction( const float hom[3][3],
+                           const int   vCutsSize,
+                           const int   vCutMaxVecLen,
+                           bool&       readable );
+#endif // not COMPUTE_HOMOGRAPHY_ON_GPU
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 

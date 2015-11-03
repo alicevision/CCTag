@@ -8,6 +8,7 @@
 
 #include "debug_image.h"
 #include "cctag/talk.hpp"
+#include "cuda/geom_ellipse.h"
 
 #if 0 // #ifndef NDEBUG
 #define SHOW_DETAILED_TIMING
@@ -509,10 +510,49 @@ void TagPipe::uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts, const 
     _frame[level]->uploadCuts( vCuts, vCutMaxVecLen );
 }
 
-double TagPipe::idCostFunction( int level, const float hom[3][3], const int vCutsSize, const int vCutMaxVecLen, bool& cuda_readable )
+#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
+double TagPipe::idCostFunction( int                                        level,
+                                const cctag::numerical::geometry::Ellipse& ellipse,
+                                const cctag::Point2dN<double>&             center,
+                                const int                         vCutsSize,
+                                const int                         vCutMaxVecLen,
+                                bool&                             readable )
 {
-    return _frame[level]->idCostFunction( hom, vCutsSize, vCutMaxVecLen, cuda_readable );
+    popart::geometry::ellipse e( ellipse.matrix()(0,0),
+                                 ellipse.matrix()(0,1),
+                                 ellipse.matrix()(0,2),
+                                 ellipse.matrix()(1,0),
+                                 ellipse.matrix()(1,1),
+                                 ellipse.matrix()(1,2),
+                                 ellipse.matrix()(2,0),
+                                 ellipse.matrix()(2,1),
+                                 ellipse.matrix()(2,2),
+                                 ellipse.center().x(),
+                                 ellipse.center().y(),
+                                 ellipse.a(),
+                                 ellipse.b(),
+                                 ellipse.angle() );
+    float2 f = make_float2( center.x(), center.y() );
+
+    return _frame[level]->idCostFunction( e,
+                                          f,
+                                          vCutsSize,
+                                          vCutMaxVecLen,
+                                          readable );
 }
+#else // not COMPUTE_HOMOGRAPHY_ON_GPU
+double TagPipe::idCostFunction( int         level,
+                                const float hom[3][3],
+                                const int   vCutsSize,
+                                const int   vCutMaxVecLen,
+                                bool&       readable )
+{
+    return _frame[level]->idCostFunction( hom,
+                                          vCutsSize,
+                                          vCutMaxVecLen,
+                                          readable );
+}
+#endif // not COMPUTE_HOMOGRAPHY_ON_GPU
 
 }; // namespace popart
 

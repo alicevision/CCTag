@@ -44,6 +44,8 @@
 #include <cmath>
 #include <vector>
 
+#include "cuda/onoff.h"
+
 namespace cctag {
 namespace identification {
 
@@ -930,6 +932,61 @@ bool refineConicFamilyGlob(
 }
 
 /**
+ * @brief Upload the ImageCut structure to the GPU.
+ * 
+ * As the destination on the GPU, reuse the space that was allocated
+ * as _d_intermediate, a float 2D array with the input image's dimensions
+ * plus padding. Three steps:
+ * @li compute the size (in floats) of the ImageCut structure on the GPU,
+ *     rounded up to the next power of 2
+ * @li check whether _d_intermediate is big enough
+ * @li initiate asynchronous uploading of the cuts to the GPU
+ * @par[Side effects:] Upload of ImageCuts to GPU has been triggered. It is
+ *     most likely NOT complete when this function returns.
+ * @param[in] cudaPipe pointer to the abstraction object that hides CUDA
+ *                     internal functions.
+ * @param[in] vCuts vector of ImageCuts that must be uploaded.
+ * @returns the number of floats reserved for each ImageCut on the GPU
+ */
+size_t cudaUploadCuts( popart::TagPipe*                cudaPipe,
+                       std::vector< cctag::ImageCut >& vCuts )
+{
+    size_t vCutMaxVecLen = cctag::kDefaultSampleCutLength;
+
+    // step 1: find the largest vector in all the Cuts in this round
+    for( const ImageCut& cut : vCuts ) {
+        vCutMaxVecLen = std::max<size_t>( vCutMaxVecLen,
+                                          cut.imgSignal().size() );
+    }
+
+    // step 2: add 8 (double values) for overhead of the ImageCut structure
+    vCutMaxVecLen += 8;
+    assert( sizeof(size_t) == 8 );        // size_t has 64 bits
+    assert( sizeof(unsigned long) == 8 ); // unsigned long has 64 bits
+
+    // step 3: is the number a power of two?
+    if( ( vCutMaxVecLen & ( ~vCutMaxVecLen + 1 ) ) != vCutMaxVecLen ) {
+        // no: find next largest power of 2
+        vCutMaxVecLen = ( 1 << ( 64 - __builtin_clzl(vCutMaxVecLen) ) );
+    }
+
+    // step 4: make sure that enough power-of-2-aligned blocks fit into
+    //         the GPU mem block that is already allocated (_d_intermediate)
+    const size_t vCutRequiredByteSize = vCuts.size() * vCutMaxVecLen * sizeof(float);
+    const size_t iMemAvailByteSize    = cudaPipe->getIntermediatePlaneByteSize( 0 );
+    if( vCutRequiredByteSize >= iMemAvailByteSize ) {
+        cerr << __FILE__ << ":" << __LINE__ << endl
+             << "ERROR: cannot reuse GPU-sided intermediate memory for ImageCuts (too small)" << endl
+             << "       use cudaMalloc and recomplile" << endl;
+        exit( -1 );
+    }
+
+    cudaPipe->uploadCuts( 0, vCuts, vCutMaxVecLen );
+
+    return vCutMaxVecLen;
+}
+
+/**
  * @brief Convex optimization of the imaged center within a point's neighbourhood.
  * 
  * @param[out] mHomography optimal homography from the pixel plane to the cctag plane.
@@ -952,12 +1009,22 @@ bool imageCenterOptimizationGlob(
         popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse)
 {
+    size_t cuda_vCutMaxVecLen = 100;
+    if( cudaPipe ) {
+        cuda_vCutMaxVecLen = cudaUploadCuts( cudaPipe, vCuts );
+    }
+
     using namespace cctag::numerical;
     using namespace boost::numeric::ublas;
   
     std::vector<cctag::Point2dN<double> > nearbyPoints;
     // A. Get all the grid point nearby the center /////////////////////////////
-    getNearbyPoints(outerEllipse, center, nearbyPoints, neighbourSize, gridNSample, GRID);
+    getNearbyPoints( outerEllipse,  // in (ellipse)
+                     center,        // in (Point2d)
+                     nearbyPoints,  // out (vector<Point2d>)
+                     neighbourSize, // in (float)
+                     gridNSample,   // in (size_t)
+                     GRID );        // in (enum)
 
     minRes = std::numeric_limits<double>::max();
     cctag::Point2dN<double> optimalPoint;
@@ -977,56 +1044,54 @@ bool imageCenterOptimizationGlob(
         // B. Compute the homography so that the back projection of 'point' is the
         // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
       
-        try
-        {
-            computeHomographyFromEllipseAndImagedCenter( outerEllipse, point, mTempHomography);
-        } catch(...) {
-            continue; 
-        }
-
         bool   readable = true;
         double res;
 
         if( cudaPipe ) {
-            size_t vCutMaxVecLen = 100;
-            // step 1: find the largest vector in all the Cuts in this round
-            for( const ImageCut& cut : vCuts ) {
-                vCutMaxVecLen = std::max<size_t>( vCutMaxVecLen, cut.imgSignal().size() );
+#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
+            res = cudaPipe->idCostFunction( 0, outerEllipse, point, vCuts.size(), cuda_vCutMaxVecLen, readable );
+#else // COMPUTE_HOMOGRAPHY_ON_GPU
+            try
+            {
+                computeHomographyFromEllipseAndImagedCenter(
+                    outerEllipse,     // in (ellipse)
+                    point,            // in (Point2d)
+                    mTempHomography); // out (matrix3x3)
+            } catch(...) {
+                continue; 
             }
-            // step 2: add 8 (double values) for overhead of the ImageCut structure
-            vCutMaxVecLen += 8;
-            assert( sizeof(size_t) == 8 );        // size_t has 64 bits
-            assert( sizeof(unsigned long) == 8 ); // unsigned long has 64 bits
-            // step 3: is the number a power of two?
-            if( ( vCutMaxVecLen & ( ~vCutMaxVecLen + 1 ) ) != vCutMaxVecLen ) {
-                // no: find next largest power of 2
-                vCutMaxVecLen = ( 1 << ( 64 - __builtin_clzl(vCutMaxVecLen) ) );
-            }
-            // step 4: make sure that enough power-of-2-aligned blocks fit into
-            //         the GPU mem block that is already allocated (_d_intermediate)
-            const size_t vCutRequiredByteSize = vCuts.size() * vCutMaxVecLen * sizeof(float);
-            const size_t iMemAvailByteSize    = cudaPipe->getIntermediatePlaneByteSize( 0 );
-            if( vCutRequiredByteSize >= iMemAvailByteSize ) {
-                cerr << __FILE__ << ":" << __LINE__ << endl
-                    << "ERROR: cannot reuse GPU-sided intermediate memory for ImageCuts (too small)" << endl
-                    << "       use cudaMalloc and recomplile" << endl;
-                exit( -1 );
-            }
-
-            cudaPipe->uploadCuts( 0, vCuts, vCutMaxVecLen );
 
             float hom[3][3];
             for( int row=0; row<3; row++ )
                 for( int col=0; col<3; col++ )
                     hom[row][col] = mTempHomography(row,col);
 
-            res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), vCutMaxVecLen, readable );
-            // cerr << "cuda cost function returns " << res << ", readable " << readable << endl;
-        } else {
+            res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), cuda_vCutMaxVecLen, readable );
+#endif // COMPUTE_HOMOGRAPHY_ON_GPU
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+            cerr << "cuda cost function returns " << res << ", readable " << readable << endl;
+#endif
+        }
+#ifndef CPU_GPU_COST_FUNCTION_COMPARE
+        else
+#endif
+        {
+            try
+            {
+                computeHomographyFromEllipseAndImagedCenter(
+                    outerEllipse,     // in (ellipse)
+                    point,            // in (Point2d)
+                    mTempHomography); // out (matrix3x3)
+            } catch(...) {
+                continue; 
+            }
+
             // C. Compute the 1D rectified signals of vCuts image cut based on the 
             // transformation mTempHomography.
             res = costFunctionGlob(mTempHomography, vCuts, src, readable );
-            // cerr << "host cost function returns " << res << ", readable " << readable << endl;
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+            cerr << "host cost function returns " << res << ", readable " << readable << endl;
+#endif
         }
       
         // If at least one image cut has been properly read

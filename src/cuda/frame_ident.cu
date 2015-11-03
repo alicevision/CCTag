@@ -118,6 +118,42 @@ void extractSignalUsingHomography( float*                             cut_ptr,
     }
 }
 
+#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
+__global__
+void idMakeHomographies( popart::geometry::ellipse ellipse,
+                         const float2 center,
+                         popart::geometry::matrix3x3* dev_homographies )
+{
+    // m1: popart::geometry::matrix3x3 mHomography;
+    // m2: popart::geometry::matrix3x3 mInvHomography;
+
+    popart::geometry::matrix3x3& m1 = dev_homographies[0];
+    popart::geometry::matrix3x3& m2 = dev_homographies[1];
+    ellipse.computeHomographyFromImagedCenter( center, m1 );
+    m1.invert( m2 );
+}
+
+__global__
+void idGetSignals( const popart::geometry::matrix3x3* dev_homographies,
+                   cv::cuda::PtrStepSzb src,
+                   float* d,
+                   const int vCutsSize,
+                   const int vCutMaxVecLen )
+{
+    int myCut = blockIdx.x * 32 + threadIdx.y;
+
+    if( myCut >= vCutsSize ) {
+        return; // out of bounds
+    }
+
+    const popart::geometry::matrix3x3& mHomography    = dev_homographies[0];
+    const popart::geometry::matrix3x3& mInvHomography = dev_homographies[1];
+
+    float* cut = &d[myCut * vCutMaxVecLen];
+
+    extractSignalUsingHomography( cut, src, mHomography, mInvHomography);
+}
+#else // not COMPUTE_HOMOGRAPHY_ON_GPU
 __global__
 void idGetSignals( popart::geometry::matrix3x3 mHomography, popart::geometry::matrix3x3 mInvHomography, cv::cuda::PtrStepSzb src, float* d, const int vCutsSize, const int vCutMaxVecLen )
 {
@@ -131,6 +167,7 @@ void idGetSignals( popart::geometry::matrix3x3 mHomography, popart::geometry::ma
 
     extractSignalUsingHomography( cut, src, mHomography, mInvHomography);
 }
+#endif // not COMPUTE_HOMOGRAPHY_ON_GPU
 
 __global__
 void idComputeResult( FrameMeta* meta, float* d, const int vCutsSize, const int vCutMaxVecLen )
@@ -204,15 +241,28 @@ void idComputeResult( FrameMeta* meta, float* d, const int vCutsSize, const int 
 } // namespace identification
 
 
+#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
+__host__
+double Frame::idCostFunction( const popart::geometry::ellipse& ellipse,
+                              const float2                     center,
+                              const int                        vCutsSize,
+                              const int                        vCutMaxVecLen,
+                              bool&                            readable )
+#else // not COMPUTE_HOMOGRAPHY_ON_GPU
 __host__
 double Frame::idCostFunction( const float hom[3][3], const int vCutsSize, const int vCutMaxVecLen, bool& readable )
+#endif // not COMPUTE_HOMOGRAPHY_ON_GPU
 {
     readable  = true;
 
+#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
+    // hom computed inside kernel
+#else // not COMPUTE_HOMOGRAPHY_ON_GPU
     // Get the rectified signals along the image cuts
     popart::geometry::matrix3x3 mHomography( hom );
     popart::geometry::matrix3x3 mInvHomography;
     mHomography.invert( mInvHomography );
+#endif // not COMPUTE_HOMOGRAPHY_ON_GPU
 
     dim3 block;
     dim3 grid;
@@ -229,11 +279,33 @@ double Frame::idCostFunction( const float hom[3][3], const int vCutsSize, const 
          << " block=(" << block.x << "," << block.y << "," << block.z << ")"
          << endl;
 #endif
-    // cudaDeviceSynchronize(); // NOTE: only for printf in kernel
+#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
+
+    /* misusing another image-sized plane */
+    popart::geometry::matrix3x3* dev_homographies = (popart::geometry::matrix3x3*)_d_map.data;
+
+    identification::idMakeHomographies
+        <<<1,1,0,_stream>>>
+        ( ellipse,
+          center,
+          dev_homographies );
     identification::idGetSignals
         <<<grid,block,0,_stream>>>
-        ( mHomography, mInvHomography, _d_plane, _d_intermediate.data, vCutsSize, vCutMaxVecLen );
-    // cudaDeviceSynchronize(); // NOTE: only for printf in kernel
+        ( dev_homographies,
+          _d_plane,
+          _d_intermediate.data,
+          vCutsSize,
+          vCutMaxVecLen );
+#else // not COMPUTE_HOMOGRAPHY_ON_GPU
+    identification::idGetSignals
+        <<<grid,block,0,_stream>>>
+        ( mHomography,
+          mInvHomography,
+          _d_plane,
+          _d_intermediate.data,
+          vCutsSize,
+          vCutMaxVecLen );
+#endif // not COMPUTE_HOMOGRAPHY_ON_GPU
 
     int numPairs = vCutsSize*(vCutsSize-1)/2;
     block.x = 32; // we use this to sum up signals
