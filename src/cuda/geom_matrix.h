@@ -23,6 +23,22 @@ public:
     matrix3x3( const float mx[3][3] );
 
     __host__ __device__
+    matrix3x3( float m00, float m01, float m02,
+               float m10, float m11, float m12,
+               float m20, float m21, float m22 )
+    {
+        val[0][0] = m00;
+        val[0][1] = m01;
+        val[0][2] = m02;
+        val[1][0] = m10;
+        val[1][1] = m11;
+        val[1][2] = m12;
+        val[2][0] = m20;
+        val[2][1] = m21;
+        val[2][2] = m22;
+    }
+
+    __host__ __device__
     void setDiag( float v00, float v11, float v22 );
 
     __host__ __device__

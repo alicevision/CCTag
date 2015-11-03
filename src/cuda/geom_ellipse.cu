@@ -335,6 +335,64 @@ void ellipse::computeMatrix()
 #endif // not __CUDA_ARCH__
 }
 
+__device__
+void ellipse::computeHomographyFromImagedCenter( const float2 center, matrix3x3& mHomography ) const
+{
+    matrix3x3 mCanonic;
+    matrix3x3 mTCan;
+    matrix3x3 mTInvCan;
+
+    this->getCanonicForm(mCanonic, mTCan, mTInvCan);
+
+    // Get the center coordinates in the new canonical representation.
+    float2 c = mTCan.applyHomography( center );
+
+    // Closed-form solution for the homography plan->image computation
+    // The ellipse is supposed to be in its canonical representation
+
+    // Matlab closed-form
+    //H =
+    //[ [     Q33,        Q22*xc*yc, -Q33*xc];
+    //  [       0,      - Q11*xc^2 - Q33, -Q33*yc];
+    //  [ -Q11*xc,        Q22*yc,    -Q33] ] ...
+    // * diag([ ((Q22*Q33/Q11*(Q11*xc^2 + Q22*yc^2 + Q33)))^(1/2);Q33;(-Q22*(Q11*xc^2 + Q33))^(1/2)]);
+
+
+    float Q11 = mCanonic(0,0);
+    float Q22 = mCanonic(1,1);
+    float Q33 = mCanonic(2,2);
+
+    float xc2 = c.x * c.x;
+    float yc2 = c.y * c.y;
+
+    mHomography(0,0) = Q33;
+    mHomography(1,0) = 0.0;
+    mHomography(2,0) = -Q11*c.x;
+
+    mHomography(0,1) = Q22*c.x*c.y;
+    mHomography(1,1) = -Q11*xc2-Q33;
+    mHomography(2,1) = Q22*c.y;
+
+    mHomography(0,2) = -Q33*c.x;
+    mHomography(1,2) = -Q33*c.y;
+    mHomography(2,2) = -Q33;
+
+    float mDiag[3];
+    mDiag[0] = __fsqrt_rn( (Q22*Q33*__frcp_rn(Q11)*(Q11*xc2 + Q22*yc2 + Q33)) );
+    mDiag[1] = Q33;
+    mDiag[2] = __fsqrt_rn( -Q22*(Q11*xc2 + Q33) );
+
+    for(int i=0; i < 3 ; ++i)
+    {
+        for(int j=0; j < 3 ; ++j)
+        {
+            mHomography(i,j) *= mDiag[j];
+        }
+    }
+
+    mHomography = popart::geometry::prod( mTInvCan, mHomography ); // mHomography = mTInvCan*mHomography
+}
+
 __host__ __device__
 void ellipse::crash( const char* file, int line, const char* msg )
 {

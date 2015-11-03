@@ -51,9 +51,9 @@ float matrix3x3::det( ) const
 __host__ __device__
 bool matrix3x3::invert( matrix3x3& result ) const
 {
-    float determinant = this->det( );
+    float determinant = det( );
 
-    if( determinant == 0 )
+    if( determinant == 0.0f )
     {
         return false;
     }

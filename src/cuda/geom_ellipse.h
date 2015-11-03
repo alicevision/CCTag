@@ -20,6 +20,22 @@ public:
 	}
 
     __host__ __device__
+    ellipse( float m00, float m01, float m02,
+             float m10, float m11, float m12,
+             float m20, float m21, float m22,
+             float centerx, float centery,
+             float a, float b, float angle )
+        : _matrix( m00, m01, m02,
+                   m10, m11, m12,
+                   m20, m21, m22 )
+        , _a(a)
+        , _b(b)
+        , _angle(angle)
+    {
+        _center = make_float2( centerx, centery );
+    }
+
+    __host__ __device__
 	ellipse( const matrix3x3& matrix );
 
     __host__ __device__
@@ -85,8 +101,8 @@ public:
         setParameters( center, a, b, angle );
     }
 
-	/// @todo: is it the correct name ??
-	// inline bounded_vector<double, 6> colon() const;
+    __device__
+    void computeHomographyFromImagedCenter( const float2 center, matrix3x3& mHomography ) const;
 
 private:
 	matrix3x3 _matrix;
