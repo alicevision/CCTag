@@ -1116,6 +1116,23 @@ bool imageCenterOptimizationGlob(
             CCTAG_COUT_VAR_OPTIM(readable);
         }
     } // for(point : nearbyPoints)
+#ifndef CPU_GPU_COST_FUNCTION_COMPARE
+    /* We should download the best solution vCut from the GPU,
+     * but this is a quicker hack at this time.
+     */
+    if( cudaPipe ) {
+        bool dummy_readable;
+        computeHomographyFromEllipseAndImagedCenter(
+            outerEllipse,        // in (ellipse)
+            optimalPoint,        // in (Point2d)
+            optimalHomography ); // out (matrix3x3)
+        costFunctionGlob(
+            optimalHomography,   // in (matrix3x3)
+            vCuts,               // out (float[])
+            src,                 // in (image)
+            dummy_readable );    // out (bool)
+    }
+#endif // CPU_GPU_COST_FUNCTION_COMPARE
     center = optimalPoint;
     CCTAG_COUT_VAR_OPTIM(center);
     mHomography = optimalHomography;
