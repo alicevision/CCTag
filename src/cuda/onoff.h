@@ -33,10 +33,6 @@
 #define USE_SEPARABLE_COMPILATION
 #define USE_SEPARABLE_COMPILATION_IN_GRADDESC
 
-/* An intermediate step in moving identification to the GPU.
- */
-#define COMPUTE_HOMOGRAPHY_ON_GPU
-
 /* Init _d_intermediate to 0 before uploading. Wastes time,
  * for debugging only. Required because of crash -O3 but not
  * with -G
@@ -49,5 +45,5 @@
  * param.useCuda == false is broken in the optim_identify_gpu
  * branch).
  */
-#define CPU_GPU_COST_FUNCTION_COMPARE
+#undef CPU_GPU_COST_FUNCTION_COMPARE
 

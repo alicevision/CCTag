@@ -510,7 +510,6 @@ void TagPipe::uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts, const 
     _frame[level]->uploadCuts( vCuts, vCutMaxVecLen );
 }
 
-#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
 double TagPipe::idCostFunction( int                                        level,
                                 const cctag::numerical::geometry::Ellipse& ellipse,
                                 const cctag::Point2dN<double>&             center,
@@ -540,19 +539,6 @@ double TagPipe::idCostFunction( int                                        level
                                           vCutMaxVecLen,
                                           readable );
 }
-#else // not COMPUTE_HOMOGRAPHY_ON_GPU
-double TagPipe::idCostFunction( int         level,
-                                const float hom[3][3],
-                                const int   vCutsSize,
-                                const int   vCutMaxVecLen,
-                                bool&       readable )
-{
-    return _frame[level]->idCostFunction( hom,
-                                          vCutsSize,
-                                          vCutMaxVecLen,
-                                          readable );
-}
-#endif // not COMPUTE_HOMOGRAPHY_ON_GPU
 
 }; // namespace popart
 

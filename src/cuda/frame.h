@@ -233,20 +233,12 @@ public:
     void uploadCuts( std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen );
 
     // implemented in frame_ident.cu
-#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
     __host__
     double idCostFunction( const popart::geometry::ellipse& ellipse,
                            const float2                     center,
                            const int                        vCutsSize,
                            const int                        vCutMaxVecLen,
                            bool&                            readable );
-#else // not COMPUTE_HOMOGRAPHY_ON_GPU
-    __host__
-    double idCostFunction( const float hom[3][3],
-                           const int   vCutsSize,
-                           const int   vCutMaxVecLen,
-                           bool&       readable );
-#endif // not COMPUTE_HOMOGRAPHY_ON_GPU
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 

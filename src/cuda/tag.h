@@ -45,20 +45,12 @@ public:
 
     size_t   getIntermediatePlaneByteSize( int level ) const;
     void     uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen );
-#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
     double   idCostFunction( int                                        level,
                              const cctag::numerical::geometry::Ellipse& ellipse,
                              const cctag::Point2dN<double>&             center,
                              const int                         vCutsSize,
                              const int                         vCutMaxVecLen,
                              bool&                             readable );
-#else // not COMPUTE_HOMOGRAPHY_ON_GPU
-    double   idCostFunction( int         level,
-                             const float hom[3][3],
-                             const int   vCutsSize,
-                             const int   vCutMaxVecLen,
-                             bool&       readable );
-#endif // not COMPUTE_HOMOGRAPHY_ON_GPU
 
     void debug( unsigned char* pix,
                 const cctag::Parameters& params );

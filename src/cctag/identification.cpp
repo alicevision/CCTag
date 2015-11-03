@@ -1048,26 +1048,7 @@ bool imageCenterOptimizationGlob(
         double res;
 
         if( cudaPipe ) {
-#ifdef COMPUTE_HOMOGRAPHY_ON_GPU
             res = cudaPipe->idCostFunction( 0, outerEllipse, point, vCuts.size(), cuda_vCutMaxVecLen, readable );
-#else // COMPUTE_HOMOGRAPHY_ON_GPU
-            try
-            {
-                computeHomographyFromEllipseAndImagedCenter(
-                    outerEllipse,     // in (ellipse)
-                    point,            // in (Point2d)
-                    mTempHomography); // out (matrix3x3)
-            } catch(...) {
-                continue; 
-            }
-
-            float hom[3][3];
-            for( int row=0; row<3; row++ )
-                for( int col=0; col<3; col++ )
-                    hom[row][col] = mTempHomography(row,col);
-
-            res = cudaPipe->idCostFunction( 0, hom, vCuts.size(), cuda_vCutMaxVecLen, readable );
-#endif // COMPUTE_HOMOGRAPHY_ON_GPU
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
             cerr << "cuda cost function returns " << res << ", readable " << readable << endl;
 #endif
