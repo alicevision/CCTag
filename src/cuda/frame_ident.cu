@@ -275,6 +275,13 @@ size_t Frame::getIntermediatePlaneByteSize( ) const
 __host__
 void Frame::uploadCuts( std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen )
 {
+#ifdef DEBUG_FRAME_UPLOAD_CUTS
+    POP_CUDA_MEMSET_ASYNC( _d_intermediate.data,
+                           -1,
+                           _h_intermediate.step * _h_intermediate.rows,
+                           _stream );
+#endif // DEBUG_FRAME_UPLOAD_CUTS
+
     // cerr << "GPU: uploading " << vCuts.size() << " cuts to GPU" << endl;
 
     using namespace popart::identification;
