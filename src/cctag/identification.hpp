@@ -230,6 +230,16 @@ void selectCut(
         const std::size_t numSamplesOuterEdgePointsRefinement,
         const std::size_t cutsSelectionTrials );
 
+void selectCutCheap(
+        std::vector< cctag::ImageCut > & vSelectedCuts,
+        std::size_t selectSize,
+        const cctag::numerical::geometry::Ellipse & outerEllipse,
+        std::vector<cctag::ImageCut> & collectedCuts,
+        const cv::Mat & src,
+        const double refinedSegSize,
+        const std::size_t numSamplesOuterEdgePointsRefinement,
+        const std::size_t cutsSelectionTrials );
+
 #ifdef NAIVE_SELECTCUT
 void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use DirectedPoint instead
         std::vector< cctag::ImageCut > & vSelectedCuts,
