@@ -71,13 +71,17 @@ void TagPipe::initialize( const uint32_t pix_w,
 __host__
 void TagPipe::load( unsigned char* pix )
 {
+#ifndef CCTAG_NO_COUT
     KeepTime t( _frame[0]->_stream );
     t.start();
+#endif // CCTAG_NO_COUT
 
     _frame[0]->upload( pix ); // async
 
+#ifndef CCTAG_NO_COUT
     t.stop();
     t.report( "Time for frame upload " );
+#endif // CCTAG_NO_COUT
 }
 
 __host__
@@ -102,8 +106,10 @@ void TagPipe::tagframe( const cctag::Parameters& params )
     }
 #endif // not NDEBUG
 
+#ifndef CCTAG_NO_COUT
     KeepTime t( _frame[0]->_stream );
     t.start();
+#endif // CCTAG_NO_COUT
 
     for( int i=0; i<num_layers; i++ ) {
         _frame[i]->initRequiredMem( ); // async
@@ -196,8 +202,10 @@ void TagPipe::tagframe( const cctag::Parameters& params )
     }
     cudaEventRecord( _frame[0]->_stream_done, _frame[0]->_stream );
 
+#ifndef CCTAG_NO_COUT
     t.stop();
     t.report( "Time for all frames " );
+#endif // CCTAG_NO_COUT
 
 #ifdef SHOW_DETAILED_TIMING
     for( int i=0; i<num_layers; i++ ) {

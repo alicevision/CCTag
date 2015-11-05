@@ -23,8 +23,10 @@ public:
                  const double thrLowCanny,
                  const double thrHighCanny,
                  const cctag::Parameters* params );
+#ifdef WITH_CUDA
   void setLevel( popart::TagPipe* cuda_pipe,
                  const cctag::Parameters& params );
+#endif // WITH_CUDA
 
   const cv::Mat & getSrc() const;
   const cv::Mat & getDx() const;

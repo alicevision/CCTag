@@ -47,8 +47,6 @@ namespace bfs = boost::filesystem;
 
 void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ofstream & output, std::string debugFileName = "")
 {
-    POP_ENTER;
-    
     if (debugFileName == "") {
       debugFileName = "00000";
     }
@@ -85,7 +83,6 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
       ++i;
     }
     CCTAG_COUT("");
-    POP_LEAVE;
 }
 
 /*************************************************************/
@@ -155,8 +152,10 @@ int main(int argc, char** argv)
     params.setDebugDir( cmdline._debugDir );
   }
 
+#ifdef WITH_CUDA
   popart::device_prop_t deviceInfo;
   deviceInfo.print( );
+#endif // WITH_CUDA
 
   bfs::path myPath( cmdline._filename );
   std::string ext(myPath.extension().string());
@@ -177,7 +176,7 @@ int main(int argc, char** argv)
   outputFile.open( outputFileName );
   
   if ( (ext == ".png") || (ext == ".jpg") || (ext == ".PNG") || (ext == ".JPG")) {
-    POP_INFO("looking at image " << myPath.string());
+    std::cerr << "looking at image " << myPath.string() << std::endl;
     
     // Gray scale convertion
     cv::Mat src = cv::imread(cmdline._filename);
@@ -198,7 +197,7 @@ int main(int argc, char** argv)
 } else if (ext == ".avi" )
   {
     CCTAG_COUT("*** Video mode ***");
-    POP_INFO( "looking at video " << myPath.string() );
+    std::cerr << "looking at video " << myPath.string() << std::endl;
 
     // open video and check
     cv::VideoCapture video( cmdline._filename.c_str() );
@@ -228,7 +227,9 @@ int main(int argc, char** argv)
       // Call the CCTag detection
       detection(frameId, imgGray, params, bank, outputFile, outFileName.str());
       ++frameId; 
+      if( frameId % 100 == 0 ) std::cerr << frameId << " ";
     }
+    std::cerr << std::endl;
   } else if (bfs::is_directory(myPath)) {
     CCTAG_COUT("*** Image sequence mode ***");
 

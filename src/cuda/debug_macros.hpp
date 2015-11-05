@@ -22,7 +22,6 @@ void pop_cuda_only_sync_calls( bool on );
  * Group: warning and error messages
  *************************************************************/
 #define POP_INFO(s)
-// #define POP_INFO(s) cerr << __FILE__ << ":" << __LINE__ << std::endl << "    " << s << endl
 
 #define POP_INFO2(silent,s) \
     if (not silent) { \

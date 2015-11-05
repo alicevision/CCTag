@@ -25,7 +25,7 @@ inline float getPixelBilinear( cv::cuda::PtrStepSzb src, float2 xy )
 {
     int px = (int)xy.x; // floor of x
     int py = (int)xy.y; // floor of y
-#if 1
+#if 0
     if( px != clamp( px, src.cols-1 ) ) {
         printf("Should clamp px from %d to %d\n", px, clamp( px, src.cols-1 ) );
     }

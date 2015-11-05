@@ -71,6 +71,7 @@ void Level::setLevel( const cv::Mat & src,
     DO_TALK( std::cerr << "Leave " << __FUNCTION__ << std::endl; )
 }
 
+#ifdef WITH_CUDA
 void Level::setLevel( popart::TagPipe*         cuda_pipe,
                       const cctag::Parameters& params )
 {
@@ -85,6 +86,7 @@ void Level::setLevel( popart::TagPipe*         cuda_pipe,
     _mag   = cuda_pipe->getMag( _level );
     _edges = cuda_pipe->getEdges( _level );
 }
+#endif // WITH_CUDA
 
 const cv::Mat & Level::getSrc() const
 {
