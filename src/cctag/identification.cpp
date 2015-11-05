@@ -645,6 +645,107 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
   }
 }
 
+
+void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
+        std::size_t selectSize,
+        const cctag::numerical::geometry::Ellipse & outerEllipse,
+        std::vector<cctag::ImageCut> & collectedCuts,
+        const cv::Mat & src,
+        const double cutLengthOuterPointRefine,
+        const std::size_t numSamplesOuterEdgePointsRefinement,
+        const std::size_t cutsSelectionTrials )
+{
+  using namespace boost::numeric;
+  using namespace boost::accumulators;
+  using namespace cctag::numerical;
+  namespace ublas = boost::numeric::ublas;
+
+  selectSize = std::min( selectSize, collectedCuts.size() );
+
+  std::map<double, std::size_t> varCuts;
+  for(std::size_t iCut = 0 ; iCut < collectedCuts.size() ; ++iCut)
+  {
+    const cctag::ImageCut & cut = collectedCuts[iCut];
+    accumulator_set< double, features< tag::variance > > acc;
+    acc = std::for_each( cut.imgSignal().begin(), cut.imgSignal().end(), acc );
+    varCuts.emplace( variance( acc ), iCut);
+  }
+  
+  // A. Keep only 1/5 of the total number of pixel of the ellipse perimeter.
+  const std::size_t ellipsePerimeter = rasterizeEllipsePerimeter(outerEllipse);
+  std::size_t upperSize = std::max((std::size_t) ellipsePerimeter/5 , selectSize); // Greater than the final size, 
+                                                                                   // Cuts will then be removed iteratively.
+  std::size_t j = 0;
+  BoundedVector2d sumDeriv;
+  sumDeriv.clear();
+  std::map< std::size_t, cctag::DirectedPoint2d<double> > mapBestIdCutOuterPoint;
+  
+  // Reverse iterator over the variance values from the highest to the smallest one
+  std::map<double,std::size_t>::reverse_iterator rit;
+  for(rit=varCuts.rbegin(); rit!=varCuts.rend(); ++rit)
+  {
+    cctag::DirectedPoint2d<double> outerPoint( collectedCuts[rit->second].stop() );
+    double normGrad = sqrt(outerPoint.dX()*outerPoint.dX() + outerPoint.dY()*outerPoint.dY());
+    double dX = outerPoint.dX()/normGrad;
+    double dY = outerPoint.dY()/normGrad;
+    outerPoint.setDX(dX);
+    outerPoint.setDY(dY);
+    
+    sumDeriv(0) += dX;
+    sumDeriv(1) += dY;
+    
+    // Push the index of the associated cut in collectedCuts
+    mapBestIdCutOuterPoint.emplace(rit->second, outerPoint);
+    ++j;
+    
+    if ( j > upperSize)
+      break;
+  }
+  
+  // B. teratively erase cuts while minimizing the sum of the normalized gradients
+  // over all outer points.
+  while( mapBestIdCutOuterPoint.size() >  selectSize)
+  {
+    double normMin = std::numeric_limits<double>::max();
+    std::size_t iPointMin = 0;
+    double dxToRemove = 0;
+    double dyToRemove = 0;
+    
+    for(const auto & idCutOuterPoint : mapBestIdCutOuterPoint)
+    {
+      BoundedVector2d derivTmp = sumDeriv;
+      derivTmp(0) -= idCutOuterPoint.second.dX();
+      derivTmp(1) -= idCutOuterPoint.second.dY();
+      
+      double normTmp = ublas::norm_2( derivTmp );
+      
+      if ( normTmp < normMin )
+      {
+        iPointMin = idCutOuterPoint.first;
+        normMin = normTmp;
+        dxToRemove = idCutOuterPoint.second.dX();
+        dyToRemove = idCutOuterPoint.second.dY();
+      } 
+    }
+    
+    // Update sumDeriv
+    sumDeriv(0) -= dxToRemove;
+    sumDeriv(1) -= dyToRemove;
+    
+    // Erase the cut index
+    mapBestIdCutOuterPoint.erase(iPointMin);
+    
+  }
+
+  vSelectedCuts.clear();
+  vSelectedCuts.reserve(mapBestIdCutOuterPoint.size());
+  for(const auto &  idCutOuterPoint : mapBestIdCutOuterPoint )
+  {
+    // Add cuts associated to the remaining cuts in mapBestIdCutOuterPoint
+    vSelectedCuts.push_back( collectedCuts[idCutOuterPoint.first] );
+  }
+}
+
 /**
  * @brief Collect rectified 1D signals along image cuts.
  * 
@@ -898,7 +999,12 @@ bool refineConicFamilyGlob(
 
   // The neighbourhood size is iteratively decreased, assuming the convexity of the 
   // cost function within it.
-  while ( neighbourSize > 1e-4 )
+  
+  double maxSemiAxis = std::max(outerEllipse.a(),outerEllipse.b());
+  
+  // Tests against synthetic experiments have shown that we do not reach a precision
+  // better than 0.02 pixel.
+  while ( neighbourSize*maxSemiAxis > 0.02 )       
   {
     if ( imageCenterOptimizationGlob(mHomography,vCuts,optimalPoint,residual,neighbourSize,gridNSample,src,cudaPipe,outerEllipse) )
     {
@@ -916,9 +1022,6 @@ bool refineConicFamilyGlob(
   DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
 
   CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
-
-  CCTAG_COUT_VAR_OPTIM(optimalPoint);
-  CCTAG_COUT_VAR_OPTIM(cctag.centerImg());
   
   // B. Get the signal associated to the optimal homography/imaged center //////
   {
@@ -1257,18 +1360,27 @@ int identify(
   // A. Pick a subsample of outer points ///////////////////////////////////////
   // Cheap (CPU only)
   
-  // Take 100 edge points around outer ellipse. //todo: 1. must be in params 2. order outer points by angle
-  const std::size_t nOuterPoints = std::min( std::size_t(params._nSamplesOuterEllipse), outerEllipsePoints.size() );
-  std::size_t step = std::size_t( outerEllipsePoints.size() / ( nOuterPoints - 1 ) );
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+#endif
+  
+  // Sort outer points and then take a subsample
   std::vector< cctag::DirectedPoint2d<double> > outerPoints;
+  getSortedOuterPoints(ellipse, outerEllipsePoints, outerPoints, params._nSamplesOuterEllipse);
   
-  assert(nOuterPoints >= 5);
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::time_duration d = t1 - t0;
+  double spendTime;
+  DO_TALK(
+
+    spendTime = d.total_milliseconds();
+    CCTAG_COUT_OPTIM("Time in subsampling: " << spendTime << " ms");
+  )
+#endif
   
-  outerPoints.reserve( nOuterPoints );
-  for( std::size_t i = 0; i < outerEllipsePoints.size(); i += step )
-  {
-    outerPoints.push_back( outerEllipsePoints[i] );
-  }
+  assert(outerPoints.size() >= 5);
+  
   // todo: next line deprec, associated to SUBPIX_EDGE_OPTIM, do not remove.
   const double cutLengthOuterPointRefine = std::min( ellipse.a(), ellipse.b() ) * 0.12;
 
@@ -1299,7 +1411,7 @@ int identify(
   // The "signal of interest" is located between startSig and 1.0 (endSig in ImageCut)
 
 #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+  t0 = boost::posix_time::microsec_clock::local_time();
 #endif
   
   // B. Collect all cuts associated to all outer points ////////////////////////
@@ -1320,9 +1432,8 @@ int identify(
   }
   
 #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-  boost::posix_time::time_duration d = t1 - t0;
-  double spendTime;
+  t1 = boost::posix_time::microsec_clock::local_time();
+  d = t1 - t0;
   DO_TALK(
 
     spendTime = d.total_milliseconds();
@@ -1349,15 +1460,27 @@ int identify(
           dx, dy ); 
     DO_TALK( CCTAG_COUT_OPTIM("Naive cut selection"); )
 #else
-    selectCut(
+//    selectCut(
+//            vSelectedCuts,
+//            params._numCutsInIdentStep,
+//            cuts,
+//            src,
+//            cutLengthOuterPointRefine,
+//            params._numSamplesOuterEdgePointsRefinement,
+//            params._cutsSelectionTrials
+//            );
+            
+    selectCutCheap(
             vSelectedCuts,
             params._numCutsInIdentStep,
+            ellipse,
             cuts,
             src,
             cutLengthOuterPointRefine,
             params._numSamplesOuterEdgePointsRefinement,
             params._cutsSelectionTrials
             );
+    
     DO_TALK( CCTAG_COUT_OPTIM("Initial cut selection"); )
 #endif
     
