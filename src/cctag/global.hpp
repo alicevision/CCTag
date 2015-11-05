@@ -3,8 +3,6 @@
 
 #undef WITH_CUDA_COMPARE_MODE
 
-#undef CCTAG_NO_COUT
-
 #include <cctag/progBase/system/system.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////

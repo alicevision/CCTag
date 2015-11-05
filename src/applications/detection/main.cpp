@@ -47,8 +47,6 @@ namespace bfs = boost::filesystem;
 
 void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ofstream & output, std::string debugFileName = "")
 {
-    POP_ENTER;
-    
     if (debugFileName == "") {
       debugFileName = "00000";
     }
@@ -85,7 +83,6 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
       ++i;
     }
     CCTAG_COUT("");
-    POP_LEAVE;
 }
 
 /*************************************************************/
