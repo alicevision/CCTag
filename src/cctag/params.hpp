@@ -39,12 +39,13 @@ static const double kDefaultEllipseGrowingEllipticHullWidth =  2.3;
 static const std::size_t kDefaultWindowSizeOnInnerEllipticSegment =  20;
 static const std::size_t kDefaultNumberOfMultiresLayers = 4;
 static const std::size_t kDefaultNumberOfProcessedMultiresLayers = 4;
-static const std::size_t kDefaultNSamplesOuterEllipse = 300;
+static const std::size_t kDefaultNSamplesOuterEllipse = 100;
 static const std::size_t kDefaultNumCutsInIdentStep = 15;//30;//100;//15;
 static const std::size_t kDefaultNumSamplesOuterEdgePointsRefinement = 20;
 static const std::size_t kDefaultCutsSelectionTrials = 500;//10000;
 static const std::size_t kDefaultSampleCutLength = 100;
-static const std::size_t kDefaultImagedCenterNGridSample = 5;
+static const std::size_t kDefaultImagedCenterNGridSample = 5; // must be odd otherwise the ellipse center will not be included 
+                                                              // in the nearby points.
 static const double kDefaultImagedCenterNeighbourSize = 0.20;
 static const double kDefaultMinIdentProba = 1e-6;//1e-4
 static const bool kDefaultUseLMDif = true;
