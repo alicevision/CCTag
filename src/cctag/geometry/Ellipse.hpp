@@ -77,6 +77,12 @@ protected:
 	double _angle;
 };
 
+void getSortedOuterPoints(
+        const Ellipse & ellipse,
+        const std::vector< cctag::DirectedPoint2d<double> > & points,
+        std::vector< cctag::DirectedPoint2d<double> > & resPoints,
+        const std::size_t requestedSize);
+
 inline bounded_vector<double, 6> Ellipse::colon() const
 {
 	bounded_vector<double, 6> qColon;

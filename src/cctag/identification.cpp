@@ -1009,9 +1009,6 @@ bool refineConicFamilyGlob(
   DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
 
   CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
-
-  CCTAG_COUT_VAR_OPTIM(optimalPoint);
-  CCTAG_COUT_VAR_OPTIM(cctag.centerImg());
   
   // B. Get the signal associated to the optimal homography/imaged center //////
   {
@@ -1243,18 +1240,27 @@ int identify(
   // A. Pick a subsample of outer points ///////////////////////////////////////
   // Cheap (CPU only)
   
-  // Take 100 edge points around outer ellipse. //todo: 1. must be in params 2. order outer points by angle
-  const std::size_t nOuterPoints = std::min( std::size_t(params._nSamplesOuterEllipse), outerEllipsePoints.size() );
-  std::size_t step = std::size_t( outerEllipsePoints.size() / ( nOuterPoints - 1 ) );
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+#endif
+  
+  // Sort outer points and then take a subsample
   std::vector< cctag::DirectedPoint2d<double> > outerPoints;
+  getSortedOuterPoints(ellipse, outerEllipsePoints, outerPoints, params._nSamplesOuterEllipse);
   
-  assert(nOuterPoints >= 5);
+#ifdef CCTAG_OPTIM
+  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::time_duration d = t1 - t0;
+  double spendTime;
+  DO_TALK(
+
+    spendTime = d.total_milliseconds();
+    CCTAG_COUT_OPTIM("Time in subsampling: " << spendTime << " ms");
+  )
+#endif
   
-  outerPoints.reserve( nOuterPoints );
-  for( std::size_t i = 0; i < outerEllipsePoints.size(); i += step )
-  {
-    outerPoints.push_back( outerEllipsePoints[i] );
-  }
+  assert(outerPoints.size() >= 5);
+  
   // todo: next line deprec, associated to SUBPIX_EDGE_OPTIM, do not remove.
   const double cutLengthOuterPointRefine = std::min( ellipse.a(), ellipse.b() ) * 0.12;
 
@@ -1285,7 +1291,7 @@ int identify(
   // The "signal of interest" is located between startSig and 1.0 (endSig in ImageCut)
 
 #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+  t0 = boost::posix_time::microsec_clock::local_time();
 #endif
   
   // B. Collect all cuts associated to all outer points ////////////////////////
@@ -1306,9 +1312,8 @@ int identify(
   }
   
 #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-  boost::posix_time::time_duration d = t1 - t0;
-  double spendTime;
+  t1 = boost::posix_time::microsec_clock::local_time();
+  d = t1 - t0;
   DO_TALK(
 
     spendTime = d.total_milliseconds();
@@ -1343,8 +1348,6 @@ int identify(
 //            params._numSamplesOuterEdgePointsRefinement,
 //            params._cutsSelectionTrials
 //            );
-    
-    CCTAG_COUT("hkjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj----------------------------");
             
     selectCutCheap(
             vSelectedCuts,

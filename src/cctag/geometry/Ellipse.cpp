@@ -2,6 +2,7 @@
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/progBase/exceptions.hpp>
+#include <cctag/global.hpp>
 
 #include <boost/math/special_functions/sign.hpp>
 #include <boost/numeric/ublas/banded.hpp>
@@ -262,6 +263,52 @@ std::ostream& operator<<(std::ostream& os, const Ellipse& e)
       << e.matrix()(1,0) << " " << e.matrix()(1,1) << " " << e.matrix()(1,2) << " ; "
       << e.matrix()(2,0) << " " << e.matrix()(2,1) << " " << e.matrix()(2,2) << " ] ";
   return os;
+}
+
+/* 
+ * @brief Sort a set of points by angle along an elliptical arc. Possibly return a subset of these 
+ *        points if requested.
+ */
+void getSortedOuterPoints(
+        const Ellipse & ellipse,
+        const std::vector< cctag::DirectedPoint2d<double> > & points,
+        std::vector< cctag::DirectedPoint2d<double> > & resPoints,
+        const std::size_t requestedSize)
+{
+  // map with the key = angle and the point index
+  // Sort points in points by angle
+  //std::map<double, std::size_t> mapAngle;
+  std::vector< std::pair<double, std::size_t> > vAngles;
+  vAngles.reserve(points.size());
+  for(std::size_t iPoint = 0 ; iPoint < points.size() ; ++iPoint)
+  {
+    double angle = atan2( ellipse.center().y() - points[iPoint].y() , ellipse.center().x() - points[iPoint].x() );
+    //mapAngle.emplace(angle, iPoint);
+    
+    vAngles.emplace_back(angle, iPoint);
+  }
+  
+  std::sort (vAngles.begin(), vAngles.end());
+  
+  // Get the final expected size of resPoints
+  const std::size_t nOuterPoints = std::min( requestedSize, points.size() );
+  std::size_t step = std::size_t( points.size() / ( nOuterPoints - 1 ) );
+  
+  CCTAG_COUT_VAR(vAngles.size());
+  
+  resPoints.clear();
+  resPoints.reserve(nOuterPoints);
+    
+  CCTAG_COUT_VAR(points.size());
+  CCTAG_COUT_VAR(step);
+  
+  // Get the final expected size of resPoints
+  
+  for(std::size_t iPoint = 0 ; iPoint < points.size() ; iPoint += step)
+  {
+    resPoints.push_back(points[vAngles[iPoint].second]);
+  }
+  CCTAG_COUT_VAR(resPoints.size());
 }
 
 }
