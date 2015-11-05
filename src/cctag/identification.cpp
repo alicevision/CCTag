@@ -991,7 +991,12 @@ bool refineConicFamilyGlob(
 
   // The neighbourhood size is iteratively decreased, assuming the convexity of the 
   // cost function within it.
-  while ( neighbourSize > 1e-4 )
+  
+  double maxSemiAxis = std::max(outerEllipse.a(),outerEllipse.b());
+  
+  // Tests against synthetic experiments have shown that we do not reach a precision
+  // better than 0.02 pixel.
+  while ( neighbourSize*maxSemiAxis > 0.02 )       
   {
     if ( imageCenterOptimizationGlob(mHomography,vCuts,optimalPoint,residual,neighbourSize,gridNSample,src,outerEllipse) )
     {
