@@ -22,6 +22,8 @@
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include <terry/sampler/all.hpp>
 #include <terry/sampler/resample_subimage.hpp>
@@ -228,7 +230,38 @@ int main(int argc, char** argv)
     std::cerr << "Done. Now processing." << std::endl;
 
     boost::timer t;
-    std::size_t frameId = 0;
+    std::size_t         frameId = 0;
+#if 1
+    boost::mutex        frame_mutex;
+    boost::thread_group frame_processor;
+    for( int proc=0; proc<2 ; proc++ ) {
+      frame_processor.create_thread(
+        [&frames, &frameId, &frame_mutex, &t, params, bank, &outputFile](){
+            bool   empty;
+            do {
+                cv::Mat* imgGray;
+                frame_mutex.lock();
+                empty = frames.empty();
+                if( not empty ) {
+                    imgGray = frames.front();
+                    frames.pop_front();
+                    ++frameId; 
+                }
+                frame_mutex.unlock();
+
+                std::stringstream outFileName;
+                outFileName << std::setfill('0') << std::setw(5) << frameId;
+
+                detection(frameId, *imgGray, params, bank, outputFile, outFileName.str());
+                if( frameId % 100 == 0 ) {
+                    std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0/frameId << ") ";
+                }
+                delete imgGray;
+            } while( not empty );
+        } );
+    }
+    frame_processor.join_all();
+#else
     for( cv::Mat* imgGray : frames ) {
         // Set the output folder
         std::stringstream outFileName;
@@ -245,6 +278,7 @@ int main(int argc, char** argv)
             std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0/frameId << ") ";
         }
     }
+#endif
     std::cerr << std::endl;
   } else if (bfs::is_directory(myPath)) {
     CCTAG_COUT("*** Image sequence mode ***");
