@@ -1,6 +1,8 @@
 #ifndef _CCTAG_GLOBAL_HPP_
 #define _CCTAG_GLOBAL_HPP_
 
+#undef WITH_CUDA_COMPARE_MODE
+
 #include <cctag/progBase/system/system.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////

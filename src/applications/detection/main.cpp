@@ -208,26 +208,38 @@ int main(int argc, char** argv)
 
     // play loop
     int lastFrame = video.get(CV_CAP_PROP_FRAME_COUNT);
-    std::size_t frameId = 0;
+
+    std::list<cv::Mat*> frames;
+
+    std::cerr << "Starting to read video frames" << std::endl;
     while( video.get(CV_CAP_PROP_POS_FRAMES) < lastFrame )
     {
       cv::Mat frame;
       video >> frame;
-      cv::Mat imgGray;
-      cv::cvtColor( frame, imgGray, CV_BGR2GRAY );
+      cv::Mat* imgGray = new cv::Mat;
+      cv::cvtColor( frame, *imgGray, CV_BGR2GRAY );
 
-      // Set the output folder
-      std::stringstream outFileName;
-      outFileName << std::setfill('0') << std::setw(5) << frameId;
+      frames.push_back( imgGray );
+    }
+    std::cerr << "Done. Now processing." << std::endl;
 
-      // Invert the image for the projection scenario
-      //cv::Mat imgGrayInverted;
-      //bitwise_not ( imgGray, imgGrayInverted );
+    boost::timer t;
+    std::size_t frameId = 0;
+    for( cv::Mat* imgGray : frames ) {
+        // Set the output folder
+        std::stringstream outFileName;
+        outFileName << std::setfill('0') << std::setw(5) << frameId;
+
+        // Invert the image for the projection scenario
+        //cv::Mat imgGrayInverted;
+        //bitwise_not ( imgGray, imgGrayInverted );
       
-      // Call the CCTag detection
-      detection(frameId, imgGray, params, bank, outputFile, outFileName.str());
-      ++frameId; 
-      if( frameId % 100 == 0 ) std::cerr << frameId << " ";
+        // Call the CCTag detection
+        detection(frameId, *imgGray, params, bank, outputFile, outFileName.str());
+        ++frameId; 
+        if( frameId % 100 == 0 ) {
+            std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0/frameId << ") ";
+        }
     }
     std::cerr << std::endl;
   } else if (bfs::is_directory(myPath)) {
