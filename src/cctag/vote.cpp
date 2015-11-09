@@ -612,6 +612,11 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 ++it;
             }
 
+            if( points.size() < 5 ) {
+                std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
+                continue;
+            }
+
             numerical::geometry::Ellipse eToto;
             cctag::numerical::geometry::fitEllipse(points, eToto);
 

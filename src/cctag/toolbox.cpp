@@ -136,6 +136,9 @@ namespace cctag {
                 cvPoints.push_back(cv::Point2f(p.x(), p.y()));
             }
 
+            if( cvPoints.size() < 5 ) {
+                std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
+            }
             cv::RotatedRect rR = cv::fitEllipse(cv::Mat(cvPoints));
             float xC = rR.center.x;
             float yC = rR.center.y;
@@ -160,6 +163,9 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<c
 		cvPoints.push_back( cv::Point2f( p->x(), p->y() ) );
             }
 
+    if( cvPoints.size() < 5 ) {
+        std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
+    }
 	cv::RotatedRect rR = cv::fitEllipse( cv::Mat( cvPoints ) );
 	float xC           = rR.center.x;
 	float yC           = rR.center.y;
@@ -227,6 +233,9 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cct
                 cvPoints.push_back(cv::Point2f(p->x(), p->y()));
             }
 
+            if( cvPoints.size() < 5 ) {
+                std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
+            }
             cv::RotatedRect rR = cv::fitEllipse(cv::Mat(cvPoints));
             float xC = rR.center.x;
             float yC = rR.center.y;

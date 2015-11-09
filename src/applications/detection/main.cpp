@@ -41,7 +41,8 @@ using namespace cctag;
 using boost::timer;
 
 using namespace boost::gil;
-namespace bfs = boost::filesystem;
+namespace bfs   = boost::filesystem;
+namespace btime = boost::posix_time;
 
 // static const std::string kUsageString = "Usage: detection image_file.png\n";
 
@@ -59,7 +60,14 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     CCTagVisualDebug::instance().setImageFileName(debugFileName);
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
 
-    cctagDetection(markers, frameId , src, params, bank, true);  
+    static cctag::logtime::Mgmt* durations;
+    if( not durations ) {
+        durations = new cctag::logtime::Mgmt( 25 );
+    } else {
+        durations->resetStartTime();
+    }
+    cctagDetection( markers, frameId , src, params, bank, true, durations );
+    durations->print( std::cerr );
 
     CCTagFileDebug::instance().outPutAllSessions();
     CCTagFileDebug::instance().clearSessions();

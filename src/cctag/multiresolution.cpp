@@ -193,7 +193,8 @@ void cctagMultiresDetection_inner(
         std::vector<EdgePoint>& vPoints,
         EdgePointsImage&        vEdgeMap,
         popart::TagPipe*        cuda_pipe,
-        const Parameters &      params )
+        const Parameters &      params,
+        cctag::logtime::Mgmt*   durations )
 {
     DO_TALK( CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::"); )
 
@@ -217,6 +218,7 @@ void cctagMultiresDetection_inner(
                          vEdgeMap,
                          seeds,
                          winners );
+    if( durations ) durations->log( "after download seeds/winners from CUDA" );
 
     level->setLevel( cuda_pipe, params );
 
@@ -257,7 +259,10 @@ void cctagMultiresDetection_inner(
         winners,
         seeds,
         vEdgeMap,
-        frame, i, std::pow(2.0, (int) i), params);
+        frame, i, std::pow(2.0, (int) i), params,
+        durations );
+
+    if( durations ) durations->log( "after cctagDetectionFromEdges" );
     
     CCTagVisualDebug::instance().initBackgroundImage(level->getSrc());
     std::stringstream outFilename2;
@@ -276,7 +281,8 @@ void cctagMultiresDetection(
         const ImagePyramid& imagePyramid,
         const std::size_t   frame,
         popart::TagPipe*    cuda_pipe,
-        const Parameters&   params)
+        const Parameters&   params,
+        cctag::logtime::Mgmt* durations )
 {
   // POP_ENTER;
   //	* For each pyramid level:
@@ -310,8 +316,10 @@ void cctagMultiresDetection(
                                   vPoints.back(),
                                   vEdgeMaps.back(),
                                   cuda_pipe,
-                                  params );
+                                  params,
+                                  durations );
   }
+  if( durations ) durations->log( "after cctagMultiresDetection_inner" );
   
   // Delete overlapping markers while keeping the best ones.
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
@@ -332,6 +340,7 @@ void cctagMultiresDetection(
       }
     }
   }
+  if( durations ) durations->log( "after update markers" );
   
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
   CCTagVisualDebug::instance().writeLocalizationView(markers);
@@ -392,6 +401,7 @@ void cctagMultiresDetection(
       marker.setRescaledOuterEllipsePoints(marker.points().back());
     }
   }
+  if( durations ) durations->log( "after marker projection" );
   
   // Log
   CCTagFileDebug::instance().newSession("data.txt");

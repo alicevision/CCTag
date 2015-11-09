@@ -6,12 +6,14 @@
 #include <cctag/types.hpp>
 #include <cctag/params.hpp>
 #include <cctag/frame.hpp>
+#include "cctag/logtime.hpp"
 
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/image_view_factory.hpp>
 #include <boost/gil/typedefs.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <cstddef>
 #include <string>
@@ -21,14 +23,15 @@ namespace cctag {
 
 class EdgePoint;
 class EdgePointImage;
-     
+
 void cctagDetection(
         CCTag::List& markers,
         const std::size_t frame,
         const cv::Mat & graySrc,
         const Parameters & params,
         const cctag::CCTagMarkersBank & bank,
-        const bool bDisplayEllipses = true );
+        const bool bDisplayEllipses = true,
+        logtime::Mgmt* durations = 0 );
 
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
@@ -40,7 +43,8 @@ void cctagDetectionFromEdges(
         const std::size_t       frame,
         int pyramidLevel,
         double scale,
-        const Parameters & params);
+        const Parameters & params,
+        logtime::Mgmt* durations );
 
 void createImageForVoteResultDebug(
         const cv::Mat & src,

@@ -9,6 +9,7 @@
 #include <cctag/boostCv/cvImage.hpp>
 #include <cctag/ImagePyramid.hpp>
 #include "cuda/tag.h"
+#include "cctag/logtime.hpp"
 
 #include <terry/sampler/all.hpp>
 #include <terry/sampler/resample_subimage.hpp>
@@ -42,7 +43,8 @@ void cctagMultiresDetection(
         const ImagePyramid& imagePyramid,
         const std::size_t   frame,
         popart::TagPipe*    cuda_pipe,
-        const Parameters&   params);
+        const Parameters&   params,
+        cctag::logtime::Mgmt* durations );
 
 void update(CCTag::List& markers, const CCTag& markerToAdd);
 

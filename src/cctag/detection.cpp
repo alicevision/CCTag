@@ -375,7 +375,8 @@ void cctagDetectionFromEdges(
         const std::size_t frame,
         int pyramidLevel,
         double scale,
-        const Parameters & params)
+        const Parameters & params,
+        cctag::logtime::Mgmt* durations )
 {
   // using namespace boost::gil;
 
@@ -415,6 +416,7 @@ void cctagDetectionFromEdges(
   {
     constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
   }
+  if( durations ) durations->log( "after constructFlowComponentFromSeed loop" );
 
   const std::size_t nFlowComponentToProcessLoopTwo = 
           std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
@@ -445,6 +447,7 @@ void cctagDetectionFromEdges(
       CCTAG_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
     }
   )
+  if( durations ) durations->log( "after completeFlowComponent loop" );
 
   boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d1 = tstop1 - tstart0;
@@ -678,13 +681,15 @@ void cctagDetection(CCTag::List& markers,
         const cv::Mat & imgGraySrc,
         const Parameters & params,
         const cctag::CCTagMarkersBank & bank,
-        const bool bDisplayEllipses)
+        const bool bDisplayEllipses,
+        cctag::logtime::Mgmt* durations )
 {
   // POP_ENTER;
   using namespace cctag;
   using namespace boost::numeric::ublas;
   //using namespace boost::gil;
 
+  if( durations ) durations->log( "start" );
 #ifdef CCTAG_OPTIM
   boost::posix_time::time_duration duration;
 #endif // CCTAG_OPTIM
@@ -696,6 +701,8 @@ void cctagDetection(CCTag::List& markers,
 #endif // CCTAG_OPTIM
   
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
+
+  if( durations ) durations->log( "after imagePyramid" );
 
     static uint32_t         cuda_w;
     static uint32_t         cuda_h;
@@ -714,6 +721,8 @@ void cctagDetection(CCTag::List& markers,
         }
     }
 
+  if( durations ) durations->log( "after TagPipe init" );
+
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
   duration = t01 - t00;
@@ -730,6 +739,9 @@ void cctagDetection(CCTag::List& markers,
   unsigned char* pix = imgGraySrc.data;
 
   pipe1->load( pix );
+
+  if( durations ) durations->log( "after Image upload" );
+
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
   duration = t11 - t10;
@@ -740,6 +752,9 @@ void cctagDetection(CCTag::List& markers,
   boost::posix_time::ptime t20(boost::posix_time::microsec_clock::local_time());
 #endif // CCTAG_OPTIM
   pipe1->tagframe( params ); // pix, w, h, params );
+
+  if( durations ) durations->log( "after CUDA stages" );
+
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t21(boost::posix_time::microsec_clock::local_time());
   duration = t21 - t20;
@@ -751,6 +766,7 @@ void cctagDetection(CCTag::List& markers,
   boost::posix_time::ptime t03(boost::posix_time::microsec_clock::local_time());
 #endif // CCTAG_OPTIM
   pipe1->debug( pix, params );
+  if( durations ) durations->log( "after CUDA debug" );
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t13(boost::posix_time::microsec_clock::local_time());
   duration = t13 - t03;
@@ -758,7 +774,8 @@ void cctagDetection(CCTag::List& markers,
 #endif // CCTAG_OPTIM
 #endif // not NDEBUG
   
-  cctagMultiresDetection( markers, imgGraySrc, imagePyramid, frame, pipe1, params );
+  cctagMultiresDetection( markers, imgGraySrc, imagePyramid, frame, pipe1, params, durations );
+  if( durations ) durations->log( "after cctagMultiresDetection" );
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
@@ -767,44 +784,46 @@ void cctagDetection(CCTag::List& markers,
 #endif
   
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
-  // Identification step
-  if (params._doIdentification)
-  {
-    CCTag::List::iterator it = markers.begin();
-    while (it != markers.end())
+  if( durations ) durations->log( "after initBackgroundImage" );
+
+    // Identification step
+    if (params._doIdentification)
     {
-      CCTag & cctag = *it;
+        CCTag::List::iterator it = markers.begin();
+        while (it != markers.end())
+        {
+            CCTag & cctag = *it;
 
-      const int detected = cctag::identification::identify(
-              cctag,
-              bank.getMarkers(),
-              imagePyramid.getLevel(0)->getSrc(),
-              pipe1,
-              params);
+            const int detected = cctag::identification::identify(
+                cctag,
+                bank.getMarkers(),
+                imagePyramid.getLevel(0)->getSrc(),
+                pipe1,
+                params );
       
-      cctag.setStatus(detected);
-      ++it;
-    }
+            cctag.setStatus(detected);
+            ++it;
+        }
+        if( durations ) durations->log( "after cctag::identification::identify" );
 #ifdef CCTAG_OPTIM
-      boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
-      duration = t2 - t1;
-      const double spendTime2 = duration.total_milliseconds();
-      CCTAG_COUT_OPTIM("TIME IN IDENTIFICATION: " << spendTime2 << " ms");
+        boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
+        duration = t2 - t1;
+        const double spendTime2 = duration.total_milliseconds();
+        CCTAG_COUT_OPTIM("TIME IN IDENTIFICATION: " << spendTime2 << " ms");
 #endif
-  }
+    }
   
-  markers.sort();
+    markers.sort();
+    if( durations ) durations->log( "after markers.sort" );
 
-  CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
-  CCTagVisualDebug::instance().writeIdentificationView(markers);
-  CCTagFileDebug::instance().newSession("identification.txt");
+    CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
+    CCTagVisualDebug::instance().writeIdentificationView(markers);
+    CCTagFileDebug::instance().newSession("identification.txt");
 
-  BOOST_FOREACH(const CCTag & marker, markers)
-  {
-    CCTagFileDebug::instance().outputMarkerInfos(marker);
-  }
-
-  // POP_LEAVE;
+    BOOST_FOREACH(const CCTag & marker, markers)
+    {
+        CCTagFileDebug::instance().outputMarkerInfos(marker);
+    }
 }
 
 } // namespace cctag
