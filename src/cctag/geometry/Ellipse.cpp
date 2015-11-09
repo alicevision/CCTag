@@ -294,13 +294,8 @@ void getSortedOuterPoints(
   const std::size_t nOuterPoints = std::min( requestedSize, points.size() );
   std::size_t step = std::size_t( points.size() / ( nOuterPoints - 1 ) );
   
-  CCTAG_COUT_VAR(vAngles.size());
-  
   resPoints.clear();
   resPoints.reserve(nOuterPoints);
-    
-  CCTAG_COUT_VAR(points.size());
-  CCTAG_COUT_VAR(step);
   
   // Get the final expected size of resPoints
   
@@ -308,7 +303,6 @@ void getSortedOuterPoints(
   {
     resPoints.push_back(points[vAngles[iPoint].second]);
   }
-  CCTAG_COUT_VAR(resPoints.size());
 }
 
 }
