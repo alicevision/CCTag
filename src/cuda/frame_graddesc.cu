@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <limits>
 #include <cuda_runtime.h>
-#include <thrust/system/cuda/detail/cub/cub.cuh>
+#include <cub/cub.cuh>
 #include <stdio.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"
@@ -11,6 +11,8 @@
 #include "assist.h"
 
 using namespace std;
+
+#define DEBUG_CUB_FUNCTIONS true
 
 namespace popart
 {
@@ -429,6 +431,9 @@ void dp_caller_step_3( DevEdgeList<int2>        edgeCoords, // input
      * The final result is stored in d_keys.d_buffers[d_keys.selector].
      * The other buffer is invalid.
      */
+#if 0
+return;
+#else
     err = cub::DeviceRadixSort::SortKeys( assist_buffer,
                                           assist_buffer_sz,
                                           keys,
@@ -436,7 +441,8 @@ void dp_caller_step_3( DevEdgeList<int2>        edgeCoords, // input
                                           0,             // begin_bit
                                           sizeof(int)*8, // end_bit
                                           childStream,   // use stream 0
-                                          false );        // synchronous for debugging
+                                          DEBUG_CUB_FUNCTIONS );        // synchronous for debugging
+#endif
 
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
@@ -471,7 +477,7 @@ void dp_caller_step_3( DevEdgeList<int2>        edgeCoords, // input
                                      seedIndices2.getSizePtr(),  // output
                                      seedIndices.getSize(), // input (unchanged in sort)
                                      childStream,  // use stream 0
-                                     false ); // synchronous for debugging
+                                     DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
 
     cudaStreamDestroy( childStream );
 }
@@ -552,7 +558,7 @@ void dp_caller_step_5( DevEdgeList<int2>        edgeCoords, // input
                            seedIndices2.getSize(),
                            select_op,
                            childStream,     // use stream 0
-                           false ); // synchronous for debugging
+                           DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
 
     cudaStreamDestroy( childStream );
 }

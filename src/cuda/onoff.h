@@ -30,8 +30,8 @@
  * e.g., GPU-side counters need to be checked before starting
  * a new kernel.
  */
-#define USE_SEPARABLE_COMPILATION
-#define USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#undef USE_SEPARABLE_COMPILATION
+#undef USE_SEPARABLE_COMPILATION_IN_GRADDESC
 
 /* Init _d_intermediate to 0 before uploading. Wastes time,
  * for debugging only. Required because of crash -O3 but not

@@ -337,7 +337,6 @@ void Frame::applyHyst( const cctag::Parameters & params )
     assert( getWidth()  == _d_hyst_edges.cols );
     assert( getHeight() == _d_hyst_edges.rows );
 
-#ifndef NDEBUG
     dim3 block;
     dim3 grid;
     block.x = HYST_W;
@@ -345,6 +344,7 @@ void Frame::applyHyst( const cctag::Parameters & params )
     grid.x  = grid_divide( getWidth(),   HYST_W );
     grid.y  = grid_divide( getHeight(),  HYST_H );
 
+#ifndef NDEBUG
     verify_map_valid
         <<<grid,block,0,_stream>>>
         ( _d_map, _d_hyst_edges, getWidth(), getHeight() );

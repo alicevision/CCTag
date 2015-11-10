@@ -2,7 +2,7 @@
 
 #include <cuda_runtime.h>
 #include <opencv2/core/cuda_types.hpp>
-#include <thrust/system/cuda/detail/cub/cub.cuh>
+#include <cub/cub.cuh>
 
 #include "onoff.h"
 
@@ -28,7 +28,6 @@ struct NumVotersIsGreaterEqual
     DevEdgeList<TriplePoint> _array;
     int                      _compare;
 
-    CUB_RUNTIME_FUNCTION
     __host__ __device__
     __forceinline__
     NumVotersIsGreaterEqual( int compare, DevEdgeList<TriplePoint> _d_array )
@@ -36,7 +35,6 @@ struct NumVotersIsGreaterEqual
         , _array( _d_array )
     {}
 
-    // CUB_RUNTIME_FUNCTION
     __device__
     __forceinline__
     bool operator()(const int &a) const {
