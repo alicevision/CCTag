@@ -1111,7 +1111,6 @@ bool imageCenterOptimizationGlob(
       }
     }
     center = optimalPoint;
-    CCTAG_COUT_VAR_OPTIM(center);
     mHomography = optimalHomography;
     
     return hasASolution;
