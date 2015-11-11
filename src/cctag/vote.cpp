@@ -30,6 +30,9 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/unordered/unordered_map.hpp>
 
+#include <boost/timer.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 #include <algorithm>
 #include <cmath>
 #include <ostream>
@@ -390,19 +393,28 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         }
     }
 
-    void outlierRemoval(const std::list<EdgePoint*>& childrens, std::vector<EdgePoint*>& filteredChildrens, double & SmFinal, double threshold, std::size_t weightedType) {
-        using namespace boost::numeric::ublas;
+    void outlierRemoval(
+            const std::list<EdgePoint*>& childrens,
+            std::vector<EdgePoint*>& filteredChildrens,
+            double & SmFinal,
+            double threshold,
+            std::size_t weightedType,
+            const std::size_t maxSize)
+    {
+      using namespace boost::numeric::ublas;
         // function [Qm, Sm, pts_in, param_in,flag,i_inliers] = outlierRemoval(pts,debug)
         // outLierRemoval compute from a set of points pts the best ellipse which fits
         // a subset of pts i.e. with Sm minimal
 
         //std::srand(1);
+      
+      filteredChildrens.reserve(childrens.size());
+      
+      const std::size_t nSubsampleSize = std::min(childrens.size(), maxSize);
+      const float step = (float) childrens.size()/ (float) nSubsampleSize;    
 
-        filteredChildrens.reserve(childrens.size());
-
-        const std::size_t n = childrens.size();
         // Precondition
-        if (n >= 5) {
+        if (nSubsampleSize >= 5) {
             numerical::geometry::Ellipse qm;
             double Sm = 10000000.0;
             const double f = 1.0;
@@ -418,28 +430,41 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             std::vector<double> weights;
             weights.reserve(childrens.size());
 
-            for (std::list<EdgePoint*>::const_iterator it = childrens.begin(); it != childrens.end(); ++it) {
-                // Push_back...
-                // TODO chaque point doit être x/w y/w 1: note eloi: utilise la methode cartesian() de Point2dN
-                pts.push_back(*(*it));
+            // Store a subset of EdgePoint* on which the robust ellipse estimation will
+            // performed. Considering a subset of points is valid as what matters is the 
+            // ratio nbInliers/nbOutliers/nbInliers which is irrespective of the size of
+            // the set of points to process. 
+            // The sub sampled have to be regularly sampled though: todo
+
+            std::size_t k = 0;
+            std::size_t iEdgePoint = 0;
+            for(const auto edgePoint : childrens )
+            {
+              if (iEdgePoint == std::size_t(k*step) )
+              {
+                ++k;
+                pts.push_back(*edgePoint);
+                CCTagVisualDebug::instance().drawPoint(cctag::Point2dN<double>(pts.back()), cctag::color_red);
 
                 if (weightedType == INV_GRAD_WEIGHT) {
-                    weights.push_back(255 / ((*it)->_normGrad)); //  0.003921= 1/255
+                  weights.push_back(255 / (edgePoint->_normGrad));
                 }
+              }
+              ++iEdgePoint;
             }
 
-            std::size_t cnt = 0;
+            std::size_t counter = 0;
 
-            while (cnt < 70)
+            while (counter < 70)
             {
                 // Random subset of 5 points from pts
-                const std::vector<int> perm = cctag::numerical::randperm< std::vector<int> >(n);
+                const std::vector<int> perm = cctag::numerical::randperm< std::vector<int> >(pts.size());
 
                 bounded_matrix<double, 5, 5> A(5, 5);
                 bounded_vector<double, 5> b(5);
 
-                // TODO : Résoltion du pb linéaire ou cvFitEllipse ?
-
+                // todo: use a closed-form solution instead of a gaussian pivot in invert
+                // The entire function could then be efficiently implemented on GPU
                 for (std::size_t i = 0; i < 5; ++i) {
                     A(i, 0) = pts[perm[i]](0) * pts[perm[i]](0);
                     A(i, 1) = 2.0 * pts[perm[i]](0) * pts[perm[i]](1);
@@ -451,11 +476,10 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 }
 
                 bounded_matrix<double, 5, 5> AInv(5, 5);
-                ///@todo what shall we do when invert fails ?
                 if (cctag::numerical::invert(A, AInv)) {
                     bounded_vector<double, 5> temp(5);
 
-                    temp = prec_prod(AInv, b); // prec_prod ou prod ?
+                    temp = prec_prod(AInv, b);
 
                     //Ellipse(const bounded_matrix<double, 3, 3> & matrix)
                     //param = (inv(A)*(-f*f*ones(5,1)))';
@@ -483,7 +507,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
                             // if "search for another convex segment" is disabled, uncomment this bloc -- todo@Lilian
                             if ((ratioSemiAxes < 0.04) || (ratioSemiAxes > 25)) {
-                                ++cnt;
+                                ++counter;
                                 continue;
                             }
 
@@ -503,21 +527,21 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                             const double S = numerical::medianRef(dist);
 
                             if (S < Sm) {
-                                cnt = 0;
+                                counter = 0;
                                 qm = numerical::geometry::Ellipse(Q);
                                 Sm = S;
                                 //CCTAG_COUT(Sm);
                             } else {
-                                ++cnt;
+                                ++counter;
                             }
                             }catch( ... ){
                             // Conique != ellipse, on passe à la une nouvelle permutation aléatoire.
                         }
                     } else {
-                        ++cnt;
+                        ++counter;
                     }
                 } else {
-                    ++cnt;
+                    ++counter;
                 }
             }
 
@@ -543,7 +567,6 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                     vDistFinal.push_back(distFinal);
                 }
             }
-            
             SmFinal = numerical::medianRef(vDistFinal);
         }
     }
