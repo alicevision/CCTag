@@ -234,7 +234,7 @@ int main(int argc, char** argv)
 #if 1
     boost::mutex        frame_mutex;
     boost::thread_group frame_processor;
-    for( int proc=0; proc<2 ; proc++ ) {
+    for( int proc=0; proc<1 ; proc++ ) {
       frame_processor.create_thread(
         [&frames, &frameId, &frame_mutex, &t, params, bank, &outputFile](){
             bool   empty;
