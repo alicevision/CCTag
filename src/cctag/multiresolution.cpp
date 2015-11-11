@@ -544,14 +544,31 @@ void cctagMultiresDetection(
 
       cctag::numerical::geometry::Ellipse rescaledOuterEllipse = marker.rescaledOuterEllipse();
 
+      #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
+      #endif
+      
+      
       std::list<EdgePoint*> pointsInHull;
       selectEdgePointInEllipticHull(vEdgeMaps[0], rescaledOuterEllipse, scale, pointsInHull);
 
+      #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
+      #endif
+      
       std::vector<EdgePoint*> rescaledOuterEllipsePoints;
 
       double SmFinal = 1e+10;
       
-      cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0);
+      cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0, 0, 60);
+      
+      #ifdef CCTAG_OPTIM
+        boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
+        boost::posix_time::time_duration d1 = t1 - t0;
+        boost::posix_time::time_duration d2 = t2 - t1;
+        CCTAG_COUT_OPTIM("Time in selectEdgePointInEllipticHull: " << d1.total_milliseconds() << " ms");
+        CCTAG_COUT_OPTIM("Time in outlierRemoval: " << d2.total_milliseconds() << " ms");
+      #endif
       
       try
       {

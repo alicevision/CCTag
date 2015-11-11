@@ -132,8 +132,13 @@ void completeFlowComponent(
 
       std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
 
-      outlierRemoval(childrens, filteredChildrens, SmFinal, 
-              params._threshRobustEstimationOfOuterEllipse, kWeight);
+      outlierRemoval(
+              childrens, 
+              filteredChildrens,
+              SmFinal, 
+              params._threshRobustEstimationOfOuterEllipse,
+              kWeight,
+              60);
 
       // todo@lilian see the case in outlierRemoval
       // where filteredChildrens.size()==0
@@ -446,6 +451,8 @@ void cctagDetectionFromEdges(
   // be here entirely recovered.
   // The GPU implementation should stop at this point => layers ->  EdgePoint* creation.
 
+  CCTagVisualDebug::instance().initBackgroundImage(src);
+  CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
   while (iCandidate < nFlowComponentToProcessLoopTwo)
   {
     completeFlowComponent(*it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, params);

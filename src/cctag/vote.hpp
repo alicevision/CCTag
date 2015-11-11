@@ -58,7 +58,14 @@ void childrensOf( std::list<EdgePoint*>& edges, WinnerMap& winnerMap, std::list<
 /** @brief Concaten all childrens of each points
  * @param [in/out] edges list of childrens points (from a winner)
  */
-void outlierRemoval( const std::list<EdgePoint*>& childrens, std::vector<EdgePoint*>& filteredChildrens, double & SmFinal, double threshold, std::size_t weightedType = 0 );
+void outlierRemoval(
+        const std::list<EdgePoint*>& childrens,
+        std::vector<EdgePoint*>& filteredChildrens,
+        double & SmFinal,
+        double threshold,
+        std::size_t weightedType = NO_WEIGHT,
+        const std::size_t maxSize = std::numeric_limits<int>::max());
+
 //void outlierRemoval( std::vector<EdgePoint*>& childrens, double & SmFinal, double threshold, std::size_t weightedType = 0 ); //todo@Lilian : templater le outlierRemoval
 
 /** @brief Search for another segment after the ellipse growinf procedure
