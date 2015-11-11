@@ -1218,7 +1218,6 @@ bool imageCenterOptimizationGlob(
     }
 #endif // CPU_GPU_COST_FUNCTION_COMPARE
     center = optimalPoint;
-    CCTAG_COUT_VAR_OPTIM(center);
     mHomography = optimalHomography;
     
     return hasASolution;
