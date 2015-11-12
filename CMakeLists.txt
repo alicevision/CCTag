@@ -100,6 +100,9 @@ IF(USE_CUDA)
   ELSE(CUDA_FOUND)
     message( FATAL_ERROR "Failed to find CUDA" )
   ENDIF(CUDA_FOUND)
+
+  cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
+
 ELSE(USE_CUDA)
   message( STATUS "Avoid using CUDA" )
 ENDIF(USE_CUDA)

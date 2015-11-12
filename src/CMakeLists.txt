@@ -23,6 +23,8 @@ IF(USE_CUDA)
     )
 
     include_directories("${CMAKE_SOURCE_DIR}/src")
+    include_directories("/home/labo/Install/cub-1.4.1")
+    # include_directories("/usr/local/cuda/include/thrust/system/cuda/detail")
 
     set_source_files_properties( ${CUDA_cpp} ${CUDA_cu}
                                  PROPERTIES COMPILE_FLAGS "-g -Wall"
@@ -30,14 +32,14 @@ IF(USE_CUDA)
     set_source_files_properties( ${CCTag_cpp}
                                  PROPERTIES COMPILE_FLAGS "-std=c++11"
     )
-    # set(CUDA_NVCC_DEBUG_FLAGS "-G -g -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52")
-    # set(CUDA_NVCC_RELEASE_FLAGS "-gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52 -O3")
 
-    # I try to find parameters that allow Dynamic Parallelism.
-    # So far not successful, but the following settings appear
-    # to be involved.
-    #
-    # set(CUDA_NVCC_FLAGS "-gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52 -O3 -rdc=true --compiler-options -fPIC")
+    add_definitions("-DSM_ARCH=100")
+    # add_definitions("-DSM_TARGETS=-gencode=arch=compute_52,code=\"sm_52,compute_52\"")
+    add_definitions("-DSM=100")
+
+    set(CUDA_NVCC_DEBUG_FLAGS "-G -g -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52")
+    set(CUDA_NVCC_RELEASE_FLAGS "-gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52 -O3")
+
     # set(CUDA_SEPARABLE_COMPILATION ON)
     # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
     # set(BUILD_SHARED_LIBS ON)
@@ -93,14 +95,14 @@ if(USE_CUDA)
                                      ${CUDA_LIBRARIES}
                                      ${OPTPP_LIBRARIES}
 				     ${Ceres_LIBRARIES}
-				     -lcudadevrt )
+				     ${CUDA_CUDADEVRT_LIBRARY} )
 
     CUDA_ADD_EXECUTABLE( testMemoryPool
                          applications/test/testMemoryPool.cpp )
     TARGET_LINK_LIBRARIES( testMemoryPool CCTag
                                           CCTagCuda
 					  ${CUDA_LIBRARIES} 
-					  -lcudadevrt )
+				          ${CUDA_CUDADEVRT_LIBRARY} )
 
     install(TARGETS CCTag CCTagCuda LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 else(USE_CUDA)
