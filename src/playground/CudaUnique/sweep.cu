@@ -13,8 +13,8 @@ const size_t BlockOffset = NumWarpsPerBlock * WarpSize * NumItemPerThread;
 
 __shared__ size_t uniqueCounter[32];
 
-__device__
 template<typename T>
+__device__
 T PrefixSumWarpInclusive( T threadValue, T& total )
 {
     T n;
@@ -27,8 +27,8 @@ T PrefixSumWarpInclusive( T threadValue, T& total )
     return threadValue;
 }
 
-__device__
 template<typename T>
+__device__
 T PrefixSumWarpExclusive( T threadValue, T& total )
 {
     T n;
@@ -234,16 +234,23 @@ void UniqueArray( int32_t*  h_ptr,
     }
     cout << endl;
 
+    cout << "Starting SumEqualityBlock for " << block_count << " entries" << endl;
+
     SumEqualityBlock
         <<<1,block>>>
-        ( grid_divide( num_in, 32*32 ),
+        ( grid_divide( block_count, 32*32 ),
           d_intermediate_block_total,
           d_intermediate_block_sum,
-          num_in );
+          block_count );
+
+    cudaMemcpy( h_ptr_intermediate_3,
+                d_intermediate_block_sum,
+                block_count*sizeof(int32_t),
+                cudaMemcpyDeviceToHost );
 
     cout << "Intermediate block sum:" << endl;
     for( int i=0; i<block_count; i++ ) {
-        cout << h_ptr_intermediate_2[i] << " ";
+        cout << h_ptr_intermediate_3[i] << " ";
         if( i%16==15 ) cout << endl;
     }
     cout << endl;
@@ -266,7 +273,7 @@ int main( )
     device_prop_t dev;
     dev.print();
 
-    const size_t num = 2000;
+    const size_t num = 3000;
     int32_t*  h_ptr;
     int32_t*  d_ptr_in;
     int32_t*  d_ptr_out;
