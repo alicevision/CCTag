@@ -245,13 +245,13 @@ std::string CCTagVisualDebug::getImageFileName() const {
 }
 
 void CCTagVisualDebug::out(const std::string & filename) const {
-#ifdef CCTAG_SERIALIZE
+#if defined CCTAG_SERIALIZE && defined VISUAL_DEBUG
   cv::imwrite(filename, _backImage);
 #endif
 }
 
 void CCTagVisualDebug::outPutAllSessions() const {
-#ifdef CCTAG_SERIALIZE
+#if defined CCTAG_SERIALIZE && defined VISUAL_DEBUG
     BOOST_FOREACH(const Sessions::const_iterator::value_type & v, _sessions) {
         const std::string filename = _path + "/" + v.first + ".png";
         cv::imwrite(filename, v.second);
