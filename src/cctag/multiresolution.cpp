@@ -560,7 +560,13 @@ void cctagMultiresDetection(
 
       double SmFinal = 1e+10;
       
-      cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0, 0, 60);
+      cctag::outlierRemoval(
+              pointsInHull,
+              rescaledOuterEllipsePoints,
+              SmFinal,
+              params._threshRobustEstimationOfOuterEllipse, //20.0 before
+              INV_GRAD_WEIGHT, // INV_GRAD_WEIGHT: NO_WEIGHT before 
+              60); 
       
       #ifdef CCTAG_OPTIM
         boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
