@@ -162,13 +162,13 @@ void print_d_intermediate_block_total( int32_t* a, size_t num )
 #endif
 
 
-void UniqueArray( int32_t*  h_ptr,
-                  size_t    num_in,
-                  int32_t*  d_ptr_in,
-                  int32_t*  d_ptr_out,
-                  int16_t*  d_intermediate_offset_array,
-                  int32_t*  d_intermediate_block_total,
-                  int32_t*  d_intermediate_block_sum,
+void UniqueArray( int32_t* h_ptr,
+                  size_t   num_in,
+                  int32_t* d_ptr_in,
+                  int32_t* d_ptr_out,
+                  int16_t* d_intermediate_offset_array,
+                  int32_t* d_intermediate_block_total,
+                  int32_t* d_intermediate_block_sum,
                   int32_t* d_intermediate_3 )
 {
     cout << "Enter " << __FUNCTION__ << endl;
