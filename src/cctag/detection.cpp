@@ -472,7 +472,7 @@ void cctagDetectionFromEdges(
   boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d1 = tstop1 - tstart0;
   const double spendTime1 = d1.total_milliseconds();
-  DO_TALK( CCTAG_COUT_OPTIM(" Time in the 1st loop " << spendTime1 << " ms"); )
+  DO_TALK( CCTAG_COUT_OPTIM("Time in the 1st loop: " << spendTime1 << " ms"); )
 
 #if defined CCTAG_SERIALIZE && defined DEBUG
   std::stringstream outFlowComponentsAssembling;
@@ -647,7 +647,7 @@ void cctagDetectionFromEdges(
   boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d2 = tstop2 - tstop1;
   const double spendTime2 = d2.total_milliseconds();
-  DO_TALK( CCTAG_COUT_OPTIM("Time in the 2nd loop" << spendTime2 << " ms"); )
+  DO_TALK( CCTAG_COUT_OPTIM("Time in the 2nd loop: " << spendTime2 << " ms"); )
 
   //	markers.sort();
 
