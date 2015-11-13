@@ -666,7 +666,7 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
   
   // A. Keep only 1/5 of the total number of pixel of the ellipse perimeter.
   const std::size_t ellipsePerimeter = rasterizeEllipsePerimeter(outerEllipse);
-  std::size_t upperSize = std::max((std::size_t) ellipsePerimeter/5 , selectSize); // Greater than the final size, 
+  std::size_t upperSize = std::max((std::size_t) ((float)collectedCuts.size()/5.f) , selectSize); // Greater than the final size, 
                                                                                    // Cuts will then be removed iteratively.
   std::size_t j = 0;
   BoundedVector2d sumDeriv;
