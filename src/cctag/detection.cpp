@@ -617,10 +617,18 @@ void cctagDetectionFromEdges(
 
       BOOST_FOREACH(const EdgePoint* p, outerEllipsePoints)
       {
-        quality2 += p->_normGrad;
+        //quality2 += p->_normGrad; // ***
+        
+        double theta = atan2(p->y() - outerEllipse.center().y(), p->x() - outerEllipse.center().x());
+        quality2 += std::abs(-sin(theta)*p->gradient().x() + cos(theta)*p->gradient().y());
       }
 
-      quality2 *= scale;
+      quality2 = outerEllipsePoints.size()/quality2;
+      quality2 *= quality;
+      
+      //quality2 *= scale; // ***
+      
+      // New quality
 
       markers.push_back(new CCTag(-1, outerEllipse.center(), cctagPoints,
               outerEllipse, markerHomography, pyramidLevel, scale, quality2));
