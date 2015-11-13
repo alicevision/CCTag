@@ -674,8 +674,10 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
   std::map< std::size_t, cctag::DirectedPoint2d<double> > mapBestIdCutOuterPoint;
   
   // Reverse iterator over the variance values from the highest to the smallest one
-  std::map<double,std::size_t>::reverse_iterator rit;
-  for(rit=varCuts.rbegin(); rit!=varCuts.rend(); ++rit)
+  std::map<double,std::size_t>::reverse_iterator rit=varCuts.rbegin();
+  double varMax = rit->first;
+  
+  for( ; rit!=varCuts.rend(); ++rit)
   {
     cctag::DirectedPoint2d<double> outerPoint( collectedCuts[rit->second].stop() );
     double normGrad = sqrt(outerPoint.dX()*outerPoint.dX() + outerPoint.dY()*outerPoint.dY());
@@ -691,7 +693,10 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
     mapBestIdCutOuterPoint.emplace(rit->second, outerPoint);
     ++j;
     
-    if ( j > upperSize)
+    //if ( j > upperSize) // todo: validate with more tests on real data (e.g. grimstad, day01,img3)
+    //  break;            // and clean
+    
+    if ( rit->first < varMax*0.8)
       break;
   }
   
