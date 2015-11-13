@@ -416,7 +416,6 @@ void cctagDetectionFromEdges(
   {
     constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
   }
-  if( durations ) durations->log( "after constructFlowComponentFromSeed loop" );
 
   const std::size_t nFlowComponentToProcessLoopTwo = 
           std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
@@ -447,7 +446,6 @@ void cctagDetectionFromEdges(
       CCTAG_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
     }
   )
-  if( durations ) durations->log( "after completeFlowComponent loop" );
 
   boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d1 = tstop1 - tstart0;
@@ -740,8 +738,6 @@ void cctagDetection(CCTag::List& markers,
 
   pipe1->load( pix );
 
-  if( durations ) durations->log( "after Image upload" );
-
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
   duration = t11 - t10;
@@ -784,7 +780,6 @@ void cctagDetection(CCTag::List& markers,
 #endif
   
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
-  if( durations ) durations->log( "after initBackgroundImage" );
 
     // Identification step
     if (params._doIdentification)
@@ -814,7 +809,6 @@ void cctagDetection(CCTag::List& markers,
     }
   
     markers.sort();
-    if( durations ) durations->log( "after markers.sort" );
 
     CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
     CCTagVisualDebug::instance().writeIdentificationView(markers);
@@ -824,6 +818,8 @@ void cctagDetection(CCTag::List& markers,
     {
         CCTagFileDebug::instance().outputMarkerInfos(marker);
     }
+
+    cerr << markers.size() << " markers found" << endl;
 }
 
 } // namespace cctag

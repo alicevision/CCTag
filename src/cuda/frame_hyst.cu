@@ -374,7 +374,7 @@ void Frame::applyHyst( const cctag::Parameters & params )
         }
         POP_CHK_CALL_IFSYNC;
         POP_CUDA_SYNC( _stream );
-        cerr << "hysteresis_block_counter=" << _h_meta->hysteresis_block_counter << endl;
+        // cerr << "hysteresis_block_counter=" << _h_meta->hysteresis_block_counter << endl;
     }
     while( _h_meta->hysteresis_block_counter > 0 );
 #endif // USE_SEPARABLE_COMPILATION

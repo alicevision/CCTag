@@ -3,6 +3,7 @@
 #include <limits>
 #include <cuda_runtime.h>
 #include <cub/cub.cuh>
+// #include <thrust/system/cuda/detail/cub/cub.cuh>
 #include <stdio.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"
@@ -453,7 +454,7 @@ void Frame::applyVote( const cctag::Parameters& params )
                                        _vote._seed_indices_2.dev.ptr );
 #endif
 #if 1
-	std::cerr << "before cub::DeviceRadixSort(0)" << std::endl;
+	// std::cerr << "before cub::DeviceRadixSort(0)" << std::endl;
 	// LETS TRY IF THIS WORKS NOW
 	assist_buffer_sz  = 0;
 #ifdef RADIX_WITHOUT_DOUBLEBUFFER
@@ -488,7 +489,7 @@ void Frame::applyVote( const cctag::Parameters& params )
         assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
 #endif
 
-	std::cerr << "before cub::DeviceRadixSort(data)" << std::endl;
+	// std::cerr << "before cub::DeviceRadixSort(data)" << std::endl;
         /* After SortKeys, both buffers in d_keys have been altered.
          * The final result is stored in d_keys.d_buffers[d_keys.selector].
          * The other buffer is invalid.
@@ -527,7 +528,7 @@ void Frame::applyVote( const cctag::Parameters& params )
 #if 1
 	// LETS TRY IF THIS WORKS NOW
 	assist_buffer_sz  = 0;
-	std::cerr << "before cub::DeviceSelect::Unique(0)" << std::endl;
+	// std::cerr << "before cub::DeviceSelect::Unique(0)" << std::endl;
         err = cub::DeviceSelect::Unique<int*,int*,int*>( 0,
                                          assist_buffer_sz,
                                          _vote._seed_indices.dev.ptr,     // input
@@ -555,7 +556,7 @@ void Frame::applyVote( const cctag::Parameters& params )
         /* Unique ensure that we check every "chosen" point only once.
          * Output is in _vote._seed_indices_2.dev
          */
-	std::cerr << "before cub::DeviceSelect::Unique(data)" << std::endl;
+	// std::cerr << "before cub::DeviceSelect::Unique(data)" << std::endl;
         err = cub::DeviceSelect::Unique<int*,int*,int*>( assist_buffer,
                                          assist_buffer_sz,
                                          _vote._seed_indices.dev.ptr,     // input
@@ -564,11 +565,11 @@ void Frame::applyVote( const cctag::Parameters& params )
                                          _vote._seed_indices.host.size,   // input (unchanged in sort)
                                          _stream,
                                          true );
-	std::cerr << "called cub::DeviceSelect::Unique(data)" << std::endl;
+	// std::cerr << "called cub::DeviceSelect::Unique(data)" << std::endl;
         POP_CHK_CALL_IFSYNC;
         POP_CUDA_SYNC( _stream );
         POP_CUDA_FATAL_TEST( err, "CUB Unique failed" );
-	std::cerr << "after cub::DeviceSelect::Unique(data)" << std::endl;
+	// std::cerr << "after cub::DeviceSelect::Unique(data)" << std::endl;
 
         /* Without Dynamic Parallelism, we must block here to retrieve the
          * value d_num_selected_out from the device before the voting
@@ -603,7 +604,7 @@ void Frame::applyVote( const cctag::Parameters& params )
 #if 1
 	// LETS TRY IF THIS WORKS NOW
 	assist_buffer_sz  = 0;
-	std::cerr << "before cub::DeviceSelect::If(0)" << std::endl;
+	// std::cerr << "before cub::DeviceSelect::If(0)" << std::endl;
         err = cub::DeviceSelect::If( 0,
                                      assist_buffer_sz,
                                      _vote._seed_indices_2.dev.ptr,
@@ -631,7 +632,7 @@ void Frame::applyVote( const cctag::Parameters& params )
         /* Filter all chosen inner points that have fewer
          * voters than required by Parameters.
          */
-	std::cerr << "before cub::DeviceSelect::If(data)" << std::endl;
+	// std::cerr << "before cub::DeviceSelect::If(data)" << std::endl;
         err = cub::DeviceSelect::If( assist_buffer,
                                      assist_buffer_sz,
                                      _vote._seed_indices_2.dev.ptr,

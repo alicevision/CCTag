@@ -66,7 +66,7 @@ struct Mgmt
     }
 
     void log( const char* probename ) {
-std::cerr << "logging >>>" << probename << "<<<" << std::endl;
+// std::cerr << "logging >>>" << probename << "<<<" << std::endl;
         if( _idx >= _reserved ) return;
 
         btime::ptime now( btime::microsec_clock::local_time() );

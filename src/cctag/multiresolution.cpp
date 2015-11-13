@@ -218,7 +218,6 @@ void cctagMultiresDetection_inner(
                          vEdgeMap,
                          seeds,
                          winners );
-    if( durations ) durations->log( "after download seeds/winners from CUDA" );
 
     level->setLevel( cuda_pipe, params );
 
@@ -262,8 +261,6 @@ void cctagMultiresDetection_inner(
         frame, i, std::pow(2.0, (int) i), params,
         durations );
 
-    if( durations ) durations->log( "after cctagDetectionFromEdges" );
-    
     CCTagVisualDebug::instance().initBackgroundImage(level->getSrc());
     std::stringstream outFilename2;
     outFilename2 << "viewLevel" << i;

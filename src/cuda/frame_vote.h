@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 #include <opencv2/core/cuda_types.hpp>
 #include <cub/cub.cuh>
+// #include <thrust/system/cuda/detail/cub/cub.cuh>
 
 #include "onoff.h"
 
