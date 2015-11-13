@@ -231,7 +231,7 @@ int main(int argc, char** argv)
 
     boost::timer t;
     std::size_t         frameId = 0;
-#if 1
+#if 0
     boost::mutex        frame_mutex;
     boost::thread_group frame_processor;
     for( int proc=0; proc<1 ; proc++ ) {
