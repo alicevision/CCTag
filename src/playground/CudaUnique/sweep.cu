@@ -2,6 +2,7 @@
 #include <cuda_runtime.h>
 #include "assist.h"
 #include "device_prop.h"
+#include "d_warp_prefixsum.h"
 
 using namespace std;
 
@@ -11,38 +12,9 @@ const size_t NumWarpsPerBlock = 32; // threadIdx.y ; threadDim.y
 const size_t WarpOffset  = WarpSize * NumItemPerThread;
 const size_t BlockOffset = NumWarpsPerBlock * WarpSize * NumItemPerThread;
 
+namespace popart {
+
 __shared__ size_t uniqueCounter[32];
-
-template<typename T>
-__device__
-T PrefixSumWarpInclusive( T threadValue, T& total )
-{
-    T n;
-    n = __shfl_up(threadValue,  1); if( threadIdx.x >=  1 ) threadValue += n;
-    n = __shfl_up(threadValue,  2); if( threadIdx.x >=  2 ) threadValue += n;
-    n = __shfl_up(threadValue,  4); if( threadIdx.x >=  4 ) threadValue += n;
-    n = __shfl_up(threadValue,  8); if( threadIdx.x >=  8 ) threadValue += n;
-    n = __shfl_up(threadValue, 16); if( threadIdx.x >= 16 ) threadValue += n;
-    total        = __shfl(    threadValue, 31 );
-    return threadValue;
-}
-
-template<typename T>
-__device__
-T PrefixSumWarpExclusive( T threadValue, T& total )
-{
-    T n;
-    n = __shfl_up(threadValue,  1); if( threadIdx.x >=  1 ) threadValue += n;
-    n = __shfl_up(threadValue,  2); if( threadIdx.x >=  2 ) threadValue += n;
-    n = __shfl_up(threadValue,  4); if( threadIdx.x >=  4 ) threadValue += n;
-    n = __shfl_up(threadValue,  8); if( threadIdx.x >=  8 ) threadValue += n;
-    n = __shfl_up(threadValue, 16); if( threadIdx.x >= 16 ) threadValue += n;
-
-    total = __shfl(    threadValue, 31 );
-    n  = __shfl_up( threadValue, 1 );
-    threadValue = threadIdx.x == 0 ? 0 : n;
-    return threadValue;
-}
 
 __device__
 size_t PrefixSumBlockExclusive( size_t threadValue, size_t& blockTotal )
@@ -104,22 +76,26 @@ void SweepEqualityBlock( const int32_t* in_array,
 __global__
 void SumEqualityBlock( const int      items_per_thread,
                        const int32_t* in_block_total,
-                       int32_t*       out_block_sum,
-                       const int      num_items )
+                       const int      in_block_items,
+                       int32_t*       out_block_prefixsum,
+                       size_t*        out_block_overallsum )
 {
     size_t offset = ( threadIdx.y * 32 + threadIdx.x ) * items_per_thread;
     int32_t counter = 0;
     for( int i=0; i<items_per_thread; i++ ) {
-        counter += (offset+i < num_items ) ? in_block_total[offset+i] : 0;
+        counter += (offset+i < in_block_items ) ? in_block_total[offset+i] : 0;
     }
     size_t total;
     size_t exclusiveSum = PrefixSumBlockExclusive( counter, total );
     counter = 0;
     for( int i=0; i<items_per_thread; i++ ) {
-        if( offset+i >= num_items ) return;
+        if( offset+i >= in_block_items ) return;
         int32_t counterIncrease = in_block_total[offset+i];
-        out_block_sum[offset+i] = exclusiveSum + counter;
+        out_block_prefixsum[offset+i] = exclusiveSum + counter;
         counter += counterIncrease;
+    }
+    if( threadIdx.x == 0 && threadIdx.y == 0 ) {
+        *out_block_overallsum = total;
     }
 }
 
@@ -139,50 +115,18 @@ void WriteUniqueValues( const int32_t* in_array,
     out_array[writeIndex] = in_array[baseOffset];
 }
 
-#if 0
-__global__
-void print_d_intermediate_offset_array( int16_t* a, size_t num )
-{
-    printf( "intermediate offset array:\n" );
-    for( int i=0; i<num; i++ ) {
-        printf("%d ", (int)a[i] );
-    }
-    printf("\n");
-}
-
-__global__
-void print_d_intermediate_block_total( int32_t* a, size_t num )
-{
-    printf( "intermediate block total:\n" );
-    for( int i=0; i<num; i++ ) {
-        printf("%d ", a[i] );
-    }
-    printf("\n");
-}
-#endif
-
 
 void UniqueArray( int32_t* h_ptr,
+                  size_t&  h_num_out,
                   size_t   num_in,
                   int32_t* d_ptr_in,
                   int32_t* d_ptr_out,
                   int16_t* d_intermediate_offset_array,
                   int32_t* d_intermediate_block_total,
                   int32_t* d_intermediate_block_sum,
-                  int32_t* d_intermediate_3 )
+                  size_t*  d_intermediate_num_output_items )
 {
     cout << "Enter " << __FUNCTION__ << endl;
-
-    int16_t*  h_ptr_intermediate_1;
-    int32_t*  h_ptr_intermediate_2;
-    int32_t*  h_ptr_intermediate_3;
-    int32_t*  h_ptr_intermediate_4;
-    cudaMallocHost( &h_ptr_intermediate_1, num_in*sizeof(int16_t) );
-    cudaMallocHost( &h_ptr_intermediate_2, num_in*sizeof(int32_t) );
-    cudaMallocHost( &h_ptr_intermediate_3, num_in*sizeof(int32_t) );
-    cudaMallocHost( &h_ptr_intermediate_4, sizeof(int32_t) );
-
-    cout << "Num init values: " << num_in << endl;
 
     cudaError_t err;
 
@@ -192,8 +136,6 @@ void UniqueArray( int32_t* h_ptr,
     }
 
     int  block_count = grid_divide( num_in, 32*32 );
-
-    cout << "Required 32x32 (" << 32*32 << ") blocks: " << block_count << endl;
 
     dim3 block( 32, 32 );
     dim3 grid ( block_count );
@@ -210,50 +152,15 @@ void UniqueArray( int32_t* h_ptr,
         cout << "Error in line " << __LINE__ << ": " << cudaGetErrorString(err) << endl;
     }
 
-    cudaMemcpy( h_ptr_intermediate_1,
-                d_intermediate_offset_array,
-                num_in*sizeof(int16_t),
-                cudaMemcpyDeviceToHost );
-
-    cout << "Intermediate offset array:" << endl;
-    for( int i=0; i<num_in; i++ ) {
-        cout << h_ptr_intermediate_1[i] << " ";
-        if( i%16==15 ) cout << endl;
-    }
-    cout << endl;
-
-    cudaMemcpy( h_ptr_intermediate_2,
-                d_intermediate_block_total,
-                block_count*sizeof(int32_t),
-                cudaMemcpyDeviceToHost );
-
-    cout << "Intermediate block total:" << endl;
-    for( int i=0; i<block_count; i++ ) {
-        cout << h_ptr_intermediate_2[i] << " ";
-        if( i%16==15 ) cout << endl;
-    }
-    cout << endl;
-
-    cout << "Starting SumEqualityBlock for " << block_count << " entries" << endl;
-
     SumEqualityBlock
         <<<1,block>>>
         ( grid_divide( block_count, 32*32 ),
           d_intermediate_block_total,
+          block_count,
           d_intermediate_block_sum,
-          block_count );
+          d_intermediate_num_output_items );
 
-    cudaMemcpy( h_ptr_intermediate_3,
-                d_intermediate_block_sum,
-                block_count*sizeof(int32_t),
-                cudaMemcpyDeviceToHost );
-
-    cout << "Intermediate block sum:" << endl;
-    for( int i=0; i<block_count; i++ ) {
-        cout << h_ptr_intermediate_3[i] << " ";
-        if( i%16==15 ) cout << endl;
-    }
-    cout << endl;
+    cudaMemcpy( &h_num_out, d_intermediate_num_output_items, sizeof(size_t), cudaMemcpyDeviceToHost );
 
     WriteUniqueValues
         <<<grid,block>>>
@@ -268,26 +175,31 @@ void UniqueArray( int32_t* h_ptr,
     cout << "Leave " << __FUNCTION__ << endl;
 }
 
+} // namespace popart
+
+using namespace popart;
+
 int main( )
 {
     device_prop_t dev;
     dev.print();
 
     const size_t num = 3000;
+    size_t    h_num_out;
     int32_t*  h_ptr;
     int32_t*  d_ptr_in;
     int32_t*  d_ptr_out;
     int16_t*  d_ptr_intermediate_1;
     int32_t*  d_ptr_intermediate_2;
     int32_t*  d_ptr_intermediate_3;
-    int32_t*  d_ptr_intermediate_4;
+    size_t*   d_ptr_intermediate_4;
     cudaMallocHost( &h_ptr, num*sizeof(int32_t) );
     cudaMalloc( &d_ptr_in,  num*sizeof(int32_t) );
     cudaMalloc( &d_ptr_out, num*sizeof(int32_t) );
     cudaMalloc( &d_ptr_intermediate_1, num*sizeof(int16_t) );
     cudaMalloc( &d_ptr_intermediate_2, num*sizeof(int32_t) );
     cudaMalloc( &d_ptr_intermediate_3, num*sizeof(int32_t) );
-    cudaMalloc( &d_ptr_intermediate_4, sizeof(int32_t) );
+    cudaMalloc( &d_ptr_intermediate_4, sizeof(size_t) );
     for( int i=0; i<num; i++ ) {
         h_ptr[i] = random() % 10;
     }
@@ -298,6 +210,7 @@ int main( )
     }
     cout << endl;
     UniqueArray( h_ptr,
+                 h_num_out,
                  num,
                  d_ptr_in,
                  d_ptr_out,
@@ -305,6 +218,7 @@ int main( )
                  d_ptr_intermediate_2,
                  d_ptr_intermediate_3,
                  d_ptr_intermediate_4 );
+    cout << "Unique output item: " << h_num_out << endl;
     cout << "Output array:" << endl;
     for( int i=0; i<num; i++ ) {
         cout << h_ptr[i] << " ";
