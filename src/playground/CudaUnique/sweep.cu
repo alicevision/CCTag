@@ -2,7 +2,7 @@
 #include <cuda_runtime.h>
 #include "assist.h"
 #include "device_prop.h"
-#include "d_warp_prefixsum.h"
+#include "d_block_prefixsum.h"
 
 using namespace std;
 
@@ -13,42 +13,6 @@ const size_t WarpOffset  = WarpSize * NumItemPerThread;
 const size_t BlockOffset = NumWarpsPerBlock * WarpSize * NumItemPerThread;
 
 namespace popart {
-
-__shared__ size_t uniqueCounter[32];
-
-__device__
-size_t PrefixSumBlockExclusive( size_t threadValue, size_t& blockTotal )
-{
-    size_t offset;
-    size_t warpTotal;
-    size_t n;
-
-    // pre: every threadValue is either 1 (keep) or 0 (drop)
-    n = PrefixSumWarpExclusive( threadValue, warpTotal );
-    // post: every thread knows its write offset relative to warp base
-    threadValue = n;
-
-    if( threadIdx.x == 0 ) {
-        uniqueCounter[threadIdx.y] = warpTotal;
-        // post: uniqueCounter contains the warps' number of kept items
-    }
-    __syncthreads();
-
-    if( threadIdx.y == 0 ) {
-        offset = uniqueCounter[threadIdx.x];
-        n = PrefixSumWarpExclusive( offset, blockTotal );
-        // blockTotal is only valid for threadIdx.y == 0
-        uniqueCounter[threadIdx.x] = n;
-    }
-    __syncthreads();
-
-    offset = uniqueCounter[threadIdx.y];
-
-    threadValue += offset;
-    // post: every thread knows its write offset relative to block base
-
-    return threadValue;
-}
 
 __global__
 void SweepEqualityBlock( const int32_t* in_array,
@@ -115,65 +79,6 @@ void WriteUniqueValues( const int32_t* in_array,
     out_array[writeIndex] = in_array[baseOffset];
 }
 
-
-void UniqueArray( int32_t* h_ptr,
-                  size_t&  h_num_out,
-                  size_t   num_in,
-                  int32_t* d_ptr_in,
-                  int32_t* d_ptr_out,
-                  int16_t* d_intermediate_offset_array,
-                  int32_t* d_intermediate_block_total,
-                  int32_t* d_intermediate_block_sum,
-                  size_t*  d_intermediate_num_output_items )
-{
-    cout << "Enter " << __FUNCTION__ << endl;
-
-    cudaError_t err;
-
-    err = cudaMemcpy( d_ptr_in, h_ptr, num_in*sizeof(int32_t), cudaMemcpyHostToDevice );
-    if( err != cudaSuccess ) {
-        cout << "Error in line " << __LINE__ << ": " << cudaGetErrorString(err) << endl;
-    }
-
-    int  block_count = grid_divide( num_in, 32*32 );
-
-    dim3 block( 32, 32 );
-    dim3 grid ( block_count );
-
-    SweepEqualityBlock
-        <<<grid,block>>>
-        ( d_ptr_in,
-          d_intermediate_offset_array,
-          d_intermediate_block_total,
-          num_in );
-    cudaDeviceSynchronize();
-    err = cudaGetLastError();
-    if( err != cudaSuccess ) {
-        cout << "Error in line " << __LINE__ << ": " << cudaGetErrorString(err) << endl;
-    }
-
-    SumEqualityBlock
-        <<<1,block>>>
-        ( grid_divide( block_count, 32*32 ),
-          d_intermediate_block_total,
-          block_count,
-          d_intermediate_block_sum,
-          d_intermediate_num_output_items );
-
-    cudaMemcpy( &h_num_out, d_intermediate_num_output_items, sizeof(size_t), cudaMemcpyDeviceToHost );
-
-    WriteUniqueValues
-        <<<grid,block>>>
-        ( d_ptr_in,
-          d_intermediate_block_sum,
-          d_intermediate_offset_array,
-          d_ptr_out,
-          num_in );
-
-    cudaMemcpy( h_ptr, d_ptr_out, num_in*sizeof(int32_t), cudaMemcpyDeviceToHost );
-
-    cout << "Leave " << __FUNCTION__ << endl;
-}
 
 } // namespace popart
 
