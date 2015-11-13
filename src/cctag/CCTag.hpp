@@ -72,7 +72,11 @@ public:
     , _scale(scale)
   {
     setInitRadius();
-    cctag::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
+    cctag::numerical::geometry::Ellipse aux = _outerEllipse;
+    aux.setCenter( Point2dN<double>(_outerEllipse.center().x()+0.5, _outerEllipse.center().y()+0.5 ) ); // todo: why + 0.5 is required ?
+    
+    cctag::numerical::geometry::scale(aux, _rescaledOuterEllipse, scale);
+    
     _status = 0;
   }
 
