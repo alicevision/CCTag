@@ -449,6 +449,11 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 if (weightedType == INV_GRAD_WEIGHT) {
                   weights.push_back(255 / (edgePoint->_normGrad));
                 }
+                
+                if (weightedType == INV_SQUARE_GRAD_WEIGHT) {
+                  weights.push_back(255 / (edgePoint->_normGrad)*(edgePoint->_normGrad));
+                }
+                
               }
               ++iEdgePoint;
             }
@@ -556,9 +561,11 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 double distFinal;
 
                 if (weightedType == NO_WEIGHT) {
-                    distFinal = numerical::distancePointEllipse(*e, qm, f);
+                  distFinal = numerical::distancePointEllipse(*e, qm, f);
                 } else if (weightedType == INV_GRAD_WEIGHT) {
-                    distFinal = numerical::distancePointEllipse(*e, qm, f)*255 / (e->_normGrad);
+                  distFinal = numerical::distancePointEllipse(*e, qm, f)*255 / (e->_normGrad);
+                } else if (weightedType == INV_SQUARE_GRAD_WEIGHT) {
+                  distFinal = numerical::distancePointEllipse(*e, qm, f)*255 / ((e->_normGrad)*(e->_normGrad));
                 }
  
                 if (distFinal < threshold * Sm) {

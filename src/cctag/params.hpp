@@ -16,6 +16,7 @@
 #define NO_WEIGHT 0
 #define INV_GRAD_WEIGHT 1
 #define INV_SQRT_GRAD_WEIGHT 2
+#define INV_SQUARE_GRAD_WEIGHT 3
 
 namespace cctag
 {
