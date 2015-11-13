@@ -26,11 +26,11 @@ void SweepBlockOp( const OpTest& in,
 
 template<typename IndexCtType>
 __global__
-void SumBlockOp( const int          items_per_thread,
-                 const IndexCtType* in_block_total,
-                 const int          in_block_items,
-                 IndexCtType*       out_block_prefixsum,
-                 IndexCtType*       out_block_overallsum )
+void SumBlockOp( const int                       items_per_thread,
+                 const IndexCtType* __restrict__ in_block_total,
+                 const int                       in_block_items,
+                 IndexCtType* __restrict__       out_block_prefixsum,
+                 IndexCtType* __restrict__       out_block_overallsum )
 {
     size_t      offset = ( threadIdx.y * 32 + threadIdx.x ) * items_per_thread;
     IndexCtType counter = 0;
@@ -62,11 +62,11 @@ void SumBlockOp( const int          items_per_thread,
 /* must have the same block structure as SweepBlockOp */
 template<typename T, typename IndexCtType>
 __global__
-void WriteSelectedOp( const T*           in_array,
-                        const IndexCtType* in_block_sum,
-                        const IndexCtType* in_offset_array,
-                        T*                 out_array,
-                        const size_t       num_in )
+void WriteSelectedOp( const T* __restrict__           in_array,
+                      const IndexCtType* __restrict__ in_block_sum,
+                      const IndexCtType* __restrict__ in_offset_array,
+                      T* __restrict__                 out_array,
+                      const size_t                    num_in )
 {
     size_t baseOffset = blockIdx.x * BlockOffset + threadIdx.y * WarpOffset + threadIdx.x;
     if( baseOffset >= num_in ) return;

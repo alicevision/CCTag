@@ -13,6 +13,18 @@ inline int grid_divide( int size, int divider )
     return size / divider + ( size % divider != 0 ? 1 : 0 );
 }
 
+__device__ __host__
+inline int round_up_pow2( int size, int val )
+{
+    return grid_drive( size, val ) * val;
+}
+
+__device__ __host__
+inline int round_up_exp2( int size, int two_exponent )
+{
+    return round_up_pow2( size, ( 1 << two_exponent ) );
+}
+
 template <typename T>
 __device__
 inline T d_abs( T value )

@@ -20,6 +20,7 @@ struct OpTestUnique : public OpTest
         , size( sz )
     { }
 
+    __device__
     bool operator( int right_idx ) const {
         const int left_idx = right_idx - 1;
         const int ridx = min( right_idx, (int)(size-1) );
@@ -31,15 +32,30 @@ struct OpTestUnique : public OpTest
     }
 };
 
-void UniqueArray( int32_t* h_ptr,
+template<typename T, typename IndexCtType>
+class Unique
+{
+    OpTestUnique<T> _optest;
+
+    size_t requiredIntermediateByteMemory( size_t num_in ) const {
+        const size_t sz_offset_array = num_in * sizeof( IndexCtType );
+        const size_t block_count     = grid_divide( num_in, 32*32 );
+        const size_t sz_block_total  = block_count * sizeof( IndexCtType );
+        const size_t sz_block_sum    = block_count * sizeof( IndexCtType );
+        const size_t sz_out_item_ct  = sizeof( IndexCtType );
+    }
+};
+
+template<typename T, typename IndexCtType>
+void UniqueArray( T* h_ptr,
                   size_t&  h_num_out,
                   size_t   num_in,
-                  int32_t* d_ptr_in,
-                  int32_t* d_ptr_out,
-                  int16_t* d_intermediate_offset_array,
-                  int32_t* d_intermediate_block_total,
-                  int32_t* d_intermediate_block_sum,
-                  size_t*  d_intermediate_num_output_items )
+                  T* __restrict__ d_ptr_in,
+                  T* __restrict__ d_ptr_out,
+                  IndexCtType* d_intermediate_offset_array,
+                  IndexCtType* d_intermediate_block_total,
+                  IndexCtType* d_intermediate_block_sum,
+                  IndexCtType* d_intermediate_num_output_items )
 {
     cout << "Enter " << __FUNCTION__ << endl;
 
