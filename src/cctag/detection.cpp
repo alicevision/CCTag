@@ -707,8 +707,6 @@ void cctagDetection(CCTag::List& markers,
   
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
 
-  if( durations ) durations->log( "after imagePyramid" );
-
     static uint32_t         cuda_w;
     static uint32_t         cuda_h;
     static popart::TagPipe* pipe1 = 0;
@@ -725,8 +723,6 @@ void cctagDetection(CCTag::List& markers,
             exit( -1 );
         }
     }
-
-  if( durations ) durations->log( "after TagPipe init" );
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
@@ -777,6 +773,7 @@ void cctagDetection(CCTag::List& markers,
 #endif // CCTAG_OPTIM
 #endif // not NDEBUG
   
+  if( durations ) durations->log( "before cctagMultiresDetection" );
   cctagMultiresDetection( markers, imgGraySrc, imagePyramid, frame, pipe1, params, durations );
   if( durations ) durations->log( "after cctagMultiresDetection" );
 
