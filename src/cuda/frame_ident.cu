@@ -308,6 +308,12 @@ __host__
 void Frame::uploadCuts( std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen )
 {
 #ifdef DEBUG_FRAME_UPLOAD_CUTS
+    if( _d_intermediate.step != _h_intermediate.step ||
+        _d_intermediate.rows != _h_intermediate.rows ) {
+        cerr << "intermediate dimensions should be identical on host and dev"
+             << endl;
+        exit( -1 );
+    }
     POP_CUDA_MEMSET_ASYNC( _d_intermediate.data,
                            -1,
                            _h_intermediate.step * _h_intermediate.rows,

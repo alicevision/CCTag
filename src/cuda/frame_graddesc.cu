@@ -13,8 +13,6 @@
 
 using namespace std;
 
-#define DEBUG_CUB_FUNCTIONS false
-
 namespace popart
 {
 

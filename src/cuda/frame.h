@@ -208,6 +208,14 @@ public:
     // implemented in frame_vote.cu
     void applyVote( const cctag::Parameters& param );
 
+    // implemented in frame_vote_sort_nodp.cu
+    // called by applyVote
+    bool applyVoteSortNoDP( const cctag::Parameters& params );
+
+    // implemented in frame_vote_uniq_nodp.cu
+    // called by applyVote
+    void applyVoteUniqNoDP( const cctag::Parameters& params );
+
     // implemented in frame_link.cu
     void applyLink( const cctag::Parameters& param );
 

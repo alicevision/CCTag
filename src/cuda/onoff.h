@@ -47,3 +47,24 @@
  */
 #undef CPU_GPU_COST_FUNCTION_COMPARE
 
+/* CUB functions always take a last parameters true or false.
+ * If it is true, they run synchronously and print some debug
+ * info.
+ */
+#define DEBUG_CUB_FUNCTIONS false
+
+/* CUB RadixSort requires the DoubleBuffer structure and annoying
+ * host-side sync in the CUB version that comes with CUDA 7.0.
+ * CUDA 7.5 or standalone CUB 1.4.1 allow an output buffer.
+ * However, so far they don't work.
+ */
+#undef RADIX_WITHOUT_DOUBLEBUFFER
+
+/* For the CUB version included with CUDA 7.0, it was possible to
+ * pass an arbitrary device pointer pointing to sufficiently large
+ * memory.
+ * Standalone CUB 1.4.1 fails unless the init call for determining
+ * intermediate buffer size is made.
+ */
+#define CUB_INIT_CALLS
+

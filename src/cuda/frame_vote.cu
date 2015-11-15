@@ -12,8 +12,6 @@
 #include "frame.h"
 #include "assist.h"
 
-#define RADIX_WITHOUT_DOUBLEBUFFER
-
 using namespace std;
 
 namespace popart
@@ -435,141 +433,14 @@ void Frame::applyVote( const cctag::Parameters& params )
     /* For every chosen, compute the average flow size from all
      * of its voters, and count the number of its voters.
      */
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size, _vote._seed_indices.dev.getSizePtr(), sizeof(int), _stream );
-    POP_CUDA_SYNC( _stream );
 
-    if( _vote._seed_indices.host.size > 0 ) {
-        /* Note: we use the intermediate picture plane, _d_intermediate, as assist
-         *       buffer for CUB algorithms. It is extremely likely that this plane
-         *       is large enough in all cases. If there are any problems, call
-         *       the function with assist_buffer=0, and the function will return
-         *       the required size in assist_buffer_sz (call by reference).
-         */
+    success = applyVoteSortNoDP( params );
+
+    if( success ) {
+        Frame::applyVoteUniqNoDP( params );
+
         void*  assist_buffer = (void*)_d_intermediate.data;
         size_t assist_buffer_sz;
-
-#ifndef RADIX_WITHOUT_DOUBLEBUFFER
-    // CUB IN CUDA 7.0 allowed only the DoubleBuffer interface
-        cub::DoubleBuffer<int> d_keys( _vote._seed_indices.dev.ptr,
-                                       _vote._seed_indices_2.dev.ptr );
-#endif
-#if 1
-	// std::cerr << "before cub::DeviceRadixSort(0)" << std::endl;
-	// LETS TRY IF THIS WORKS NOW
-	assist_buffer_sz  = 0;
-#ifdef RADIX_WITHOUT_DOUBLEBUFFER
-        err = cub::DeviceRadixSort::SortKeys<int>( 0,
-                                              assist_buffer_sz,
-					      _vote._seed_indices.dev.ptr,
-					      _vote._seed_indices_2.dev.ptr,
-                                              _vote._seed_indices.host.size,
-                                              0,             // begin_bit
-                                              sizeof(int)*8, // end_bit
-                                              _stream );
-#else // RADIX_WITHOUT_DOUBLEBUFFER
-        err = cub::DeviceRadixSort::SortKeys<int>( 0,
-                                              assist_buffer_sz,
-                                              d_keys,
-                                              _vote._seed_indices.host.size,
-                                              0,             // begin_bit
-                                              sizeof(int)*8, // end_bit
-                                              _stream );
-#endif // RADIX_WITHOUT_DOUBLEBUFFER
-	if( err != cudaSuccess ) {
-	    std::cerr << "cub::DeviceRadixSort::SortKeys init step failed. Crashing." << std::endl;
-	    std::cerr << "Error message: " << cudaGetErrorString( err ) << std::endl;
-	    exit(-1);
-	}
-	if( assist_buffer_sz >= _d_intermediate.step * _d_intermediate.rows ) {
-            std::cerr << "cub::DeviceRadixSort::SortKeys requires too much intermediate memory. Crashing." << std::endl;
-	    exit( -1 );
-	}
-#else
-	// THIS CODE WORKED BEFORE
-        assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
-#endif
-
-	// std::cerr << "before cub::DeviceRadixSort(data)" << std::endl;
-        /* After SortKeys, both buffers in d_keys have been altered.
-         * The final result is stored in d_keys.d_buffers[d_keys.selector].
-         * The other buffer is invalid.
-         */
-#ifdef RADIX_WITHOUT_DOUBLEBUFFER
-        err = cub::DeviceRadixSort::SortKeys( assist_buffer,
-                                              assist_buffer_sz,
-					      _vote._seed_indices.dev.ptr,
-					      _vote._seed_indices_2.dev.ptr,
-                                              _vote._seed_indices.host.size,
-                                              0,             // begin_bit
-                                              sizeof(int)*8, // end_bit
-                                              _stream );
-        POP_CUDA_SYNC( _stream );
-        POP_CUDA_FATAL_TEST( err, "CUB SortKeys failed" );
-
-        std::swap( _vote._seed_indices.dev.ptr,           _vote._seed_indices_2.dev.ptr );
-        std::swap( _vote._seed_indices.dev.getSizePtr(),  _vote._seed_indices_2.dev.getSizePtr() );
-#else // RADIX_WITHOUT_DOUBLEBUFFER
-        err = cub::DeviceRadixSort::SortKeys( assist_buffer,
-                                              assist_buffer_sz,
-                                              d_keys,
-                                              _vote._seed_indices.host.size,
-                                              0,             // begin_bit
-                                              sizeof(int)*8, // end_bit
-                                              _stream );
-        POP_CUDA_SYNC( _stream );
-        POP_CUDA_FATAL_TEST( err, "CUB SortKeys failed" );
-
-        if( d_keys.d_buffers[d_keys.selector] == _vote._seed_indices_2.dev.ptr ) {
-            std::swap( _vote._seed_indices.dev.ptr,   _vote._seed_indices_2.dev.ptr );
-            std::swap( _vote._seed_indices.dev.getSizePtr(),  _vote._seed_indices_2.dev.getSizePtr() );
-        }
-#endif // RADIX_WITHOUT_DOUBLEBUFFER
-
-#if 1
-	// LETS TRY IF THIS WORKS NOW
-	assist_buffer_sz  = 0;
-	// std::cerr << "before cub::DeviceSelect::Unique(0)" << std::endl;
-        err = cub::DeviceSelect::Unique<int*,int*,int*>( 0,
-                                         assist_buffer_sz,
-                                         _vote._seed_indices.dev.ptr,     // input
-                                         _vote._seed_indices_2.dev.ptr,   // output
-                                         _vote._seed_indices_2.dev.getSizePtr(),  // output
-                                         _vote._seed_indices.host.size,   // input (unchanged in sort)
-                                         _stream,
-                                         true );
-
-	if( err != cudaSuccess ) {
-	    std::cerr << "cub::DeviceSelect::Unique init step failed. Crashing." << std::endl;
-	    std::cerr << "Error message: " << cudaGetErrorString( err ) << std::endl;
-	    exit(-1);
-	}
-	if( assist_buffer_sz >= _d_intermediate.step * _d_intermediate.rows ) {
-            std::cerr << "cub::DeviceSelect::Unique requires too much intermediate memory. Crashing." << std::endl;
-	    exit( -1 );
-	}
-#else
-	// THIS CODE WORKED BEFORE
-        // safety: SortKeys is allowed to alter assist_buffer_sz
-        assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
-#endif
-
-        /* Unique ensure that we check every "chosen" point only once.
-         * Output is in _vote._seed_indices_2.dev
-         */
-	// std::cerr << "before cub::DeviceSelect::Unique(data)" << std::endl;
-        err = cub::DeviceSelect::Unique<int*,int*,int*>( assist_buffer,
-                                         assist_buffer_sz,
-                                         _vote._seed_indices.dev.ptr,     // input
-                                         _vote._seed_indices_2.dev.ptr,   // output
-                                         _vote._seed_indices_2.dev.getSizePtr(),  // output
-                                         _vote._seed_indices.host.size,   // input (unchanged in sort)
-                                         _stream,
-                                         true );
-	// std::cerr << "called cub::DeviceSelect::Unique(data)" << std::endl;
-        POP_CHK_CALL_IFSYNC;
-        POP_CUDA_SYNC( _stream );
-        POP_CUDA_FATAL_TEST( err, "CUB Unique failed" );
-	// std::cerr << "after cub::DeviceSelect::Unique(data)" << std::endl;
 
         /* Without Dynamic Parallelism, we must block here to retrieve the
          * value d_num_selected_out from the device before the voting
@@ -583,15 +454,8 @@ void Frame::applyVote( const cctag::Parameters& params )
         /* Add number of voters to chosen inner points, and
          * add average flow length to chosen inner points.
          */
-        dim3 block;
-        dim3 grid;
-
-        block.x = 32;
-        block.y = 1;
-        block.z = 1;
-        grid.x  = grid_divide( _vote._seed_indices_2.host.size, 32 );
-        grid.y  = 1;
-        grid.z  = 1;
+        dim3 block( 32, 1, 1 );
+        dim3 grid ( grid_divide( _vote._seed_indices_2.host.size, 32 ), 1, 1 );
 
         vote::eval_chosen
             <<<grid,block,0,_stream>>>
@@ -601,10 +465,8 @@ void Frame::applyVote( const cctag::Parameters& params )
 
         NumVotersIsGreaterEqual select_op( params._minVotesToSelectCandidate,
                                            _vote._chained_edgecoords.dev );
-#if 1
-	// LETS TRY IF THIS WORKS NOW
-	assist_buffer_sz  = 0;
-	// std::cerr << "before cub::DeviceSelect::If(0)" << std::endl;
+#ifdef CUB_INIT_CALLS
+	    assist_buffer_sz  = 0;
         err = cub::DeviceSelect::If( 0,
                                      assist_buffer_sz,
                                      _vote._seed_indices_2.dev.ptr,
@@ -612,7 +474,8 @@ void Frame::applyVote( const cctag::Parameters& params )
                                      _vote._seed_indices.dev.getSizePtr(),
                                      _vote._seed_indices_2.host.size,
                                      select_op,
-                                     _stream );
+                                     _stream,
+                                     DEBUG_CUB_FUNCTIONS );
 
 	if( err != cudaSuccess ) {
 	    std::cerr << "cub::DeviceSelect::If init step failed. Crashing." << std::endl;
@@ -640,7 +503,8 @@ void Frame::applyVote( const cctag::Parameters& params )
                                      _vote._seed_indices.dev.getSizePtr(),
                                      _vote._seed_indices_2.host.size,
                                      select_op,
-                                     _stream );
+                                     _stream,
+                                     DEBUG_CUB_FUNCTIONS );
         POP_CHK_CALL_IFSYNC;
         POP_CUDA_FATAL_TEST( err, "CUB DeviceSelect::If failed" );
 
