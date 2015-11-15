@@ -9,8 +9,10 @@
 #include "debug_image.h"
 #include "cctag/talk.hpp"
 #include "cuda/geom_ellipse.h"
+
 #include "cctag/logtime.hpp"
 #include "cuda/onoff.h"
+// #include "cctag/algebra/matrix/Matrix.hpp"
 
 using namespace std;
 
@@ -523,14 +525,9 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
     delete [] plane.data;
 }
 
-size_t TagPipe::getIntermediatePlaneByteSize( int level ) const
+void TagPipe::uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts )
 {
-    return _frame[0]->getIntermediatePlaneByteSize();
-}
-
-void TagPipe::uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen )
-{
-    _frame[level]->uploadCuts( vCuts, vCutMaxVecLen );
+    _frame[level]->uploadCuts( vCuts );
 }
 
 double TagPipe::idCostFunction( int                                        level,

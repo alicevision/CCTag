@@ -66,6 +66,9 @@ public:
     __host__ __device__
     float2 applyHomography( float x, float y ) const;
 
+    __host__ __device__
+    void condition( float2& homVec ) const;
+
     __host__
     inline void print( std::ostream& ostr ) const {
         ostr << "r1=(" << val[0][0] << "," << val[0][1] << "," << val[0][2] << ")"
@@ -113,6 +116,12 @@ private:
     __host__ __device__
     matrix3x3_tView& operator=( const matrix3x3_tView& );
 };
+
+__host__ __device__
+float2 prod_normvec2normvec( const matrix3x3& l, const float2& r );
+
+__host__ __device__
+float3 prod_normvec2vec( const matrix3x3& l, const float2& r );
 
 __host__ __device__
 matrix3x3 prod( const matrix3x3& l,       const matrix3x3& r );

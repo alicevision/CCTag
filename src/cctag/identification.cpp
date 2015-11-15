@@ -1073,18 +1073,7 @@ size_t cudaUploadCuts( popart::TagPipe*                cudaPipe,
         vCutMaxVecLen = ( 1 << ( 64 - __builtin_clzl(vCutMaxVecLen) ) );
     }
 
-    // step 4: make sure that enough power-of-2-aligned blocks fit into
-    //         the GPU mem block that is already allocated (_d_intermediate)
-    const size_t vCutRequiredByteSize = vCuts.size() * vCutMaxVecLen * sizeof(float);
-    const size_t iMemAvailByteSize    = cudaPipe->getIntermediatePlaneByteSize( 0 );
-    if( vCutRequiredByteSize >= iMemAvailByteSize ) {
-        cerr << __FILE__ << ":" << __LINE__ << endl
-             << "ERROR: cannot reuse GPU-sided intermediate memory for ImageCuts (too small)" << endl
-             << "       use cudaMalloc and recomplile" << endl;
-        exit( -1 );
-    }
-
-    cudaPipe->uploadCuts( 0, vCuts, vCutMaxVecLen );
+    cudaPipe->uploadCuts( 0, vCuts );
 
     return vCutMaxVecLen;
 }

@@ -95,6 +95,12 @@ float2 matrix3x3::applyHomography( float x, float y ) const
 }
 
 __host__ __device__
+void matrix3x3::condition( float2& homVec ) const
+{
+    homVec = prod_normvec2normvec( *this, homVec );
+}
+
+__host__ __device__
 matrix3x3 prod( const matrix3x3& l, const matrix3x3& r )
 {
     matrix3x3 result;
@@ -106,6 +112,47 @@ matrix3x3 prod( const matrix3x3& l, const matrix3x3& r )
         }
     }
     return result;
+}
+
+__host__ __device__
+float2 prod_normvec2normvec( const matrix3x3& l, const float2& r )
+{
+    float2 d12;
+    float  d3;
+
+    d12.x  = l(0,0)*r.x + l(0,1)*r.y + l(0,2);
+    d12.y  = l(1,0)*r.x + l(1,1)*r.y + l(1,2);
+    d3     = l(2,0)*r.x + l(2,1)*r.y + l(2,2);
+#ifdef __CUDA_ARCH__
+    if( d3 != 0.0f ) {
+        d3     = __frcp_rn( d3 );
+        d12.x *= d3;
+        d12.y *= d3;
+        return d12;
+    } else {
+        return make_float2( 0.0f, 0.0f );
+    }
+#else // not __CUDA_ARCH__
+    if( d3 != 0.0f ) {
+        d12.x /= d3;
+        d12.y /= d3;
+        return d12;
+    } else {
+        cerr << __FILE__ << ":" << __LINE__
+             << "matrix X normalized vector -> scale is 0" << endl;
+        return make_float2( 0.0f, 0.0f );
+    }
+#endif // not __CUDA_ARCH__
+}
+
+__host__ __device__
+float3 prod_normvec2vec( const matrix3x3& l, const float2& r )
+{
+    float3 d;
+    d.x = l(0,0)*r.x + l(0,1)*r.y + l(0,2);
+    d.y = l(1,0)*r.x + l(1,1)*r.y + l(1,2);
+    d.z = l(2,0)*r.x + l(2,1)*r.y + l(2,2);
+    return d;
 }
 
 __host__ __device__

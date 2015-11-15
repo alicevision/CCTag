@@ -48,6 +48,8 @@ namespace btime = boost::posix_time;
 
 void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ofstream & output, std::string debugFileName = "")
 {
+    POP_ENTER;
+    
     if (debugFileName == "") {
       debugFileName = "00000";
     }
@@ -95,6 +97,7 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
       ++i;
     }
     CCTAG_COUT("");
+    POP_LEAVE;
 }
 
 /*************************************************************/
@@ -188,7 +191,7 @@ int main(int argc, char** argv)
   outputFile.open( outputFileName );
   
   if ( (ext == ".png") || (ext == ".jpg") || (ext == ".PNG") || (ext == ".JPG")) {
-    std::cerr << "looking at image " << myPath.string() << std::endl;
+    POP_INFO("looking at image " << myPath.string());
     
     // Gray scale convertion
     cv::Mat src = cv::imread(cmdline._filename);
@@ -209,7 +212,7 @@ int main(int argc, char** argv)
 } else if (ext == ".avi" )
   {
     CCTAG_COUT("*** Video mode ***");
-    std::cerr << "looking at video " << myPath.string() << std::endl;
+    POP_INFO( "looking at video " << myPath.string() );
 
     // open video and check
     cv::VideoCapture video( cmdline._filename.c_str() );
