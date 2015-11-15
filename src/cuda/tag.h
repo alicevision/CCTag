@@ -43,13 +43,17 @@ public:
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
 
-    size_t   getIntermediatePlaneByteSize( int level ) const;
-    double   idCostFunction( int                                        level,
-                             const cctag::numerical::geometry::Ellipse& ellipse,
-                             const cctag::Point2dN<double>&             center,
-                             const int                         vCutsSize,
-                             const int                         vCutMaxVecLen,
-                             bool&                             readable );
+    // size_t   getIntermediatePlaneByteSize( int level ) const;
+    double idCostFunction( int                                        level,
+                           const cctag::numerical::geometry::Ellipse& ellipse,
+                           const cctag::Point2dN<double>&             center,
+                           std::vector<cctag::ImageCut>& vCuts,
+                           const size_t                  vCutMaxVecLen,
+                           const float                   neighbourSize,
+                           const size_t                  gridNSample );
+
+    size_t getSignalBufferByteSize( int level ) const;
+
     void uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts );
 
     void debug( unsigned char* pix,

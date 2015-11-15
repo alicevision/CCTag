@@ -1,5 +1,6 @@
 #include <math.h>
 #include "geom_ellipse.h"
+#include "math_constants.h" // a CUDA header file
 #include "debug_macros.hpp"
 
 using namespace std;
@@ -81,6 +82,7 @@ void ellipse::setAngle( const float angle )
 	computeMatrix();
 }
 
+#if 0
 __host__ __device__
 ellipse ellipse::transform( const matrix3x3& mT ) const
 {
@@ -88,6 +90,17 @@ ellipse ellipse::transform( const matrix3x3& mT ) const
 	const matrix3x3 a   = popart::geometry::prod( mtransposed, _matrix );
 	const matrix3x3 mET = popart::geometry::prod( a, mT );
 	return ellipse( mET );
+}
+#endif
+
+__host__ __device__
+void ellipse::projectiveTransform( const matrix3x3& transf_m, ellipse& e ) const
+{
+    matrix3x3_tView transf_m_transposed( transf_m );
+    e.setMatrix(
+        prod( transf_m_transposed,
+              prod( _matrix,
+                    transf_m ) ) );
 }
 
 __host__ __device__
@@ -392,6 +405,25 @@ void ellipse::computeHomographyFromImagedCenter( const float2 center, matrix3x3&
 
     mHomography = popart::geometry::prod( mTInvCan, mHomography ); // mHomography = mTInvCan*mHomography
 }
+
+__host__ __device__
+void ellipse::makeConditionerFromEllipse( matrix3x3& output ) const
+{
+    const float meanAB = ( _a * _b ) / 2.0f;
+
+    output(0,0) = CUDART_SQRT_TWO_F / meanAB;
+    output(0,1) = 0.0f;
+    output(0,2) = -CUDART_SQRT_TWO_F * _center.x / meanAB;
+
+    output(1,0) = 0.0f;
+    output(1,1) = CUDART_SQRT_TWO_F / meanAB;
+    output(1,2) = -CUDART_SQRT_TWO_F * _center.y / meanAB;
+
+    output(2,0) = 0.0f;
+    output(2,1) = 0.0f;
+    output(2,2) = 1.0f;
+}
+
 
 __host__ __device__
 void ellipse::crash( const char* file, int line, const char* msg )

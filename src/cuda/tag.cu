@@ -509,18 +509,33 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
     delete [] plane.data;
 }
 
-void TagPipe::uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts )
-{
-    _frame[level]->uploadCuts( vCuts );
-}
-
 double TagPipe::idCostFunction( int                                        level,
                                 const cctag::numerical::geometry::Ellipse& ellipse,
                                 const cctag::Point2dN<double>&             center,
-                                const int                         vCutsSize,
-                                const int                         vCutMaxVecLen,
-                                bool&                             readable )
+                                std::vector<cctag::ImageCut>& vCuts,
+                                const size_t                  vCutMaxVecLen,
+                                const float                   neighbourSize,
+                                const size_t                  gridNSample )
 {
+    /* The first part of cctag::identification::getNearbyPoints() applies
+     * to all possible centers for the candidate tag. It is best to
+     * compute it on the host side.
+     * Computing the nearby centers is gradNSample X gridNSample size
+     * operation and best moved to the device side.
+     */
+/*
+    cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromEllipse( ellipse );
+    cctag::numerical::BoundedMatrix3x3d mInvT;
+    cctag::numerical::invert_3x3(mT,mInvT);
+
+    cctag::numerical::geometry::Ellipse transformedEllipse(ellipse);
+    cctag::viewGeometry::projectiveTransform( mInvT, transformedEllipse );
+    neighbourSize *= std::max(transformedEllipse.a(),transformedEllipse.b());
+
+    cctag::Point2dN<double> condCenter = center;
+    cctag::numerical::optimization::condition(condCenter, mT);
+*/
+
     popart::geometry::ellipse e( ellipse.matrix()(0,0),
                                  ellipse.matrix()(0,1),
                                  ellipse.matrix()(0,2),
@@ -539,9 +554,10 @@ double TagPipe::idCostFunction( int                                        level
 
     return _frame[level]->idCostFunction( e,
                                           f,
-                                          vCutsSize,
+                                          vCuts,
                                           vCutMaxVecLen,
-                                          readable );
+                                          neighbourSize,
+                                          gridNSample );
 }
 
 }; // namespace popart
