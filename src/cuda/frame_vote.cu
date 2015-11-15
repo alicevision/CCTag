@@ -495,7 +495,7 @@ void Frame::applyVote( const cctag::Parameters& params )
         /* Filter all chosen inner points that have fewer
          * voters than required by Parameters.
          */
-	// std::cerr << "before cub::DeviceSelect::If(data)" << std::endl;
+
         err = cub::DeviceSelect::If( assist_buffer,
                                      assist_buffer_sz,
                                      _vote._seed_indices_2.dev.ptr,

@@ -14,10 +14,28 @@ struct CutStruct
 {
     float2 start;
     float2 stop;
-    int    outOfBounds;
     float  beginSig;
     float  endSig;
     int    sigSize;
+};
+
+struct NearbyPoint
+{
+    float result;
+    int   resSize;
+    bool  readable;
+
+    /* These homographies are computed once for each NearbyPoint,
+     * and used for all of its Cuts. The best one must be returned.
+     */
+    popart::geometry::matrix3x3 mHomography;
+    popart::geometry::matrix3x3 mInvHomography;
+};
+
+struct CutSignals
+{
+    uint32_t outOfBounds;
+    float    sig[127];
 };
 
 __device__
@@ -275,37 +293,128 @@ double Frame::idCostFunction( const popart::geometry::ellipse& ellipse,
     grid.y  = 1;
     grid.z  = 1;
 
-    _h_meta->identification_result = 0.0f;
-    _h_meta->identification_resct  = 0;
-
-    identification::idComputeResult
-        <<<grid,block,0,_stream>>>
-        ( _d_meta, _d_intermediate.data, vCutsSize, vCutMaxVecLen );
-
-    cudaStreamSynchronize( _stream );
-    float res     = _h_meta->identification_result;
-    int   resSize = _h_meta->identification_resct;
-    // cerr << "GPU: result=" << res << " resSize=" << resSize << endl;
-
-    // If no cut-pair has been found within the image bounds.
-    if ( resSize == 0) {
-        readable  = false;
-        return std::numeric_limits<double>::max();
-    } else {
-        // normalize, dividing by the total number of pairs in the image bounds.
-        res /= resSize;
-        return res;
-    }
+    popart::identification::idComputeResult2
+        <<<grid,block>>>
+        ( nPoint, cut_buffer, signals, vCutsSize, vCutMaxVecLen );
 }
 
-__host__
-size_t Frame::getIntermediatePlaneByteSize( ) const
+__global__
+void idBestNearbyPoint( NearbyPoint* point_buffer )
 {
-    return _d_intermediate.rows * _d_intermediate.step;
 }
 
 __host__
-void Frame::uploadCuts( std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen )
+double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
+                              const popart::geometry::ellipse&    mInvT,
+                              const float2                        center,
+                              const std::vector<cctag::ImageCut>& vCuts,
+                              const int                           vCutMaxVecLen,
+                              const float                         neighbourSize,
+                              const size_t                        gridNSample )
+{
+    const size_t g = gridNSample * gridNSample;
+    if( g*sizeof(NearbyPoint) > getNearbyPointBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold point search rsults" << endl;
+        exit( -1 );
+    }
+
+    if( vCuts.size() * sizeof(CutStruct) > getCutStructBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold all intermediate homographies" << endl;
+        exit( -1 );
+    }
+
+    clearSignalBuffer( );
+    uploadCuts( vCuts );
+
+    /* reusing various image-sized plane */
+    identification::NearbyPoint* point_buffer;
+    identification::CutStruct*   cut_buffer;
+    identification::CutSignals*  signal_buffer;
+
+    point_buffer  = getNearbyPointBuffer();
+    cut_buffer    = getCutStructBuffer();
+    signal_buffer = getSignalBuffer();
+
+    dim3 block( 32, 32, 1 );
+    dim3 grid( grid_divide( gridNSample, 32 ),
+               grid_divide( gridNSample, 32 ),
+               1 );
+
+    popart::identification::idNearbyPointDispatcher
+        <<<grid,block,0,_stream>>>
+        ( _d_meta,
+          ellipse,
+          vCuts.size(),
+          vCutMaxVecLen,
+          mInvT,
+          center,
+          neighbourSize,
+          gridNSample,
+          point_buffer,
+          cut_buffer,
+          signal_buffer );
+
+    block.x = 32;
+    block.y = 1:
+    block.z = 1;
+    grid.x  = grid_divide( gridNSample, 32 );
+    grid.y  = gridNSample;
+    grid.z  = 1;
+
+    popart::identification::idBestNearbyPoint
+        <<<grid,block,0,_stream>>>
+        ( point_buffer );
+}
+
+__host__
+size_t Frame::getCutStructBufferByteSize( ) const
+{
+    /* these are uint8_t */
+    return _d_mag.data * _d_mag.step;
+}
+
+__host__
+identification::CutStruct* Frame::getCutStructBuffer( ) const
+{
+    return reinterpret_cast<CutStruct*>( _d_mag.data );
+}
+
+__host__
+identification::CutStruct* Frame::getCutStructBufferHost( ) const
+{
+    return reinterpret_cast<CutStruct*>( _h_mag.data );
+}
+
+__host__
+size_t Frame::getNearbyPointBufferByteSize( ) const
+{
+    /* these are uint32_t */
+    return _d_map.rows * _d_map.step;
+}
+
+__host__
+identification::NearbyPoint* Frame::getNearbyPointBuffer( ) const
+{
+    return reinterpret_cast<NearbyPoint*>( _d_map.data );
+}
+
+__host__
+size_t Frame::getSignalBufferByteSize( ) const
+{
+    /* these are float */
+    return _d_intermediate.rows * _d_intermediate.step * sizeof(float);
+}
+
+__host__
+identification::CutSignals* Frame::getSignalBuffer( ) const
+{
+    return reinterpret_cast<CutSignals*>( _d_intermediate.data );
+}
+
+__host__
+void Frame::clearSignalBuffer( )
 {
 #ifdef DEBUG_FRAME_UPLOAD_CUTS
     if( _d_intermediate.step != _h_intermediate.step ||

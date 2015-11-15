@@ -58,6 +58,11 @@ namespace cv {
 
 
 namespace popart {
+namespace identification {
+// locally defined in frame_ident.cu only
+struct CutStruct;
+struct NearbyPoint;
+} // identification
 
 /*************************************************************
  * FrameTexture
@@ -231,15 +236,25 @@ public:
     cv::Mat* getMag( ) const;
     cv::Mat* getEdges( ) const;
 
+private:
     // implemented in frame_ident.cu
-    /* to reuse _d_intermediate in cctag:identification, we must ensure that the
-     * ImageCut structs fit into the allocated space.
+    /* to reuse various image-sized buffers, but retrieve their
+     * bytesize to ensure that the new types fit into the
+     * already allocated space.
      */
-    size_t   getIntermediatePlaneByteSize( ) const;
+    size_t                               getCutStructBufferByteSize( ) const;
+    popart::identification::CutStruct*   getCutStructBuffer( ) const;
+    popart::identification::CutStruct*   getCutStructBufferHost( ) const;
+    size_t                               getNearbyPointBufferByteSize( ) const;
+    popart::identification::NearbyPoint* getNearbyPointBuffer( ) const;
+    size_t                               getSignalBufferByteSize( ) const;
+    float*                               getSignalBuffer( ) const;
+    void                                 clearSignalBuffer( );
 
     // implemented in frame_ident.cu
-    void uploadCuts( std::vector<cctag::ImageCut>& vCuts, const int vCutMaxVecLen );
+    void uploadCuts( std::vector<cctag::ImageCut>& vCuts );
 
+public:
     // implemented in frame_ident.cu
     __host__
     double idCostFunction( const popart::geometry::ellipse& ellipse,
