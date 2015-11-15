@@ -69,6 +69,7 @@ namespace identification {
 // locally defined in frame_ident.cu only
 struct CutStruct;
 struct NearbyPoint;
+struct CutSignals;
 } // identification
 
 /*************************************************************
@@ -237,20 +238,22 @@ private:
     size_t                               getNearbyPointBufferByteSize( ) const;
     popart::identification::NearbyPoint* getNearbyPointBuffer( ) const;
     size_t                               getSignalBufferByteSize( ) const;
-    float*                               getSignalBuffer( ) const;
+    popart::identification::CutSignals*  getSignalBuffer( ) const;
     void                                 clearSignalBuffer( );
 
+private:
     // implemented in frame_ident.cu
-    void uploadCuts( std::vector<cctag::ImageCut>& vCuts );
+    void uploadCuts( const std::vector<cctag::ImageCut>& vCuts );
 
 public:
     // implemented in frame_ident.cu
     __host__
-    double idCostFunction( const popart::geometry::ellipse& ellipse,
-                           const float2                     center,
-                           const int                        vCutsSize,
-                           const int                        vCutMaxVecLen,
-                           bool&                            readable );
+    double idCostFunction( const popart::geometry::ellipse&    ellipse,
+                           const float2                        center,
+                           const std::vector<cctag::ImageCut>& vCuts,
+                           const size_t                        vCutsMaxSize,
+                           float                               neighbourSize,
+                           const size_t                        gridNSample );
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 

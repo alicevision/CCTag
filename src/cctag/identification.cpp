@@ -1006,7 +1006,16 @@ bool refineConicFamilyGlob(
   // better than 0.02 pixel.
   while ( neighbourSize*maxSemiAxis > 0.02 )       
   {
-    if ( imageCenterOptimizationGlob(mHomography,vCuts,optimalPoint,residual,neighbourSize,gridNSample,src,cudaPipe,outerEllipse) )
+    if ( imageCenterOptimizationGlob( mHomography,   // out
+                                      vCuts,         // out
+                                      optimalPoint,  // out
+                                      residual,      // out
+                                      neighbourSize,
+                                      gridNSample,
+                                      src,
+                                      cudaPipe,
+                                      outerEllipse,
+                                      params ) )
     {
       CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
       neighbourSize /= double((gridNSample-1)/2) ;
@@ -1035,50 +1044,6 @@ bool refineConicFamilyGlob(
 }
 
 /**
- * @brief Upload the ImageCut structure to the GPU.
- * 
- * As the destination on the GPU, reuse the space that was allocated
- * as _d_intermediate, a float 2D array with the input image's dimensions
- * plus padding. Three steps:
- * @li compute the size (in floats) of the ImageCut structure on the GPU,
- *     rounded up to the next power of 2
- * @li check whether _d_intermediate is big enough
- * @li initiate asynchronous uploading of the cuts to the GPU
- * @par[Side effects:] Upload of ImageCuts to GPU has been triggered. It is
- *     most likely NOT complete when this function returns.
- * @param[in] cudaPipe pointer to the abstraction object that hides CUDA
- *                     internal functions.
- * @param[in] vCuts vector of ImageCuts that must be uploaded.
- * @returns the number of floats reserved for each ImageCut on the GPU
- */
-size_t cudaUploadCuts( popart::TagPipe*                cudaPipe,
-                       std::vector< cctag::ImageCut >& vCuts )
-{
-    size_t vCutMaxVecLen = cctag::kDefaultSampleCutLength;
-
-    // step 1: find the largest vector in all the Cuts in this round
-    for( const ImageCut& cut : vCuts ) {
-        vCutMaxVecLen = std::max<size_t>( vCutMaxVecLen,
-                                          cut.imgSignal().size() );
-    }
-
-    // step 2: add 8 (double values) for overhead of the ImageCut structure
-    vCutMaxVecLen += 8;
-    assert( sizeof(size_t) == 8 );        // size_t has 64 bits
-    assert( sizeof(unsigned long) == 8 ); // unsigned long has 64 bits
-
-    // step 3: is the number a power of two?
-    if( ( vCutMaxVecLen & ( ~vCutMaxVecLen + 1 ) ) != vCutMaxVecLen ) {
-        // no: find next largest power of 2
-        vCutMaxVecLen = ( 1 << ( 64 - __builtin_clzl(vCutMaxVecLen) ) );
-    }
-
-    cudaPipe->uploadCuts( 0, vCuts );
-
-    return vCutMaxVecLen;
-}
-
-/**
  * @brief Convex optimization of the imaged center within a point's neighbourhood.
  * 
  * @param[out] mHomography optimal homography from the pixel plane to the cctag plane.
@@ -1088,7 +1053,9 @@ size_t cudaUploadCuts( popart::TagPipe*                cudaPipe,
  * @param[in] neighbourSize size of the neighbourhood to consider relatively to the outer ellipse dimensions
  * @param[in] gridNSample number of sample points along one dimension of the neighbourhood (e.g. grid)
  * @param[in] src source gray (uchar) image
+ * @param[inout] cudaPipe CUDA object handle, changing
  * @param[in] outerEllipse outer ellipse
+ * @param[in] params Parameters read from config file
  */
 bool imageCenterOptimizationGlob(
         cctag::numerical::BoundedMatrix3x3d & mHomography,
@@ -1099,113 +1066,121 @@ bool imageCenterOptimizationGlob(
         const std::size_t gridNSample,
         const cv::Mat & src, 
         popart::TagPipe* cudaPipe,
-        const cctag::numerical::geometry::Ellipse & outerEllipse)
+        const cctag::numerical::geometry::Ellipse& outerEllipse,
+        const cctag::Parameters params )
 {
-    size_t cuda_vCutMaxVecLen = 100;
+    cctag::Point2dN<double>             optimalPoint;
+    cctag::numerical::BoundedMatrix3x3d optimalHomography;
+    bool                                hasASolution = false;
+  
+
     if( cudaPipe ) {
-        cuda_vCutMaxVecLen = cudaUploadCuts( cudaPipe, vCuts );
-    }
-
-    using namespace cctag::numerical;
-    using namespace boost::numeric::ublas;
-  
-    std::vector<cctag::Point2dN<double> > nearbyPoints;
-    // A. Get all the grid point nearby the center /////////////////////////////
-    getNearbyPoints( outerEllipse,  // in (ellipse)
-                     center,        // in (Point2d)
-                     nearbyPoints,  // out (vector<Point2d>)
-                     neighbourSize, // in (float)
-                     gridNSample,   // in (size_t)
-                     GRID );        // in (enum)
-
-    minRes = std::numeric_limits<double>::max();
-    cctag::Point2dN<double> optimalPoint;
-    BoundedMatrix3x3d optimalHomography;
-    BoundedMatrix3x3d mTempHomography;
-
-    bool hasASolution = false;
-  
-#ifdef OPTIM_CENTER_VISUAL_DEBUG // Visual debug durign the optim
-    int k = 0;
-#endif // OPTIM_CENTER_VISUAL_DEBUG   
-    // For all points nearby the center ////////////////////////////////////////
-    for(const cctag::Point2dN<double> & point : nearbyPoints)
-    {
-        CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
-      
-        // B. Compute the homography so that the back projection of 'point' is the
-        // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
-      
-        bool   readable = true;
         double res;
 
-        if( cudaPipe ) {
-            res = cudaPipe->idCostFunction( 0, outerEllipse, point, vCuts.size(), cuda_vCutMaxVecLen, readable );
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-            cerr << "cuda cost function returns " << res << ", readable " << readable << endl;
-#endif
-        }
-#ifndef CPU_GPU_COST_FUNCTION_COMPARE
-        else
-#endif
-        {
-            try
-            {
-                computeHomographyFromEllipseAndImagedCenter(
-                    outerEllipse,     // in (ellipse)
-                    point,            // in (Point2d)
-                    mTempHomography); // out (matrix3x3)
-            } catch(...) {
-                continue; 
-            }
+        res = cudaPipe->idCostFunction( 0,
+                                        outerEllipse,
+                                        center,
+                                        vCuts,
+                                        params._sampleCutLength,
+                                        neighbourSize,
+                                        gridNSample );
 
-            // C. Compute the 1D rectified signals of vCuts image cut based on the 
-            // transformation mTempHomography.
-            res = costFunctionGlob(mTempHomography, vCuts, src, readable );
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-            cerr << "host cost function returns " << res << ", readable " << readable << endl;
-#endif
-        }
-      
-        // If at least one image cut has been properly read
-        if ( readable )
-        {
-#ifdef OPTIM_CENTER_VISUAL_DEBUG // todo: write a proper function in visual debug
-            cv::Mat output;
-            createRectifiedCutImage(vCuts, output);
-            cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
-            ++k;
-#endif // OPTIM_CENTER_VISUAL_DEBUG        
-        
-            // Update the residual and the optimized parameters
-            hasASolution = true;
-            if ( res < minRes )
-            {
-                minRes = res;
-                optimalPoint = point;
-                optimalHomography = mTempHomography;
-            }
-        } else {
-            CCTAG_COUT_VAR_OPTIM(readable);
-        }
-    } // for(point : nearbyPoints)
-#ifndef CPU_GPU_COST_FUNCTION_COMPARE
-    /* We should download the best solution vCut from the GPU,
-     * but this is a quicker hack at this time.
-     */
-    if( cudaPipe ) {
-        bool dummy_readable;
+        /* We should download the best solution vCut from the GPU,
+         * but this is a quicker hack at this time.
+         */
+        bool readable;
+
         computeHomographyFromEllipseAndImagedCenter(
             outerEllipse,        // in (ellipse)
             optimalPoint,        // in (Point2d)
             optimalHomography ); // out (matrix3x3)
+
         costFunctionGlob(
             optimalHomography,   // in (matrix3x3)
             vCuts,               // out (float[])
             src,                 // in (image)
-            dummy_readable );    // out (bool)
+            readable );          // out (bool)
+
+        if( readable ) {
+            hasASolution = true;
+        }
     }
-#endif // CPU_GPU_COST_FUNCTION_COMPARE
+#ifndef CPU_GPU_COST_FUNCTION_COMPARE
+    else
+#endif
+    {
+        using namespace cctag::numerical;
+        using namespace boost::numeric::ublas;
+  
+        std::vector<cctag::Point2dN<double> > nearbyPoints;
+        // A. Get all the grid point nearby the center /////////////////////////////
+        getNearbyPoints( outerEllipse,  // in (ellipse)
+                         center,        // in (Point2d)
+                         nearbyPoints,  // out (vector<Point2d>)
+                         neighbourSize, // in (float)
+                         gridNSample,   // in (size_t)
+                         GRID );        // in (enum)
+
+        minRes = std::numeric_limits<double>::max();
+        BoundedMatrix3x3d mTempHomography;
+
+#ifdef OPTIM_CENTER_VISUAL_DEBUG // Visual debug durign the optim
+        int k = 0;
+#endif // OPTIM_CENTER_VISUAL_DEBUG   
+        // For all points nearby the center ////////////////////////////////////////
+        for(const cctag::Point2dN<double> & point : nearbyPoints)
+        {
+            CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
+      
+            // B. Compute the homography so that the back projection of 'point' is the
+            // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
+      
+            bool   readable = true;
+            double res;
+
+            {
+                try
+                {
+                    computeHomographyFromEllipseAndImagedCenter(
+                        outerEllipse,     // in (ellipse)
+                        point,            // in (Point2d)
+                        mTempHomography); // out (matrix3x3)
+                } catch(...) {
+                    continue; 
+                }
+
+                // C. Compute the 1D rectified signals of vCuts image cut based on the 
+                // transformation mTempHomography.
+                res = costFunctionGlob(mTempHomography, vCuts, src, readable );
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+                cerr << "host cost function returns " << res << ", readable " << readable << endl;
+#endif
+            }
+      
+            // If at least one image cut has been properly read
+            if ( readable )
+            {
+#ifdef OPTIM_CENTER_VISUAL_DEBUG // todo: write a proper function in visual debug
+                cv::Mat output;
+                createRectifiedCutImage(vCuts, output);
+                cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
+                ++k;
+#endif // OPTIM_CENTER_VISUAL_DEBUG        
+        
+                // Update the residual and the optimized parameters
+                hasASolution = true;
+                if ( res < minRes )
+                {
+                    minRes = res;
+                    optimalPoint = point;
+                    optimalHomography = mTempHomography;
+                }
+            } else {
+                CCTAG_COUT_VAR_OPTIM(readable);
+            }
+        } // for(point : nearbyPoints)
+    }
+
     center = optimalPoint;
     mHomography = optimalHomography;
     

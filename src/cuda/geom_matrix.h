@@ -104,6 +104,11 @@ public:
         return _m.det();
     }
 
+    __host__ __device__
+    const matrix3x3& transposed() const {
+        return _m;
+    }
+
 private:
     // forbidden default constructor and assignment op
 

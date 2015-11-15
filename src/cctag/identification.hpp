@@ -299,7 +299,9 @@ bool refineConicFamilyGlob(
  * @param[in] neighbourSize size of the neighbourhood to consider relatively to the outer ellipse dimensions
  * @param[in] gridNSample number of sample points along one dimension of the neighbourhood (e.g. grid)
  * @param[in] src source gray (uchar) image
+ * @param[inout] cudaPipe CUDA object handle, changing
  * @param[in] outerEllipse outer ellipse
+ * @param[in] params Parameters read from config file
  */
 bool imageCenterOptimizationGlob(
         cctag::numerical::BoundedMatrix3x3d & mHomography,
@@ -310,7 +312,8 @@ bool imageCenterOptimizationGlob(
         const std::size_t gridNSample,
         const cv::Mat & src, 
         popart::TagPipe* cudaPipe,
-        const cctag::numerical::geometry::Ellipse & outerEllipse);
+        const cctag::numerical::geometry::Ellipse & outerEllipse,
+        const cctag::Parameters params );
 
 
 /**

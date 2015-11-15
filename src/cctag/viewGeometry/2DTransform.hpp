@@ -26,7 +26,12 @@ inline void projectiveTransform( const ublas::bounded_matrix<double, 3, 3>& tr, 
 
 inline void projectiveTransform( const ublas::bounded_matrix<double, 3, 3>& tr, cctag::numerical::geometry::Ellipse& ellipse )
 {
-	ellipse.setMatrix( ublas::prec_prod( ublas::trans( tr ), ( ublas::bounded_matrix<double, 3, 3>) ublas::prec_prod( ellipse.matrix(), tr ) ) );
+	ellipse.setMatrix(
+        ublas::prec_prod(
+            ublas::trans( tr ),
+            (ublas::bounded_matrix<double, 3, 3>)ublas::prec_prod(
+                ellipse.matrix(),
+                tr ) ) );
 }
 
 inline void projectiveTransform( const ublas::bounded_matrix<double, 3, 3>& tr, const ublas::bounded_matrix<double, 3, 3>& ttr, cctag::numerical::geometry::Ellipse& ellipse )

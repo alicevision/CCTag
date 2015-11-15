@@ -82,8 +82,13 @@ public:
     __host__ __device__
 	void setAngle( const float angle );
 
+#if 0
     __host__ __device__
 	ellipse transform(const matrix3x3& mT)  const;
+#endif
+
+    __host__ __device__
+    void projectiveTransform( const matrix3x3& m, ellipse& e ) const;
 
     // two separate implementations!
     __host__ __device__
@@ -103,6 +108,9 @@ public:
 
     __device__
     void computeHomographyFromImagedCenter( const float2 center, matrix3x3& mHomography ) const;
+
+    __host__ __device__
+    void makeConditionerFromEllipse( matrix3x3& output ) const;
 
 private:
 	matrix3x3 _matrix;
