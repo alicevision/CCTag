@@ -3,6 +3,7 @@
 #include "assist.h"
 #include "device_prop.h"
 #include "d_block_prefixsum.h"
+#include "d_dev_unique.h"
 
 using namespace std;
 
@@ -50,7 +51,7 @@ void SumEqualityBlock( const int      items_per_thread,
         counter += (offset+i < in_block_items ) ? in_block_total[offset+i] : 0;
     }
     size_t total;
-    size_t exclusiveSum = PrefixSumBlockExclusive( counter, total );
+    size_t exclusiveSum = PrefixSumBlockExclusive( (size_t)counter, total );
     counter = 0;
     for( int i=0; i<items_per_thread; i++ ) {
         if( offset+i >= in_block_items ) return;
@@ -94,17 +95,17 @@ int main( )
     int32_t*  h_ptr;
     int32_t*  d_ptr_in;
     int32_t*  d_ptr_out;
-    int16_t*  d_ptr_intermediate_1;
+    int32_t*  d_ptr_intermediate_1;
     int32_t*  d_ptr_intermediate_2;
     int32_t*  d_ptr_intermediate_3;
-    size_t*   d_ptr_intermediate_4;
+    int32_t*   d_ptr_intermediate_4;
     cudaMallocHost( &h_ptr, num*sizeof(int32_t) );
     cudaMalloc( &d_ptr_in,  num*sizeof(int32_t) );
     cudaMalloc( &d_ptr_out, num*sizeof(int32_t) );
-    cudaMalloc( &d_ptr_intermediate_1, num*sizeof(int16_t) );
+    cudaMalloc( &d_ptr_intermediate_1, num*sizeof(int32_t) );
     cudaMalloc( &d_ptr_intermediate_2, num*sizeof(int32_t) );
     cudaMalloc( &d_ptr_intermediate_3, num*sizeof(int32_t) );
-    cudaMalloc( &d_ptr_intermediate_4, sizeof(size_t) );
+    cudaMalloc( &d_ptr_intermediate_4, sizeof(int32_t) );
     for( int i=0; i<num; i++ ) {
         h_ptr[i] = random() % 10;
     }

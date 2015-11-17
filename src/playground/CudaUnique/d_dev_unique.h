@@ -6,10 +6,8 @@
 
 namespace popart {
 
-// struct OpTest { bool operator( int idx ) const; };
-
 template<typename T>
-struct OpTestUnique : public OpTest
+struct OpTestUnique
 {
     const T* array; // on device
     size_t   size;
@@ -21,7 +19,7 @@ struct OpTestUnique : public OpTest
     { }
 
     __device__
-    bool operator( int right_idx ) const {
+    bool operator()( int right_idx ) const {
         const int left_idx = right_idx - 1;
         const int ridx = min( right_idx, (int)(size-1) );
         const int lidx = max( 0, min( left_idx, (int)(size-1) ) );

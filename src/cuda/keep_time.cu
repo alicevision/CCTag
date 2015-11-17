@@ -47,7 +47,7 @@ void KeepTime::report( const char* msg )
     cudaEventSynchronize( _stop );
     float diff;
     cudaEventElapsedTime( &diff, _start, _stop );
-    printf("%s %f ms\n", msg, diff );
+    fprintf(stderr,"%s %f ms\n", msg, diff );
 }
 
 float KeepTime::getElapsed( )

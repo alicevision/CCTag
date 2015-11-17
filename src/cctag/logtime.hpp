@@ -29,17 +29,9 @@ struct Mgmt
             _us_acc( duration.total_microseconds() );
         }
 
-        bool doPrint( ) const {
-            return ( _probe != 0 );
-        }
+        bool doPrint( ) const;
 
-        void print( std::ostream& ostr ) const {
-            if( not _probe ) return;
-            ostr << _probe << ": "
-                 << bacc::mean(_ms_acc) << "ms "
-                 // << bacc::mean(_us_acc) << "us"
-                 << std::endl;
-        }
+        void print( std::ostream& ostr ) const;
 
     private:
         const char* _probe;
@@ -52,21 +44,12 @@ struct Mgmt
     int                      _reserved;
     int                      _idx;
 
-    Mgmt( int rsvp )
-        : _previous_time( btime::microsec_clock::local_time() )
-        , _durations( rsvp )
-        , _reserved( rsvp )
-        , _idx( 0 )
-    { }
+    Mgmt( int rsvp );
 
-    void resetStartTime( )
-    {
-        _previous_time = btime::microsec_clock::local_time();
-        _idx = 0;
-    }
+    void resetStartTime( );
 
     void log( const char* probename ) {
-// std::cerr << "logging >>>" << probename << "<<<" << std::endl;
+        // std::cerr << "logging >>>" << probename << "<<<" << std::endl;
         if( _idx >= _reserved ) return;
 
         btime::ptime now( btime::microsec_clock::local_time() );
@@ -76,15 +59,7 @@ struct Mgmt
         _idx++;
     }
 
-    void print( std::ostream& ostr ) const {
-        int idx = 0;
-        for( const Measurement& m : _durations ) {
-            if( m.doPrint() ) {
-                ostr << "(" << idx++ << ") ";
-                m.print( ostr );
-            }
-        }
-    }
+    void print( std::ostream& ostr ) const;
 };
 
 } // logtime

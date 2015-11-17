@@ -129,7 +129,8 @@ set( FILES_TO_DEPLOY
       ./cctag/CCTagMarkersBank.hpp
       ./cctag/progBase/MemoryPool.hpp
       ./cctag/progBase/IMemoryPool.hpp
-      ./cctag/progBase/pattern/Singleton.hpp)
+      ./cctag/progBase/pattern/Singleton.hpp
+      ./cctag/logtime.hpp)
 
 foreach ( file ${FILES_TO_DEPLOY} )
 get_filename_component( dir ${file} DIRECTORY )

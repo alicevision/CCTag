@@ -9,8 +9,9 @@
 #include "debug_image.h"
 #include "cctag/talk.hpp"
 #include "cuda/geom_ellipse.h"
+#include "cctag/logtime.hpp"
 
-#if 0 // #ifndef NDEBUG
+#if 1 // #ifndef NDEBUG
 #define SHOW_DETAILED_TIMING
 #else
 #undef  SHOW_DETAILED_TIMING
@@ -26,16 +27,21 @@ namespace popart
 __host__
 void TagPipe::initialize( const uint32_t pix_w,
                           const uint32_t pix_h,
-                          const cctag::Parameters& params )
+                          const cctag::Parameters& params,
+	                  cctag::logtime::Mgmt* durations )
 {
+    if( durations ) { durations->log( "before CUDA set device mappable" ); }
     cudaError_t err = cudaSetDeviceFlags( cudaDeviceMapHost );
     POP_CUDA_FATAL_TEST( err, "Failed to set CUDA device into mappable mode." );
+    if( durations ) { cudaDeviceSynchronize(); durations->log( "after CUDA set device mappable" ); }
 
     static bool tables_initialized = false;
     if( not tables_initialized ) {
         tables_initialized = true;
         Frame::initGaussTable( );
+        if( durations ) { cudaDeviceSynchronize(); durations->log( "after init Gauss table" ); }
         Frame::initThinningTable( );
+        if( durations ) { cudaDeviceSynchronize(); durations->log( "after init thin table" ); }
     }
 
     int num_layers = params._numberOfMultiresLayers;
@@ -59,13 +65,16 @@ void TagPipe::initialize( const uint32_t pix_w,
         h = ( h >> 1 ) + ( h & 1 );
     }
 #endif
+    if( durations ) { cudaDeviceSynchronize(); durations->log( "after making frames" ); }
 
     _frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float); // sync
     _frame[0]->allocUploadEvent( ); // sync
+    if( durations ) { cudaDeviceSynchronize(); durations->log( "after creating textures and events" ); }
 
     for( int i=0; i<num_layers; i++ ) {
         _frame[i]->allocRequiredMem( params ); // sync
     }
+    if( durations ) { cudaDeviceSynchronize(); durations->log( "after allocating required memory" ); }
 }
 
 __host__
@@ -143,7 +152,18 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         time_thin[i]->stop();
         POP_CHK_CALL_IFSYNC;
         time_desc[i]->start();
-        success = _frame[i]->applyDesc(  params );  // async
+#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
+     	success = _frame[i]->applyDesc0(  params );  // async
+     	if( success ) success = _frame[i]->applyDesc1(  params );  // async
+     	if( success ) success = _frame[i]->applyDesc2(  params );  // async
+     	if( success ) success = _frame[i]->applyDesc3(  params );  // async
+     	if( success ) success = _frame[i]->applyDesc4(  params );  // async
+     	if( success ) success = _frame[i]->applyDesc5(  params );  // async
+     	if( success ) success = _frame[i]->applyDesc6(  params );  // async
+#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
+     	success = _frame[i]->applyDesc0(  params );  // async
+        if( success ) success = _frame[i]->applyDesc(  params );  // async
+#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
         time_desc[i]->stop();
         POP_CHK_CALL_IFSYNC;
 
@@ -209,14 +229,12 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 
 #ifdef SHOW_DETAILED_TIMING
     for( int i=0; i<num_layers; i++ ) {
-        DO_TALK(
-          time_gauss[i]->report( "time for Gauss " );
-          time_mag  [i]->report( "time for Mag   " );
-          time_hyst [i]->report( "time for Hyst  " );
-          time_thin [i]->report( "time for Thin  " );
-          time_desc [i]->report( "time for Desc  " );
-          time_vote [i]->report( "time for Vote  " );
-        )
+        time_gauss[i]->report( "time for Gauss " );
+        time_mag  [i]->report( "time for Mag   " );
+        time_hyst [i]->report( "time for Hyst  " );
+        time_thin [i]->report( "time for Thin  " );
+        time_desc [i]->report( "time for Desc  " );
+        time_vote [i]->report( "time for Vote  " );
         delete time_gauss[i];
         delete time_mag  [i];
         delete time_hyst [i];

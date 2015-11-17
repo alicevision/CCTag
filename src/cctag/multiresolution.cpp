@@ -28,6 +28,8 @@
 #include <fstream>
 #include <map>
 
+#include <cuda_runtime.h> // only for debugging!!!
+
 #include "cuda/tag.h"
 
 namespace cctag
@@ -218,6 +220,10 @@ void cctagMultiresDetection_inner(
                          vEdgeMap,
                          seeds,
                          winners );
+    if( durations ) {
+        cudaDeviceSynchronize();
+        durations->log( "after CUDA download" );
+    }
 
     level->setLevel( cuda_pipe, params );
 
@@ -260,6 +266,7 @@ void cctagMultiresDetection_inner(
         vEdgeMap,
         frame, i, std::pow(2.0, (int) i), params,
         durations );
+    cudaDeviceSynchronize(); if( durations ) durations->log( "after CPU detection-from-edges" );
 
     CCTagVisualDebug::instance().initBackgroundImage(level->getSrc());
     std::stringstream outFilename2;

@@ -45,6 +45,7 @@
 #include <sstream>
 #include <list>
 #include <utility>
+#include <cuda_runtime.h> // only for debugging
 
 using namespace std;
 
@@ -707,6 +708,8 @@ void cctagDetection(CCTag::List& markers,
   
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
 
+    if( durations ) durations->log( "after ImagePyramid constructor" );
+
     static uint32_t         cuda_w;
     static uint32_t         cuda_h;
     static popart::TagPipe* pipe1 = 0;
@@ -715,7 +718,7 @@ void cctagDetection(CCTag::List& markers,
     
         cuda_w = imgGraySrc.size().width;
         cuda_h = imgGraySrc.size().height;
-        pipe1->initialize( cuda_w, cuda_h, params );
+        pipe1->initialize( cuda_w, cuda_h, params, durations );
     } else {
         if( cuda_w != imgGraySrc.size().width ||
             cuda_h != imgGraySrc.size().height ) {
@@ -723,6 +726,7 @@ void cctagDetection(CCTag::List& markers,
             exit( -1 );
         }
     }
+    if( durations ) durations->log( "after CUDA initialization" );
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
@@ -740,6 +744,10 @@ void cctagDetection(CCTag::List& markers,
   unsigned char* pix = imgGraySrc.data;
 
   pipe1->load( pix );
+  if( durations ) {
+    cudaDeviceSynchronize();
+    durations->log( "after CUDA load" );
+  }
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());

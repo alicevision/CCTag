@@ -150,7 +150,7 @@ find_package(PNG REQUIRED)
 find_package(JPEG REQUIRED)
 
 # FIND Glog
-find_package(Glog REQUIRED)
+#find_package(Glog REQUIRED)
 
 # FIND GOMP
 find_package(Gomp REQUIRED)

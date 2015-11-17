@@ -12,6 +12,7 @@
 #include "cctag/ImageCut.hpp"
 #include "cctag/geometry/Ellipse.hpp"
 #include "cctag/geometry/point.hpp"
+#include "cctag/logtime.hpp"
 
 namespace popart
 {
@@ -24,7 +25,8 @@ class TagPipe
 public:
     void initialize( const uint32_t pix_w,
                      const uint32_t pix_h,
-                     const cctag::Parameters& params );
+                     const cctag::Parameters& params,
+	             cctag::logtime::Mgmt* durations );
     void load( unsigned char* pix );
     void tagframe( const cctag::Parameters& params );
     void download( size_t                          layer,

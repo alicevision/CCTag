@@ -16,7 +16,7 @@ inline int grid_divide( int size, int divider )
 __device__ __host__
 inline int round_up_pow2( int size, int val )
 {
-    return grid_drive( size, val ) * val;
+    return grid_divide( size, val ) * val;
 }
 
 __device__ __host__

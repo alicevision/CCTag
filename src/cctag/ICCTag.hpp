@@ -10,6 +10,10 @@
 #include <opencv2/core/core.hpp>
 
 namespace cctag {
+
+namespace logtime {
+struct Mgmt;
+}
   
 typedef int MarkerID;
 
@@ -37,21 +41,24 @@ protected:
         int _status;
 };
 
+// implemeted in cctag/ICCTag.cpp
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
       const cv::Mat & graySrc,
+      logtime::Mgmt* durations = 0,
       const std::size_t nCrowns = 3,
       const std::string & parameterFile = "",
       const std::string & cctagBankFilename = "");
 
+// implemeted in cctag/ICCTag.cpp
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
       const cv::Mat & graySrc,
       const cctag::Parameters & params,
+      logtime::Mgmt* durations = 0,
       const CCTagMarkersBank * bank = NULL);
-
 }
 
 #endif	/* PONCTUALCCTAG_HPP */
