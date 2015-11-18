@@ -198,21 +198,21 @@ bool edge_block_loop( )
 }
 
 __device__
-bool edge( FrameMeta* meta )
+bool edge( FrameMetaPtr& meta )
 {
     bool something_changed = edge_block_loop( );
     if( threadIdx.x == 0 && threadIdx.y == 0 ) {
         if( something_changed ) {
-            atomicAdd( &meta->hysteresis_block_counter, 1 );
+            atomicAdd( &meta.hysteresis_block_counter(), 1 );
         }
     }
     return something_changed;
 }
 
 __global__
-void edge_first( cv::cuda::PtrStepSzb img, FrameMeta* meta, cv::cuda::PtrStepSzb src )
+void edge_first( cv::cuda::PtrStepSzb img, FrameMetaPtr meta, cv::cuda::PtrStepSzb src )
 {
-    meta->hysteresis_block_counter = 0;
+    meta.hysteresis_block_counter() = 0;
 
     // const int idx  = blockIdx.x * HYST_W + threadIdx.x;
     // const int idy  = blockIdx.y * HYST_H + threadIdx.y;
@@ -239,9 +239,9 @@ void edge_first( cv::cuda::PtrStepSzb img, FrameMeta* meta, cv::cuda::PtrStepSzb
 }
 
 __global__
-void edge_second( cv::cuda::PtrStepSzb img, FrameMeta* meta )
+void edge_second( cv::cuda::PtrStepSzb img, FrameMetaPtr meta )
 {
-    meta->hysteresis_block_counter = 0;
+    meta.hysteresis_block_counter() = 0;
 
     cv::cuda::PtrStepSz32u input;
     input.data = reinterpret_cast<uint32_t*>(img.data);
@@ -284,9 +284,9 @@ void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w
 
 #if defined(USE_SEPARABLE_COMPILATION)
 __global__
-void hyst_outer_loop_recurse( int width, int height, FrameMeta* meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src, int depth )
+void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src, int depth )
 {
-    if( meta->hysteresis_block_counter == 0 ) return;
+    if( meta.hysteresis_block_counter() == 0 ) return;
 
     dim3 block;
     dim3 grid;
@@ -295,7 +295,7 @@ void hyst_outer_loop_recurse( int width, int height, FrameMeta* meta, cv::cuda::
     grid.x  = grid_divide( width,   HYST_W * 4 );
     grid.y  = grid_divide( height,  HYST_H );
 
-    meta->hysteresis_block_counter = 1; // anything non-null will allow the grid to start
+    meta.hysteresis_block_counter() = 1; // anything non-null will allow the grid to start
 
     for( int i=0; i<depth*2; i++ ) {
         hysteresis::edge_second
@@ -308,7 +308,7 @@ void hyst_outer_loop_recurse( int width, int height, FrameMeta* meta, cv::cuda::
 }
 
 __global__
-void hyst_outer_loop( int width, int height, FrameMeta* meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src )
+void hyst_outer_loop( int width, int height, FrameMetaPtr meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src )
 {
     dim3 block;
     dim3 grid;
@@ -353,30 +353,32 @@ void Frame::applyHyst( const cctag::Parameters & params )
 #if defined(USE_SEPARABLE_COMPILATION)
     hyst_outer_loop
         <<<1,1,0,_stream>>>
-        ( getWidth(), getHeight(), _d_meta, _d_hyst_edges, _d_map );
+        ( getWidth(), getHeight(), _meta, _d_hyst_edges, _d_map );
 #else // USE_SEPARABLE_COMPILATION
     bool first_time = true;
+    int  block_counter;
     do
     {
-        _h_meta->hysteresis_block_counter = grid.x * grid.y;
+        block_counter = grid.x * grid.y;
+        _meta.toDevice( Hysteresis_block_counter, block_counter, _stream );
         if( first_time ) {
             hysteresis::edge_first
                 <<<grid,block,0,_stream>>>
                 ( _d_hyst_edges,
-                  _d_meta,
+                  _meta,
                   _d_map );
             first_time = false;
         } else {
             hysteresis::edge_second
                 <<<grid,block,0,_stream>>>
                 ( _d_hyst_edges,
-                  _d_meta );
+                  _meta );
         }
         POP_CHK_CALL_IFSYNC;
+        _meta.fromDevice( Hysteresis_block_counter, block_counter, _stream );
         POP_CUDA_SYNC( _stream );
-        // cerr << "hysteresis_block_counter=" << _h_meta->hysteresis_block_counter << endl;
     }
-    while( _h_meta->hysteresis_block_counter > 0 );
+    while( block_counter > 0 );
 #endif // USE_SEPARABLE_COMPILATION
 }
 

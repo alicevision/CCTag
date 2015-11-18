@@ -9,31 +9,9 @@ namespace popart
 using namespace std;
 
 __host__
-void FrameMeta::alloc( FrameMeta** host, FrameMeta** device )
-{
-    cudaError_t err;
-    void* ptr;
-    err = cudaHostAlloc( &ptr, sizeof(FrameMeta), cudaHostAllocMapped );
-    POP_CUDA_FATAL_TEST( err, "Could not allocate Frame meta info as mapped memory" );
-    *host = (FrameMeta*)ptr;
-
-    (*host)->ring_counter_max = EDGE_LINKING_MAX_ARCS;
-
-    err = cudaHostGetDevicePointer( &ptr, *host, 0 );
-    POP_CUDA_FATAL_TEST( err, "Could not allocate Frame meta info as mapped memory" );
-    *device = (FrameMeta*)ptr;
-}
-
-__host__
-void FrameMeta::release( FrameMeta* host )
-{
-    cudaFreeHost( host );
-}
-
-__host__
 void Frame::allocRequiredMem( const cctag::Parameters& params )
 {
-    FrameMeta::alloc( &_h_meta, &_d_meta );
+    _meta.toDevice( Ring_counter_max, EDGE_LINKING_MAX_ARCS, _stream );
 
     void* ptr;
     const size_t w = getWidth();
@@ -246,8 +224,6 @@ void Frame::releaseRequiredMem( )
     _vote._seed_indices      .release();
     _vote._seed_indices_2    .release();
     POP_CUDA_FREE( _vote._d_edgepoint_index_table.data );
-
-    FrameMeta::release( _h_meta );
 }
 
 }; // namespace popart

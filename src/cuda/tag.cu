@@ -30,10 +30,7 @@ void TagPipe::initialize( const uint32_t pix_w,
                           const cctag::Parameters& params,
 	                  cctag::logtime::Mgmt* durations )
 {
-    if( durations ) { durations->log( "before CUDA set device mappable" ); }
-    cudaError_t err = cudaSetDeviceFlags( cudaDeviceMapHost );
-    POP_CUDA_FATAL_TEST( err, "Failed to set CUDA device into mappable mode." );
-    if( durations ) { cudaDeviceSynchronize(); durations->log( "after CUDA set device mappable" ); }
+    if( durations ) { durations->log( "before table initialization" ); }
 
     static bool tables_initialized = false;
     if( not tables_initialized ) {

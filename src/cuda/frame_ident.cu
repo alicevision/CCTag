@@ -154,7 +154,7 @@ void idGetSignals( const popart::geometry::matrix3x3* dev_homographies,
 }
 
 __global__
-void idComputeResult( FrameMeta* meta, float* d, const int vCutsSize, const int vCutMaxVecLen )
+void idComputeResult( FrameMetaPtr meta, float* d, const int vCutsSize, const int vCutMaxVecLen )
 {
     __syncthreads();
 
@@ -215,8 +215,8 @@ void idComputeResult( FrameMeta* meta, float* d, const int vCutsSize, const int 
         ct  += __shfl_down( ct,  1 );
 
         if( threadIdx.x == 0 ) {
-            atomicAdd( &meta->identification_result, val );
-            atomicAdd( &meta->identification_resct,  ct );
+            atomicAdd( &meta.identification_result(), val );
+            atomicAdd( &meta.identification_resct(),  ct );
         }
     }
     __threadfence();
@@ -275,17 +275,20 @@ double Frame::idCostFunction( const popart::geometry::ellipse& ellipse,
     grid.y  = 1;
     grid.z  = 1;
 
-    _h_meta->identification_result = 0.0f;
-    _h_meta->identification_resct  = 0;
+    _meta.toDevice( Identification_result, 0.0f, _stream );
+    _meta.toDevice( Identification_resct,  0,    _stream );
 
     identification::idComputeResult
         <<<grid,block,0,_stream>>>
-        ( _d_meta, _d_intermediate.data, vCutsSize, vCutMaxVecLen );
+        ( _meta, _d_intermediate.data, vCutsSize, vCutMaxVecLen );
+
+    float res;
+    int   resSize;
+    _meta.fromDevice( Identification_result, res,     _stream );
+    _meta.fromDevice( Identification_resct,  resSize, _stream );
+    // cerr << "GPU: result=" << res << " resSize=" << resSize << endl;
 
     cudaStreamSynchronize( _stream );
-    float res     = _h_meta->identification_result;
-    int   resSize = _h_meta->identification_resct;
-    // cerr << "GPU: result=" << res << " resSize=" << resSize << endl;
 
     // If no cut-pair has been found within the image bounds.
     if ( resSize == 0) {

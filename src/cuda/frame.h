@@ -14,6 +14,7 @@
 #include "frame_vote.h"
 #include "triple_point.h"
 #include "cuda/geom_ellipse.h"
+#include "cuda/framemeta.h"
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
@@ -89,24 +90,6 @@ private:
 };
 
 /*************************************************************
- * FrameTexture
- * Every from has one of these structures. It is allocated in
- * pinned host memory, but is also mapped to the device.
- */
-struct FrameMeta
-{
-    int   hysteresis_block_counter;
-    int   connect_component_block_counter;
-    int   ring_counter;
-    int   ring_counter_max;
-    float identification_result;
-    int   identification_resct;
-
-    static void alloc( FrameMeta** host, FrameMeta** device );
-    static void release( FrameMeta* host );
-};
-
-/*************************************************************
  * Frame
  * The basic structure for managing data stored on the GPU
  *************************************************************/
@@ -114,7 +97,7 @@ class Frame
 {
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
-    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream );
+    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe = 0 );
     ~Frame( );
 
 public:
@@ -265,8 +248,7 @@ private:
 private:
     int                     _layer;
 
-    FrameMeta*              _h_meta; // pointer to pinned mem
-    FrameMeta*              _d_meta; // mapping to device mem
+    FrameMetaPtr            _meta; // lots of small variables
 
     cv::cuda::PtrStepSzb    _d_plane;
     cv::cuda::PtrStepSzf    _d_intermediate;

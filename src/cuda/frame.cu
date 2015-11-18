@@ -19,11 +19,12 @@ using namespace std;
  * Frame
  *************************************************************/
 
-Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream )
+Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe )
     : _layer( my_layer )
     , _h_debug_hyst_edges( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
+    , _meta( my_pipe, my_layer )
 {
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
     _h_ring_output.data = 0;
@@ -61,6 +62,10 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
                            0,
                            _d_plane.step * _d_plane.rows,
                            _stream );
+
+#ifndef NDEBUG
+    _meta.testOffset( _stream );
+#endif
 }
 
 Frame::~Frame( )
