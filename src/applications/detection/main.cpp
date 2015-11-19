@@ -61,7 +61,7 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
 
     static cctag::logtime::Mgmt* durations = 0;
-#if 0
+#if 1
     if( not durations ) {
         durations = new cctag::logtime::Mgmt( 25 );
     } else {
@@ -69,7 +69,7 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     }
 #endif
     cctagDetection( markers, frameId , src, params, bank, true, durations );
-#if 0
+#if 1
     durations->print( std::cerr );
 #endif
 

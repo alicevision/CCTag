@@ -709,6 +709,7 @@ popart::TagPipe* initCuda( int      pipeId,
     popart::TagPipe* pipe1 = cudaPipelines[pipeId];
 
     if( not pipe1 ) {
+std::cerr << "NO PIPE YET" << std::endl;
         pipe1 = new popart::TagPipe;
         pipe1->initialize( width, height, params, durations );
         cudaPipelines[pipeId] = pipe1;
@@ -719,7 +720,6 @@ popart::TagPipe* initCuda( int      pipeId,
             exit( -1 );
         }
     }
-    if( durations ) durations->log( "after CUDA initialization" );
     return pipe1;
 }
 
@@ -749,14 +749,14 @@ void cctagDetection(CCTag::List& markers,
   
   ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
 
-    if( durations ) durations->log( "after ImagePyramid constructor" );
-
     popart::TagPipe* pipe1;
     pipe1 = initCuda( 0,
                       imgGraySrc.size().width,
 	              imgGraySrc.size().height,
 	              params,
 	              durations );
+
+    if( durations ) durations->log( "after initCuda" );
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());

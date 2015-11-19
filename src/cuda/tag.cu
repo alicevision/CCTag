@@ -23,15 +23,11 @@ void TagPipe::initialize( const uint32_t pix_w,
                           const cctag::Parameters& params,
 	                  cctag::logtime::Mgmt* durations )
 {
-    if( durations ) { durations->log( "before table initialization" ); }
-
     static bool tables_initialized = false;
     if( not tables_initialized ) {
         tables_initialized = true;
         Frame::initGaussTable( );
-        if( durations ) { cudaDeviceSynchronize(); durations->log( "after init Gauss table" ); }
         Frame::initThinningTable( );
-        if( durations ) { cudaDeviceSynchronize(); durations->log( "after init thin table" ); }
     }
 
     int num_layers = params._numberOfMultiresLayers;
@@ -55,16 +51,13 @@ void TagPipe::initialize( const uint32_t pix_w,
         h = ( h >> 1 ) + ( h & 1 );
     }
 #endif
-    if( durations ) { cudaDeviceSynchronize(); durations->log( "after making frames" ); }
 
     _frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float); // sync
     _frame[0]->allocUploadEvent( ); // sync
-    if( durations ) { cudaDeviceSynchronize(); durations->log( "after creating textures and events" ); }
 
     for( int i=0; i<num_layers; i++ ) {
         _frame[i]->allocRequiredMem( params ); // sync
     }
-    if( durations ) { cudaDeviceSynchronize(); durations->log( "after allocating required memory" ); }
 }
 
 __host__
