@@ -835,7 +835,7 @@ void cctagDetection(CCTag::List& markers,
                 cctag,
                 bank.getMarkers(),
                 imagePyramid.getLevel(0)->getSrc(),
-                pipe1,
+                0, // pipe1,
                 params );
 #ifndef NDEBUG
             std::cerr << "Marker after:" << std::endl; 
