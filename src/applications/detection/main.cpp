@@ -60,16 +60,18 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     CCTagVisualDebug::instance().setImageFileName(debugFileName);
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
 
-    static cctag::logtime::Mgmt* durations;
-std::cerr << "before ccTagDetection" << std::endl;
+    static cctag::logtime::Mgmt* durations = 0;
+#if 0
     if( not durations ) {
         durations = new cctag::logtime::Mgmt( 25 );
     } else {
         durations->resetStartTime();
     }
+#endif
     cctagDetection( markers, frameId , src, params, bank, true, durations );
+#if 0
     durations->print( std::cerr );
-std::cerr << "after ccTagDetection" << std::endl;
+#endif
 
     CCTagFileDebug::instance().outPutAllSessions();
     CCTagFileDebug::instance().clearSessions();
