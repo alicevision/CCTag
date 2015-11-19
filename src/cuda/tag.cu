@@ -171,6 +171,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         time_vote[i]->stop();
         POP_CHK_CALL_IFSYNC;
 
+        _frame[i]->applyPlaneDownload( params ); // async
         _frame[i]->applyGaussDownload( params );
         _frame[i]->applyMagDownload( params );
         _frame[i]->applyThinDownload( params );
