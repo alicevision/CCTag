@@ -10,14 +10,7 @@
 #include "cctag/talk.hpp"
 #include "cuda/geom_ellipse.h"
 #include "cctag/logtime.hpp"
-
-#if 1 // #ifndef NDEBUG
-#define SHOW_DETAILED_TIMING
-#else
-#undef  SHOW_DETAILED_TIMING
-#endif
-
-#define USE_ONE_DOWNLOAD_STREAM
+#include "cuda/onoff.h"
 
 using namespace std;
 
