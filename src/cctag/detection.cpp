@@ -542,6 +542,7 @@ void cctagDetectionFromEdges(
 
       cctag::Point2dN<double> markerCenter;
       cctag::numerical::BoundedMatrix3x3d markerHomography;
+      markerHomography.clear();
 
       const double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
 
@@ -801,12 +802,20 @@ void cctagDetection(CCTag::List& markers,
         {
             CCTag & cctag = *it;
 
+#ifndef NDEBUG
+            std::cerr << "Marker before:" << std::endl; 
+            it->print( std::cerr );
+#endif
             const int detected = cctag::identification::identify(
                 cctag,
                 bank.getMarkers(),
                 imagePyramid.getLevel(0)->getSrc(),
                 pipe1,
                 params );
+#ifndef NDEBUG
+            std::cerr << "Marker after:" << std::endl; 
+            it->print( std::cerr );
+#endif
       
             cctag.setStatus(detected);
             ++it;

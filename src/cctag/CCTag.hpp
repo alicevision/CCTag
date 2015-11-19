@@ -52,6 +52,7 @@ public:
     , _status(0)
   {
     setInitRadius();
+    _mHomography.clear();
   }
 
   CCTag(const MarkerID id,
