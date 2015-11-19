@@ -100,6 +100,10 @@ public:
   {
   }
 
+#ifndef NDEBUG
+  void print( std::ostream& ostr ) const;
+#endif
+
   void scale(const double s);
 
   double x() const {
