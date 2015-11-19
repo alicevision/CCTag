@@ -241,7 +241,7 @@ void idComputeResult( NearbyPoint*      nPoint,
 }
 
 __global__
-void idNearbyPointDispatcher( FrameMeta*                         meta,
+void idNearbyPointDispatcher( FrameMetaPtr                       meta,
                               cv::cuda::PtrStepSzb               src,
                               const popart::geometry::ellipse  & ellipse,
                               const popart::geometry::matrix3x3& mInvT,
@@ -485,7 +485,7 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
 
     popart::identification::idNearbyPointDispatcher
         <<<grid,block,0,_stream>>>
-        ( _d_meta,
+        ( _meta,
           _d_plane,
           ellipse,
           mInvT,
