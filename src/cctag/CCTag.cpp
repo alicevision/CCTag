@@ -112,4 +112,42 @@ void CCTag::serialize(boost::archive::text_oarchive & ar, const unsigned int ver
 #endif
 }
 
+#ifndef NDEBUG
+using namespace std;
+
+void CCTag::print( std::ostream& ostr ) const
+{
+    ostr << setprecision(4)
+         << "CCTag:" << endl
+	 << "    (" << _centerImg.getX() << "," << _centerImg.getY() << ")" << endl
+         << "    nCircles: " << _nCircles << endl
+	 << "    radius ratios: ";
+    for( double x : _radiusRatios ) {
+        ostr << x << " ";
+    }
+    ostr << endl
+	 << "    ID: " << _id << endl
+	 << "    quality: " << _quality << endl
+	 << "    level: " << _pyramidLevel << endl
+	 << "    scale: " << _scale << endl
+	 << "    status: " << _status << endl
+         << "    outerEllipse: " << _outerEllipse << endl
+         << "    mHomography: " << "[ " << _mHomography(0,0) << " " << _mHomography(0,1) << " " << _mHomography(0,2) << " ; "
+		                << _mHomography(1,0) << " " << _mHomography(1,1) << " " << _mHomography(1,2) << " ; "
+			        << _mHomography(2,0) << " " << _mHomography(2,1) << " " << _mHomography(2,2) << " ] " << endl
+	 << "    Ellipses: " << endl;
+    for( const cctag::numerical::geometry::Ellipse& e : _ellipses ) {
+        ostr << "        " << e << endl;
+    }
+    ostr << "    rescaledOuterEllipse: " << _rescaledOuterEllipse << endl
+         << "    Points: " << endl;
+    for( const std::vector< DirectedPoint2d<double> >& v : _points ) {
+	ostr << "        ";
+    	for( const DirectedPoint2d<double>& p : v ) {
+            ostr << "(" << p.x() << "," << p.y() << ") ";
+    	}
+	ostr << endl;
+    }
+}
+#endif
 } // namespace cctag
