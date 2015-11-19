@@ -865,7 +865,12 @@ void cctagDetection(CCTag::List& markers,
         CCTagFileDebug::instance().outputMarkerInfos(marker);
     }
 
-    cerr << markers.size() << " markers found" << endl;
+    cerr << markers.size() << " markers found:" << endl;
+    cerr << "Ids: ";
+    for( const CCTag& tag : markers ) {
+	cerr << tag.id() << " ";
+    }
+    cerr << endl;
 }
 
 } // namespace cctag
