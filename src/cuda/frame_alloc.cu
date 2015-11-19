@@ -129,10 +129,10 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_debug_map = (unsigned char*)ptr;
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-    _vote._all_edgecoords    .alloc( params._maxEdges, EdgeListBoth );
-    _vote._chained_edgecoords.alloc( params._maxEdges, EdgeListBoth );
-    _vote._seed_indices      .alloc( params._maxEdges, EdgeListBoth );
-    _vote._seed_indices_2    .alloc( params._maxEdges, EdgeListDevOnly );
+    _vote._all_edgecoords    .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _vote._chained_edgecoords.alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _vote._seed_indices      .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _vote._seed_indices_2    .alloc( EDGE_POINT_MAX, EdgeListDevOnly );
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
     assert( p % _vote._d_edgepoint_index_table.elemSize() == 0 );

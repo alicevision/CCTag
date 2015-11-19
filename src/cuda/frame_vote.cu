@@ -278,7 +278,6 @@ const TriplePoint* construct_line_inner(
 __global__
 void construct_line( DevEdgeList<int>             seed_indices,       // output
                      DevEdgeList<TriplePoint>     chained_edgecoords, // input/output
-                     const int                    edge_index_max,     // input
                      const cv::cuda::PtrStepSz32s edgepoint_index_table, // input
                      const size_t                 numCrowns,
                      const float                  ratioVoting )
@@ -304,7 +303,7 @@ void construct_line( DevEdgeList<int>             seed_indices,       // output
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) );
 
     if( chosen ) {
-        if( seed_indices.Size() < edge_index_max ) {
+        if( seed_indices.Size() < EDGE_POINT_MAX ) {
             idx = edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
             seed_indices.ptr[write_index] = idx;
         }
@@ -396,7 +395,6 @@ bool Voting::constructLine( const cctag::Parameters&     params,
         <<<grid,block,0,stream>>>
         ( _seed_indices.dev,        // output
           _chained_edgecoords.dev,  // input
-          params._maxEdges,         // input
           _d_edgepoint_index_table, // input
           params._nCrowns,          // input
           params._ratioVoting );    // input

@@ -184,7 +184,6 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
                        cv::cuda::PtrStepSz16s   d_dy,
                        DevEdgeList<TriplePoint> chained_edgecoords,    // output
                        cv::cuda::PtrStepSz32s   edgepoint_index_table, // output
-                       const uint32_t           param_edgeMax,
                        const uint32_t           param_nmax,
                        const int32_t            param_thrGradient )
 {
@@ -255,7 +254,7 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
         // not that it is initialized with 1 to ensure that 0 represents a NULL pointer
         write_index = atomicAdd( chained_edgecoords.getSizePtr(), (int)ct );
 
-        if( chained_edgecoords.Size() > 2*all_edgecoords.Size() ) {
+        if( chained_edgecoords.Size() > EDGE_POINT_MAX ) {
             printf( "max offset: (%d x %d)=%d\n"
                     "my  offset: (%d*32+%d)=%d\n"
                     "edges in:    %d\n"
@@ -274,7 +273,7 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
 
     assert( write_index >= 0 );
 
-    if( keep && write_index < param_edgeMax ) {
+    if( keep && write_index < EDGE_POINT_MAX ) {
         assert( out_edge.coord.x != out_edge.descending.befor.x ||
                 out_edge.coord.y != out_edge.descending.befor.y );
         assert( out_edge.coord.x != out_edge.descending.after.x ||
@@ -305,7 +304,6 @@ void dp_caller_step_1( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     intermediate, // buffer
                 const uint32_t           param_nmax, // input param
                 const int32_t            param_thrGradient, // input param
-                const uint32_t           param_edgeMax, // input param
                 const size_t             param_numCrowns, // input param
                 const float              param_ratioVoting, // input param
                 const int                param_minVotesToSelectCandidate ) // input param
@@ -340,7 +338,6 @@ void dp_caller_step_1( DevEdgeList<int2>        edgeCoords, // input
           dy,
           chainedEdgeCoords,  // output - TriplePoints with before/after info
           edgepointIndexTable, // output - table, map coord to TriplePoint index
-          param_edgeMax,
           param_nmax,
           param_thrGradient );
 }
@@ -357,7 +354,6 @@ void dp_caller_step_2( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     intermediate, // buffer
                 const uint32_t           param_nmax, // input param
                 const int32_t            param_thrGradient, // input param
-                const uint32_t           param_edgeMax, // input param
                 const size_t             param_numCrowns, // input param
                 const float              param_ratioVoting, // input param
                 const int                param_minVotesToSelectCandidate ) // input param
@@ -381,7 +377,6 @@ void dp_caller_step_2( DevEdgeList<int2>        edgeCoords, // input
         <<<grid,block>>>
         ( seedIndices,        // output
           chainedEdgeCoords,  // input
-          param_edgeMax,  // input
           edgepointIndexTable,  // input
           param_numCrowns,          // input
           param_ratioVoting );    // input
@@ -399,7 +394,6 @@ void dp_caller_step_3( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     intermediate, // buffer
                 const uint32_t           param_nmax, // input param
                 const int32_t            param_thrGradient, // input param
-                const uint32_t           param_edgeMax, // input param
                 const size_t             param_numCrowns, // input param
                 const float              param_ratioVoting, // input param
                 const int                param_minVotesToSelectCandidate ) // input param
@@ -489,7 +483,6 @@ void dp_caller_step_4( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     intermediate, // buffer
                 const uint32_t           param_nmax, // input param
                 const int32_t            param_thrGradient, // input param
-                const uint32_t           param_edgeMax, // input param
                 const size_t             param_numCrowns, // input param
                 const float              param_ratioVoting, // input param
                 const int                param_minVotesToSelectCandidate ) // input param
@@ -523,7 +516,6 @@ void dp_caller_step_5( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     intermediate, // buffer
                 const uint32_t           param_nmax, // input param
                 const int32_t            param_thrGradient, // input param
-                const uint32_t           param_edgeMax, // input param
                 const size_t             param_numCrowns, // input param
                 const float              param_ratioVoting, // input param
                 const int                param_minVotesToSelectCandidate ) // input param
@@ -593,7 +585,6 @@ bool Frame::applyDesc1( const cctag::Parameters& params )
           cv::cuda::PtrStepSzb(_d_intermediate), // buffer
           params._distSearch,             // input param
           params._thrGradientMagInVote,   // input param
-          params._maxEdges,               // input param
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
@@ -617,7 +608,6 @@ bool Frame::applyDesc2( const cctag::Parameters& params )
           cv::cuda::PtrStepSzb(_d_intermediate), // buffer
           params._distSearch,             // input param
           params._thrGradientMagInVote,   // input param
-          params._maxEdges,               // input param
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
@@ -641,7 +631,6 @@ bool Frame::applyDesc3( const cctag::Parameters& params )
           cv::cuda::PtrStepSzb(_d_intermediate), // buffer
           params._distSearch,             // input param
           params._thrGradientMagInVote,   // input param
-          params._maxEdges,               // input param
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
@@ -665,7 +654,6 @@ bool Frame::applyDesc4( const cctag::Parameters& params )
           cv::cuda::PtrStepSzb(_d_intermediate), // buffer
           params._distSearch,             // input param
           params._thrGradientMagInVote,   // input param
-          params._maxEdges,               // input param
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
@@ -689,7 +677,6 @@ bool Frame::applyDesc5( const cctag::Parameters& params )
           cv::cuda::PtrStepSzb(_d_intermediate), // buffer
           params._distSearch,             // input param
           params._thrGradientMagInVote,   // input param
-          params._maxEdges,               // input param
           params._nCrowns,                // input param
           params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
@@ -753,7 +740,6 @@ bool Frame::applyDesc( const cctag::Parameters& params )
           _d_dy,
           _vote._chained_edgecoords.dev,  // output - TriplePoints with before/after info
           _vote._d_edgepoint_index_table, // output - table, map coord to TriplePoint index
-          params._maxEdges,
           params._distSearch,
           params._thrGradientMagInVote );
     POP_CHK_CALL_IFSYNC;

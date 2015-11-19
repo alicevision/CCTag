@@ -20,6 +20,12 @@
 
 #define EDGE_LINKING_HOST_SIDE
 
+/* This must replace params._maxEdges. That configuration variable
+ * is definitely not big enough for finding all edge points in a 1K
+ * image.
+ */
+#define EDGE_POINT_MAX                   100000
+
 #define EDGE_LINKING_MAX_EDGE_LENGTH        100
 #define EDGE_LINKING_MAX_ARCS             10000
 #define EDGE_LINKING_MAX_RING_BUFFER_SIZE    40

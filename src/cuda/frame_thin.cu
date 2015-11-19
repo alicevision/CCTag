@@ -104,8 +104,7 @@ void first_round( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 __global__
 void second_round( cv::cuda::PtrStepSzb src,          // input
                    cv::cuda::PtrStepSzb dst,          // output
-                   DevEdgeList<int2>    edgeCoords,   // output
-                   uint32_t             param_edgeMax )     // input
+                   DevEdgeList<int2>    edgeCoords )  // output
 {
     const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
@@ -124,7 +123,7 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
-    if( keep && write_index < param_edgeMax ) {
+    if( keep && write_index < EDGE_POINT_MAX ) {
         edgeCoords.ptr[write_index] = make_int2( idx, idy );
     }
 }
@@ -136,11 +135,10 @@ void set_null( DevEdgeList<int2> edgeCoords )
 }
 
 __global__
-void set_edgemax( DevEdgeList<int2> edgeCoords,
-                  uint32_t          param_edgeMax )
+void set_edgemax( DevEdgeList<int2> edgeCoords )
 {
-    if( edgeCoords.Size() > param_edgeMax ) {
-        edgeCoords.setSize( param_edgeMax );
+    if( edgeCoords.Size() > EDGE_POINT_MAX ) {
+        edgeCoords.setSize( EDGE_POINT_MAX );
     }
 }
 
@@ -151,8 +149,7 @@ void dp_caller( const size_t         width,          // input
                 cv::cuda::PtrStepSzb hystEdges,      // input
                 cv::cuda::PtrStepSzb edges,          // output
                 DevEdgeList<int2>    edgeCoords,     // output
-                cv::cuda::PtrStepSzb intermediate,   // intermediate
-                uint32_t             param_edgeMax ) // input param
+                cv::cuda::PtrStepSzb intermediate )  // intermediate
 {
     edgeCoords.setSize( 0 );
 
@@ -170,8 +167,7 @@ void dp_caller( const size_t         width,          // input
         <<<grid,block>>>
         ( intermediate,    // input
           edges,           // output
-          edgeCoords,      // output
-          param_edgeMax ); // input param
+          edgeCoords );    // output
 }
 #endif // USE_SEPARABLE_COMPILATION
 
@@ -224,14 +220,12 @@ void Frame::applyThinning( const cctag::Parameters & params )
         <<<grid,block,0,_stream>>>
         ( cv::cuda::PtrStepSzb(_d_intermediate), // input
           _d_edges,                              // output
-          _vote._all_edgecoords.dev,             // output
-          params._maxEdges );                    // input
+          _vote._all_edgecoords.dev );           // output
 #endif // USE_SEPARABLE_COMPILATION
 
     thinning::set_edgemax
         <<<1,1,0,_stream>>>
-        ( _vote._all_edgecoords.dev,
-          params._maxEdges );
+        ( _vote._all_edgecoords.dev );
 
 #if 0
     debugPointIsOnEdge( _d_edges, _vote._all_edgecoords, _stream );
