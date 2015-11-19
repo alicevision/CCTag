@@ -392,6 +392,10 @@ void cctagDetectionFromEdges(
         const Parameters & params,
         cctag::logtime::Mgmt* durations )
 {
+  // std::cerr << "Searching for point differences" << std::endl;
+  // std::cerr << "number of edge points: " << points.size() << std::endl;
+  // std::cerr << "number of seeds      : " << seeds.size() << std::endl;
+
   // using namespace boost::gil;
 
   // Call for debug only. Write the vote result as an image.
