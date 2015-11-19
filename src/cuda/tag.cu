@@ -75,6 +75,19 @@ void TagPipe::initialize( const uint32_t pix_w,
 }
 
 __host__
+uint32_t TagPipe::getWidth(  size_t layer ) const
+{
+    return _frame[layer]->getWidth();
+}
+
+__host__
+uint32_t TagPipe::getHeight( size_t layer ) const
+{
+    return _frame[layer]->getHeight();
+}
+
+
+__host__
 void TagPipe::load( unsigned char* pix )
 {
 #ifndef CCTAG_NO_COUT

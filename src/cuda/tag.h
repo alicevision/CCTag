@@ -39,6 +39,9 @@ public:
         return _frame.size();
     }
 
+    uint32_t getWidth(  size_t layer ) const;
+    uint32_t getHeight( size_t layer ) const;
+
     cv::Mat* getPlane( size_t layer ) const;
     cv::Mat* getDx( size_t layer ) const;
     cv::Mat* getDy( size_t layer ) const;
