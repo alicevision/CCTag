@@ -9,6 +9,7 @@
 #include "debug_image.h"
 #include "cctag/talk.hpp"
 #include "cuda/geom_ellipse.h"
+#include "cctag/algebra/matrix/Matrix.hpp"
 
 #include "cctag/logtime.hpp"
 #include "cuda/onoff.h"
