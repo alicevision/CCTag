@@ -52,6 +52,14 @@ using namespace std;
 namespace cctag
 {
 
+/* These are the CUDA pipelines that we instantiate for parallel processing.
+ * We need at least one.
+ * It is uncertain whether the CPU code can handle parallel pipe, but the CUDA
+ * code should be able to.
+ * BEWARE: this is untested
+ */
+std::vector<popart::TagPipe*> cudaPipelines;
+
 void constructFlowComponentFromSeed(
         EdgePoint * seed,
         const EdgePointsImage& edgesMap,
@@ -683,6 +691,34 @@ void createImageForVoteResultDebug(
 #endif
 }
 
+
+popart::TagPipe* initCuda( int      pipeId,
+                           uint32_t width,
+	                   uint32_t height, 
+	                   const Parameters & params,
+	                   cctag::logtime::Mgmt* durations )
+{
+    if( cudaPipelines.size() <= pipeId ) {
+        cudaPipelines.resize( pipeId+1 );
+    }
+
+    popart::TagPipe* pipe1 = cudaPipelines[pipeId];
+
+    if( not pipe1 ) {
+        pipe1 = new popart::TagPipe;
+        pipe1->initialize( width, height, params, durations );
+        cudaPipelines[pipeId] = pipe1;
+    } else {
+        if( width  != pipe1->getWidth(0) ||
+            height != pipe1->getHeight(0) ) {
+            std::cerr << "We cannot change the input frame resolution (yet)" << std::endl;
+            exit( -1 );
+        }
+    }
+    if( durations ) durations->log( "after CUDA initialization" );
+    return pipe1;
+}
+
 void cctagDetection(CCTag::List& markers,
         const std::size_t frame, 
         const cv::Mat & imgGraySrc,
@@ -711,23 +747,12 @@ void cctagDetection(CCTag::List& markers,
 
     if( durations ) durations->log( "after ImagePyramid constructor" );
 
-    static uint32_t         cuda_w;
-    static uint32_t         cuda_h;
-    static popart::TagPipe* pipe1 = 0;
-    if( not pipe1 ) {
-        pipe1 = new popart::TagPipe;
-    
-        cuda_w = imgGraySrc.size().width;
-        cuda_h = imgGraySrc.size().height;
-        pipe1->initialize( cuda_w, cuda_h, params, durations );
-    } else {
-        if( cuda_w != imgGraySrc.size().width ||
-            cuda_h != imgGraySrc.size().height ) {
-            std::cerr << "We cannot change the input frame resolution (yet)" << std::endl;
-            exit( -1 );
-        }
-    }
-    if( durations ) durations->log( "after CUDA initialization" );
+    popart::TagPipe* pipe1;
+    pipe1 = initCuda( 0,
+                      imgGraySrc.size().width,
+	              imgGraySrc.size().height,
+	              params,
+	              durations );
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
