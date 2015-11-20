@@ -22,9 +22,10 @@ struct CutStruct
 
 struct NearbyPoint
 {
-    float result;
-    int   resSize;
-    bool  readable;
+    float2 point;
+    float  result;
+    int    resSize;
+    bool   readable;
 
     /* These homographies are computed once for each NearbyPoint,
      * and used for all of its Cuts. The best one must be returned.
@@ -125,6 +126,8 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
     }
 }
 
+#if 0
+// now included in the nearby point dispatcher
 __global__
 void idMakeHomographies( popart::geometry::ellipse ellipse,
                          const float2 center,
@@ -138,6 +141,7 @@ void idMakeHomographies( popart::geometry::ellipse ellipse,
     ellipse.computeHomographyFromImagedCenter( center, m1 );
     m1.invert( m2 );
 }
+#endif
 
 /* We use a pair of homographies to extract signals (<=128) for every
  * cut, and every nearby point of a potential center.
@@ -170,6 +174,16 @@ void idGetSignals( NearbyPoint*         nPoint,
                                   nPoint->mInvHomography );
 }
 
+/* All the signals have been computed for the homographies rolled
+ * this NearbyPoint structure by the previous call to idGetSignals.
+ * Now we want to compare all possible combinations of Cuts and
+ * select the one that has minimizes the signal.
+ * Essential a full matrix of checks, but one triangle excluding the
+ * diagonal of the matrix is sufficient.
+ * We use 32 threads per NearbyPoint, and threads must find the
+ * minimum for ceil(#Cuts/32) first, before finding using shuffle to
+ * store the minimum in result in the NearbyPoint structure.
+ */
 __global__
 void idComputeResult( NearbyPoint*      nPoint,
                       const CutStruct*  vCuts,
@@ -188,14 +202,13 @@ void idComputeResult( NearbyPoint*      nPoint,
     comp = ( j < vCutsSize && i < j );
 
     if( comp ) {
-        const CutStruct*  l         = &vCuts[i];
         const CutSignals* l_signals = &allcut_signals[i];
         const CutSignals* r_signals = &allcut_signals[j];
         comp  = ( threadIdx.x < vCutMaxVecLen ) &&
                   not l_signals->outOfBounds &&
                   not r_signals->outOfBounds;
         if( comp ) {
-            int    limit = l->sigSize;
+            const int limit = vCuts[i].sigSize; // we could also use j ?
             for( int offset = threadIdx.x; offset < limit; offset += 32 ) {
                 float square = l_signals->sig[offset] - r_signals->sig[offset];
                 val += ( square * square );
@@ -245,7 +258,7 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
                               cv::cuda::PtrStepSzb               src,
                               const popart::geometry::ellipse  & ellipse,
                               const popart::geometry::matrix3x3& mInvT,
-                              const float2                       center,
+                              float2                             center,
                               const int                          vCutsSize,
                               const int                          vCutMaxVecLen,
                               const float                        neighbourSize,
@@ -263,13 +276,15 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
     if( i >= gridNSample ) return;
     if( j >= gridNSample ) return;
 
+    int idx = j * gridNSample + i;
+
     float2 point = make_float2( center.x - halfWidth + i*stepSize,
                                 center.y - halfWidth + j*stepSize );
     mInvT.condition( point );
 
-    int idx = j * gridNSample + i;
-
     identification::NearbyPoint* nPoint  = &point_buffer[idx];
+
+    nPoint->point = point;
 
     // GRIFF: is this multiplication correct???
     identification::CutSignals*  signals = &sig_buffer[idx * vCutsSize];
@@ -277,7 +292,7 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
     nPoint->result   = 0.0f;
     nPoint->resSize  = 0;
     nPoint->readable = true;
-    ellipse.computeHomographyFromImagedCenter( point, nPoint->mHomography );
+    ellipse.computeHomographyFromImagedCenter( nPoint->point, nPoint->mHomography );
     nPoint->mHomography.invert( nPoint->mInvHomography );
 
     dim3 block( 32, // we use this to sum up signals
@@ -437,7 +452,9 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
                               const std::vector<cctag::ImageCut>& vCuts,
                               const size_t                        vCutMaxVecLen,
                               float                               neighbourSize,
-                              const size_t                        gridNSample )
+                              const size_t                        gridNSample,
+                              float2&                             bestPointOut,
+                              popart::geometry::matrix3x3&        bestHomographyOut )
 {
     const size_t g = gridNSample * gridNSample;
     if( g*sizeof(identification::NearbyPoint) > getNearbyPointBufferByteSize() ) {
@@ -533,6 +550,8 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
 
     cudaStreamSynchronize( _stream );
     if( point.readable ) {
+        bestPointOut      = point.point;
+        bestHomographyOut = point.mHomography;
         return point.result / point.resSize;
     } else {
         return FLT_MAX;

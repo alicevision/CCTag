@@ -1073,6 +1073,11 @@ bool imageCenterOptimizationGlob(
     cctag::numerical::BoundedMatrix3x3d optimalHomography;
     bool                                hasASolution = false;
   
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    cctag::Point2dN<double>             cuda_optimalPoint;
+    cctag::numerical::BoundedMatrix3x3d cuda_optimalHomography;
+    bool                                cuda_hasASolution = false;
+#endif // CPU_GPU_COST_FUNCTION_COMPARE
 
     if( cudaPipe ) {
         double res;
@@ -1083,31 +1088,30 @@ bool imageCenterOptimizationGlob(
                                         vCuts,
                                         params._sampleCutLength,
                                         neighbourSize,
-                                        gridNSample );
+                                        gridNSample,
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+                                        cuda_optimalPoint,
+                                        cuda_optimalHomography
+#else // CPU_GPU_COST_FUNCTION_COMPARE
+                                        optimalPoint,
+                                        optimalHomography
+#endif // CPU_GPU_COST_FUNCTION_COMPARE
+                                        );
 
-        /* We should download the best solution vCut from the GPU,
-         * but this is a quicker hack at this time.
-         */
-        bool readable;
-
-        computeHomographyFromEllipseAndImagedCenter(
-            outerEllipse,        // in (ellipse)
-            optimalPoint,        // in (Point2d)
-            optimalHomography ); // out (matrix3x3)
-
-        costFunctionGlob(
-            optimalHomography,   // in (matrix3x3)
-            vCuts,               // out (float[])
-            src,                 // in (image)
-            readable );          // out (bool)
-
-        if( readable ) {
+        if( res < FLT_MAX ) {
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+            cuda_hasASolution = true;
+#else // CPU_GPU_COST_FUNCTION_COMPARE
             hasASolution = true;
+#endif // CPU_GPU_COST_FUNCTION_COMPARE
         }
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+        cerr << "device cost function returns " << res << ", readable " << cuda_hasASolution << endl;
+#endif // CPU_GPU_COST_FUNCTION_COMPARE
     }
 #ifndef CPU_GPU_COST_FUNCTION_COMPARE
     else
-#endif
+#endif // CPU_GPU_COST_FUNCTION_COMPARE
     {
         using namespace cctag::numerical;
         using namespace boost::numeric::ublas;

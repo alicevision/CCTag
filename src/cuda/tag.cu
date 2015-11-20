@@ -529,10 +529,12 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
 double TagPipe::idCostFunction( int                                        level,
                                 const cctag::numerical::geometry::Ellipse& ellipse,
                                 const cctag::Point2dN<double>&             center,
-                                std::vector<cctag::ImageCut>& vCuts,
-                                const size_t                  vCutMaxVecLen,
-                                const float                   neighbourSize,
-                                const size_t                  gridNSample )
+                                std::vector<cctag::ImageCut>&              vCuts,
+                                const size_t                               vCutMaxVecLen,
+                                const float                                neighbourSize,
+                                const size_t                               gridNSample,
+                                cctag::Point2dN<double>&                   bestPointOut,
+                                cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut )
 {
     /* The first part of cctag::identification::getNearbyPoints() applies
      * to all possible centers for the candidate tag. It is best to
@@ -569,12 +571,29 @@ double TagPipe::idCostFunction( int                                        level
                                  ellipse.angle() );
     float2 f = make_float2( center.x(), center.y() );
 
-    return _frame[level]->idCostFunction( e,
-                                          f,
-                                          vCuts,
-                                          vCutMaxVecLen,
-                                          neighbourSize,
-                                          gridNSample );
+    float2                      bestPoint;
+    popart::geometry::matrix3x3 bestHomography;
+    double avg = _frame[level]->idCostFunction( e,
+                                                f,
+                                                vCuts,
+                                                vCutMaxVecLen,
+                                                neighbourSize,
+                                                gridNSample,
+                                                bestPoint,
+                                                bestHomography );,
+    if( avg < FLT_MAX ) {
+        bestPointOut.x() = bestPoint.x;
+        bestPointOut.y() = bestPoint.y;
+
+        #pragma unroll
+        for( int i=0; i<3; i++ ) {
+            #pragma unroll
+            for( int j=0; j<3; j++ ) {
+                bestHomographyOut(i,j) = bestHomography(i,j);
+            }
+        }
+    }
+    return avg;
 }
 
 }; // namespace popart

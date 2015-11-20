@@ -251,9 +251,11 @@ public:
     double idCostFunction( const popart::geometry::ellipse&    ellipse,
                            const float2                        center,
                            const std::vector<cctag::ImageCut>& vCuts,
-                           const size_t                        vCutsMaxSize,
+                           const size_t                        vCutMaxVecLen,
                            float                               neighbourSize,
-                           const size_t                        gridNSample );
+                           const size_t                        gridNSample,
+                           float2&                             bestPointOut,
+                           popart::geometry::matrix3x3&        bestHomographyOut );
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
