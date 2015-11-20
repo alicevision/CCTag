@@ -39,6 +39,10 @@ FrameMetaPtr::FrameMetaPtr( int pipeId, int frameId )
     : _pipeId( pipeId )
     , _frameId( frameId )
 {
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
+
     if( pipeId >= FRAME_META_MAX_PIPES ) {
 	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << "Requesting more than " << FRAME_META_MAX_PIPES << " CUDA pipelines."
@@ -61,7 +65,7 @@ FrameMetaPtr::FrameMetaPtr( int pipeId, int frameId )
     POP_CUDA_FATAL_TEST( err, "Could not recover the symbol address for FrameMetas" );
 }
 
-#define GET_OFFSET( cond, val ) \
+#define HOST_DEVICE_TRANSFER_CASE( cond, val ) \
     case cond: \
         offset = (intptr_t)&frame_meta[my_meta].val - (intptr_t)frame_meta; \
         break;
@@ -69,19 +73,22 @@ FrameMetaPtr::FrameMetaPtr( int pipeId, int frameId )
 __host__
 void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
 {
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
-    GET_OFFSET( Hysteresis_block_counter, hysteresis_block_counter )
-    GET_OFFSET( Connect_component_block_counter, connect_component_block_counter )
-    GET_OFFSET( Ring_counter, ring_counter )
-    GET_OFFSET( Ring_counter_max, ring_counter_max )
-    GET_OFFSET( Identification_resct, identification_resct )
+    HOST_DEVICE_TRANSFER_CASE( Hysteresis_block_counter, hysteresis_block_counter )
+    HOST_DEVICE_TRANSFER_CASE( Connect_component_block_counter, connect_component_block_counter )
+    HOST_DEVICE_TRANSFER_CASE( Ring_counter, ring_counter )
+    HOST_DEVICE_TRANSFER_CASE( Ring_counter_max, ring_counter_max )
+    HOST_DEVICE_TRANSFER_CASE( Identification_resct, identification_resct )
 #ifndef NDEBUG
-    GET_OFFSET( Offset_tester, offset_tester )
+    HOST_DEVICE_TRANSFER_CASE( Offset_tester, offset_tester )
 #endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    GET_OFFSET( Num_nearby_points, num_nearby_points )
+    HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
 #endif
     case Identification_result:
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
@@ -108,10 +115,13 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
 __host__
 void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
 {
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
-    GET_OFFSET( Identification_result, identification_result )
+    HOST_DEVICE_TRANSFER_CASE( Identification_result, identification_result )
     case Hysteresis_block_counter:
     case Connect_component_block_counter:
     case Ring_counter:
@@ -147,19 +157,22 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
 __host__
 void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
 {
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
-    GET_OFFSET( Hysteresis_block_counter, hysteresis_block_counter )
-    GET_OFFSET( Connect_component_block_counter, connect_component_block_counter )
-    GET_OFFSET( Ring_counter, ring_counter )
-    GET_OFFSET( Ring_counter_max, ring_counter_max )
-    GET_OFFSET( Identification_resct, identification_resct )
+    HOST_DEVICE_TRANSFER_CASE( Hysteresis_block_counter, hysteresis_block_counter )
+    HOST_DEVICE_TRANSFER_CASE( Connect_component_block_counter, connect_component_block_counter )
+    HOST_DEVICE_TRANSFER_CASE( Ring_counter, ring_counter )
+    HOST_DEVICE_TRANSFER_CASE( Ring_counter_max, ring_counter_max )
+    HOST_DEVICE_TRANSFER_CASE( Identification_resct, identification_resct )
 #ifndef NDEBUG
-    GET_OFFSET( Offset_tester, offset_tester )
+    HOST_DEVICE_TRANSFER_CASE( Offset_tester, offset_tester )
 #endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    GET_OFFSET( Num_nearby_points, num_nearby_points )
+    HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
 #endif
     case Identification_result:
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
@@ -180,16 +193,24 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
 				     offset,
 				     cudaMemcpyDeviceToHost,
 				     stream );
+#ifndef NDEBUG
+    if( err != cudaSuccess ) {
+        std::cerr << "cudaMemcpyFromSymbolAsync failed for case " << e << std::endl;
+    }
+#endif
     POP_CUDA_FATAL_TEST( err, "Could not copy int variable from device symbol: " );
 }
 
 __host__
 void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream )
 {
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
-    GET_OFFSET( Identification_result, identification_result )
+    HOST_DEVICE_TRANSFER_CASE( Identification_result, identification_result )
     case Hysteresis_block_counter:
     case Connect_component_block_counter:
     case Ring_counter:
@@ -222,26 +243,30 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream 
     POP_CUDA_FATAL_TEST( err, "Could not copy float variable from device symbol: " );
 }
 
-#define GET_REFERENCE( int, name ) \
+#define OFFSET_GETTER_FUNCTION( type, name ) \
     __device__ \
-    int& FramMetaPtr::name() { \
+    type& FrameMetaPtr::name() { \
         const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId; \
         return frame_meta[my_meta].name; \
     } \
+    \
     __device__ \
-    const int& FramMetaPtr::name() const { \
+    const type& FrameMetaPtr::name() const { \
         const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId; \
         return frame_meta[my_meta].name; \
     }
 
-#define GET_REFERENCE( int, hysteresis_block_counter )
-#define GET_REFERENCE( int, connect_component_block_counter )
-#define GET_REFERENCE( int, ring_counter )
-#define GET_REFERENCE( int, ring_counter_max )
-#define GET_REFERENCE( float, identification_result )
-#define GET_REFERENCE( int, identification_resct )
+OFFSET_GETTER_FUNCTION( int,   hysteresis_block_counter )
+OFFSET_GETTER_FUNCTION( int,   connect_component_block_counter )
+OFFSET_GETTER_FUNCTION( int,   ring_counter )
+OFFSET_GETTER_FUNCTION( int,   ring_counter_max )
+OFFSET_GETTER_FUNCTION( float, identification_result )
+OFFSET_GETTER_FUNCTION( int,   identification_resct )
+#ifndef NDEBUG
+OFFSET_GETTER_FUNCTION( int,   offset_tester )
+#endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
-#define GET_REFERENCE( int, num_nearby_points )
+OFFSET_GETTER_FUNCTION( int,   num_nearby_points )
 #endif
 
 #ifndef NDEBUG
@@ -256,6 +281,9 @@ void offset_setter( FrameMetaPtr meta )
 __host__
 void FrameMetaPtr::testOffset( cudaStream_t stream )
 {
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
     std::cerr << "Enter " << __FUNCTION__ << std::endl;
     std::cerr << "symbol address is " << std::hex << (intptr_t)_d_symbol_ptr
 	      << std::dec  << std::endl;

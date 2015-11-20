@@ -51,30 +51,22 @@ struct FrameMetaPtr
     __host__
     void fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream );
 
-    __device__
-    int&   hysteresis_block_counter();
-    __device__
-    int&   connect_component_block_counter();
-    __device__
-    int&   ring_counter();
-    __device__
-    int&   ring_counter_max();
-    __device__
-    float& identification_result();
-    __device__
-    int&   identification_resct();
-    __device__
-    const int&   hysteresis_block_counter() const;
-    __device__
-    const int&   connect_component_block_counter() const;
-    __device__
-    const int&   ring_counter() const;
-    __device__
-    const int&   ring_counter_max() const;
-    __device__
-    const float& identification_result() const;
-    __device__
-    const int&   identification_resct() const;
+#define OFFSET_GETTER_HEADER( type, name ) \
+    __device__ type& name(); \
+    __device__ const type& name() const;
+
+    OFFSET_GETTER_HEADER( int, hysteresis_block_counter )
+    OFFSET_GETTER_HEADER( int, connect_component_block_counter )
+    OFFSET_GETTER_HEADER( int, ring_counter )
+    OFFSET_GETTER_HEADER( int, ring_counter_max )
+    OFFSET_GETTER_HEADER( float, identification_result )
+    OFFSET_GETTER_HEADER( int, identification_resct )
+#ifndef NDEBUG
+    OFFSET_GETTER_HEADER( int, offset_tester )
+#endif
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    OFFSET_GETTER_HEADER( int, num_nearby_points )
+#endif
 
 #ifndef NDEBUG
     /* Function to test whether the offsets computed are reasonable.
@@ -83,10 +75,6 @@ struct FrameMetaPtr
     __host__
     void testOffset( cudaStream_t stream );
 #endif // NDEBUG
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    __device__
-    const int&   num_nearby_points() const;
-#endif
 
 private:
     // FrameMetaPtr( );

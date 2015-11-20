@@ -580,15 +580,15 @@ double TagPipe::idCostFunction( int                                        level
                                                 neighbourSize,
                                                 gridNSample,
                                                 bestPoint,
-                                                bestHomography );,
+                                                bestHomography );
     if( avg < FLT_MAX ) {
         bestPointOut.x() = bestPoint.x;
         bestPointOut.y() = bestPoint.y;
 
+    #pragma unroll
+    for( int i=0; i<3; i++ ) {
         #pragma unroll
-        for( int i=0; i<3; i++ ) {
-            #pragma unroll
-            for( int j=0; j<3; j++ ) {
+        for( int j=0; j<3; j++ ) {
                 bestHomographyOut(i,j) = bestHomography(i,j);
             }
         }

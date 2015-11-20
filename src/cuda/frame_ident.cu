@@ -463,6 +463,9 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     _meta.toDevice( Num_nearby_points, 0, _stream );
 #endif
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
 
     const size_t g = gridNSample * gridNSample;
     if( g*sizeof(identification::NearbyPoint) > getNearbyPointBufferByteSize() ) {
@@ -478,7 +481,13 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
     }
 
     clearSignalBuffer( );
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
     uploadCuts( vCuts );
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
 
     /* reusing various image-sized plane */
     identification::NearbyPoint* point_buffer;
@@ -522,6 +531,9 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
           point_buffer,
           cut_buffer,
           signal_buffer );
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
 
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     int aNumber;
@@ -552,6 +564,9 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
             <<<grid,block,0,_stream>>>
             ( point_buffer, gridSquare );
     }
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
 
     /* When this kernel finishes, the best point does not
      * exist or it is stored in point_buffer[0]
@@ -561,7 +576,12 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
                                    point_buffer,
                                    sizeof(popart::identification::NearbyPoint),
                                    _stream );
+#ifndef __CUDA_ARCH__
 #warning this copy function is blocking
+#endif
+#ifndef NDEBUG
+    POP_SYNC_CHK;
+#endif
 
     cudaStreamSynchronize( _stream );
     if( point.readable ) {
