@@ -1125,7 +1125,8 @@ bool imageCenterOptimizationGlob(
                          gridNSample,   // in (size_t)
                          GRID );        // in (enum)
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
-        std::cerr << "host number of nearby points" << std::endl;
+    	std::cerr << "host tries center (" << center.x() << "," << center.y() << ")" << std::endl
+                  << "host number of nearby points: " << nearbyPoints.size() << std::endl;
 #endif
 
         minRes = std::numeric_limits<double>::max();
@@ -1159,9 +1160,6 @@ bool imageCenterOptimizationGlob(
                 // C. Compute the 1D rectified signals of vCuts image cut based on the 
                 // transformation mTempHomography.
                 res = costFunctionGlob(mTempHomography, vCuts, src, readable );
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-                cerr << "host cost function returns " << res << ", readable " << readable << endl;
-#endif
             }
       
             // If at least one image cut has been properly read
@@ -1189,6 +1187,7 @@ bool imageCenterOptimizationGlob(
     }
 
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    std::cerr << std::setprecision(4);
     std::cerr << "host optimal point is (" << optimalPoint.x() << "," << optimalPoint.y() << ")" << std::endl;
     std::cerr << "dev  optimal point is (" << cuda_optimalPoint.x() << "," << cuda_optimalPoint.y() << ")" << std::endl;
     std::cerr << "host optimal homography is (" << optimalHomography << std::endl;

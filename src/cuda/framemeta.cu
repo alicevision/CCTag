@@ -39,10 +39,6 @@ FrameMetaPtr::FrameMetaPtr( int pipeId, int frameId )
     : _pipeId( pipeId )
     , _frameId( frameId )
 {
-#ifndef NDEBUG
-    POP_SYNC_CHK;
-#endif
-
     if( pipeId >= FRAME_META_MAX_PIPES ) {
 	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << "Requesting more than " << FRAME_META_MAX_PIPES << " CUDA pipelines."
@@ -73,9 +69,6 @@ FrameMetaPtr::FrameMetaPtr( int pipeId, int frameId )
 __host__
 void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
 {
-#ifndef NDEBUG
-    POP_SYNC_CHK;
-#endif
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
@@ -115,9 +108,6 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
 __host__
 void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
 {
-#ifndef NDEBUG
-    POP_SYNC_CHK;
-#endif
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
@@ -157,9 +147,6 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
 __host__
 void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
 {
-#ifndef NDEBUG
-    POP_SYNC_CHK;
-#endif
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
@@ -193,20 +180,12 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
 				     offset,
 				     cudaMemcpyDeviceToHost,
 				     stream );
-#ifndef NDEBUG
-    if( err != cudaSuccess ) {
-        std::cerr << "cudaMemcpyFromSymbolAsync failed for case " << e << std::endl;
-    }
-#endif
     POP_CUDA_FATAL_TEST( err, "Could not copy int variable from device symbol: " );
 }
 
 __host__
 void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream )
 {
-#ifndef NDEBUG
-    POP_SYNC_CHK;
-#endif
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
@@ -281,9 +260,6 @@ void offset_setter( FrameMetaPtr meta )
 __host__
 void FrameMetaPtr::testOffset( cudaStream_t stream )
 {
-#ifndef NDEBUG
-    POP_SYNC_CHK;
-#endif
     std::cerr << "Enter " << __FUNCTION__ << std::endl;
     std::cerr << "symbol address is " << std::hex << (intptr_t)_d_symbol_ptr
 	      << std::dec  << std::endl;
