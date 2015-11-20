@@ -26,6 +26,9 @@ struct FrameMeta
 #ifndef NDEBUG
     int   offset_tester;
 #endif
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    int   num_nearby_points;
+#endif
 };
 
 __device__
@@ -58,31 +61,27 @@ FrameMetaPtr::FrameMetaPtr( int pipeId, int frameId )
     POP_CUDA_FATAL_TEST( err, "Could not recover the symbol address for FrameMetas" );
 }
 
+#define GET_OFFSET( cond, val ) \
+    case cond: \
+        offset = (intptr_t)&frame_meta[my_meta].val - (intptr_t)frame_meta; \
+        break;
+
 __host__
 void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
 {
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
-    case Hysteresis_block_counter:
-    	offset = (intptr_t)&frame_meta[my_meta].hysteresis_block_counter - (intptr_t)frame_meta;
-	break;
-    case Connect_component_block_counter:
-    	offset = (intptr_t)&frame_meta[my_meta].connect_component_block_counter - (intptr_t)frame_meta;
-	break;
-    case Ring_counter:
-    	offset = (intptr_t)&frame_meta[my_meta].ring_counter - (intptr_t)frame_meta;
-	break;
-    case Ring_counter_max:
-    	offset = (intptr_t)&frame_meta[my_meta].ring_counter_max - (intptr_t)frame_meta;
-	break;
-    case Identification_resct:
-    	offset = (intptr_t)&frame_meta[my_meta].identification_resct - (intptr_t)frame_meta;
-	break;
+    GET_OFFSET( Hysteresis_block_counter, hysteresis_block_counter )
+    GET_OFFSET( Connect_component_block_counter, connect_component_block_counter )
+    GET_OFFSET( Ring_counter, ring_counter )
+    GET_OFFSET( Ring_counter_max, ring_counter_max )
+    GET_OFFSET( Identification_resct, identification_resct )
 #ifndef NDEBUG
-    case Offset_tester:
-    	offset = (intptr_t)&frame_meta[my_meta].offset_tester - (intptr_t)frame_meta;
-	break;
+    GET_OFFSET( Offset_tester, offset_tester )
+#endif
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    GET_OFFSET( Num_nearby_points, num_nearby_points )
 #endif
     case Identification_result:
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
@@ -112,9 +111,7 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
-    case Identification_result:
-    	offset = (intptr_t)&frame_meta[my_meta].identification_result - (intptr_t)frame_meta;
-	break;
+    GET_OFFSET( Identification_result, identification_result )
     case Hysteresis_block_counter:
     case Connect_component_block_counter:
     case Ring_counter:
@@ -122,6 +119,9 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
     case Identification_resct:
 #ifndef NDEBUG
     case Offset_tester:
+#endif
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    case Num_nearby_points:
 #endif
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
@@ -150,26 +150,16 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
-    case Hysteresis_block_counter:
-    	offset = (intptr_t)&frame_meta[my_meta].hysteresis_block_counter - (intptr_t)frame_meta;
-	break;
-    case Connect_component_block_counter:
-    	offset = (intptr_t)&frame_meta[my_meta].connect_component_block_counter - (intptr_t)frame_meta;
-	break;
-    case Ring_counter:
-    	offset = (intptr_t)&frame_meta[my_meta].ring_counter - (intptr_t)frame_meta;
-	break;
-    case Ring_counter_max:
-    	offset = (intptr_t)&frame_meta[my_meta].ring_counter_max - (intptr_t)frame_meta;
-	break;
-    case Identification_resct:
-    	offset = (intptr_t)&frame_meta[my_meta].identification_resct - (intptr_t)frame_meta;
-	break;
+    GET_OFFSET( Hysteresis_block_counter, hysteresis_block_counter )
+    GET_OFFSET( Connect_component_block_counter, connect_component_block_counter )
+    GET_OFFSET( Ring_counter, ring_counter )
+    GET_OFFSET( Ring_counter_max, ring_counter_max )
+    GET_OFFSET( Identification_resct, identification_resct )
 #ifndef NDEBUG
-    case Offset_tester:
-    	offset = (intptr_t)&frame_meta[my_meta].offset_tester - (intptr_t)frame_meta;
-	std::cerr << "Trying to read value from offset " << offset << std::endl;
-	break;
+    GET_OFFSET( Offset_tester, offset_tester )
+#endif
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    GET_OFFSET( Num_nearby_points, num_nearby_points )
 #endif
     case Identification_result:
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
@@ -199,9 +189,7 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream 
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
-    case Identification_result:
-    	offset = (intptr_t)&frame_meta[my_meta].identification_result - (intptr_t)frame_meta;
-	break;
+    GET_OFFSET( Identification_result, identification_result )
     case Hysteresis_block_counter:
     case Connect_component_block_counter:
     case Ring_counter:
@@ -210,16 +198,19 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream 
 #ifndef NDEBUG
     case Offset_tester:
 #endif
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    case Num_nearby_points:
+#endif
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
 		  << "Trying to fetch a float to a FrameMeta::<int>" << std::endl
 		  << "Type is incorrect." << std::endl;
-	exit( -1 );
+        exit( -1 );
     default :
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
 		  << "Trying to fetch an unknown FrameMeta element." << std::endl;
-	exit( -1 );
+        exit( -1 );
     }
     cudaError_t err;
     err = cudaMemcpyFromSymbolAsync( &val,
@@ -231,66 +222,27 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream 
     POP_CUDA_FATAL_TEST( err, "Could not copy float variable from device symbol: " );
 }
 
-__device__
-int&   FrameMetaPtr::hysteresis_block_counter() {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].hysteresis_block_counter;
-}
-__device__
-int&   FrameMetaPtr::connect_component_block_counter() {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].connect_component_block_counter;
-}
-__device__
-int&   FrameMetaPtr::ring_counter() {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].ring_counter;
-}
-__device__
-int&   FrameMetaPtr::ring_counter_max() {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].ring_counter_max;
-}
-__device__
-float& FrameMetaPtr::identification_result() {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].identification_result;
-}
-__device__
-int&   FrameMetaPtr::identification_resct() {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].identification_resct;
-}
-__device__
-const int&   FrameMetaPtr::hysteresis_block_counter() const {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].hysteresis_block_counter;
-}
-__device__
-const int&   FrameMetaPtr::connect_component_block_counter() const {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].connect_component_block_counter;
-}
-__device__
-const int&   FrameMetaPtr::ring_counter() const {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].ring_counter;
-}
-__device__
-const int&   FrameMetaPtr::ring_counter_max() const {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].ring_counter_max;
-}
-__device__
-const float& FrameMetaPtr::identification_result() const {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].identification_result;
-}
-__device__
-const int&   FrameMetaPtr::identification_resct() const {
-    const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
-    return frame_meta[my_meta].identification_resct;
-}
+#define GET_REFERENCE( int, name ) \
+    __device__ \
+    int& FramMetaPtr::name() { \
+        const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId; \
+        return frame_meta[my_meta].name; \
+    } \
+    __device__ \
+    const int& FramMetaPtr::name() const { \
+        const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId; \
+        return frame_meta[my_meta].name; \
+    }
+
+#define GET_REFERENCE( int, hysteresis_block_counter )
+#define GET_REFERENCE( int, connect_component_block_counter )
+#define GET_REFERENCE( int, ring_counter )
+#define GET_REFERENCE( int, ring_counter_max )
+#define GET_REFERENCE( float, identification_result )
+#define GET_REFERENCE( int, identification_resct )
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+#define GET_REFERENCE( int, num_nearby_points )
+#endif
 
 #ifndef NDEBUG
 __global__

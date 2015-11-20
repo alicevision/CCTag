@@ -18,6 +18,9 @@ enum FrameMetaEnum
 #ifndef NDEBUG
     Offset_tester,                    // int
 #endif
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    Num_nearby_points,                // int
+#endif
     End_indicator
 };
 
@@ -80,6 +83,10 @@ struct FrameMetaPtr
     __host__
     void testOffset( cudaStream_t stream );
 #endif // NDEBUG
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    __device__
+    const int&   num_nearby_points() const;
+#endif
 
 private:
     // FrameMetaPtr( );

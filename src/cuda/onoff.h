@@ -45,7 +45,7 @@
  * param.useCuda == false is broken in the optim_identify_gpu
  * branch).
  */
-#undef CPU_GPU_COST_FUNCTION_COMPARE
+#define CPU_GPU_COST_FUNCTION_COMPARE
 
 /* CUB functions always take a last parameters true or false.
  * If it is true, they run synchronously and print some debug

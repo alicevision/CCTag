@@ -1124,6 +1124,9 @@ bool imageCenterOptimizationGlob(
                          neighbourSize, // in (float)
                          gridNSample,   // in (size_t)
                          GRID );        // in (enum)
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+        std::cerr << "host number of nearby points" << std::endl;
+#endif
 
         minRes = std::numeric_limits<double>::max();
         BoundedMatrix3x3d mTempHomography;
@@ -1185,6 +1188,12 @@ bool imageCenterOptimizationGlob(
         } // for(point : nearbyPoints)
     }
 
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    std::cerr << "host optimal point is (" << optimalPoint.x() << "," << optimalPoint.y() << ")" << std::endl;
+    std::cerr << "dev  optimal point is (" << cuda_optimalPoint.x() << "," << cuda_optimalPoint.y() << ")" << std::endl;
+    std::cerr << "host optimal homography is (" << optimalHomography << std::endl;
+    std::cerr << "dev  optimal homography is (" << cuda_optimalHomography << std::endl;
+#endif
     center = optimalPoint;
     mHomography = optimalHomography;
     

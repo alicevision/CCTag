@@ -276,6 +276,10 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
     if( i >= gridNSample ) return;
     if( j >= gridNSample ) return;
 
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    atomicAdd( &meta.num_nearby_points(), 1);
+#endif
+
     int idx = j * gridNSample + i;
 
     float2 point = make_float2( center.x - halfWidth + i*stepSize,
@@ -456,6 +460,10 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
                               float2&                             bestPointOut,
                               popart::geometry::matrix3x3&        bestHomographyOut )
 {
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    _meta.toDevice( Num_nearby_points, 0, _stream );
+#endif
+
     const size_t g = gridNSample * gridNSample;
     if( g*sizeof(identification::NearbyPoint) > getNearbyPointBufferByteSize() ) {
         cerr << __FILE__ << ":" << __LINE__
@@ -514,6 +522,13 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
           point_buffer,
           cut_buffer,
           signal_buffer );
+
+#ifdef CPU_GPU_COST_FUNCTION_COMPARE
+    int aNumber;
+    _meta.fromDevice( Num_nearby_points, aNumber, _stream );
+    cudaStreamSynchronize( _stream );
+    std::cerr << "Number of nearby points on device: " << aNumber << std::endl;
+#endif
 
     /* We search for the minimum of gridNSample x gridNSample
      * nearby points. Default for gridNSample is 5.
