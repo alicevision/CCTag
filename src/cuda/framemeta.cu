@@ -23,9 +23,6 @@ struct FrameMeta
     int   ring_counter_max;
     float identification_result;
     int   identification_resct;
-#ifndef NDEBUG
-    int   offset_tester;
-#endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     int   num_nearby_points;
 #endif
@@ -77,9 +74,6 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
     HOST_DEVICE_TRANSFER_CASE( Ring_counter, ring_counter )
     HOST_DEVICE_TRANSFER_CASE( Ring_counter_max, ring_counter_max )
     HOST_DEVICE_TRANSFER_CASE( Identification_resct, identification_resct )
-#ifndef NDEBUG
-    HOST_DEVICE_TRANSFER_CASE( Offset_tester, offset_tester )
-#endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
 #endif
@@ -117,9 +111,6 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
     case Ring_counter:
     case Ring_counter_max:
     case Identification_resct:
-#ifndef NDEBUG
-    case Offset_tester:
-#endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     case Num_nearby_points:
 #endif
@@ -155,9 +146,6 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
     HOST_DEVICE_TRANSFER_CASE( Ring_counter, ring_counter )
     HOST_DEVICE_TRANSFER_CASE( Ring_counter_max, ring_counter_max )
     HOST_DEVICE_TRANSFER_CASE( Identification_resct, identification_resct )
-#ifndef NDEBUG
-    HOST_DEVICE_TRANSFER_CASE( Offset_tester, offset_tester )
-#endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
 #endif
@@ -195,9 +183,6 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream 
     case Ring_counter:
     case Ring_counter_max:
     case Identification_resct:
-#ifndef NDEBUG
-    case Offset_tester:
-#endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     case Num_nearby_points:
 #endif
@@ -241,42 +226,9 @@ OFFSET_GETTER_FUNCTION( int,   ring_counter )
 OFFSET_GETTER_FUNCTION( int,   ring_counter_max )
 OFFSET_GETTER_FUNCTION( float, identification_result )
 OFFSET_GETTER_FUNCTION( int,   identification_resct )
-#ifndef NDEBUG
-OFFSET_GETTER_FUNCTION( int,   offset_tester )
-#endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
 OFFSET_GETTER_FUNCTION( int,   num_nearby_points )
 #endif
-
-#ifndef NDEBUG
-__global__
-void offset_setter( FrameMetaPtr meta )
-{
-    const size_t my_meta = meta._pipeId*FRAME_META_MAX_LEVELS+meta._frameId;
-    int offset = (intptr_t)&frame_meta[my_meta].offset_tester - (intptr_t)frame_meta;
-    frame_meta[my_meta].offset_tester = offset;
-}
-
-__host__
-void FrameMetaPtr::testOffset( cudaStream_t stream )
-{
-    std::cerr << "Enter " << __FUNCTION__ << std::endl;
-    std::cerr << "symbol address is " << std::hex << (intptr_t)_d_symbol_ptr
-	      << std::dec  << std::endl;
-    offset_setter
-        <<<1,1,0,stream>>>
-	( *this );
-    int offset_value;
-    fromDevice( Offset_tester, offset_value, stream );
-    cudaStreamSynchronize( stream );
-    std::cerr << "OFFSET TESTING" << std::endl
-	      << std::endl
-	      << "Offset: " << offset_value << std::endl
-	      << std::endl
-	      << "END OFFSET TESTING" << std::endl;
-    std::cerr << "Leave " << __FUNCTION__ << std::endl;
-}
-#endif // NDEBUG
 
 }; // namespace popart
 

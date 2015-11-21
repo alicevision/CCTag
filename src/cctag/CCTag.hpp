@@ -106,7 +106,7 @@ public:
   }
 
 #ifndef NDEBUG
-  void print( std::ostream& ostr ) const;
+  void printTag( std::ostream& ostr ) const;
 #endif
 
   void scale(const double s);

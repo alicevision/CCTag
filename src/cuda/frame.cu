@@ -62,10 +62,6 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
                            0,
                            _d_plane.step * _d_plane.rows,
                            _stream );
-
-#ifndef NDEBUG
-    _meta.testOffset( _stream );
-#endif
 }
 
 Frame::~Frame( )

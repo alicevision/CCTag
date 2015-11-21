@@ -15,9 +15,6 @@ enum FrameMetaEnum
     Ring_counter_max,                 // int
     Identification_result,            // float
     Identification_resct,             // int
-#ifndef NDEBUG
-    Offset_tester,                    // int
-#endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     Num_nearby_points,                // int
 #endif
@@ -61,22 +58,13 @@ struct FrameMetaPtr
     OFFSET_GETTER_HEADER( int, ring_counter_max )
     OFFSET_GETTER_HEADER( float, identification_result )
     OFFSET_GETTER_HEADER( int, identification_resct )
-#ifndef NDEBUG
-    OFFSET_GETTER_HEADER( int, offset_tester )
-#endif
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     OFFSET_GETTER_HEADER( int, num_nearby_points )
 #endif
 
-#ifndef NDEBUG
-    /* Function to test whether the offsets computed are reasonable.
-     * Read from device and print to cerr.
-     */
-    __host__
-    void testOffset( cudaStream_t stream );
-#endif // NDEBUG
-
 private:
+    // These default functions are actually needed for automatic
+    // host-device copying:
     // FrameMetaPtr( );
     // FrameMetaPtr( const FrameMetaPtr& );
     // FrameMetaPtr& operator=( const FrameMetaPtr& );

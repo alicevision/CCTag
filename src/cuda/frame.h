@@ -24,7 +24,7 @@
  * is definitely not big enough for finding all edge points in a 1K
  * image.
  */
-#define EDGE_POINT_MAX                   100000
+#define EDGE_POINT_MAX                  1000000
 
 #define EDGE_LINKING_MAX_EDGE_LENGTH        100
 #define EDGE_LINKING_MAX_ARCS             10000

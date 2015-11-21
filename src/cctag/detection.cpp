@@ -831,20 +831,13 @@ void cctagDetection(CCTag::List& markers,
         {
             CCTag & cctag = *it;
 
-#ifndef NDEBUG
-            std::cerr << "Marker before:" << std::endl; 
-            it->print( std::cerr );
-#endif
             const int detected = cctag::identification::identify(
                 cctag,
                 bank.getMarkers(),
                 imagePyramid.getLevel(0)->getSrc(),
                 pipe1,
                 params );
-#ifndef NDEBUG
-            std::cerr << "Marker after:" << std::endl; 
-            it->print( std::cerr );
-#endif
+            // it->print( std::cerr ); // print marker info after identify
       
             cctag.setStatus(detected);
             ++it;
