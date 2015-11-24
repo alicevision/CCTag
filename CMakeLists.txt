@@ -119,10 +119,12 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_definitions(${OpenCV_DEFINITIONS})
 
 # FIND OPTPP
-find_package(OPTPP REQUIRED)
-include_directories(${OPTPP_INCLUDE_DIRS})
-# link_directories(${OPTPP_LIB_DIR})
-add_definitions(${OPTPP_DEFINITIONS})
+find_package(OPTPP)
+if(OPTPP_FOUND)
+  include_directories(${OPTPP_INCLUDE_DIRS})
+  # link_directories(${OPTPP_LIB_DIR})
+  add_definitions(${OPTPP_DEFINITIONS})
+endif()
 
 # FIND CERES
 find_package(Ceres REQUIRED)
