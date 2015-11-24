@@ -11,7 +11,9 @@ project( CCTag )
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
 
-include("${MACHINE_NAME}.cmake")
+if(EXISTS "${MACHINE_NAME}.cmake")
+  include("${MACHINE_NAME}.cmake")
+endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -pg")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
