@@ -13,6 +13,7 @@
 
 #include <opencv2/core/core.hpp>
 
+namespace cctag {
 namespace openMVG {
 namespace image {
 
@@ -498,5 +499,6 @@ private:
 
 } // namespace image
 } // namespace openMVG
+} // namespace cctag
 
 #endif  // OPENMVG_IMAGE_SAMPLE_HPP
