@@ -159,6 +159,7 @@ find_package(OpenMP REQUIRED)
 
 # FIND GSL
 find_package(GSL REQUIRED)
+link_directories(${GSL_LINK_DIRECTORIES})
 
 add_subdirectory(src)
 
