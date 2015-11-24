@@ -92,6 +92,8 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
 /*************************************************************/
 int main(int argc, char** argv)
 {
+  CmdLine cmdline;
+
   if( cmdline.parse( argc, argv ) == false ) {
     cmdline.usage( argv[0] );
     return EXIT_FAILURE;

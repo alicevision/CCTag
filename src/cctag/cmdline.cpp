@@ -3,13 +3,12 @@
 #include <string>
 #include "cmdline.hpp"
 
-using namespace std;
+namespace cctag {
 
 #define no_argument       0 
 #define required_argument 1 
 #define optional_argument 2
 
-CmdLine cmdline;
 
 static const struct option longopts[] =
 {
@@ -75,26 +74,26 @@ bool CmdLine::parse( int argc, char* argv[] )
 
 void CmdLine::print( const char* const argv0 )
 {
-    cout << "You called " << argv0 << " with:" << endl
-         << "    --input     " << _filename << endl
-         << "    --nbrings     " << _nCrowns << endl
-         << "    --bank      " << _cctagBankFilename << endl
-         << "    --params    " << _paramsFilename << endl
-         << "    --output    " << _outputFolderName << endl;
+    std::cout << "You called " << argv0 << " with:" << std::endl
+         << "    --input     " << _filename << std::endl
+         << "    --nbrings     " << _nCrowns << std::endl
+         << "    --bank      " << _cctagBankFilename << std::endl
+         << "    --params    " << _paramsFilename << std::endl
+         << "    --output    " << _outputFolderName << std::endl;
 #ifdef WITH_CUDA
     if( _switchSync )
-        cout << "    --sync " << endl;
+        std::cout << "    --sync " << std::endl;
     if( _debugDir != "" )
-        cout << "    --debug-dir " << _debugDir << endl;
+        std::cout << "    --debug-dir " << _debugDir << std::endl;
     if( _useCuda )
-        cout << "    --use-cuda " << endl;
+        std::cout << "    --use-cuda " << std::endl;
 #endif
-    cout << endl;
+    std::cout << std::endl;
 }
 
 void CmdLine::usage( const char* const argv0 )
 {
-  cerr << "Usage: " << argv0 << "<parameters>\n"
+  std::cerr << "Usage: " << argv0 << "<parameters>\n"
           "    Mandatory:\n"
           "           [-i|--input] <imgpath>\n"
           "           [-n|--nbrings] <nbrings>\n"
@@ -114,6 +113,8 @@ void CmdLine::usage( const char* const argv0 )
           "    --sync     - CUDA debug option, run all CUDA ops synchronously\n"
           "    <debugdir> - path storing image to debug intermediate GPU results\n"
           "    --use-cuda - select GPU code instead of CPU code\n"
-          "\n" << endl;
+          "\n" << std::endl;
+}
+
 }
 
