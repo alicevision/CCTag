@@ -1,7 +1,9 @@
 #include "params.hpp"
 
-namespace cctag
-{
+#include <iostream>
+
+namespace cctag {
+
 Parameters::Parameters(const std::size_t nCrowns)
     : _cannyThrLow( kDefaultCannyThrLow )
     , _cannyThrHigh( kDefaultCannyThrHigh )
@@ -63,6 +65,9 @@ void Parameters::setUseCuda( bool val )
 {
 #ifdef WITH_CUDA
     _useCuda = val;
+#else
+    if(val)
+        std::cerr << "Warning: CCTag library is built without CUDA support, so we can't enable CUDA." << std::endl;
 #endif // WITH_CUDA
 }
 
