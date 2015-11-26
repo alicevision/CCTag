@@ -343,46 +343,6 @@ void dp_call_01_gradient_descent( DevEdgeList<int2>        edgeCoords, // input
 }
 
 __global__
-void dp_call_02_construct_line( DevEdgeList<int2>        edgeCoords, // input
-                cv::cuda::PtrStepSzb     edgeImage, // input
-                cv::cuda::PtrStepSz16s   dx, // input
-                cv::cuda::PtrStepSz16s   dy, // input
-                DevEdgeList<TriplePoint> chainedEdgeCoords, // output
-                cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
-                DevEdgeList<int>         seedIndices, // output
-                DevEdgeList<int>         seedIndices2, // output
-                cv::cuda::PtrStepSzb     intermediate, // buffer
-                const uint32_t           param_nmax, // input param
-                const int32_t            param_thrGradient, // input param
-                const size_t             param_numCrowns, // input param
-                const float              param_ratioVoting, // input param
-                const int                param_minVotesToSelectCandidate ) // input param
-{
-    int listsize = chainedEdgeCoords.getSize();
-
-    if( listsize == 0 ) return;
-
-    dim3           block;
-    dim3           grid;
-    block.x = 32;
-    block.y = 1;
-    block.z = 1;
-    grid.x  = grid_divide( listsize, 32 );
-    grid.y  = 1;
-    grid.z  = 1;
-
-    seedIndices.setSize( 0 );
-
-    vote::construct_line
-        <<<grid,block>>>
-        ( seedIndices,        // output
-          chainedEdgeCoords,  // input
-          edgepointIndexTable,  // input
-          param_numCrowns,          // input
-          param_ratioVoting );    // input
-}
-
-__global__
 void dp_call_04_eval_chosen( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     edgeImage, // input
                 cv::cuda::PtrStepSz16s   dx, // input
@@ -484,29 +444,6 @@ __host__
 bool Frame::applyDesc1( const cctag::Parameters& params )
 {
     descent::dp_call_01_gradient_descent
-        <<<1,1,0,_stream>>>
-        ( _vote._all_edgecoords.dev,      // input
-          _d_edges,                       // input
-          _d_dx,                          // input
-          _d_dy,                          // input
-          _vote._chained_edgecoords.dev,  // output
-          _vote._d_edgepoint_index_table, // output
-          _vote._seed_indices.dev,        // output
-          _vote._seed_indices_2.dev,      // buffer
-          cv::cuda::PtrStepSzb(_d_intermediate), // buffer
-          params._distSearch,             // input param
-          params._thrGradientMagInVote,   // input param
-          params._nCrowns,                // input param
-          params._ratioVoting,            // input param
-          params._minVotesToSelectCandidate ); // input param
-    POP_CHK_CALL_IFSYNC;
-    return true;
-}
-
-__host__
-bool Frame::applyDesc2( const cctag::Parameters& params )
-{
-    descent::dp_call_02_construct_line
         <<<1,1,0,_stream>>>
         ( _vote._all_edgecoords.dev,      // input
           _d_edges,                       // input

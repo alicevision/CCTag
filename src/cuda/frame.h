@@ -164,8 +164,8 @@ public:
     bool applyDesc0( const cctag::Parameters& param );
 #ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
     bool applyDesc1( const cctag::Parameters& param );
-    bool applyDesc2( const cctag::Parameters& param );
-    // bool applyDesc3( const cctag::Parameters& param ); replaced by applyVoteSortUniqDP
+    // applyDesc2 replaced by applyVoteConstructLine
+    // applyDesc3 replaced by applyVoteSortUniqDP
     bool applyDesc4( const cctag::Parameters& param );
     bool applyDesc5( const cctag::Parameters& param );
     bool applyDesc6( const cctag::Parameters& param );
@@ -176,9 +176,15 @@ public:
     void applyDescDownload( const cctag::Parameters& param );
 
 #ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
+    // implemented in frame_07_vote_line.cu
+    bool applyVoteConstructLine( const cctag::Parameters& params );
+
     // implemented in frame_07_vote_sort_uniq_dp.cu
     bool applyVoteSortUniqDP(   const cctag::Parameters& params );
 #else // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
+    // implemented in frame_07_vote_line.cu
+    bool applyVoteConstructLine( const cctag::Parameters& params );
+
     // implemented in frame_07_vote_sort_uniq_nodp.cu
     // called by applyVote
     bool applyVoteSortUniqNoDP( const cctag::Parameters& params );

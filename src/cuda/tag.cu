@@ -154,8 +154,8 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 #ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
      	success = _frame[i]->applyDesc0(  params );  // async
      	if( success ) success = _frame[i]->applyDesc1(  params );  // async
-     	if( success ) success = _frame[i]->applyDesc2(  params );  // async
-     	if( success ) success = _frame[i]->applyVoteSortUniqDP(  params );  // async
+     	if( success ) success = _frame[i]->applyVoteConstructLine( params );
+     	if( success ) success = _frame[i]->applyVoteSortUniqDP( params );
      	if( success ) success = _frame[i]->applyDesc4(  params );  // async
      	if( success ) success = _frame[i]->applyDesc5(  params );  // async
      	if( success ) success = _frame[i]->applyDesc6(  params );  // async
@@ -197,7 +197,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc0(  params );  // async
 #ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc1(  params );  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc2(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteConstructLine(  params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteSortUniqDP(  params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc4(  params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc5(  params );  // async

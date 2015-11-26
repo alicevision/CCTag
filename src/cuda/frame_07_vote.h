@@ -46,13 +46,6 @@ struct NumVotersIsGreaterEqual
 namespace vote {
 
 __global__
-void construct_line( DevEdgeList<int>             seed_indices,       // output
-                     DevEdgeList<TriplePoint>     chained_edgecoords, // input/output
-                     const cv::cuda::PtrStepSz32s edgepoint_index_table, // input
-                     const size_t                 numCrowns,
-                     const float                  ratioVoting );
-
-__global__
 void eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
                   DevEdgeList<int>         seed_indices        // input
                 );
@@ -68,13 +61,6 @@ struct Voting
     cv::cuda::PtrStepSz32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
 
     void debug_download( const cctag::Parameters& params );
-
-#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
-    // constructLine is called from within the graddesc DP kernel
-#else // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
-    bool constructLine( const cctag::Parameters&     params,
-                        cudaStream_t                 stream );
-#endif // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
 };
 
 #ifndef NDEBUG
