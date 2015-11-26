@@ -366,10 +366,10 @@ bool Frame::applyVoteConstructLine( const cctag::Parameters& params )
     dim3 block( 32, 1, 1 );
     dim3 grid ( grid_divide( listsize, 32 ), 1, 1 );
 
-    POP_CUDA_SET0_ASYNC( _seed_indices.dev.getSizePtr(), stream );
+    POP_CUDA_SET0_ASYNC( _vote._seed_indices.dev.getSizePtr(), _stream );
 
     vote::construct_line
-        <<<grid,block,0,stream>>>
+        <<<grid,block,0,_stream>>>
         ( _vote._seed_indices.dev,        // output
           _vote._chained_edgecoords.dev,  // input
           _vote._d_edgepoint_index_table, // input
