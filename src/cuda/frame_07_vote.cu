@@ -69,12 +69,7 @@ void eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
 
 } // namespace vote
 
-#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
-// this is called in frame_desc.cu by descent::dp_caller
-#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
-#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
-
-#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#ifdef USE_SEPARABLE_COMPILATION
 __host__
 void Frame::applyVote( const cctag::Parameters& )
 {
@@ -82,7 +77,7 @@ void Frame::applyVote( const cctag::Parameters& )
     // descent::dp_caller when USE_SEPARABLE_COMPILATION is
     // used
 }
-#else // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#else // not USE_SEPARABLE_COMPILATION
 __host__
 void Frame::applyVote( const cctag::Parameters& params )
 {
@@ -110,9 +105,10 @@ void Frame::applyVote( const cctag::Parameters& params )
          * value d_num_selected_out from the device before the voting
          * step.
          */
-        POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices_2.host.size,
-                                       _vote._seed_indices_2.dev.getSizePtr(),
-                                       sizeof(int), _stream );
+        _vote._seed_indices_2.copySizeFromDevice( _stream );
+        // POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices_2.host.size,
+        //                                _vote._seed_indices_2.dev.getSizePtr(),
+        //                                sizeof(int), _stream );
         POP_CUDA_SYNC( _stream );
 
         /* Add number of voters to chosen inner points, and
@@ -127,72 +123,28 @@ void Frame::applyVote( const cctag::Parameters& params )
               _vote._seed_indices_2.dev );
         POP_CHK_CALL_IFSYNC;
 
-        NumVotersIsGreaterEqual select_op( params._minVotesToSelectCandidate,
-                                           _vote._chained_edgecoords.dev );
-#ifdef CUB_INIT_CALLS
-	    assist_buffer_sz  = 0;
-        err = cub::DeviceSelect::If( 0,
-                                     assist_buffer_sz,
-                                     _vote._seed_indices_2.dev.ptr,
-                                     _vote._seed_indices.dev.ptr,
-                                     _vote._seed_indices.dev.getSizePtr(),
-                                     _vote._seed_indices_2.host.size,
-                                     select_op,
-                                     _stream,
-                                     DEBUG_CUB_FUNCTIONS );
-
-	if( err != cudaSuccess ) {
-	    std::cerr << "cub::DeviceSelect::If init step failed. Crashing." << std::endl;
-	    std::cerr << "Error message: " << cudaGetErrorString( err ) << std::endl;
-	    exit(-1);
-	}
-	if( assist_buffer_sz >= _d_intermediate.step * _d_intermediate.rows ) {
-            std::cerr << "cub::DeviceSelect::If requires too much intermediate memory. Crashing." << std::endl;
-	    exit( -1 );
-	}
-#else
-	// THIS CODE WORKED BEFORE
-        // safety: SortKeys is allowed to alter assist_buffer_sz
-        assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
-#endif
-
-        /* Filter all chosen inner points that have fewer
-         * voters than required by Parameters.
-         */
-
-        err = cub::DeviceSelect::If( assist_buffer,
-                                     assist_buffer_sz,
-                                     _vote._seed_indices_2.dev.ptr,
-                                     _vote._seed_indices.dev.ptr,
-                                     _vote._seed_indices.dev.getSizePtr(),
-                                     _vote._seed_indices_2.host.size,
-                                     select_op,
-                                     _stream,
-                                     DEBUG_CUB_FUNCTIONS );
-        POP_CHK_CALL_IFSYNC;
-        POP_CUDA_FATAL_TEST( err, "CUB DeviceSelect::If failed" );
-
-        _vote._seed_indices.copySizeFromDevice( _stream );
+        applyVoteIf( params );
         POP_CUDA_SYNC( _stream );
+
 #ifdef EDGE_LINKING_HOST_SIDE
         /* After vote_eval_chosen, _chained_edgecoords is no longer changed
          * we can copy it to the host for edge linking
          */
         _vote._chained_edgecoords.copySizeFromDevice( _stream );
         POP_CUDA_SYNC( _stream );
-        _vote._chained_edgecoords.copyDataFromDevice( _vote._chained_edgecoords.host.size,
-                                                      _stream );
+
+        _vote._chained_edgecoords.copyDataFromDevice( _stream );
         POP_CHK_CALL_IFSYNC;
 
         if( _vote._seed_indices.host.size != 0 ) {
-            _vote._seed_indices.copyDataFromDevice( _vote._seed_indices.host.size, _stream );
+            _vote._seed_indices.copyDataFromDevice( _stream );
         }
 #endif // EDGE_LINKING_HOST_SIDE
     } else {
         _vote._chained_edgecoords.host.size = 0;
     }
 }
-#endif // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#endif // not USE_SEPARABLE_COMPILATION
 
 } // namespace popart
 

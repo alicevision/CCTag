@@ -167,7 +167,7 @@ public:
     // applyDesc2 replaced by applyVoteConstructLine
     // applyDesc3 replaced by applyVoteSortUniqDP
     bool applyDesc4( const cctag::Parameters& param );
-    bool applyDesc5( const cctag::Parameters& param );
+    // applyDesc5 replaced by applyVoteIf
     bool applyDesc6( const cctag::Parameters& param );
 #else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
     bool applyDesc( const cctag::Parameters& param );
@@ -180,7 +180,10 @@ public:
     bool applyVoteConstructLine( const cctag::Parameters& params );
 
     // implemented in frame_07_vote_sort_uniq_dp.cu
-    bool applyVoteSortUniqDP(   const cctag::Parameters& params );
+    bool applyVoteSortUniqDP( const cctag::Parameters& params );
+
+    // implemented in frame_07_vote_if.cu
+    bool applyVoteIf( const cctag::Parameters& params );
 #else // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
     // implemented in frame_07_vote_line.cu
     bool applyVoteConstructLine( const cctag::Parameters& params );
@@ -188,6 +191,9 @@ public:
     // implemented in frame_07_vote_sort_uniq_nodp.cu
     // called by applyVote
     bool applyVoteSortUniqNoDP( const cctag::Parameters& params );
+
+    // implemented in frame_07_vote_if.cu
+    bool applyVoteIf( const cctag::Parameters& params );
 private:
     // implemented in frame_07_vote_sort_nodp.cu
     // called by applyVoteSortUniqNoDP

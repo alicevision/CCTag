@@ -487,29 +487,6 @@ bool Frame::applyDesc4( const cctag::Parameters& params )
 }
 
 __host__
-bool Frame::applyDesc5( const cctag::Parameters& params )
-{
-    descent::dp_call_05_if
-        <<<1,1,0,_stream>>>
-        ( _vote._all_edgecoords.dev,      // input
-          _d_edges,                       // input
-          _d_dx,                          // input
-          _d_dy,                          // input
-          _vote._chained_edgecoords.dev,  // output
-          _vote._d_edgepoint_index_table, // output
-          _vote._seed_indices.dev,        // output
-          _vote._seed_indices_2.dev,      // buffer
-          cv::cuda::PtrStepSzb(_d_intermediate), // buffer
-          params._distSearch,             // input param
-          params._thrGradientMagInVote,   // input param
-          params._nCrowns,                // input param
-          params._ratioVoting,            // input param
-          params._minVotesToSelectCandidate ); // input param
-    POP_CHK_CALL_IFSYNC;
-    return true;
-}
-
-__host__
 bool Frame::applyDesc6( const cctag::Parameters& params )
 {
     cudaEventRecord( _download_ready_event.descent1, _stream );
