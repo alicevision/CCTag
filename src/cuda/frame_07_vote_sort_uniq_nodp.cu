@@ -23,6 +23,8 @@ namespace popart
 __host__
 bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
 {
+    cerr << "Enter " << __FUNCTION__ << endl;
+
     cudaError_t err;
 
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size,
@@ -30,7 +32,10 @@ bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
                                    sizeof(int), _stream );
     POP_CUDA_SYNC( _stream );
 
-    if( _vote._seed_indices.host.size <= 0 ) return false;
+    if( _vote._seed_indices.host.size <= 0 ) {
+        cerr << "Leave " << __FUNCTION__ << " in " << __LINE__ << endl;
+        return false;
+    }
 
     /* Note: we use the intermediate picture plane, _d_intermediate, as assist
      *       buffer for CUB algorithms. It is extremely likely that this plane

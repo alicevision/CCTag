@@ -1,3 +1,7 @@
+#include "onoff.h"
+
+#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
+
 #include <iostream>
 #include <algorithm>
 #include <limits>
@@ -9,9 +13,7 @@
 
 #include "frame.h"
 #include "assist.h"
-#include "onoff.h"
 
-#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
 using namespace std;
 
 namespace popart
@@ -109,7 +111,7 @@ bool Frame::applyVoteSortUniqDP( const cctag::Parameters& params )
         (
           _vote._seed_indices.dev,        // output
           _vote._seed_indices_2.dev,      // buffer
-          cv::cuda::PtrStepSzb(_d_intermediate) ) // buffer
+          cv::cuda::PtrStepSzb(_d_intermediate) ); // buffer
     POP_CHK_CALL_IFSYNC;
     return true;
 }
