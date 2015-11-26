@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"
-#include "cctag/talk.hpp" // for DO_TALK macro
 
 #include "frame.h"
 #include "assist.h"
@@ -412,7 +411,7 @@ void Frame::applyVote( const cctag::Parameters& )
     // descent::dp_caller when USE_SEPARABLE_COMPILATION is
     // used
 }
-#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#else // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
 __host__
 void Frame::applyVote( const cctag::Parameters& params )
 {
@@ -526,7 +525,7 @@ void Frame::applyVote( const cctag::Parameters& params )
         _vote._chained_edgecoords.host.size = 0;
     }
 }
-#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#endif // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
 
 } // namespace popart
 

@@ -18,6 +18,9 @@ enum FrameMetaEnum
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     Num_nearby_points,                // int
 #endif
+#ifndef NDEBUG
+    Num_edges_thinned,
+#endif // NDEBUG
     End_indicator
 };
 
@@ -61,6 +64,9 @@ struct FrameMetaPtr
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     OFFSET_GETTER_HEADER( int, num_nearby_points )
 #endif
+#ifndef NDEBUG
+    OFFSET_GETTER_HEADER( int, num_edges_thinned )
+#endif // NDEBUG
 
 private:
     // These default functions are actually needed for automatic

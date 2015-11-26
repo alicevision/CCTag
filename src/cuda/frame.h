@@ -11,10 +11,11 @@
 #include "cctag/params.hpp"
 #include "cctag/types.hpp"
 #include "cctag/ImageCut.hpp"
-#include "frame_vote.h"
+#include "frame_07_vote.h"
 #include "triple_point.h"
 #include "cuda/geom_ellipse.h"
 #include "cuda/framemeta.h"
+#include "cuda/ptrstep.h"
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
@@ -38,31 +39,6 @@
  */
 #define GAUSS_TABLE  0 // Gauss parameters
 #define GAUSS_DERIV 16 // first derivative
-
-namespace cv {
-    namespace cuda {
-        typedef PtrStepSz<int16_t>  PtrStepSz16s;
-        typedef PtrStepSz<uint32_t> PtrStepSz32u;
-        typedef PtrStepSz<int32_t>  PtrStepSz32s;
-        typedef PtrStepSz<uchar4>   PtrStepSzb4;
-
-        typedef PtrStep<int16_t>    PtrStep16s;
-        typedef PtrStep<uint32_t>   PtrStep32u;
-        typedef PtrStep<int32_t>    PtrStep32s;
-        typedef PtrStep<uchar4>     PtrStepb4;
-
-#ifdef DEBUG_LINKED_USE_INT4_BUFFER
-        typedef PtrStepSz<int4>     PtrStepSzInt2;
-        typedef PtrStep<int4>       PtrStepInt2;
-        typedef int4                PtrStepInt2_base_t;
-#else // DEBUG_LINKED_USE_INT4_BUFFER
-        typedef PtrStepSz<int2>     PtrStepSzInt2;
-        typedef PtrStep<int2>       PtrStepInt2;
-        typedef int2                PtrStepInt2_base_t;
-#endif // DEBUG_LINKED_USE_INT4_BUFFER
-    }
-};
-
 
 namespace popart {
 namespace identification {
@@ -132,8 +108,7 @@ public:
     void deleteTexture( ); // Delete it. Done anyway in the destructor.
 
     // initialize this frame from other's normalized texture
-    void fillFromTexture( Frame& src );
-    void fillFromFrame( Frame& src );
+    // void fillFromFrame( Frame& src );
 
     inline cudaTextureObject_t getTex( ) {
         assert( _texture );
@@ -160,31 +135,32 @@ public:
     void initRequiredMem( );
     void releaseRequiredMem( );
 
-    // implemented in frame_gaussian.cu
-    void applyGauss( const cctag::Parameters& param );
+    // implemented in frame_01_tex.cu
+    void fillFromTexture( Frame& src );
 
-    // implemented in frame_gaussian.cu
+    // implemented in frame_01_tex.cu
     void applyPlaneDownload( const cctag::Parameters& param );
 
-    // implemented in frame_gaussian.cu
+    // implemented in frame_02_gaussian.cu
+    void applyGauss( const cctag::Parameters& param );
+
+    // implemented in frame_02_gaussian.cu
     void applyGaussDownload( const cctag::Parameters& param );
 
-    // implemented in frame_magmap.cu
+    // implemented in frame_03_magmap.cu
     void applyMag( const cctag::Parameters& param );
 
-    // implemented in frame_magmap.cu
+    // implemented in frame_03_magmap.cu
     void applyMagDownload( const cctag::Parameters& param );
 
-    // implemented in frame_hyst.cu
+    // implemented in frame_04_hyst.cu
     void applyHyst( const cctag::Parameters& param );
 
-    // implemented in frame_thin.cu
+    // implemented in frame_05_thin.cu
     void applyThinning( const cctag::Parameters& param );
-
-    // implemented in frame_thin.cu
     void applyThinDownload( const cctag::Parameters& param );
 
-    // implemented in frame_graddesc.cu
+    // implemented in frame_06_graddesc.cu
     bool applyDesc0( const cctag::Parameters& param );
 #ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
     bool applyDesc1( const cctag::Parameters& param );
@@ -197,17 +173,17 @@ public:
     bool applyDesc( const cctag::Parameters& param );
 #endif // USE_SEPARABLE_COMPILATION
 
-    // implemented in frame_graddesc.cu
+    // implemented in frame_06_graddesc.cu
     void applyDescDownload( const cctag::Parameters& param );
 
-    // implemented in frame_vote.cu
+    // implemented in frame_07_vote.cu
     void applyVote( const cctag::Parameters& param );
 
-    // implemented in frame_vote_sort_nodp.cu
+    // implemented in frame_07_vote_sort_nodp.cu
     // called by applyVote
     bool applyVoteSortNoDP( const cctag::Parameters& params );
 
-    // implemented in frame_vote_uniq_nodp.cu
+    // implemented in frame_07_vote_uniq_nodp.cu
     // called by applyVote
     void applyVoteUniqNoDP( const cctag::Parameters& params );
 
@@ -227,7 +203,7 @@ public:
     cv::Mat* getEdges( ) const;
 
 private:
-    // implemented in frame_ident.cu
+    // implemented in frame_11_identify.cu
     /* to reuse various image-sized buffers, but retrieve their
      * bytesize to ensure that the new types fit into the
      * already allocated space.
@@ -242,11 +218,11 @@ private:
     void                                 clearSignalBuffer( );
 
 private:
-    // implemented in frame_ident.cu
+    // implemented in frame_11_identify.cu
     void uploadCuts( const std::vector<cctag::ImageCut>& vCuts );
 
 public:
-    // implemented in frame_ident.cu
+    // implemented in frame_11_identify.cu
     __host__
     double idCostFunction( const popart::geometry::ellipse&    ellipse,
                            const float2                        center,

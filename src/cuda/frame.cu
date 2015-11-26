@@ -116,6 +116,7 @@ void Frame::createTexture( FrameTexture::Kind kind )
     _texture = new FrameTexture( _d_plane );
 }
 
+#if 0
 __global__
 void cu_fill_from_frame( unsigned char* dst, uint32_t pitch, uint32_t width, uint32_t height, unsigned char* src, uint32_t spitch, uint32_t swidth, uint32_t sheight )
 {
@@ -146,34 +147,7 @@ void Frame::fillFromFrame( Frame& src )
         ( _d_plane, getPitch(), getWidth(), getHeight(), src._d_plane, src.getPitch(), src.getWidth(), src.getHeight() );
     POP_CHK_CALL_IFSYNC;
 }
-
-__global__
-// void cu_fill_from_texture( unsigned char* dst, uint32_t pitch, uint32_t width, uint32_t height, cudaTextureObject_t tex )
-void cu_fill_from_texture( cv::cuda::PtrStepSzb dst, cudaTextureObject_t tex )
-{
-    uint32_t idy = blockIdx.y;
-    uint32_t idx = blockIdx.x * 32 + threadIdx.x;
-    if( idy >= dst.rows ) return;
-    if( idx >= dst.step ) return;
-    bool nix = ( idx < dst.cols );
-    float d = tex2D<float>( tex, float(idx)/float(dst.cols), float(idy)/float(dst.rows) );
-    dst.ptr(idy)[idx] = nix ? (unsigned char)( d * 255 ) : 0;
-}
-
-void Frame::fillFromTexture( Frame& src )
-{
-    dim3 grid;
-    dim3 block;
-    block.x = 32;
-    grid.x  = ( getWidth() / 32 ) + ( getWidth() % 32 == 0 ? 0 : 1 );
-    grid.y  = getHeight();
-
-    cu_fill_from_texture
-        <<<grid,block,0,_stream>>>
-        // ( _d_plane, getPitch(), getWidth(), getHeight(), src.getTex() );
-        ( _d_plane, src.getTex() );
-    POP_CHK_CALL_IFSYNC;
-}
+#endif
 
 void Frame::deleteTexture( )
 {

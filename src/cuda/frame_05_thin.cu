@@ -60,12 +60,9 @@ __device__ __constant__ unsigned char d_lut_t[256];
 __device__
 bool update_pixel( const int idx, const int idy, cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, bool first_run )
 {
-    if( src.ptr(idy)[idx] != 2 ) {
-        dst.ptr(idy)[idx] = 0;
-        return false;
-    }
-
-    if( idx >= 1 && idy >=1 && idx <= src.cols-2 && idy <= src.rows-2 ) {
+    unsigned char result = 0;
+    if( src.ptr(idy)[idx] == 2 &&
+        idx >= 1 && idy >=1 && idx <= src.cols-2 && idy <= src.rows-2 ) {
         uint8_t log = 0;
 
         log |= ( src.ptr(idy-1)[idx  ] == 2 ) ? 0x01 : 0;
@@ -77,18 +74,15 @@ bool update_pixel( const int idx, const int idy, cv::cuda::PtrStepSzb src, cv::c
         log |= ( src.ptr(idy  )[idx-1] == 2 ) ? 0x40 : 0;
         log |= ( src.ptr(idy-1)[idx-1] == 2 ) ? 0x80 : 0;
 
-        unsigned char result;
         if( first_run ) {
             result = d_lut[log] ? 2 : 0;
         } else {
             result = d_lut_t[log];
         }
-        dst.ptr(idy)[idx] = result;
-
-        return ( result != 0 );
-        // return true;
     }
-    return false;
+    __syncthreads();
+    dst.ptr(idy)[idx] = result;
+    return ( result != 0 );
 }
 
 __global__
@@ -104,7 +98,12 @@ void first_round( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 __global__
 void second_round( cv::cuda::PtrStepSzb src,          // input
                    cv::cuda::PtrStepSzb dst,          // output
+#ifndef NDEBUG
+                   DevEdgeList<int2>    edgeCoords,   // output
+                   FrameMetaPtr         meta )
+#else
                    DevEdgeList<int2>    edgeCoords )  // output
+#endif
 {
     const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
@@ -112,6 +111,15 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
 
     bool keep = update_pixel( idx, idy, src, dst, false );
 
+    if( keep ) {
+        atomicAdd( &meta.num_edges_thinned(), 1 );
+    }
+#if 0
+    uint32_t write_index;
+    if( keep ) {
+        write_index = atomicAdd( edgeCoords.getSizePtr(), 1 );
+    }
+#else
     uint32_t mask = __ballot( keep );  // bitfield of warps with results
     uint32_t ct   = __popc( mask );    // horizontal reduce
     uint32_t leader = __ffs(mask) - 1; // the highest thread id with indicator==true
@@ -122,9 +130,12 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
     }
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
+#endif
 
-    if( keep && write_index < EDGE_POINT_MAX ) {
-        edgeCoords.ptr[write_index] = make_int2( idx, idy );
+    if( keep ) {
+        if( write_index < EDGE_POINT_MAX ) {
+            edgeCoords.ptr[write_index] = make_int2( idx, idy );
+        }
     }
 }
 
@@ -142,35 +153,6 @@ void set_edgemax( DevEdgeList<int2> edgeCoords )
     }
 }
 
-#ifdef USE_SEPARABLE_COMPILATION
-__global__
-void dp_caller( const size_t         width,          // input
-                const size_t         height,         // input
-                cv::cuda::PtrStepSzb hystEdges,      // input
-                cv::cuda::PtrStepSzb edges,          // output
-                DevEdgeList<int2>    edgeCoords,     // output
-                cv::cuda::PtrStepSzb intermediate )  // intermediate
-{
-    edgeCoords.setSize( 0 );
-
-    dim3 block;
-    dim3 grid;
-    block.x = 32;
-    grid.x  = grid_divide( width, 32 );
-    grid.y  = height;
-
-    first_round
-        <<<grid,block>>>
-        ( hystEdges, intermediate );
-
-    second_round
-        <<<grid,block>>>
-        ( intermediate,    // input
-          edges,           // output
-          edgeCoords );    // output
-}
-#endif // USE_SEPARABLE_COMPILATION
-
 }; // namespace thinning
 
 __host__
@@ -187,23 +169,10 @@ void Frame::initThinningTable( )
 __host__
 void Frame::applyThinning( const cctag::Parameters & params )
 {
-// #ifdef USE_SEPARABLE_COMPILATION
-#if 0
-    thinning::dp_caller
-        <<<1,1,0,_stream>>>
-        ( getWidth(),
-          getHeight(),
-          _d_hyst_edges,                         // input
-          _d_edges,                              // output
-          _vote._all_edgecoords.dev,             // output
-          cv::cuda::PtrStepSzb(_d_intermediate), // intermediate
-          params._maxEdges );                    // input param
-#else // USE_SEPARABLE_COMPILATION
-    dim3 block;
-    dim3 grid;
-    block.x = 32;
-    grid.x  = ( getWidth() / 32 ) + ( getWidth() % 32 == 0 ? 0 : 1 );
-    grid.y  = getHeight();
+    dim3 block( 32, 1, 1 );
+    dim3 grid( grid_divide( getWidth(), 32 ),
+               getHeight(),
+               1 );
 
     thinning::first_round
         <<<grid,block,0,_stream>>>
@@ -216,17 +185,38 @@ void Frame::applyThinning( const cctag::Parameters & params )
 
     // POP_CUDA_SET0_ASYNC( _vote._all_edgecoords.dev.getSizePtr(), _stream );
 
+#ifndef NDEBUG
+    _meta.toDevice( Num_edges_thinned, 0, _stream );
+
+    thinning::second_round
+        <<<grid,block,0,_stream>>>
+        ( cv::cuda::PtrStepSzb(_d_intermediate), // input
+          _d_edges,                              // output
+          _vote._all_edgecoords.dev,             // output
+          _meta );
+
+    int val;
+    _meta.fromDevice( Num_edges_thinned, val, _stream );
+    _vote._all_edgecoords.copySizeFromDevice( _stream );
+    cudaStreamSynchronize( _stream );
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl
+              << "num of edge points after thinning: " << val << std::endl
+              << "num of edge points added to list:  " << _vote._all_edgecoords.host.size << std::endl
+              << "edgemax: " << EDGE_POINT_MAX << std::endl;
+
+#else // NDEBUG
     thinning::second_round
         <<<grid,block,0,_stream>>>
         ( cv::cuda::PtrStepSzb(_d_intermediate), // input
           _d_edges,                              // output
           _vote._all_edgecoords.dev );           // output
-#endif // USE_SEPARABLE_COMPILATION
+#endif // NDEBUG
 
     thinning::set_edgemax
         <<<1,1,0,_stream>>>
         ( _vote._all_edgecoords.dev );
 
+    _vote._all_edgecoords.copySizeFromDevice( _stream );
 #if 0
     debugPointIsOnEdge( _d_edges, _vote._all_edgecoords, _stream );
 #endif // NDEBUG
@@ -246,12 +236,12 @@ void Frame::applyThinDownload( const cctag::Parameters& )
     /* After thinning_and_store, _all_edgecoords is no longer changed
      * we can copy it to the host for edge linking
      */
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.edgecoords1, 0 );
-    _vote._all_edgecoords.copySizeFromDevice( _download_stream );
-    cudaEventRecord( _download_ready_event.edgecoords2, _download_stream );
+    // cudaStreamWaitEvent( _download_stream, _download_ready_event.edgecoords1, 0 );
 
     /* CPU must wait for counter _vote._all_edgecoords.host.size */
-    cudaEventSynchronize( _download_ready_event.edgecoords2 );
+    cudaEventSynchronize( _download_ready_event.edgecoords1 );
+
+    // cudaEventSynchronize( _download_ready_event.edgecoords2 );
     POP_CHK_CALL_IFSYNC;
     if( _vote._all_edgecoords.host.size > 0 ) {
         _vote._all_edgecoords.copyDataFromDevice( _vote._all_edgecoords.host.size,

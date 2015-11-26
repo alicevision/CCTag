@@ -1,12 +1,9 @@
-// #include <iostream>
 #include <fstream>
 #include <cuda_runtime.h>
-// #include <stdio.h>
 #include "debug_macros.hpp"
 
 #include "frame.h"
 #include "clamp.h"
-#include "cctag/talk.hpp" // for DO_TALK macro
 
 namespace popart
 {
@@ -201,12 +198,9 @@ void Frame::applyGauss( const cctag::Parameters & params )
     /* generate event when DX and DY are ready */
     cudaEventRecord( _download_ready_event.dxdy, _stream );
 #ifndef NDEBUG
-    if( params._debugDir == "" ) {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl; )
-    } else {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl; )
+    if( params._debugDir != "" ) {
+        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+            << params._debugDir << "] using that directory" << endl;
 
         POP_CUDA_SYNC( _download_stream );
 
@@ -231,21 +225,6 @@ void Frame::applyGauss( const cctag::Parameters & params )
         }
     }
 #endif // not NDEBUG
-}
-
-__host__
-void Frame::applyPlaneDownload( const cctag::Parameters& )
-{
-    cudaEventRecord( _download_ready_event.plane, _stream );
-
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.plane, 0 );
-
-    // download - layer 0 is mandatory, other layers for debugging
-    cudaMemcpy2DAsync( _h_plane.data, _h_plane.step,
-                       _d_plane.data, _d_plane.step,
-                       _d_plane.cols,
-                       _d_plane.rows,
-                       cudaMemcpyDeviceToHost, _download_stream );
 }
 
 __host__

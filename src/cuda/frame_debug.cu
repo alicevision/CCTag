@@ -18,6 +18,24 @@
 
 #undef CHATTY_WRITE_DEBUG_PLANE
 
+struct int2cmp
+{
+    __host__
+    inline bool operator()( const int2& l, const int2& r )
+    {
+        return ( l.x < r.x || ( l.x == r.x && l.y < r.y ) );
+    }
+};
+
+struct tp_cmp
+{
+    __host__
+    inline bool operator()( const popart::TriplePoint& l, const popart::TriplePoint& r )
+    {
+        return ( l.coord.x < r.coord.x || ( l.coord.x == r.coord.x && l.coord.y < r.coord.y ) );
+    }
+};
+
 namespace popart {
 
 using namespace std;
@@ -79,28 +97,6 @@ void Frame::hostDebugCompare( unsigned char* pix )
 #endif // NDEBUG
 }
 
-struct PtrStepSzbClone
-{
-    cv::cuda::PtrStepSzb e;
-
-    PtrStepSzbClone( const cv::cuda::PtrStepSzb& orig )
-        : e ( orig )
-    {
-        e.data = new uint8_t[ orig.rows * orig.step ];
-        memcpy( e.data, orig.data, orig.rows * orig.step );
-    }
-
-    ~PtrStepSzbClone( )
-    {
-        delete [] e.data;
-    }
-
-private:
-    PtrStepSzbClone( );
-    PtrStepSzbClone( const PtrStepSzbClone& );
-    PtrStepSzbClone& operator=( const PtrStepSzbClone& );
-};
-
 void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& params )
 {
     filename = params._debugDir + filename;
@@ -109,9 +105,9 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 
 #ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
     const cv::cuda::PtrStepSzb& b = _h_plane;
-    DebugImage::writePGM( filename + ".pgm", b );
+    DebugImage::writePGM( filename + "-01.pgm", b );
 #ifdef DEBUG_WRITE_ORIGINAL_AS_ASCII
-    DebugImage::writeASCII( filename + "-img-ascii.txt", b );
+    DebugImage::writeASCII( filename + "-01-img-ascii.txt", b );
 #endif // DEBUG_WRITE_ORIGINAL_AS_ASCII
 #endif // WRITE_ORIGINAL_AS_PGM
 
@@ -120,9 +116,9 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                                getWidth(),
                                _h_dx,
                                getWidth()*sizeof(int16_t) );
-    DebugImage::writePGMscaled( filename + "-dx.pgm", dx );
+    DebugImage::writePGMscaled( filename + "-02-dx.pgm", dx );
 #ifdef DEBUG_WRITE_DX_AS_ASCII
-    DebugImage::writeASCII( filename + "-dx-ascii.txt", dx );
+    DebugImage::writeASCII( filename + "-02-dx-ascii.txt", dx );
 #endif // DEBUG_WRITE_DX_AS_ASCII
 #endif // DEBUG_WRITE_DX_AS_PGM
 
@@ -131,18 +127,18 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                                getWidth(),
                                _h_dy,
                                getWidth()*sizeof(int16_t) );
-    DebugImage::writePGMscaled( filename + "-dy.pgm", dy );
+    DebugImage::writePGMscaled( filename + "-02-dy.pgm", dy );
 #ifdef DEBUG_WRITE_DY_AS_ASCII
-    DebugImage::writeASCII( filename + "-dy-ascii.txt", dy );
+    DebugImage::writeASCII( filename + "-02-dy-ascii.txt", dy );
 #endif // DEBUG_WRITE_DY_AS_ASCII
 #endif // DEBUG_WRITE_DY_AS_PGM
 
 
 #ifdef DEBUG_WRITE_MAG_AS_PGM
     const cv::cuda::PtrStepSz32u& mag = _h_mag;
-    DebugImage::writePGMscaled( filename + "-mag.pgm", mag );
+    DebugImage::writePGMscaled( filename + "-03-mag.pgm", mag );
 #ifdef DEBUG_WRITE_MAG_AS_ASCII
-    DebugImage::writeASCII( filename + "-mag-ascii.txt", mag );
+    DebugImage::writeASCII( filename + "-03-mag-ascii.txt", mag );
 #endif // DEBUG_WRITE_MAG_AS_ASCII
 #endif // DEBUG_WRITE_MAG_AS_PGM
 
@@ -151,9 +147,9 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                                 getWidth(),
                                 _h_debug_map,
                                 getWidth()*sizeof(uint8_t) );
-    DebugImage::writePGMscaled( filename + "-map.pgm", map );
+    DebugImage::writePGMscaled( filename + "-03-map.pgm", map );
 #ifdef DEBUG_WRITE_MAP_AS_ASCII
-    DebugImage::writeASCII( filename + "-map-ascii.txt", map );
+    DebugImage::writeASCII( filename + "-03-map-ascii.txt", map );
 #endif // DEBUG_WRITE_MAP_AS_ASCII
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
@@ -162,13 +158,13 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                                       getWidth(),
                                       _h_debug_hyst_edges,
                                       getWidth()*sizeof(uint8_t) );
-    DebugImage::writePGMscaled( filename + "-hystedges.pgm", hystedges );
+    DebugImage::writePGMscaled( filename + "-04-hystedges.pgm", hystedges );
 #endif // DEBUG_WRITE_HYSTEDGES_AS_PGM
 
     const cv::cuda::PtrStepSzb&  edges = _h_edges;
 
 #ifdef DEBUG_WRITE_EDGES_AS_PGM
-    DebugImage::writePGMscaled( filename + "-edges.pgm", edges );
+    DebugImage::writePGMscaled( filename + "-05-edges.pgm", edges );
 #endif // DEBUG_WRITE_EDGES_AS_PGM
 
 #ifndef NDEBUG
@@ -181,13 +177,15 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
          * Confirmed that this works
          */
         vector<int2> out;
-        _vote._all_edgecoords.debug_out( params._maxEdges, out );
+        _vote._all_edgecoords.debug_out( EDGE_POINT_MAX, out );
 
-        PtrStepSzbClone edgeclone( edges );
-        DebugImage::plotPoints( out, edgeclone.e );
-        DebugImage::writePPM( filename + "-edgelist.ppm", edgeclone.e );
+        PtrStepSzbNull edgelistplane( edges.cols, edges.rows );
+        DebugImage::plotPoints( out, edgelistplane.e, false, DebugImage::BLUE );
+        DebugImage::writePGMscaled( filename + "-05-edgelist.pgm", edgelistplane.e );
 #ifdef DEBUG_WRITE_EDGELIST_AS_ASCII
-        DebugImage::writeASCII( filename + "-edgelist.txt", out );
+        int2cmp c;
+        std::sort( out.begin(), out.end(), c );
+        DebugImage::writeASCII( filename + "-05-edgelist.txt", out );
 #endif // DEBUG_WRITE_EDGELIST_AS_ASCII
     }
 #endif // DEBUG_WRITE_EDGELIST_AS_PPM
@@ -205,11 +203,16 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                                       sizeof(int) );
 
         vector<TriplePoint> out;
-        _vote._chained_edgecoords.debug_out(  params._maxEdges, out );
+        _vote._chained_edgecoords.debug_out(  EDGE_POINT_MAX, out );
 
-        PtrStepSzbClone edgeclone( edges );
-        DebugImage::plotPoints( out, edgeclone.e );
-        DebugImage::writePPM( filename + "-voter-dots.ppm", edgeclone.e );
+        PtrStepSzbNull edgelistplane( edges.cols, edges.rows );
+        DebugImage::plotPoints( out, edgelistplane.e, false, DebugImage::BLUE );
+        DebugImage::writePGMscaled( filename + "-06-voter-dots.pgm", edgelistplane.e );
+#ifdef DEBUG_WRITE_VOTERS_AS_ASCII
+        tp_cmp c;
+        std::sort( out.begin(), out.end(), c );
+        DebugImage::writeASCII( filename + "-06-voters.txt", out );
+#endif // DEBUG_WRITE_VOTERS_AS_ASCII
     }
 #endif // DEBUG_WRITE_VOTERS_AS_PPM
 #endif // NDEBUG
@@ -228,20 +231,24 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
         if( _vote._chained_edgecoords.host.size > 0 && _vote._seed_indices.host.size > 0) {
             vector<TriplePoint> out;
             PtrStepSzbClone edgeclone( edges );
-            _vote._chained_edgecoords.debug_out( params._maxEdges, out, EdgeListFilterCommittedOnly );
+            _vote._chained_edgecoords.debug_out( EDGE_POINT_MAX, out, EdgeListFilterCommittedOnly );
             DebugImage::plotPoints( out, edgeclone.e, true, DebugImage::GREEN );
 #ifdef DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
-            DebugImage::writeASCII( filename + "-chosen-voter-chains.txt", out );
+            DebugImage::writeASCII( filename + "-07-chosen-voter-chains.txt", out );
 #endif // DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
 
             out.clear();
-            _vote._chained_edgecoords.debug_out( _vote._seed_indices, params._maxEdges, out );
+            _vote._chained_edgecoords.debug_out( _vote._seed_indices, EDGE_POINT_MAX, out );
             DebugImage::plotPoints( out, edgeclone.e, false, DebugImage::BLUE );
 #ifdef DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
-            DebugImage::writeASCII( filename + "-chosen-dots.txt", out );
+            DebugImage::writeASCII( filename + "-07-chosen-dots.txt", out );
 #endif // DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
 
-            DebugImage::writePPM( filename + "-chosen-dots.ppm", edgeclone.e );
+            DebugImage::writePPM( filename + "-07-chosen-dots.ppm", edgeclone.e );
+
+            PtrStepSzbNull edgelistplane( edges.cols, edges.rows );
+            DebugImage::plotPoints( out, edgelistplane.e, false, DebugImage::BLUE );
+            DebugImage::writePGMscaled( filename + "-07-chosen-dots.pgm", edgelistplane.e );
         }
     }
 #endif // DEBUG_WRITE_CHOSEN_AS_PPM

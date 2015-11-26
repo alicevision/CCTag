@@ -33,6 +33,15 @@ void DebugImage::writePGM( const string& filename, const cv::cuda::PtrStepSzb& p
        << plane.cols << " " << plane.rows << endl
        << "255" << endl;
     of.write( (char*)plane.data, plane.cols * plane.rows );
+
+    uint32_t ct = 0;
+    for( int x=0; x<plane.step; x++ ) {
+        for( int y=0; y<plane.rows; y++ ) {
+            if( plane.ptr(y)[x] != 0 ) ct++;
+        }
+    }
+    cerr << "Writing pgm file " << filename << ": "
+         << ct << " non-null pixels" << endl;
 }
 
 template<class T>
@@ -40,6 +49,15 @@ __host__
 void DebugImage::writePGMscaled_T( const string&                 filename,
                                    const cv::cuda::PtrStepSz<T>& plane )
 {
+    uint32_t ct = 0;
+    for( int x=0; x<plane.step; x++ ) {
+        for( int y=0; y<plane.rows; y++ ) {
+            if( plane.ptr(y)[x] != 0 ) ct++;
+        }
+    }
+    cerr << "Writing scaled pgm file " << filename << ": "
+         << ct << " non-null pixels" << endl;
+
     T minval = std::numeric_limits<T>::max();
     T maxval = std::numeric_limits<T>::min();
     // for( uint32_t i=0; i<plane.rows*plane.cols; i++ )
@@ -240,7 +258,7 @@ void DebugImage::plotPoints( const vector<int2>& v, cv::cuda::PtrStepSzb img, bo
 
     vector<int2>::const_iterator cit, cend;
     cend = v.end();
-    cout << "Plotting in image of size " << img.cols << " x " << img.rows << endl;
+    cout << "Plotting " << v.size() << " int2 coordinates into image of size " << img.cols << " x " << img.rows << endl;
     for( cit=v.begin(); cit!=cend; cit++ ) {
         if( outOfBounds( cit->x, cit->y, img ) ) {
             cout << "Coord of point (" << cit->x << "," << cit->y << ") is out of bounds" << endl;

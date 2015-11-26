@@ -38,9 +38,6 @@ IF(USE_CUDA)
     # add_definitions("-DSM_TARGETS=-gencode=arch=compute_52,code=\"sm_52,compute_52\"")
     add_definitions("-DSM=100")
 
-    set(CUDA_NVCC_DEBUG_FLAGS "-G -g -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52")
-    set(CUDA_NVCC_RELEASE_FLAGS "-gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_52,code=compute_52 -O3")
-
     # set(CUDA_SEPARABLE_COMPILATION ON)
     # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
     # set(BUILD_SHARED_LIBS ON)

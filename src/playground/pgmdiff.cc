@@ -105,9 +105,9 @@ int main( int argc, char*argv[] )
     of.write( (const char*)data_out, w1*h1 );
     
     if( different == 0 ) {
-        cout << "Files " << argv[1] << " and " << argv[2] << " are identical" << endl;
+        cout << "Files " << argv[2] << " and " << argv[3] << " are identical" << endl;
     } else {
-        cout << "Files " << argv[1] << " and " << argv[2] << " differ in " << different << " bytes" << endl;
+        cout << "Files " << argv[2] << " and " << argv[3] << " differ in " << different << " bytes" << endl;
     }
 }
 

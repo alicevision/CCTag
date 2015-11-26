@@ -3,7 +3,6 @@
 #include <limits>
 #include <cuda_runtime.h>
 #include <cub/cub.cuh>
-// #include <thrust/system/cuda/detail/cub/cub.cuh>
 #include <stdio.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"
@@ -293,7 +292,7 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
 
 #ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
 __global__
-void dp_caller_step_1( DevEdgeList<int2>        edgeCoords, // input
+void dp_call_01_gradient_descent( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     edgeImage, // input
                 cv::cuda::PtrStepSz16s   dx, // input
                 cv::cuda::PtrStepSz16s   dy, // input
@@ -343,7 +342,7 @@ void dp_caller_step_1( DevEdgeList<int2>        edgeCoords, // input
 }
 
 __global__
-void dp_caller_step_2( DevEdgeList<int2>        edgeCoords, // input
+void dp_call_02_construct_line( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     edgeImage, // input
                 cv::cuda::PtrStepSz16s   dx, // input
                 cv::cuda::PtrStepSz16s   dy, // input
@@ -383,7 +382,7 @@ void dp_caller_step_2( DevEdgeList<int2>        edgeCoords, // input
 }
 
 __global__
-void dp_caller_step_3( DevEdgeList<int2>        edgeCoords, // input
+void dp_call_03_sort_uniq( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     edgeImage, // input
                 cv::cuda::PtrStepSz16s   dx, // input
                 cv::cuda::PtrStepSz16s   dy, // input
@@ -472,7 +471,7 @@ void dp_caller_step_3( DevEdgeList<int2>        edgeCoords, // input
 }
 
 __global__
-void dp_caller_step_4( DevEdgeList<int2>        edgeCoords, // input
+void dp_call_04_eval_chosen( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     edgeImage, // input
                 cv::cuda::PtrStepSz16s   dx, // input
                 cv::cuda::PtrStepSz16s   dy, // input
@@ -505,7 +504,7 @@ void dp_caller_step_4( DevEdgeList<int2>        edgeCoords, // input
 }
 
 __global__
-void dp_caller_step_5( DevEdgeList<int2>        edgeCoords, // input
+void dp_call_05_if( DevEdgeList<int2>        edgeCoords, // input
                 cv::cuda::PtrStepSzb     edgeImage, // input
                 cv::cuda::PtrStepSz16s   dx, // input
                 cv::cuda::PtrStepSz16s   dy, // input
@@ -572,7 +571,7 @@ bool Frame::applyDesc0( const cctag::Parameters& params )
 __host__
 bool Frame::applyDesc1( const cctag::Parameters& params )
 {
-    descent::dp_caller_step_1
+    descent::dp_call_01_gradient_descent
         <<<1,1,0,_stream>>>
         ( _vote._all_edgecoords.dev,      // input
           _d_edges,                       // input
@@ -595,7 +594,7 @@ bool Frame::applyDesc1( const cctag::Parameters& params )
 __host__
 bool Frame::applyDesc2( const cctag::Parameters& params )
 {
-    descent::dp_caller_step_2
+    descent::dp_call_02_construct_line
         <<<1,1,0,_stream>>>
         ( _vote._all_edgecoords.dev,      // input
           _d_edges,                       // input
@@ -618,7 +617,7 @@ bool Frame::applyDesc2( const cctag::Parameters& params )
 __host__
 bool Frame::applyDesc3( const cctag::Parameters& params )
 {
-    descent::dp_caller_step_3
+    descent::dp_call_03_sort_uniq
         <<<1,1,0,_stream>>>
         ( _vote._all_edgecoords.dev,      // input
           _d_edges,                       // input
@@ -641,7 +640,7 @@ bool Frame::applyDesc3( const cctag::Parameters& params )
 __host__
 bool Frame::applyDesc4( const cctag::Parameters& params )
 {
-    descent::dp_caller_step_4
+    descent::dp_call_04_eval_chosen
         <<<1,1,0,_stream>>>
         ( _vote._all_edgecoords.dev,      // input
           _d_edges,                       // input
@@ -664,7 +663,7 @@ bool Frame::applyDesc4( const cctag::Parameters& params )
 __host__
 bool Frame::applyDesc5( const cctag::Parameters& params )
 {
-    descent::dp_caller_step_5
+    descent::dp_call_05_if
         <<<1,1,0,_stream>>>
         ( _vote._all_edgecoords.dev,      // input
           _d_edges,                       // input
@@ -698,7 +697,7 @@ bool Frame::applyDesc6( const cctag::Parameters& params )
     // we will check eventually whether the call succeeds
     return true;
 }
-#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#else // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
 __host__
 bool Frame::applyDesc( const cctag::Parameters& params )
 {
@@ -747,7 +746,7 @@ bool Frame::applyDesc( const cctag::Parameters& params )
     // cout << "  Leave " << __FUNCTION__ << endl;
     return true;
 }
-#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#endif // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
 
 
 __host__

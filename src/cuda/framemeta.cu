@@ -26,6 +26,9 @@ struct FrameMeta
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     int   num_nearby_points;
 #endif
+#ifndef NDEBUG
+    int   num_edges_thinned;
+#endif // NDEBUG
 };
 
 __device__
@@ -77,6 +80,9 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
 #endif
+#ifndef NDEBUG
+    HOST_DEVICE_TRANSFER_CASE( Num_edges_thinned, num_edges_thinned )
+#endif // NDEBUG
     case Identification_result:
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
@@ -114,6 +120,9 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     case Num_nearby_points:
 #endif
+#ifndef NDEBUG
+    case Num_edges_thinned:
+#endif // NDEBUG
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
 		  << "Trying to copy a float to a FrameMeta::<int>" << std::endl
@@ -149,6 +158,9 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
 #endif
+#ifndef NDEBUG
+    HOST_DEVICE_TRANSFER_CASE( Num_edges_thinned, num_edges_thinned )
+#endif // NDEBUG
     case Identification_result:
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
@@ -186,6 +198,9 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream 
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     case Num_nearby_points:
 #endif
+#ifndef NDEBUG
+    case Num_edges_thinned:
+#endif // NDEBUG
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
 		  << "Trying to fetch a float to a FrameMeta::<int>" << std::endl
@@ -229,6 +244,9 @@ OFFSET_GETTER_FUNCTION( int,   identification_resct )
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
 OFFSET_GETTER_FUNCTION( int,   num_nearby_points )
 #endif
+#ifndef NDEBUG
+OFFSET_GETTER_FUNCTION( int,   num_edges_thinned )
+#endif // NDEBUG
 
 }; // namespace popart
 
