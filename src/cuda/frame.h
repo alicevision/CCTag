@@ -165,27 +165,36 @@ public:
 #ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
     bool applyDesc1( const cctag::Parameters& param );
     bool applyDesc2( const cctag::Parameters& param );
-    bool applyDesc3( const cctag::Parameters& param );
+    // bool applyDesc3( const cctag::Parameters& param ); replaced by applyVoteSortUniqDP
     bool applyDesc4( const cctag::Parameters& param );
     bool applyDesc5( const cctag::Parameters& param );
     bool applyDesc6( const cctag::Parameters& param );
-#else // USE_SEPARABLE_COMPILATION
+#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
     bool applyDesc( const cctag::Parameters& param );
-#endif // USE_SEPARABLE_COMPILATION
-
+#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
     // implemented in frame_06_graddesc.cu
     void applyDescDownload( const cctag::Parameters& param );
 
-    // implemented in frame_07_vote.cu
-    void applyVote( const cctag::Parameters& param );
-
-    // implemented in frame_07_vote_sort_nodp.cu
+#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
+    // implemented in frame_07_vote_sort_uniq_dp.cu
+    bool applyVoteSortUniqDP(   const cctag::Parameters& params );
+#else // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
+    // implemented in frame_07_vote_sort_uniq_nodp.cu
     // called by applyVote
+    bool applyVoteSortUniqNoDP( const cctag::Parameters& params );
+private:
+    // implemented in frame_07_vote_sort_nodp.cu
+    // called by applyVoteSortUniqNoDP
     bool applyVoteSortNoDP( const cctag::Parameters& params );
 
     // implemented in frame_07_vote_uniq_nodp.cu
-    // called by applyVote
+    // called by applyVoteSortUniqNoDP
     void applyVoteUniqNoDP( const cctag::Parameters& params );
+public:
+#endif // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
+
+    // implemented in frame_07_vote.cu
+    void applyVote( const cctag::Parameters& param );
 
     // implemented in frame_link.cu
     void applyLink( const cctag::Parameters& param );

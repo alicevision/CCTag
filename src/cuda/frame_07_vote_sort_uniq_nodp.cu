@@ -173,6 +173,15 @@ void Frame::applyVoteUniqNoDP( const cctag::Parameters& params )
     POP_CUDA_SYNC( _stream );
     POP_CUDA_FATAL_TEST( err, "CUB Unique failed" );
 }
+
+bool Frame::applyVoteSortUniqNoDP( const cctag::Parameters& params )
+{
+    bool success = applyVoteSortNoDP( params );
+    if( success ) return false;
+    applyVoteUniqNoDP( params );
+    return true;
+}
+
 #endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
 
 } // namespace popart

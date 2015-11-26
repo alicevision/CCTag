@@ -430,12 +430,9 @@ void Frame::applyVote( const cctag::Parameters& params )
     /* For every chosen, compute the average flow size from all
      * of its voters, and count the number of its voters.
      */
-
-    success = applyVoteSortNoDP( params );
+    success = applyVoteSortUniqNoDP( params );
 
     if( success ) {
-        Frame::applyVoteUniqNoDP( params );
-
         void*  assist_buffer = (void*)_d_intermediate.data;
         size_t assist_buffer_sz;
 
