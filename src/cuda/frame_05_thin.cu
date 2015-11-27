@@ -111,9 +111,11 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
 
     bool keep = update_pixel( idx, idy, src, dst, false );
 
+#ifndef NDEBUG
     if( keep ) {
         atomicAdd( &meta.num_edges_thinned(), 1 );
     }
+#endif
 #if 0
     uint32_t write_index;
     if( keep ) {

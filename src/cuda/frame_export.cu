@@ -13,7 +13,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  array,
 {
     // cerr << "Enter " << __FUNCTION__ << endl;
 
-    int vote_sz = _vote._chained_edgecoords.host.size;
+    int vote_sz = _voters.host.size;
     int all_sz  = _vote._all_edgecoords.host.size;
 
     assert( array.size() == 0 );
@@ -45,7 +45,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  array,
         edgesMap[pt.x][pt.y] = &array[i];
     }
     for( int i=1; i<vote_sz; i++ ) {
-        const TriplePoint& pt = _vote._chained_edgecoords.host.ptr[i];
+        const TriplePoint& pt = _voters.host.ptr[i];
         if( pt.coord.x == 0 && pt.coord.y == 0 ) {
             static bool reported_error_once = false;
             if( not reported_error_once ) {
@@ -84,7 +84,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  array,
     // std::list<cctag::EdgePoint*> empty_list;
     int* seed_array = _vote._seed_indices.host.ptr;
     for( int i=0; i<_vote._seed_indices.host.size; i++ ) {
-        const TriplePoint& pt = _vote._chained_edgecoords.host.ptr[ seed_array[i] ];
+        const TriplePoint& pt = _voters.host.ptr[ seed_array[i] ];
         cctag::EdgePoint* ep = edgesMap[pt.coord.x][pt.coord.y];
         seeds.push_back( ep );
 
@@ -94,10 +94,10 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  array,
     }
 
     for( int i=1; i<vote_sz; i++ ) {
-        const TriplePoint& pt = _vote._chained_edgecoords.host.ptr[i];
+        const TriplePoint& pt = _voters.host.ptr[i];
 
         if( pt.my_vote != 0 ) {
-            const TriplePoint& point = _vote._chained_edgecoords.host.ptr[ pt.my_vote ];
+            const TriplePoint& point = _voters.host.ptr[ pt.my_vote ];
             cctag::EdgePoint* potential_seed = edgesMap[point.coord.x][point.coord.y];
             if( winners.find(potential_seed) != winners.end() ) {
                 cctag::EdgePoint* this_voter = edgesMap[pt.coord.x][pt.coord.y];

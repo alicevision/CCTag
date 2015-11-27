@@ -169,7 +169,9 @@ int main(int argc, char** argv)
 
 #ifdef WITH_CUDA
   popart::device_prop_t deviceInfo;
+#if 0
   deviceInfo.print( );
+#endif
 #endif // WITH_CUDA
 
   bfs::path myPath( cmdline._filename );

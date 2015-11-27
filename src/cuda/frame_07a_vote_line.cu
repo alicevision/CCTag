@@ -339,7 +339,7 @@ bool Frame::applyVoteConstructLine( const cctag::Parameters& params )
     applyVoteConstructLine_dp
         <<<1,1,0,_stream>>>
         ( _vote._seed_indices.dev,        // output
-          _vote._chained_edgecoords.dev,  // ?
+          _voters.dev,  // ?
           _vote._d_edgepoint_index_table, // ?
           params._nCrowns,                // input param
           params._ratioVoting );          // input param
@@ -352,12 +352,12 @@ __host__
 bool Frame::applyVoteConstructLine( const cctag::Parameters& params )
 {
     // Note: right here, Dynamic Parallelism would avoid blocking.
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._chained_edgecoords.host.size,
-                                   _vote._chained_edgecoords.dev.getSizePtr(),
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_voters.host.size,
+                                   _voters.dev.getSizePtr(),
                                    sizeof(int), _stream );
     POP_CUDA_SYNC( _stream );
 
-    int listsize = _vote._chained_edgecoords.host.size;
+    int listsize = _voters.host.size;
 
     if( listsize == 0 ) {
         return false;
@@ -371,7 +371,7 @@ bool Frame::applyVoteConstructLine( const cctag::Parameters& params )
     vote::construct_line
         <<<grid,block,0,_stream>>>
         ( _vote._seed_indices.dev,        // output
-          _vote._chained_edgecoords.dev,  // input
+          _voters.dev,  // input
           _vote._d_edgepoint_index_table, // input
           params._nCrowns,                // input param
           params._ratioVoting );          // input param

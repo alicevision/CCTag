@@ -27,12 +27,11 @@ void FrameParam::init( const cctag::Parameters& params )
     }
 
     FrameParam p;
-    p.cannyThrLow          = params._cannyThrLow;
-    p.cannyThrHigh         = params._cannyThrHigh;
-    p.cannyThrLow_x_256    = params._cannyThrLow * 256.0f;
-    p.cannyThrHigh_x_256   = params._cannyThrHigh * 256.0f;
-    p.thrGradientMagInVote = params._thrGradientMagInVote;
-    p.distSearch           = params._distSearch;
+    p.cannyThrLow_x_256         = params._cannyThrLow * 256.0f;
+    p.cannyThrHigh_x_256        = params._cannyThrHigh * 256.0f;
+    p.thrGradientMagInVote      = params._thrGradientMagInVote;
+    p.distSearch                = params._distSearch;
+    p.minVotesToSelectCandidate = params._minVotesToSelectCandidate;
 
     cudaError_t err;
     err = cudaMemcpyToSymbol( tagParam, // _d_symbol_ptr,

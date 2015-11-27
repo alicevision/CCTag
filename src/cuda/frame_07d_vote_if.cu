@@ -8,6 +8,7 @@
 #include "debug_is_on_edge.h"
 
 #include "frame.h"
+#include "frameparam.h"
 #include "assist.h"
 #include "onoff.h"
 
@@ -22,15 +23,14 @@ struct NumVotersIsGreaterEqual
 
     __host__ __device__
     __forceinline__
-    NumVotersIsGreaterEqual( int compare, DevEdgeList<TriplePoint> _d_array )
-        : _compare(compare)
-        , _array( _d_array )
+    NumVotersIsGreaterEqual( DevEdgeList<TriplePoint> _d_array )
+        : _array( _d_array )
     {}
 
     __device__
     __forceinline__
     bool operator()(const int &a) const {
-        return (_array.ptr[a]._winnerSize >= _compare);
+        return (_array.ptr[a]._winnerSize >= tagParam.minVotesToSelectCandidate );
     }
 };
 
@@ -42,8 +42,7 @@ void dp_call_05_if(
     DevEdgeList<TriplePoint> chainedEdgeCoords, // input
     DevEdgeList<int>         seedIndices,       // output
     DevEdgeList<int>         seedIndices2,      // input
-    cv::cuda::PtrStepSzb     intermediate,      // buffer
-    const int                param_minVotesToSelectCandidate ) // input param
+    cv::cuda::PtrStepSzb     intermediate )     // buffer
 {
     if( seedIndices.getSize() == 0 ) {
         seedIndices2.setSize(0);
@@ -59,8 +58,7 @@ void dp_call_05_if(
     /* Filter all chosen inner points that have fewer
      * voters than required by Parameters.
      */
-    NumVotersIsGreaterEqual select_op( param_minVotesToSelectCandidate,
-                                       chainedEdgeCoords );
+    NumVotersIsGreaterEqual select_op( chainedEdgeCoords );
     cub::DeviceSelect::If( assist_buffer,
                            assist_buffer_sz,
                            seedIndices2.ptr,
@@ -77,15 +75,14 @@ void dp_call_05_if(
 } // namespace vote
 
 __host__
-bool Frame::applyVoteIf( const cctag::Parameters& params )
+bool Frame::applyVoteIf( )
 {
     vote::dp_call_05_if
         <<<1,1,0,_stream>>>
-        ( _vote._chained_edgecoords.dev,  // input
+        ( _voters.dev,  // input
           _vote._seed_indices.dev,        // output
           _vote._seed_indices_2.dev,      // input
-          cv::cuda::PtrStepSzb(_d_intermediate), // buffer
-          params._minVotesToSelectCandidate ); // input param
+          cv::cuda::PtrStepSzb(_d_intermediate) ); // buffer
     POP_CHK_CALL_IFSYNC;
 
     _vote._seed_indices.copySizeFromDevice( _stream, EdgeListCont );
@@ -94,15 +91,14 @@ bool Frame::applyVoteIf( const cctag::Parameters& params )
 }
 #else // not USE_SEPARABLE_COMPILATION
 __host__
-bool Frame::applyVoteIf( const cctag::Parameters& params )
+bool Frame::applyVoteIf( )
 {
     cudaError_t err;
 
     void*  assist_buffer = (void*)_d_intermediate.data;
     size_t assist_buffer_sz;
 
-    NumVotersIsGreaterEqual select_op( params._minVotesToSelectCandidate,
-                                       _vote._chained_edgecoords.dev );
+    NumVotersIsGreaterEqual select_op( _voters.dev );
 #ifdef CUB_INIT_CALLS
     assist_buffer_sz  = 0;
     err = cub::DeviceSelect::If( 0,

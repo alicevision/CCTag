@@ -7,12 +7,11 @@ namespace popart {
 
 struct FrameParam
 {
-    float cannyThrLow;
-    float cannyThrHigh;
     float cannyThrLow_x_256;
     float cannyThrHigh_x_256;
     int   thrGradientMagInVote;
     int   distSearch;
+    int   minVotesToSelectCandidate;
 
     __host__
     static void init( const cctag::Parameters& params );

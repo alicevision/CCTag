@@ -30,7 +30,7 @@ void Frame::applyVote( const cctag::Parameters& params )
 {
     bool success;
 
-    /* For every potential outer ring point in _chained_edgecoords,
+    /* For every potential outer ring point in _voters,
      * check whether it votes for a point, and if yes:
      * (a) add that point to _seed_indices, 
      * (b) store the index that point (value it edgepoint_index_table)
@@ -40,9 +40,9 @@ void Frame::applyVote( const cctag::Parameters& params )
     success = applyVoteConstructLine( params );
 
 #ifndef NDEBUG
-    _vote._chained_edgecoords.copySizeFromDevice( _stream, EdgeListCont );
+    _voters.copySizeFromDevice( _stream, EdgeListCont );
     _vote._seed_indices.copySizeFromDevice( _stream, EdgeListWait );
-    cerr << "after constructline, voters: " << _vote._chained_edgecoords.host.size
+    cerr << "after constructline, voters: " << _voters.host.size
          << " votes: " << _vote._seed_indices.host.size << endl;
 #endif
 
@@ -70,7 +70,7 @@ void Frame::applyVote( const cctag::Parameters& params )
          * average flow size exceeds threshold, store all successful
          * inner point in _seed_indices.
          */
-        applyVoteIf( params );
+        applyVoteIf();
 #ifndef NDEBUG
         _vote._seed_indices.copySizeFromDevice( _stream, EdgeListWait );
         cerr << "after if, votes: " << _vote._seed_indices.host.size << endl;
@@ -83,7 +83,7 @@ void Frame::applyVote( const cctag::Parameters& params )
 
     if( not success ) {
         _vote._seed_indices.host.size       = 0;
-        _vote._chained_edgecoords.host.size = 0;
+        _voters.host.size = 0;
         return;
     }
 
@@ -97,7 +97,7 @@ void debug_inner_test_consistency( const char*                    origin,
                                    int                            p_idx,
                                    const TriplePoint*             p,
                                    cv::cuda::PtrStepSz32s         edgepoint_index_table,
-                                   const DevEdgeList<TriplePoint> chained_edgecoords )
+                                   const DevEdgeList<TriplePoint> voters )
 {
     if( p == 0 ) {
         printf("%s Impossible bug, initialized from memory address\n", origin);
@@ -110,7 +110,7 @@ void debug_inner_test_consistency( const char*                    origin,
     }
 
     int idx = edgepoint_index_table.ptr(p->coord.y)[p->coord.x];
-    if( idx < 0 || idx >= chained_edgecoords.Size() ) {
+    if( idx < 0 || idx >= voters.Size() ) {
         printf("%s Looked up index (coord) is out of bounds\n", origin);
         assert( 0 );
     }
