@@ -865,7 +865,7 @@ void cctagDetection(CCTag::List& markers,
     cerr << markers.size() << " markers found:" << endl;
     cerr << "Ids: ";
     for( const CCTag& tag : markers ) {
-	cerr << tag.id() << " ";
+	    cerr << tag.id() << " ";
     }
     cerr << endl;
 }

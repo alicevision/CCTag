@@ -17,9 +17,9 @@ using namespace std;
 namespace popart
 {
 
-#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#ifdef USE_SEPARABLE_COMPILATION
 // nothing
-#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#else // USE_SEPARABLE_COMPILATION
 __host__
 bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
 {
@@ -27,10 +27,7 @@ bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
 
     cudaError_t err;
 
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices.host.size,
-                                   _vote._seed_indices.dev.getSizePtr(),
-                                   sizeof(int), _stream );
-    POP_CUDA_SYNC( _stream );
+    _vote._seed_indices.copySizeFromDevice( _stream, EdgeListWait );
 
     if( _vote._seed_indices.host.size <= 0 ) {
         cerr << "Leave " << __FUNCTION__ << " in " << __LINE__ << endl;
@@ -182,12 +179,12 @@ void Frame::applyVoteUniqNoDP( const cctag::Parameters& params )
 bool Frame::applyVoteSortUniqNoDP( const cctag::Parameters& params )
 {
     bool success = applyVoteSortNoDP( params );
-    if( success ) return false;
+    if( not success ) return false;
     applyVoteUniqNoDP( params );
     return true;
 }
 
-#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#endif // USE_SEPARABLE_COMPILATION
 
 } // namespace popart
 

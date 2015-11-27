@@ -1,5 +1,6 @@
 #include "tag.h"
 #include "frame.h"
+#include "frameparam.h"
 #include "debug_macros.hpp"
 #include "keep_time.hpp"
 #include <sstream>
@@ -24,7 +25,7 @@ __host__
 void TagPipe::initialize( const uint32_t pix_w,
                           const uint32_t pix_h,
                           const cctag::Parameters& params,
-	                  cctag::logtime::Mgmt* durations )
+                          cctag::logtime::Mgmt* durations )
 {
     static bool tables_initialized = false;
     if( not tables_initialized ) {
@@ -32,6 +33,8 @@ void TagPipe::initialize( const uint32_t pix_w,
         Frame::initGaussTable( );
         Frame::initThinningTable( );
     }
+
+    FrameParam::init( params );
 
     int num_layers = params._numberOfMultiresLayers;
     _frame.reserve( num_layers );
@@ -112,7 +115,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
         time_desc [i] = new KeepTime( _frame[i]->_stream );
         time_vote [i] = new KeepTime( _frame[i]->_stream );
     }
-#endif // not NDEBUG
+#endif
 
 #ifndef CCTAG_NO_COUT
     KeepTime t( _frame[0]->_stream );
@@ -132,83 +135,49 @@ void TagPipe::tagframe( const cctag::Parameters& params )
     }
 
 #ifdef SHOW_DETAILED_TIMING
+#error SHOW_DETAILED_TIMING needs to be rewritten
     for( int i=0; i<num_layers; i++ ) {
         bool success;
         time_gauss[i]->start();
-        _frame[i]->applyGauss( params ); // async
         time_gauss[i]->stop();
-        POP_CHK_CALL_IFSYNC;
         time_mag[i]->start();
-        _frame[i]->applyMag(   params );  // async
         time_mag[i]->stop();
-        POP_CHK_CALL_IFSYNC;
         time_hyst[i]->start();
-        _frame[i]->applyHyst(  params );  // async
-        POP_CHK_CALL_IFSYNC;
         time_hyst[i]->stop();
         time_thin[i]->start();
-        _frame[i]->applyThinning(  params );  // async
         time_thin[i]->stop();
-        POP_CHK_CALL_IFSYNC;
         time_desc[i]->start();
-#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
-     	success = _frame[i]->applyDesc0(  params );  // async
-     	if( success ) success = _frame[i]->applyDesc1(  params );  // async
-     	if( success ) success = _frame[i]->applyVoteConstructLine( params );
-     	if( success ) success = _frame[i]->applyVoteSortUniqDP( params );
-     	if( success ) success = _frame[i]->applyDesc4(  params );  // async
-     	if( success ) success = _frame[i]->applyVoteIf( params );  // async
-     	if( success ) success = _frame[i]->applyDesc6(  params );  // async
-#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
-     	success = _frame[i]->applyDesc0(  params );  // async
-        if( success ) success = _frame[i]->applyDesc(  params );  // async
-#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
         time_desc[i]->stop();
-        POP_CHK_CALL_IFSYNC;
-
-        if( not success ) continue;
-
         time_vote[i]->start();
-        _frame[i]->applyVote(  params );  // async
         time_vote[i]->stop();
-        POP_CHK_CALL_IFSYNC;
-
-        _frame[i]->applyPlaneDownload( params ); // async
-        _frame[i]->applyGaussDownload( params );
-        _frame[i]->applyMagDownload( params );
-        _frame[i]->applyThinDownload( params );
-        _frame[i]->applyDescDownload( params );
-        POP_CHK_CALL_IFSYNC;
-        // _frame[i]->applyLink(  params );  // async
     }
-#else
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyPlaneDownload( params ); // async
+#else // not SHOW_DETAILED_TIMING
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyPlaneDownload(); // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyGauss( params ); // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyGaussDownload( params ); // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyGaussDownload(); // async
 
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyMag(   params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyMag();  // async
 
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyHyst(  params );  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyMagDownload( params );
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyHyst();  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyMagDownload();
 
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinning(  params );  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinDownload( params ); // sync
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinning();  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinDownload(); // sync
 
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc0(  params );  // async
-#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc1(  params );  // async
+#ifdef USE_SEPARABLE_COMPILATION
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc();  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteConstructLine( params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteSortUniqDP( params );  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc4(  params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteEval( params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteIf( params );  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc6(  params );  // async
-#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc(  params );  // async
-#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDescDownload( params ); // sync
-
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVote(  params );  // async
-#endif // not NDEBUG
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVote( params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteDownload();   // sync!
+#else // USE_SEPARABLE_COMPILATION
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc();  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVote( params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteDownload();   // sync!
+#endif // USE_SEPARABLE_COMPILATION
+#endif // not SHOW_DETAILED_TIMING
 
     for( int i=1; i<num_layers; i++ ) {
         cudaEventRecord( _frame[i]->_download_stream_done, _frame[i]->_download_stream );

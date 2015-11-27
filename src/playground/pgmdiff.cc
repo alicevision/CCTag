@@ -76,8 +76,6 @@ int main( int argc, char*argv[] )
     if( pxsz != 255 )
         usage( argv[0], string("File ") + argv[3] + string( " is not single-byte encoded" ) );
 
-    cout << "Image size is " << w1 << "x" << h1 << endl;
-
     unsigned char* data_in1 = new unsigned char[ w1 * h1 ];
     unsigned char* data_in2 = new unsigned char[ w1 * h1 ];
     if1.read( (char*)data_in1, w1 * h1 );
@@ -105,8 +103,9 @@ int main( int argc, char*argv[] )
     of.write( (const char*)data_out, w1*h1 );
     
     if( different == 0 ) {
-        cout << "Files " << argv[2] << " and " << argv[3] << " are identical" << endl;
+        // cout << "Files " << argv[2] << " and " << argv[3] << " are identical" << endl;
     } else {
+        cout << "Image size is " << w1 << "x" << h1 << endl;
         cout << "Files " << argv[2] << " and " << argv[3] << " differ in " << different << " bytes" << endl;
     }
 }

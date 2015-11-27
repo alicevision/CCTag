@@ -2,6 +2,7 @@
 #include "debug_macros.hpp"
 
 #include "frame.h"
+#include "frameparam.h"
 #include "clamp.h"
 #include "assist.h"
 
@@ -52,9 +53,7 @@ __global__
 void compute_map( const cv::cuda::PtrStepSz16s dx,
                   const cv::cuda::PtrStepSz16s dy,
                   const cv::cuda::PtrStepSz32u mag,
-                  cv::cuda::PtrStepSzb         map,
-                  const float                  low_thresh,
-                  const float                  high_thresh )
+                  cv::cuda::PtrStepSzb         map )
 {
     const int CANNY_SHIFT = 15;
     const int TG22 = (int32_t)(0.4142135623730950488016887242097*(1<<CANNY_SHIFT) + 0.5);
@@ -81,7 +80,7 @@ void compute_map( const cv::cuda::PtrStepSz16s dx,
     // 2 - the pixel does belong to an edge
     uint8_t edge_type = 0;
 
-    if( magVal > low_thresh )
+    if( magVal > tagParam.cannyThrLow_x_256 )
     {
         const int32_t tg22x = dxVal * TG22;
         const int32_t tg67x = tg22x + ((dxVal + dxVal) << CANNY_SHIFT);
@@ -100,7 +99,7 @@ void compute_map( const cv::cuda::PtrStepSz16s dx,
         y.y = clamp( y.y, dx.rows );
 
         if( magVal > mag.ptr(y.x)[x.x] && magVal >= mag.ptr(y.y)[x.y] ) {
-            edge_type = 1 + (uint8_t)(magVal > high_thresh);
+            edge_type = 1 + (uint8_t)(magVal > tagParam.cannyThrHigh_x_256);
         }
     }
     __syncthreads();
@@ -110,13 +109,10 @@ void compute_map( const cv::cuda::PtrStepSz16s dx,
 }
 
 __host__
-void Frame::applyMag( const cctag::Parameters & params )
+void Frame::applyMag( )
 {
-    dim3 block;
-    dim3 grid;
-    block.x = 32;
-    grid.x  = grid_divide( getWidth(), 32 );
-    grid.y  = getHeight();
+    dim3 block( 32, 1, 1 );
+    dim3 grid( grid_divide( getWidth(), 32 ), getHeight(), 1 );
 
     // necessary to merge into 1 stream
     compute_mag_l2
@@ -125,14 +121,14 @@ void Frame::applyMag( const cctag::Parameters & params )
 
     compute_map
         <<<grid,block,0,_stream>>>
-        ( _d_dx, _d_dy, _d_mag, _d_map, 256.0f * params._cannyThrLow, 256.0f * params._cannyThrHigh );
+        ( _d_dx, _d_dy, _d_mag, _d_map );
 
     /* block download until MAG and MAP are ready */
     cudaEventRecord( _download_ready_event.magmap, _stream );
 }
 
 __host__
-void Frame::applyMagDownload( const cctag::Parameters& )
+void Frame::applyMagDownload( )
 {
     cudaStreamWaitEvent( _download_stream, _download_ready_event.magmap, 0 );
 

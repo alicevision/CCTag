@@ -35,7 +35,7 @@ void DebugImage::writePGM( const string& filename, const cv::cuda::PtrStepSzb& p
     of.write( (char*)plane.data, plane.cols * plane.rows );
 
     uint32_t ct = 0;
-    for( int x=0; x<plane.step; x++ ) {
+    for( int x=0; x<plane.cols; x++ ) {
         for( int y=0; y<plane.rows; y++ ) {
             if( plane.ptr(y)[x] != 0 ) ct++;
         }
@@ -50,7 +50,7 @@ void DebugImage::writePGMscaled_T( const string&                 filename,
                                    const cv::cuda::PtrStepSz<T>& plane )
 {
     uint32_t ct = 0;
-    for( int x=0; x<plane.step; x++ ) {
+    for( int x=0; x<plane.cols; x++ ) {
         for( int y=0; y<plane.rows; y++ ) {
             if( plane.ptr(y)[x] != 0 ) ct++;
         }
@@ -245,7 +245,7 @@ void DebugImage::plotPoints( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb 
     cout << "Plotting in image of size " << img.cols << " x " << img.rows << endl;
     for( cit=v.begin(); cit!=cend; cit++ ) {
         if( outOfBounds( cit->coord.x, cit->coord.y, img ) ) {
-            cout << "Coord of point (" << cit->coord.x << "," << cit->coord.y << ") is out of bounds" << endl;
+            cout << "Coord of point (" << cit->coord.x << "," << cit->coord.y << ") is out of bounds (line " << __LINE__ << ")" << endl;
         } else {
             img.ptr(cit->coord.y)[cit->coord.x] = getColor( b );
         }
@@ -261,7 +261,7 @@ void DebugImage::plotPoints( const vector<int2>& v, cv::cuda::PtrStepSzb img, bo
     cout << "Plotting " << v.size() << " int2 coordinates into image of size " << img.cols << " x " << img.rows << endl;
     for( cit=v.begin(); cit!=cend; cit++ ) {
         if( outOfBounds( cit->x, cit->y, img ) ) {
-            cout << "Coord of point (" << cit->x << "," << cit->y << ") is out of bounds" << endl;
+            cout << "Coord of point (" << cit->x << "," << cit->y << ") is out of bounds (line " << __LINE__ << ")" << endl;
         } else {
             img.ptr(cit->y)[cit->x] = getColor( b );
         }
@@ -319,7 +319,7 @@ void DebugImage::plotLines( EdgeList<TriplePoint>& points,
         const int2& befor = out_it->descending.befor; // array[i].befor;
 
         if( outOfBounds( coord.x, coord.y, img ) ) {
-            cout << "Coord of point (" << coord.x << "," << coord.y << ") is out of bounds" << endl;
+            cout << "Coord of point (" << coord.x << "," << coord.y << ") is out of bounds (" << __LINE__ << ")" << endl;
         } else {
             // if( befor.x != 0 && befor.y != 0 && after.x != 0 && after.y != 0 )
             if( befor.x != 0 && befor.y != 0 ) {

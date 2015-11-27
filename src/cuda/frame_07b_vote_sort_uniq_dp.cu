@@ -1,6 +1,6 @@
 #include "onoff.h"
 
-#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#ifdef USE_SEPARABLE_COMPILATION
 
 #include <iostream>
 #include <algorithm>
@@ -118,7 +118,7 @@ bool Frame::applyVoteSortUniqDP( const cctag::Parameters& params )
 
 } // namespace popart
 
-#else // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#else // not USE_SEPARABLE_COMPILATION
 // other file
-#endif // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#endif // not USE_SEPARABLE_COMPILATION
 

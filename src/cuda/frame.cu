@@ -27,7 +27,9 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     , _meta( my_pipe, my_layer )
 {
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
+#ifndef EDGE_LINKING_HOST_SIDE
     _h_ring_output.data = 0;
+#endif
 
     if( download_stream != 0 ) {
         _private_download_stream = false;

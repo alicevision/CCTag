@@ -330,7 +330,7 @@ void hyst_outer_loop( int width, int height, FrameMetaPtr meta, cv::cuda::PtrSte
 #endif // USE_SEPARABLE_COMPILATION
 
 __host__
-void Frame::applyHyst( const cctag::Parameters & params )
+void Frame::applyHyst( )
 {
     assert( getWidth()  == _d_map.cols );
     assert( getHeight() == _d_map.rows );

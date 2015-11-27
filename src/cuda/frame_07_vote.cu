@@ -16,59 +16,6 @@ using namespace std;
 namespace popart
 {
 
-namespace vote
-{
-
-__device__ inline
-int count_winners( const int                       chosen_edge_index,
-                   TriplePoint*                    chosen_edge,
-                   const DevEdgeList<TriplePoint>& array )
-{
-    int   winner_size = 0;
-    float flow_length = 0.0f;
-
-    /* This loop looks dangerous, but it is actually faster than
-     * a manually partially unrolled loop.
-     */
-    const int voter_list_size = array.Size();
-    for( int i=0; i<voter_list_size; i++ )
-    // for( int i=0; i<chained_edgecoords.Size(); i++ )
-    {
-        if( array.ptr[i].my_vote == chosen_edge_index ) {
-            winner_size += 1;
-            flow_length += array.ptr[i].chosen_flow_length;
-        }
-    }
-    chosen_edge->_winnerSize = winner_size;
-    chosen_edge->_flowLength = flow_length / winner_size;
-    return winner_size;
-}
-
-/* For all chosen inner points, compute the average flow length and the
- * number of voters, and store in the TriplePoint structure of the chosen
- * inner point.
- *
- * chained_edgecoords is the list of all edges with their chaining info.
- * seed_indices is a list of indices into that list, containing the sorted,
- * unique indices of chosen inner points.
- */
-__global__
-void eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
-                  DevEdgeList<int>         seed_indices        // input
-                )
-{
-    uint32_t offset = threadIdx.x + blockIdx.x * 32;
-    if( offset >= seed_indices.Size() ) {
-        return;
-    }
-
-    const int    chosen_edge_index = seed_indices.ptr[offset];
-    TriplePoint* chosen_edge = &chained_edgecoords.ptr[chosen_edge_index];
-    vote::count_winners( chosen_edge_index, chosen_edge, chained_edgecoords );
-}
-
-} // namespace vote
-
 #ifdef USE_SEPARABLE_COMPILATION
 __host__
 void Frame::applyVote( const cctag::Parameters& )
@@ -82,9 +29,57 @@ __host__
 void Frame::applyVote( const cctag::Parameters& params )
 {
     bool success;
-    cudaError_t err;
 
+    /* For every potential outer ring point in _chained_edgecoords,
+     * check whether it votes for a point, and if yes:
+     * (a) add that point to _seed_indices, 
+     * (b) store the index that point (value it edgepoint_index_table)
+     *     in the outer ring point's TriplePoint structure
+     * (c) store the flow value there as well.
+     */
     success = applyVoteConstructLine( params );
+
+#ifndef NDEBUG
+    _vote._chained_edgecoords.copySizeFromDevice( _stream, EdgeListCont );
+    _vote._seed_indices.copySizeFromDevice( _stream, EdgeListWait );
+    cerr << "after constructline, voters: " << _vote._chained_edgecoords.host.size
+         << " votes: " << _vote._seed_indices.host.size << endl;
+#endif
+
+    if( success ) {
+        /* Apply sort and uniq to the list of potential inner ring
+         * points in _seed_indices. Store the result in _seed_indices_2.
+         */
+        success = applyVoteSortUniqNoDP( params );
+#ifndef NDEBUG
+        _vote._seed_indices_2.copySizeFromDevice( _stream, EdgeListWait );
+        cerr << "after sort/uniq, votes: " << _vote._seed_indices_2.host.size << endl;
+#endif
+
+        /* For all potential inner points in _seed_indices_2,
+         * count the number of voters and compute the average
+         * flow size. Annotate inner points.
+         */
+        applyVoteEval( params );
+#ifndef NDEBUG
+        _vote._seed_indices_2.copySizeFromDevice( _stream, EdgeListWait );
+        cerr << "after eval, votes: " << _vote._seed_indices_2.host.size << endl;
+#endif
+
+        /* For all inner points in _seed_indices_2, check if
+         * average flow size exceeds threshold, store all successful
+         * inner point in _seed_indices.
+         */
+        applyVoteIf( params );
+#ifndef NDEBUG
+        _vote._seed_indices.copySizeFromDevice( _stream, EdgeListWait );
+        cerr << "after if, votes: " << _vote._seed_indices.host.size << endl;
+#else
+        _vote._seed_indices.copySizeFromDevice( _stream, EdgeListCont );
+#endif
+
+        /* would it be better to remove unused voters from the chaincoords ? */
+    }
 
     if( not success ) {
         _vote._seed_indices.host.size       = 0;
@@ -92,59 +87,50 @@ void Frame::applyVote( const cctag::Parameters& params )
         return;
     }
 
-    /* For every chosen, compute the average flow size from all
-     * of its voters, and count the number of its voters.
-     */
-    success = applyVoteSortUniqNoDP( params );
-
-    if( success ) {
-        void*  assist_buffer = (void*)_d_intermediate.data;
-        size_t assist_buffer_sz;
-
-        /* Without Dynamic Parallelism, we must block here to retrieve the
-         * value d_num_selected_out from the device before the voting
-         * step.
-         */
-        _vote._seed_indices_2.copySizeFromDevice( _stream );
-        // POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._seed_indices_2.host.size,
-        //                                _vote._seed_indices_2.dev.getSizePtr(),
-        //                                sizeof(int), _stream );
-        POP_CUDA_SYNC( _stream );
-
-        /* Add number of voters to chosen inner points, and
-         * add average flow length to chosen inner points.
-         */
-        dim3 block( 32, 1, 1 );
-        dim3 grid ( grid_divide( _vote._seed_indices_2.host.size, 32 ), 1, 1 );
-
-        vote::eval_chosen
-            <<<grid,block,0,_stream>>>
-            ( _vote._chained_edgecoords.dev,
-              _vote._seed_indices_2.dev );
-        POP_CHK_CALL_IFSYNC;
-
-        applyVoteIf( params );
-        POP_CUDA_SYNC( _stream );
-
-#ifdef EDGE_LINKING_HOST_SIDE
-        /* After vote_eval_chosen, _chained_edgecoords is no longer changed
-         * we can copy it to the host for edge linking
-         */
-        _vote._chained_edgecoords.copySizeFromDevice( _stream );
-        POP_CUDA_SYNC( _stream );
-
-        _vote._chained_edgecoords.copyDataFromDevice( _stream );
-        POP_CHK_CALL_IFSYNC;
-
-        if( _vote._seed_indices.host.size != 0 ) {
-            _vote._seed_indices.copyDataFromDevice( _stream );
-        }
-#endif // EDGE_LINKING_HOST_SIDE
-    } else {
-        _vote._chained_edgecoords.host.size = 0;
-    }
+    applyVoteDownload( );
 }
 #endif // not USE_SEPARABLE_COMPILATION
+
+#ifndef NDEBUG
+__device__
+void debug_inner_test_consistency( const char*                    origin,
+                                   int                            p_idx,
+                                   const TriplePoint*             p,
+                                   cv::cuda::PtrStepSz32s         edgepoint_index_table,
+                                   const DevEdgeList<TriplePoint> chained_edgecoords )
+{
+    if( p == 0 ) {
+        printf("%s Impossible bug, initialized from memory address\n", origin);
+        assert( 0 );
+    }
+
+    if( outOfBounds( p->coord, edgepoint_index_table ) ) {
+        printf("%s Index (%d,%d) does not fit into coord lookup tables\n", origin, p->coord.x, p->coord.y );
+        assert( 0 );
+    }
+
+    int idx = edgepoint_index_table.ptr(p->coord.y)[p->coord.x];
+    if( idx < 0 || idx >= chained_edgecoords.Size() ) {
+        printf("%s Looked up index (coord) is out of bounds\n", origin);
+        assert( 0 );
+    }
+
+    if( idx != p_idx ) {
+        printf("%s Looked up index %d is not identical to input index %d\n", origin, idx, p_idx);
+        assert( 0 );
+    }
+
+    if( outOfBounds( p->descending.befor, edgepoint_index_table ) ) {
+        printf("%s Before coordinates (%d,%d) do not fit into lookup tables\n", origin, p->descending.befor.x, p->descending.befor.y );
+        assert( 0 );
+    }
+
+    if( outOfBounds( p->descending.after, edgepoint_index_table ) ) {
+        printf("%s After coordinates (%d,%d) for [%d]=(%d,%d) do not fit into lookup tables\n", origin, p->descending.after.x, p->descending.after.y, p_idx, p->coord.x, p->coord.y );
+        assert( 0 );
+    }
+}
+#endif // NDEBUG
 
 } // namespace popart
 

@@ -253,9 +253,11 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     }
 #endif // DEBUG_WRITE_CHOSEN_AS_PPM
 #endif // NDEBUG
+#ifndef EDGE_LINKING_HOST_SIDE
 #ifndef NDEBUG
 #ifdef DEBUG_WRITE_LINKED_AS_PPM
     {
+        cerr << "Enter link writing block" << endl;
 #ifdef DEBUG_WRITE_LINKED_AS_ASCII
         const bool write_linked_as_ascii = true;
 #else // DEBUG_WRITE_LINKED_AS_ASCII
@@ -340,6 +342,8 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                     color++;
                     if( color == DebugImage::WHITE ) color = DebugImage::LAST;
 #endif // DEBUG_WRITE_LINKED_AS_PPM_INTENSE
+                } else {
+                    cerr << "Not plotting in _h_ring_output, out.size==0" << endl;
                 }
             }
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
@@ -351,10 +355,17 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
                     DebugImage::writeASCII( filename + "-linked-dots.txt", debug_ostr.str() );
                 }
             }
+        } else {
+            cerr << "Not plotting anything from _h_ring_output." << endl
+                 << "    # chained edge coords: " << _vote._chained_edgecoords.host.size << endl
+                 << "    # seed indices: " << _vote._seed_indices.host.size << endl
+                 << "    # _h_ring_output dimensions: (" << _h_ring_output.cols << "," << _h_ring_output.rows << ")" << endl;
         }
+        cerr << "Leave link writing block" << endl;
     }
 #endif // DEBUG_WRITE_LINKED_AS_PPM
 #endif // NDEBUG
+#endif // EDGE_LINKING_HOST_SIDE
 }
 
 }; // namespace popart

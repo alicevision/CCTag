@@ -228,7 +228,7 @@ void Frame::applyGauss( const cctag::Parameters & params )
 }
 
 __host__
-void Frame::applyGaussDownload( const cctag::Parameters& )
+void Frame::applyGaussDownload( )
 {
     /* block download until DX and DY are ready */
     cudaStreamWaitEvent( _download_stream, _download_ready_event.dxdy, 0 );

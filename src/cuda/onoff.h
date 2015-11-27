@@ -1,14 +1,14 @@
 #pragma once
 
-#undef  DEBUG_WRITE_ORIGINAL_AS_PGM
+#define DEBUG_WRITE_ORIGINAL_AS_PGM
 #define DEBUG_WRITE_ORIGINAL_AS_ASCII
-#undef  DEBUG_WRITE_DX_AS_PGM
+#define DEBUG_WRITE_DX_AS_PGM
 #define DEBUG_WRITE_DX_AS_ASCII
-#undef  DEBUG_WRITE_DY_AS_PGM
+#define DEBUG_WRITE_DY_AS_PGM
 #define DEBUG_WRITE_DY_AS_ASCII
-#undef  DEBUG_WRITE_MAG_AS_PGM
+#define DEBUG_WRITE_MAG_AS_PGM
 #define DEBUG_WRITE_MAG_AS_ASCII
-#undef  DEBUG_WRITE_MAP_AS_PGM
+#define DEBUG_WRITE_MAP_AS_PGM
 #define DEBUG_WRITE_MAP_AS_ASCII
 #define DEBUG_WRITE_HYSTEDGES_AS_PGM
 #define DEBUG_WRITE_EDGES_AS_PGM
@@ -19,10 +19,16 @@
 #define DEBUG_WRITE_CHOSEN_AS_PPM
 #define DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
 #define DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
+// WARNING: follow 4 show bug in separable compilation
 #define DEBUG_WRITE_LINKED_AS_PPM
 #define DEBUG_WRITE_LINKED_AS_PPM_INTENSE
 #define DEBUG_WRITE_LINKED_AS_ASCII
 #define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
+
+/* Although some GPU code exists, it is too slow and edge
+ * linking is still done on the host side.
+ */
+#define EDGE_LINKING_HOST_SIDE
 
 #define DEBUG_LINKED_USE_INT4_BUFFER
 
@@ -32,7 +38,6 @@
  * a new kernel.
  */
 #undef USE_SEPARABLE_COMPILATION
-#define USE_SEPARABLE_COMPILATION_IN_GRADDESC
 
 /* Init _d_intermediate to 0 before uploading. Wastes time,
  * for debugging only. Required because of crash -O3 but not

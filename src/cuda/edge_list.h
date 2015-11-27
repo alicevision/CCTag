@@ -24,6 +24,13 @@ enum EdgeListAllocMode
     EdgeListBoth = 1
 };
 
+enum EdgeListBlockSizeCopy
+{
+    EdgeListCont = false,
+    EdgeListWait = true
+};
+
+
 template <typename T> struct EdgeList;
 
 template <typename T>
@@ -219,25 +226,47 @@ public:
 #endif // NDEBUG
 
     __host__
-    void copySizeFromDevice( cudaStream_t stream )
+    void copySizeFromDevice( cudaStream_t stream, EdgeListBlockSizeCopy wait )
     {
-        // POP_CUDA_MEMCPY_TO_HOST_ASYNC( &host.size, dev.size, sizeof(int), stream );
-        cudaMemcpyAsync( &host.size, dev.size, sizeof(int), cudaMemcpyDeviceToHost, stream );
+        cudaError_t err;
+        err = cudaMemcpyAsync( &host.size, dev.size, sizeof(int), cudaMemcpyDeviceToHost, stream );
+        if( err != cudaSuccess ) {
+            std::cerr << "Error (1) in EdgeList::copySizeFromDevice: "
+                      << cudaGetErrorString(err) << std::endl;
+            host.size = 0;
+            return;
+        }
+        if( wait ) {
+            err = cudaStreamSynchronize( stream );
+        }
+        if( err != cudaSuccess ) {
+            std::cerr << "Error (2) in EdgeList::copySizeFromDevice: "
+                      << cudaGetErrorString(err) << std::endl;
+            host.size = 0;
+        }
     }
 
 #ifndef NDEBUG
     __host__
-    void copyDataFromDevice( int sz )
+    void copyDataFromDeviceSync( int sz )
     {
         POP_CUDA_MEMCPY_SYNC( host.ptr,
                               dev.ptr,
                               sz * sizeof(T),
                               cudaMemcpyDeviceToHost );
     }
+    __host__
+    void copyDataFromDeviceSync( )
+    {
+        POP_CUDA_MEMCPY_SYNC( host.ptr,
+                              dev.ptr,
+                              host.size * sizeof(T),
+                              cudaMemcpyDeviceToHost );
+    }
 #endif // NDEBUG
 
     __host__
-    bool copyDataFromDevice( int sz, cudaStream_t stream )
+    bool copyDataFromDeviceAsync( int sz, cudaStream_t stream )
     {
         assert( sz != 0 );
         if( sz == 0 ) {
@@ -246,6 +275,21 @@ public:
         POP_CUDA_MEMCPY_ASYNC( host.ptr,
                                dev.ptr,
                                sz * sizeof(T),
+                               cudaMemcpyDeviceToHost,
+                               stream );
+        return true;
+    }
+
+    __host__
+    bool copyDataFromDeviceAsync( cudaStream_t stream )
+    {
+        assert( host.size != 0 );
+        if( host.size == 0 ) {
+            return false;
+        }
+        POP_CUDA_MEMCPY_ASYNC( host.ptr,
+                               dev.ptr,
+                               host.size * sizeof(T),
                                cudaMemcpyDeviceToHost,
                                stream );
         return true;
@@ -290,7 +334,7 @@ private:
             const int size = min( maxSize, host.size );
 
             host.alloc( size );
-            copyDataFromDevice( size );
+            copyDataFromDeviceSync( size );
         }
         return true;
     }

@@ -14,24 +14,36 @@
 using namespace std;
 
 namespace popart {
-namespace vote {
+
+struct NumVotersIsGreaterEqual
+{
+    DevEdgeList<TriplePoint> _array;
+    int                      _compare;
+
+    __host__ __device__
+    __forceinline__
+    NumVotersIsGreaterEqual( int compare, DevEdgeList<TriplePoint> _d_array )
+        : _compare(compare)
+        , _array( _d_array )
+    {}
+
+    __device__
+    __forceinline__
+    bool operator()(const int &a) const {
+        return (_array.ptr[a]._winnerSize >= _compare);
+    }
+};
 
 #ifdef USE_SEPARABLE_COMPILATION
+namespace vote {
+
 __global__
-void dp_call_05_if( DevEdgeList<int2>        edgeCoords, // input
-                cv::cuda::PtrStepSzb     edgeImage, // input
-                cv::cuda::PtrStepSz16s   dx, // input
-                cv::cuda::PtrStepSz16s   dy, // input
-                DevEdgeList<TriplePoint> chainedEdgeCoords, // output
-                cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
-                DevEdgeList<int>         seedIndices, // output
-                DevEdgeList<int>         seedIndices2, // output
-                cv::cuda::PtrStepSzb     intermediate, // buffer
-                const uint32_t           param_nmax, // input param
-                const int32_t            param_thrGradient, // input param
-                const size_t             param_numCrowns, // input param
-                const float              param_ratioVoting, // input param
-                const int                param_minVotesToSelectCandidate ) // input param
+void dp_call_05_if(
+    DevEdgeList<TriplePoint> chainedEdgeCoords, // input
+    DevEdgeList<int>         seedIndices,       // output
+    DevEdgeList<int>         seedIndices2,      // input
+    cv::cuda::PtrStepSzb     intermediate,      // buffer
+    const int                param_minVotesToSelectCandidate ) // input param
 {
     if( seedIndices.getSize() == 0 ) {
         seedIndices2.setSize(0);
@@ -41,7 +53,6 @@ void dp_call_05_if( DevEdgeList<int2>        edgeCoords, // input
     cudaStream_t childStream;
     cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
 
-    // safety: SortKeys is allowed to alter assist_buffer_sz
     void*  assist_buffer = (void*)intermediate.data;
     size_t assist_buffer_sz = intermediate.step * intermediate.rows;
 
@@ -64,35 +75,29 @@ void dp_call_05_if( DevEdgeList<int2>        edgeCoords, // input
 }
 
 } // namespace vote
-#endif // USE_SEPARABLE_COMPILATION
 
-#ifdef USE_SEPARABLE_COMPILATION
 __host__
 bool Frame::applyVoteIf( const cctag::Parameters& params )
 {
-    descent::dp_call_05_if
+    vote::dp_call_05_if
         <<<1,1,0,_stream>>>
-        ( _vote._all_edgecoords.dev,      // input
-          _d_edges,                       // input
-          _d_dx,                          // input
-          _d_dy,                          // input
-          _vote._chained_edgecoords.dev,  // output
-          _vote._d_edgepoint_index_table, // output
+        ( _vote._chained_edgecoords.dev,  // input
           _vote._seed_indices.dev,        // output
-          _vote._seed_indices_2.dev,      // buffer
+          _vote._seed_indices_2.dev,      // input
           cv::cuda::PtrStepSzb(_d_intermediate), // buffer
-          params._distSearch,             // input param
-          params._thrGradientMagInVote,   // input param
-          params._nCrowns,                // input param
-          params._ratioVoting,            // input param
           params._minVotesToSelectCandidate ); // input param
     POP_CHK_CALL_IFSYNC;
+
+    _vote._seed_indices.copySizeFromDevice( _stream, EdgeListCont );
+
     return true;
 }
 #else // not USE_SEPARABLE_COMPILATION
 __host__
-void Frame::applyVoteIf( const cctag::Parameters& params )
+bool Frame::applyVoteIf( const cctag::Parameters& params )
 {
+    cudaError_t err;
+
     void*  assist_buffer = (void*)_d_intermediate.data;
     size_t assist_buffer_sz;
 
@@ -110,25 +115,20 @@ void Frame::applyVoteIf( const cctag::Parameters& params )
                                  _stream,
                                  DEBUG_CUB_FUNCTIONS );
 
-    if( err != cudaSuccess ) {
-        std::cerr << "cub::DeviceSelect::If init step failed. Crashing." << std::endl;
-        std::cerr << "Error message: " << cudaGetErrorString( err ) << std::endl;
-        exit(-1);
-    }
+    POP_CUDA_FATAL_TEST( err, "CUB DeviceSelect::If failed in init test" );
+
     if( assist_buffer_sz >= _d_intermediate.step * _d_intermediate.rows ) {
         std::cerr << "cub::DeviceSelect::If requires too much intermediate memory. Crashing." << std::endl;
         exit( -1 );
     }
 #else
     // THIS CODE WORKED BEFORE
-    // safety: SortKeys is allowed to alter assist_buffer_sz
     assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
 #endif
 
     /* Filter all chosen inner points that have fewer
      * voters than required by Parameters.
      */
-
     err = cub::DeviceSelect::If( assist_buffer,
                                  assist_buffer_sz,
                                  _vote._seed_indices_2.dev.ptr,
@@ -141,7 +141,8 @@ void Frame::applyVoteIf( const cctag::Parameters& params )
     POP_CHK_CALL_IFSYNC;
     POP_CUDA_FATAL_TEST( err, "CUB DeviceSelect::If failed" );
 
-    _vote._seed_indices.copySizeFromDevice( _stream );
+    _vote._seed_indices.copySizeFromDevice( _stream, EdgeListCont );
+    return true;
 }
 #endif // not USE_SEPARABLE_COMPILATION
 

@@ -34,7 +34,7 @@ void Frame::fillFromTexture( Frame& src )
 }
 
 __host__
-void Frame::applyPlaneDownload( const cctag::Parameters& )
+void Frame::applyPlaneDownload( )
 {
     cudaEventRecord( _download_ready_event.plane, _stream );
 

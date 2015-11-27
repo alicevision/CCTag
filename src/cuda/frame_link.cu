@@ -1,3 +1,7 @@
+#include "onoff.h"
+
+#ifndef EDGE_LINKING_HOST_SIDE
+
 #include <vector>
 #include <math_constants.h>
 
@@ -778,4 +782,6 @@ void Frame::applyLink( const cctag::Parameters& params )
 }
 }; // namespace popart
 
+
+#endif // EDGE_LINKING_HOST_SIDE
 

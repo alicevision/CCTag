@@ -19,8 +19,6 @@
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
-#define EDGE_LINKING_HOST_SIDE
-
 /* This must replace params._maxEdges. That configuration variable
  * is definitely not big enough for finding all edge points in a 1K
  * image.
@@ -139,71 +137,56 @@ public:
     void fillFromTexture( Frame& src );
 
     // implemented in frame_01_tex.cu
-    void applyPlaneDownload( const cctag::Parameters& param );
+    void applyPlaneDownload( );
 
     // implemented in frame_02_gaussian.cu
     void applyGauss( const cctag::Parameters& param );
 
     // implemented in frame_02_gaussian.cu
-    void applyGaussDownload( const cctag::Parameters& param );
+    void applyGaussDownload( );
 
     // implemented in frame_03_magmap.cu
-    void applyMag( const cctag::Parameters& param );
+    void applyMag( );
 
     // implemented in frame_03_magmap.cu
-    void applyMagDownload( const cctag::Parameters& param );
+    void applyMagDownload( );
 
     // implemented in frame_04_hyst.cu
-    void applyHyst( const cctag::Parameters& param );
+    void applyHyst( );
 
     // implemented in frame_05_thin.cu
-    void applyThinning( const cctag::Parameters& param );
-    void applyThinDownload( const cctag::Parameters& param );
+    void applyThinning( );
+    void applyThinDownload( );
 
     // implemented in frame_06_graddesc.cu
-    bool applyDesc0( const cctag::Parameters& param );
-#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
-    bool applyDesc1( const cctag::Parameters& param );
-    // applyDesc2 replaced by applyVoteConstructLine
-    // applyDesc3 replaced by applyVoteSortUniqDP
-    bool applyDesc4( const cctag::Parameters& param );
-    // applyDesc5 replaced by applyVoteIf
-    bool applyDesc6( const cctag::Parameters& param );
-#else // USE_SEPARABLE_COMPILATION_IN_GRADDESC
-    bool applyDesc( const cctag::Parameters& param );
-#endif // USE_SEPARABLE_COMPILATION_IN_GRADDESC
-    // implemented in frame_06_graddesc.cu
-    void applyDescDownload( const cctag::Parameters& param );
+    bool applyDesc( );
 
-#ifdef USE_SEPARABLE_COMPILATION_IN_GRADDESC
-    // implemented in frame_07_vote_line.cu
+    // implemented in frame_07a_vote_line.cu
     bool applyVoteConstructLine( const cctag::Parameters& params );
 
-    // implemented in frame_07_vote_sort_uniq_dp.cu
+#ifdef USE_SEPARABLE_COMPILATION
+    // implemented in frame_07b_vote_sort_uniq_dp.cu
     bool applyVoteSortUniqDP( const cctag::Parameters& params );
-
-    // implemented in frame_07_vote_if.cu
-    bool applyVoteIf( const cctag::Parameters& params );
-#else // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
-    // implemented in frame_07_vote_line.cu
-    bool applyVoteConstructLine( const cctag::Parameters& params );
-
-    // implemented in frame_07_vote_sort_uniq_nodp.cu
+#else // not USE_SEPARABLE_COMPILATION
+    // implemented in frame_07b_vote_sort_uniq_nodp.cu
     // called by applyVote
     bool applyVoteSortUniqNoDP( const cctag::Parameters& params );
-
-    // implemented in frame_07_vote_if.cu
-    bool applyVoteIf( const cctag::Parameters& params );
 private:
-    // implemented in frame_07_vote_sort_nodp.cu
+    // implemented in frame_07b_vote_sort_nodp.cu
     // called by applyVoteSortUniqNoDP
     bool applyVoteSortNoDP( const cctag::Parameters& params );
-
-    // implemented in frame_07_vote_uniq_nodp.cu
-    // called by applyVoteSortUniqNoDP
     void applyVoteUniqNoDP( const cctag::Parameters& params );
 public:
-#endif // not USE_SEPARABLE_COMPILATION_IN_GRADDESC
+#endif // not USE_SEPARABLE_COMPILATION
+
+    // implemented in frame_07c_eval.cu
+    bool applyVoteEval( const cctag::Parameters& params );
+
+    // implemented in frame_07d_vote_if.cu
+    bool applyVoteIf( const cctag::Parameters& params );
+
+    // implemented in frame_07e_graddesc.cu
+    void applyVoteDownload( );
 
     // implemented in frame_07_vote.cu
     void applyVote( const cctag::Parameters& param );
@@ -297,7 +280,9 @@ public: // HACK FOR DEBUGGING
 
     cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
 private:
+#ifndef EDGE_LINKING_HOST_SIDE
     cv::cuda::PtrStepSzInt2 _h_ring_output;
+#endif
 
     Voting _vote;
 

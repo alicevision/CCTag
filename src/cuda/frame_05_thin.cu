@@ -167,7 +167,7 @@ void Frame::initThinningTable( )
 }
 
 __host__
-void Frame::applyThinning( const cctag::Parameters & params )
+void Frame::applyThinning( )
 {
     dim3 block( 32, 1, 1 );
     dim3 grid( grid_divide( getWidth(), 32 ),
@@ -197,12 +197,12 @@ void Frame::applyThinning( const cctag::Parameters & params )
 
     int val;
     _meta.fromDevice( Num_edges_thinned, val, _stream );
-    _vote._all_edgecoords.copySizeFromDevice( _stream );
-    cudaStreamSynchronize( _stream );
+    _vote._all_edgecoords.copySizeFromDevice( _stream, EdgeListWait );
     std::cerr << __FILE__ << ":" << __LINE__ << std::endl
               << "num of edge points after thinning: " << val << std::endl
               << "num of edge points added to list:  " << _vote._all_edgecoords.host.size << std::endl
               << "edgemax: " << EDGE_POINT_MAX << std::endl;
+    _vote._all_edgecoords.copyDataFromDeviceSync( );
 
 #else // NDEBUG
     thinning::second_round
@@ -216,7 +216,7 @@ void Frame::applyThinning( const cctag::Parameters & params )
         <<<1,1,0,_stream>>>
         ( _vote._all_edgecoords.dev );
 
-    _vote._all_edgecoords.copySizeFromDevice( _stream );
+    _vote._all_edgecoords.copySizeFromDevice( _stream, EdgeListCont );
 #if 0
     debugPointIsOnEdge( _d_edges, _vote._all_edgecoords, _stream );
 #endif // NDEBUG
@@ -230,7 +230,7 @@ void Frame::applyThinning( const cctag::Parameters & params )
 }
 
 __host__
-void Frame::applyThinDownload( const cctag::Parameters& )
+void Frame::applyThinDownload( )
 {
 #ifdef EDGE_LINKING_HOST_SIDE
     /* After thinning_and_store, _all_edgecoords is no longer changed
@@ -240,17 +240,13 @@ void Frame::applyThinDownload( const cctag::Parameters& )
 
     /* CPU must wait for counter _vote._all_edgecoords.host.size */
     cudaEventSynchronize( _download_ready_event.edgecoords1 );
+    POP_CHK_CALL_IFSYNC;
 
     // cudaEventSynchronize( _download_ready_event.edgecoords2 );
+    _vote._all_edgecoords.copyDataFromDeviceAsync( _download_stream );
     POP_CHK_CALL_IFSYNC;
-    if( _vote._all_edgecoords.host.size > 0 ) {
-        _vote._all_edgecoords.copyDataFromDevice( _vote._all_edgecoords.host.size,
-                                                  _download_stream );
-        POP_CHK_CALL_IFSYNC;
-    }
 #ifndef NDEBUG
-    else
-    {
+    if( _vote._all_edgecoords.host.size <= 0 ) {
         // initialize the hostside array to 0 for debugging
         _vote._all_edgecoords.initHost( );
     }

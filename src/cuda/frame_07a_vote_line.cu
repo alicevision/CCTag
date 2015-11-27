@@ -29,7 +29,7 @@ TriplePoint* find_neigh( const int2&              neigh,
             assert( idx < chained_edgecoords.Size() );
             TriplePoint* neighbour = &chained_edgecoords.ptr[idx];
 #ifndef NDEBUG
-            debug_inner_test_consistency( idx, neighbour, edgepoint_index_table, chained_edgecoords );
+            debug_inner_test_consistency( "B", idx, neighbour, edgepoint_index_table, chained_edgecoords );
 
             if( neigh.x != neighbour->coord.x || neigh.y != neighbour->coord.y ) {
                 printf("Intended coordinate is (%d,%d) at index %d, looked up coord is (%d,%d)\n",
@@ -129,7 +129,7 @@ const TriplePoint* cl_inner(
 
 #ifndef NDEBUG
     p->debug_init( );
-    debug_inner_test_consistency( offset, p, edgepoint_index_table, chained_edgecoords );
+    debug_inner_test_consistency( "A", offset, p, edgepoint_index_table, chained_edgecoords );
     p->debug_add( p->coord );
 #endif // NDEBUG
 
