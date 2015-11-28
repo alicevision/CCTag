@@ -67,6 +67,7 @@ void constructFlowComponentFromSeed(
         std::list<Candidate> & vCandidateLoopOne,
         const Parameters & params)
 {
+  assert( seed );
   // Check if the seed has already been processed, i.e. belongs to an already
   // reconstructed flow component.
   if (!seed->_processedIn)
@@ -432,6 +433,7 @@ void cctagDetectionFromEdges(
   // will be collected and constitute the initial data of a flow component.
   for (int iSeed = 0; iSeed < nSeedsToProcess; ++iSeed)
   {
+    assert( seeds[iSeed] );
     constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
   }
 

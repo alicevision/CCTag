@@ -16,9 +16,9 @@ namespace popart {
 namespace vote {
 
 __device__ inline
-int count_winners( const int                       chosen_edge_index,
-                   TriplePoint*                    chosen_edge,
-                   const DevEdgeList<TriplePoint>& array )
+int count_winners( const int                       inner_point_index,
+                   TriplePoint*                    inner_point,
+                   const DevEdgeList<TriplePoint>& voters )
 {
     int   winner_size = 0;
     float flow_length = 0.0f;
@@ -26,15 +26,15 @@ int count_winners( const int                       chosen_edge_index,
     /* This loop looks dangerous, but it is actually faster than
      * a manually partially unrolled loop.
      */
-    const int voter_list_size = array.Size();
+    const int voter_list_size = voters.Size();
     for( int i=0; i<voter_list_size; i++ ) {
-        if( array.ptr[i].my_vote == chosen_edge_index ) {
+        if( voters.ptr[i].my_vote == inner_point_index ) {
             winner_size += 1;
-            flow_length += array.ptr[i].chosen_flow_length;
+            flow_length += voters.ptr[i].chosen_flow_length;
         }
     }
-    chosen_edge->_winnerSize = winner_size;
-    chosen_edge->_flowLength = flow_length / winner_size;
+    inner_point->_winnerSize = winner_size;
+    inner_point->_flowLength = flow_length / winner_size;
     return winner_size;
 }
 
@@ -42,23 +42,23 @@ int count_winners( const int                       chosen_edge_index,
  * number of voters, and store in the TriplePoint structure of the chosen
  * inner point.
  *
- * chained_edgecoords is the list of all edges with their chaining info.
- * seed_indices is a list of indices into that list, containing the sorted,
+ * voters is the list of all edges with their chaining info.
+ * inner_points is a list of indices into that list, containing the sorted,
  * unique indices of chosen inner points.
  */
 __global__
-void eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
-                  DevEdgeList<int>         seed_indices        // input
+void eval_chosen( DevEdgeList<TriplePoint> voters,      // input-output
+                  DevEdgeList<int>         inner_points // input
                 )
 {
     uint32_t offset = threadIdx.x + blockIdx.x * 32;
-    if( offset >= seed_indices.Size() ) {
+    if( offset >= inner_points.Size() ) {
         return;
     }
 
-    const int    chosen_edge_index = seed_indices.ptr[offset];
-    TriplePoint* chosen_edge = &chained_edgecoords.ptr[chosen_edge_index];
-    vote::count_winners( chosen_edge_index, chosen_edge, chained_edgecoords );
+    const int    inner_point_index = inner_points.ptr[offset];
+    TriplePoint* inner_point = &voters.ptr[inner_point_index];
+    vote::count_winners( inner_point_index, inner_point, voters );
 }
 
 } // namespace vote
@@ -70,18 +70,18 @@ namespace vote
 
 __global__
 void dp_call_eval_chosen(
-                DevEdgeList<TriplePoint> chainedEdgeCoords, // modified input
-                DevEdgeList<int>         seedIndices )      // input
+                DevEdgeList<TriplePoint> voters, // modified input
+                DevEdgeList<int>         inner_points )      // input
 {
-    int listsize = seedIndices.getSize();
+    int listsize = inner_points.getSize();
 
     dim3 block( 32, 1, 1 );
     dim3 grid( grid_divide( listsize, 32 ), 1, 1 );
 
     vote::eval_chosen
         <<<grid,block>>>
-        ( chainedEdgeCoords,
-          seedIndices );
+        ( voters,
+          inner_points );
 }
 
 } // namespace vote

@@ -284,6 +284,11 @@ private:
     cv::cuda::PtrStepSzInt2 _h_ring_output;
 #endif
 
+    // Stores coordinates of all edges. Valid after thinning.
+    EdgeList<int2>         _all_edgecoords;
+
+    // Stores all points that are recognized as potential voters
+    // in gradient descent.
     EdgeList<TriplePoint>  _voters;
 
     Voting _vote;

@@ -131,7 +131,7 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_debug_map = (unsigned char*)ptr;
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-    _vote._all_edgecoords.alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _all_edgecoords      .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _voters              .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _vote._seed_indices  .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _vote._seed_indices_2.alloc( EDGE_POINT_MAX, EdgeListDevOnly );
@@ -182,7 +182,7 @@ void Frame::initRequiredMem( )
                            _d_edges.step * _d_edges.rows,
                            _stream );
 
-    _vote._all_edgecoords.init( _stream );
+    _all_edgecoords      .init( _stream );
     _voters              .init( _stream );
     _vote._seed_indices  .init( _stream );
     _vote._seed_indices_2.init( _stream );
@@ -222,7 +222,7 @@ void Frame::releaseRequiredMem( )
     cudaFreeHost( _h_debug_map );
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-    _vote._all_edgecoords.release();
+    _all_edgecoords      .release();
     _voters              .release();
     _vote._seed_indices  .release();
     _vote._seed_indices_2.release();

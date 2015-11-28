@@ -1455,14 +1455,6 @@ int identify(
             params._numSamplesOuterEdgePointsRefinement,
             params._cutsSelectionTrials
             );
-#ifdef CCTAG_FIND_RANDOMNESS
-    std::cerr << __FILE__ << ":" << __LINE__ << " selected cuts: ";
-    for( const ImageCut& cut : vSelectedCuts ) {
-        std::cerr << "(" << cut.start().x() << "," << cut.start().y() << ")->("
-                  << cut.stop().x() << "," << cut.stop().y() << ") ";
-    }
-    std::cerr << std::endl;
-#endif
     
     DO_TALK( CCTAG_COUT_OPTIM("Initial cut selection"); )
 #endif
@@ -1526,9 +1518,6 @@ int identify(
 
   if( !hasConverged )
   {
-#ifdef CCTAG_FIND_RANDOMNESS
-    std::cerr << "refineConicFamilyGlob has not converged" << std::endl;
-#endif
     DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
     CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
     DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
@@ -1536,10 +1525,6 @@ int identify(
     return status::opti_has_diverged;
   }
 
-#ifdef CCTAG_FIND_RANDOMNESS
-    std::cerr << "refineConicFamilyGlob -> (" << cctag.centerImg().x() << "," << cctag.centerImg().y() << ")" << std::endl;
-#endif
-    
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t3(boost::posix_time::microsec_clock::local_time());
   DO_TALK(

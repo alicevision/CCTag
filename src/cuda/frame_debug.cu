@@ -14,27 +14,10 @@
 #include "frame.h"
 #include "debug_image.h"
 #include "edge_list.h"
+#include "cmp_list.h"
 #include "assist.h"
 
 #undef CHATTY_WRITE_DEBUG_PLANE
-
-struct int2cmp
-{
-    __host__
-    inline bool operator()( const int2& l, const int2& r )
-    {
-        return ( l.x < r.x || ( l.x == r.x && l.y < r.y ) );
-    }
-};
-
-struct tp_cmp
-{
-    __host__
-    inline bool operator()( const popart::TriplePoint& l, const popart::TriplePoint& r )
-    {
-        return ( l.coord.x < r.coord.x || ( l.coord.x == r.coord.x && l.coord.y < r.coord.y ) );
-    }
-};
 
 namespace popart {
 

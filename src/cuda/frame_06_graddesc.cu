@@ -58,20 +58,20 @@ void initChainedEdgeCoords( DevEdgeList<TriplePoint> voters )
 }
 
 __device__
-bool gradient_descent_inner( int4&                  out_edge_info,
-                             short2&                out_edge_d,
-                             DevEdgeList<int2>      all_edgecoords,
-                             cv::cuda::PtrStepSzb   edge_image,
-                             cv::cuda::PtrStepSz16s d_dx,
-                             cv::cuda::PtrStepSz16s d_dy )
+bool gradient_descent_inner( const int                    idx,
+                             const int                    idy,
+                             int                          direction,
+                             int4&                        out_edge_info,
+                             short2&                      out_edge_d,
+                             const cv::cuda::PtrStepSzb   edge_image,
+                             const cv::cuda::PtrStepSz16s d_dx,
+                             const cv::cuda::PtrStepSz16s d_dy )
 {
-    const int offset = blockIdx.x * 32 + threadIdx.x;
-    int direction    = threadIdx.y == 0 ? -1 : 1;
-
-    if( offset >= all_edgecoords.Size() ) return false;
-
-    const int idx = all_edgecoords.ptr[offset].x;
-    const int idy = all_edgecoords.ptr[offset].y;
+    // const int offset = blockIdx.x * 32 + threadIdx.x;
+    // int direction    = threadIdx.y == 0 ? -1 : 1;
+    // if( offset >= all_edgecoords.Size() ) return false;
+    // const int idx = all_edgecoords.ptr[offset].x;
+    // const int idy = all_edgecoords.ptr[offset].y;
 #if 0
     /* This was necessary to allow the "after" threads (threadIdx.y==1)
      * to return sensible results even if "before" was 0.
@@ -180,32 +180,43 @@ bool gradient_descent_inner( int4&                  out_edge_info,
 }
 
 __global__
-void gradient_descent( DevEdgeList<int2>        all_edgecoords,
-                       cv::cuda::PtrStepSzb     edge_image,
-                       cv::cuda::PtrStepSz16s   d_dx,
-                       cv::cuda::PtrStepSz16s   d_dy,
-                       DevEdgeList<TriplePoint> voters,    // output
-                       cv::cuda::PtrStepSz32s   edgepoint_index_table ) // output
+void gradient_descent( const DevEdgeList<int2>      all_edgecoords, // input
+                       const cv::cuda::PtrStepSzb   edge_image,
+                       const cv::cuda::PtrStepSz16s d_dx,
+                       const cv::cuda::PtrStepSz16s d_dy,
+                       DevEdgeList<TriplePoint>     voters,    // output
+                       cv::cuda::PtrStepSz32s       edgepoint_index_table ) // output
 {
     assert( blockDim.x * gridDim.x < all_edgecoords.Size() + 32 );
     assert( voters.Size() <= 2*all_edgecoords.Size() );
 
     int4   out_edge_info;
     short2 out_edge_d;
-    bool   keep;
+    bool   keep = false;
     // before -1  if threadIdx.y == 0
     // after   1  if threadIdx.y == 1
 
-    keep = gradient_descent_inner( out_edge_info,
-                                   out_edge_d,
-                                   all_edgecoords,
-                                   edge_image,
-                                   d_dx,
-                                   d_dy );
+    const int offset = blockIdx.x * 32 + threadIdx.x;
+
+    if( offset < all_edgecoords.Size() )
+    {
+        const int idx       = all_edgecoords.ptr[offset].x;
+        const int idy       = all_edgecoords.ptr[offset].y;
+        const int direction = threadIdx.y == 0 ? -1 : 1;
+
+        keep = gradient_descent_inner( idx, idy,
+                                       direction,
+                                       out_edge_info,
+                                       out_edge_d,
+                                       edge_image,
+                                       d_dx,
+                                       d_dy );
+    }
+
+    __syncthreads();
 
     assert( not keep || not outOfBounds( out_edge_info.z, out_edge_info.w, edge_image ) );
 
-    __syncthreads();
     __shared__ int2 merge_directions[2][32];
     merge_directions[threadIdx.y][threadIdx.x].x = keep ? out_edge_info.z : 0;
     merge_directions[threadIdx.y][threadIdx.x].y = keep ? out_edge_info.w : 0;
@@ -306,25 +317,19 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
 #ifdef USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 __global__
 void dp_call_01_gradient_descent(
-    DevEdgeList<int2>        edgeCoords, // input
-    cv::cuda::PtrStepSzb     edgeImage, // input
-    cv::cuda::PtrStepSz16s   dx, // input
-    cv::cuda::PtrStepSz16s   dy, // input
-    DevEdgeList<TriplePoint> chainedEdgeCoords, // output
-    cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
-    DevEdgeList<int>         seedIndices, // output
-    DevEdgeList<int>         seedIndices2, // output
-    cv::cuda::PtrStepSzb     intermediate ) // buffer
+    const DevEdgeList<int2>      all_edgecoords, // input
+    const cv::cuda::PtrStepSzb   edge_image, // input
+    const cv::cuda::PtrStepSz16s dx, // input
+    const cv::cuda::PtrStepSz16s dy, // input
+    DevEdgeList<TriplePoint>     chainedEdgeCoords, // output
+    cv::cuda::PtrStepSz32s       edgepointIndexTable ) // output
 {
     initChainedEdgeCoords_2( chainedEdgeCoords );
 
     /* No need to start more child kernels than the number of points found by
      * the Thinning stage.
      */
-    int listsize = edgeCoords.getSize();
-
-    /* dummy: in case we return early */
-    seedIndices.setSize( 0 );
+    int listsize = all_edgecoords.getSize();
 
     /* The list of edge candidates is empty. Do nothing. */
     if( listsize == 0 ) return;
@@ -334,8 +339,8 @@ void dp_call_01_gradient_descent(
 
     gradient_descent
         <<<grid,block>>>
-        ( edgeCoords,         // input
-          edgeImage,
+        ( all_edgecoords,         // input
+          edge_image,
           dx,
           dy,
           chainedEdgeCoords,  // output - TriplePoints with before/after info
@@ -351,15 +356,12 @@ bool Frame::applyDesc( )
 {
     descent::dp_call_01_gradient_descent
         <<<1,1,0,_stream>>>
-        ( _vote._all_edgecoords.dev,      // input
+        ( _all_edgecoords.dev,      // input
           _d_edges,                       // input
           _d_dx,                          // input
           _d_dy,                          // input
-          _voters.dev,  // output
-          _vote._d_edgepoint_index_table, // output
-          _vote._seed_indices.dev,        // output
-          _vote._seed_indices_2.dev,      // buffer
-          cv::cuda::PtrStepSzb(_d_intermediate) ); // buffer
+          _voters.dev,                    // output
+          _vote._d_edgepoint_index_table ); // output
     POP_CHK_CALL_IFSYNC;
     return true;
 }
@@ -375,7 +377,7 @@ bool Frame::applyDesc( )
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( &listsize,
-                                   _vote._all_edgecoords.dev.getSizePtr(),
+                                   _all_edgecoords.dev.getSizePtr(),
                                    sizeof(int), _stream );
     POP_CUDA_SYNC( _stream );
 
@@ -388,12 +390,12 @@ bool Frame::applyDesc( )
     dim3 grid( grid_divide( listsize, 32 ), 1, 1 );
 
 #ifndef NDEBUG
-    debugPointIsOnEdge( _d_edges, _vote._all_edgecoords, _stream );
+    debugPointIsOnEdge( _d_edges, _all_edgecoords, _stream );
 #endif
 
     descent::gradient_descent
         <<<grid,block,0,_stream>>>
-        ( _vote._all_edgecoords.dev,
+        ( _all_edgecoords.dev,
           _d_edges,
           _d_dx,
           _d_dy,
