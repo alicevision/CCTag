@@ -24,19 +24,9 @@ namespace cv {
 
 namespace popart {
 
-namespace vote {
-
-__global__
-void eval_chosen( DevEdgeList<TriplePoint> chained_edgecoords, // input-output
-                  DevEdgeList<int>         seed_indices        // input
-                );
-
-}; // namespace vote
-
 struct Voting
 {
     EdgeList<int2>         _all_edgecoords;
-    EdgeList<TriplePoint>  _chained_edgecoords;
     EdgeList<int>          _seed_indices;
     EdgeList<int>          _seed_indices_2;
     cv::cuda::PtrStepSz32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
@@ -50,7 +40,7 @@ void debug_inner_test_consistency( const char*                    origin,
                                    int                            p_idx,
                                    const TriplePoint*             p,
                                    cv::cuda::PtrStepSz32s         edgepoint_index_table,
-                                   const DevEdgeList<TriplePoint> chained_edgecoords );
+                                   const DevEdgeList<TriplePoint> voters );
 #endif // NDEBUG
 
 }; // namespace popart

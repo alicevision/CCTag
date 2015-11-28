@@ -63,7 +63,7 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
 
     static cctag::logtime::Mgmt* durations = 0;
-#if 1
+#if 0
     if( not durations ) {
         durations = new cctag::logtime::Mgmt( 25 );
     } else {
@@ -71,9 +71,10 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     }
 #endif
     cctagDetection( markers, frameId , src, params, bank, true, durations );
-#if 1
-    durations->print( std::cerr );
-#endif
+
+    if( durations ) {
+        durations->print( std::cerr );
+    }
 
     CCTagFileDebug::instance().outPutAllSessions();
     CCTagFileDebug::instance().clearSessions();
@@ -169,7 +170,9 @@ int main(int argc, char** argv)
 
 #ifdef WITH_CUDA
   popart::device_prop_t deviceInfo;
+#if 0
   deviceInfo.print( );
+#endif
 #endif // WITH_CUDA
 
   bfs::path myPath( cmdline._filename );

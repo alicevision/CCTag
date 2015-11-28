@@ -194,16 +194,16 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     {
         /* Debugging immediately after gradientDescent.
          * The list of TriplePoints has been created in
-         * _vote._chained_edgecoords
+         * _voters
          * These points have no before or after information yet.
          * The size of this list has not been copied to the host yet.
          */
-        POP_CUDA_MEMCPY_TO_HOST_SYNC( &_vote._chained_edgecoords.host.size,
-                                      _vote._chained_edgecoords.dev.getSizePtr(),
+        POP_CUDA_MEMCPY_TO_HOST_SYNC( &_voters.host.size,
+                                      _voters.dev.getSizePtr(),
                                       sizeof(int) );
 
         vector<TriplePoint> out;
-        _vote._chained_edgecoords.debug_out(  EDGE_POINT_MAX, out );
+        _voters.debug_out(  EDGE_POINT_MAX, out );
 
         PtrStepSzbNull edgelistplane( edges.cols, edges.rows );
         DebugImage::plotPoints( out, edgelistplane.e, false, DebugImage::BLUE );
@@ -220,7 +220,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #ifndef NDEBUG
 #ifdef DEBUG_WRITE_CHOSEN_AS_PPM
     {
-        /* _chained_edgecoords.dev.size has been loaded into .host.size
+        /* _voters.dev.size has been loaded into .host.size
          * _seed_indices has been created into this step.
          * _vote._seed_indices.dev.size, has been loaded into .host.soze
          * before returning.
@@ -228,17 +228,17 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
          * filtering has taken place yet.
          * ... have the paths leading to these votes been stored?
          */
-        if( _vote._chained_edgecoords.host.size > 0 && _vote._seed_indices.host.size > 0) {
+        if( _voters.host.size > 0 && _vote._seed_indices.host.size > 0) {
             vector<TriplePoint> out;
             PtrStepSzbClone edgeclone( edges );
-            _vote._chained_edgecoords.debug_out( EDGE_POINT_MAX, out, EdgeListFilterCommittedOnly );
+            _voters.debug_out( EDGE_POINT_MAX, out, EdgeListFilterCommittedOnly );
             DebugImage::plotPoints( out, edgeclone.e, true, DebugImage::GREEN );
 #ifdef DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
             DebugImage::writeASCII( filename + "-07-chosen-voter-chains.txt", out );
 #endif // DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
 
             out.clear();
-            _vote._chained_edgecoords.debug_out( _vote._seed_indices, EDGE_POINT_MAX, out );
+            _voters.debug_out( _vote._seed_indices, EDGE_POINT_MAX, out );
             DebugImage::plotPoints( out, edgeclone.e, false, DebugImage::BLUE );
 #ifdef DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
             DebugImage::writeASCII( filename + "-07-chosen-dots.txt", out );
@@ -263,7 +263,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #else // DEBUG_WRITE_LINKED_AS_ASCII
         const bool write_linked_as_ascii = false;
 #endif // DEBUG_WRITE_LINKED_AS_ASCII
-        if( _vote._chained_edgecoords.host.size > 0 && _vote._seed_indices.host.size > 0) {
+        if( _voters.host.size > 0 && _vote._seed_indices.host.size > 0) {
             PtrStepSzbClone edgeclone( edges );
             ostringstream debug_ostr;
             bool do_print = false;
@@ -357,7 +357,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
             }
         } else {
             cerr << "Not plotting anything from _h_ring_output." << endl
-                 << "    # chained edge coords: " << _vote._chained_edgecoords.host.size << endl
+                 << "    # chained edge coords: " << _voters.host.size << endl
                  << "    # seed indices: " << _vote._seed_indices.host.size << endl
                  << "    # _h_ring_output dimensions: (" << _h_ring_output.cols << "," << _h_ring_output.rows << ")" << endl;
         }

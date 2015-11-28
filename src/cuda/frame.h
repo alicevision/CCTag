@@ -162,7 +162,7 @@ public:
     bool applyDesc( );
 
     // implemented in frame_07a_vote_line.cu
-    bool applyVoteConstructLine( const cctag::Parameters& params );
+    bool applyVoteConstructLine( );
 
 #ifdef USE_SEPARABLE_COMPILATION
     // implemented in frame_07b_vote_sort_uniq_dp.cu
@@ -183,7 +183,7 @@ public:
     bool applyVoteEval( const cctag::Parameters& params );
 
     // implemented in frame_07d_vote_if.cu
-    bool applyVoteIf( const cctag::Parameters& params );
+    bool applyVoteIf( );
 
     // implemented in frame_07e_graddesc.cu
     void applyVoteDownload( );
@@ -283,6 +283,8 @@ private:
 #ifndef EDGE_LINKING_HOST_SIDE
     cv::cuda::PtrStepSzInt2 _h_ring_output;
 #endif
+
+    EdgeList<TriplePoint>  _voters;
 
     Voting _vote;
 

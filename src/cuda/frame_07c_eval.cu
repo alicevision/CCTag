@@ -1,13 +1,6 @@
 #include "onoff.h"
 
-// #include <iostream>
-// #include <algorithm>
-// #include <limits>
 #include <cuda_runtime.h>
-// #include <cub/cub.cuh>
-// #include <stdio.h>
-// #include "debug_macros.hpp"
-// #include "debug_is_on_edge.h"
 
 #include "frame.h"
 // #include "assist.h"
@@ -97,17 +90,17 @@ __host__
 bool Frame::applyVoteEval( const cctag::Parameters& params )
 {
 #ifndef NDEBUG
-    _vote._chained_edgecoords.copySizeFromDevice( _stream, EdgeListWait );
+    _voters.copySizeFromDevice( _stream, EdgeListWait );
     _vote._seed_indices_2.copySizeFromDevice( _stream, EdgeListCont );
 
     cerr << "Debug voting (with separable compilation)"
          << " # seed indices 2: " << _vote._seed_indices_2.host.size
-         << " # chained edgeco: " << _vote._chained_edgecoords.host.size << endl;
+         << " # chained edgeco: " << _voters.host.size << endl;
 #endif
 
     vote::dp_call_eval_chosen
         <<<1,1,0,_stream>>>
-        ( _vote._chained_edgecoords.dev,  // output
+        ( _voters.dev,  // output
           _vote._seed_indices_2.dev );    // buffer
     POP_CHK_CALL_IFSYNC;
     return true;
@@ -122,13 +115,13 @@ bool Frame::applyVoteEval( const cctag::Parameters& params )
      * step.
      */
 #ifndef NDEBUG
-    _vote._chained_edgecoords.copySizeFromDevice( _stream, EdgeListCont );
+    _voters.copySizeFromDevice( _stream, EdgeListCont );
 #endif
     _vote._seed_indices_2.copySizeFromDevice( _stream, EdgeListWait );
 
     cerr << "Debug voting (without separable compilation)"
          << " # seed indices 2: " << _vote._seed_indices_2.host.size
-         << " # chained edgeco: " << _vote._chained_edgecoords.host.size << endl;
+         << " # chained edgeco: " << _voters.host.size << endl;
 
     /* Add number of voters to chosen inner points, and
      * add average flow length to chosen inner points.
@@ -138,7 +131,7 @@ bool Frame::applyVoteEval( const cctag::Parameters& params )
 
     vote::eval_chosen
         <<<grid,block,0,_stream>>>
-        ( _vote._chained_edgecoords.dev,
+        ( _voters.dev,
           _vote._seed_indices_2.dev );
     POP_CHK_CALL_IFSYNC;
 

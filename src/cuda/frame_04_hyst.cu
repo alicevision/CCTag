@@ -65,7 +65,7 @@ void load( cv::cuda::PtrStepSz32u img )
 }
 
 __device__
-void store( cv::cuda::PtrStepSz32u img, bool printout )
+void store( cv::cuda::PtrStepSz32u img )
 {
     const int dstidx  = blockIdx.x * HYST_W + threadIdx.x;
     const int dstidy  = blockIdx.y * HYST_H + threadIdx.y;
@@ -235,7 +235,7 @@ void edge_first( cv::cuda::PtrStepSzb img, FrameMetaPtr meta, cv::cuda::PtrStepS
     output.step = img.step;
     output.rows = img.rows;
     output.cols = img.cols / 4;
-    store( output, false );
+    store( output );
 }
 
 __global__
@@ -254,7 +254,7 @@ void edge_second( cv::cuda::PtrStepSzb img, FrameMetaPtr meta )
     bool something_changed = edge( meta );
 
     if( __any( something_changed ) ) {
-        store( input, false );
+        store( input );
     }
 }
 
@@ -282,7 +282,7 @@ void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w
 }
 #endif // NDEBUG
 
-#if defined(USE_SEPARABLE_COMPILATION)
+#ifdef USE_SEPARABLE_COMPILATION_FOR_HYST
 __global__
 void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src, int depth )
 {
@@ -294,8 +294,6 @@ void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, cv::cuda
     block.y = HYST_H;
     grid.x  = grid_divide( width,   HYST_W * 4 );
     grid.y  = grid_divide( height,  HYST_H );
-
-    meta.hysteresis_block_counter() = 1; // anything non-null will allow the grid to start
 
     for( int i=0; i<depth*2; i++ ) {
         hysteresis::edge_second
@@ -327,7 +325,7 @@ void hyst_outer_loop( int width, int height, FrameMetaPtr meta, cv::cuda::PtrSte
 
     __threadfence(); // meant to push the children's atomic meta data to CPU
 }
-#endif // USE_SEPARABLE_COMPILATION
+#endif // USE_SEPARABLE_COMPILATION_FOR_HYST
 
 __host__
 void Frame::applyHyst( )
@@ -350,11 +348,11 @@ void Frame::applyHyst( )
         ( _d_map, _d_hyst_edges, getWidth(), getHeight() );
 #endif
 
-#if defined(USE_SEPARABLE_COMPILATION)
+#ifdef USE_SEPARABLE_COMPILATION_FOR_HYST
     hyst_outer_loop
         <<<1,1,0,_stream>>>
         ( getWidth(), getHeight(), _meta, _d_hyst_edges, _d_map );
-#else // USE_SEPARABLE_COMPILATION
+#else // not USE_SEPARABLE_COMPILATION_FOR_HYST
     bool first_time = true;
     int  block_counter;
     do
@@ -379,7 +377,7 @@ void Frame::applyHyst( )
         POP_CUDA_SYNC( _stream );
     }
     while( block_counter > 0 );
-#endif // USE_SEPARABLE_COMPILATION
+#endif // not USE_SEPARABLE_COMPILATION_FOR_HYST
 }
 
 }; // namespace popart

@@ -41,20 +41,20 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
 
 /* functions cannot be __global__ __device__ */
 __device__
-inline void initChainedEdgeCoords_2( DevEdgeList<TriplePoint>& chained_edgecoords )
+inline void initChainedEdgeCoords_2( DevEdgeList<TriplePoint>& voters )
 {
-    /* Note: the initial _chained_edgecoords.dev.size is set to 1 because it is used
+    /* Note: the initial _voters.dev.size is set to 1 because it is used
      * as an index for writing points into an array. Starting the counter
      * at 1 allows to distinguish unchained points (0) from chained
      * points non-0.
      */
-    chained_edgecoords.setSize( 1 );
+    voters.setSize( 1 );
 }
 
 __global__
-void initChainedEdgeCoords( DevEdgeList<TriplePoint> chained_edgecoords )
+void initChainedEdgeCoords( DevEdgeList<TriplePoint> voters )
 {
-    initChainedEdgeCoords_2( chained_edgecoords );
+    initChainedEdgeCoords_2( voters );
 }
 
 __device__
@@ -184,11 +184,11 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
                        cv::cuda::PtrStepSzb     edge_image,
                        cv::cuda::PtrStepSz16s   d_dx,
                        cv::cuda::PtrStepSz16s   d_dy,
-                       DevEdgeList<TriplePoint> chained_edgecoords,    // output
+                       DevEdgeList<TriplePoint> voters,    // output
                        cv::cuda::PtrStepSz32s   edgepoint_index_table ) // output
 {
     assert( blockDim.x * gridDim.x < all_edgecoords.Size() + 32 );
-    assert( chained_edgecoords.Size() <= 2*all_edgecoords.Size() );
+    assert( voters.Size() <= 2*all_edgecoords.Size() );
 
     int4   out_edge_info;
     short2 out_edge_d;
@@ -255,9 +255,9 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
     if( threadIdx.x == leader ) {
         // leader gets warp's offset from global value and increases it
         // not that it is initialized with 1 to ensure that 0 represents a NULL pointer
-        write_index = atomicAdd( chained_edgecoords.getSizePtr(), (int)ct );
+        write_index = atomicAdd( voters.getSizePtr(), (int)ct );
 
-        if( chained_edgecoords.Size() > EDGE_POINT_MAX ) {
+        if( voters.Size() > EDGE_POINT_MAX ) {
             printf( "max offset: (%d x %d)=%d\n"
                     "my  offset: (%d*32+%d)=%d\n"
                     "edges in:    %d\n"
@@ -265,8 +265,8 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
                     gridDim.x, blockDim.x, blockDim.x * gridDim.x,
                     blockIdx.x, threadIdx.x, threadIdx.x + blockIdx.x*32,
                     all_edgecoords.Size(),
-                    ct, chained_edgecoords.Size() );
-            assert( chained_edgecoords.Size() <= 2*all_edgecoords.Size() );
+                    ct, voters.Size() );
+            assert( voters.Size() <= 2*all_edgecoords.Size() );
         }
     }
     // assert( *chained_edgecoord_list_sz >= 2*all_edgecoord_list_sz );
@@ -290,30 +290,31 @@ void gradient_descent( DevEdgeList<int2>        all_edgecoords,
          */
         edgepoint_index_table.ptr(out_edge.coord.y)[out_edge.coord.x] = write_index;
 
-        chained_edgecoords.ptr[write_index] = out_edge;
+        voters.ptr[write_index] = out_edge;
     }
 
 #ifndef NDEBUG
     if( keep ) {
-        debug_inner_test_consistency( "D", write_index, &out_edge, edgepoint_index_table, chained_edgecoords );
+        debug_inner_test_consistency( "D", write_index, &out_edge, edgepoint_index_table, voters );
 
-        TriplePoint* p = &chained_edgecoords.ptr[write_index];
-        debug_inner_test_consistency( "C", write_index, p, edgepoint_index_table, chained_edgecoords );
+        TriplePoint* p = &voters.ptr[write_index];
+        debug_inner_test_consistency( "C", write_index, p, edgepoint_index_table, voters );
     }
 #endif
 }
 
-#ifdef USE_SEPARABLE_COMPILATION
+#ifdef USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 __global__
-void dp_call_01_gradient_descent( DevEdgeList<int2>        edgeCoords, // input
-                cv::cuda::PtrStepSzb     edgeImage, // input
-                cv::cuda::PtrStepSz16s   dx, // input
-                cv::cuda::PtrStepSz16s   dy, // input
-                DevEdgeList<TriplePoint> chainedEdgeCoords, // output
-                cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
-                DevEdgeList<int>         seedIndices, // output
-                DevEdgeList<int>         seedIndices2, // output
-                cv::cuda::PtrStepSzb     intermediate ) // buffer
+void dp_call_01_gradient_descent(
+    DevEdgeList<int2>        edgeCoords, // input
+    cv::cuda::PtrStepSzb     edgeImage, // input
+    cv::cuda::PtrStepSz16s   dx, // input
+    cv::cuda::PtrStepSz16s   dy, // input
+    DevEdgeList<TriplePoint> chainedEdgeCoords, // output
+    cv::cuda::PtrStepSz32s   edgepointIndexTable, // output
+    DevEdgeList<int>         seedIndices, // output
+    DevEdgeList<int>         seedIndices2, // output
+    cv::cuda::PtrStepSzb     intermediate ) // buffer
 {
     initChainedEdgeCoords_2( chainedEdgeCoords );
 
@@ -340,11 +341,11 @@ void dp_call_01_gradient_descent( DevEdgeList<int2>        edgeCoords, // input
           chainedEdgeCoords,  // output - TriplePoints with before/after info
           edgepointIndexTable ); // output - table, map coord to TriplePoint index
 }
-#endif // USE_SEPARABLE_COMPILATION
+#endif // USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 
 } // namespace descent
 
-#ifdef USE_SEPARABLE_COMPILATION
+#ifdef USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 __host__
 bool Frame::applyDesc( )
 {
@@ -354,7 +355,7 @@ bool Frame::applyDesc( )
           _d_edges,                       // input
           _d_dx,                          // input
           _d_dy,                          // input
-          _vote._chained_edgecoords.dev,  // output
+          _voters.dev,  // output
           _vote._d_edgepoint_index_table, // output
           _vote._seed_indices.dev,        // output
           _vote._seed_indices_2.dev,      // buffer
@@ -362,13 +363,13 @@ bool Frame::applyDesc( )
     POP_CHK_CALL_IFSYNC;
     return true;
 }
-#else // not USE_SEPARABLE_COMPILATION
+#else // not USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 __host__
 bool Frame::applyDesc( )
 {
     descent::initChainedEdgeCoords
         <<<1,1,0,_stream>>>
-        ( _vote._chained_edgecoords.dev );
+        ( _voters.dev );
 
     int listsize;
 
@@ -396,14 +397,13 @@ bool Frame::applyDesc( )
           _d_edges,
           _d_dx,
           _d_dy,
-          _vote._chained_edgecoords.dev,    // output - TriplePoints with before/after info
+          _voters.dev,    // output - TriplePoints with before/after info
           _vote._d_edgepoint_index_table ); // output - table, map coord to TriplePoint index
     POP_CHK_CALL_IFSYNC;
 
-    // cout << "  Leave " << __FUNCTION__ << endl;
     return true;
 }
-#endif // not USE_SEPARABLE_COMPILATION
+#endif // not USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 
 
 } // namespace popart

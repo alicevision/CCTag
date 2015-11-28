@@ -10,6 +10,7 @@
 #include "debug_is_on_edge.h"
 
 #include "frame.h"
+#include "frameparam.h"
 #include "assist.h"
 
 using namespace std;
@@ -20,16 +21,16 @@ namespace vote {
 __device__ inline
 TriplePoint* find_neigh( const int2&              neigh,
                          cv::cuda::PtrStepSz32s   edgepoint_index_table,
-                         DevEdgeList<TriplePoint> chained_edgecoords )
+                         DevEdgeList<TriplePoint> voters )
 {
     if( neigh.x != 0 || neigh.y != 0 ) {
         int idx = edgepoint_index_table.ptr(neigh.y)[neigh.x];
         if( idx != 0 ) {
             assert( idx > 0 );
-            assert( idx < chained_edgecoords.Size() );
-            TriplePoint* neighbour = &chained_edgecoords.ptr[idx];
+            assert( idx < voters.Size() );
+            TriplePoint* neighbour = &voters.ptr[idx];
 #ifndef NDEBUG
-            debug_inner_test_consistency( "B", idx, neighbour, edgepoint_index_table, chained_edgecoords );
+            debug_inner_test_consistency( "B", idx, neighbour, edgepoint_index_table, voters );
 
             if( neigh.x != neighbour->coord.x || neigh.y != neighbour->coord.y ) {
                 printf("Intended coordinate is (%d,%d) at index %d, looked up coord is (%d,%d)\n",
@@ -47,24 +48,24 @@ TriplePoint* find_neigh( const int2&              neigh,
 __device__ inline
 TriplePoint* find_befor( const TriplePoint*       p,
                          cv::cuda::PtrStepSz32s   edgepoint_index_table,
-                         DevEdgeList<TriplePoint> chained_edgecoords )
+                         DevEdgeList<TriplePoint> voters )
 {
     assert( p );
     return find_neigh( p->descending.befor,
                        edgepoint_index_table,
-                       chained_edgecoords );
+                       voters );
 }
 
 
 __device__ inline
 TriplePoint* find_after( const TriplePoint*             p,
                                cv::cuda::PtrStepSz32s   edgepoint_index_table,
-                               DevEdgeList<TriplePoint> chained_edgecoords )
+                               DevEdgeList<TriplePoint> voters )
 {
     assert( p );
     return find_neigh( p->descending.after,
                        edgepoint_index_table,
-                       chained_edgecoords );
+                       voters );
 }
 
 __device__
@@ -109,13 +110,11 @@ inline float cl_distance( const TriplePoint* l, const TriplePoint* r )
  */
 __device__
 const TriplePoint* cl_inner(
-    DevEdgeList<TriplePoint>       chained_edgecoords,
-    const cv::cuda::PtrStepSz32s   edgepoint_index_table,
-    const size_t                   numCrowns,
-    const float                    ratioVoting )
+    DevEdgeList<TriplePoint>       voters,
+    const cv::cuda::PtrStepSz32s   edgepoint_index_table )
 {
     int offset = threadIdx.x + blockIdx.x * 32;
-    if( offset >= chained_edgecoords.Size() ) {
+    if( offset >= voters.Size() ) {
         return 0;
     }
     if( offset == 0 ) {
@@ -123,19 +122,19 @@ const TriplePoint* cl_inner(
         return 0;
     }
 
-    TriplePoint* const p = &chained_edgecoords.ptr[offset];
+    TriplePoint* const p = &voters.ptr[offset];
 
     if( p == 0 ) return 0;
 
 #ifndef NDEBUG
     p->debug_init( );
-    debug_inner_test_consistency( "A", offset, p, edgepoint_index_table, chained_edgecoords );
+    debug_inner_test_consistency( "A", offset, p, edgepoint_index_table, voters );
     p->debug_add( p->coord );
 #endif // NDEBUG
 
     float dist; // scalar to compute the distance ratio
 
-    TriplePoint* current = vote::find_befor( p, edgepoint_index_table, chained_edgecoords );
+    TriplePoint* current = vote::find_befor( p, edgepoint_index_table, voters );
     // Here current contains the edge point lying on the 2nd ellipse (from outer to inner)
     if( not current ) {
         return 0;
@@ -147,7 +146,7 @@ const TriplePoint* cl_inner(
     // To save all sub-segments length
     int       vDistSize = 0;
 #ifndef NDEBUG
-    const int vDistMax  = numCrowns * 2 - 1;
+    const int vDistMax  = tagParam.nCrowns * 2 - 1;
 #endif // NDEBUG
     float     vDist[RESERVE_MEM_MAX_CROWNS * 2 - 1];
     int flagDist = 1;
@@ -172,13 +171,13 @@ const TriplePoint* cl_inner(
     TriplePoint* chosen = 0;
 
     // Iterate over all crowns
-    for( int i=1; i < numCrowns; ++i ) {
+    for( int i=1; i < tagParam.nCrowns; ++i ) {
         chosen = 0;
 
         // First in the gradient direction
         TriplePoint* target = vote::find_after( current,
                                                 edgepoint_index_table,
-                                                chained_edgecoords );
+                                                voters );
         // No edge point was found in that direction
         if( not target ) {
             return 0;
@@ -202,7 +201,7 @@ const TriplePoint* cl_inner(
         if( vDistSize > 1 ) {
             for( int iDist = 0; iDist < vDistSize; ++iDist ) {
                 for (int jDist = iDist + 1; jDist < vDistSize; ++jDist) {
-                    flagDist = (vDist[iDist] <= vDist[jDist] * ratioVoting) && (vDist[jDist] <= vDist[iDist] * ratioVoting) && flagDist;
+                    flagDist = (vDist[iDist] <= vDist[jDist] * tagParam.ratioVoting) && (vDist[jDist] <= vDist[iDist] * tagParam.ratioVoting) && flagDist;
                 }
             }
         }
@@ -214,10 +213,10 @@ const TriplePoint* cl_inner(
         // lastDist = dist;
         current = target;
         // Second in the opposite gradient direction
-        // target = vote::find_befor( current, d_next_edge_befor, chained_edgecoord_list );
+        // target = vote::find_befor( current, d_next_edge_befor, voters );
         target = vote::find_befor( current,
                                    edgepoint_index_table,
-                                   chained_edgecoords );
+                                   voters );
         if( not target ) {
             return 0;
         }
@@ -234,7 +233,7 @@ const TriplePoint* cl_inner(
 
         for( int iDist = 0; iDist < vDistSize; ++iDist ) {
             for (int jDist = iDist + 1; jDist < vDistSize; ++jDist) {
-                flagDist = (vDist[iDist] <= vDist[jDist] * ratioVoting) && (vDist[jDist] <= vDist[iDist] * ratioVoting) && flagDist;
+                flagDist = (vDist[iDist] <= vDist[jDist] * tagParam.ratioVoting) && (vDist[jDist] <= vDist[iDist] * tagParam.ratioVoting) && flagDist;
             }
         }
 
@@ -271,16 +270,12 @@ const TriplePoint* cl_inner(
 
 __global__
 void construct_line( DevEdgeList<int>             seed_indices,       // output
-                     DevEdgeList<TriplePoint>     chained_edgecoords, // input/output
-                     const cv::cuda::PtrStepSz32s edgepoint_index_table, // input
-                     const size_t                 numCrowns,
-                     const float                  ratioVoting )
+                     DevEdgeList<TriplePoint>     voters, // input/output
+                     const cv::cuda::PtrStepSz32s edgepoint_index_table ) // input
 {
     const TriplePoint* chosen =
-        cl_inner( chained_edgecoords,    // input
-                  edgepoint_index_table, // input
-                  numCrowns,
-                  ratioVoting );
+        cl_inner( voters,      // input
+                  edgepoint_index_table ); // input
 
     if( chosen && chosen->coord.x == 0 && chosen->coord.y == 0 ) chosen = 0;
 
@@ -306,80 +301,69 @@ void construct_line( DevEdgeList<int>             seed_indices,       // output
 
 } // namespace vote
 
-#ifdef USE_SEPARABLE_COMPILATION
+#ifdef USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
 __global__
-void applyVoteConstructLine_dp(
-    DevEdgeList<int>         seedIndices,         // output
-    DevEdgeList<TriplePoint> chainedEdgeCoords,   // ?
-    cv::cuda::PtrStepSz32s   edgepointIndexTable, // ?
-    const size_t             param_numCrowns,     // input param
-    const float              param_ratioVoting )  // input param
+void dp_call_construct_line(
+    DevEdgeList<int>         seedIndices,          // output
+    DevEdgeList<TriplePoint> voters,               // ?
+    cv::cuda::PtrStepSz32s   edgepointIndexTable ) // ?
 {
-    int listsize = chainedEdgeCoords.getSize();
+    seedIndices.setSize( 0 );
 
-    if( listsize == 0 ) return;
+    int num_voters = voters.getSize();
+
+    if( num_voters == 0 ) return;
 
     dim3 block( 32, 1, 1 );
-    dim3 grid( grid_divide( listsize, 32 ), 1, 1 );
-
-    seedIndices.setSize( 0 );
+    dim3 grid( grid_divide( num_voters, 32 ), 1, 1 );
 
     vote::construct_line
         <<<grid,block>>>
-        ( seedIndices,         // output
-          chainedEdgeCoords,   // ?
-          edgepointIndexTable, // ?
-          param_numCrowns,     // input
-          param_ratioVoting ); // input
+        ( seedIndices,           // output
+          voters,                // ?
+          edgepointIndexTable ); // ?
 }
 
 __host__
-bool Frame::applyVoteConstructLine( const cctag::Parameters& params )
+bool Frame::applyVoteConstructLine( )
 {
-    applyVoteConstructLine_dp
+    _vote._seed_indices.host.size = 0;
+
+    dp_call_construct_line
         <<<1,1,0,_stream>>>
-        ( _vote._seed_indices.dev,        // output
-          _vote._chained_edgecoords.dev,  // ?
-          _vote._d_edgepoint_index_table, // ?
-          params._nCrowns,                // input param
-          params._ratioVoting );          // input param
+        ( _vote._seed_indices.dev,          // output
+          _voters.dev,                      // ?
+          _vote._d_edgepoint_index_table ); // ?
     POP_CHK_CALL_IFSYNC;
     return true;
 }
 
-#else // not USE_SEPARABLE_COMPILATION
+#else // not USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
 __host__
-bool Frame::applyVoteConstructLine( const cctag::Parameters& params )
+bool Frame::applyVoteConstructLine( )
 {
-    // Note: right here, Dynamic Parallelism would avoid blocking.
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &_vote._chained_edgecoords.host.size,
-                                   _vote._chained_edgecoords.dev.getSizePtr(),
-                                   sizeof(int), _stream );
-    POP_CUDA_SYNC( _stream );
+    _voters.copySizeFromDevice( _stream, EdgeListWait );
 
-    int listsize = _vote._chained_edgecoords.host.size;
-
-    if( listsize == 0 ) {
+    if( _voters.host.size == 0 ) {
         return false;
     }
 
-    dim3 block( 32, 1, 1 );
-    dim3 grid ( grid_divide( listsize, 32 ), 1, 1 );
+    _vote._seed_indices.host.size = 0;
+    _vote._seed_indices.copySizeToDevice( _stream, EdgeListCont );
 
-    POP_CUDA_SET0_ASYNC( _vote._seed_indices.dev.getSizePtr(), _stream );
+    dim3 block( 32, 1, 1 );
+    dim3 grid ( grid_divide( _voters.host.size, 32 ), 1, 1 );
 
     vote::construct_line
         <<<grid,block,0,_stream>>>
-        ( _vote._seed_indices.dev,        // output
-          _vote._chained_edgecoords.dev,  // input
-          _vote._d_edgepoint_index_table, // input
-          params._nCrowns,                // input param
-          params._ratioVoting );          // input param
+        ( _vote._seed_indices.dev,          // output
+          _voters.dev,                      // input
+          _vote._d_edgepoint_index_table ); // input
     POP_CHK_CALL_IFSYNC;
 
     return true;
 }
-#endif // not USE_SEPARABLE_COMPILATION
+#endif // not USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
 
 } // namespace popart
 

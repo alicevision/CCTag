@@ -85,14 +85,6 @@ int main( int argc, char*argv[] )
     if( if2.fail() )
         usage( argv[0], string("File ") + argv[3] + string( " contains too few bytes" ) );
 
-    ofstream of(argv[1] );
-    if( not of.is_open() )
-        usage( argv[0], string("File ") + argv[1] + string( " could not be opened for writing" ) );
-
-    of << "P5" << endl
-       << w1 << " " << h1 << endl
-       << pxsz << endl;
-
     unsigned char* data_out = new unsigned char[ w1 * h1 ];
     uint32_t different = 0;
 
@@ -100,7 +92,18 @@ int main( int argc, char*argv[] )
         data_out[i] = (unsigned char) abs( (int)data_in1[i] - (int)data_in2[i] );
         if( data_out[i] != 0 ) different += 1;
     }
-    of.write( (const char*)data_out, w1*h1 );
+
+    if( different > 0 ) {
+        ofstream of(argv[1] );
+        if( not of.is_open() )
+            usage( argv[0], string("File ") + argv[1] + string( " could not be opened for writing" ) );
+
+        of << "P5" << endl
+           << w1 << " " << h1 << endl
+           << pxsz << endl;
+
+        of.write( (const char*)data_out, w1*h1 );
+    }
     
     if( different == 0 ) {
         // cout << "Files " << argv[2] << " and " << argv[3] << " are identical" << endl;

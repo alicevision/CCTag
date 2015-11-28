@@ -749,7 +749,7 @@ void Frame::applyLink( const cctag::Parameters& params )
 
     linking::edge_linking
         <<<grid,block,0,_stream>>>
-        ( _vote._chained_edgecoords.dev,
+        ( _voters.dev,
           _vote._seed_indices.dev,
           _vote._d_edgepoint_index_table,
           _d_edges,

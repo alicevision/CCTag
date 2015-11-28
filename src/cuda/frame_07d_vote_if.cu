@@ -8,6 +8,7 @@
 #include "debug_is_on_edge.h"
 
 #include "frame.h"
+#include "frameparam.h"
 #include "assist.h"
 #include "onoff.h"
 
@@ -22,45 +23,62 @@ struct NumVotersIsGreaterEqual
 
     __host__ __device__
     __forceinline__
-    NumVotersIsGreaterEqual( int compare, DevEdgeList<TriplePoint> _d_array )
-        : _compare(compare)
-        , _array( _d_array )
+    NumVotersIsGreaterEqual( DevEdgeList<TriplePoint> _d_array )
+        : _array( _d_array )
     {}
 
     __device__
     __forceinline__
     bool operator()(const int &a) const {
-        return (_array.ptr[a]._winnerSize >= _compare);
+        return (_array.ptr[a]._winnerSize >= tagParam.minVotesToSelectCandidate );
     }
 };
 
-#ifdef USE_SEPARABLE_COMPILATION
-namespace vote {
+#ifdef USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 
 __global__
-void dp_call_05_if(
-    DevEdgeList<TriplePoint> chainedEdgeCoords, // input
-    DevEdgeList<int>         seedIndices,       // output
-    DevEdgeList<int>         seedIndices2,      // input
-    cv::cuda::PtrStepSzb     intermediate,      // buffer
-    const int                param_minVotesToSelectCandidate ) // input param
+void dp_call_vote_if(
+    DevEdgeList<TriplePoint> voters,        // input
+    DevEdgeList<int>         seedIndices,   // output
+    DevEdgeList<int>         seedIndices2,  // input
+    cv::cuda::PtrStepSzb     intermediate ) // buffer
 {
+    /* Filter all chosen inner points that have fewer
+     * voters than required by Parameters.
+     */
+
+    cudaError_t err;
+
     if( seedIndices.getSize() == 0 ) {
         seedIndices2.setSize(0);
         return;
     }
 
-    cudaStream_t childStream;
-    cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
+    NumVotersIsGreaterEqual select_op( voters );
 
-    void*  assist_buffer = (void*)intermediate.data;
+#ifdef CUB_INIT_CALLS
+    size_t assist_buffer_sz = 0;
+    err = cub::DeviceSelect::If( 0,
+                                 assist_buffer_sz,
+                                 seedIndices2.ptr,
+                                 seedIndices.ptr,
+                                 seedIndices.getSizePtr(),
+                                 seedIndices2.getSize(),
+                                 select_op,
+                                 0,     // use stream 0
+                                 DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
+    if( err != cudaSuccess ) {
+        return;
+    }
+    if( assist_buffer_sz > intermediate.step * intermediate.rows ) {
+        seedIndices.setSize(0);
+        return;
+    }
+#else // not CUB_INIT_CALLS
     size_t assist_buffer_sz = intermediate.step * intermediate.rows;
+#endif // not CUB_INIT_CALLS
+    void*  assist_buffer = (void*)intermediate.data;
 
-    /* Filter all chosen inner points that have fewer
-     * voters than required by Parameters.
-     */
-    NumVotersIsGreaterEqual select_op( param_minVotesToSelectCandidate,
-                                       chainedEdgeCoords );
     cub::DeviceSelect::If( assist_buffer,
                            assist_buffer_sz,
                            seedIndices2.ptr,
@@ -68,41 +86,35 @@ void dp_call_05_if(
                            seedIndices.getSizePtr(),
                            seedIndices2.getSize(),
                            select_op,
-                           childStream,     // use stream 0
+                           0,     // use stream 0
                            DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
-
-    cudaStreamDestroy( childStream );
 }
 
-} // namespace vote
-
 __host__
-bool Frame::applyVoteIf( const cctag::Parameters& params )
+bool Frame::applyVoteIf( )
 {
-    vote::dp_call_05_if
+    dp_call_vote_if
         <<<1,1,0,_stream>>>
-        ( _vote._chained_edgecoords.dev,  // input
+        ( _voters.dev,  // input
           _vote._seed_indices.dev,        // output
           _vote._seed_indices_2.dev,      // input
-          cv::cuda::PtrStepSzb(_d_intermediate), // buffer
-          params._minVotesToSelectCandidate ); // input param
+          cv::cuda::PtrStepSzb(_d_intermediate) ); // buffer
     POP_CHK_CALL_IFSYNC;
 
     _vote._seed_indices.copySizeFromDevice( _stream, EdgeListCont );
 
     return true;
 }
-#else // not USE_SEPARABLE_COMPILATION
+#else // not USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 __host__
-bool Frame::applyVoteIf( const cctag::Parameters& params )
+bool Frame::applyVoteIf( )
 {
     cudaError_t err;
 
     void*  assist_buffer = (void*)_d_intermediate.data;
     size_t assist_buffer_sz;
 
-    NumVotersIsGreaterEqual select_op( params._minVotesToSelectCandidate,
-                                       _vote._chained_edgecoords.dev );
+    NumVotersIsGreaterEqual select_op( _voters.dev );
 #ifdef CUB_INIT_CALLS
     assist_buffer_sz  = 0;
     err = cub::DeviceSelect::If( 0,
@@ -144,7 +156,7 @@ bool Frame::applyVoteIf( const cctag::Parameters& params )
     _vote._seed_indices.copySizeFromDevice( _stream, EdgeListCont );
     return true;
 }
-#endif // not USE_SEPARABLE_COMPILATION
+#endif // not USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 
 } // namespace popart
 

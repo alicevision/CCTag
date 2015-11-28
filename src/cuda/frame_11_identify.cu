@@ -489,7 +489,6 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
                               popart::geometry::matrix3x3&        bestHomographyOut )
 {
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    std::cerr << "dev  tries center (" << center.x << "," << center.y << ")" << std::endl;
     _meta.toDevice( Num_nearby_points, 0, _stream );
 #endif
 

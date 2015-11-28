@@ -246,6 +246,27 @@ public:
         }
     }
 
+    __host__
+    void copySizeToDevice( cudaStream_t stream, EdgeListBlockSizeCopy wait )
+    {
+        cudaError_t err;
+        err = cudaMemcpyAsync( dev.size, &host.size, sizeof(int), cudaMemcpyHostToDevice, stream );
+        if( err != cudaSuccess ) {
+            std::cerr << "Error (1) in EdgeList::copySizeToDevice: "
+                      << cudaGetErrorString(err) << std::endl;
+            host.size = 0;
+            return;
+        }
+        if( wait ) {
+            err = cudaStreamSynchronize( stream );
+        }
+        if( err != cudaSuccess ) {
+            std::cerr << "Error (2) in EdgeList::copySizeToDevice: "
+                      << cudaGetErrorString(err) << std::endl;
+            host.size = 0;
+        }
+    }
+
 #ifndef NDEBUG
     __host__
     void copyDataFromDeviceSync( int sz )
