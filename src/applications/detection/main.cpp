@@ -295,7 +295,8 @@ int main(int argc, char** argv)
     for(const auto & fileInFolder : vFileInFolder) {
       const std::string subExt(bfs::extension(fileInFolder));
       
-      if ( (subExt == ".png") || (subExt == ".jpg") ) {
+      if ( (subExt == ".png") || (subExt == ".jpg") || (subExt == ".PNG") || (subExt == ".JPG") ) {
+
         CCTAG_COUT( "Processing image " << fileInFolder.string() );
 
 		cv::Mat src;
