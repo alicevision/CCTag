@@ -8,7 +8,7 @@ using namespace std;
 
 namespace popart {
 
-device_prop_t::device_prop_t( )
+device_prop_t::device_prop_t( bool output )
 {
     cudaError_t err;
 
@@ -33,7 +33,12 @@ device_prop_t::device_prop_t( )
         }
     }
 
-    cerr << "Choosing CUDA device " << chosenDevice << endl;
+    if( output && _num_devices > 1 ) {
+        cerr << "Choosing CUDA device with compute capability "
+             << _properties[chosenDevice]->major << "."
+             << _properties[chosenDevice]->minor
+             << " (dev " << chosenDevice << ")" << endl;
+    }
 
     err = cudaSetDevice( chosenDevice );
     POP_CUDA_FATAL_TEST( err, "Cannot set device 0" );

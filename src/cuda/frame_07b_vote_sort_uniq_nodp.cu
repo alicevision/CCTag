@@ -10,6 +10,7 @@
 // #include "debug_is_on_edge.h"
 
 #include "frame.h"
+#include "framemeta.h"
 #include "assist.h"
 
 using namespace std;
@@ -23,14 +24,11 @@ namespace popart
 __host__
 bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
 {
-    cerr << "Enter " << __FUNCTION__ << endl;
-
     cudaError_t err;
 
-    _vote._seed_indices.copySizeFromDevice( _stream, EdgeListWait );
+    _inner_points.copySizeFromDevice( _stream, EdgeListWait );
 
-    if( _vote._seed_indices.host.size <= 0 ) {
-        cerr << "Leave " << __FUNCTION__ << " in " << __LINE__ << endl;
+    if( _inner_points.host.size <= 0 ) {
         return false;
     }
 
@@ -45,8 +43,8 @@ bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
 
 #ifndef RADIX_WITHOUT_DOUBLEBUFFER
     // CUB IN CUDA 7.0 allowed only the DoubleBuffer interface
-    cub::DoubleBuffer<int> d_keys( _vote._seed_indices.dev.ptr,
-                                   _vote._seed_indices_2.dev.ptr );
+    cub::DoubleBuffer<int> d_keys( _inner_points.dev.ptr,
+                                   _interm_inner_points.dev.ptr );
 #endif // not RADIX_WITHOUT_DOUBLEBUFFER
 
 #ifdef CUB_INIT_CALLS
@@ -55,9 +53,9 @@ bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
 #ifdef RADIX_WITHOUT_DOUBLEBUFFER
     err = cub::DeviceRadixSort::SortKeys<int>( 0,
                                               assist_buffer_sz,
-                                              _vote._seed_indices.dev.ptr,
-                                              _vote._seed_indices_2.dev.ptr,
-                                              _vote._seed_indices.host.size,
+                                              _inner_points.dev.ptr,
+                                              _interm_inner_points.dev.ptr,
+                                              _inner_points.host.size,
                                               0,             // begin_bit
                                               sizeof(int)*8, // end_bit
                                               _stream,
@@ -66,7 +64,7 @@ bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
     err = cub::DeviceRadixSort::SortKeys<int>( 0,
                                               assist_buffer_sz,
                                               d_keys,
-                                              _vote._seed_indices.host.size,
+                                              _inner_points.host.size,
                                               0,             // begin_bit
                                               sizeof(int)*8, // end_bit
                                               _stream,
@@ -88,9 +86,9 @@ bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
 #ifdef RADIX_WITHOUT_DOUBLEBUFFER
     err = cub::DeviceRadixSort::SortKeys( assist_buffer,
                                           assist_buffer_sz,
-                                          _vote._seed_indices.dev.ptr,
-                                          _vote._seed_indices_2.dev.ptr,
-                                          _vote._seed_indices.host.size,
+                                          _inner_points.dev.ptr,
+                                          _interm_inner_points.dev.ptr,
+                                          _inner_points.host.size,
                                           0,             // begin_bit
                                           sizeof(int)*8, // end_bit
                                           _stream,
@@ -98,13 +96,12 @@ bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
     POP_CUDA_SYNC( _stream );
     POP_CUDA_FATAL_TEST( err, "CUB SortKeys failed" );
 
-    std::swap( _vote._seed_indices.dev.ptr,           _vote._seed_indices_2.dev.ptr );
-    std::swap( _vote._seed_indices.dev.getSizePtr(),  _vote._seed_indices_2.dev.getSizePtr() );
+    std::swap( _inner_points.dev.ptr,           _interm_inner_points.dev.ptr );
 #else // RADIX_WITHOUT_DOUBLEBUFFER
     err = cub::DeviceRadixSort::SortKeys( assist_buffer,
                                           assist_buffer_sz,
                                           d_keys,
-                                          _vote._seed_indices.host.size,
+                                          _inner_points.host.size,
                                           0,             // begin_bit
                                           sizeof(int)*8, // end_bit
                                           _stream,
@@ -116,9 +113,11 @@ bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
      * The final result is stored in d_keys.d_buffers[d_keys.selector].
      * The other buffer is invalid.
      */
-    if( d_keys.d_buffers[d_keys.selector] == _vote._seed_indices_2.dev.ptr ) {
-        std::swap( _vote._seed_indices.dev.ptr,   _vote._seed_indices_2.dev.ptr );
-        std::swap( _vote._seed_indices.dev.getSizePtr(),  _vote._seed_indices_2.dev.getSizePtr() );
+    if( d_keys.d_buffers[d_keys.selector] == _interm_inner_points.dev.ptr ) {
+        /* data pointers must be swapped, we need the buffer later */
+        std::swap( _inner_points.dev.ptr,   _interm_inner_points.dev.ptr );
+
+        /* The sizes are irrelevant: they cannot change in sorting */
     }
 #endif // RADIX_WITHOUT_DOUBLEBUFFER
     return true;
@@ -135,13 +134,14 @@ void Frame::applyVoteUniqNoDP( const cctag::Parameters& params )
 #ifdef CUB_INIT_CALLS
 	assist_buffer_sz  = 0;
 	// std::cerr << "before cub::DeviceSelect::Unique(0)" << std::endl;
+
     err = cub::DeviceSelect::Unique<int*,int*,int*>(
         0,
         assist_buffer_sz,
-        _vote._seed_indices.dev.ptr,     // input
-        _vote._seed_indices_2.dev.ptr,   // output
-        _vote._seed_indices_2.dev.getSizePtr(),  // output
-        _vote._seed_indices.host.size,   // input (unchanged in sort)
+        _inner_points.dev.ptr,        // input
+        _interm_inner_points.dev.ptr, // output
+        _d_interm_int,                // output
+        _inner_points.host.size,      // input (unchanged in sort)
         _stream,
         DEBUG_CUB_FUNCTIONS );
 
@@ -159,21 +159,23 @@ void Frame::applyVoteUniqNoDP( const cctag::Parameters& params )
 #endif // not CUB_INIT_CALLS
 
     /* Unique ensure that we check every "chosen" point only once.
-     * Output is in _vote._seed_indices_2.dev
+     * Output is in _interm_inner_points.dev
      */
     err = cub::DeviceSelect::Unique<int*,int*,int*>(
         assist_buffer,
         assist_buffer_sz,
-        _vote._seed_indices.dev.ptr,     // input
-        _vote._seed_indices_2.dev.ptr,   // output
-        _vote._seed_indices_2.dev.getSizePtr(),  // output
-        _vote._seed_indices.host.size,   // input (unchanged in sort)
+        _inner_points.dev.ptr,        // input
+        _interm_inner_points.dev.ptr, // output
+        _d_interm_int,                // output
+        _inner_points.host.size,      // input (unchanged in sort)
         _stream,
         DEBUG_CUB_FUNCTIONS );
 
+    _meta.toDevice_D2S( List_size_interm_inner_points, _d_interm_int, _stream );
+
     POP_CHK_CALL_IFSYNC;
     POP_CUDA_SYNC( _stream );
-    POP_CUDA_FATAL_TEST( err, "CUB Unique failed" );
+    POP_CUDA_FATAL_TEST( err, "CUB Unique failed: " );
 }
 
 bool Frame::applyVoteSortUniqNoDP( const cctag::Parameters& params )

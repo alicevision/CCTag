@@ -707,7 +707,7 @@ void Frame::applyLink( const cctag::Parameters& params )
         exit( -1 );
     }
 
-    if( _vote._seed_indices.host.size <= 0 ) {
+    if( _inner_points.host.size <= 0 ) {
         DO_TALK( cout << "Leave " << __FUNCTION__ << endl; )
         // We have note found any seed, return
         return;
@@ -715,7 +715,7 @@ void Frame::applyLink( const cctag::Parameters& params )
 
 #ifndef NDEBUG
     POP_CUDA_SYNC( _stream );
-    cout << "  Searching arcs from " << _vote._seed_indices.host.size << " seeds" << endl;
+    cout << "  Searching arcs from " << _inner_points.host.size << " seeds" << endl;
     cout << "  Parameters: _windowSizeOnInnerEllipticSegment="
          << params._windowSizeOnInnerEllipticSegment << endl
          << "              _averageVoteMin=" << params._averageVoteMin << endl;
@@ -731,9 +731,9 @@ void Frame::applyLink( const cctag::Parameters& params )
     dim3 block;
     dim3 grid;
 
-    /* Seeds have an index in the _seed_indices list.
+    /* Seeds have an index in the _inner_points list.
      * For each of those seeds, mark their coordinate with a label.
-     * This label is their index in the _seed_indices list, because
+     * This label is their index in the _inner_points list, because
      * it is a unique int strictly > 0
      */
 #ifdef ONE_THREAD_ONLY
@@ -743,14 +743,14 @@ void Frame::applyLink( const cctag::Parameters& params )
 #endif // ONE_THREAD_ONLY
     block.y = 1;
     block.z = 1;
-    grid.x  = _vote._seed_indices.host.size;
+    grid.x  = _inner_points.host.size;
     grid.y  = 1;
     grid.z  = 1;
 
     linking::edge_linking
         <<<grid,block,0,_stream>>>
         ( _voters.dev,
-          _vote._seed_indices.dev,
+          _inner_points.dev,
           _vote._d_edgepoint_index_table,
           _d_edges,
           _d_dx,

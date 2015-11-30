@@ -291,6 +291,15 @@ private:
     // in gradient descent.
     EdgeList<TriplePoint>  _voters;
 
+    EdgeList<int>          _inner_points;
+    EdgeList<int>          _interm_inner_points;
+
+    /* A single int allocated on the device as an intermediate
+     * value. Some CUB calls needs such a thing. Waste of space
+     * but necessary.
+     */
+    int*                   _d_interm_int;
+
     Voting _vote;
 
     FrameTexture*  _texture;

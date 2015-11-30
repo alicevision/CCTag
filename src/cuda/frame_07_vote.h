@@ -7,6 +7,7 @@
 
 #include "onoff.h"
 
+#include "framemeta.h"
 #include "triple_point.h"
 #include "edge_list.h"
 #include "assist.h"
@@ -26,8 +27,6 @@ namespace popart {
 
 struct Voting
 {
-    EdgeList<int>          _seed_indices;
-    EdgeList<int>          _seed_indices_2;
     cv::cuda::PtrStepSz32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
 
     void debug_download( const cctag::Parameters& params );
@@ -35,7 +34,8 @@ struct Voting
 
 #ifndef NDEBUG
 __device__
-void debug_inner_test_consistency( const char*                    origin,
+void debug_inner_test_consistency( FrameMetaPtr&                  meta,
+                                   const char*                    origin,
                                    int                            p_idx,
                                    const TriplePoint*             p,
                                    cv::cuda::PtrStepSz32s         edgepoint_index_table,

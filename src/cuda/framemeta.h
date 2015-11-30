@@ -21,6 +21,10 @@ enum FrameMetaEnum
 #ifndef NDEBUG
     Num_edges_thinned,
 #endif // NDEBUG
+    List_size_all_edgecoords,
+    List_size_voters,
+    List_size_inner_points,
+    List_size_interm_inner_points,
     End_indicator
 };
 
@@ -43,6 +47,13 @@ struct FrameMetaPtr
     void toDevice( FrameMetaEnum e, int val, cudaStream_t stream );
     __host__
     void toDevice( FrameMetaEnum e, float val, cudaStream_t stream );
+
+    /* Copy the symbol e from a device location from device to device
+     */
+    __host__
+    void toDevice_D2S( FrameMetaEnum e, int* d_val, cudaStream_t stream );
+    __host__
+    void toDevice_D2S( FrameMetaEnum e, float* d_val, cudaStream_t stream );
 
     /* Copy the symbol e from this pipe/frame from device to host
      */
@@ -67,6 +78,10 @@ struct FrameMetaPtr
 #ifndef NDEBUG
     OFFSET_GETTER_HEADER( int, num_edges_thinned )
 #endif // NDEBUG
+    OFFSET_GETTER_HEADER( int, list_size_all_edgecoords )
+    OFFSET_GETTER_HEADER( int, list_size_voters )
+    OFFSET_GETTER_HEADER( int, list_size_inner_points )
+    OFFSET_GETTER_HEADER( int, list_size_interm_inner_points )
 
 private:
     // These default functions are actually needed for automatic

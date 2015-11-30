@@ -16,7 +16,8 @@ namespace popart {
 namespace vote {
 
 __device__ inline
-int count_winners( const int                       inner_point_index,
+int count_winners( FrameMetaPtr&                   meta,
+                   const int                       inner_point_index,
                    TriplePoint*                    inner_point,
                    const DevEdgeList<TriplePoint>& voters )
 {
@@ -26,7 +27,7 @@ int count_winners( const int                       inner_point_index,
     /* This loop looks dangerous, but it is actually faster than
      * a manually partially unrolled loop.
      */
-    const int voter_list_size = voters.Size();
+    const int voter_list_size = meta.list_size_voters();
     for( int i=0; i<voter_list_size; i++ ) {
         if( voters.ptr[i].my_vote == inner_point_index ) {
             winner_size += 1;
@@ -47,18 +48,19 @@ int count_winners( const int                       inner_point_index,
  * unique indices of chosen inner points.
  */
 __global__
-void eval_chosen( DevEdgeList<TriplePoint> voters,      // input-output
+void eval_chosen( FrameMetaPtr             meta,
+                  DevEdgeList<TriplePoint> voters,      // input-output
                   DevEdgeList<int>         inner_points // input
                 )
 {
     uint32_t offset = threadIdx.x + blockIdx.x * 32;
-    if( offset >= inner_points.Size() ) {
+    if( offset >= meta.list_size_inner_points() ) {
         return;
     }
 
     const int    inner_point_index = inner_points.ptr[offset];
     TriplePoint* inner_point = &voters.ptr[inner_point_index];
-    vote::count_winners( inner_point_index, inner_point, voters );
+    vote::count_winners( meta, inner_point_index, inner_point, voters );
 }
 
 } // namespace vote
@@ -69,11 +71,11 @@ namespace vote
 {
 
 __global__
-void dp_call_eval_chosen(
-                DevEdgeList<TriplePoint> voters, // modified input
-                DevEdgeList<int>         inner_points )      // input
+void dp_call_eval_chosen( FrameMetaPtr             meta,
+                          DevEdgeList<TriplePoint> voters, // modified input
+                          DevEdgeList<int>         inner_points )      // input
 {
-    int listsize = inner_points.getSize();
+    int listsize = meta.list_size_inner_points();
 
     dim3 block( 32, 1, 1 );
     dim3 grid( grid_divide( listsize, 32 ), 1, 1 );
@@ -89,19 +91,20 @@ void dp_call_eval_chosen(
 __host__
 bool Frame::applyVoteEval( const cctag::Parameters& params )
 {
+    _interm_inner_points.copySizeFromDevice( _stream, EdgeListCont );
+
 #ifndef NDEBUG
     _voters.copySizeFromDevice( _stream, EdgeListWait );
-    _vote._seed_indices_2.copySizeFromDevice( _stream, EdgeListCont );
-
     cerr << "Debug voting (with separable compilation)"
-         << " # seed indices 2: " << _vote._seed_indices_2.host.size
+         << " # seed indices 2: " << _interm_inner_points.host.size
          << " # chained edgeco: " << _voters.host.size << endl;
 #endif
 
     vote::dp_call_eval_chosen
         <<<1,1,0,_stream>>>
-        ( _voters.dev,  // output
-          _vote._seed_indices_2.dev );    // buffer
+        ( _meta,
+          _voters.dev,  // output
+          _interm_inner_points.dev );    // buffer
     POP_CHK_CALL_IFSYNC;
     return true;
 }
@@ -117,22 +120,25 @@ bool Frame::applyVoteEval( const cctag::Parameters& params )
 #ifndef NDEBUG
     _voters.copySizeFromDevice( _stream, EdgeListCont );
 #endif
-    _vote._seed_indices_2.copySizeFromDevice( _stream, EdgeListWait );
+    _interm_inner_points.copySizeFromDevice( _stream, EdgeListWait );
 
+#ifndef NDEBUG
     cerr << "Debug voting (without separable compilation)"
-         << " # seed indices 2: " << _vote._seed_indices_2.host.size
-         << " # chained edgeco: " << _voters.host.size << endl;
+         << " # inner points: " << _interm_inner_points.host.size
+         << " # voters      : " << _voters.host.size << endl;
+#endif
 
     /* Add number of voters to chosen inner points, and
      * add average flow length to chosen inner points.
      */
     dim3 block( 32, 1, 1 );
-    dim3 grid ( grid_divide( _vote._seed_indices_2.host.size, 32 ), 1, 1 );
+    dim3 grid ( grid_divide( _interm_inner_points.host.size, 32 ), 1, 1 );
 
     vote::eval_chosen
         <<<grid,block,0,_stream>>>
-        ( _voters.dev,
-          _vote._seed_indices_2.dev );
+        ( _meta,
+          _voters.dev,
+          _interm_inner_points.dev );
     POP_CHK_CALL_IFSYNC;
 
     return true;

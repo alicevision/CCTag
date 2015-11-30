@@ -48,8 +48,6 @@ namespace btime = boost::posix_time;
 
 void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ofstream & output, std::string debugFileName = "")
 {
-    POP_ENTER;
-    
     if (debugFileName == "") {
       debugFileName = "00000";
     }
@@ -169,7 +167,7 @@ int main(int argc, char** argv)
   }
 
 #ifdef WITH_CUDA
-  popart::device_prop_t deviceInfo;
+  popart::device_prop_t deviceInfo( true );
 #if 0
   deviceInfo.print( );
 #endif

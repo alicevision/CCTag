@@ -25,6 +25,11 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     , _texture( 0 )
     , _wait_for_upload( 0 )
     , _meta( my_pipe, my_layer )
+    , _all_edgecoords( _meta, List_size_all_edgecoords )
+    , _voters( _meta, List_size_voters )
+    , _inner_points( _meta, List_size_inner_points )
+    , _interm_inner_points( _meta, List_size_interm_inner_points )
+
 {
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
 #ifndef EDGE_LINKING_HOST_SIDE

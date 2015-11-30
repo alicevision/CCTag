@@ -32,7 +32,7 @@ void Frame::applyVote( const cctag::Parameters& params )
 
     /* For every potential outer ring point in _voters,
      * check whether it votes for a point, and if yes:
-     * (a) add that point to _seed_indices, 
+     * (a) add that point to _inner_points, 
      * (b) store the index that point (value it edgepoint_index_table)
      *     in the outer ring point's TriplePoint structure
      * (c) store the flow value there as well.
@@ -41,59 +41,61 @@ void Frame::applyVote( const cctag::Parameters& params )
 
 #ifndef NDEBUG
     _voters.copySizeFromDevice( _stream, EdgeListCont );
-    _vote._seed_indices.copySizeFromDevice( _stream, EdgeListWait );
+    _inner_points.copySizeFromDevice( _stream, EdgeListWait );
     cerr << "after constructline, voters: " << _voters.host.size
-         << " votes: " << _vote._seed_indices.host.size << endl;
+         << " votes: " << _inner_points.host.size << endl;
 #endif
 
     if( success ) {
         /* Apply sort and uniq to the list of potential inner ring
-         * points in _seed_indices. Store the result in _seed_indices_2.
+         * points in _inner_points. Store the result in _interm_inner_points.
          */
         success = applyVoteSortUniqNoDP( params );
 #ifndef NDEBUG
-        _vote._seed_indices_2.copySizeFromDevice( _stream, EdgeListWait );
-        cerr << "after sort/uniq, votes: " << _vote._seed_indices_2.host.size << endl;
+        _interm_inner_points.copySizeFromDevice( _stream, EdgeListWait );
+        cerr << "after sort/uniq, votes: " << _interm_inner_points.host.size << endl;
 #endif
 
-        /* For all potential inner points in _seed_indices_2,
+        /* For all potential inner points in _interm_inner_points,
          * count the number of voters and compute the average
          * flow size. Annotate inner points.
          */
         applyVoteEval( params );
 #ifndef NDEBUG
-        _vote._seed_indices_2.copySizeFromDevice( _stream, EdgeListWait );
-        cerr << "after eval, votes: " << _vote._seed_indices_2.host.size << endl;
+        _interm_inner_points.copySizeFromDevice( _stream, EdgeListWait );
+        cerr << "after eval, votes: " << _interm_inner_points.host.size << endl;
 #endif
 
-        /* For all inner points in _seed_indices_2, check if
+        /* For all inner points in _interm_inner_points, check if
          * average flow size exceeds threshold, store all successful
-         * inner point in _seed_indices.
+         * inner point in _inner_points.
          */
         applyVoteIf();
 #ifndef NDEBUG
-        _vote._seed_indices.copySizeFromDevice( _stream, EdgeListWait );
-        cerr << "after if, votes: " << _vote._seed_indices.host.size << endl;
-#else
-        _vote._seed_indices.copySizeFromDevice( _stream, EdgeListCont );
+        // _inner_points.copySizeFromDevice( _stream, EdgeListWait );
+        // already copied in applyVoteIf
+        cudaStreamSynchronize( _stream );
+        cerr << "after if, votes: " << _inner_points.host.size << endl;
 #endif
 
         /* would it be better to remove unused voters from the chaincoords ? */
     }
 
     if( not success ) {
-        _vote._seed_indices.host.size       = 0;
-        _voters.host.size = 0;
+        _inner_points.host.size = 0;
+        _voters.host.size       = 0;
         return;
     }
 
-    applyVoteDownload( );
+    // Called separately from tag.cu
+    // applyVoteDownload( );
 }
 #endif // not USE_SEPARABLE_COMPILATION
 
 #ifndef NDEBUG
 __device__
-void debug_inner_test_consistency( const char*                    origin,
+void debug_inner_test_consistency( FrameMetaPtr&                  meta,
+                                   const char*                    origin,
                                    int                            p_idx,
                                    const TriplePoint*             p,
                                    cv::cuda::PtrStepSz32s         edgepoint_index_table,
@@ -110,7 +112,7 @@ void debug_inner_test_consistency( const char*                    origin,
     }
 
     int idx = edgepoint_index_table.ptr(p->coord.y)[p->coord.x];
-    if( idx < 0 || idx >= voters.Size() ) {
+    if( idx < 0 || idx >= meta.list_size_voters() ) {
         printf("%s Looked up index (coord) is out of bounds\n", origin);
         assert( 0 );
     }

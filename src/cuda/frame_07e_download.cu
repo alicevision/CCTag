@@ -31,7 +31,7 @@ void Frame::applyVoteDownload( )
      */
     _voters.copySizeFromDevice( _stream, EdgeListWait );
     _voters.copyDataFromDeviceAsync( _download_stream );
-    _vote._seed_indices.      copyDataFromDeviceAsync( _download_stream );
+    _inner_points.copyDataFromDeviceAsync( _download_stream );
 #endif // EDGE_LINKING_HOST_SIDE
 }
 

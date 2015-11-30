@@ -38,9 +38,10 @@ struct NumVotersIsGreaterEqual
 
 __global__
 void dp_call_vote_if(
+    FrameMetaPtr             meta,
     DevEdgeList<TriplePoint> voters,        // input
-    DevEdgeList<int>         seedIndices,   // output
-    DevEdgeList<int>         seedIndices2,  // input
+    DevEdgeList<int>         inner_points,   // output
+    DevEdgeList<int>         interm_inner_points,  // input
     cv::cuda::PtrStepSzb     intermediate ) // buffer
 {
     /* Filter all chosen inner points that have fewer
@@ -49,8 +50,8 @@ void dp_call_vote_if(
 
     cudaError_t err;
 
-    if( seedIndices.getSize() == 0 ) {
-        seedIndices2.setSize(0);
+    if( meta.list_size_interm_inner_points() == 0 ) {
+        meta.list_size_inner_points() = 0;
         return;
     }
 
@@ -60,10 +61,10 @@ void dp_call_vote_if(
     size_t assist_buffer_sz = 0;
     err = cub::DeviceSelect::If( 0,
                                  assist_buffer_sz,
-                                 seedIndices2.ptr,
-                                 seedIndices.ptr,
-                                 seedIndices.getSizePtr(),
-                                 seedIndices2.getSize(),
+                                 interm_inner_points.ptr,
+                                 inner_points.ptr,
+                                 &meta.list_size_inner_points(),
+                                 meta.list_size_interm_inner_points(),
                                  select_op,
                                  0,     // use stream 0
                                  DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
@@ -71,7 +72,7 @@ void dp_call_vote_if(
         return;
     }
     if( assist_buffer_sz > intermediate.step * intermediate.rows ) {
-        seedIndices.setSize(0);
+        meta.list_size_inner_points() = 0;
         return;
     }
 #else // not CUB_INIT_CALLS
@@ -81,10 +82,10 @@ void dp_call_vote_if(
 
     cub::DeviceSelect::If( assist_buffer,
                            assist_buffer_sz,
-                           seedIndices2.ptr,
-                           seedIndices.ptr,
-                           seedIndices.getSizePtr(),
-                           seedIndices2.getSize(),
+                           interm_inner_points.ptr,
+                           inner_points.ptr,
+                           &meta.list_size_inner_points(),
+                           meta.list_size_interm_inner_points(),
                            select_op,
                            0,     // use stream 0
                            DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
@@ -95,13 +96,14 @@ bool Frame::applyVoteIf( )
 {
     dp_call_vote_if
         <<<1,1,0,_stream>>>
-        ( _voters.dev,  // input
-          _vote._seed_indices.dev,        // output
-          _vote._seed_indices_2.dev,      // input
+        ( _meta,
+          _voters.dev,  // input
+          _inner_points.dev,        // output
+          _interm_inner_points.dev,      // input
           cv::cuda::PtrStepSzb(_d_intermediate) ); // buffer
     POP_CHK_CALL_IFSYNC;
 
-    _vote._seed_indices.copySizeFromDevice( _stream, EdgeListCont );
+    _inner_points.copySizeFromDevice( _stream, EdgeListCont );
 
     return true;
 }
@@ -119,10 +121,10 @@ bool Frame::applyVoteIf( )
     assist_buffer_sz  = 0;
     err = cub::DeviceSelect::If( 0,
                                  assist_buffer_sz,
-                                 _vote._seed_indices_2.dev.ptr,
-                                 _vote._seed_indices.dev.ptr,
-                                 _vote._seed_indices.dev.getSizePtr(),
-                                 _vote._seed_indices_2.host.size,
+                                 _interm_inner_points.dev.ptr,
+                                 _inner_points.dev.ptr,
+                                 _d_interm_int,
+                                 _interm_inner_points.host.size,
                                  select_op,
                                  _stream,
                                  DEBUG_CUB_FUNCTIONS );
@@ -143,17 +145,18 @@ bool Frame::applyVoteIf( )
      */
     err = cub::DeviceSelect::If( assist_buffer,
                                  assist_buffer_sz,
-                                 _vote._seed_indices_2.dev.ptr,
-                                 _vote._seed_indices.dev.ptr,
-                                 _vote._seed_indices.dev.getSizePtr(),
-                                 _vote._seed_indices_2.host.size,
+                                 _interm_inner_points.dev.ptr,
+                                 _inner_points.dev.ptr,
+                                 _d_interm_int,
+                                 _interm_inner_points.host.size,
                                  select_op,
                                  _stream,
                                  DEBUG_CUB_FUNCTIONS );
     POP_CHK_CALL_IFSYNC;
     POP_CUDA_FATAL_TEST( err, "CUB DeviceSelect::If failed" );
 
-    _vote._seed_indices.copySizeFromDevice( _stream, EdgeListCont );
+    _meta.toDevice_D2S( List_size_inner_points, _d_interm_int, _stream );
+    _inner_points.copySizeFromDevice( _stream, EdgeListCont );
     return true;
 }
 #endif // not USE_SEPARABLE_COMPILATION_FOR_VOTE_IF

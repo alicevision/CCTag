@@ -116,7 +116,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
 
     /* Block 3
      * Seeds are candidate points that may be on an inner ellipse.
-     * Every seed in _vote._seed_indices has received enough votes to reach
+     * Every seed in _inner_points has received enough votes to reach
      * the threshold.
      * We sort them by number of votes first, and coordinates in case of collision.
      * We copy all of them into the host-side list.
@@ -124,17 +124,17 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
      * NOTE: move sorting to the GPU !!!
      */
     vote_index_sort sort_by_votes_and_coords( _voters.host );
-    std::sort( _vote._seed_indices.host.ptr,
-               _vote._seed_indices.host.ptr + _vote._seed_indices.host.size,
+    std::sort( _inner_points.host.ptr,
+               _inner_points.host.ptr + _inner_points.host.size,
                sort_by_votes_and_coords );
 
     // NVCC handles the std::list<...>() construct. GCC does not. Keeping alternative code.
 
     // std::list<cctag::EdgePoint*> empty_list;
-    out_seedlist.resize( _vote._seed_indices.host.size );
+    out_seedlist.resize( _inner_points.host.size );
 
-    for( int i=0; i<_vote._seed_indices.host.size; i++ ) {
-        int seedidx = _vote._seed_indices.host.ptr[i];
+    for( int i=0; i<_inner_points.host.size; i++ ) {
+        int seedidx = _inner_points.host.ptr[i];
         const TriplePoint& pt = _voters.host.ptr[seedidx];
         cctag::EdgePoint* ep = out_edgemap[pt.coord.x][pt.coord.y];
 

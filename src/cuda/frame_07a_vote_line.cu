@@ -19,7 +19,8 @@ namespace popart {
 namespace vote {
 
 __device__ inline
-TriplePoint* find_neigh( const int2&              neigh,
+TriplePoint* find_neigh( FrameMetaPtr&            meta,
+                         const int2&              neigh,
                          cv::cuda::PtrStepSz32s   edgepoint_index_table,
                          DevEdgeList<TriplePoint> voters )
 {
@@ -27,10 +28,10 @@ TriplePoint* find_neigh( const int2&              neigh,
         int idx = edgepoint_index_table.ptr(neigh.y)[neigh.x];
         if( idx != 0 ) {
             assert( idx > 0 );
-            assert( idx < voters.Size() );
+            assert( idx < meta.list_size_voters() );
             TriplePoint* neighbour = &voters.ptr[idx];
 #ifndef NDEBUG
-            debug_inner_test_consistency( "B", idx, neighbour, edgepoint_index_table, voters );
+            debug_inner_test_consistency( meta, "B", idx, neighbour, edgepoint_index_table, voters );
 
             if( neigh.x != neighbour->coord.x || neigh.y != neighbour->coord.y ) {
                 printf("Intended coordinate is (%d,%d) at index %d, looked up coord is (%d,%d)\n",
@@ -46,24 +47,28 @@ TriplePoint* find_neigh( const int2&              neigh,
 }
 
 __device__ inline
-TriplePoint* find_befor( const TriplePoint*       p,
+TriplePoint* find_befor( FrameMetaPtr&            meta,
+                         const TriplePoint*       p,
                          cv::cuda::PtrStepSz32s   edgepoint_index_table,
                          DevEdgeList<TriplePoint> voters )
 {
     assert( p );
-    return find_neigh( p->descending.befor,
+    return find_neigh( meta,
+                       p->descending.befor,
                        edgepoint_index_table,
                        voters );
 }
 
 
 __device__ inline
-TriplePoint* find_after( const TriplePoint*             p,
-                               cv::cuda::PtrStepSz32s   edgepoint_index_table,
-                               DevEdgeList<TriplePoint> voters )
+TriplePoint* find_after( FrameMetaPtr&            meta,
+                         const TriplePoint*       p,
+                         cv::cuda::PtrStepSz32s   edgepoint_index_table,
+                         DevEdgeList<TriplePoint> voters )
 {
     assert( p );
-    return find_neigh( p->descending.after,
+    return find_neigh( meta,
+                       p->descending.after,
                        edgepoint_index_table,
                        voters );
 }
@@ -110,11 +115,12 @@ inline float cl_distance( const TriplePoint* l, const TriplePoint* r )
  */
 __device__
 const TriplePoint* cl_inner(
+    FrameMetaPtr&                  meta,
     DevEdgeList<TriplePoint>       voters,
     const cv::cuda::PtrStepSz32s   edgepoint_index_table )
 {
     int offset = threadIdx.x + blockIdx.x * 32;
-    if( offset >= voters.Size() ) {
+    if( offset >= meta.list_size_voters() ) {
         return 0;
     }
     if( offset == 0 ) {
@@ -128,13 +134,13 @@ const TriplePoint* cl_inner(
 
 #ifndef NDEBUG
     p->debug_init( );
-    debug_inner_test_consistency( "A", offset, p, edgepoint_index_table, voters );
+    debug_inner_test_consistency( meta, "A", offset, p, edgepoint_index_table, voters );
     p->debug_add( p->coord );
 #endif // NDEBUG
 
     float dist; // scalar to compute the distance ratio
 
-    TriplePoint* current = vote::find_befor( p, edgepoint_index_table, voters );
+    TriplePoint* current = vote::find_befor( meta, p, edgepoint_index_table, voters );
     // Here current contains the edge point lying on the 2nd ellipse (from outer to inner)
     if( not current ) {
         return 0;
@@ -175,7 +181,8 @@ const TriplePoint* cl_inner(
         chosen = 0;
 
         // First in the gradient direction
-        TriplePoint* target = vote::find_after( current,
+        TriplePoint* target = vote::find_after( meta,
+                                                current,
                                                 edgepoint_index_table,
                                                 voters );
         // No edge point was found in that direction
@@ -214,7 +221,8 @@ const TriplePoint* cl_inner(
         current = target;
         // Second in the opposite gradient direction
         // target = vote::find_befor( current, d_next_edge_befor, voters );
-        target = vote::find_befor( current,
+        target = vote::find_befor( meta,
+                                   current,
                                    edgepoint_index_table,
                                    voters );
         if( not target ) {
@@ -269,12 +277,14 @@ const TriplePoint* cl_inner(
 }
 
 __global__
-void construct_line( DevEdgeList<int>             seed_indices,       // output
+void construct_line( FrameMetaPtr                 meta,
+                     DevEdgeList<int>             inner_points,       // output
                      DevEdgeList<TriplePoint>     voters, // input/output
                      const cv::cuda::PtrStepSz32s edgepoint_index_table ) // input
 {
     const TriplePoint* chosen =
-        cl_inner( voters,      // input
+        cl_inner( meta,
+                  voters,      // input
                   edgepoint_index_table ); // input
 
     if( chosen && chosen->coord.x == 0 && chosen->coord.y == 0 ) chosen = 0;
@@ -286,15 +296,15 @@ void construct_line( DevEdgeList<int>             seed_indices,       // output
 
     uint32_t write_index;
     if( threadIdx.x == 0 ) {
-        write_index = atomicAdd( seed_indices.getSizePtr(), (int)ct );
+        write_index = atomicAdd( &meta.list_size_inner_points(), (int)ct );
     }
     write_index = __shfl( write_index, 0 );
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) );
 
     if( chosen ) {
-        if( seed_indices.Size() < EDGE_POINT_MAX ) {
+        if( meta.list_size_inner_points() < EDGE_POINT_MAX ) {
             idx = edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
-            seed_indices.ptr[write_index] = idx;
+            inner_points.ptr[write_index] = idx;
         }
     }
 }
@@ -304,13 +314,14 @@ void construct_line( DevEdgeList<int>             seed_indices,       // output
 #ifdef USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
 __global__
 void dp_call_construct_line(
-    DevEdgeList<int>         seedIndices,          // output
+    FrameMetaPtr             meta,
+    DevEdgeList<int>         inner_points,          // output
     DevEdgeList<TriplePoint> voters,               // ?
     cv::cuda::PtrStepSz32s   edgepointIndexTable ) // ?
 {
-    seedIndices.setSize( 0 );
+    meta.list_size_inner_points() = 0;
 
-    int num_voters = voters.getSize();
+    int num_voters = meta.list_size_voters();
 
     if( num_voters == 0 ) return;
 
@@ -319,7 +330,8 @@ void dp_call_construct_line(
 
     vote::construct_line
         <<<grid,block>>>
-        ( seedIndices,           // output
+        ( meta,
+          inner_points,           // output
           voters,                // ?
           edgepointIndexTable ); // ?
 }
@@ -327,11 +339,12 @@ void dp_call_construct_line(
 __host__
 bool Frame::applyVoteConstructLine( )
 {
-    _vote._seed_indices.host.size = 0;
+    _inner_points.host.size = 0;
 
     dp_call_construct_line
         <<<1,1,0,_stream>>>
-        ( _vote._seed_indices.dev,          // output
+        ( _meta,
+          _inner_points.dev,          // output
           _voters.dev,                      // ?
           _vote._d_edgepoint_index_table ); // ?
     POP_CHK_CALL_IFSYNC;
@@ -348,15 +361,15 @@ bool Frame::applyVoteConstructLine( )
         return false;
     }
 
-    _vote._seed_indices.host.size = 0;
-    _vote._seed_indices.copySizeToDevice( _stream, EdgeListCont );
+    _inner_points.host.size = 0;
+    _inner_points.copySizeToDevice( _stream, EdgeListCont );
 
     dim3 block( 32, 1, 1 );
     dim3 grid ( grid_divide( _voters.host.size, 32 ), 1, 1 );
 
     vote::construct_line
         <<<grid,block,0,_stream>>>
-        ( _vote._seed_indices.dev,          // output
+        ( _inner_points.dev,          // output
           _voters.dev,                      // input
           _vote._d_edgepoint_index_table ); // input
     POP_CHK_CALL_IFSYNC;

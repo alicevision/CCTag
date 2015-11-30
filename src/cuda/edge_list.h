@@ -7,6 +7,7 @@
 
 #include "triple_point.h"
 #include "debug_macros.hpp"
+#include "framemeta.h"
 
 namespace popart {
 
@@ -37,39 +38,6 @@ template <typename T>
 struct DevEdgeList
 {
     T*   ptr;
-private:
-    int* size;
-
-public:
-    __device__
-    int Size() const
-    {
-        assert(size);
-        return *size;
-    }
-
-    __device__
-    void setSize( int sz )
-    {
-        assert(size);
-        *size = sz;
-    }
-
-    __device__
-    int getSize( ) const {
-        assert(size);
-        return *size;
-    }
-
-    __device__ __host__
-    int*& getSizePtr( ) {
-        return size;
-    }
-
-    __device__ __host__
-    const int* getSizePtr( ) const {
-        return size;
-    }
 
 protected:
     friend class EdgeList<T>;
@@ -81,9 +49,6 @@ protected:
 
         POP_CUDA_MALLOC( &aptr, sz*sizeof(T) );
         ptr = (T*)aptr;
-
-        POP_CUDA_MALLOC( &aptr, sizeof(int) );
-        size = (int*)aptr;
     }
 
     __host__
@@ -99,9 +64,7 @@ protected:
     void release( )
     {
         POP_CUDA_FREE( ptr );
-        POP_CUDA_FREE( size );
         ptr = 0;
-        size = 0;
     }
 };
 
@@ -131,7 +94,6 @@ protected:
             void* a;
             POP_CUDA_MALLOC_HOST( &a, sz * sizeof(T) );
             ptr = (T*)a;
-            // ptr = new T[sz];
         }
     }
 
@@ -145,7 +107,6 @@ protected:
     void release( )
     {
         cudaFreeHost( ptr );
-        // delete [] ptr;
         ptr = 0;
     }
 };
@@ -210,60 +171,55 @@ struct EdgeList
 {
 private:
     int             alloc_num;
+    FrameMetaPtr&   _meta;
+    FrameMetaEnum   _e;
 public:
     DevEdgeList<T>  dev;
     HostEdgeList<T> host;
 
-    EdgeList( ) { }
+    EdgeList( FrameMetaPtr& meta, FrameMetaEnum e )
+        : _meta( meta )
+        , _e( e )
+    { }
     ~EdgeList( ) { }
 
 #ifndef NDEBUG
     __host__
     void copySizeFromDevice( )
     {
-        POP_CUDA_MEMCPY_TO_HOST_SYNC( &host.size, dev.size, sizeof(int) );
+        _meta.fromDevice( _e, host.size, 0 );
     }
 #endif // NDEBUG
 
     __host__
     void copySizeFromDevice( cudaStream_t stream, EdgeListBlockSizeCopy wait )
     {
-        cudaError_t err;
-        err = cudaMemcpyAsync( &host.size, dev.size, sizeof(int), cudaMemcpyDeviceToHost, stream );
-        if( err != cudaSuccess ) {
-            std::cerr << "Error (1) in EdgeList::copySizeFromDevice: "
-                      << cudaGetErrorString(err) << std::endl;
-            host.size = 0;
-            return;
-        }
+        _meta.fromDevice( _e, host.size, stream );
+
         if( wait ) {
+            cudaError_t err;
             err = cudaStreamSynchronize( stream );
-        }
-        if( err != cudaSuccess ) {
-            std::cerr << "Error (2) in EdgeList::copySizeFromDevice: "
-                      << cudaGetErrorString(err) << std::endl;
-            host.size = 0;
+            if( err != cudaSuccess ) {
+                std::cerr << "Error in EdgeList::copySizeFromDevice: "
+                          << cudaGetErrorString(err) << std::endl;
+                host.size = 0;
+            }
         }
     }
 
     __host__
     void copySizeToDevice( cudaStream_t stream, EdgeListBlockSizeCopy wait )
     {
-        cudaError_t err;
-        err = cudaMemcpyAsync( dev.size, &host.size, sizeof(int), cudaMemcpyHostToDevice, stream );
-        if( err != cudaSuccess ) {
-            std::cerr << "Error (1) in EdgeList::copySizeToDevice: "
-                      << cudaGetErrorString(err) << std::endl;
-            host.size = 0;
-            return;
-        }
+        _meta.toDevice( _e, host.size, stream );
+
         if( wait ) {
+            cudaError_t err;
             err = cudaStreamSynchronize( stream );
-        }
-        if( err != cudaSuccess ) {
-            std::cerr << "Error (2) in EdgeList::copySizeToDevice: "
-                      << cudaGetErrorString(err) << std::endl;
-            host.size = 0;
+            if( err != cudaSuccess ) {
+                std::cerr << "Error in EdgeList::copySizeToDevice: "
+                          << cudaGetErrorString(err) << std::endl;
+                host.size = 0;
+            }
         }
     }
 
@@ -304,7 +260,6 @@ public:
     __host__
     bool copyDataFromDeviceAsync( cudaStream_t stream )
     {
-        assert( host.size != 0 );
         if( host.size == 0 ) {
             return false;
         }

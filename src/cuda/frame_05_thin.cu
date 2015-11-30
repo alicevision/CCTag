@@ -98,12 +98,8 @@ void first_round( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 __global__
 void second_round( cv::cuda::PtrStepSzb src,          // input
                    cv::cuda::PtrStepSzb dst,          // output
-#ifndef NDEBUG
                    DevEdgeList<int2>    all_edgecoords,   // output
                    FrameMetaPtr         meta )
-#else
-                   DevEdgeList<int2>    all_edgecoords )  // output
-#endif
 {
     const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
@@ -116,23 +112,16 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
         atomicAdd( &meta.num_edges_thinned(), 1 );
     }
 #endif
-#if 0
-    uint32_t write_index;
-    if( keep ) {
-        write_index = atomicAdd( all_edgecoords.getSizePtr(), 1 );
-    }
-#else
     uint32_t mask = __ballot( keep );  // bitfield of warps with results
     uint32_t ct   = __popc( mask );    // horizontal reduce
     uint32_t leader = __ffs(mask) - 1; // the highest thread id with indicator==true
     uint32_t write_index;
     if( threadIdx.x == leader ) {
         // leader gets warp's offset from global value and increases it
-        write_index = atomicAdd( all_edgecoords.getSizePtr(), int(ct) );
+        write_index = atomicAdd( &meta.list_size_all_edgecoords(), int(ct) );
     }
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
-#endif
 
     if( keep ) {
         if( write_index < EDGE_POINT_MAX ) {
@@ -142,16 +131,10 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
 }
 
 __global__
-void set_null( DevEdgeList<int2> all_edgecoords )
+void set_edgemax( FrameMetaPtr meta )
 {
-    all_edgecoords.setSize( 0 );
-}
-
-__global__
-void set_edgemax( DevEdgeList<int2> all_edgecoords )
-{
-    if( all_edgecoords.Size() > EDGE_POINT_MAX ) {
-        all_edgecoords.setSize( EDGE_POINT_MAX );
+    if( meta.list_size_all_edgecoords() > EDGE_POINT_MAX ) {
+        meta.list_size_all_edgecoords() = EDGE_POINT_MAX;
     }
 }
 
@@ -181,13 +164,8 @@ void Frame::applyThinning( )
         ( _d_hyst_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
     POP_CHK_CALL_IFSYNC;
 
-    thinning::set_null
-        <<<1,1,0,_stream>>>
-        ( _all_edgecoords.dev );
-
-    // POP_CUDA_SET0_ASYNC( _all_edgecoords.dev.getSizePtr(), _stream );
-
 #ifndef NDEBUG
+    _meta.toDevice( List_size_all_edgecoords, 0, _stream );
     _meta.toDevice( Num_edges_thinned, 0, _stream );
 
     thinning::second_round
@@ -207,16 +185,19 @@ void Frame::applyThinning( )
     _all_edgecoords.copyDataFromDeviceSync( );
 
 #else // NDEBUG
+    _meta.toDevice( List_size_all_edgecoords, 0, _stream );
+
     thinning::second_round
         <<<grid,block,0,_stream>>>
         ( cv::cuda::PtrStepSzb(_d_intermediate), // input
           _d_edges,                              // output
-          _all_edgecoords.dev );           // output
+          _all_edgecoords.dev,             // output
+          _meta );
 #endif // NDEBUG
 
     thinning::set_edgemax
         <<<1,1,0,_stream>>>
-        ( _all_edgecoords.dev );
+        ( _meta );
 
     _all_edgecoords.copySizeFromDevice( _stream, EdgeListCont );
 #if 0

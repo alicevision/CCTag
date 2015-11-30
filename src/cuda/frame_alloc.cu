@@ -131,10 +131,10 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_debug_map = (unsigned char*)ptr;
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-    _all_edgecoords      .alloc( EDGE_POINT_MAX, EdgeListBoth );
-    _voters              .alloc( EDGE_POINT_MAX, EdgeListBoth );
-    _vote._seed_indices  .alloc( EDGE_POINT_MAX, EdgeListBoth );
-    _vote._seed_indices_2.alloc( EDGE_POINT_MAX, EdgeListDevOnly );
+    _all_edgecoords.alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _voters        .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _inner_points  .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _interm_inner_points.alloc( EDGE_POINT_MAX, EdgeListDevOnly );
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
     assert( p % _vote._d_edgepoint_index_table.elemSize() == 0 );
@@ -142,6 +142,8 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _vote._d_edgepoint_index_table.step = p;
     _vote._d_edgepoint_index_table.cols = w;
     _vote._d_edgepoint_index_table.rows = h;
+
+    POP_CUDA_MALLOC_HOST( &_d_interm_int, sizeof(int) );
 }
 
 __host__
@@ -182,10 +184,10 @@ void Frame::initRequiredMem( )
                            _d_edges.step * _d_edges.rows,
                            _stream );
 
-    _all_edgecoords      .init( _stream );
-    _voters              .init( _stream );
-    _vote._seed_indices  .init( _stream );
-    _vote._seed_indices_2.init( _stream );
+    _all_edgecoords.init( _stream );
+    _voters        .init( _stream );
+    _inner_points  .init( _stream );
+    _interm_inner_points.init( _stream );
 
     POP_CUDA_MEMSET_ASYNC( _vote._d_edgepoint_index_table.data,
                            0,
@@ -222,11 +224,12 @@ void Frame::releaseRequiredMem( )
     cudaFreeHost( _h_debug_map );
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-    _all_edgecoords      .release();
-    _voters              .release();
-    _vote._seed_indices  .release();
-    _vote._seed_indices_2.release();
+    _all_edgecoords.release();
+    _voters        .release();
+    _inner_points  .release();
+    _interm_inner_points.release();
     POP_CUDA_FREE( _vote._d_edgepoint_index_table.data );
+    POP_CUDA_FREE( _d_interm_int );
 }
 
 }; // namespace popart

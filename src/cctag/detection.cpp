@@ -711,7 +711,6 @@ popart::TagPipe* initCuda( int      pipeId,
     popart::TagPipe* pipe1 = cudaPipelines[pipeId];
 
     if( not pipe1 ) {
-std::cerr << "NO PIPE YET" << std::endl;
         pipe1 = new popart::TagPipe;
         pipe1->initialize( width, height, params, durations );
         cudaPipelines[pipeId] = pipe1;

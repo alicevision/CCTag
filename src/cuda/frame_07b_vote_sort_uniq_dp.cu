@@ -87,7 +87,7 @@ void dp_call_03_sort_uniq(
     assist_buffer_sz = intermediate.step * intermediate.rows;
 
     /* Unique ensure that we check every "chosen" point only once.
-     * Output is in _vote._seed_indices_2.dev
+     * Output is in _interm_inner_points.dev
      */
     err = cub::DeviceSelect::Unique( assist_buffer,
                                      assist_buffer_sz,
@@ -109,8 +109,8 @@ bool Frame::applyVoteSortUniqDP( const cctag::Parameters& params )
     descent::dp_call_03_sort_uniq
         <<<1,1,0,_stream>>>
         (
-          _vote._seed_indices.dev,        // output
-          _vote._seed_indices_2.dev,      // buffer
+          _inner_points.dev,        // output
+          _interm_inner_points.dev,      // buffer
           cv::cuda::PtrStepSzb(_d_intermediate) ); // buffer
     POP_CHK_CALL_IFSYNC;
     return true;
