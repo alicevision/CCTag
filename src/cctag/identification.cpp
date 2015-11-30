@@ -973,7 +973,7 @@ bool refineConicFamilyGlob(
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
 
-  BOOST_ASSERT( vOuterPoints.size() > 0 );
+  // BOOST_ASSERT( vOuterPoints.size() > 0 );
 
   // Visual debug
   CCTagVisualDebug::instance().newSession( "refineConicPts" );
