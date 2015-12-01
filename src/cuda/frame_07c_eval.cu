@@ -19,7 +19,9 @@ __device__ inline
 int count_winners( FrameMetaPtr&                   meta,
                    const int                       inner_point_index,
                    TriplePoint*                    inner_point,
-                   const DevEdgeList<TriplePoint>& voters )
+                   const DevEdgeList<TriplePoint>& voters,
+                   const int*                      voters_my_vote,
+                   const float*                    voters_chosen_flow_length )
 {
     int   winner_size = 0;
     float flow_length = 0.0f;
@@ -29,9 +31,9 @@ int count_winners( FrameMetaPtr&                   meta,
      */
     const int voter_list_size = meta.list_size_voters();
     for( int i=0; i<voter_list_size; i++ ) {
-        if( voters.ptr[i].my_vote == inner_point_index ) {
+        if( voters_my_vote[i] == inner_point_index ) {
             winner_size += 1;
-            flow_length += voters.ptr[i].chosen_flow_length;
+            flow_length += voters_chosen_flow_length[i];
         }
     }
     inner_point->_winnerSize = winner_size;
@@ -50,6 +52,8 @@ int count_winners( FrameMetaPtr&                   meta,
 __global__
 void eval_chosen( FrameMetaPtr             meta,
                   DevEdgeList<TriplePoint> voters,      // input-output
+                  const int*               voters_my_vote, // input
+                  const float*             voters_chosen_flow_length, // input
                   DevEdgeList<int>         inner_points // input
                 )
 {
@@ -60,7 +64,14 @@ void eval_chosen( FrameMetaPtr             meta,
 
     const int    inner_point_index = inner_points.ptr[offset];
     TriplePoint* inner_point = &voters.ptr[inner_point_index];
-    vote::count_winners( meta, inner_point_index, inner_point, voters );
+    vote::count_winners( meta,
+                         offset,
+                         // maxpoints,
+                         // inner_points.ptr,
+                         inner_point,
+                         voters,
+                         voters_my_vote,
+                         voters_chosen_flow_length );
 }
 
 } // namespace vote
@@ -73,6 +84,8 @@ namespace vote
 __global__
 void dp_call_eval_chosen( FrameMetaPtr             meta,
                           DevEdgeList<TriplePoint> voters, // modified input
+                          const int*               voters_my_vote, // input
+                          const float*             voters_chosen_flow_length, // input
                           DevEdgeList<int>         inner_points )      // input
 {
     int listsize = meta.list_size_inner_points();
@@ -84,6 +97,8 @@ void dp_call_eval_chosen( FrameMetaPtr             meta,
         <<<grid,block>>>
         ( meta,
           voters,
+          voters_my_vote,
+          voters_chosen_flow_length,
           inner_points );
 }
 
@@ -105,6 +120,8 @@ bool Frame::applyVoteEval( )
         <<<1,1,0,_stream>>>
         ( _meta,
           _voters.dev,  // output
+          _voters_my_vote, // input
+          _voters_chosen_flow_length, // input
           _interm_inner_points.dev );    // buffer
     POP_CHK_CALL_IFSYNC;
     return true;
@@ -139,6 +156,8 @@ bool Frame::applyVoteEval( )
         <<<grid,block,0,_stream>>>
         ( _meta,
           _voters.dev,
+          _voters_my_vote,
+          _voters_chosen_flow_length,
           _interm_inner_points.dev );
     POP_CHK_CALL_IFSYNC;
 

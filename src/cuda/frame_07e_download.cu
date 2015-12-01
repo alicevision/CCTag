@@ -32,6 +32,8 @@ void Frame::applyVoteDownload( )
     _voters.copySizeFromDevice( _stream, EdgeListWait );
     _voters.copyDataFromDeviceAsync( _download_stream );
     _inner_points.copyDataFromDeviceAsync( _download_stream );
+
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( _h_voters_my_vote, _voters_my_vote, _voters.host.size*sizeof(int), _download_stream );
 #endif // EDGE_LINKING_HOST_SIDE
 }
 

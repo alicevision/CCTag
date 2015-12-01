@@ -182,16 +182,22 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 #endif // not SHOW_DETAILED_TIMING
 
     for( int i=1; i<num_layers; i++ ) {
-        cudaEventRecord( _frame[i]->_download_stream_done, _frame[i]->_download_stream );
-        cudaStreamWaitEvent( _frame[i]->_stream, _frame[i]->_download_stream_done, 0 );
-        cudaEventRecord( _frame[i]->_stream_done, _frame[i]->_stream );
+        cudaEventRecord( _frame[i]->_download_stream_done,
+                         _frame[i]->_download_stream );
+        cudaStreamWaitEvent( _frame[i]->_stream,
+                             _frame[i]->_download_stream_done, 0 );
+        cudaEventRecord( _frame[i]->_stream_done,
+                         _frame[i]->_stream );
     }
-    cudaEventRecord( _frame[0]->_download_stream_done, _frame[0]->_download_stream );
-    cudaStreamWaitEvent( _frame[0]->_stream, _frame[0]->_download_stream_done, 0 );
+    cudaEventRecord( _frame[0]->_download_stream_done,
+                     _frame[0]->_download_stream );
+    cudaStreamWaitEvent( _frame[0]->_stream,
+                         _frame[0]->_download_stream_done, 0 );
     for( int i=1; i<num_layers; i++ ) {
         cudaStreamWaitEvent( _frame[0]->_stream, _frame[i]->_stream_done, 0 );
     }
     cudaEventRecord( _frame[0]->_stream_done, _frame[0]->_stream );
+    cudaStreamSynchronize( _frame[0]->_stream );
 
 #ifndef CCTAG_NO_COUT
     t.stop();

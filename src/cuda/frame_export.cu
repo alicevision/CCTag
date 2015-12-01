@@ -157,9 +157,10 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
      */
     for( int i=1; i<vote_sz; i++ ) {
         const TriplePoint& pt = _voters.host.ptr[i];
+        const int my_vote     = _h_voters_my_vote[i];
 
-        if( pt.my_vote != 0 ) {
-            const TriplePoint& point = _voters.host.ptr[ pt.my_vote ];
+        if( my_vote != 0 ) {
+            const TriplePoint& point = _voters.host.ptr[ my_vote ];
             cctag::EdgePoint* potential_seed = out_edgemap[point.coord.x][point.coord.y];
             if( winners.find(potential_seed) != winners.end() ) {
                 cctag::EdgePoint* this_voter = out_edgemap[pt.coord.x][pt.coord.y];

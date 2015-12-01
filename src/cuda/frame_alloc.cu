@@ -136,6 +136,13 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _inner_points       .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _interm_inner_points.alloc( EDGE_POINT_MAX, EdgeListDevOnly );
 
+    POP_CUDA_MALLOC( &ptr, EDGE_POINT_MAX * sizeof(float) );
+    _voters_chosen_flow_length = (float*)ptr;
+    POP_CUDA_MALLOC( &ptr, EDGE_POINT_MAX * sizeof(int) );
+    _voters_my_vote = (int*)ptr;
+    POP_CUDA_MALLOC_HOST( &ptr, EDGE_POINT_MAX * sizeof(int) );
+    _h_voters_my_vote = (int*)ptr;
+
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
     assert( p % _vote._d_edgepoint_index_table.elemSize() == 0 );
     _vote._d_edgepoint_index_table.data = (int32_t*)ptr;
@@ -193,6 +200,16 @@ void Frame::initRequiredMem( )
                            0,
                            _vote._d_edgepoint_index_table.step * _vote._d_edgepoint_index_table.rows,
                            _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _voters_my_vote,
+                           0,
+                           EDGE_POINT_MAX * sizeof(int),
+                           _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _voters_chosen_flow_length,
+                           0,
+                           EDGE_POINT_MAX * sizeof(float),
+                           _stream );
 }
 
 void Frame::releaseRequiredMem( )
@@ -230,6 +247,9 @@ void Frame::releaseRequiredMem( )
     _interm_inner_points.release();
     POP_CUDA_FREE( _vote._d_edgepoint_index_table.data );
     POP_CUDA_FREE( _d_interm_int );
+    POP_CUDA_FREE( _voters_chosen_flow_length );
+    POP_CUDA_FREE( _voters_my_vote );
+    cudaFreeHost( _h_voters_my_vote );
 }
 
 }; // namespace popart
