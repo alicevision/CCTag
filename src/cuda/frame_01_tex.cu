@@ -31,13 +31,13 @@ void Frame::fillFromTexture( Frame& src )
         <<<grid,block,0,_stream>>>
         ( _d_plane, src.getTex() );
     POP_CHK_CALL_IFSYNC;
+
+    cudaEventRecord( _download_ready_event.plane, _stream );
 }
 
 __host__
 void Frame::applyPlaneDownload( )
 {
-    cudaEventRecord( _download_ready_event.plane, _stream );
-
     cudaStreamWaitEvent( _download_stream, _download_ready_event.plane, 0 );
 
     // download - layer 0 is mandatory, other layers for debugging

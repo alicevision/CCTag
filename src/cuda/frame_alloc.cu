@@ -131,9 +131,9 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_debug_map = (unsigned char*)ptr;
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-    _all_edgecoords.alloc( EDGE_POINT_MAX, EdgeListBoth );
-    _voters        .alloc( EDGE_POINT_MAX, EdgeListBoth );
-    _inner_points  .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _all_edgecoords     .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _voters             .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _inner_points       .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _interm_inner_points.alloc( EDGE_POINT_MAX, EdgeListDevOnly );
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );

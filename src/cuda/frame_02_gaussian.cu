@@ -202,8 +202,11 @@ void Frame::applyGauss( const cctag::Parameters & params )
 __host__
 void Frame::applyGaussDownload( )
 {
+    cudaError_t err;
+
     /* block download until DX and DY are ready */
-    cudaStreamWaitEvent( _download_stream, _download_ready_event.dxdy, 0 );
+    err = cudaStreamWaitEvent( _download_stream, _download_ready_event.dxdy, 0 );
+    POP_CUDA_FATAL_TEST( err, "Cannot wait for download stream event: " );
 
     // After these linking operations, dx and dy are created for
     // all edge points and we can copy them to the host
