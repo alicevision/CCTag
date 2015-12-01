@@ -242,8 +242,8 @@ void gradient_descent( FrameMetaPtr                 meta,
     out_edge.descending.befor.y = keep ? merge_directions[0][threadIdx.x].y : 0;
     out_edge.descending.after.x = keep ? merge_directions[1][threadIdx.x].x : 0;
     out_edge.descending.after.y = keep ? merge_directions[1][threadIdx.x].y : 0;
-    // out_edge.my_vote            = 0;
-    // out_edge.chosen_flow_length = 0.0f;
+    out_edge.my_vote            = 0;
+    out_edge.chosen_flow_length = 0.0f;
     out_edge._winnerSize        = 0;
     out_edge._flowLength        = 0.0f;
 

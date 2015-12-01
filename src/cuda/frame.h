@@ -290,9 +290,6 @@ private:
     // Stores all points that are recognized as potential voters
     // in gradient descent.
     EdgeList<TriplePoint>  _voters;
-    int*                   _voters_my_vote;
-    int*                   _h_voters_my_vote;
-    float*                 _voters_chosen_flow_length;
 
     EdgeList<int>          _inner_points;
     EdgeList<int>          _interm_inner_points;

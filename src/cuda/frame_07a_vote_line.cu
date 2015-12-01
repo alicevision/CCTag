@@ -117,8 +117,6 @@ __device__
 const TriplePoint* cl_inner(
     FrameMetaPtr&                  meta,
     DevEdgeList<TriplePoint>       voters,
-    int*                           voters_my_vote,
-    float*                         voters_chosen_flow_length,
     const cv::cuda::PtrStepSz32s   edgepoint_index_table )
 {
     int offset = threadIdx.x + blockIdx.x * 32;
@@ -130,9 +128,7 @@ const TriplePoint* cl_inner(
         return 0;
     }
 
-    TriplePoint* const p    = &voters.ptr[offset];
-    int&               pmv  = voters_my_vote[offset];
-    float&             pcfl = voters_chosen_flow_length[offset];
+    TriplePoint* const p = &voters.ptr[offset];
 
     if( p == 0 ) return 0;
 
@@ -274,9 +270,8 @@ const TriplePoint* cl_inner(
      * keep the important data in the choosers for now, and
      * update the chosen in a new kernel.
      */
-    pmv  = edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
-    pcfl = totalDistance;
-    // p->chosen_flow_length = totalDistance;
+    p->my_vote            = edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
+    p->chosen_flow_length = totalDistance;
 
     return chosen;
 }
@@ -285,15 +280,11 @@ __global__
 void construct_line( FrameMetaPtr                 meta,
                      DevEdgeList<int>             inner_points,       // output
                      DevEdgeList<TriplePoint>     voters, // input/output
-                     int*                         voters_my_vote, // output
-                     float*                       voters_chosen_flow_length, // output
                      const cv::cuda::PtrStepSz32s edgepoint_index_table ) // input
 {
     const TriplePoint* chosen =
         cl_inner( meta,
-                  voters,      // input/output
-                  voters_my_vote, // output
-                  voters_chosen_flow_length, // output
+                  voters,      // input
                   edgepoint_index_table ); // input
 
     if( chosen && chosen->coord.x == 0 && chosen->coord.y == 0 ) chosen = 0;
@@ -325,9 +316,7 @@ __global__
 void dp_call_construct_line(
     FrameMetaPtr             meta,
     DevEdgeList<int>         inner_points,          // output
-    DevEdgeList<TriplePoint> voters,               // input-output
-    int*                     voters_my_vote, // output
-    float*                   voters_chosen_flow_length, // output
+    DevEdgeList<TriplePoint> voters,               // ?
     cv::cuda::PtrStepSz32s   edgepointIndexTable ) // ?
 {
     meta.list_size_inner_points() = 0;
@@ -343,9 +332,7 @@ void dp_call_construct_line(
         <<<grid,block>>>
         ( meta,
           inner_points,           // output
-          voters,                // input-output
-          voters_my_vote, // output
-          voters_chosen_flow_length, // output
+          voters,                // ?
           edgepointIndexTable ); // ?
 }
 
@@ -358,9 +345,7 @@ bool Frame::applyVoteConstructLine( )
         <<<1,1,0,_stream>>>
         ( _meta,
           _inner_points.dev,          // output
-          _voters.dev,                      // input-output
-          _voters_my_vote, // output
-          _voters_chosen_flow_length, // output
+          _voters.dev,                      // ?
           _vote._d_edgepoint_index_table ); // ?
     POP_CHK_CALL_IFSYNC;
     return true;
@@ -385,9 +370,7 @@ bool Frame::applyVoteConstructLine( )
     vote::construct_line
         <<<grid,block,0,_stream>>>
         ( _inner_points.dev,          // output
-          _voters.dev,                      // input-output
-          _voters_my_vote, // output
-          _voters_chosen_flow_length, // output
+          _voters.dev,                      // input
           _vote._d_edgepoint_index_table ); // input
     POP_CHK_CALL_IFSYNC;
 

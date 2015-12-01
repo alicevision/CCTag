@@ -21,8 +21,8 @@ struct TriplePoint
 
     // in the original code, chosen keeps list of voters
     // no possible here; we must invert this
-    // int   my_vote;
-    // float chosen_flow_length;
+    int   my_vote;
+    float chosen_flow_length;
 
     int   _winnerSize;
     float _flowLength;
