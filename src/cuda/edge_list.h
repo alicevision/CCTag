@@ -8,6 +8,7 @@
 #include "triple_point.h"
 #include "debug_macros.hpp"
 #include "framemeta.h"
+#include "pinned_counters.h"
 
 namespace popart {
 
@@ -71,13 +72,15 @@ protected:
 template <typename T>
 struct HostEdgeList
 {
-    T*  ptr;
-    int size;
+    T*   ptr;
+    int& size;
 
-    HostEdgeList()
+    HostEdgeList( PinnedCounters& pc )
         : ptr(0)
-        , size(0)
-    { }
+        , size( pc.getCounter() )
+    {
+        size = 0;
+    }
 
     ~HostEdgeList( )
     {
@@ -177,9 +180,10 @@ public:
     DevEdgeList<T>  dev;
     HostEdgeList<T> host;
 
-    EdgeList( FrameMetaPtr& meta, FrameMetaEnum e )
+    EdgeList( FrameMetaPtr& meta, FrameMetaEnum e, PinnedCounters& pc )
         : _meta( meta )
         , _e( e )
+        , host( pc )
     { }
     ~EdgeList( ) { }
 

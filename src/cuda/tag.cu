@@ -3,6 +3,7 @@
 #include "frameparam.h"
 #include "debug_macros.hpp"
 #include "keep_time.hpp"
+#include "pinned_counters.h"
 #include <sstream>
 #include <iostream>
 #include <fstream>
@@ -26,6 +27,8 @@ void TagPipe::initialize( const uint32_t pix_w,
                           const cctag::Parameters& params,
                           cctag::logtime::Mgmt* durations )
 {
+    pinned_counters.init( );
+
     static bool tables_initialized = false;
     if( not tables_initialized ) {
         tables_initialized = true;
