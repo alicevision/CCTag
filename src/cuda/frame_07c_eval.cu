@@ -65,7 +65,7 @@ void eval_chosen( FrameMetaPtr             meta,
 
 } // namespace vote
 
-#ifdef USE_SEPARABLE_COMPILATION
+#ifdef USE_SEPARABLE_COMPILATION_FOR_EVAL
 
 namespace vote
 {
@@ -82,14 +82,15 @@ void dp_call_eval_chosen( FrameMetaPtr             meta,
 
     vote::eval_chosen
         <<<grid,block>>>
-        ( voters,
+        ( meta,
+          voters,
           inner_points );
 }
 
 } // namespace vote
 
 __host__
-bool Frame::applyVoteEval( const cctag::Parameters& params )
+bool Frame::applyVoteEval( )
 {
     _interm_inner_points.copySizeFromDevice( _stream, EdgeListCont );
 
@@ -109,9 +110,9 @@ bool Frame::applyVoteEval( const cctag::Parameters& params )
     return true;
 }
 
-#else // not USE_SEPARABLE_COMPILATION
+#else // not USE_SEPARABLE_COMPILATION_FOR_EVAL
 __host__
-bool Frame::applyVoteEval( const cctag::Parameters& params )
+bool Frame::applyVoteEval( )
 {
     /* Without Dynamic Parallelism, we must block here to retrieve the
      * value d_num_selected_out from the device before the voting
@@ -143,7 +144,7 @@ bool Frame::applyVoteEval( const cctag::Parameters& params )
 
     return true;
 }
-#endif // not USE_SEPARABLE_COMPILATION
+#endif // not USE_SEPARABLE_COMPILATION_FOR_EVAL
 
 } // namespace popart
 

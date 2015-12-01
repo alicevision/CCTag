@@ -60,7 +60,7 @@ void Frame::applyVote( const cctag::Parameters& params )
          * count the number of voters and compute the average
          * flow size. Annotate inner points.
          */
-        applyVoteEval( params );
+        applyVoteEval();
 #ifndef NDEBUG
         _interm_inner_points.copySizeFromDevice( _stream, EdgeListWait );
         cerr << "after eval, votes: " << _interm_inner_points.host.size << endl;

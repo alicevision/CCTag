@@ -180,7 +180,7 @@ public:
 #endif // not USE_SEPARABLE_COMPILATION
 
     // implemented in frame_07c_eval.cu
-    bool applyVoteEval( const cctag::Parameters& params );
+    bool applyVoteEval( );
 
     // implemented in frame_07d_vote_if.cu
     bool applyVoteIf( );

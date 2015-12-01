@@ -170,7 +170,7 @@ void TagPipe::tagframe( const cctag::Parameters& params )
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc();  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteConstructLine();  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteSortUniqDP( params );  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteEval( params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteEval();  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteIf();  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVote( params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteDownload();   // sync!
