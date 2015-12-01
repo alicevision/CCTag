@@ -385,7 +385,8 @@ bool Frame::applyVoteConstructLine( )
 
     vote::construct_line
         <<<grid,block,0,_stream>>>
-        ( _inner_points.dev,          // output
+        ( _meta,
+          _inner_points.dev,          // output
           _voters.dev,                      // input-modified
           _v_chosen_flow_length, // output
           _v_chosen_idx.dev,     // output
