@@ -99,3 +99,10 @@
  */
 #define USE_ONE_DOWNLOAD_STREAM
 
+/* Affects frame_export.cu.
+ * We must sort all potential inner points, but must we sort the
+ * edge point coordinates to avoid randomness? If it appears that
+ * this is the case, #define this.
+ */
+#undef SORT_ALL_EDGECOORDS_IN_EXPORT
+

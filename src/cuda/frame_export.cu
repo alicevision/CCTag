@@ -42,6 +42,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
      *   a pointer to an EdgePoint when it exists, or 0 if not.
      */
 
+#ifdef SORT_ALL_EDGECOORDS_IN_EXPORT
     /* remove a bit of randomness by sorting the list of edge point
      * that is stored in the 1D array of int2 _all_edgecoords
      *
@@ -51,6 +52,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
     std::sort( _all_edgecoords.host.ptr,
                _all_edgecoords.host.ptr+all_sz,
                v_comp );
+#endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
     out_edgemap.resize( boost::extents[ _d_plane.cols ][ _d_plane.rows ] );
     std::fill( out_edgemap.origin(), out_edgemap.origin() + out_edgemap.size(), (cctag::EdgePoint*)NULL );
