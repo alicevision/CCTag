@@ -11,7 +11,6 @@ void TriplePoint::debug_out( std::ostream& ostr ) const
          << "d=" << d.x << " " << d.y << " "
          << "bef=" << descending.befor.x << " " << descending.befor.y << " "
          << "aft=" << descending.after.x << " " << descending.after.y << " "
-         << "vote=" << "my_vote" << " l=" << chosen_flow_length << " "
          << std::setprecision(4)
          << "winS=" << _winnerSize << " l=" << _flowLength;
 

@@ -14,7 +14,6 @@
 
 #include "cctag/logtime.hpp"
 #include "cuda/onoff.h"
-// #include "cctag/algebra/matrix/Matrix.hpp"
 
 using namespace std;
 
@@ -221,13 +220,11 @@ void TagPipe::download( size_t                          layer,
                         std::vector<cctag::EdgePoint*>& seeds,
                         cctag::WinnerMap&               winners )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
 
     assert( layer < _frame.size() );
 
     _frame[layer]->applyExport( vPoints, edgeImage, seeds, winners );
 
-    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 __host__

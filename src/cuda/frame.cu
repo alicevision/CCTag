@@ -42,7 +42,6 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     } else {
         _private_download_stream = true;
         cudaStreamCreateWithFlags( &_download_stream, cudaStreamNonBlocking );
-        // POP_CUDA_STREAM_CREATE( &_download_stream );
     }
     POP_CUDA_STREAM_CREATE( &_stream );
 

@@ -197,34 +197,6 @@ void Frame::applyGauss( const cctag::Parameters & params )
 
     /* generate event when DX and DY are ready */
     cudaEventRecord( _download_ready_event.dxdy, _stream );
-#ifndef NDEBUG
-    if( params._debugDir != "" ) {
-        cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl;
-
-        POP_CUDA_SYNC( _download_stream );
-
-        ostringstream dx_i_out_n;
-        dx_i_out_n << params._debugDir << "gpu-dx-" << _layer << "-i.txt";
-        ofstream dx_i_out( dx_i_out_n.str().c_str() );
-        for( int y=0; y<_d_dx.rows; y++ ) {
-            for( int x=0; x<_d_dx.cols; x++ ) {
-                dx_i_out << setw(3) << _h_dx.ptr(y)[x] << " ";
-            }
-            dx_i_out << endl;
-        }
-
-        ostringstream dy_i_out_n;
-        dy_i_out_n << params._debugDir << "gpu-dy-" << _layer << "-i.txt";
-        ofstream dy_i_out( dy_i_out_n.str().c_str() );
-        for( int y=0; y<_d_dx.rows; y++ ) {
-            for( int x=0; x<_d_dx.cols; x++ ) {
-                dy_i_out << setw(3) << _h_dy.ptr(y)[x] << " ";
-            }
-            dy_i_out << endl;
-        }
-    }
-#endif // not NDEBUG
 }
 
 __host__

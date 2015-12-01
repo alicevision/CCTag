@@ -9,7 +9,7 @@ using namespace std;
 
 // NOTE
 // Excellent easy speedup possible by using threadIdx.x for parallel checking
-// fo the voter array in count_winners!!!
+// of the voter array in count_winners!!!
 
 namespace popart {
 
