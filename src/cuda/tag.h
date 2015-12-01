@@ -1,12 +1,18 @@
 #pragma once
 
+#include "cuda/onoff.h"
+
 #include <string>
 #include <vector>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <opencv2/core.hpp>
 
-#include "cuda/onoff.h"
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
+
+#include "cuda/tag_threads.h"
 #include "cctag/params.hpp"
 #include "cctag/types.hpp"
 #include "cctag/ImageCut.hpp"
@@ -22,14 +28,19 @@ class Frame; // forward decl means cctag/*.cpp need not recompile for frame.h
 
 class TagPipe
 {
-    std::vector<Frame*>  _frame;
+    std::vector<Frame*>         _frame;
+    const cctag::Parameters&    _params;
+    TagThreads                  _threads;
+
 public:
+    TagPipe( const cctag::Parameters& params );
+
     void initialize( const uint32_t pix_w,
                      const uint32_t pix_h,
-                     const cctag::Parameters& params,
                      cctag::logtime::Mgmt* durations );
     void load( unsigned char* pix );
-    void tagframe( const cctag::Parameters& params );
+    void tagframe( );
+    void handleframe( int layer );
 
     void convertToHost( size_t                          layer,
                         std::vector<cctag::EdgePoint>&  vPoints,

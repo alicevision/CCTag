@@ -112,7 +112,8 @@ void Frame::upload( const unsigned char* image )
                               getWidth(),
                               getWidth(),
                               getHeight(),
-                              cudaMemcpyHostToDevice, _stream );
+                              cudaMemcpyHostToDevice,
+                              _stream );
 }
 
 void Frame::createTexture( FrameTexture::Kind kind )
@@ -163,26 +164,26 @@ void Frame::deleteTexture( )
 
 void Frame::allocUploadEvent( )
 {
-    _wait_for_upload = new cudaEvent_t;
-
     cudaError_t err;
-    err = cudaEventCreateWithFlags( _wait_for_upload, cudaEventDisableTiming );
+    err = cudaEventCreateWithFlags( &_wait_for_upload, cudaEventDisableTiming );
     POP_CUDA_FATAL_TEST( err, "Could not create a non-timing event: " );
 }
 
 void Frame::deleteUploadEvent( )
 {
-    if( not _wait_for_upload ) return;
-    cudaEventDestroy( *_wait_for_upload );
-    delete _wait_for_upload;
+    cudaEventDestroy( _wait_for_upload );
 }
 
-cudaEvent_t Frame::addUploadEvent( )
+void Frame::addUploadEvent( )
 {
     cudaError_t err;
-    err = cudaEventRecord( *_wait_for_upload, _stream );
+    err = cudaEventRecord( _wait_for_upload, _stream );
     POP_CUDA_FATAL_TEST( err, "Could not insert an event into a stream: " );
-    return *_wait_for_upload;
+}
+
+cudaEvent_t Frame::getUploadEvent( )
+{
+    return _wait_for_upload;
 }
 
 void Frame::streamSync( )

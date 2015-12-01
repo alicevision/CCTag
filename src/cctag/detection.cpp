@@ -700,9 +700,9 @@ void createImageForVoteResultDebug(
 
 popart::TagPipe* initCuda( int      pipeId,
                            uint32_t width,
-	                   uint32_t height, 
-	                   const Parameters & params,
-	                   cctag::logtime::Mgmt* durations )
+                           uint32_t height, 
+                           const Parameters & params,
+                           cctag::logtime::Mgmt* durations )
 {
     if( cudaPipelines.size() <= pipeId ) {
         cudaPipelines.resize( pipeId+1 );
@@ -711,8 +711,8 @@ popart::TagPipe* initCuda( int      pipeId,
     popart::TagPipe* pipe1 = cudaPipelines[pipeId];
 
     if( not pipe1 ) {
-        pipe1 = new popart::TagPipe;
-        pipe1->initialize( width, height, params, durations );
+        pipe1 = new popart::TagPipe( params );
+        pipe1->initialize( width, height, durations );
         cudaPipelines[pipeId] = pipe1;
     } else {
         if( width  != pipe1->getWidth(0) ||
@@ -789,7 +789,7 @@ void cctagDetection(CCTag::List& markers,
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t20(boost::posix_time::microsec_clock::local_time());
 #endif // CCTAG_OPTIM
-  pipe1->tagframe( params ); // pix, w, h, params );
+  pipe1->tagframe( ); // pix, w, h, params );
 
   if( durations ) durations->log( "after CUDA stages" );
 

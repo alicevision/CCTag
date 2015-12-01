@@ -15,16 +15,21 @@
 
 #include "cctag/logtime.hpp"
 #include "cuda/onoff.h"
+#include "cuda/tag_threads.h"
 
 using namespace std;
 
 namespace popart
 {
+__host__
+TagPipe::TagPipe( const cctag::Parameters& params )
+    : _params( params )
+{
+}
 
 __host__
 void TagPipe::initialize( const uint32_t pix_w,
                           const uint32_t pix_h,
-                          const cctag::Parameters& params,
                           cctag::logtime::Mgmt* durations )
 {
     pinned_counters.init( );
@@ -36,9 +41,9 @@ void TagPipe::initialize( const uint32_t pix_w,
         Frame::initThinningTable( );
     }
 
-    FrameParam::init( params );
+    FrameParam::init( _params );
 
-    int num_layers = params._numberOfMultiresLayers;
+    int num_layers = _params._numberOfMultiresLayers;
     _frame.reserve( num_layers );
 
     uint32_t w = pix_w;
@@ -64,8 +69,10 @@ void TagPipe::initialize( const uint32_t pix_w,
     _frame[0]->allocUploadEvent( ); // sync
 
     for( int i=0; i<num_layers; i++ ) {
-        _frame[i]->allocRequiredMem( params ); // sync
+        _frame[i]->allocRequiredMem( _params ); // sync
     }
+
+    _threads.init( this, num_layers );
 }
 
 __host__
@@ -90,6 +97,7 @@ void TagPipe::load( unsigned char* pix )
 #endif // CCTAG_NO_COUT
 
     _frame[0]->upload( pix ); // async
+    _frame[0]->addUploadEvent( ); // async
 
 #ifndef CCTAG_NO_COUT
     t.stop();
@@ -98,114 +106,103 @@ void TagPipe::load( unsigned char* pix )
 }
 
 __host__
-void TagPipe::tagframe( const cctag::Parameters& params )
+void TagPipe::tagframe( )
 {
-    int num_layers = _frame.size();
-
-#ifdef SHOW_DETAILED_TIMING
-    KeepTime* time_gauss[num_layers];
-    KeepTime* time_mag  [num_layers];
-    KeepTime* time_hyst [num_layers];
-    KeepTime* time_thin [num_layers];
-    KeepTime* time_desc [num_layers];
-    KeepTime* time_vote [num_layers];
-    for( int i=0; i<num_layers; i++ ) {
-        time_gauss[i] = new KeepTime( _frame[i]->_stream );
-        time_mag  [i] = new KeepTime( _frame[i]->_stream );
-        time_hyst [i] = new KeepTime( _frame[i]->_stream );
-        time_thin [i] = new KeepTime( _frame[i]->_stream );
-        time_desc [i] = new KeepTime( _frame[i]->_stream );
-        time_vote [i] = new KeepTime( _frame[i]->_stream );
-    }
-#endif
-
 #ifndef CCTAG_NO_COUT
     KeepTime t( _frame[0]->_stream );
     t.start();
 #endif // CCTAG_NO_COUT
 
-    for( int i=0; i<num_layers; i++ ) {
-        _frame[i]->initRequiredMem( ); // async
-    }
-
-    cudaEvent_t ev = _frame[0]->addUploadEvent( ); // async
-
-    for( int i=1; i<num_layers; i++ ) {
-        _frame[i]->streamSync( ev ); // aysnc
-        _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
-        // _frame[i]->fillFromFrame( *(_frame[0]) );
-    }
-
-#ifdef SHOW_DETAILED_TIMING
-#error SHOW_DETAILED_TIMING needs to be rewritten
-    for( int i=0; i<num_layers; i++ ) {
-        bool success;
-        time_gauss[i]->start();
-        time_gauss[i]->stop();
-        time_mag[i]->start();
-        time_mag[i]->stop();
-        time_hyst[i]->start();
-        time_hyst[i]->stop();
-        time_thin[i]->start();
-        time_thin[i]->stop();
-        time_desc[i]->start();
-        time_desc[i]->stop();
-        time_vote[i]->start();
-        time_vote[i]->stop();
-    }
-#else // not SHOW_DETAILED_TIMING
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyPlaneDownload(); // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyGauss( params ); // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyGaussDownload(); // async
-
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyMag();  // async
-
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyHyst();  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyMagDownload();
-
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinning();  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinDownload(); // sync
-
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc();  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteConstructLine();  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteSortUniq();  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteEval();  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteIf();  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteDownload();   // sync!
-#endif // not SHOW_DETAILED_TIMING
-
-    for( int i=1; i<num_layers; i++ ) {
-        cudaEventRecord( _frame[i]->_download_stream_done, _frame[i]->_download_stream );
-        cudaStreamWaitEvent( _frame[i]->_stream, _frame[i]->_download_stream_done, 0 );
-        cudaEventRecord( _frame[i]->_stream_done, _frame[i]->_stream );
-    }
-    cudaEventRecord( _frame[0]->_download_stream_done, _frame[0]->_download_stream );
-    cudaStreamWaitEvent( _frame[0]->_stream, _frame[0]->_download_stream_done, 0 );
-    for( int i=1; i<num_layers; i++ ) {
-        cudaStreamWaitEvent( _frame[0]->_stream, _frame[i]->_stream_done, 0 );
-    }
-    cudaEventRecord( _frame[0]->_stream_done, _frame[0]->_stream );
+    _threads.oneRound( );
 
 #ifndef CCTAG_NO_COUT
     t.stop();
     t.report( "Time for all frames " );
 #endif // CCTAG_NO_COUT
+}
+
+__host__
+void TagPipe::handleframe( int i )
+{
+    // int num_layers = _frame.size();
 
 #ifdef SHOW_DETAILED_TIMING
-    for( int i=0; i<num_layers; i++ ) {
-        time_gauss[i]->report( "time for Gauss " );
-        time_mag  [i]->report( "time for Mag   " );
-        time_hyst [i]->report( "time for Hyst  " );
-        time_thin [i]->report( "time for Thin  " );
-        time_desc [i]->report( "time for Desc  " );
-        time_vote [i]->report( "time for Vote  " );
-        delete time_gauss[i];
-        delete time_mag  [i];
-        delete time_hyst [i];
-        delete time_thin [i];
-        delete time_desc [i];
-        delete time_vote [i];
+    KeepTime* time_gauss;
+    KeepTime* time_mag;
+    KeepTime* time_hyst;
+    KeepTime* time_thin;
+    KeepTime* time_desc;
+    KeepTime* time_vote;
+    time_gauss = new KeepTime( _frame[i]->_stream );
+    time_mag   = new KeepTime( _frame[i]->_stream );
+    time_hyst  = new KeepTime( _frame[i]->_stream );
+    time_thin  = new KeepTime( _frame[i]->_stream );
+    time_desc  = new KeepTime( _frame[i]->_stream );
+    time_vote  = new KeepTime( _frame[i]->_stream );
+#endif
+
+    _frame[i]->initRequiredMem( ); // async
+
+    cudaEvent_t ev = _frame[0]->getUploadEvent( ); // async
+
+    if( i > 0 ) {
+        _frame[i]->streamSync( ev ); // aysnc
+        _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
     }
+
+#ifdef SHOW_DETAILED_TIMING
+#error SHOW_DETAILED_TIMING needs to be rewritten
+    time_gauss->start();
+    time_gauss->stop();
+    time_mag->start();
+    time_mag->stop();
+    time_hyst->start();
+    time_hyst->stop();
+    time_thin->start();
+    time_thin->stop();
+    time_desc->start();
+    time_desc->stop();
+    time_vote->start();
+    time_vote->stop();
+#endif // not SHOW_DETAILED_TIMING
+
+    _frame[i]->applyGauss( _params ); // async
+    _frame[i]->applyMag();  // async
+
+    _frame[i]->applyHyst();  // async
+    _frame[i]->applyThinning();  // async
+
+    _frame[i]->applyDesc();  // async
+    _frame[i]->applyVoteConstructLine();  // async
+    _frame[i]->applyVoteSortUniq();  // async
+
+    _frame[i]->applyPlaneDownload(); // async
+    _frame[i]->applyGaussDownload(); // async
+    _frame[i]->applyMagDownload();
+    _frame[i]->applyThinDownload(); // sync
+
+    _frame[i]->applyVoteEval();  // async
+    _frame[i]->applyVoteIf();  // async
+
+    _frame[i]->applyVoteDownload();   // sync!
+
+    cudaStreamSynchronize( _frame[i]->_stream );
+    cudaStreamSynchronize( _frame[i]->_download_stream );
+
+
+#ifdef SHOW_DETAILED_TIMING
+    time_gauss->report( "time for Gauss " );
+    time_mag  ->report( "time for Mag   " );
+    time_hyst ->report( "time for Hyst  " );
+    time_thin ->report( "time for Thin  " );
+    time_desc ->report( "time for Desc  " );
+    time_vote ->report( "time for Vote  " );
+    delete time_gauss;
+    delete time_mag;
+    delete time_hyst;
+    delete time_thin;
+    delete time_desc;
+    delete time_vote;
 #endif // not NDEBUG
 }
 
@@ -216,7 +213,6 @@ void TagPipe::convertToHost( size_t                          layer,
                              std::vector<cctag::EdgePoint*>& seeds,
                              cctag::WinnerMap&               winners )
 {
-
     assert( layer < _frame.size() );
 
     _frame[layer]->applyExport( vPoints, edgeImage, seeds, winners );

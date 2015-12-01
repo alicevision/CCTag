@@ -42,12 +42,12 @@
  */
 // #undef USE_SEPARABLE_COMPILATION
 /* hysteresis fails without separable compilation */
-#define USE_SEPARABLE_COMPILATION_FOR_HYST
-#define USE_SEPARABLE_COMPILATION_FOR_GRADDESC
-#define USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
-#define USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
-#define USE_SEPARABLE_COMPILATION_FOR_EVAL
-#define USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
+#undef USE_SEPARABLE_COMPILATION_FOR_HYST
+#undef USE_SEPARABLE_COMPILATION_FOR_GRADDESC
+#undef USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
+#undef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
+#undef USE_SEPARABLE_COMPILATION_FOR_EVAL
+#undef USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 
 
 /* Init _d_intermediate to 0 before uploading. Wastes time,
@@ -99,7 +99,7 @@
  * uncertain if that has any negative side-effects, because the PCIe
  * bus is congested when they compete.
  */
-#define USE_ONE_DOWNLOAD_STREAM
+#undef USE_ONE_DOWNLOAD_STREAM
 
 /* Affects frame_export.cu.
  * We must sort all potential inner points, but must we sort the

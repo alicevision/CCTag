@@ -113,9 +113,10 @@ public:
         return _texture->getTex( );
     }
 
-    void allocUploadEvent( );
-    void deleteUploadEvent( );
-    cudaEvent_t addUploadEvent( );
+    void        allocUploadEvent( );
+    void        deleteUploadEvent( );
+    void        addUploadEvent( );
+    cudaEvent_t getUploadEvent( );
 
     void streamSync( ); // Wait for the asynchronous ops to finish
     void streamSync( cudaEvent_t ev ); // Wait for ev to happen (in another stream)
@@ -303,7 +304,7 @@ private:
     Voting _vote;
 
     FrameTexture*  _texture;
-    cudaEvent_t*   _wait_for_upload;
+    cudaEvent_t    _wait_for_upload;
 
 public:
     // if we run out of streams (there are 32), we may have to share
