@@ -40,11 +40,12 @@
  * e.g., GPU-side counters need to be checked before starting
  * a new kernel.
  */
-#undef USE_SEPARABLE_COMPILATION
+// #undef USE_SEPARABLE_COMPILATION
 /* hysteresis fails without separable compilation */
 #define USE_SEPARABLE_COMPILATION_FOR_HYST
 #define USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 #define USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
+#define USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 #define USE_SEPARABLE_COMPILATION_FOR_EVAL
 #define USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 

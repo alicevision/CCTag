@@ -27,7 +27,7 @@ public:
     void initialize( const uint32_t pix_w,
                      const uint32_t pix_h,
                      const cctag::Parameters& params,
-	             cctag::logtime::Mgmt* durations );
+                     cctag::logtime::Mgmt* durations );
     void load( unsigned char* pix );
     void tagframe( const cctag::Parameters& params );
 

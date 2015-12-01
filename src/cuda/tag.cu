@@ -166,19 +166,12 @@ void TagPipe::tagframe( const cctag::Parameters& params )
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinning();  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyThinDownload(); // sync
 
-#ifdef USE_SEPARABLE_COMPILATION
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc();  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteConstructLine();  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteSortUniqDP( params );  // async
+    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteSortUniq();  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteEval();  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteIf();  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVote( params );  // async
     for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteDownload();   // sync!
-#else // USE_SEPARABLE_COMPILATION
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyDesc();  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVote( params );  // async
-    for( int i=0; i<num_layers; i++ ) _frame[i]->applyVoteDownload();   // sync!
-#endif // USE_SEPARABLE_COMPILATION
 #endif // not SHOW_DETAILED_TIMING
 
     for( int i=1; i<num_layers; i++ ) {

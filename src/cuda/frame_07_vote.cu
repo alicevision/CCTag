@@ -16,17 +16,9 @@ using namespace std;
 namespace popart
 {
 
-#ifdef USE_SEPARABLE_COMPILATION
+#if 0
 __host__
-void Frame::applyVote( const cctag::Parameters& )
-{
-    // everything that was in here is called frame_desc.cu by
-    // descent::dp_caller when USE_SEPARABLE_COMPILATION is
-    // used
-}
-#else // not USE_SEPARABLE_COMPILATION
-__host__
-void Frame::applyVote( const cctag::Parameters& params )
+void Frame::applyVote( )
 {
     bool success;
 
@@ -39,44 +31,23 @@ void Frame::applyVote( const cctag::Parameters& params )
      */
     success = applyVoteConstructLine( );
 
-#ifndef NDEBUG
-    _voters.copySizeFromDevice( _stream, EdgeListCont );
-    _inner_points.copySizeFromDevice( _stream, EdgeListWait );
-    cerr << "after constructline, voters: " << _voters.host.size
-         << " votes: " << _inner_points.host.size << endl;
-#endif
-
     if( success ) {
         /* Apply sort and uniq to the list of potential inner ring
          * points in _inner_points. Store the result in _interm_inner_points.
          */
-        success = applyVoteSortUniqNoDP( params );
-#ifndef NDEBUG
-        _interm_inner_points.copySizeFromDevice( _stream, EdgeListWait );
-        cerr << "after sort/uniq, votes: " << _interm_inner_points.host.size << endl;
-#endif
+        success = applyVoteSortUniq();
 
         /* For all potential inner points in _interm_inner_points,
          * count the number of voters and compute the average
          * flow size. Annotate inner points.
          */
         applyVoteEval();
-#ifndef NDEBUG
-        _interm_inner_points.copySizeFromDevice( _stream, EdgeListWait );
-        cerr << "after eval, votes: " << _interm_inner_points.host.size << endl;
-#endif
 
         /* For all inner points in _interm_inner_points, check if
          * average flow size exceeds threshold, store all successful
          * inner point in _inner_points.
          */
         applyVoteIf();
-#ifndef NDEBUG
-        // _inner_points.copySizeFromDevice( _stream, EdgeListWait );
-        // already copied in applyVoteIf
-        cudaStreamSynchronize( _stream );
-        cerr << "after if, votes: " << _inner_points.host.size << endl;
-#endif
 
         /* would it be better to remove unused voters from the chaincoords ? */
     }
@@ -90,7 +61,7 @@ void Frame::applyVote( const cctag::Parameters& params )
     // Called separately from tag.cu
     // applyVoteDownload( );
 }
-#endif // not USE_SEPARABLE_COMPILATION
+#endif // 0
 
 #ifndef NDEBUG
 __device__

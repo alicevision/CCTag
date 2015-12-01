@@ -18,11 +18,11 @@ using namespace std;
 namespace popart
 {
 
-#ifdef USE_SEPARABLE_COMPILATION
+#ifdef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 // nothing
-#else // USE_SEPARABLE_COMPILATION
+#else // USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 __host__
-bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
+bool Frame::applyVoteSortNoDP( )
 {
     cudaError_t err;
 
@@ -124,7 +124,7 @@ bool Frame::applyVoteSortNoDP( const cctag::Parameters& params )
 }
 
 __host__
-void Frame::applyVoteUniqNoDP( const cctag::Parameters& params )
+void Frame::applyVoteUniqNoDP( )
 {
     cudaError_t err;
 
@@ -178,15 +178,15 @@ void Frame::applyVoteUniqNoDP( const cctag::Parameters& params )
     POP_CUDA_FATAL_TEST( err, "CUB Unique failed: " );
 }
 
-bool Frame::applyVoteSortUniqNoDP( const cctag::Parameters& params )
+bool Frame::applyVoteSortUniq( )
 {
-    bool success = applyVoteSortNoDP( params );
+    bool success = applyVoteSortNoDP( );
     if( not success ) return false;
-    applyVoteUniqNoDP( params );
+    applyVoteUniqNoDP( );
     return true;
 }
 
-#endif // USE_SEPARABLE_COMPILATION
+#endif // USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 
 } // namespace popart
 

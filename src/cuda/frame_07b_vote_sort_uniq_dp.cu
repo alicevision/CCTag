@@ -1,6 +1,6 @@
 #include "onoff.h"
 
-#ifdef USE_SEPARABLE_COMPILATION
+#ifdef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 
 #include <iostream>
 #include <algorithm>
@@ -24,19 +24,20 @@ namespace descent
 
 __global__
 void dp_call_03_sort_uniq(
-                DevEdgeList<int>         seedIndices,   // input/output
-                DevEdgeList<int>         seedIndices2,  // invalidated buffer
-                cv::cuda::PtrStepSzb     intermediate ) // invalidated buffer
+    FrameMetaPtr             meta, // input
+    DevEdgeList<int>         inner_points,   // input/output
+    DevEdgeList<int>         interm_inner_points,  // invalidated buffer
+    cv::cuda::PtrStepSzb     intermediate ) // invalidated buffer
 {
     cudaError_t  err;
     cudaStream_t childStream;
     cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
 
-    int listsize = seedIndices.getSize();
+    int listsize = meta.list_size_inner_points();
 
     if( listsize == 0 ) return;
 
-    assert( seedIndices.getSize() > 0 );
+    assert( meta.list_size_inner_points() > 0 );
 
     /* Note: we use the intermediate picture plane, _d_intermediate, as assist
      *       buffer for CUB algorithms. It is extremely likely that this plane
@@ -47,13 +48,38 @@ void dp_call_03_sort_uniq(
     void*  assist_buffer = (void*)intermediate.data;
     size_t assist_buffer_sz = intermediate.step * intermediate.rows;
 
-    cub::DoubleBuffer<int> keys( seedIndices.ptr,
-                                 seedIndices2.ptr );
+    cub::DoubleBuffer<int> keys( inner_points.ptr,
+                                 interm_inner_points.ptr );
 
     /* After SortKeys, both buffers in d_keys have been altered.
      * The final result is stored in d_keys.d_buffers[d_keys.selector].
      * The other buffer is invalid.
      */
+#ifdef CUB_INIT_CALLS
+    assist_buffer_sz  = 0;
+
+    err = cub::DeviceRadixSort::SortKeys( 0,
+                                          assist_buffer_sz,
+                                          keys,
+                                          listsize,
+                                          0,             // begin_bit
+                                          sizeof(int)*8, // end_bit
+                                          childStream,   // use stream 0
+                                          DEBUG_CUB_FUNCTIONS );
+    if( err != cudaSuccess ) {
+        meta.list_size_interm_inner_points() = 0;
+        cudaStreamDestroy( childStream );
+        return;
+    }
+    if( assist_buffer_sz > intermediate.step * intermediate.rows ) {
+        meta.list_size_interm_inner_points() = 0;
+        cudaStreamDestroy( childStream );
+        return;
+    }
+#else // not CUB_INIT_CALLS
+    assist_buffer_sz = intermediate.step * intermediate.rows;
+#endif // not CUB_INIT_CALLS
+
     err = cub::DeviceRadixSort::SortKeys( assist_buffer,
                                           assist_buffer_sz,
                                           keys,
@@ -66,35 +92,58 @@ void dp_call_03_sort_uniq(
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
     if( err != cudaSuccess ) {
+        cudaStreamDestroy( childStream );
         return;
     }
 
-    assert( seedIndices.getSize() > 0 );
+    assert( meta.list_size_inner_points() > 0 );
 
-    if( keys.Current() == seedIndices2.ptr ) {
-        int* swap_ptr    = seedIndices2.ptr;
-        seedIndices2.ptr = seedIndices.ptr;
-        seedIndices.ptr  = swap_ptr;
+    if( keys.Current() == interm_inner_points.ptr ) {
+        int* swap_ptr    = interm_inner_points.ptr;
+        interm_inner_points.ptr = inner_points.ptr;
+        inner_points.ptr  = swap_ptr;
     }
 
-    seedIndices2.setSize( listsize );
+    meta.list_size_interm_inner_points() = listsize;
 
-    assert( seedIndices2.ptr != 0 );
-    assert( seedIndices.ptr != 0 );
-    assert( seedIndices.getSize() > 0 );
+    assert( interm_inner_points.ptr != 0 );
+    assert( inner_points.ptr != 0 );
 
+#ifdef CUB_INIT_CALLS
+    assist_buffer_sz = 0;
+
+    err = cub::DeviceSelect::Unique( 0,
+                                     assist_buffer_sz,
+                                     inner_points.ptr,     // input
+                                     interm_inner_points.ptr,   // output
+                                     &meta.list_size_interm_inner_points(), // output
+                                     meta.list_size_inner_points(), // input (unchanged in sort)
+                                     childStream,  // use stream 0
+                                     DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
+    if( err != cudaSuccess ) {
+        meta.list_size_interm_inner_points() = 0;
+        cudaStreamDestroy( childStream );
+        return;
+    }
+    if( assist_buffer_sz > intermediate.step * intermediate.rows ) {
+        meta.list_size_interm_inner_points() = 0;
+        cudaStreamDestroy( childStream );
+        return;
+    }
+#else // not CUB_INIT_CALLS
     // safety: SortKeys is allowed to alter assist_buffer_sz
     assist_buffer_sz = intermediate.step * intermediate.rows;
+#endif // not CUB_INIT_CALLS
 
     /* Unique ensure that we check every "chosen" point only once.
      * Output is in _interm_inner_points.dev
      */
     err = cub::DeviceSelect::Unique( assist_buffer,
                                      assist_buffer_sz,
-                                     seedIndices.ptr,     // input
-                                     seedIndices2.ptr,   // output
-                                     seedIndices2.getSizePtr(),  // output
-                                     seedIndices.getSize(), // input (unchanged in sort)
+                                     inner_points.ptr,     // input
+                                     interm_inner_points.ptr,   // output
+                                     &meta.list_size_interm_inner_points(), // output
+                                     meta.list_size_inner_points(), // input (unchanged in sort)
                                      childStream,  // use stream 0
                                      DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
 
@@ -104,13 +153,13 @@ void dp_call_03_sort_uniq(
 } // namespace descent
 
 __host__
-bool Frame::applyVoteSortUniqDP( const cctag::Parameters& params )
+bool Frame::applyVoteSortUniq( )
 {
     descent::dp_call_03_sort_uniq
         <<<1,1,0,_stream>>>
-        (
-          _inner_points.dev,        // output
-          _interm_inner_points.dev,      // buffer
+        ( _meta,
+          _inner_points.dev,
+          _interm_inner_points.dev,
           cv::cuda::PtrStepSzb(_d_intermediate) ); // buffer
     POP_CHK_CALL_IFSYNC;
     return true;
@@ -118,7 +167,7 @@ bool Frame::applyVoteSortUniqDP( const cctag::Parameters& params )
 
 } // namespace popart
 
-#else // not USE_SEPARABLE_COMPILATION
+#else // not USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 // other file
-#endif // not USE_SEPARABLE_COMPILATION
+#endif // not USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 

@@ -164,20 +164,18 @@ public:
     // implemented in frame_07a_vote_line.cu
     bool applyVoteConstructLine( );
 
-#ifdef USE_SEPARABLE_COMPILATION
     // implemented in frame_07b_vote_sort_uniq_dp.cu
-    bool applyVoteSortUniqDP( const cctag::Parameters& params );
-#else // not USE_SEPARABLE_COMPILATION
     // implemented in frame_07b_vote_sort_uniq_nodp.cu
-    // called by applyVote
-    bool applyVoteSortUniqNoDP( const cctag::Parameters& params );
+    bool applyVoteSortUniq( );
+
+#ifndef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 private:
     // implemented in frame_07b_vote_sort_nodp.cu
     // called by applyVoteSortUniqNoDP
-    bool applyVoteSortNoDP( const cctag::Parameters& params );
-    void applyVoteUniqNoDP( const cctag::Parameters& params );
+    bool applyVoteSortNoDP( );
+    void applyVoteUniqNoDP( );
 public:
-#endif // not USE_SEPARABLE_COMPILATION
+#endif // not USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 
     // implemented in frame_07c_eval.cu
     bool applyVoteEval( );
@@ -189,7 +187,7 @@ public:
     void applyVoteDownload( );
 
     // implemented in frame_07_vote.cu
-    void applyVote( const cctag::Parameters& param );
+    void applyVote( );
 
     // implemented in frame_link.cu
     void applyLink( const cctag::Parameters& param );
