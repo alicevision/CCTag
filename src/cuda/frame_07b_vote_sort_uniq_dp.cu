@@ -102,6 +102,10 @@ void dp_call_03_sort_uniq(
         int* swap_ptr    = interm_inner_points.ptr;
         interm_inner_points.ptr = inner_points.ptr;
         inner_points.ptr  = swap_ptr;
+
+        meta.swap_buffers_after_sort() = 1;
+    } else {
+        meta.swap_buffers_after_sort() = 0;
     }
 
     meta.list_size_interm_inner_points() = listsize;
@@ -162,6 +166,18 @@ bool Frame::applyVoteSortUniq( )
           _interm_inner_points.dev,
           cv::cuda::PtrStepSzb(_d_intermediate) ); // buffer
     POP_CHK_CALL_IFSYNC;
+
+    int mustSwap;
+
+    _meta.fromDevice( Swap_buffers_after_sort, mustSwap, _stream );
+    POP_CHK_CALL_IFSYNC;
+
+    cudaError_t err = cudaStreamSynchronize( _stream );
+    POP_CUDA_FATAL_TEST( err, "Failed to synchronize after sort: " );
+    if( mustSwap ) {
+        std::swap( _inner_points.dev.ptr, _interm_inner_points.dev.ptr );
+    }
+
     return true;
 }
 

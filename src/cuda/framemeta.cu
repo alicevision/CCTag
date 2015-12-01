@@ -34,6 +34,7 @@ struct FrameMeta
     int   list_size_chosen_idx;
     int   list_size_inner_points;
     int   list_size_interm_inner_points;
+    int   swap_buffers_after_sort;
 };
 
 __device__
@@ -81,7 +82,8 @@ FrameMetaPtr::FrameMetaPtr( int pipeId, int frameId )
     HOST_DEVICE_TRANSFER_CASE( List_size_voters, list_size_voters ) \
     HOST_DEVICE_TRANSFER_CASE( List_size_chosen_idx, list_size_chosen_idx ) \
     HOST_DEVICE_TRANSFER_CASE( List_size_inner_points, list_size_inner_points ) \
-    HOST_DEVICE_TRANSFER_CASE( List_size_interm_inner_points, list_size_interm_inner_points )
+    HOST_DEVICE_TRANSFER_CASE( List_size_interm_inner_points, list_size_interm_inner_points ) \
+    HOST_DEVICE_TRANSFER_CASE( Swap_buffers_after_sort, swap_buffers_after_sort )
 
 __host__
 void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
@@ -138,12 +140,12 @@ void FrameMetaPtr::toDevice_D2S( FrameMetaEnum e, int* val, cudaStream_t stream 
 		  << __FUNCTION__ << std::endl
 		  << "Trying to copy an int to FrameMeta::<float>" << std::endl
 		  << "Type is incorrect." << std::endl;
-	exit( -1 );
+        exit( -1 );
     default :
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
 		  << "Trying to copy an unknown FrameMeta element." << std::endl;
-	exit( -1 );
+        exit( -1 );
     }
     cudaError_t err;
     err = cudaMemcpyToSymbolAsync( frame_meta, // _d_symbol_ptr,
@@ -162,32 +164,11 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
     intptr_t offset;
     switch( e ) {
     HOST_DEVICE_TRANSFER_CASE( Identification_result, identification_result )
-    case Hysteresis_block_counter:
-    case Connect_component_block_counter:
-    case Ring_counter:
-    case Ring_counter_max:
-    case Identification_resct:
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    case Num_nearby_points:
-#endif
-#ifndef NDEBUG
-    case Num_edges_thinned:
-#endif // NDEBUG
-    case List_size_all_edgecoords :
-    case List_size_voters :
-    case List_size_chosen_idx :
-    case List_size_inner_points :
-    case List_size_interm_inner_points :
-    	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-		  << __FUNCTION__ << std::endl
-		  << "Trying to copy a float to a FrameMeta::<int>" << std::endl
-		  << "Type is incorrect." << std::endl;
-	exit( -1 );
     default :
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
 		  << "Trying to copy an unknown FrameMeta element." << std::endl;
-	exit( -1 );
+        exit( -1 );
     }
     cudaError_t err;
     err = cudaMemcpyToSymbolAsync( frame_meta, // _d_symbol_ptr,
@@ -206,32 +187,11 @@ void FrameMetaPtr::toDevice_D2S( FrameMetaEnum e, float* val, cudaStream_t strea
     intptr_t offset;
     switch( e ) {
     HOST_DEVICE_TRANSFER_CASE( Identification_result, identification_result )
-    case Hysteresis_block_counter:
-    case Connect_component_block_counter:
-    case Ring_counter:
-    case Ring_counter_max:
-    case Identification_resct:
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    case Num_nearby_points:
-#endif
-#ifndef NDEBUG
-    case Num_edges_thinned:
-#endif // NDEBUG
-    case List_size_all_edgecoords :
-    case List_size_voters :
-    case List_size_chosen_idx :
-    case List_size_inner_points :
-    case List_size_interm_inner_points :
-    	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-		  << __FUNCTION__ << std::endl
-		  << "Trying to copy a float to a FrameMeta::<int>" << std::endl
-		  << "Type is incorrect." << std::endl;
-	exit( -1 );
     default :
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
 		  << "Trying to copy an unknown FrameMeta element." << std::endl;
-	exit( -1 );
+        exit( -1 );
     }
     cudaError_t err;
     err = cudaMemcpyToSymbolAsync( frame_meta, // _d_symbol_ptr,
@@ -261,12 +221,12 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
 		  << __FUNCTION__ << std::endl
 		  << "Trying to fetch an int to FrameMeta::<float>" << std::endl
 		  << "Type is incorrect." << std::endl;
-	exit( -1 );
+        exit( -1 );
     default :
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
 		  << "Trying to fetch an unknown FrameMeta element." << std::endl;
-	exit( -1 );
+        exit( -1 );
     }
     cudaError_t err;
     err = cudaMemcpyFromSymbolAsync( &val,
@@ -285,27 +245,6 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream 
     intptr_t offset;
     switch( e ) {
     HOST_DEVICE_TRANSFER_CASE( Identification_result, identification_result )
-    case Hysteresis_block_counter:
-    case Connect_component_block_counter:
-    case Ring_counter:
-    case Ring_counter_max:
-    case Identification_resct:
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    case Num_nearby_points:
-#endif
-#ifndef NDEBUG
-    case Num_edges_thinned:
-#endif // NDEBUG
-    case List_size_all_edgecoords :
-    case List_size_voters :
-    case List_size_chosen_idx :
-    case List_size_inner_points :
-    case List_size_interm_inner_points :
-    	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-		  << __FUNCTION__ << std::endl
-		  << "Trying to fetch a float to a FrameMeta::<int>" << std::endl
-		  << "Type is incorrect." << std::endl;
-        exit( -1 );
     default :
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
@@ -353,6 +292,7 @@ OFFSET_GETTER_BODY( int,   list_size_voters )
 OFFSET_GETTER_BODY( int,   list_size_chosen_idx )
 OFFSET_GETTER_BODY( int,   list_size_inner_points )
 OFFSET_GETTER_BODY( int,   list_size_interm_inner_points )
+OFFSET_GETTER_BODY( int,   swap_buffers_after_sort )
 
 }; // namespace popart
 

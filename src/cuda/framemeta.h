@@ -26,6 +26,7 @@ enum FrameMetaEnum
     List_size_chosen_idx,
     List_size_inner_points,
     List_size_interm_inner_points,
+    Swap_buffers_after_sort,
     End_indicator
 };
 
@@ -84,6 +85,7 @@ struct FrameMetaPtr
     OFFSET_GETTER_HEADER( int, list_size_chosen_idx )
     OFFSET_GETTER_HEADER( int, list_size_inner_points )
     OFFSET_GETTER_HEADER( int, list_size_interm_inner_points )
+    OFFSET_GETTER_HEADER( int, swap_buffers_after_sort )
 
 private:
     // These default functions are actually needed for automatic
