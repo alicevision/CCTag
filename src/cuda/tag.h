@@ -30,11 +30,12 @@ public:
 	             cctag::logtime::Mgmt* durations );
     void load( unsigned char* pix );
     void tagframe( const cctag::Parameters& params );
-    void download( size_t                          layer,
-                   std::vector<cctag::EdgePoint>&  vPoints,
-                   cctag::EdgePointsImage&         edgeImage,
-                   std::vector<cctag::EdgePoint*>& seeds,
-                   cctag::WinnerMap&               winners );
+
+    void convertToHost( size_t                          layer,
+                        std::vector<cctag::EdgePoint>&  vPoints,
+                        cctag::EdgePointsImage&         edgeImage,
+                        std::vector<cctag::EdgePoint*>& seeds,
+                        cctag::WinnerMap&               winners );
 
     inline std::size_t getNumOctaves( ) const {
         return _frame.size();

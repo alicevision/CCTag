@@ -214,11 +214,11 @@ void TagPipe::tagframe( const cctag::Parameters& params )
 }
 
 __host__
-void TagPipe::download( size_t                          layer,
-                        std::vector<cctag::EdgePoint>&  vPoints,
-                        cctag::EdgePointsImage&         edgeImage,
-                        std::vector<cctag::EdgePoint*>& seeds,
-                        cctag::WinnerMap&               winners )
+void TagPipe::convertToHost( size_t                          layer,
+                             std::vector<cctag::EdgePoint>&  vPoints,
+                             cctag::EdgePointsImage&         edgeImage,
+                             std::vector<cctag::EdgePoint*>& seeds,
+                             cctag::WinnerMap&               winners )
 {
 
     assert( layer < _frame.size() );

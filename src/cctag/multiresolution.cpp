@@ -215,11 +215,11 @@ void cctagMultiresDetection_inner(
 #ifdef CCTAG_OPTIM
     boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
 #endif
-    cuda_pipe->download( i, 
-                         vPoints,
-                         vEdgeMap,
-                         seeds,
-                         winners );
+    cuda_pipe->convertToHost( i, 
+                              vPoints,
+                              vEdgeMap,
+                              seeds,
+                              winners );
     if( durations ) {
         cudaDeviceSynchronize();
     }
