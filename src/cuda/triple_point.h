@@ -19,10 +19,6 @@ struct TriplePoint
         int2  after;
     } descending;
 
-    // in the original code, chosen keeps list of voters
-    // no possible here; we must invert this
-    // int   my_vote;
-
     int   _winnerSize;
     float _flowLength;
 #ifndef NDEBUG
