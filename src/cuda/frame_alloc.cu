@@ -133,8 +133,12 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
 
     _all_edgecoords     .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _voters             .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _v_chosen_idx       .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _inner_points       .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _interm_inner_points.alloc( EDGE_POINT_MAX, EdgeListDevOnly );
+
+    POP_CUDA_MALLOC( &ptr, EDGE_POINT_MAX * sizeof(float) );
+    _v_chosen_flow_length = (float*)ptr;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
     assert( p % _vote._d_edgepoint_index_table.elemSize() == 0 );
@@ -186,8 +190,14 @@ void Frame::initRequiredMem( )
 
     _all_edgecoords.init( _stream );
     _voters        .init( _stream );
+    _v_chosen_idx  .init( _stream );
     _inner_points  .init( _stream );
     _interm_inner_points.init( _stream );
+
+    POP_CUDA_MEMSET_ASYNC( _v_chosen_flow_length,
+                           0,
+                           EDGE_POINT_MAX * sizeof(float),
+                           _stream );
 
     POP_CUDA_MEMSET_ASYNC( _vote._d_edgepoint_index_table.data,
                            0,
@@ -226,8 +236,10 @@ void Frame::releaseRequiredMem( )
 
     _all_edgecoords.release();
     _voters        .release();
+    _v_chosen_idx  .release();
     _inner_points  .release();
     _interm_inner_points.release();
+    POP_CUDA_FREE( _v_chosen_flow_length );
     POP_CUDA_FREE( _vote._d_edgepoint_index_table.data );
     POP_CUDA_FREE( _d_interm_int );
 }

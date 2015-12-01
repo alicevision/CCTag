@@ -31,6 +31,7 @@ void Frame::applyVoteDownload( )
      */
     _voters.copySizeFromDevice( _stream, EdgeListWait );
     _voters.copyDataFromDeviceAsync( _download_stream );
+    _v_chosen_idx.copyDataFromDeviceAsync( _voters.host.size, _download_stream );
     _inner_points.copyDataFromDeviceAsync( _download_stream );
 #endif // EDGE_LINKING_HOST_SIDE
 }

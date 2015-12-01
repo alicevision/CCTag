@@ -26,6 +26,7 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     , _meta( my_pipe, my_layer )
     , _all_edgecoords( _meta, List_size_all_edgecoords, pinned_counters )
     , _voters( _meta, List_size_voters, pinned_counters )
+    , _v_chosen_idx( _meta, List_size_chosen_idx, pinned_counters )
     , _inner_points( _meta, List_size_inner_points, pinned_counters )
     , _interm_inner_points( _meta, List_size_interm_inner_points, pinned_counters )
 
