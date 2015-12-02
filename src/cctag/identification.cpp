@@ -1102,6 +1102,7 @@ bool imageCenterOptimizationGlob(
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
             cuda_hasASolution = true;
 #else // CPU_GPU_COST_FUNCTION_COMPARE
+            minRes = res;
             hasASolution = true;
 #endif // CPU_GPU_COST_FUNCTION_COMPARE
         }
