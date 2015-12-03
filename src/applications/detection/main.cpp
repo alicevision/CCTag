@@ -172,13 +172,11 @@ int main(int argc, char** argv)
   } else {
     params.setUseCuda( false );
   }
-#endif // WITH_CUDA
 
   if( cmdline._debugDir != "" ) {
     params.setDebugDir( cmdline._debugDir );
   }
 
-#ifdef WITH_CUDA
   popart::device_prop_t deviceInfo( false );
 #if 0
   deviceInfo.print( );

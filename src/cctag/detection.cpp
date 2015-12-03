@@ -688,7 +688,7 @@ void createImageForVoteResultDebug(
 #endif
 }
 
-
+#ifdef WITH_CUDA
 popart::TagPipe* initCuda( int      pipeId,
                            uint32_t width,
                            uint32_t height, 
@@ -714,6 +714,7 @@ popart::TagPipe* initCuda( int      pipeId,
     }
     return pipe1;
 }
+#endif // WITH_CUDA
 
 void cctagDetection(CCTag::List& markers,
         const std::size_t frame, 
