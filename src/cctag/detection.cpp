@@ -827,6 +827,9 @@ void cctagDetection(CCTag::List& markers,
     // Identification step
     if (params._doIdentification)
     {
+#ifndef NDEBUG
+    std::cerr << "markers: ";
+#endif
         CCTag::List::iterator it = markers.begin();
         while (it != markers.end())
         {
@@ -839,10 +842,17 @@ void cctagDetection(CCTag::List& markers,
                 pipe1,
                 params );
             // it->print( std::cerr ); // print marker info after identify
-      
+
             cctag.setStatus(detected);
+#ifndef NDEBUG
+            std::cerr << cctag.id() << ": " << cctag.x() << "," << cctag.y() << " (" << cctag.getStatus() <<") ";
+#endif // NEBUG
             ++it;
         }
+#ifndef NDEBUG
+        std::cerr << std::endl;
+#endif
+
         if( durations ) durations->log( "after cctag::identification::identify" );
 #ifdef CCTAG_OPTIM
         boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
