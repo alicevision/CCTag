@@ -479,15 +479,16 @@ void Frame::uploadCuts( const std::vector<cctag::ImageCut>& vCuts )
 }
 
 __host__
-double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
+float Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
                               const float2                        center,
                               const std::vector<cctag::ImageCut>& vCuts,
-                              const size_t                        vCutMaxVecLen,
-                              float                               neighbourSize,
+                              float                               currentNeighbourSize,
                               float2&                             bestPointOut,
-                              popart::geometry::matrix3x3&        bestHomographyOut )
+                              popart::geometry::matrix3x3&        bestHomographyOut,
+                              const cctag::Parameters&            params ) // out
 {
-    const size_t gridNSample = params._imagedCenterNGridSample;
+    const size_t gridNSample   = params._imagedCenterNGridSample;
+    const size_t vCutMaxVecLen = params._sampleCutLength;
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     _meta.toDevice( Num_nearby_points, 0, _stream );
 #endif
@@ -525,8 +526,8 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
     popart::geometry::ellipse transformedEllipse;
     ellipse.projectiveTransform( mInvT, transformedEllipse );
 
-    neighbourSize *= max( transformedEllipse.a(),
-                          transformedEllipse.b() );
+    currentNeighbourSize *= max( transformedEllipse.a(),
+                                 transformedEllipse.b() );
 
     float2 condCenter = center;
     mT.condition( condCenter );
@@ -545,7 +546,7 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
           condCenter,
           vCuts.size(),
           vCutMaxVecLen,
-          neighbourSize,
+          currentNeighbourSize,
           gridNSample,
           point_buffer,
           cut_buffer,
@@ -612,26 +613,31 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
     }
 }
 
-__host__ float imageCenterOptLoop(
+__host__
+bool Frame::imageCenterOptLoop(
     const popart::geometry::ellipse&    outerEllipse, // in
     float2&                             center,       // in-out
     const std::vector<cctag::ImageCut>& vCuts,        // out
-    const size_t                        vCutMaxVecLen,
-    const size_t                        gridNSample,
-    popart::geometry::matrix3x3&        bestHomographyOut ) // out
+    popart::geometry::matrix3x3&        bestHomographyOut,
+    const cctag::Parameters&            params ) // out
 {
-    const float maxSemiAxis = std::max( outerEllipse.a(), outerEllipse.b() );
-    const float neighbourSize = params._imagedCenterNeighbourSize;
+    const size_t gridNSample   = params._imagedCenterNGridSample;
+    const float  maxSemiAxis   = std::max( outerEllipse.a(), outerEllipse.b() );
+    float        neighbourSize = params._imagedCenterNeighbourSize;
+
     while( neighbourSize*maxSemiAxis > 0.02 ) {
+        float  residual;
+        float2 bestPointOut;
         residual = idCostFunction( outerEllipse,
                                    center,
                                    vCuts,
-                                   vCutMaxVecLen,
                                    neighbourSize,
                                    bestPointOut,
-                                   bestHomographyOut );
+                                   bestHomographyOut,
+                                   params );
+
         if( residual == FLT_MAX ) return false;
-        center = bestPointOut.point;
+        center        =  bestPointOut;
         neighbourSize /= (float)((gridNSample-1)/2) ;
     }
     return true;

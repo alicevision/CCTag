@@ -61,15 +61,23 @@ public:
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
 
-    double idCostFunction( int                                        level,
-                           const cctag::numerical::geometry::Ellipse& ellipse,
-                           const cctag::Point2dN<double>&             center,
-                           std::vector<cctag::ImageCut>&              vCuts,
-                           const size_t                               vCutMaxVecLen,
-                           const float                                neighbourSize,
-                           const size_t                               gridNSample,
-                           cctag::Point2dN<double>&                   bestPoint,
-                           cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut );
+    bool imageCenterOptLoop(
+        int                                        level,
+        const cctag::numerical::geometry::Ellipse& ellipse,
+        cctag::Point2dN<double>&                   center,
+        const std::vector<cctag::ImageCut>&        vCuts,
+        cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+        const cctag::Parameters&                   params );
+
+    double idCostFunction(
+        int                                        level,
+        const cctag::numerical::geometry::Ellipse& ellipse,
+        const cctag::Point2dN<double>&             oldCenterIn,
+        std::vector<cctag::ImageCut>&              vCuts,
+        const float                                currentNeighbourSize,
+        cctag::Point2dN<double>&                   newCenterOut,
+        cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+        const cctag::Parameters&                   params );
 
     size_t getSignalBufferByteSize( int level ) const;
 
