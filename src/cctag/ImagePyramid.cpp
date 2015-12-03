@@ -27,6 +27,8 @@ ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::si
 
 void ImagePyramid::build( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params )
 {
+    /* The pyramid building function is never called if CUDA is used.
+     */
   _levels[0]->setLevel( src , thrLowCanny, thrHighCanny, params );
   
   for(int i = 1; i < _levels.size() ; ++i)

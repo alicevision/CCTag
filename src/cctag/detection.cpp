@@ -45,7 +45,9 @@
 #include <sstream>
 #include <list>
 #include <utility>
-// #include <cuda_runtime.h> // only for debugging
+#ifdef WITH_CUDA
+#include <cuda_runtime.h> // only for debugging
+#endif // WITH_CUDA
 
 using namespace std;
 
@@ -722,59 +724,81 @@ void cctagDetection(CCTag::List& markers,
         cctag::logtime::Mgmt* durations )
 
 {
-  using namespace cctag;
-  using namespace boost::numeric::ublas;
+    using namespace cctag;
+    using namespace boost::numeric::ublas;
 
-  if( durations ) durations->log( "start" );
+    if( durations ) durations->log( "start" );
   
-  std::srand(1);
-  
-  ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
+    std::srand(1);
 
-  popart::TagPipe* pipe1 = 0;
 #ifdef WITH_CUDA
-  if( params._useCuda ) {
-    pipe1 = initCuda( 0,
-                      imgGraySrc.size().width,
-	                  imgGraySrc.size().height,
-	                  params,
-	                  durations );
+    bool cuda_allocates = params._useCuda;
+#else
+    bool cuda_allocates = false;
+#endif
+  
+    ImagePyramid imagePyramid( imgGraySrc.cols,
+                               imgGraySrc.rows,
+                               params._numberOfProcessedMultiresLayers,
+                               cuda_allocates );
 
-  if( durations ) durations->log( "after initCuda" );
+    popart::TagPipe* pipe1 = 0;
+#ifdef WITH_CUDA
+    if( params._useCuda ) {
+        pipe1 = initCuda( 0,
+                          imgGraySrc.size().width,
+	                      imgGraySrc.size().height,
+	                      params,
+	                      durations );
 
-  if( params._useCuda ) {
-  assert( imgGraySrc.elemSize() == 1 );
-  assert( imgGraySrc.isContinuous() );
-  assert( imgGraySrc.type() == CV_8U );
-  unsigned char* pix = imgGraySrc.data;
+        if( durations ) durations->log( "after initCuda" );
 
-  pipe1->load( pix );
-  if( durations ) {
-    cudaDeviceSynchronize();
-    durations->log( "after CUDA load" );
-  }
+        assert( imgGraySrc.elemSize() == 1 );
+        assert( imgGraySrc.isContinuous() );
+        assert( imgGraySrc.type() == CV_8U );
+        unsigned char* pix = imgGraySrc.data;
 
-  pipe1->tagframe( ); // pix, w, h, params );
+        pipe1->load( pix );
 
-  if( durations ) durations->log( "after CUDA stages" );
+        if( durations ) {
+            cudaDeviceSynchronize();
+            durations->log( "after CUDA load" );
+        }
+
+        pipe1->tagframe( ); // pix, w, h, params );
+
+        if( durations ) durations->log( "after CUDA stages" );
 
 #ifndef NDEBUG
-  pipe1->debug( pix, params );
-  if( durations ) durations->log( "after CUDA debug" );
+        pipe1->debug( pix, params );
+        if( durations ) durations->log( "after CUDA debug" );
 #endif // not NDEBUG
-  } else { // not params.useCuda
+    } else { // not params.useCuda
 #endif // WITH_CUDA
-    imagePyramid.build(imgGraySrc, params._cannyThrLow, params._cannyThrHigh, &params );
+
+        imagePyramid.build( imgGraySrc,
+                            params._cannyThrLow,
+                            params._cannyThrHigh,
+                            &params );
+
 #ifdef WITH_CUDA
-  } // not params.useCuda
+    } // not params.useCuda
 #endif // WITH_CUDA
   
-  if( durations ) durations->log( "before cctagMultiresDetection" );
-  cctagMultiresDetection( markers, imgGraySrc, imagePyramid, frame, pipe1, params, durations );
-  if( durations ) durations->log( "after cctagMultiresDetection" );
+    if( durations ) durations->log( "before cctagMultiresDetection" );
+
+    cctagMultiresDetection( markers,
+                            imgGraySrc,
+                            imagePyramid,
+                            frame,
+                            pipe1,
+                            params,
+                            durations );
+
+    if( durations ) durations->log( "after cctagMultiresDetection" );
 
   
-  CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
+    CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
 
     // Identification step
     if (params._doIdentification)
@@ -795,9 +819,9 @@ void cctagDetection(CCTag::List& markers,
             ++it;
         }
         if( durations ) durations->log( "after cctag::identification::identify" );
-  }
+    }
   
-  markers.sort();
+    markers.sort();
 
     CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
     CCTagVisualDebug::instance().writeIdentificationView(markers);

@@ -170,10 +170,10 @@ struct DataFitSize : public std::unary_function<PoolData*, void>
  * w: image width
  * h: image height
  */
-void MemoryPool::allocateImagePyramid( std::size_t width, std::size_t height, std::size_t nbLevels )
+void MemoryPool::allocateImagePyramid( std::size_t width, std::size_t height, std::size_t nbLevels, bool cuda_allocates )
 {
-  _imagePyramid = new ImagePyramid(width, height, nbLevels);
-  // TODO@Lilian need to be deleted somewhere
+    _imagePyramid = new ImagePyramid( width, height, nbLevels, cuda_allocates );
+    // TODO@Lilian need to be deleted somewhere
 }
 
 ImagePyramid & MemoryPool::getImagePyramid()

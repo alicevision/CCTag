@@ -168,6 +168,7 @@ int main(int argc, char** argv)
   if( cmdline._useCuda ) {
     params.setUseCuda( true );
   }
+#endif // WITH_CUDA
 
   if( cmdline._debugDir != "" ) {
     params.setDebugDir( cmdline._debugDir );

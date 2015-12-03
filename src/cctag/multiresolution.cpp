@@ -192,7 +192,7 @@ void cctagMultiresDetection_inner(
         size_t                  i,
         CCTag::List&            pyramidMarkers,
         const cv::Mat&          imgGraySrc,
-        const Level*            level,
+        Level*                  level,
         const std::size_t       frame,
         std::vector<EdgePoint>& vPoints,
         EdgePointsImage&        vEdgeMap,

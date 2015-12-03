@@ -1102,8 +1102,8 @@ bool imageCenterOptimizationGlob(
     {
 #endif //  WITH_CUDA
 
-  using namespace cctag::numerical;
-  using namespace boost::numeric::ublas;
+        using namespace cctag::numerical;
+        using namespace boost::numeric::ublas;
   
         std::vector<cctag::Point2dN<double> > nearbyPoints;
         // A. Get all the grid point nearby the center /////////////////////////////
@@ -1151,10 +1151,10 @@ bool imageCenterOptimizationGlob(
             if ( readable )
             {
 #ifdef OPTIM_CENTER_VISUAL_DEBUG // todo: write a proper function in visual debug
-        cv::Mat output;
-        createRectifiedCutImage(vCuts, output);
-        cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
-        ++k;
+                cv::Mat output;
+                createRectifiedCutImage(vCuts, output);
+                cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
+                ++k;
 #endif // OPTIM_CENTER_VISUAL_DEBUG        
         
                 // Update the residual and the optimized parameters
@@ -1165,13 +1165,12 @@ bool imageCenterOptimizationGlob(
                     optimalPoint = point;
                     optimalHomography = mTempHomography;
                 }
-            } else {
+            } else { // not readable
                 CCTAG_COUT_VAR_OPTIM(readable);
             }
         } // for(point : nearbyPoints)
-    }
 #ifdef WITH_CUDA
-  }
+    }
 #endif // WITH_CUDA
     center = optimalPoint;
     mHomography = optimalHomography;

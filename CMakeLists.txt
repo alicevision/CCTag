@@ -1,14 +1,6 @@
-IF(USE_CUDA)
 # Version 3,4 is the first that supports separable compilation on Linux.
 # Windows requires more work, and Mac is probably still hopeless.
 cmake_minimum_required(VERSION 3.4)
-ELSE(USE_CUDA)
-if(APPLE)
-cmake_minimum_required(VERSION 3.0)
-else(APPLE)
-cmake_minimum_required(VERSION 2.8)
-endif(APPLE)
-ENDIF(USE_CUDA)
 
 include(ExternalProject)
 
@@ -17,8 +9,10 @@ project( CCTag )
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
 
-if(EXISTS "${MACHINE_NAME}.cmake")
+if(EXISTS "${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake")
   include("${MACHINE_NAME}.cmake")
+else()
+  message(FATAL_ERROR "Compiling without ${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake" )
 endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -pg")
@@ -137,7 +131,7 @@ find_package(OPTPP)
 if(OPTPP_FOUND)
   include_directories(${OPTPP_INCLUDE_DIRS})
   # link_directories(${OPTPP_LIB_DIR})
-  add_definitions(${OPTPP_DEFINITIONS})
+  add_definitions(-D${OPTPP_DEFINITIONS})
 endif()
 
 # FIND CERES

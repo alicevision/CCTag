@@ -42,8 +42,8 @@ public:
 	MemoryPool( const std::size_t maxSize = 0 );
 	~MemoryPool();
 
-        void allocateImagePyramid( std::size_t width, std::size_t height, std::size_t nbLevels);
-        ImagePyramid & getImagePyramid();
+    void allocateImagePyramid( std::size_t width, std::size_t height, std::size_t nbLevels, bool cuda_allocates );
+    ImagePyramid& getImagePyramid();
 
 	IPoolDataPtr allocate( const std::size_t size );
 	std::size_t  updateMemoryAuthorizedWithRAM();
