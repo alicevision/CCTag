@@ -1061,7 +1061,7 @@ bool refineConicFamilyGlob(
  * 
  * @param[out] mHomography optimal homography from the pixel plane to the cctag plane.
  * @param[out] vCuts vector of the image cuts whose the signal has been rectified w.r.t. the computed mHomography
- * @param[out] center optimal imaged center
+ * @param[in-out] center optimal imaged center
  * @param[out] minRes residual after optimization
  * @param[in] neighbourSize size of the neighbourhood to consider relatively to the outer ellipse dimensions
  * @param[in] gridNSample number of sample points along one dimension of the neighbourhood (e.g. grid)
