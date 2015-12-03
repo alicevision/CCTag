@@ -14,6 +14,8 @@ struct FrameParam
     int   distSearch;
     int   minVotesToSelectCandidate;
     int   nCrowns;
+    float neighbourSize;
+    int   gridNSample;
 
     __host__
     static void init( const cctag::Parameters& params );

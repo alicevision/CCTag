@@ -1007,8 +1007,8 @@ bool refineConicFamilyGlob(
   while ( neighbourSize*maxSemiAxis > 0.02 )       
   {
     if ( imageCenterOptimizationGlob( mHomography,   // out
-                                      vCuts,         // out
-                                      optimalPoint,  // out
+                                      vCuts,         // in?-out
+                                      optimalPoint,  // in?-out
                                       residual,      // out
                                       neighbourSize,
                                       gridNSample,
