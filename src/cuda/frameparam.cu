@@ -34,6 +34,8 @@ void FrameParam::init( const cctag::Parameters& params )
     p.distSearch                = params._distSearch;
     p.minVotesToSelectCandidate = params._minVotesToSelectCandidate;
     p.nCrowns                   = params._nCrowns;
+    p.neighbourSize             = params._imagedCenterNeighbourSize;
+    p.gridNSample               = params._imagedCenterNGridSample;
 
     cudaError_t err;
     err = cudaMemcpyToSymbol( tagParam, // _d_symbol_ptr,

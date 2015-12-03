@@ -471,11 +471,11 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
                               const std::vector<cctag::ImageCut>& vCuts,
                               const size_t                        vCutMaxVecLen,
                               float                               neighbourSize,
-                              const size_t                        gridNSample,
                               float2&                             bestPointOut,
                               popart::geometry::matrix3x3&        bestHomographyOut,
                               NearbyPoint*                       cctag_pointer_buffer )
 {
+    const size_t gridNSample = params._imagedCenterNGridSample;
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     _meta.toDevice( Num_nearby_points, 0, _stream );
 #endif
@@ -594,6 +594,31 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
     } else {
         return FLT_MAX;
     }
+}
+
+__host__ float imageCenterOptLoop(
+    const popart::geometry::ellipse&    outerEllipse, // in
+    float2&                             center,       // in-out
+    const std::vector<cctag::ImageCut>& vCuts,        // out
+    const size_t                        vCutMaxVecLen,
+    const size_t                        gridNSample,
+    popart::geometry::matrix3x3&        bestHomographyOut ) // out
+{
+    const float maxSemiAxis = std::max( outerEllipse.a(), outerEllipse.b() );
+    const float neighbourSize = params._imagedCenterNeighbourSize;
+    while( neighbourSize*maxSemiAxis > 0.02 ) {
+        residual = idCostFunction( outerEllipse,
+                                   center,
+                                   vCuts,
+                                   vCutMaxVecLen,
+                                   neighbourSize,
+                                   bestPointOut,
+                                   bestHomographyOut );
+        if( residual == FLT_MAX ) return false;
+        center = bestPointOut.point;
+        neighbourSize /= (float)((gridNSample-1)/2) ;
+    }
+    return true;
 }
 
 __host__
