@@ -822,6 +822,9 @@ void cctagDetection(CCTag::List& markers,
     // Identification step
     if (params._doIdentification)
     {
+#ifndef NDEBUG
+    std::cerr << "markers: ";
+#endif
         CCTag::List::iterator it = markers.begin();
         while (it != markers.end())
         {
@@ -833,10 +836,16 @@ void cctagDetection(CCTag::List& markers,
                 imagePyramid.getLevel(0)->getSrc(),
                 pipe1,
                 params );
-      
             cctag.setStatus(detected);
+#ifndef NDEBUG
+            std::cerr << cctag.id() << ": " << cctag.x() << "," << cctag.y() << " (" << cctag.getStatus() <<") ";
+#endif // NEBUG
             ++it;
         }
+#ifndef NDEBUG
+        std::cerr << std::endl;
+#endif
+
         if( durations ) durations->log( "after cctag::identification::identify" );
     }
 
