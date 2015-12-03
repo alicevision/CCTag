@@ -227,15 +227,25 @@ private:
 public:
     // implemented in frame_11_identify.cu
     __host__
-    double idCostFunction( const popart::geometry::ellipse&    ellipse,
-                           const float2                        center,
-                           const std::vector<cctag::ImageCut>& vCuts,
-                           const size_t                        vCutMaxVecLen,
-                           float                               neighbourSize,
-                           const size_t                        gridNSample,
-                           float2&                             bestPointOut,
-                           popart::geometry::matrix3x3&        bestHomographyOut,
-                           NearbyPoint*                        cctag_pointer_buffer );
+    bool imageCenterOptLoop(
+        const popart::geometry::ellipse&    outerEllipse, // in
+        float2&                             center,       // in-out
+        const std::vector<cctag::ImageCut>& vCuts,        // out
+        popart::geometry::matrix3x3&        bestHomographyOut, // out
+        const cctag::Parameters&            params,
+        NearbyPoint*                        cctag_pointer_buffer );
+
+    // implemented in frame_11_identify.cu
+    __host__
+    float idCostFunction(
+        const popart::geometry::ellipse&    ellipse,
+        const float2                        center,
+        const std::vector<cctag::ImageCut>& vCuts,
+        float                               currentNeighbourSize,
+        float2&                             bestPointOut,
+        popart::geometry::matrix3x3&        bestHomographyOut,
+        const cctag::Parameters&            params,
+        NearbyPoint*                        cctag_pointer_buffer );
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 

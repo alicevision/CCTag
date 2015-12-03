@@ -461,36 +461,68 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
     delete [] plane.data;
 }
 
-double TagPipe::idCostFunction( int                                        level,
-                                const cctag::numerical::geometry::Ellipse& ellipse,
-                                const cctag::Point2dN<double>&             center,
-                                std::vector<cctag::ImageCut>&              vCuts,
-                                const size_t                               vCutMaxVecLen,
-                                const float                                neighbourSize,
-                                const size_t                               gridNSample,
-                                cctag::Point2dN<double>&                   bestPointOut,
-                                cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
-                                NearbyPoint*                               cctag_pointer_buffer )
+double TagPipe::idCostFunction(
+    int                                        level,
+    const cctag::numerical::geometry::Ellipse& ellipse,
+    const cctag::Point2dN<double>&             oldCenterIn,
+    std::vector<cctag::ImageCut>&              vCuts,
+    const float                                currentNeighbourSize,
+    cctag::Point2dN<double>&                   newCenterOut,
+    cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+    const cctag::Parameters&                   params,
+    NearbyPoint*                               cctag_pointer_buffer )
 {
-    /* The first part of cctag::identification::getNearbyPoints() applies
-     * to all possible centers for the candidate tag. It is best to
-     * compute it on the host side.
-     * Computing the nearby centers is gradNSample X gridNSample size
-     * operation and best moved to the device side.
-     */
-/*
-    cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromEllipse( ellipse );
-    cctag::numerical::BoundedMatrix3x3d mInvT;
-    cctag::numerical::invert_3x3(mT,mInvT);
+    popart::geometry::ellipse e( ellipse.matrix()(0,0),
+                                 ellipse.matrix()(0,1),
+                                 ellipse.matrix()(0,2),
+                                 ellipse.matrix()(1,0),
+                                 ellipse.matrix()(1,1),
+                                 ellipse.matrix()(1,2),
+                                 ellipse.matrix()(2,0),
+                                 ellipse.matrix()(2,1),
+                                 ellipse.matrix()(2,2),
+                                 ellipse.center().x(),
+                                 ellipse.center().y(),
+                                 ellipse.a(),
+                                 ellipse.b(),
+                                 ellipse.angle() );
+    float2 f = make_float2( oldCenterIn.x(), oldCenterIn.y() );
 
-    cctag::numerical::geometry::Ellipse transformedEllipse(ellipse);
-    cctag::viewGeometry::projectiveTransform( mInvT, transformedEllipse );
-    neighbourSize *= std::max(transformedEllipse.a(),transformedEllipse.b());
+    float2                      bestPoint;
+    popart::geometry::matrix3x3 bestHomography;
+    double avg = _frame[level]->idCostFunction( e,
+                                                f,
+                                                vCuts,
+                                                currentNeighbourSize,
+                                                bestPoint,
+                                                bestHomography,
+                                                params,
+                                                cctag_pointer_buffer );
+    if( avg < FLT_MAX ) {
+        newCenterOut.x() = bestPoint.x;
+        newCenterOut.y() = bestPoint.y;
 
-    cctag::Point2dN<double> condCenter = center;
-    cctag::numerical::optimization::condition(condCenter, mT);
-*/
+    #pragma unroll
+    for( int i=0; i<3; i++ ) {
+        #pragma unroll
+        for( int j=0; j<3; j++ ) {
+                bestHomographyOut(i,j) = bestHomography(i,j);
+            }
+        }
+    }
+    return avg;
+}
 
+__host__
+bool TagPipe::imageCenterOptLoop(
+    int                                        level,
+    const cctag::numerical::geometry::Ellipse& ellipse,
+    cctag::Point2dN<double>&                   center,
+    const std::vector<cctag::ImageCut>&        vCuts,
+    cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+    const cctag::Parameters&                   params,
+    NearbyPoint*                               cctag_pointer_buffer )
+{
     popart::geometry::ellipse e( ellipse.matrix()(0,0),
                                  ellipse.matrix()(0,1),
                                  ellipse.matrix()(0,2),
@@ -507,20 +539,18 @@ double TagPipe::idCostFunction( int                                        level
                                  ellipse.angle() );
     float2 f = make_float2( center.x(), center.y() );
 
-    float2                      bestPoint;
     popart::geometry::matrix3x3 bestHomography;
-    double avg = _frame[level]->idCostFunction( e,
-                                                f,
-                                                vCuts,
-                                                vCutMaxVecLen,
-                                                neighbourSize,
-                                                gridNSample,
-                                                bestPoint,
-                                                bestHomography,
-                                                cctag_pointer_buffer );
-    if( avg < FLT_MAX ) {
-        bestPointOut.x() = bestPoint.x;
-        bestPointOut.y() = bestPoint.y;
+
+    bool success = _frame[level]->imageCenterOptLoop( e,
+                                                      f,
+                                                      vCuts,
+                                                      bestHomography,
+                                                      params,
+                                                      cctag_pointer_buffer );
+
+    if( success ) {
+        center.x() = f.x;
+        center.y() = f.y;
 
     #pragma unroll
     for( int i=0; i<3; i++ ) {
@@ -530,8 +560,9 @@ double TagPipe::idCostFunction( int                                        level
             }
         }
     }
-    return avg;
+    return success;
 }
+
 
 }; // namespace popart
 
