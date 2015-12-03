@@ -47,7 +47,7 @@ namespace bfs = boost::filesystem;
 
 // static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ofstream & output, std::string debugFileName = "")
+void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ostream & output, std::string debugFileName = "")
 {
     if (debugFileName == "") {
       debugFileName = "00000";
