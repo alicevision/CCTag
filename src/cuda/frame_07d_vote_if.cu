@@ -111,6 +111,10 @@ bool Frame::applyVoteIf( )
 __host__
 bool Frame::applyVoteIf( )
 {
+    if( _interm_inner_points.host.size == 0 ) {
+        return false;
+    }
+
     cudaError_t err;
 
     void*  assist_buffer = (void*)_d_intermediate.data;
