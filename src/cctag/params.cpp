@@ -1,7 +1,6 @@
 #include "params.hpp"
-#include <boost/archive/archive_exception.hpp>
 
-using namespace std;
+#include <iostream>
 
 namespace cctag
 {
@@ -37,6 +36,7 @@ Parameters::Parameters(const std::size_t nCrowns)
     , _writeOutput( kDefaultWriteOutput )
     , _doIdentification( kDefaultDoIdentification )
     , _maxEdges( kDefaultMaxEdges )
+    , _useCuda( kDefaultUseCuda )
     , _debugDir( "" )
 {
     _nCircles = 2*_nCrowns;
@@ -57,6 +57,16 @@ void Parameters::setDebugDir( const std::string& debugDir )
     if (::stat( _debugDir.c_str(), &st) == -1) {
         ::mkdir( _debugDir.c_str(), 0700);
     }
+}
+
+void Parameters::setUseCuda( bool val )
+{
+#ifdef WITH_CUDA
+    _useCuda = val;
+#else
+    if(val)
+        std::cerr << "Warning: CCTag library is built without CUDA support, so we can't enable CUDA." << std::endl;
+#endif // WITH_CUDA
 }
 
 } // namespace cctag

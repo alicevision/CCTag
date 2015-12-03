@@ -18,7 +18,7 @@ class ImagePyramid
 public:
   ImagePyramid();
   
-  ImagePyramid( const std::size_t width, const std::size_t height, const std::size_t nLevels );
+  ImagePyramid( const std::size_t width, const std::size_t height, const std::size_t nLevels, bool cuda_allocates );
   
   ~ImagePyramid();
 

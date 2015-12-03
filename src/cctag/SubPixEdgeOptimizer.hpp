@@ -6,18 +6,20 @@
 #include <cctag/geometry/point.hpp>
 #include <cctag/global.hpp>
 
+#ifdef WITH_OPTPP
 #include <OPT++_config.h>
 #include <newmat.h>
 #include <OptLBFGS.h>
 #include <NLF.h>
 #include <OptQNewton.h>
 #include <newmat.h>
+#endif
 
 namespace cctag {
-  
-#ifdef SUBPIX_EDGE_OPTIM // undefined. Depreciated
-  
-  struct ImageCut;
+
+#if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM) // undefined. Deprecated
+
+struct ImageCut;
 
 /**
  * @brief Optimizer to find the subpixel position of an edge point from a 1D signal.

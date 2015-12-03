@@ -87,45 +87,22 @@ uint32_t TagPipe::getHeight( size_t layer ) const
     return _frame[layer]->getHeight();
 }
 
-
 __host__
 void TagPipe::load( unsigned char* pix )
 {
-#ifndef CCTAG_NO_COUT
-    KeepTime t( _frame[0]->_stream );
-    t.start();
-#endif // CCTAG_NO_COUT
-
     _frame[0]->upload( pix ); // async
     _frame[0]->addUploadEvent( ); // async
-
-#ifndef CCTAG_NO_COUT
-    t.stop();
-    t.report( "Time for frame upload " );
-#endif // CCTAG_NO_COUT
 }
 
 __host__
 void TagPipe::tagframe( )
 {
-#ifndef CCTAG_NO_COUT
-    KeepTime t( _frame[0]->_stream );
-    t.start();
-#endif // CCTAG_NO_COUT
-
     _threads.oneRound( );
-
-#ifndef CCTAG_NO_COUT
-    t.stop();
-    t.report( "Time for all frames " );
-#endif // CCTAG_NO_COUT
 }
 
 __host__
 void TagPipe::handleframe( int i )
 {
-    // int num_layers = _frame.size();
-
 #ifdef SHOW_DETAILED_TIMING
     KeepTime* time_gauss;
     KeepTime* time_mag;

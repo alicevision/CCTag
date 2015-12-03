@@ -4,8 +4,10 @@
 #include <cctag/progBase/exceptions.hpp>
 #include <cctag/global.hpp>
 
+#ifdef WITH_OPTPP
 #include <OptQNewton.h>
 #include <newmat.h>
+#endif
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -17,7 +19,7 @@
 
 namespace cctag {
 
-#ifdef SUBPIX_EDGE_OPTIM // undefined. Depreciated
+#if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM) // undefined. Depreciated
 
 SubPixEdgeOptimizer::SubPixEdgeOptimizer( const cctag::ImageCut & line )
 : Parent( 4, &SubPixEdgeOptimizer::subPix, NULL, this )

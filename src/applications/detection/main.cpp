@@ -22,6 +22,8 @@
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include <terry/sampler/all.hpp>
 #include <terry/sampler/resample_subimage.hpp>
@@ -41,8 +43,7 @@ using namespace cctag;
 using boost::timer;
 
 using namespace boost::gil;
-namespace bfs   = boost::filesystem;
-namespace btime = boost::posix_time;
+namespace bfs = boost::filesystem;
 
 // static const std::string kUsageString = "Usage: detection image_file.png\n";
 
@@ -103,6 +104,8 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
 /*************************************************************/
 int main(int argc, char** argv)
 {
+  CmdLine cmdline;
+
   if( cmdline.parse( argc, argv ) == false ) {
     cmdline.usage( argv[0] );
     return EXIT_FAILURE;
@@ -141,7 +144,7 @@ int main(int argc, char** argv)
 
     // Read the parameter file provided by the user
     std::ifstream ifs( cmdline._paramsFilename.c_str() );
-    boost::archive::xml_iarchive ia( ifs );
+    boost::archive::xml_iarchive ia(ifs);
     ia >> boost::serialization::make_nvp("CCTagsParams", params);
     CCTAG_COUT(params._nCrowns);
     CCTAG_COUT(nCrowns);
@@ -161,12 +164,17 @@ int main(int argc, char** argv)
     bank = CCTagMarkersBank(cmdline._cctagBankFilename);
   }
 
+#ifdef WITH_CUDA
+  if( cmdline._useCuda ) {
+    params.setUseCuda( true );
+  }
+
   if( cmdline._debugDir != "" ) {
     params.setDebugDir( cmdline._debugDir );
   }
 
 #ifdef WITH_CUDA
-  popart::device_prop_t deviceInfo( true );
+  popart::device_prop_t deviceInfo( false );
 #if 0
   deviceInfo.print( );
 #endif
@@ -239,7 +247,38 @@ int main(int argc, char** argv)
     std::cerr << "Done. Now processing." << std::endl;
 
     boost::timer t;
-    std::size_t frameId = 0;
+    std::size_t         frameId = 0;
+#if 0
+    boost::mutex        frame_mutex;
+    boost::thread_group frame_processor;
+    for( int proc=0; proc<1 ; proc++ ) {
+      frame_processor.create_thread(
+        [&frames, &frameId, &frame_mutex, &t, params, bank, &outputFile](){
+            bool   empty;
+            do {
+                cv::Mat* imgGray;
+                frame_mutex.lock();
+                empty = frames.empty();
+                if( not empty ) {
+                    imgGray = frames.front();
+                    frames.pop_front();
+                    ++frameId; 
+                }
+                frame_mutex.unlock();
+
+                std::stringstream outFileName;
+                outFileName << std::setfill('0') << std::setw(5) << frameId;
+
+                detection(frameId, *imgGray, params, bank, outputFile, outFileName.str());
+                if( frameId % 100 == 0 ) {
+                    std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0/frameId << ") ";
+                }
+                delete imgGray;
+            } while( not empty );
+        } );
+    }
+    frame_processor.join_all();
+#else // 0
     for( cv::Mat* imgGray : frames ) {
         // Set the output folder
         std::stringstream outFileName;
@@ -256,6 +295,7 @@ int main(int argc, char** argv)
             std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0/frameId << ") ";
         }
     }
+#endif // 0
     std::cerr << std::endl;
   } else if (bfs::is_directory(myPath)) {
     CCTAG_COUT("*** Image sequence mode ***");
@@ -270,7 +310,8 @@ int main(int argc, char** argv)
     for(const auto & fileInFolder : vFileInFolder) {
       const std::string subExt(bfs::extension(fileInFolder));
       
-      if ( (subExt == ".png") || (subExt == ".jpg") ) {
+      if ( (subExt == ".png") || (subExt == ".jpg") || (subExt == ".PNG") || (subExt == ".JPG") ) {
+
         CCTAG_COUT( "Processing image " << fileInFolder.string() );
 
 		cv::Mat src;

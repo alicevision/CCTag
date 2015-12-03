@@ -23,8 +23,6 @@ void cctagDetection(
       const std::string & parameterFilename,
       const std::string & cctagBankFilename)
 {
-    cerr << "Enter " << __FUNCTION__ << " in " << __FILE__ << endl;
-
   // Load parameters
   cctag::Parameters params = cctag::Parameters(nCrowns);
     
@@ -49,7 +47,6 @@ void cctagDetection(
   }
   
   cctagDetection(markers, frame, graySrc, params, durations, &bank);
-    cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << endl;
 }
 
 void cctagDetection(
@@ -60,8 +57,6 @@ void cctagDetection(
       logtime::Mgmt* durations,
       const CCTagMarkersBank * pBank)
 {
-    cerr << "Enter " << __FUNCTION__ << " in " << __FILE__ << endl;
-
   boost::ptr_list<cctag::CCTag> cctags;
   
   if ( pBank == NULL)
@@ -78,7 +73,6 @@ void cctagDetection(
   {
     markers.push_back(new cctag::CCTag(cctag));
   }
-    cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << endl;
 }
 
 void initCCTagDetection( )

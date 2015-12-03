@@ -3,13 +3,12 @@
 #include <string>
 #include "cmdline.hpp"
 
-using namespace std;
+namespace cctag {
 
 #define no_argument       0 
 #define required_argument 1 
 #define optional_argument 2
 
-CmdLine cmdline;
 
 static const struct option longopts[] =
 {
@@ -18,9 +17,11 @@ static const struct option longopts[] =
     {"bank",       required_argument, 0, 'b'},
     {"parameters", required_argument, 0, 'p'},
     {"output",     optional_argument, 0, 'o'},   
+#ifdef WITH_CUDA
     {"sync",       no_argument,       0, 0xd0 },
     {"debug-dir",  required_argument, 0, 0xd1 },
     {"use-cuda",   no_argument,       0, 0xd2 },
+#endif
     {0,0,0,0},
 };
 
@@ -30,8 +31,11 @@ CmdLine::CmdLine( )
     , _cctagBankFilename( "" )
     , _paramsFilename( "" )
     , _outputFolderName( "" )
+#ifdef WITH_CUDA
     , _switchSync( false )
     , _debugDir( "" )
+    , _useCuda( false )
+#endif
 { }
 
 bool CmdLine::parse( int argc, char* argv[] )
@@ -57,8 +61,11 @@ bool CmdLine::parse( int argc, char* argv[] )
       case 'b'  : _cctagBankFilename = optarg; break;
       case 'p'  : _paramsFilename    = optarg; break;
       case 'o'  : _outputFolderName  = optarg; break;
+#ifdef WITH_CUDA
       case 0xd0 : _switchSync        = true;   break;
       case 0xd1 : _debugDir          = optarg; break;
+      case 0xd2 : _useCuda           = true;   break;
+#endif
       default : break;
     }
   }
@@ -67,22 +74,26 @@ bool CmdLine::parse( int argc, char* argv[] )
 
 void CmdLine::print( const char* const argv0 )
 {
-    cout << "You called " << argv0 << " with:" << endl
-         << "    --input     " << _filename << endl
-         << "    --nbrings     " << _nCrowns << endl
-         << "    --bank      " << _cctagBankFilename << endl
-         << "    --params    " << _paramsFilename << endl
-         << "    --output    " << _outputFolderName << endl;
+    std::cout << "You called " << argv0 << " with:" << std::endl
+         << "    --input     " << _filename << std::endl
+         << "    --nbrings     " << _nCrowns << std::endl
+         << "    --bank      " << _cctagBankFilename << std::endl
+         << "    --params    " << _paramsFilename << std::endl
+         << "    --output    " << _outputFolderName << std::endl;
+#ifdef WITH_CUDA
     if( _switchSync )
-        cout << "    --sync " << endl;
+        std::cout << "    --sync " << std::endl;
     if( _debugDir != "" )
-        cout << "    --debug-dir " << _debugDir << endl;
-    cout << endl;
+        std::cout << "    --debug-dir " << _debugDir << std::endl;
+    if( _useCuda )
+        std::cout << "    --use-cuda " << std::endl;
+#endif
+    std::cout << std::endl;
 }
 
 void CmdLine::usage( const char* const argv0 )
 {
-  cerr << "Usage: " << argv0 << "<parameters>\n"
+  std::cerr << "Usage: " << argv0 << "<parameters>\n"
           "    Mandatory:\n"
           "           [-i|--input] <imgpath>\n"
           "           [-n|--nbrings] <nbrings>\n"
@@ -102,6 +113,8 @@ void CmdLine::usage( const char* const argv0 )
           "    --sync     - CUDA debug option, run all CUDA ops synchronously\n"
           "    <debugdir> - path storing image to debug intermediate GPU results\n"
           "    --use-cuda - select GPU code instead of CPU code\n"
-          "\n" << endl;
+          "\n" << std::endl;
+}
+
 }
 

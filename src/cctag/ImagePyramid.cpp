@@ -13,13 +13,13 @@ ImagePyramid::ImagePyramid()
 {
 }
 
-ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::size_t nLevels )
+ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::size_t nLevels, bool cuda_allocates )
 {
   _levels.clear();
   _levels.resize(nLevels);
   for(int i = 0; i < nLevels ; ++i)
   {
-    _levels[i] = new Level( width, height, i, true );
+    _levels[i] = new Level( width, height, i, cuda_allocates );
     width /= 2;
     height /= 2;
   }

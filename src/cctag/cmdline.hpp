@@ -2,6 +2,8 @@
 
 #include <string>
 
+namespace cctag {
+
 class CmdLine
 {
 public:
@@ -10,8 +12,11 @@ public:
     std::string _paramsFilename;
     std::string _nCrowns;
     std::string _outputFolderName;
+#ifdef WITH_CUDA
     bool        _switchSync;
     std::string _debugDir;
+    bool        _useCuda;
+#endif
 
     CmdLine( );
 
@@ -21,5 +26,5 @@ public:
     void usage( const char* const argv0 );
 };
 
-extern CmdLine cmdline;
+}
 

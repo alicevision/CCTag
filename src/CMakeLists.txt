@@ -43,7 +43,6 @@ IF(USE_CUDA)
     # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
     # set(BUILD_SHARED_LIBS ON)
 
-    # ---- CUDA_COMPILE( cuda_files ${CUDA_cu} )
 
     IF( COMPILE_STATIC_CCTAG_LIBRARY )
     	ADD_LIBRARY( CCTag STATIC ${CCTag_cpp} )

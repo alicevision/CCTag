@@ -1,13 +1,8 @@
 #pragma once
 
-#ifndef VISION_CCTAG_PARAMS_HPP_
-#define VISION_CCTAG_PARAMS_HPP_
-
 #include <boost/math/constants/constants.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/nvp.hpp>
-#include <boost/archive/xml_iarchive.hpp>
-#include <boost/archive/xml_oarchive.hpp>
 
 #include <cmath>
 #include <cstddef>
@@ -18,6 +13,7 @@
 #define NO_WEIGHT 0
 #define INV_GRAD_WEIGHT 1
 #define INV_SQRT_GRAD_WEIGHT 2
+#define INV_SQUARE_GRAD_WEIGHT 3
 
 namespace cctag
 {
@@ -55,7 +51,11 @@ static const bool kDefaultSearchForAnotherSegment = true;
 static const bool kDefaultWriteOutput = false;
 static const bool kDefaultDoIdentification = true;
 static const uint32_t kDefaultMaxEdges = 20000;
+#ifdef WITH_CUDA
 static const bool kDefaultUseCuda = true;
+#else
+static const bool kDefaultUseCuda = false;
+#endif
 
 static const std::string kParamCannyThrLow( "kParamCannyThrLow" );
 static const std::string kParamCannyThrHigh( "kParamCannyThrHigh" );
@@ -139,8 +139,8 @@ struct Parameters
   bool _writeOutput;
   bool _doIdentification; // perform the identification step
   uint32_t _maxEdges; // max number of edge point, determines memory allocation
+  bool        _useCuda; // if compiled WITH_CUDA, allow CLI selection, ignore if not
   std::string _debugDir; // prefix for debug output !!!! ONLY ON COMMAND LINE
-  bool _useCuda;
 
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
@@ -182,12 +182,7 @@ struct Parameters
 
   void setDebugDir( const std::string& debugDir );
 
-private:
-  template<class Archive>
-  void private_serialize(Archive & ar, const unsigned int version);
+  void setUseCuda( bool val );
 };
 
 } // namespace cctag
-
-#endif
-

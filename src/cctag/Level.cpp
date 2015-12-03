@@ -30,8 +30,9 @@ Level::Level( std::size_t width, std::size_t height, int level, bool cuda_alloca
     _temp = cv::Mat(height, width, CV_8UC1);
   
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
-    _edgesNotThin = cv::Mat(height, width, CV_8UC1);
+  _edgesNotThin = cv::Mat(height, width, CV_8UC1);
 #endif
+  
 }
 
 Level::~Level( )
@@ -53,7 +54,6 @@ void Level::setLevel( const cv::Mat & src,
         exit( -__LINE__ );
     }
 
-    DO_TALK( std::cerr << "Enter " << __FUNCTION__ << std::endl; )
     cv::resize( src, *_src, cv::Size(_src->cols,_src->rows) );
     // ASSERT TODO : check that the data are allocated here
     // Compute derivative and canny edge extraction.
@@ -68,7 +68,6 @@ void Level::setLevel( const cv::Mat & src,
 #endif
   
     thin(*_edges,_temp);
-    DO_TALK( std::cerr << "Leave " << __FUNCTION__ << std::endl; )
 }
 
 #ifdef WITH_CUDA

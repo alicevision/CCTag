@@ -579,7 +579,7 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     mapVar.insert( v );
   }
 
-#ifdef SUBPIX_EDGE_OPTIM // undefined. Depreciated
+#if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM) // undefined. Depreciated
   // half size of the segment used to refine the external point of cut
   //const double halfWidth = cutLengthOuterPointRefine / 2.0;
 #endif // SUBPIX_EDGE_OPTIM
@@ -594,7 +594,7 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     BOOST_ASSERT( cut.stop().x() >= 0 && cut.stop().x() < src.cols );
     BOOST_ASSERT( cut.stop().y() >= 0 && cut.stop().y() < src.rows );
 
-#ifdef SUBPIX_EDGE_OPTIM
+#if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM)
     const double halfWidth = cutLengthOuterPointRefine / 2.0;
     cctag::numerical::BoundedVector2d gradDirection = cctag::numerical::unit( cut.stop().gradient() );
     BOOST_ASSERT( norm_2( gradDirection ) != 0 );
@@ -673,7 +673,7 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
   
   // A. Keep only 1/5 of the total number of pixel of the ellipse perimeter.
   const std::size_t ellipsePerimeter = rasterizeEllipsePerimeter(outerEllipse);
-  std::size_t upperSize = std::max((std::size_t) ellipsePerimeter/5 , selectSize); // Greater than the final size, 
+  std::size_t upperSize = std::max((std::size_t) ((float)collectedCuts.size()/5.f) , selectSize); // Greater than the final size, 
                                                                                    // Cuts will then be removed iteratively.
   std::size_t j = 0;
   BoundedVector2d sumDeriv;
@@ -681,8 +681,10 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
   std::map< std::size_t, cctag::DirectedPoint2d<double> > mapBestIdCutOuterPoint;
   
   // Reverse iterator over the variance values from the highest to the smallest one
-  std::map<double,std::size_t>::reverse_iterator rit;
-  for(rit=varCuts.rbegin(); rit!=varCuts.rend(); ++rit)
+  std::map<double,std::size_t>::reverse_iterator rit=varCuts.rbegin();
+  double varMax = rit->first;
+  
+  for( ; rit!=varCuts.rend(); ++rit)
   {
     cctag::DirectedPoint2d<double> outerPoint( collectedCuts[rit->second].stop() );
     double normGrad = sqrt(outerPoint.dX()*outerPoint.dX() + outerPoint.dY()*outerPoint.dY());
@@ -698,7 +700,10 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
     mapBestIdCutOuterPoint.emplace(rit->second, outerPoint);
     ++j;
     
-    if ( j > upperSize)
+    //if ( j > upperSize) // todo: validate with more tests on real data (e.g. grimstad, day01,img3)
+    //  break;            // and clean
+    
+    if ( rit->first < varMax*0.8)
       break;
   }
   
@@ -1072,14 +1077,9 @@ bool imageCenterOptimizationGlob(
     cctag::Point2dN<double>             optimalPoint;
     cctag::numerical::BoundedMatrix3x3d optimalHomography;
     bool                                hasASolution = false;
-  
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    cctag::Point2dN<double>             cuda_optimalPoint;
-    cctag::numerical::BoundedMatrix3x3d cuda_optimalHomography;
-    bool                                cuda_hasASolution = false;
-#endif // CPU_GPU_COST_FUNCTION_COMPARE
 
-    if( cudaPipe ) {
+#ifdef WITH_CUDA
+ if( cudaPipe ) {
         double res;
 
         res = cudaPipe->idCostFunction( 0,
@@ -1089,33 +1089,21 @@ bool imageCenterOptimizationGlob(
                                         params._sampleCutLength,
                                         neighbourSize,
                                         gridNSample,
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-                                        cuda_optimalPoint,
-                                        cuda_optimalHomography
-#else // CPU_GPU_COST_FUNCTION_COMPARE
                                         optimalPoint,
                                         optimalHomography
-#endif // CPU_GPU_COST_FUNCTION_COMPARE
                                         );
 
         if( res < FLT_MAX ) {
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-            cuda_hasASolution = true;
-#else // CPU_GPU_COST_FUNCTION_COMPARE
             minRes = res;
             hasASolution = true;
-#endif // CPU_GPU_COST_FUNCTION_COMPARE
         }
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-        cerr << "device cost function returns " << res << ", readable " << cuda_hasASolution << endl;
-#endif // CPU_GPU_COST_FUNCTION_COMPARE
     }
-#ifndef CPU_GPU_COST_FUNCTION_COMPARE
     else
-#endif // CPU_GPU_COST_FUNCTION_COMPARE
     {
-        using namespace cctag::numerical;
-        using namespace boost::numeric::ublas;
+#endif //  WITH_CUDA
+
+  using namespace cctag::numerical;
+  using namespace boost::numeric::ublas;
   
         std::vector<cctag::Point2dN<double> > nearbyPoints;
         // A. Get all the grid point nearby the center /////////////////////////////
@@ -1125,10 +1113,6 @@ bool imageCenterOptimizationGlob(
                          neighbourSize, // in (float)
                          gridNSample,   // in (size_t)
                          GRID );        // in (enum)
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    	std::cerr << "host tries center (" << center.x() << "," << center.y() << ")" << std::endl
-                  << "host number of nearby points: " << nearbyPoints.size() << std::endl;
-#endif
 
         minRes = std::numeric_limits<double>::max();
         BoundedMatrix3x3d mTempHomography;
@@ -1167,10 +1151,10 @@ bool imageCenterOptimizationGlob(
             if ( readable )
             {
 #ifdef OPTIM_CENTER_VISUAL_DEBUG // todo: write a proper function in visual debug
-                cv::Mat output;
-                createRectifiedCutImage(vCuts, output);
-                cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
-                ++k;
+        cv::Mat output;
+        createRectifiedCutImage(vCuts, output);
+        cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
+        ++k;
 #endif // OPTIM_CENTER_VISUAL_DEBUG        
         
                 // Update the residual and the optimized parameters
@@ -1186,14 +1170,9 @@ bool imageCenterOptimizationGlob(
             }
         } // for(point : nearbyPoints)
     }
-
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    std::cerr << std::setprecision(4);
-    std::cerr << "host optimal point is (" << optimalPoint.x() << "," << optimalPoint.y() << ")" << std::endl;
-    std::cerr << "dev  optimal point is (" << cuda_optimalPoint.x() << "," << cuda_optimalPoint.y() << ")" << std::endl;
-    std::cerr << "host optimal homography is (" << optimalHomography << std::endl;
-    std::cerr << "dev  optimal homography is (" << cuda_optimalHomography << std::endl;
-#endif
+#ifdef WITH_CUDA
+  }
+#endif // WITH_CUDA
     center = optimalPoint;
     mHomography = optimalHomography;
     
@@ -1278,7 +1257,6 @@ double costFunctionGlob(
 
   double res = 0;
   std::size_t resSize = 0;
-  int debug_loops = 0;
   for( std::size_t i = 0; i < vCuts.size() - 1; ++i )
   {
     for( std::size_t j = i+1; j < vCuts.size(); ++j )
@@ -1290,12 +1268,8 @@ double costFunctionGlob(
         // += (signalCutI(0)-signalCutJ(0))*(signalCutI(0)-signalCutJ(0)) + ... + (signalCutI(end)-signalCutJ(end))*(signalCutI(end)-signalCutJ(end)) // GPU
         ++resSize;
       }
-      debug_loops++;
     }
   }
-
-  // cerr << "CPU: result=" << res << " resSize=" << resSize << " in " << debug_loops << " loops" << endl;
-
   // If no cut-pair has been found within the image bounds.
   if ( resSize == 0)
   {
@@ -1326,8 +1300,6 @@ int identify(
   popart::TagPipe* cudaPipe,
   const cctag::Parameters & params)
 {
-    // cerr << "Enter " << __FUNCTION__ << " in " << __FILE__ << endl;
-
   // Get the outer ellipse in its original scale, i.e. in src.
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
   // Get the outer points in their original scale, i.e. in src.
@@ -1420,7 +1392,6 @@ int identify(
   if ( cuts.size() == 0 )
   {
     // Can happen when an object or the image frame is occluding a part of all available cuts.
-    // cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (1)" << endl;
     return status::no_collected_cuts;
   }
   
@@ -1431,7 +1402,7 @@ int identify(
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
 #ifdef NAIVE_SELECTCUT // undefined, deprec
-    'depreciated: dx and dy are not accessible anymore -> use DirectedPoint instead'
+    'deprecated: dx and dy are not accessible anymore -> use DirectedPoint instead'
     selectCutNaive( vSelectedCuts, prSelection, params._numCutsInIdentStep, cuts, src, 
           dx, dy ); 
     DO_TALK( CCTAG_COUT_OPTIM("Naive cut selection"); )
@@ -1479,7 +1450,6 @@ int identify(
   {
     //
     CCTAG_COUT_DEBUG("Unable to select any cut.");
-    // cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (2)" << endl;
     return status::no_selected_cuts; // todo: is class attributes the best option?
   }
 
@@ -1496,11 +1466,6 @@ int identify(
   //    }
     
   // C. Imaged center optimization /////////////////////////////////////////////
-
-  // OLD OLD
-  // OLD OLD bool hasConverged = refineConicFamilyGlob( cctag, vSelectedCuts, src, cudaPipe, ellipse, params);
-  // OLD OLD
-
   // Expensive (GPU) Time bottleneck, the only function (including its sub functions) to be implemented on GPU
   // Note Inputs (CPU->GPU):
   //       i) src is already on GPU
@@ -1516,13 +1481,11 @@ int identify(
   //        All the ImageCut in vSelectedCuts including their attribute _imgSignal have to be transfer back to CPU.
   //        This operation is done once per marker. A maximum of 30 markers will be processed per frame. The 
   //        maximum number of cuts will be of 50. The maximum length of each _imgSignal will of 100*float.
-
   if( !hasConverged )
   {
     DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
     CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
     DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
-    // cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (3)" << endl;
     return status::opti_has_diverged;
   }
 
@@ -1631,7 +1594,6 @@ int identify(
       }
       catch (...) // An exception can be thrown when a degenerate ellipse is computed.
       {
-        // cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (4)" << endl;
         return status::degenerate;
       }
 
@@ -1650,12 +1612,10 @@ int identify(
   // Tell if the identification is reliable or not.
   if (identSuccessful)
   {
-    // cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (5)" << endl;
     return status::id_reliable;
   }
   else
   {
-    // cerr << "Leave " << __FUNCTION__ << " in " << __FILE__ << " (6)" << endl;
     return status::id_not_reliable;
   }
 }

@@ -28,9 +28,11 @@
 #include <fstream>
 #include <map>
 
+#ifdef WITH_CUDA
 #include <cuda_runtime.h> // only for debugging!!!
-
 #include "cuda/tag.h"
+#endif
+
 
 namespace cctag
 {
@@ -190,7 +192,7 @@ void cctagMultiresDetection_inner(
         size_t                  i,
         CCTag::List&            pyramidMarkers,
         const cv::Mat&          imgGraySrc,
-        Level*                  level,
+        const Level*            level,
         const std::size_t       frame,
         std::vector<EdgePoint>& vPoints,
         EdgePointsImage&        vEdgeMap,
@@ -206,15 +208,9 @@ void cctagMultiresDetection_inner(
 
     boost::posix_time::time_duration d;
 
+#if defined(WITH_CUDA)
     // there is no point in measuring time in compare mode
-    if( ! cuda_pipe ) {
-        std::cerr << "CUDA data structures have not been created in " << __FUNCTION__ << ":" << __LINE__ << std::endl;
-        exit( -__LINE__ );
-    }
-
-#ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
-#endif
+    if( cuda_pipe ) {
     cuda_pipe->convertToHost( i, 
                               vPoints,
                               vEdgeMap,
@@ -223,27 +219,21 @@ void cctagMultiresDetection_inner(
     if( durations ) {
         cudaDeviceSynchronize();
     }
-
     level->setLevel( cuda_pipe, params );
 
-#ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
-    d = t11 - t01;
-    CCTAG_COUT_OPTIM("Time in GPU download: " << d.total_milliseconds() << " ms");
-#endif
-
-    /*
-        edgesPointsFromCanny( vPoints,
-                              vEdgeMap,
-                              level->getEdges(),
-                              level->getDx(),
-                              level->getDy());
-    */
+    CCTagVisualDebug::instance().setPyramidLevel(i);
+} else { // not cuda_pipe
+#endif // defined(WITH_CUDA)
+    edgesPointsFromCanny( vPoints,
+                          vEdgeMap,
+                          level->getEdges(),
+                          level->getDx(),
+                          level->getDy());
 
     CCTagVisualDebug::instance().setPyramidLevel(i);
 
-    /*
-        vote( vPoints,
+    // Voting procedure applied on every edge points.
+    vote( vPoints,
           seeds,        // output
           vEdgeMap,
           winners,      // output
@@ -251,10 +241,15 @@ void cctagMultiresDetection_inner(
           level->getDy(),
           params );
     
-        if( seeds.size() > 1 ) {
-            std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
-        }
-    */
+    if( seeds.size() > 1 ) {
+        // Sort the seeds based on the number of received votes.
+        std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
+    }
+
+#if defined(WITH_CUDA)
+    } // not cuda_pipe
+#endif // defined(WITH_CUDA)
+
 
     cctagDetectionFromEdges(
         pyramidMarkers,
@@ -286,7 +281,6 @@ void cctagMultiresDetection(
         const Parameters&   params,
         cctag::logtime::Mgmt* durations )
 {
-  // POP_ENTER;
   //	* For each pyramid level:
   //	** launch CCTag detection based on the canny edge detection output.
   
@@ -378,7 +372,13 @@ void cctagMultiresDetection(
 
       double SmFinal = 1e+10;
       
-      cctag::outlierRemoval(pointsInHull, rescaledOuterEllipsePoints, SmFinal, 20.0, 0, 60);
+      cctag::outlierRemoval(
+              pointsInHull,
+              rescaledOuterEllipsePoints,
+              SmFinal,
+              params._threshRobustEstimationOfOuterEllipse, //20.0 before
+              INV_GRAD_WEIGHT, // INV_GRAD_WEIGHT: NO_WEIGHT before 
+              60); 
       
       #ifdef CCTAG_OPTIM
         boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());

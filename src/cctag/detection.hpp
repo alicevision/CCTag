@@ -13,7 +13,6 @@
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/image_view_factory.hpp>
 #include <boost/gil/typedefs.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <cstddef>
 #include <string>
