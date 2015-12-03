@@ -39,6 +39,8 @@
 #include <fstream>
 #include <exception>
 
+#undef PRINT_TO_CERR
+
 using namespace cctag;
 using boost::timer;
 
@@ -167,6 +169,8 @@ int main(int argc, char** argv)
 #ifdef WITH_CUDA
   if( cmdline._useCuda ) {
     params.setUseCuda( true );
+  } else {
+    params.setUseCuda( false );
   }
 #endif // WITH_CUDA
 
@@ -216,8 +220,11 @@ int main(int argc, char** argv)
     }*/
 
     // Call the CCTag detection
+#ifdef PRINT_TO_CERR
+    detection(0, graySrc, params, bank, std::cerr, myPath.stem().string());
+#else
     detection(0, graySrc, params, bank, outputFile, myPath.stem().string());
-  //detection(0, my_view, params, bank, outputFile, myPath.stem().string());
+#endif
 } else if (ext == ".avi" )
   {
     CCTAG_COUT("*** Video mode ***");
@@ -290,7 +297,11 @@ int main(int argc, char** argv)
         //bitwise_not ( imgGray, imgGrayInverted );
       
         // Call the CCTag detection
+#ifdef PRINT_TO_CERR
+        detection(frameId, *imgGray, params, bank, std::cerr, outFileName.str());
+#else
         detection(frameId, *imgGray, params, bank, outputFile, outFileName.str());
+#endif
         ++frameId; 
         if( frameId % 100 == 0 ) {
             std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0/frameId << ") ";
@@ -322,7 +333,11 @@ int main(int argc, char** argv)
         cv::cvtColor( src, imgGray, CV_BGR2GRAY );
       
         // Call the CCTag detection
+#ifdef PRINT_TO_CERR
+        detection(frameId, imgGray, params, bank, std::cerr, fileInFolder.stem().string());
+#else
         detection(frameId, imgGray, params, bank, outputFile, fileInFolder.stem().string());
+#endif
 ++frameId;
       }
     }
