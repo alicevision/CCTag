@@ -630,8 +630,10 @@ void cctagDetectionFromEdges(
                               quality2 );
 #ifdef CCTAG_SERIALIZE
       tag->setFlowComponents( componentCandidates ); // markers.back().setFlowComponents(componentCandidates);
-#ifdef DEBUG
+#endif
       markers.push_back( tag ); // markers takes responsibility for delete
+#ifdef CCTAG_SERIALIZE
+#ifdef DEBUG
 
       CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PASS_ALLTESTS);
       CCTagFileDebug::instance().incrementFlowComponentIndex(0);
