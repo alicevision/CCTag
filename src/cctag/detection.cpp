@@ -620,11 +620,21 @@ void cctagDetectionFromEdges(
 
       quality2 *= scale;
 
-      markers.push_back(new CCTag(-1, outerEllipse.center(), cctagPoints,
-              outerEllipse, markerHomography, pyramidLevel, scale, quality2));
+      CCTag* tag = new CCTag( -1,
+                              outerEllipse.center(),
+                              cctagPoints,
+                              outerEllipse,
+                              markerHomography,
+                              pyramidLevel,
+                              scale,
+                              quality2 );
 #ifdef CCTAG_SERIALIZE
-      markers.back().setFlowComponents(componentCandidates);
+      tag->setFlowComponents( componentCandidates ); // markers.back().setFlowComponents(componentCandidates);
+#endif
+      markers.push_back( tag ); // markers takes responsibility for delete
+#ifdef CCTAG_SERIALIZE
 #ifdef DEBUG
+
       CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PASS_ALLTESTS);
       CCTagFileDebug::instance().incrementFlowComponentIndex(0);
 #endif
