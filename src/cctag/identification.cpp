@@ -989,7 +989,8 @@ bool refineConicFamilyGlob(
             optimalPoint,                      // in-out
             vCuts,                             // in
             mHomography,                       // out
-            params );
+            params,
+            cctag_pointer_buffer );
 
         if( not success ) {
             return false;
@@ -1085,6 +1086,7 @@ bool imageCenterOptimizationGlob(
         const double neighbourSize,
         const std::size_t gridNSample,
         const cv::Mat & src, 
+        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
         const cctag::Parameters params,
         popart::NearbyPoint* cctag_pointer_buffer )
@@ -1101,14 +1103,12 @@ bool imageCenterOptimizationGlob(
                                         outerEllipse,
                                         center,
                                         vCuts,
-                                        params._sampleCutLength,
                                         neighbourSize,
-                                        gridNSample,
                                         optimalPoint,
                                         optimalHomography,
+                                        params,
                                         cctag_pointer_buffer
                                         );
-
         if( res < FLT_MAX ) {
             minRes = res;
             hasASolution = true;

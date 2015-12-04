@@ -1,5 +1,4 @@
-#ifndef _CCTAG_CCTAG_IDENTIFICATION_HPP_
-#define	_CCTAG_CCTAG_IDENTIFICATION_HPP_
+#pragma once
 
 #include <cctag/visualDebug.hpp>
 #include <cctag/ellipseGrowing.hpp>
@@ -254,7 +253,6 @@ void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use
         const cv::Mat & src,
         const cv::Mat & dx,
         const cv::Mat & dy );
-}
 #endif // NAIVE_SELECTCUT
 
 /**
@@ -312,6 +310,7 @@ bool imageCenterOptimizationGlob(
         const double neighbourSize,
         const std::size_t gridNSample,
         const cv::Mat & src, 
+        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params,
         popart::NearbyPoint* cctag_pointer_buffer );
@@ -470,4 +469,3 @@ bool orazioDistance(
 } // namespace identification
 } // namespace cctag
 
-#endif
