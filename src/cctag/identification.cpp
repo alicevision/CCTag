@@ -1032,10 +1032,8 @@ bool refineConicFamilyGlob(
                                               residual,      // out
                                               neighbourSize,
                                               src,
-                                              cudaPipe,
                                               outerEllipse,
-                                              params,
-                                              cctag_pointer_buffer ) )
+                                              params ) )
             {
                 CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
                 neighbourSize /= double((gridNSample-1)/2) ;
@@ -1084,51 +1082,26 @@ bool imageCenterOptimizationGlob(
         double & minRes,
         const double neighbourSize,
         const cv::Mat & src, 
-        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
-        const cctag::Parameters params,
-        popart::NearbyPoint* cctag_pointer_buffer )
+        const cctag::Parameters params )
 {
     cctag::Point2dN<double>             optimalPoint;
     cctag::numerical::BoundedMatrix3x3d optimalHomography;
     bool                                hasASolution = false;
 
-#ifdef WITH_CUDA
-    if( cudaPipe ) {
-        double res;
+    using namespace cctag::numerical;
+    using namespace boost::numeric::ublas;
 
-        res = cudaPipe->idCostFunction( 0,
-                                        outerEllipse,
-                                        center,
-                                        vCuts,
-                                        neighbourSize,
-                                        optimalPoint,
-                                        optimalHomography,
-                                        params,
-                                        cctag_pointer_buffer
-                                        );
-        if( res < FLT_MAX ) {
-            minRes = res;
-            hasASolution = true;
-        }
-    }
-    else
-    {
-#endif //  WITH_CUDA
-
-        using namespace cctag::numerical;
-        using namespace boost::numeric::ublas;
-
-        const size_t gridNSample   = params._imagedCenterNGridSample;
+    const size_t gridNSample   = params._imagedCenterNGridSample;
   
-        std::vector<cctag::Point2dN<double> > nearbyPoints;
-        // A. Get all the grid point nearby the center /////////////////////////////
-        getNearbyPoints( outerEllipse,  // in (ellipse)
-                         center,        // in (Point2d)
-                         nearbyPoints,  // out (vector<Point2d>)
-                         neighbourSize, // in (float)
-                         gridNSample,   // in (size_t)
-                         GRID );        // in (enum)
+    std::vector<cctag::Point2dN<double> > nearbyPoints;
+    // A. Get all the grid point nearby the center /////////////////////////////
+    getNearbyPoints( outerEllipse,  // in (ellipse)
+                     center,        // in (Point2d)
+                     nearbyPoints,  // out (vector<Point2d>)
+                     neighbourSize, // in (float)
+                     gridNSample,   // in (size_t)
+                     GRID );        // in (enum)
 
     minRes = std::numeric_limits<double>::max();
     BoundedMatrix3x3d mTempHomography;
@@ -1172,22 +1145,20 @@ bool imageCenterOptimizationGlob(
             cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
             ++k;
 #endif // OPTIM_CENTER_VISUAL_DEBUG        
-        
-                // Update the residual and the optimized parameters
-                hasASolution = true;
-                if ( res < minRes )
-                {
-                    minRes = res;
-                    optimalPoint = point;
-                    optimalHomography = mTempHomography;
-                }
-            } else { // not readable
-                CCTAG_COUT_VAR_OPTIM(readable);
+
+            // Update the residual and the optimized parameters
+            hasASolution = true;
+            if ( res < minRes )
+            {
+                minRes = res;
+                optimalPoint = point;
+                optimalHomography = mTempHomography;
             }
-        } // for(point : nearbyPoints)
-#ifdef WITH_CUDA
-    }
-#endif // WITH_CUDA
+        } else { // not readable
+            CCTAG_COUT_VAR_OPTIM(readable);
+        }
+    } // for(point : nearbyPoints)
+
     center = optimalPoint;
     mHomography = optimalHomography;
     

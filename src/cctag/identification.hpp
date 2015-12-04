@@ -309,10 +309,8 @@ bool imageCenterOptimizationGlob(
         double & minRes,
         const double neighbourSize,
         const cv::Mat & src, 
-        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::Parameters params,
-        popart::NearbyPoint* cctag_pointer_buffer );
+        const cctag::Parameters params );
 
 
 /**
