@@ -24,7 +24,9 @@
 #include <boost/throw_exception.hpp>
 #include <boost/archive/text_oarchive.hpp>
 
-// #include <opencv2/core/types_c.h>
+#ifdef WITH_CUDA
+#include "cuda/pinned_counters.h"
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -334,6 +336,12 @@ public:
   }
 #endif
 
+#ifdef WITH_CUDA
+  void acquireNearbyPointMemory( ) {
+    _cuda_result = PinnedCounters::getPointPtr();
+  }
+#endif
+
   void serialize(boost::archive::text_oarchive & ar, const unsigned int version);
 
 protected:
@@ -361,9 +369,16 @@ protected:
   std::vector< std::vector< DirectedPoint2d<double> > > _points;
   cctag::numerical::BoundedMatrix3x3d _mHomography;
   double _quality;
-  int _pyramidLevel;
+  int    _pyramidLevel;
   double _scale;
-  int _status;
+  int    _status;
+#ifdef WITH_CUDA
+  /** Pointer into pinned memory page.
+   *  Valid from the construction of the CCTag until identify()
+   *  is complete.
+   */
+  popart::NearbyPoint* _cuda_result;
+#endif
 
 #ifdef CCTAG_SERIALIZE
   std::vector<CCTagFlowComponent> _flowComponents;

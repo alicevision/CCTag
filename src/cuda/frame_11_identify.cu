@@ -4,6 +4,7 @@
 #include "clamp.h"
 #include "geom_matrix.h"
 #include "geom_projtrans.h"
+#include "nearby_point.h"
 
 using namespace std;
 
@@ -18,20 +19,6 @@ struct CutStruct
     float  beginSig;
     float  endSig;
     int    sigSize;
-};
-
-struct NearbyPoint
-{
-    float2 point;
-    float  result;
-    int    resSize;
-    bool   readable;
-
-    /* These homographies are computed once for each NearbyPoint,
-     * and used for all of its Cuts. The best one must be returned.
-     */
-    popart::geometry::matrix3x3 mHomography;
-    popart::geometry::matrix3x3 mInvHomography;
 };
 
 struct CutSignals
