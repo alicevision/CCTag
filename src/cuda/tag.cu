@@ -32,7 +32,7 @@ void TagPipe::initialize( const uint32_t pix_w,
                           const uint32_t pix_h,
                           cctag::logtime::Mgmt* durations )
 {
-    pinned_counters.init( );
+    PinnedCounters::init( );
 
     static bool tables_initialized = false;
     if( not tables_initialized ) {
@@ -469,7 +469,8 @@ double TagPipe::idCostFunction( int                                        level
                                 const float                                neighbourSize,
                                 const size_t                               gridNSample,
                                 cctag::Point2dN<double>&                   bestPointOut,
-                                cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut )
+                                cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+                                NearbyPoint*                               cctag_pointer_buffer )
 {
     /* The first part of cctag::identification::getNearbyPoints() applies
      * to all possible centers for the candidate tag. It is best to
@@ -515,7 +516,8 @@ double TagPipe::idCostFunction( int                                        level
                                                 neighbourSize,
                                                 gridNSample,
                                                 bestPoint,
-                                                bestHomography );
+                                                bestHomography,
+                                                cctag_pointer_buffer );
     if( avg < FLT_MAX ) {
         bestPointOut.x() = bestPoint.x;
         bestPointOut.y() = bestPoint.y;

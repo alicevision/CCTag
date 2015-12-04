@@ -37,6 +37,7 @@
 
 namespace popart {
 class TagPipe;
+class NearbyPoint;
 };
 
 namespace cctag {
@@ -313,7 +314,8 @@ bool imageCenterOptimizationGlob(
         const cv::Mat & src, 
         popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::Parameters params );
+        const cctag::Parameters params,
+        popart::NearbyPoint* cctag_pointer_buffer );
 
 
 /**

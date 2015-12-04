@@ -25,6 +25,7 @@ namespace popart
 {
 
 class Frame; // forward decl means cctag/*.cpp need not recompile for frame.h
+class NearbyPoint;
 
 class TagPipe
 {
@@ -69,7 +70,8 @@ public:
                            const float                                neighbourSize,
                            const size_t                               gridNSample,
                            cctag::Point2dN<double>&                   bestPoint,
-                           cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut );
+                           cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+                           NearbyPoint*                               cctag_pointer_buffer );
 
     size_t getSignalBufferByteSize( int level ) const;
 

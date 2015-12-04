@@ -243,7 +243,7 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
                               const int                          vCutMaxVecLen,
                               const float                        neighbourSize,
                               const size_t                       gridNSample,
-                              identification::NearbyPoint*       point_buffer,
+                              NearbyPoint*                       point_buffer,
                               const identification::CutStruct*   cut_buffer,
                               identification::CutSignals*        sig_buffer )
 {
@@ -271,7 +271,7 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
                                 center.y - halfWidth + j*stepSize );
     mInvT.condition( point );
 
-    identification::NearbyPoint* nPoint  = &point_buffer[idx];
+    NearbyPoint* nPoint  = &point_buffer[idx];
 
     nPoint->point = point;
 
@@ -327,14 +327,14 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
 __global__
 void validateSignals( size_t                             gridNSample,
                       const int                          vCutsSize,
-                      identification::NearbyPoint*       point_buffer,
+                      NearbyPoint*       point_buffer,
                       const identification::CutStruct*   cut_buffer,
                       identification::CutSignals*        sig_buffer )
 {
     for( int i = 0; i<gridNSample; i++ ) {
         for( int j = 0; j<gridNSample; j++ ) {
             int idx = j * gridNSample + i;
-            identification::NearbyPoint* nPoint  = &point_buffer[idx];
+            NearbyPoint* nPoint  = &point_buffer[idx];
 	    printf("point (%.3f,%.3f)\n", nPoint->point.x, nPoint->point.y);
             for( int cut = 0; cut<vCutsSize; cut++ ) {
                 const identification::CutStruct*  cutptr  = &cut_buffer[cut];
@@ -473,14 +473,15 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
                               float                               neighbourSize,
                               const size_t                        gridNSample,
                               float2&                             bestPointOut,
-                              popart::geometry::matrix3x3&        bestHomographyOut )
+                              popart::geometry::matrix3x3&        bestHomographyOut,
+                              NearbyPoint*                       cctag_pointer_buffer )
 {
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     _meta.toDevice( Num_nearby_points, 0, _stream );
 #endif
 
     const size_t g = gridNSample * gridNSample;
-    if( g*sizeof(identification::NearbyPoint) > getNearbyPointBufferByteSize() ) {
+    if( g*sizeof(NearbyPoint) > getNearbyPointBufferByteSize() ) {
         cerr << __FILE__ << ":" << __LINE__
              << "ERROR: re-interpreted image plane too small to hold point search rsults" << endl;
         exit( -1 );
@@ -496,7 +497,7 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
     uploadCuts( vCuts );
 
     /* reusing various image-sized plane */
-    identification::NearbyPoint* point_buffer;
+    NearbyPoint*                 point_buffer;
     identification::CutStruct*   cut_buffer;
     identification::CutSignals*  signal_buffer;
 
@@ -580,20 +581,16 @@ double Frame::idCostFunction( const popart::geometry::ellipse&    ellipse,
     /* When this kernel finishes, the best point does not
      * exist or it is stored in point_buffer[0]
      */
-    popart::identification::NearbyPoint point;
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( &point,
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( cctag_pointer_buffer,
                                    point_buffer,
-                                   sizeof(popart::identification::NearbyPoint),
+                                   sizeof(popart::NearbyPoint),
                                    _stream );
-#ifndef __CUDA_ARCH__
-#warning this copy function is blocking
-#endif
 
     cudaStreamSynchronize( _stream );
-    if( point.readable ) {
-        bestPointOut      = point.point;
-        bestHomographyOut = point.mHomography;
-        return point.result / point.resSize;
+    if( cctag_pointer_buffer->readable ) {
+        bestPointOut      = cctag_pointer_buffer->point;
+        bestHomographyOut = cctag_pointer_buffer->mHomography;
+        return cctag_pointer_buffer->result / cctag_pointer_buffer->resSize;
     } else {
         return FLT_MAX;
     }
@@ -626,9 +623,9 @@ size_t Frame::getNearbyPointBufferByteSize( ) const
 }
 
 __host__
-identification::NearbyPoint* Frame::getNearbyPointBuffer( ) const
+NearbyPoint* Frame::getNearbyPointBuffer( ) const
 {
-    return reinterpret_cast<identification::NearbyPoint*>( _d_map.data );
+    return reinterpret_cast<NearbyPoint*>( _d_map.data );
 }
 
 __host__

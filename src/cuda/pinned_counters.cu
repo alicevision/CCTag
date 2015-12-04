@@ -47,7 +47,7 @@ NearbyPoint* PinnedCounters::getPointPtr( )
     return pinned_counters.obj_getPointPtr( );
 }
 
-void PinnedCounters::_objinit( )
+void PinnedCounters::obj_init( )
 {
     _lock.lock();
     if( not _counters ) {
@@ -65,7 +65,7 @@ void PinnedCounters::_objinit( )
     _lock.unlock();
 }
 
-int& PinnedCounters::getCounter( )
+int& PinnedCounters::obj_getCounter( )
 {
     _lock.lock();
     if( _allocated_counters < _max_counters ) {
@@ -97,7 +97,7 @@ NearbyPoint& PinnedCounters::obj_getPoint( )
     }
 }
 
-NearbyPoint* PinnedCounters::_objgetPointPtr( )
+NearbyPoint* PinnedCounters::obj_getPointPtr( )
 {
     _lock.lock();
     if( _nearby_point_counter < _max_points ) {

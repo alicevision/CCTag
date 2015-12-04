@@ -91,6 +91,18 @@ void CCTag::scale(const double s)
   _outerEllipse.setB(_outerEllipse.b() * s);
 }
 
+#ifdef WITH_CUDA
+void CCTag::acquireNearbyPointMemory( )
+{
+    _cuda_result = popart::PinnedCounters::getPointPtr();
+}
+
+void CCTag::releaseNearbyPointMemory( )
+{
+    popart::PinnedCounters::releaseAllPoints();
+}
+#endif
+
 void CCTag::serialize(boost::archive::text_oarchive & ar, const unsigned int version)
 {
   ar & BOOST_SERIALIZATION_NVP(_nCircles);

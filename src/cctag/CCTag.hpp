@@ -337,9 +337,22 @@ public:
 #endif
 
 #ifdef WITH_CUDA
-  void acquireNearbyPointMemory( ) {
-    _cuda_result = PinnedCounters::getPointPtr();
+  /** Get a pointer to pinned memory for this tag.
+   *  It cannot be released for this tag.
+   *  Instead, releaseNearbyPointMemory() invalidates all such
+   *  pointers in the process.
+   */
+  void acquireNearbyPointMemory( );
+
+  inline popart::NearbyPoint* getNearbyPointBuffer( ) {
+    return _cuda_result;
   }
+
+  /** Release all pinned memory associated with NearbyPoints.
+   *  Invalidates pointers in all objects and in all threads in
+   *  this process.
+   */
+  static void releaseNearbyPointMemory( );
 #endif
 
   void serialize(boost::archive::text_oarchive & ar, const unsigned int version);

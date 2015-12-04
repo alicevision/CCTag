@@ -976,7 +976,8 @@ bool refineConicFamilyGlob(
         const cv::Mat & src,
         popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::Parameters params)
+        const cctag::Parameters params,
+        popart::NearbyPoint* cctag_pointer_buffer )
 {
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
@@ -1020,7 +1021,8 @@ bool refineConicFamilyGlob(
                                       src,
                                       cudaPipe,
                                       outerEllipse,
-                                      params ) )
+                                      params,
+                                      cctag_pointer_buffer ) )
     {
       CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
       neighbourSize /= double((gridNSample-1)/2) ;
@@ -1072,7 +1074,8 @@ bool imageCenterOptimizationGlob(
         const cv::Mat & src, 
         popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
-        const cctag::Parameters params )
+        const cctag::Parameters params,
+        popart::NearbyPoint* cctag_pointer_buffer )
 {
     cctag::Point2dN<double>             optimalPoint;
     cctag::numerical::BoundedMatrix3x3d optimalHomography;
@@ -1090,7 +1093,8 @@ bool imageCenterOptimizationGlob(
                                         neighbourSize,
                                         gridNSample,
                                         optimalPoint,
-                                        optimalHomography
+                                        optimalHomography,
+                                        cctag_pointer_buffer
                                         );
 
         if( res < FLT_MAX ) {
@@ -1472,7 +1476,7 @@ int identify(
   //       these signals will be collected inside the function.
   //       iii) cctag.homography(): 3x3 float homography, cctag.centerImg(): 2 floats (x,y), ellipse: (see Ellipse.hpp)
   // Begin GPU //////
-  bool hasConverged = refineConicFamilyGlob( cctag.homography(), cctag.centerImg(), vSelectedCuts, src, cudaPipe, ellipse, params);
+  bool hasConverged = refineConicFamilyGlob( cctag.homography(), cctag.centerImg(), vSelectedCuts, src, cudaPipe, ellipse, params, cctag.getNearbyPointBuffer() );
   // End GPU ////////
   // Note Outputs (GPU->CPU):
   //        The main amount of data to transfert is only that way and is 'vSelectedCuts', 

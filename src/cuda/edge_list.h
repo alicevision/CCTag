@@ -75,9 +75,9 @@ struct HostEdgeList
     T*   ptr;
     int& size;
 
-    HostEdgeList( PinnedCounters& pc )
+    HostEdgeList( )
         : ptr(0)
-        , size( pc.getCounter() )
+        , size( PinnedCounters::getCounter() )
     {
         size = 0;
     }
@@ -180,10 +180,9 @@ public:
     DevEdgeList<T>  dev;
     HostEdgeList<T> host;
 
-    EdgeList( FrameMetaPtr& meta, FrameMetaEnum e, PinnedCounters& pc )
+    EdgeList( FrameMetaPtr& meta, FrameMetaEnum e )
         : _meta( meta )
         , _e( e )
-        , host( pc )
     { }
     ~EdgeList( ) { }
 

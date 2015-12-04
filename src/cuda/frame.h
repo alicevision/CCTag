@@ -42,9 +42,9 @@ namespace popart {
 namespace identification {
 // locally defined in frame_ident.cu only
 struct CutStruct;
-struct NearbyPoint;
 struct CutSignals;
 } // identification
+struct NearbyPoint;
 
 /*************************************************************
  * FrameTexture
@@ -215,7 +215,7 @@ private:
     popart::identification::CutStruct*   getCutStructBuffer( ) const;
     popart::identification::CutStruct*   getCutStructBufferHost( ) const;
     size_t                               getNearbyPointBufferByteSize( ) const;
-    popart::identification::NearbyPoint* getNearbyPointBuffer( ) const;
+    popart::NearbyPoint*                 getNearbyPointBuffer( ) const;
     size_t                               getSignalBufferByteSize( ) const;
     popart::identification::CutSignals*  getSignalBuffer( ) const;
     void                                 clearSignalBuffer( );
@@ -234,7 +234,8 @@ public:
                            float                               neighbourSize,
                            const size_t                        gridNSample,
                            float2&                             bestPointOut,
-                           popart::geometry::matrix3x3&        bestHomographyOut );
+                           popart::geometry::matrix3x3&        bestHomographyOut,
+                           NearbyPoint*                        cctag_pointer_buffer );
 
     void hostDebugDownload( const cctag::Parameters& params ); // async
 

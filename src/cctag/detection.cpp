@@ -806,6 +806,14 @@ void cctagDetection(CCTag::List& markers,
 
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
+#ifdef WITH_CUDA
+    /* identification in CUDA requires a host-side nearby point struct
+     * in pinned memory for safe, non-blocking memcpy.
+     */
+    for( CCTag& tag : markers ) {
+        tag.acquireNearbyPointMemory( );
+    }
+#endif // WITH_CUDA
   
     CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
 
@@ -829,6 +837,12 @@ void cctagDetection(CCTag::List& markers,
         }
         if( durations ) durations->log( "after cctag::identification::identify" );
     }
+
+#ifdef WITH_CUDA
+    /* Releasing all points in all threads in the process.
+     */
+    CCTag::releaseNearbyPointMemory();
+#endif
   
     markers.sort();
 

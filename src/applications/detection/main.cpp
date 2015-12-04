@@ -39,7 +39,7 @@
 #include <fstream>
 #include <exception>
 
-#undef PRINT_TO_CERR
+#define PRINT_TO_CERR
 
 using namespace cctag;
 using boost::timer;
