@@ -1031,7 +1031,6 @@ bool refineConicFamilyGlob(
                                               optimalPoint,  // in?-out
                                               residual,      // out
                                               neighbourSize,
-                                              gridNSample,
                                               src,
                                               cudaPipe,
                                               outerEllipse,
@@ -1084,8 +1083,8 @@ bool imageCenterOptimizationGlob(
         cctag::Point2dN<double> & center,
         double & minRes,
         const double neighbourSize,
-        const std::size_t gridNSample,
         const cv::Mat & src, 
+        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
         const cctag::Parameters params,
         popart::NearbyPoint* cctag_pointer_buffer )
@@ -1095,7 +1094,7 @@ bool imageCenterOptimizationGlob(
     bool                                hasASolution = false;
 
 #ifdef WITH_CUDA
- if( cudaPipe ) {
+    if( cudaPipe ) {
         double res;
 
         res = cudaPipe->idCostFunction( 0,
@@ -1119,6 +1118,8 @@ bool imageCenterOptimizationGlob(
 
         using namespace cctag::numerical;
         using namespace boost::numeric::ublas;
+
+        const size_t gridNSample   = params._imagedCenterNGridSample;
   
         std::vector<cctag::Point2dN<double> > nearbyPoints;
         // A. Get all the grid point nearby the center /////////////////////////////

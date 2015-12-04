@@ -308,8 +308,8 @@ bool imageCenterOptimizationGlob(
         cctag::Point2dN<double> & center,
         double & minRes,
         const double neighbourSize,
-        const std::size_t gridNSample,
         const cv::Mat & src, 
+        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params,
         popart::NearbyPoint* cctag_pointer_buffer );
