@@ -14,6 +14,7 @@ struct FrameParam
     int   distSearch;
     int   minVotesToSelectCandidate;
     int   nCrowns;
+    int   sampleCutLength;
     float neighbourSize;
     int   gridNSample;
 

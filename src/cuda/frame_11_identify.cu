@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 
 #include "frame.h"
+#include "frameparam.h"
 #include "clamp.h"
 #include "geom_matrix.h"
 #include "geom_projtrans.h"
@@ -125,8 +126,7 @@ void idGetSignals( NearbyPoint*         nPoint,
                    cv::cuda::PtrStepSzb src,
                    const CutStruct*     cuts,
                    CutSignals*          signals,
-                   const int            vCutsSize,
-                   const int            vCutMaxVecLen )
+                   const int            vCutsSize )
 {
     int myCutIdx = blockIdx.x * 32 + threadIdx.y;
 
@@ -161,8 +161,7 @@ __global__
 void idComputeResult( NearbyPoint*      nPoint,
                       const CutStruct*  vCuts,
                       const CutSignals* allcut_signals,
-                      const int         vCutsSize,
-                      const int         vCutMaxVecLen )
+                      const int         vCutsSize )
 {
     int myPair = blockIdx.x * 32 + threadIdx.y;
     int j      = __float2int_rd( 1.0f + __fsqrt_rd(1.0f+8.0f*myPair) ) / 2;
@@ -177,7 +176,7 @@ void idComputeResult( NearbyPoint*      nPoint,
     if( comp ) {
         const CutSignals* l_signals = &allcut_signals[i];
         const CutSignals* r_signals = &allcut_signals[j];
-        comp  = ( threadIdx.x < vCutMaxVecLen ) &&
+        comp  = ( threadIdx.x < tagParam.sampleCutLength ) &&
                   not l_signals->outOfBounds &&
                   not r_signals->outOfBounds;
         if( comp ) {
@@ -240,7 +239,6 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
                               const popart::geometry::matrix3x3  mInvT,
                               float2                             center,
                               const int                          vCutsSize,
-                              const int                          vCutMaxVecLen,
                               const float                        neighbourSize,
                               const size_t                       gridNSample,
                               NearbyPoint*                       point_buffer,
@@ -304,8 +302,7 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
           src,
           cut_buffer,
           signals,
-          vCutsSize,
-          vCutMaxVecLen );
+          vCutsSize );
 
     int numPairs = vCutsSize*(vCutsSize-1)/2;
     block.x = 32; // we use this to sum up signals
@@ -320,7 +317,7 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
 
     popart::identification::idComputeResult
         <<<grid,block>>>
-        ( nPoint, cut_buffer, signals, vCutsSize, vCutMaxVecLen );
+        ( nPoint, cut_buffer, signals, vCutsSize );
 }
 
 #if 0
@@ -477,7 +474,6 @@ float Frame::idCostFunction(
     NearbyPoint*                        cctag_pointer_buffer )
 {
     const size_t gridNSample   = params._imagedCenterNGridSample;
-    const size_t vCutMaxVecLen = params._sampleCutLength;
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     _meta.toDevice( Num_nearby_points, 0, _stream );
 #endif
@@ -534,7 +530,6 @@ float Frame::idCostFunction(
           mInvT,
           condCenter,
           vCuts.size(),
-          vCutMaxVecLen,
           currentNeighbourSize,
           gridNSample,
           point_buffer,
