@@ -461,58 +461,6 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
     delete [] plane.data;
 }
 
-double TagPipe::idCostFunction(
-    int                                        level,
-    const cctag::numerical::geometry::Ellipse& ellipse,
-    const cctag::Point2dN<double>&             oldCenterIn,
-    std::vector<cctag::ImageCut>&              vCuts,
-    const float                                currentNeighbourSize,
-    cctag::Point2dN<double>&                   newCenterOut,
-    cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
-    const cctag::Parameters&                   params,
-    NearbyPoint*                               cctag_pointer_buffer )
-{
-    popart::geometry::ellipse e( ellipse.matrix()(0,0),
-                                 ellipse.matrix()(0,1),
-                                 ellipse.matrix()(0,2),
-                                 ellipse.matrix()(1,0),
-                                 ellipse.matrix()(1,1),
-                                 ellipse.matrix()(1,2),
-                                 ellipse.matrix()(2,0),
-                                 ellipse.matrix()(2,1),
-                                 ellipse.matrix()(2,2),
-                                 ellipse.center().x(),
-                                 ellipse.center().y(),
-                                 ellipse.a(),
-                                 ellipse.b(),
-                                 ellipse.angle() );
-    float2 f = make_float2( oldCenterIn.x(), oldCenterIn.y() );
-
-    float2                      bestPoint;
-    popart::geometry::matrix3x3 bestHomography;
-    double avg = _frame[level]->idCostFunction( e,
-                                                f,
-                                                vCuts,
-                                                currentNeighbourSize,
-                                                bestPoint,
-                                                bestHomography,
-                                                params,
-                                                cctag_pointer_buffer );
-    if( avg < FLT_MAX ) {
-        newCenterOut.x() = bestPoint.x;
-        newCenterOut.y() = bestPoint.y;
-
-    #pragma unroll
-    for( int i=0; i<3; i++ ) {
-        #pragma unroll
-        for( int j=0; j<3; j++ ) {
-                bestHomographyOut(i,j) = bestHomography(i,j);
-            }
-        }
-    }
-    return avg;
-}
-
 __host__
 bool TagPipe::imageCenterOptLoop(
     int                                        level,

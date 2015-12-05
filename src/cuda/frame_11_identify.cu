@@ -503,8 +503,8 @@ float Frame::idCostFunction(
     ellipse.projectiveTransform( mInvT, transformedEllipse );
 
     bool first_iteration = true;
-    for( ; iterations>0; i-- ) {
-    I   float neighSize = currentNeighbourSize * max( transformedEllipse.a(),
+    for( ; iterations>0; iterations-- ) {
+        float neighSize = currentNeighbourSize * max( transformedEllipse.a(),
                                                       transformedEllipse.b() );
 
         dim3 block( 32, 32, 1 );

@@ -71,18 +71,7 @@ public:
         const cctag::Parameters&                   params,
         NearbyPoint*                               cctag_pointer_buffer );
 
-    double idCostFunction(
-        int                                        level,
-        const cctag::numerical::geometry::Ellipse& ellipse,
-        const cctag::Point2dN<double>&             oldCenterIn,
-        std::vector<cctag::ImageCut>&              vCuts,
-        const float                                currentNeighbourSize,
-        cctag::Point2dN<double>&                   newCenterOut,
-        cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
-        const cctag::Parameters&                   params,
-        NearbyPoint*                               cctag_pointer_buffer );
-
-    size_t getSignalBufferByteSize( int level ) const;
+    // size_t getSignalBufferByteSize( int level ) const;
 
     void uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts );
 

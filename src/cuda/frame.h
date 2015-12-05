@@ -238,6 +238,7 @@ public:
     // implemented in frame_11_identify.cu
     __host__
     float idCostFunction(
+        int                                 iterations,
         const popart::geometry::ellipse&    ellipse,
         const float2                        center,
         const std::vector<cctag::ImageCut>& vCuts,
