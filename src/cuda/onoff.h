@@ -54,7 +54,7 @@
  * for debugging only. Required because of crash -O3 but not
  * with -G
  */
-#define DEBUG_FRAME_UPLOAD_CUTS
+#undef DEBUG_FRAME_UPLOAD_CUTS
 
 /* Define if you want to compute identity both on GPU and CPU.
  * The GPU version takes precedence.

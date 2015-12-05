@@ -234,8 +234,10 @@ void idComputeResult( NearbyPoint*      nPoint,
 
 __global__
 void idNearbyPointDispatcher( FrameMetaPtr                       meta,
+                              bool                               first_iteration,
                               cv::cuda::PtrStepSzb               src,
                               const popart::geometry::ellipse    ellipse,
+                              const popart::geometry::matrix3x3  mT,
                               const popart::geometry::matrix3x3  mInvT,
                               float2                             center,
                               const int                          vCutsSize,
@@ -248,6 +250,13 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
     const float gridWidth = neighbourSize;
     const float halfWidth = gridWidth/2.0f;
     const float stepSize  = gridWidth * __frcp_rn( float(gridNSample-1) );
+
+    if( not first_iteration ) {
+        // the best center is located in point_buffer[0]
+        center = point_buffer[0].point;
+        // @lilian: why do we need this "center = mT * center" in every iteration?
+    }
+    mT.condition( center );
 
     int i = blockIdx.x * 32 + threadIdx.x;
     int j = blockIdx.y * 32 + threadIdx.y;
@@ -279,15 +288,14 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
     ellipse.computeHomographyFromImagedCenter( nPoint->point, nPoint->mHomography );
     nPoint->mHomography.invert( nPoint->mInvHomography );
 
-    // GRIFF: is this multiplication correct???
-    identification::CutSignals*  signals = &sig_buffer[idx * vCutsSize];
+    identification::CutSignals* signals = &sig_buffer[idx * vCutsSize];
 
     dim3 block( 32, // we use this to sum up signals
                 32, // 32 cuts in one block
                 1 );
     dim3 grid(  grid_divide( vCutsSize, 32 ), // ceil(#cuts/32) blocks needed
                 1,
-	       	1 );
+                1 );
 
 #if 0
     cerr << "GPU: #vCuts=" << vCutsSize << " vCutMaxLen=" << vCutMaxVecLen
@@ -464,6 +472,7 @@ void Frame::uploadCuts( const std::vector<cctag::ImageCut>& vCuts )
 
 __host__
 float Frame::idCostFunction(
+    int                                 iterations,
     const popart::geometry::ellipse&    ellipse,
     const float2                        center,
     const std::vector<cctag::ImageCut>& vCuts,
@@ -474,25 +483,6 @@ float Frame::idCostFunction(
     NearbyPoint*                        cctag_pointer_buffer )
 {
     const size_t gridNSample   = params._imagedCenterNGridSample;
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    _meta.toDevice( Num_nearby_points, 0, _stream );
-#endif
-
-    const size_t g = gridNSample * gridNSample;
-    if( g*sizeof(NearbyPoint) > getNearbyPointBufferByteSize() ) {
-        cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold point search rsults" << endl;
-        exit( -1 );
-    }
-
-    if( vCuts.size() * sizeof(identification::CutStruct) > getCutStructBufferByteSize() ) {
-        cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold all intermediate homographies" << endl;
-        exit( -1 );
-    }
-
-    clearSignalBuffer( );
-    uploadCuts( vCuts );
 
     /* reusing various image-sized plane */
     NearbyPoint*                 point_buffer;
@@ -503,6 +493,7 @@ float Frame::idCostFunction(
     cut_buffer    = getCutStructBuffer();
     signal_buffer = getSignalBuffer();
 
+    // should this ellipse change?
     popart::geometry::matrix3x3 mT;
     ellipse.makeConditionerFromEllipse( mT );
     popart::geometry::matrix3x3 mInvT;
@@ -511,30 +502,31 @@ float Frame::idCostFunction(
     popart::geometry::ellipse transformedEllipse;
     ellipse.projectiveTransform( mInvT, transformedEllipse );
 
-    currentNeighbourSize *= max( transformedEllipse.a(),
-                                 transformedEllipse.b() );
+    bool first_iteration = true;
+    for( ; iterations>0; i-- ) {
+    I   float neighSize = currentNeighbourSize * max( transformedEllipse.a(),
+                                                      transformedEllipse.b() );
 
-    float2 condCenter = center;
-    mT.condition( condCenter );
+        dim3 block( 32, 32, 1 );
+        dim3 grid( grid_divide( gridNSample, 32 ),
+                   grid_divide( gridNSample, 32 ),
+                   1 );
 
-    dim3 block( 32, 32, 1 );
-    dim3 grid( grid_divide( gridNSample, 32 ),
-               grid_divide( gridNSample, 32 ),
-               1 );
-
-    popart::identification::idNearbyPointDispatcher
-        <<<grid,block,0,_stream>>>
-        ( _meta,
-          _d_plane,
-          ellipse,
-          mInvT,
-          condCenter,
-          vCuts.size(),
-          currentNeighbourSize,
-          gridNSample,
-          point_buffer,
-          cut_buffer,
-          signal_buffer );
+        popart::identification::idNearbyPointDispatcher
+            <<<grid,block,0,_stream>>>
+            ( _meta,
+              first_iteration,
+              _d_plane,
+              ellipse,
+              mT,
+              mInvT,
+              center,
+              vCuts.size(),
+              neighSize,
+              gridNSample,
+              point_buffer,
+              cut_buffer,
+              signal_buffer );
 
 #if 0
 // #ifdef CPU_GPU_COST_FUNCTION_COMPARE
@@ -552,27 +544,26 @@ float Frame::idCostFunction(
     std::cerr << "Number of nearby points on device: " << aNumber << std::endl;
 #endif
 
-    /* We search for the minimum of gridNSample x gridNSample
-     * nearby points. Default for gridNSample is 5.
-     * It is therefore most efficient to use a single-warp kernel
-     * for the search.
-     */
-    block.x = 32;
-    block.y = 1;
-    block.z = 1;
-    grid.x  = 1;
-    grid.y  = 1;
-    grid.z  = 1;
-    int gridSquare = gridNSample * gridNSample;
+        /* We search for the minimum of gridNSample x gridNSample
+         * nearby points. Default for gridNSample is 5.
+         * It is therefore most efficient to use a single-warp kernel
+         * for the search.
+         */
+        int gridSquare = gridNSample * gridNSample;
 
-    if( gridSquare < 32 ) {
-        popart::identification::idBestNearbyPoint31max
-            <<<grid,block,0,_stream>>>
-            ( point_buffer, gridSquare );
-    } else {
-        popart::identification::idBestNearbyPoint32plus
-            <<<grid,block,0,_stream>>>
-            ( point_buffer, gridSquare );
+        if( gridSquare < 32 ) {
+            popart::identification::idBestNearbyPoint31max
+                <<<1,32,0,_stream>>>
+                  ( point_buffer, gridSquare );
+        } else {
+            popart::identification::idBestNearbyPoint32plus
+                <<<1,32,0,_stream>>>
+                  ( point_buffer, gridSquare );
+        }
+
+        currentNeighbourSize /= (float)((gridNSample-1)/2) ;
+
+        first_iteration = false;
     }
 
     /* When this kernel finishes, the best point does not
@@ -584,13 +575,12 @@ float Frame::idCostFunction(
                                    _stream );
 
     cudaStreamSynchronize( _stream );
-    if( cctag_pointer_buffer->readable ) {
-        bestPointOut      = cctag_pointer_buffer->point;
-        bestHomographyOut = cctag_pointer_buffer->mHomography;
-        return cctag_pointer_buffer->result / cctag_pointer_buffer->resSize;
-    } else {
+    if( not cctag_pointer_buffer->readable ) {
         return FLT_MAX;
     }
+    bestPointOut      = cctag_pointer_buffer->point;
+    bestHomographyOut = cctag_pointer_buffer->mHomography;
+    return cctag_pointer_buffer->result / cctag_pointer_buffer->resSize;
 }
 
 __host__
@@ -603,13 +593,39 @@ bool Frame::imageCenterOptLoop(
     NearbyPoint*                        cctag_pointer_buffer )
 {
     const size_t gridNSample   = params._imagedCenterNGridSample;
+
+    const size_t g = gridNSample * gridNSample;
+    if( g*sizeof(NearbyPoint) > getNearbyPointBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold point search rsults" << endl;
+        exit( -1 );
+    }
+
+    if( vCuts.size() * sizeof(identification::CutStruct) > getCutStructBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold all intermediate homographies" << endl;
+        exit( -1 );
+    }
+
+    clearSignalBuffer( );
+    uploadCuts( vCuts );
+
     const float  maxSemiAxis   = std::max( outerEllipse.a(), outerEllipse.b() );
     float        neighbourSize = params._imagedCenterNeighbourSize;
+    int          iterations    = 0;
 
     while( neighbourSize*maxSemiAxis > 0.02 ) {
+        iterations += 1;
+        neighbourSize /= (float)((gridNSample-1)/2) ;
+    }
+
+    neighbourSize = params._imagedCenterNeighbourSize;
+
+    for( ; iterations > 0;  iterations-- ) {
         float  residual;
         float2 bestPointOut;
-        residual = idCostFunction( outerEllipse,
+        residual = idCostFunction( iterations,
+                                   outerEllipse,
                                    center,
                                    vCuts,
                                    neighbourSize,
