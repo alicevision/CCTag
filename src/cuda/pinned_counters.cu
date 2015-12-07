@@ -24,12 +24,15 @@ PinnedCounters::PinnedCounters( )
 
 PinnedCounters::~PinnedCounters( )
 {
-    cudaFreeHost( pinned_counters._counters );
-    cudaFreeHost( pinned_counters._nearby_points );
 }
 
 void PinnedCounters::init( ) {
     pinned_counters.obj_init();
+}
+
+void PinnedCounters::release( ) {
+    POP_CUDA_FREE_HOST( pinned_counters._counters );
+    POP_CUDA_FREE_HOST( pinned_counters._nearby_points );
 }
 
 int& PinnedCounters::getCounter( )
