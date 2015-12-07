@@ -178,7 +178,7 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
     cudaError_t err;
     err = cudaMemcpyToSymbolAsync( frame_meta, // _d_symbol_ptr,
                                    &val,
-                                   sizeof(int),
+                                   sizeof(float),
                                    offset,
                                    cudaMemcpyHostToDevice,
                                    stream );
@@ -203,7 +203,7 @@ void FrameMetaPtr::toDevice_D2S( FrameMetaEnum e, float* val, cudaStream_t strea
     cudaError_t err;
     err = cudaMemcpyToSymbolAsync( frame_meta, // _d_symbol_ptr,
                                    val,
-                                   sizeof(int),
+                                   sizeof(float),
                                    offset,
                                    cudaMemcpyDeviceToDevice,
                                    stream );
@@ -265,7 +265,7 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream 
     cudaError_t err;
     err = cudaMemcpyFromSymbolAsync( &val,
                                      frame_meta, // _d_symbol_ptr,
-                                     sizeof(int),
+                                     sizeof(float),
                                      offset,
                                      cudaMemcpyDeviceToHost,
                                      stream );
