@@ -39,6 +39,7 @@ public:
     void initialize( const uint32_t pix_w,
                      const uint32_t pix_h,
                      cctag::logtime::Mgmt* durations );
+    void release( );
     void load( unsigned char* pix );
     void tagframe( );
     void handleframe( int layer );
