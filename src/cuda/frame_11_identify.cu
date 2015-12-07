@@ -8,6 +8,8 @@
 #include "nearby_point.h"
 #include "tag_cut.h"
 
+#undef NO_ATOMIC
+
 using namespace std;
 
 namespace popart {
@@ -15,20 +17,11 @@ namespace popart {
 namespace identification {
 
 __device__
+inline
 float getPixelBilinear( cv::cuda::PtrStepSzb src, float2 xy )
 {
     const int px = (int)xy.x; // floor of x
     const int py = (int)xy.y; // floor of y
-#if 0
-    if( px != clamp( px, src.cols-1 ) ) {
-        printf("Should clamp px from %d to %d\n", px, clamp( px, src.cols-1 ) );
-    }
-    if( py != clamp( py, src.rows-1 ) ) {
-        printf("Should clamp py from %d to %d\n", py, clamp( py, src.rows-1 ) );
-    }
-    px = clamp( px, src.cols-1 );
-    py = clamp( py, src.rows-1 );
-#endif
 
     // uint8_t p0 = src.ptr(py  )[px  ];
     const uint8_t p1 = src.ptr(py  )[px  ];
@@ -52,6 +45,7 @@ float getPixelBilinear( cv::cuda::PtrStepSzb src, float2 xy )
 }
 
 __device__
+inline
 void extractSignalUsingHomography( const CutStruct&                   cut,
                                    CutSignals*                        signals,
                                    cv::cuda::PtrStepSzb               src,
@@ -146,12 +140,24 @@ void idGetSignals( const int            tagIndex,
  */
 __global__
 void idComputeResult( const int         tagIndex,
-                      NearbyPoint*      nPoint,
+                      NearbyPoint*      point_buffer,
                       const CutStruct*  vCuts,
-                      const CutSignals* allcut_signals,
+                      const CutSignals* sig_buffer,
                       const int         vCutsSize )
 {
+  const size_t gridNSample = tagParam.gridNSample;
+  const int grid_i   = blockIdx.y;
+  const int grid_j   = blockIdx.z;
+  const int grid_idx = grid_j * gridNSample + grid_i;
+  const CutSignals* allcut_signals = &sig_buffer[grid_idx * vCutsSize];
+  NearbyPoint* const nPoint  = &point_buffer[grid_idx];
+
+#ifdef NO_ATOMIC
+  const int numPairs = vCutsSize*(vCutsSize-1)/2;
+  for( int myPair = threadIdx.y; myPair < numPairs; myPair += 32 ) {
+#else
     int myPair = blockIdx.x * 32 + threadIdx.y;
+#endif
     int j      = __float2int_rd( 1.0f + __fsqrt_rd(1.0f+8.0f*myPair) ) / 2;
     int i      = myPair - j*(j-1)/2;
 
@@ -214,10 +220,19 @@ void idComputeResult( const int         tagIndex,
         ct  += __shfl_down( ct,  1 );
 
         if( threadIdx.x == 0 ) {
+#ifdef NO_ATOMIC
+            nPoint->result  += val;
+            nPoint->resSize += ct;
+#else
             atomicAdd( &nPoint->result,  val );
             atomicAdd( &nPoint->resSize, ct );
+#endif
         }
     }
+#ifdef NO_ATOMIC
+    __syncthreads();
+  }
+#endif
 }
 
 __global__
@@ -252,23 +267,20 @@ void getSignalsAllNearbyPoints(
     if( i >= gridNSample ) return;
     if( j >= gridNSample ) return;
 
+    const int idx = j * gridNSample + i;
 
-    NearbyPoint* nPoint;
-    identification::CutSignals* signals;
 
-    {
-        const int idx = j * gridNSample + i;
-        nPoint  = &point_buffer[idx];
-        signals = &sig_buffer[idx * vCutsSize];
-    }
+    NearbyPoint* nPoint = &point_buffer[idx];
+    identification::CutSignals* signals = &sig_buffer[idx * vCutsSize];
 
-    nPoint->point = make_float2( center.x - halfWidth + i*stepSize,
-                                center.y - halfWidth + j*stepSize );
+    float2 condCenter = make_float2( center.x - halfWidth + i*stepSize,
+                                     center.y - halfWidth + j*stepSize );
 
     popart::geometry::matrix3x3  mInvT;
     mT.invert( mInvT ); // note: returns false if it fails
-    mInvT.condition( nPoint->point );
+    mInvT.condition( condCenter );
 
+    nPoint->point    = condCenter;
     nPoint->result   = 0.0f;
     nPoint->resSize  = 0;
     nPoint->readable = true;
@@ -304,61 +316,6 @@ void getSignalsAllNearbyPoints(
           signals,
           vCutsSize );
 }
-
-__global__
-void computeResultAllNearbyPoints(
-    const int                          tagIndex,
-    const int                          vCutsSize,
-    NearbyPoint*                       point_buffer,
-    const identification::CutStruct*   cut_buffer,
-    identification::CutSignals*        sig_buffer )
-{
-    const size_t gridNSample = tagParam.gridNSample;
-    const int    i           = blockIdx.x * 32 + threadIdx.x;
-    const int    j           = blockIdx.y * 32 + threadIdx.y;
-    const int    idx         = j * gridNSample + i;
-
-    identification::CutSignals* signals = &sig_buffer[idx * vCutsSize];
-    NearbyPoint* const          nPoint  = &point_buffer[idx];
-
-    const int numPairs = vCutsSize*(vCutsSize-1)/2;
-    dim3 block( 32, // we use this to sum up signals
-                32, // we can use some shared memory/warp magic for summing
-                1 );
-    dim3 grid( grid_divide( numPairs, 32 ), 1, 1 );
-
-    popart::identification::idComputeResult
-        <<<grid,block>>>
-        ( tagIndex, nPoint, cut_buffer, signals, vCutsSize );
-}
-
-#if 0
-__global__
-void validateSignals( size_t                             gridNSample,
-                      const int                          vCutsSize,
-                      NearbyPoint*       point_buffer,
-                      const identification::CutStruct*   cut_buffer,
-                      identification::CutSignals*        sig_buffer )
-{
-    for( int i = 0; i<gridNSample; i++ ) {
-        for( int j = 0; j<gridNSample; j++ ) {
-            int idx = j * gridNSample + i;
-            NearbyPoint* nPoint  = &point_buffer[idx];
-	    printf("point (%.3f,%.3f)\n", nPoint->point.x, nPoint->point.y);
-            for( int cut = 0; cut<vCutsSize; cut++ ) {
-                const identification::CutStruct*  cutptr  = &cut_buffer[cut];
-                identification::CutSignals* signals = &sig_buffer[idx * vCutsSize+cut];
-		int n   = cutptr->sigSize;
-		int oob = signals->outOfBounds;
-		printf("    cut %d has sigSize %d is out of bounds: %d\n", cut, n, oob );
-		if( not oob ) {
-		    printf("    %.3f - %.3f\n", signals[0], signals[n-1] );
-		}
-            }
-	}
-    }
-}
-#endif
 
 __global__
 void idBestNearbyPoint32plus( NearbyPoint* point_buffer, const size_t gridSquare )
@@ -485,6 +442,9 @@ float Frame::idCostFunction(
     ellipse.projectiveTransform( mInvT, transformedEllipse );
 
     bool first_iteration = true;
+
+    // cerr << "TagIndex: " << tagIndex << " number of loops: " << iterations << endl;
+
     for( ; iterations>0; iterations-- ) {
         float neighSize = currentNeighbourSize * max( transformedEllipse.a(),
                                                       transformedEllipse.b() );
@@ -510,30 +470,23 @@ float Frame::idCostFunction(
               signal_buffer );
         POP_CHK_CALL_IFSYNC;
 
-        popart::identification::computeResultAllNearbyPoints
-            <<<grid,block,0,_stream>>>
-            ( tagIndex,
-              vCutSize,
-              point_buffer,
-              cut_buffer,
-              signal_buffer );
-        POP_CHK_CALL_IFSYNC;
-
-#if 0
-// #ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    popart::identification::validateSignals
-        <<<1,1,0,_stream>>>
-        ( gridNSample,
-          vCuts.size(),
-          point_buffer,
-          cut_buffer,
-          signal_buffer );
-
-    int aNumber;
-    _meta.fromDevice( Num_nearby_points, aNumber, _stream );
-    cudaStreamSynchronize( _stream );
-    std::cerr << "Number of nearby points on device: " << aNumber << std::endl;
+        dim3 id_block( 32, // we use this to sum up signals
+                       32, // we can use some shared memory/warp magic for summing
+                       1 );
+#ifdef NO_ATOMIC
+        dim3 id_grid( 1,
+                      gridNSample,
+                      gridNSample );
+#else
+        const int numPairs = vCutSize*(vCutSize-1)/2;
+        dim3 id_grid( grid_divide( numPairs, 32 ),
+                gridNSample,
+                gridNSample );
 #endif
+
+        popart::identification::idComputeResult
+            <<<id_grid,id_block,0,_stream>>>
+            ( tagIndex, point_buffer, cut_buffer, signal_buffer, vCutSize );
 
         /* We search for the minimum of gridNSample x gridNSample
          * nearby points. Default for gridNSample is 5.
@@ -604,24 +557,22 @@ bool Frame::imageCenterOptLoop(
 
     neighbourSize = params._imagedCenterNeighbourSize;
 
-    for( ; iterations > 0;  iterations-- ) {
-        float  residual;
-        float2 bestPointOut;
-        residual = idCostFunction( tagIndex,
-                                   iterations,
-                                   outerEllipse,
-                                   center,
-                                   vCutSize,
-                                   neighbourSize,
-                                   bestPointOut,
-                                   bestHomographyOut,
-                                   params,
-                                   cctag_pointer_buffer );
+    float  residual;
+    float2 bestPointOut;
+    residual = idCostFunction( tagIndex,
+                               iterations,
+                               outerEllipse,
+                               center,
+                               vCutSize,
+                               neighbourSize,
+                               bestPointOut,
+                               bestHomographyOut,
+                               params,
+                               cctag_pointer_buffer );
 
-        if( residual == FLT_MAX ) return false;
-        center        =  bestPointOut;
-        neighbourSize /= (float)((gridNSample-1)/2) ;
-    }
+    if( residual == FLT_MAX ) return false;
+    center        =  bestPointOut;
+    neighbourSize /= (float)((gridNSample-1)/2) ;
     return true;
 }
 
