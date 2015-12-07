@@ -15,10 +15,10 @@ namespace popart {
 namespace identification {
 
 __device__
-inline float getPixelBilinear( cv::cuda::PtrStepSzb src, float2 xy )
+float getPixelBilinear( cv::cuda::PtrStepSzb src, float2 xy )
 {
-    int px = (int)xy.x; // floor of x
-    int py = (int)xy.y; // floor of y
+    const int px = (int)xy.x; // floor of x
+    const int py = (int)xy.y; // floor of y
 #if 0
     if( px != clamp( px, src.cols-1 ) ) {
         printf("Should clamp px from %d to %d\n", px, clamp( px, src.cols-1 ) );
@@ -31,21 +31,21 @@ inline float getPixelBilinear( cv::cuda::PtrStepSzb src, float2 xy )
 #endif
 
     // uint8_t p0 = src.ptr(py  )[px  ];
-    uint8_t p1 = src.ptr(py  )[px  ];
-    uint8_t p2 = src.ptr(py  )[px+1];
-    uint8_t p3 = src.ptr(py+1)[px  ];
-    uint8_t p4 = src.ptr(py+1)[px+1];
+    const uint8_t p1 = src.ptr(py  )[px  ];
+    const uint8_t p2 = src.ptr(py  )[px+1];
+    const uint8_t p3 = src.ptr(py+1)[px  ];
+    const uint8_t p4 = src.ptr(py+1)[px+1];
 
     // Calculate the weights for each pixel
-    float fx  = xy.x - (float)px;
-    float fy  = xy.y - (float)py;
-    float fx1 = 1.0f - fx;
-    float fy1 = 1.0f - fy;
+    const float fx  = xy.x - (float)px;
+    const float fy  = xy.y - (float)py;
+    const float fx1 = 1.0f - fx;
+    const float fy1 = 1.0f - fy;
 
-    float w1 = fx1 * fy1;
-    float w2 = fx  * fy1;
-    float w3 = fx1 * fy;
-    float w4 = fx  * fy;
+    const float w1 = fx1 * fy1;
+    const float w2 = fx  * fy1;
+    const float w3 = fx1 * fy;
+    const float w4 = fx  * fy;
 
     // Calculate the weighted sum of pixels (for each color channel)
     return ( p1 * w1 + p2 * w2 + p3 * w3 + p4 * w4 ) / 2.0f;
@@ -115,7 +115,7 @@ void idGetSignals( const int            tagIndex,
                    CutSignals*          signals,
                    const int            vCutsSize )
 {
-    int myCutIdx = blockIdx.x * 32 + threadIdx.y;
+    int myCutIdx = blockIdx.x * blockDim.y + threadIdx.y;
 
     if( myCutIdx >= vCutsSize ) {
         // warps do never loose lockstep because of this
@@ -221,19 +221,19 @@ void idComputeResult( const int         tagIndex,
 }
 
 __global__
-void idNearbyPointDispatcher( FrameMetaPtr                       meta,
-                              const int                          tagIndex,
-                              bool                               first_iteration,
-                              cv::cuda::PtrStepSzb               src,
-                              const popart::geometry::ellipse    ellipse,
-                              const popart::geometry::matrix3x3  mT,
-                              const popart::geometry::matrix3x3  mInvT,
-                              float2                             center,
-                              const int                          vCutsSize,
-                              const float                        neighbourSize,
-                              NearbyPoint*                       point_buffer,
-                              const identification::CutStruct*   cut_buffer,
-                              identification::CutSignals*        sig_buffer )
+void getSignalsAllNearbyPoints(
+    const int                          tagIndex,
+    bool                               first_iteration,
+    cv::cuda::PtrStepSzb               src,
+    const popart::geometry::ellipse    ellipse,
+    const popart::geometry::matrix3x3  mT,
+    // const popart::geometry::matrix3x3  mInvT,
+    float2                             center,
+    const int                          vCutsSize,
+    const float                        neighbourSize,
+    NearbyPoint*                       point_buffer,
+    const identification::CutStruct*   cut_buffer,
+    identification::CutSignals*        sig_buffer )
 {
     const size_t gridNSample = tagParam.gridNSample;
     const float  gridWidth   = neighbourSize;
@@ -247,29 +247,27 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
     }
     mT.condition( center );
 
-    int i = blockIdx.x * 32 + threadIdx.x;
-    int j = blockIdx.y * 32 + threadIdx.y;
+    const int i = blockIdx.x * 32 + threadIdx.x;
+    const int j = blockIdx.y * 32 + threadIdx.y;
     if( i >= gridNSample ) return;
     if( j >= gridNSample ) return;
 
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    atomicAdd( &meta.num_nearby_points(), 1);
-    // confirmed: there is exactly one instance of this kernel for every NearbyPoint
-    //            with exactly the same values as on the CPU
-    // confimed: host and device compute an identical number of NearbyPoints
-    //           and the points after mInvT.condition() are identical
-    //           consequently, mInvT is correct, and nPoint->point is correct
-    // confimed that number of cuts is idential on host and device
-#endif
-    int idx = j * gridNSample + i;
 
-    float2 point = make_float2( center.x - halfWidth + i*stepSize,
+    NearbyPoint* nPoint;
+    identification::CutSignals* signals;
+
+    {
+        const int idx = j * gridNSample + i;
+        nPoint  = &point_buffer[idx];
+        signals = &sig_buffer[idx * vCutsSize];
+    }
+
+    nPoint->point = make_float2( center.x - halfWidth + i*stepSize,
                                 center.y - halfWidth + j*stepSize );
-    mInvT.condition( point );
 
-    NearbyPoint* nPoint  = &point_buffer[idx];
-
-    nPoint->point = point;
+    popart::geometry::matrix3x3  mInvT;
+    mT.invert( mInvT ); // note: returns false if it fails
+    mInvT.condition( nPoint->point );
 
     nPoint->result   = 0.0f;
     nPoint->resSize  = 0;
@@ -277,14 +275,18 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
     ellipse.computeHomographyFromImagedCenter( nPoint->point, nPoint->mHomography );
     nPoint->mHomography.invert( nPoint->mInvHomography );
 
-    identification::CutSignals* signals = &sig_buffer[idx * vCutsSize];
 
-    dim3 block( 32, // we use this to sum up signals
-                32, // 32 cuts in one block
-                1 );
-    dim3 grid(  grid_divide( vCutsSize, 32 ), // ceil(#cuts/32) blocks needed
-                1,
-                1 );
+#if 1
+    const dim3 block( 32, // we use this to sum up signals
+                      32, // 32 cuts in one block
+                      1 );
+    const dim3 grid(  grid_divide( vCutsSize, 32 ), // ceil(#cuts/32) blocks needed
+                      1,
+                      1 );
+#else
+    const dim3 block( 32, 1, 1 ); // we use this to sum up signals
+    const dim3 grid( vCutsSize, 1, 1 );
+#endif
 
 #if 0
     cerr << "GPU: #vCuts=" << vCutsSize << " vCutMaxLen=" << vCutMaxVecLen
@@ -301,17 +303,29 @@ void idNearbyPointDispatcher( FrameMetaPtr                       meta,
           cut_buffer,
           signals,
           vCutsSize );
+}
 
-    int numPairs = vCutsSize*(vCutsSize-1)/2;
-    block.x = 32; // we use this to sum up signals
-    block.y = 32; // we can use some shared memory/warp magic for summing
-    block.z = 1;
-    grid.x  = grid_divide( numPairs, 32 );
-    grid.y  = 1;
-    grid.z  = 1;
+__global__
+void computeResultAllNearbyPoints(
+    const int                          tagIndex,
+    const int                          vCutsSize,
+    NearbyPoint*                       point_buffer,
+    const identification::CutStruct*   cut_buffer,
+    identification::CutSignals*        sig_buffer )
+{
+    const size_t gridNSample = tagParam.gridNSample;
+    const int    i           = blockIdx.x * 32 + threadIdx.x;
+    const int    j           = blockIdx.y * 32 + threadIdx.y;
+    const int    idx         = j * gridNSample + i;
 
-    // _meta.toDevice( Identification_result, 0.0f, _stream );
-    // _meta.toDevice( Identification_resct,  0,    _stream );
+    identification::CutSignals* signals = &sig_buffer[idx * vCutsSize];
+    NearbyPoint* const          nPoint  = &point_buffer[idx];
+
+    const int numPairs = vCutsSize*(vCutsSize-1)/2;
+    dim3 block( 32, // we use this to sum up signals
+                32, // we can use some shared memory/warp magic for summing
+                1 );
+    dim3 grid( grid_divide( numPairs, 32 ), 1, 1 );
 
     popart::identification::idComputeResult
         <<<grid,block>>>
@@ -480,21 +494,30 @@ float Frame::idCostFunction(
                    grid_divide( gridNSample, 32 ),
                    1 );
 
-        popart::identification::idNearbyPointDispatcher
+        popart::identification::getSignalsAllNearbyPoints
             <<<grid,block,0,_stream>>>
-            ( _meta,
-              tagIndex,
+            ( tagIndex,
               first_iteration,
               _d_plane,
               ellipse,
               mT,
-              mInvT,
+              // mInvT,
               center,
               vCutSize,
               neighSize,
               point_buffer,
               cut_buffer,
               signal_buffer );
+        POP_CHK_CALL_IFSYNC;
+
+        popart::identification::computeResultAllNearbyPoints
+            <<<grid,block,0,_stream>>>
+            ( tagIndex,
+              vCutSize,
+              point_buffer,
+              cut_buffer,
+              signal_buffer );
+        POP_CHK_CALL_IFSYNC;
 
 #if 0
 // #ifdef CPU_GPU_COST_FUNCTION_COMPARE
@@ -520,13 +543,17 @@ float Frame::idCostFunction(
         const int gridSquare = gridNSample * gridNSample;
 
         if( gridSquare < 32 ) {
+            POP_CHK_CALL_IFSYNC;
             popart::identification::idBestNearbyPoint31max
                 <<<1,32,0,_stream>>>
                   ( point_buffer, gridSquare );
+            POP_CHK_CALL_IFSYNC;
         } else {
+            POP_CHK_CALL_IFSYNC;
             popart::identification::idBestNearbyPoint32plus
                 <<<1,32,0,_stream>>>
                   ( point_buffer, gridSquare );
+            POP_CHK_CALL_IFSYNC;
         }
 
         currentNeighbourSize /= (float)((gridNSample-1)/2) ;
@@ -537,10 +564,12 @@ float Frame::idCostFunction(
     /* When this kernel finishes, the best point does not
      * exist or it is stored in point_buffer[0]
      */
+    POP_CHK_CALL_IFSYNC;
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( cctag_pointer_buffer,
                                    point_buffer,
                                    sizeof(popart::NearbyPoint),
                                    _stream );
+    POP_CHK_CALL_IFSYNC;
 
     cudaStreamSynchronize( _stream );
     if( not cctag_pointer_buffer->readable ) {
@@ -651,10 +680,12 @@ void Frame::clearSignalBuffer( )
              << endl;
         exit( -1 );
     }
+    POP_CHK_CALL_IFSYNC;
     POP_CUDA_MEMSET_ASYNC( _d_intermediate.data,
                            -1,
                            _h_intermediate.step * _h_intermediate.rows,
                            _stream );
+    POP_CHK_CALL_IFSYNC;
 #endif // DEBUG_FRAME_UPLOAD_CUTS
 }
 
