@@ -144,9 +144,9 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     DebugImage::writePGMscaled( filename + "-04-hystedges.pgm", hystedges );
 #endif // DEBUG_WRITE_HYSTEDGES_AS_PGM
 
-#ifdef DEBUG_WRITE_EDGES_AS_PGM
+#ifndef NDEBUG
     const cv::cuda::PtrStepSzb&  edges = _h_edges;
-#endif // DEBUG_WRITE_EDGES_AS_PGM
+#endif // NDEBUG
 
 #ifdef DEBUG_WRITE_EDGES_AS_PGM
     DebugImage::writePGMscaled( filename + "-05-edges.pgm", edges );
