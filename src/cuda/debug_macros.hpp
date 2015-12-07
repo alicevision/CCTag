@@ -213,6 +213,7 @@ void pop_cuda_malloc_pitch( void**      ptr,
                             uint32_t    byte_width, uint32_t byte_height,
                             const char* file, uint32_t line );
 void pop_cuda_free( void* ptr, const char* file, uint32_t line );
+void pop_cuda_free_host( void* ptr, const char* file, uint32_t line );
 
 #define POP_CUDA_MALLOC( ptr, byte_size ) \
     pop_cuda_malloc( ptr, byte_size, __FILE__, __LINE__ )
@@ -236,6 +237,9 @@ void pop_cuda_free( void* ptr, const char* file, uint32_t line );
 
 #define POP_CUDA_FREE( ptr ) \
     pop_cuda_free( ptr, __FILE__, __LINE__ )
+
+#define POP_CUDA_FREE_HOST( ptr ) \
+    pop_cuda_free_host( ptr, __FILE__, __LINE__ )
 
 /*************************************************************
  * Group: CUDA stream handling

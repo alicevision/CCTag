@@ -181,12 +181,14 @@ bool Frame::applyVoteEval( )
 {
 #ifndef NDEBUG
     _interm_inner_points.copySizeFromDevice( _stream, EdgeListCont );
+    POP_CHK_CALL_IFSYNC;
     _voters.copySizeFromDevice( _stream, EdgeListWait );
     cerr << "Debug voting (with separable compilation)"
          << " # seed indices 2: " << _interm_inner_points.host.size
          << " # chained edgeco: " << _voters.host.size << endl;
 #endif
 
+    POP_CHK_CALL_IFSYNC;
     vote::dp_call_eval_chosen
         <<<1,1,0,_stream>>>
         ( _meta,

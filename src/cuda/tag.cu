@@ -590,10 +590,12 @@ void TagPipe::uploadCuts( int                                 numTags,
         }
     }
 
+    POP_CHK_CALL_IFSYNC;
     POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( _frame[0]->getCutStructBuffer(),
                                      _frame[0]->getCutStructBufferHost(),
                                      numTags * max_cuts_per_Tag * sizeof(identification::CutStruct),
                                      _frame[0]->_stream );
+    POP_CHK_CALL_IFSYNC;
 }
 
 

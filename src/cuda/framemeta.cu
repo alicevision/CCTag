@@ -88,6 +88,7 @@ FrameMetaPtr::FrameMetaPtr( int pipeId, int frameId )
 __host__
 void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
 {
+    POP_CHK_CALL_IFSYNC;
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
@@ -118,12 +119,14 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
                                    offset,
                                    cudaMemcpyHostToDevice,
                                    stream );
-    POP_CUDA_FATAL_TEST( err, "Could not copy int variable to device symbol" );
+    POP_CHK_CALL_IFSYNC;
+    POP_CUDA_FATAL_TEST( err, "Could not copy int variable to device symbol: " );
 }
 
 __host__
 void FrameMetaPtr::toDevice_D2S( FrameMetaEnum e, int* val, cudaStream_t stream )
 {
+    POP_CHK_CALL_IFSYNC;
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
@@ -154,12 +157,14 @@ void FrameMetaPtr::toDevice_D2S( FrameMetaEnum e, int* val, cudaStream_t stream 
                                    offset,
                                    cudaMemcpyDeviceToDevice,
                                    stream );
+    POP_CHK_CALL_IFSYNC;
     POP_CUDA_FATAL_TEST( err, "Could not copy int variable to device symbol" );
 }
 
 __host__
 void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
 {
+    POP_CHK_CALL_IFSYNC;
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
@@ -177,12 +182,14 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, float val, cudaStream_t stream )
                                    offset,
                                    cudaMemcpyHostToDevice,
                                    stream );
+    POP_CHK_CALL_IFSYNC;
     POP_CUDA_FATAL_TEST( err, "Could not copy float variable to device symbol" );
 }
 
 __host__
 void FrameMetaPtr::toDevice_D2S( FrameMetaEnum e, float* val, cudaStream_t stream )
 {
+    POP_CHK_CALL_IFSYNC;
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
@@ -200,12 +207,14 @@ void FrameMetaPtr::toDevice_D2S( FrameMetaEnum e, float* val, cudaStream_t strea
                                    offset,
                                    cudaMemcpyDeviceToDevice,
                                    stream );
+    POP_CHK_CALL_IFSYNC;
     POP_CUDA_FATAL_TEST( err, "Could not copy float variable to device symbol" );
 }
 
 __host__
 void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
 {
+    POP_CHK_CALL_IFSYNC;
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
@@ -235,12 +244,14 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
                                      offset,
                                      cudaMemcpyDeviceToHost,
                                      stream );
+    POP_CHK_CALL_IFSYNC;
     POP_CUDA_FATAL_TEST( err, "Could not copy int variable from device symbol: " );
 }
 
 __host__
 void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream )
 {
+    POP_CHK_CALL_IFSYNC;
     const size_t my_meta = _pipeId*FRAME_META_MAX_LEVELS+_frameId;
     intptr_t offset;
     switch( e ) {
@@ -258,6 +269,7 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, float& val, cudaStream_t stream 
                                      offset,
                                      cudaMemcpyDeviceToHost,
                                      stream );
+    POP_CHK_CALL_IFSYNC;
     POP_CUDA_FATAL_TEST( err, "Could not copy float variable from device symbol: " );
 }
 
