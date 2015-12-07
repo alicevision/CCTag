@@ -144,6 +144,9 @@ void TagPipe::handleframe( int i )
     time_vote->stop();
 #endif // not SHOW_DETAILED_TIMING
 
+    // note: without visual debug, only level 0 performs download
+    _frame[i]->applyPlaneDownload(); // async
+
     _frame[i]->applyGauss( _params ); // async
     _frame[i]->applyMag();  // async
 
@@ -154,7 +157,6 @@ void TagPipe::handleframe( int i )
     _frame[i]->applyVoteConstructLine();  // async
     _frame[i]->applyVoteSortUniq();  // async
 
-    _frame[i]->applyPlaneDownload(); // async
     _frame[i]->applyGaussDownload(); // async
     _frame[i]->applyMagDownload();
     _frame[i]->applyThinDownload(); // sync
