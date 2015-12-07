@@ -55,10 +55,45 @@ public:
     }
 
     __host__ __device__
-    float det( ) const;
+    inline
+    float det( ) const {
+        float det =  val[0][0] * ( val[1][1] * val[2][2] - val[2][1] * val[1][2] )
+                  - val[0][1] * ( val[1][0] * val[2][2] - val[1][2] * val[2][0] )
+                  + val[0][2] * ( val[1][0] * val[2][1] - val[1][1] * val[2][0] ) ;
+
+        return det;
+    }
 
     __host__ __device__
-    bool invert( matrix3x3& result ) const;
+    inline
+    bool invert( matrix3x3& result ) const {
+        float determinant = det( );
+
+        if( determinant == 0.0f )
+        {
+            return false;
+        }
+
+        result(0,0) = (  val[1][1] * val[2][2] - val[1][2] * val[2][1] )
+                    / determinant;
+        result(1,0) = ( -val[1][0] * val[2][2] + val[2][0] * val[1][2] )
+                    / determinant;
+        result(2,0) = (  val[1][0] * val[2][1] - val[2][0] * val[1][1] )
+                    / determinant;
+        result(0,1) = ( -val[0][1] * val[2][2] + val[2][1] * val[0][2] )
+                    / determinant;
+        result(1,1) = (  val[0][0] * val[2][2] - val[2][0] * val[0][2] )
+                    / determinant;
+        result(2,1) = ( -val[0][0] * val[2][1] + val[2][0] * val[0][1] )
+                    / determinant;
+        result(0,2) = (  val[0][1] * val[1][2] - val[1][1] * val[0][2] )
+                    / determinant;
+        result(1,2) = ( -val[0][0] * val[1][2] + val[1][0] * val[0][2] )
+                    / determinant;
+        result(2,2) = (  val[0][0] * val[1][1] - val[1][0] * val[0][1] )
+                    / determinant;
+        return true;
+    }
 
     __host__ __device__
     float2 applyHomography( const float2& vec ) const;
