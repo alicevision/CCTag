@@ -502,6 +502,7 @@ double costSelectCutFun(
   return ndir - alpha * sumVar;
 }
 
+#if 0
 /**
  * @brief Select a subset of image cuts appropriate for the image center optimisation.
  * This selection aims at maximizing the variance of the image signal over all the 
@@ -644,7 +645,7 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     }
   }
 }
-
+#endif
 
 void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
         std::size_t selectSize,
@@ -961,6 +962,7 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @brief Compute the optimal homography/imaged center based on the 
  * signal in the image and  the outer ellipse, supposed to be image the unit circle.
  * 
+ * @param[in] tagIndex a sequence number for this tag
  * @param[out] mHomography optimal image->cctag homography
  * @param[out] optimalPoint optimal imaged center
  * @param[out] vCuts cuts holding the rectified 1D signals at the end of the optimization
@@ -970,6 +972,7 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
+        const int tagIndex,
         cctag::numerical::BoundedMatrix3x3d & mHomography,
         Point2dN<double> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
@@ -984,11 +987,11 @@ bool refineConicFamilyGlob(
 
     if( cudaPipe ) {
         bool success = cudaPipe->imageCenterOptLoop(
-            0,
-            outerEllipse,                      // in
-            optimalPoint,                      // in-out
-            vCuts,                             // in
-            mHomography,                       // out
+            tagIndex,      // in
+            outerEllipse,  // in
+            optimalPoint,  // in-out
+            vCuts.size(),  // in - cuts are already uploaded
+            mHomography,   // out
             params,
             cctag_pointer_buffer );
 
@@ -1273,17 +1276,17 @@ double costFunctionGlob(
  *   ii) the outer ellipse + the obtained imaged center delivers the image->cctag homography
  *   iii) the rectified 1D signals are read and deliver the ID via a nearest neighbour
  *        approach where the distance to the cctag bank's profiles used is the one described in [Orazio et al. 2011]
+ * @param[in] tagIndex a sequence number assigned to this tag
  * @param[in] cctag whose center is to be optimized in conjunction with its associated homography.
- * @param[in] radiusRatios bank of radius ratios along with their associated IDs.
  * @param[in] src original gray scale image (original scale, uchar)
  * @param[in] params set of parameters
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
-int identify(
-  CCTag & cctag,
-  const std::vector< std::vector<double> > & radiusRatios, // todo: directly use the CCTagBank
+int identify_step_1(
+  const int tagIndex,
+  const CCTag & cctag,
+  std::vector<cctag::ImageCut>& vSelectedCuts,
   const cv::Mat &  src,
-  popart::TagPipe* cudaPipe,
   const cctag::Parameters & params)
 {
   // Get the outer ellipse in its original scale, i.e. in src.
@@ -1383,7 +1386,7 @@ int identify(
   
   // C. Select a sub sample of image cuts //////////////////////////////////////
   // Cheap in near future (CPU only)
-  std::vector< cctag::ImageCut > vSelectedCuts;
+
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
@@ -1421,7 +1424,41 @@ int identify(
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
   }
+
+  /* This is a fake return value. The important thing is to
+   * distinguish this from the return value
+   * status::no_collected_cuts
+   */
+  return status::id_reliable;
+}
   
+/**
+ * @brief Identify a marker:
+ *   i) its imaged center is optimized: A. 1D image cuts are selected ; B. the optimization is performed 
+ *   ii) the outer ellipse + the obtained imaged center delivers the image->cctag homography
+ *   iii) the rectified 1D signals are read and deliver the ID via a nearest neighbour
+ *        approach where the distance to the cctag bank's profiles used is the one described in [Orazio et al. 2011]
+ * @param[in] tagIndex a sequence number assigned to this tag
+ * @param[inout] cctag whose center is to be optimized in conjunction with its associated homography.
+ * @param[in] vSelectedCuts Cuts selected for this tag, list stays constant, signals are recomputed
+ * @params[in] radiusRatios the Bank information
+ * @param[in] src original gray scale image (original scale, uchar)
+ * @param[inout] cudaPipe entry object for processing on the GPU
+ * @param[in] params set of parameters
+ * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
+ */
+int identify_step_2(
+  const int tagIndex,
+  CCTag & cctag,
+  std::vector<cctag::ImageCut>& vSelectedCuts,
+  const std::vector< std::vector<double> > & radiusRatios, // todo: directly use the CCTagBank
+  const cv::Mat &  src,
+  popart::TagPipe* cudaPipe,
+  const cctag::Parameters & params)
+{
+  // Get the outer ellipse in its original scale, i.e. in src.
+  const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
+
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
   DO_TALK(
@@ -1459,7 +1496,16 @@ int identify(
   //       these signals will be collected inside the function.
   //       iii) cctag.homography(): 3x3 float homography, cctag.centerImg(): 2 floats (x,y), ellipse: (see Ellipse.hpp)
   // Begin GPU //////
-  bool hasConverged = refineConicFamilyGlob( cctag.homography(), cctag.centerImg(), vSelectedCuts, src, cudaPipe, ellipse, params, cctag.getNearbyPointBuffer() );
+  bool hasConverged = refineConicFamilyGlob(
+                        tagIndex,
+                        cctag.homography(),
+                        cctag.centerImg(),
+                        vSelectedCuts,
+                        src,
+                        cudaPipe,
+                        ellipse,
+                        params,
+                        cctag.getNearbyPointBuffer() );
   // End GPU ////////
   // Note Outputs (GPU->CPU):
   //        The main amount of data to transfert is only that way and is 'vSelectedCuts', 

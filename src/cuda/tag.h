@@ -62,18 +62,23 @@ public:
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
 
+    void checkTagAllocations( const int                numTags,
+                              const cctag::Parameters& params );
+
     bool imageCenterOptLoop(
-        int                                        level,
+        const int                                  tagIndex,
         const cctag::numerical::geometry::Ellipse& ellipse,
         cctag::Point2dN<double>&                   center,
-        const std::vector<cctag::ImageCut>&        vCuts,
+        const int                                  vCutSize,
         cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
         const cctag::Parameters&                   params,
         NearbyPoint*                               cctag_pointer_buffer );
 
     // size_t getSignalBufferByteSize( int level ) const;
 
-    void uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts );
+    void uploadCuts( int                                 numTags,
+                     const std::vector<cctag::ImageCut>* vCuts,
+                     const cctag::Parameters&            params );
 
     void debug( unsigned char* pix,
                 const cctag::Parameters& params );

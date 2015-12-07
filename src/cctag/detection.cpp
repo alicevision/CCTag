@@ -822,20 +822,57 @@ void cctagDetection(CCTag::List& markers,
     // Identification step
     if (params._doIdentification)
     {
+        int detected;
+        int tagIndex = 0;
+        const int numTags  = markers.size();
+
+#ifdef WITH_CUDA
+        if( pipe1 ) {
+            pipe1->checkTagAllocations( numTags, params );
+        }
+#endif // WITH_CUDA
+
+        std::vector<cctag::ImageCut> vSelectedCuts[ numTags ];
+
+        for( const CCTag& cctag : markers ) {
+            detected = cctag::identification::identify_step_1(
+                tagIndex,
+                cctag,
+                vSelectedCuts[tagIndex],
+                imagePyramid.getLevel(0)->getSrc(),
+                params );
+
+            tagIndex++;
+        }
+
+#ifdef WITH_CUDA
+        if( pipe1 ) {
+            pipe1->uploadCuts( numTags, vSelectedCuts, params );
+        }
+#endif // WITH_CUDA
+
+        tagIndex = 0;
+
         CCTag::List::iterator it = markers.begin();
         while (it != markers.end())
         {
             CCTag & cctag = *it;
 
-            const int detected = cctag::identification::identify(
-                cctag,
-                bank.getMarkers(),
-                imagePyramid.getLevel(0)->getSrc(),
-                pipe1,
-                params );
+            if( detected == status::id_reliable ) {
+                detected = cctag::identification::identify_step_2(
+                    tagIndex,
+                    cctag,
+                    vSelectedCuts[tagIndex],
+                    bank.getMarkers(),
+                    imagePyramid.getLevel(0)->getSrc(),
+                    pipe1,
+                    params );
+            }
 
             cctag.setStatus(detected);
             ++it;
+
+            tagIndex++;
         }
         if( durations ) durations->log( "after cctag::identification::identify" );
     }

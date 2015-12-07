@@ -72,6 +72,8 @@ void device_prop_t::print( )
                   << "    Concurrent kernels:    " << (ptr->concurrentKernels?"yes":"no") << endl
                   << "    Mapping host memory:   " << (ptr->canMapHostMemory?"yes":"no") << endl
                   << "    Unified addressing:    " << (ptr->unifiedAddressing?"yes":"no") << endl
+                  << "    Texture alignment:     " << ptr->textureAlignment << " byte" << endl
+                  << "    Pitch alignment:       " << ptr->texturePitchAlignment << " byte" << endl
                   << endl;
     }
 }

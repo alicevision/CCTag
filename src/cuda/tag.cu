@@ -16,6 +16,7 @@
 #include "cctag/logtime.hpp"
 #include "cuda/onoff.h"
 #include "cuda/tag_threads.h"
+#include "cuda/tag_cut.h"
 
 using namespace std;
 
@@ -463,10 +464,10 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
 
 __host__
 bool TagPipe::imageCenterOptLoop(
-    int                                        level,
+    const int                                  tagIndex,
     const cctag::numerical::geometry::Ellipse& ellipse,
     cctag::Point2dN<double>&                   center,
-    const std::vector<cctag::ImageCut>&        vCuts,
+    const int                                  vCutSize,
     cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
@@ -489,12 +490,13 @@ bool TagPipe::imageCenterOptLoop(
 
     popart::geometry::matrix3x3 bestHomography;
 
-    bool success = _frame[level]->imageCenterOptLoop( e,
-                                                      f,
-                                                      vCuts,
-                                                      bestHomography,
-                                                      params,
-                                                      cctag_pointer_buffer );
+    bool success = _frame[0]->imageCenterOptLoop( tagIndex,
+                                                  e,
+                                                  f,
+                                                  vCutSize,
+                                                  bestHomography,
+                                                  params,
+                                                  cctag_pointer_buffer );
 
     if( success ) {
         center.x() = f.x;
@@ -509,6 +511,87 @@ bool TagPipe::imageCenterOptLoop(
         }
     }
     return success;
+}
+
+/** How much GPU-side memory do we need?
+ *  For each tag (numTags), we need gridNSample^2  nearby points.
+ *  For each tag (numTags) and each nearby point (gridNSample^2), we
+ *    need a signal buffer (sizeof(CutSignals)).
+ *    Note that sizeof(CutSignals) must also be >=
+ *    sizeof(float) * sampleCutLength + sizeof(uint32_t)
+ *  For each tag (numTags), we need space for max cut size
+ *    (params._numCutsInIdentStep) cuts without the signals.
+ */
+void TagPipe::checkTagAllocations( const int                numTags,
+                                   const cctag::Parameters& params )
+{
+    const size_t gridNSample   = params._imagedCenterNGridSample;
+
+    const size_t g = numTags * gridNSample * gridNSample;
+
+    if( g*sizeof(NearbyPoint) > _frame[0]->getNearbyPointBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold point search results"
+             << endl;
+        exit( -1 );
+    }
+
+    if( g*sizeof(identification::CutSignals) > _frame[0]->getSignalBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold all signal buffers"
+             << endl;
+        exit( -1 );
+    }
+
+    if( numTags * params._numCutsInIdentStep * sizeof(identification::CutStruct) > _frame[0]->getCutStructBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold all intermediate homographies" << endl;
+        exit( -1 );
+    }
+}
+
+__host__
+void TagPipe::uploadCuts( int                                 numTags,
+                          const std::vector<cctag::ImageCut>* vCuts,
+                          const cctag::Parameters&            params )
+{
+    identification::CutStruct* csptr_base = _frame[0]->getCutStructBufferHost();
+
+    const int max_cuts_per_Tag = params._numCutsInIdentStep;
+
+    for( int tagIndex=0; tagIndex<numTags; tagIndex++ ) {
+        identification::CutStruct* csptr;
+        
+        csptr = &csptr_base[tagIndex * max_cuts_per_Tag];
+
+#if 1
+// #ifndef NDEBUG
+        if( vCuts[tagIndex].size() > max_cuts_per_Tag ) {
+            cerr << __FILE__ << "," << __LINE__ << ":" << endl
+                 << "    Programming error: assumption that number of cuts for a single tag is < params._numCutsInIdentStep is wrong" << endl;
+            exit( -1 );
+        }
+#endif // NDEBUG
+
+        std::vector<cctag::ImageCut>::const_iterator vit  = vCuts[tagIndex].begin();
+        std::vector<cctag::ImageCut>::const_iterator vend = vCuts[tagIndex].end();
+
+        for( ; vit!=vend; vit++ ) {
+            csptr->start.x     = vit->start().getX();
+            csptr->start.y     = vit->start().getY();
+            csptr->stop.x      = vit->stop().getX();
+            csptr->stop.y      = vit->stop().getY();
+            csptr->beginSig    = vit->beginSig();
+            csptr->endSig      = vit->endSig();
+            csptr->sigSize     = vit->imgSignal().size();
+            csptr++;
+        }
+    }
+
+    POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( _frame[0]->getCutStructBuffer(),
+                                     _frame[0]->getCutStructBufferHost(),
+                                     numTags * max_cuts_per_Tag * sizeof(identification::CutStruct),
+                                     _frame[0]->_stream );
 }
 
 

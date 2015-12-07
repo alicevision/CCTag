@@ -205,7 +205,7 @@ public:
     cv::Mat* getMag( ) const;
     cv::Mat* getEdges( ) const;
 
-private:
+protected:
     // implemented in frame_11_identify.cu
     /* to reuse various image-sized buffers, but retrieve their
      * bytesize to ensure that the new types fit into the
@@ -220,17 +220,16 @@ private:
     popart::identification::CutSignals*  getSignalBuffer( ) const;
     void                                 clearSignalBuffer( );
 
-private:
-    // implemented in frame_11_identify.cu
-    void uploadCuts( const std::vector<cctag::ImageCut>& vCuts );
+    friend class TagPipe;
 
 public:
     // implemented in frame_11_identify.cu
     __host__
     bool imageCenterOptLoop(
+        const int                           tagIndex,     // in
         const popart::geometry::ellipse&    outerEllipse, // in
         float2&                             center,       // in-out
-        const std::vector<cctag::ImageCut>& vCuts,        // out
+        const int                           vCutSize,     // in
         popart::geometry::matrix3x3&        bestHomographyOut, // out
         const cctag::Parameters&            params,
         NearbyPoint*                        cctag_pointer_buffer );
@@ -238,10 +237,11 @@ public:
     // implemented in frame_11_identify.cu
     __host__
     float idCostFunction(
+        const int                           tagIndex,
         int                                 iterations,
         const popart::geometry::ellipse&    ellipse,
         const float2                        center,
-        const std::vector<cctag::ImageCut>& vCuts,
+        const int                           vCutSize,     // in
         float                               currentNeighbourSize,
         float2&                             bestPointOut,
         popart::geometry::matrix3x3&        bestHomographyOut,
