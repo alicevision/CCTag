@@ -160,7 +160,7 @@ void dp_call_eval_chosen( FrameMetaPtr             meta,
                           DevEdgeList<int>         chosen_idx,
                           DevEdgeList<int>         inner_points ) // input
 {
-    int listsize = meta.list_size_inner_points();
+    int listsize = meta.list_size_interm_inner_points();
 
     dim3 block( 32, 32, 1 );
     dim3 grid ( grid_divide( listsize, CONC_POINTS ), 1, 1 );
