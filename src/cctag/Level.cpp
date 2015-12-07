@@ -79,15 +79,7 @@ void Level::setLevel( popart::TagPipe*         cuda_pipe,
         exit( -__LINE__ );
     }
 
-#if defined(VISUAL_DEBUG)
     _src   = cuda_pipe->getPlane( _level );
-#else // not defined(VISUAL_DEBUG)
-    if( _level == 0 ) {
-        _src = cuda_pipe->getPlane( _level );
-    } else {
-        _src = 0;
-    }
-#endif // not defined(VISUAL_DEBUG)
     _dx    = cuda_pipe->getDx( _level );
     _dy    = cuda_pipe->getDy( _level );
     _mag   = cuda_pipe->getMag( _level );
