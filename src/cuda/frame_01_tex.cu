@@ -40,7 +40,7 @@ void Frame::applyPlaneDownload( )
 {
 #if !defined(VISUAL_DEBUG)
     if( _layer != 0 ) return;
-#endif not defined(VISUAL_DEBUG)
+#endif // not defined(VISUAL_DEBUG)
 
     cudaStreamWaitEvent( _download_stream, _download_ready_event.plane, 0 );
 
