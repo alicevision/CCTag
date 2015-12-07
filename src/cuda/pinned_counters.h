@@ -26,6 +26,7 @@ public:
     ~PinnedCounters( );
 
     static void init( );
+    static void release( );
 
     static int& getCounter( );
 

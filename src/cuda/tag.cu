@@ -77,6 +77,12 @@ void TagPipe::initialize( const uint32_t pix_w,
 }
 
 __host__
+void TagPipe::release( )
+{
+    PinnedCounters::release( );
+}
+
+__host__
 uint32_t TagPipe::getWidth(  size_t layer ) const
 {
     return _frame[layer]->getWidth();
