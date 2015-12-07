@@ -101,6 +101,10 @@ IF(USE_CUDA)
     set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-DTHIS_IS_NVCC_DEBUG_MODE;-G;-g")
     set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-DTHIS_IS_NVCC_RELEASE_MODE;-O3")
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread")
+    # MORE NOISE:
+    # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;-v")
+    # DOES NOT WORK UNTIL CUDA 7.5:
+    # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
   ELSE(CUDA_FOUND)
     message( FATAL_ERROR "Failed to find CUDA" )
   ENDIF(CUDA_FOUND)
