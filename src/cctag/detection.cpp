@@ -822,8 +822,6 @@ void cctagDetection(CCTag::List& markers,
     // Identification step
     if (params._doIdentification)
     {
-        int detected;
-        int tagIndex = 0;
         const int numTags  = markers.size();
 
 #ifdef WITH_CUDA
@@ -833,9 +831,11 @@ void cctagDetection(CCTag::List& markers,
 #endif // WITH_CUDA
 
         std::vector<cctag::ImageCut> vSelectedCuts[ numTags ];
+        int                          detected[ numTags ];
+        int                          tagIndex = 0;
 
         for( const CCTag& cctag : markers ) {
-            detected = cctag::identification::identify_step_1(
+            detected[tagIndex] = cctag::identification::identify_step_1(
                 tagIndex,
                 cctag,
                 vSelectedCuts[tagIndex],
@@ -858,8 +858,8 @@ void cctagDetection(CCTag::List& markers,
         {
             CCTag & cctag = *it;
 
-            if( detected == status::id_reliable ) {
-                detected = cctag::identification::identify_step_2(
+            if( detected[tagIndex] == status::id_reliable ) {
+                detected[tagIndex] = cctag::identification::identify_step_2(
                     tagIndex,
                     cctag,
                     vSelectedCuts[tagIndex],
@@ -869,7 +869,7 @@ void cctagDetection(CCTag::List& markers,
                     params );
             }
 
-            cctag.setStatus(detected);
+            cctag.setStatus( detected[tagIndex] );
             ++it;
 
             tagIndex++;
