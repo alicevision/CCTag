@@ -804,6 +804,8 @@ void cctagDetection(CCTag::List& markers,
     // Identification step
     if (params._doIdentification)
     {
+      CCTagVisualDebug::instance().resetMarkerIndex();
+      
         CCTag::List::iterator it = markers.begin();
         while (it != markers.end())
         {

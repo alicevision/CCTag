@@ -64,6 +64,27 @@ int CCTagVisualDebug::getPyramidLevel() {
     return _pyramidLevel;
 }
 
+void CCTagVisualDebug::resetMarkerIndex() 
+{
+#ifdef CCTAG_SERIALIZE
+  _markerIndex = 0;;
+#endif
+}
+
+void CCTagVisualDebug::incrementMarkerIndex() 
+{
+#ifdef CCTAG_SERIALIZE
+  ++_markerIndex;
+#endif
+}
+
+std::size_t CCTagVisualDebug::getMarkerIndex() 
+{
+#ifdef CCTAG_SERIALIZE
+  return _markerIndex;
+#endif
+}
+
 std::string CCTagVisualDebug::getPath() const {
   return _path;
 }
@@ -96,6 +117,9 @@ void CCTagVisualDebug::newSession(const std::string & sessionName) {
   // Don't erase old sessions
   if (_sessions.find(sessionName) == _sessions.end()) {
       _sessions[sessionName] = _backImage;
+  }else
+  {
+    _backImage = _sessions[sessionName];
   }
 #endif
 }

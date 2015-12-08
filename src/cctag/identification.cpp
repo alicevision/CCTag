@@ -707,7 +707,7 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
       break;
   }
   
-  // B. teratively erase cuts while minimizing the sum of the normalized gradients
+  // B. iteratively erase cuts while minimizing the sum of the normalized gradients
   // over all outer points.
   while( mapBestIdCutOuterPoint.size() >  selectSize)
   {
@@ -1149,13 +1149,7 @@ bool imageCenterOptimizationGlob(
       
             // If at least one image cut has been properly read
             if ( readable )
-            {
-#ifdef OPTIM_CENTER_VISUAL_DEBUG // todo: write a proper function in visual debug
-                cv::Mat output;
-                createRectifiedCutImage(vCuts, output);
-                cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
-                ++k;
-#endif // OPTIM_CENTER_VISUAL_DEBUG        
+            {       
         
                 // Update the residual and the optimized parameters
                 hasASolution = true;
@@ -1534,6 +1528,18 @@ int identify(
     // used
     // v0.1 for the identification: use the most redundant id over all the rectified cut.
     identSuccessful = orazioDistanceRobust( vScore, radiusRatios, vSelectedCuts, params._minIdentProba);
+    
+#ifdef VISUAL_DEBUG // todo: write a proper function in visual debug
+    cv::Mat output;
+    createRectifiedCutImage(vSelectedCuts, output);
+    CCTagVisualDebug::instance().initBackgroundImage(output);
+    CCTagVisualDebug::instance().newSession( "rectifiedSignal" + 
+      std::to_string(CCTagVisualDebug::instance().getMarkerIndex()) );
+    CCTagVisualDebug::instance().incrementMarkerIndex();
+    // Back to session refineConicPts
+    CCTagVisualDebug::instance().newSession( "refineConicPts" );
+#endif // OPTIM_CENTER_VISUAL_DEBUG
+    
 #ifdef GRIFF_DEBUG
     // todo: clean and mode this block into a dedicated function.
     if( identSuccessful )
