@@ -288,7 +288,8 @@ bool refineConicFamilyGlob(
         const cv::Mat & src,
         popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::Parameters params);
+        const cctag::Parameters params,
+        popart::NearbyPoint* cctag_pointer_buffer );
 
 /**
  * @brief Convex optimization of the imaged center within a point's neighbourhood.

@@ -1476,7 +1476,20 @@ int identify(
   //       these signals will be collected inside the function.
   //       iii) cctag.homography(): 3x3 float homography, cctag.centerImg(): 2 floats (x,y), ellipse: (see Ellipse.hpp)
   // Begin GPU //////
-  bool hasConverged = refineConicFamilyGlob( cctag.homography(), cctag.centerImg(), vSelectedCuts, src, cudaPipe, ellipse, params, cctag.getNearbyPointBuffer() );
+  bool hasConverged = refineConicFamilyGlob(
+                        cctag.homography(),
+                        cctag.centerImg(),
+                        vSelectedCuts,
+                        src,
+                        cudaPipe,
+                        ellipse,
+                        params,
+#ifdef WITH_CUDA
+                        cctag.getNearbyPointBuffer()
+#else
+                        0
+#endif
+                        );
   // End GPU ////////
   // Note Outputs (GPU->CPU):
   //        The main amount of data to transfert is only that way and is 'vSelectedCuts', 
