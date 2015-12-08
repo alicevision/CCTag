@@ -23,6 +23,12 @@ public:
 
     int getPyramidLevel();
     
+    void resetMarkerIndex();
+
+    void incrementMarkerIndex();
+    
+    std::size_t getMarkerIndex();
+    
     std::string getPath() const;
 
     void setImageFileName(const std::string& imageFileName);
@@ -81,6 +87,7 @@ private:
     std::string _imageFileName;
     std::string _pathRoot;
     std::string _path;
+    std::size_t _markerIndex;
 };
 
 } // namespace cctag

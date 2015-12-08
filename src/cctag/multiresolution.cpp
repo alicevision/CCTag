@@ -376,8 +376,8 @@ void cctagMultiresDetection(
               pointsInHull,
               rescaledOuterEllipsePoints,
               SmFinal,
-              params._threshRobustEstimationOfOuterEllipse, //20.0 before
-              INV_GRAD_WEIGHT, // INV_GRAD_WEIGHT: NO_WEIGHT before 
+              20.0,
+              NO_WEIGHT,
               60); 
       
       #ifdef CCTAG_OPTIM
