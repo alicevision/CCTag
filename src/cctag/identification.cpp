@@ -1013,6 +1013,15 @@ bool refineConicFamilyGlob(
     using namespace cctag::numerical;
     using namespace boost::numeric::ublas;
 
+    // Visual debug
+    CCTagVisualDebug::instance().newSession( "refineConicPts" );
+    for(const cctag::ImageCut & cut : vCuts)
+    {
+        CCTagVisualDebug::instance().drawPoint( cut.stop(), cctag::color_red );
+    }
+    CCTagVisualDebug::instance().newSession( "centerOpt" );
+    CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_green );
+
 #ifdef WITH_CUDA
     if( cudaPipe ) {
         bool success = cudaPipe->imageCenterRetrieve(
@@ -1027,15 +1036,6 @@ bool refineConicFamilyGlob(
         }
     } else { // not CUDA
 #endif // WITH_CUDA
-
-        // Visual debug
-        CCTagVisualDebug::instance().newSession( "refineConicPts" );
-        for(const cctag::ImageCut & cut : vCuts)
-        {
-            CCTagVisualDebug::instance().drawPoint( cut.stop(), cctag::color_red );
-        }
-        CCTagVisualDebug::instance().newSession( "centerOpt" );
-        CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_green );
 
         boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
@@ -1078,10 +1078,10 @@ bool refineConicFamilyGlob(
         const double spendTime = d.total_milliseconds();
         DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
 
-        CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
 #ifdef WITH_CUDA
     } // not CUDA
 #endif // WITH_CUDA
+    CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
   
     // B. Get the signal associated to the optimal homography/imaged center //////
     {
@@ -1607,6 +1607,7 @@ int identify_step_2(
 #endif // OPTIM_CENTER_VISUAL_DEBUG
     
 #ifdef GRIFF_DEBUG
+#error here
     // todo: clean and mode this block into a dedicated function.
     if( identSuccessful )
     {

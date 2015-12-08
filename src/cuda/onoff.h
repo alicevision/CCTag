@@ -105,5 +105,5 @@
  * edge point coordinates to avoid randomness? If it appears that
  * this is the case, #define this.
  */
-#undef SORT_ALL_EDGECOORDS_IN_EXPORT
+#define SORT_ALL_EDGECOORDS_IN_EXPORT
 
