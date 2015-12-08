@@ -1027,7 +1027,6 @@ bool refineConicFamilyGlob(
         }
     } else { // not CUDA
 #endif // WITH_CUDA
-        // BOOST_ASSERT( vOuterPoints.size() > 0 );
 
         // Visual debug
         CCTagVisualDebug::instance().newSession( "refineConicPts" );
@@ -1058,8 +1057,8 @@ bool refineConicFamilyGlob(
         while ( neighbourSize*maxSemiAxis > 0.02 )       
         {
             if ( imageCenterOptimizationGlob( mHomography,   // out
-                                              vCuts,         // in?-out
-                                              optimalPoint,  // in?-out
+                                              vCuts,         // out
+                                              optimalPoint,  // out
                                               residual,      // out
                                               neighbourSize,
                                               src,
@@ -1163,10 +1162,15 @@ bool imageCenterOptimizationGlob(
             } catch(...) {
                 continue; 
             }
+
+            // C. Compute the 1D rectified signals of vCuts image cut based on the 
+            // transformation mTempHomography.
+            res = costFunctionGlob(mTempHomography, vCuts, src, readable );
+        }
       
-            // If at least one image cut has been properly read
-            if ( readable )
-            {       
+        // If at least one image cut has been properly read
+        if ( readable )
+        {       
         
                 // Update the residual and the optimized parameters
                 hasASolution = true;
@@ -1176,11 +1180,8 @@ bool imageCenterOptimizationGlob(
                     optimalPoint = point;
                     optimalHomography = mTempHomography;
                 }
-            } else { // not readable
-                CCTAG_COUT_VAR_OPTIM(readable);
-            }
         } else { // not readable
-            CCTAG_COUT_VAR_OPTIM(readable);
+                CCTAG_COUT_VAR_OPTIM(readable);
         }
     } // for(point : nearbyPoints)
 
