@@ -98,7 +98,11 @@ bool orazioDistanceRobust(
       // compute some statitics
       accumulator_set< double, features< /*tag::median,*/ tag::variance > > acc;
       // Put the image signal into the accumulator
-      acc = std::for_each( imgSig.begin(), imgSig.end(), acc );
+      acc = std::for_each( imgSig.begin()+30, imgSig.end(), acc ); // todo: find a more accurate solution
+                                                                   // to replace the +30:
+                                                                   // Ideally, the mean should be 
+                                                                   // computed from where the barcode
+                                                                   // start until the end.
 
       // Mean
       const double medianSig = boost::accumulators::mean( acc );
