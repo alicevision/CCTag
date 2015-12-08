@@ -985,6 +985,7 @@ bool refineConicFamilyGlob(
     using namespace cctag::numerical;
     using namespace boost::numeric::ublas;
 
+#ifdef WITH_CUDA
     if( cudaPipe ) {
         bool success = cudaPipe->imageCenterRetrieve(
             tagIndex,      // in
@@ -997,6 +998,7 @@ bool refineConicFamilyGlob(
             return false;
         }
     } else { // not CUDA
+#endif // WITH_CUDA
         // BOOST_ASSERT( vOuterPoints.size() > 0 );
 
         // Visual debug
@@ -1050,7 +1052,9 @@ bool refineConicFamilyGlob(
         DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
 
         CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
+#ifdef WITH_CUDA
     } // not CUDA
+#endif // WITH_CUDA
   
     // B. Get the signal associated to the optimal homography/imaged center //////
     {
@@ -1502,7 +1506,12 @@ int identify_step_2(
                         cudaPipe,
                         ellipse,
                         params,
-                        cctag.getNearbyPointBuffer() );
+#ifdef WITH_CUDA
+                        cctag.getNearbyPointBuffer()
+#else
+                        0
+#endif
+                        );
   // End GPU ////////
   // Note Outputs (GPU->CPU):
   //        The main amount of data to transfert is only that way and is 'vSelectedCuts', 
