@@ -100,8 +100,11 @@ bool orazioDistanceRobust(
       // Put the image signal into the accumulator
       acc = std::for_each( imgSig.begin(), imgSig.end(), acc );
 
-      const double medianSig = computeMedian( imgSig );
-      // const double medianSig = computeMedian( boost::numeric::ublas::subrange(imgSig,startOffset, imgSig.size()) ); // todo : to remove
+      // Mean
+      const double medianSig = boost::accumulators::mean( acc );
+      
+      // or median
+      //const double medianSig = computeMedian( imgSig );
 
       const double varSig = boost::accumulators::variance( acc );
 
