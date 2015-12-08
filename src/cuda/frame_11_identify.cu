@@ -132,20 +132,19 @@ void idGetSignals( NearbyPoint*         nPoint,
 }
 
 __global__
-void getSignalsAllNearbyPoints(
+void initAllNearbyPoints(
     bool                               first_iteration,
-    cv::cuda::PtrStepSzb               src,
     const popart::geometry::ellipse    ellipse,
     const popart::geometry::matrix3x3  mT,
-    // const popart::geometry::matrix3x3  mInvT,
     float2                             center,
-    const int                          vCutSize,
     const float                        neighbourSize,
-    NearbyPoint*                       point_buffer,
-    const identification::CutStruct*   cut_buffer,
-    identification::CutSignals*        sig_buffer )
+    NearbyPoint*                       point_buffer )
 {
     const size_t gridNSample = tagParam.gridNSample;
+
+    assert( gridDim.y == gridNSample );
+    assert( gridDim.z == gridNSample );
+
     const float  gridWidth   = neighbourSize;
     const float  halfWidth   = gridWidth/2.0f;
     const float  stepSize    = gridWidth * __frcp_rn( float(gridNSample-1) );
@@ -159,14 +158,11 @@ void getSignalsAllNearbyPoints(
 
     const int i = blockIdx.y;
     const int j = blockIdx.z;
-    if( i >= gridNSample ) return;
-    if( j >= gridNSample ) return;
-
     const int idx = j * gridNSample + i;
 
 
     NearbyPoint* nPoint = &point_buffer[idx];
-    identification::CutSignals* signals = &sig_buffer[idx * vCutSize];
+    // identification::CutSignals* signals = &sig_buffer[idx * vCutSize];
 
     float2 condCenter = make_float2( center.x - halfWidth + i*stepSize,
                                      center.y - halfWidth + j*stepSize );
@@ -181,19 +177,26 @@ void getSignalsAllNearbyPoints(
     nPoint->readable = true;
     ellipse.computeHomographyFromImagedCenter( nPoint->point, nPoint->mHomography );
     nPoint->mHomography.invert( nPoint->mInvHomography );
+}
 
+__global__
+void getSignalsAllNearbyPoints(
+    cv::cuda::PtrStepSzb               src,
+    const int                          vCutSize,
+    NearbyPoint*                       point_buffer,
+    const identification::CutStruct*   cut_buffer,
+    identification::CutSignals*        sig_buffer )
+{
+    const size_t gridNSample = tagParam.gridNSample;
+    const int i = blockIdx.y;
+    const int j = blockIdx.z;
+    const int idx = j * gridNSample + i;
 
-#if 0
-    const dim3 block( 32, // we use this to sum up signals
-                      32, // 32 cuts in one block
-                      1 );
-    const dim3 grid(  grid_divide( vCutSize, 32 ), // ceil(#cuts/32) blocks needed
-                      1,
-                      1 );
-#else
+    NearbyPoint* nPoint = &point_buffer[idx];
+    identification::CutSignals* signals = &sig_buffer[idx * vCutSize];
+
     const dim3 block( 32, 1, 1 ); // we use this to sum up signals
     const dim3 grid( vCutSize, 1, 1 );
-#endif
 
     popart::identification::idGetSignals
         <<<grid,block>>>
@@ -460,28 +463,23 @@ void Frame::idCostFunction(
         float neighSize = currentNeighbourSize * max( transformedEllipse.a(),
                                                       transformedEllipse.b() );
 
-#if 0
-        dim3 block( 1, 32, 32 );
-        dim3 grid( 1,
-                   grid_divide( gridNSample, 32 ),
-                   grid_divide( gridNSample, 32 ) );
-#else
         dim3 block( 1, 1, 1 );
-        dim3 grid( 1,
-                   gridNSample,
-                   gridNSample );
-#endif
+        dim3 grid( 1, gridNSample, gridNSample );
+
+        popart::identification::initAllNearbyPoints
+            <<<grid,block,0,tagStream>>>
+            ( first_iteration,
+              ellipse,
+              mT,
+              center,
+              neighSize,
+              point_buffer );
+        POP_CHK_CALL_IFSYNC;
 
         popart::identification::getSignalsAllNearbyPoints
             <<<grid,block,0,tagStream>>>
-            ( first_iteration,
-              _d_plane,
-              ellipse,
-              mT,
-              // mInvT,
-              center,
+            ( _d_plane,
               vCutSize,
-              neighSize,
               point_buffer,
               cut_buffer,
               sig_buffer );
