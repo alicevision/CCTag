@@ -60,7 +60,6 @@ void cctagDetection(
       logtime::Mgmt* durations = 0,
       const CCTagMarkersBank * bank = NULL);
 
-void initCCTagDetection( );
 }
 
 #endif	/* PONCTUALCCTAG_HPP */

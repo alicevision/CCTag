@@ -27,7 +27,7 @@ static const float kDefaultRatioVoting        = 4.f;
 static const float kDefaultAverageVoteMin        = 0.f;
 static const double kDefaultThrMedianDistanceEllipse = 3.0;
 static const std::size_t kDefaultMaximumNbSeeds = 500;
-static const std::size_t kDefaultMaximumNbCandidatesLoopTwo = 30;
+static const std::size_t kDefaultMaximumNbCandidatesLoopTwo = 60;//30;
 static const float kDefaultCannyThrLow      =  0.01f ;//0.002
 static const float kDefaultCannyThrHigh     =  0.04f ;// 0.04
 static const std::size_t kDefaultMinPointsSegmentCandidate =  10;
@@ -45,7 +45,7 @@ static const std::size_t kDefaultSampleCutLength = 100;
 static const std::size_t kDefaultImagedCenterNGridSample = 5; // must be odd otherwise the ellipse center will not be included 
                                                               // in the nearby points.
 static const double kDefaultImagedCenterNeighbourSize = 0.20;
-static const double kDefaultMinIdentProba = 1e-6;//1e-4
+static const double kDefaultMinIdentProba = 1e-6;//1e-6
 static const bool kDefaultUseLMDif = true;
 static const bool kDefaultSearchForAnotherSegment = true;
 static const bool kDefaultWriteOutput = false;

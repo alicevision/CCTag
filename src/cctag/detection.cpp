@@ -822,6 +822,8 @@ void cctagDetection(CCTag::List& markers,
     // Identification step
     if (params._doIdentification)
     {
+      CCTagVisualDebug::instance().resetMarkerIndex();
+
         const int numTags  = markers.size();
 
 #ifdef WITH_CUDA

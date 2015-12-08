@@ -98,24 +98,51 @@ bool orazioDistanceRobust(
       // compute some statitics
       accumulator_set< double, features< /*tag::median,*/ tag::variance > > acc;
       // Put the image signal into the accumulator
-      acc = std::for_each( imgSig.begin(), imgSig.end(), acc );
+      acc = std::for_each( imgSig.begin()+30, imgSig.end(), acc ); // todo: find a more accurate solution
+                                                                   // to replace the +30:
+                                                                   // Ideally, the mean should be 
+                                                                   // computed from where the barcode
+                                                                   // start until the end.
 
-      const double medianSig = computeMedian( imgSig );
-      // const double medianSig = computeMedian( boost::numeric::ublas::subrange(imgSig,startOffset, imgSig.size()) ); // todo : to remove
+      // Mean
+      const double medianSig = boost::accumulators::mean( acc );
+      
+      // or median
+      //const double medianSig = computeMedian( imgSig );
 
       const double varSig = boost::accumulators::variance( acc );
 
       accumulator_set< double, features< tag::mean > > accInf;
       accumulator_set< double, features< tag::mean > > accSup;
+      
+//      std::cout << "sig = [ " ; // todo: clean
+//      for( std::size_t i = 0 ; i < imgSig.size(); ++i )
+//      {
+//            std::cout <<  imgSig[i] << " , "; 
+//      }
+//      std::cout << " ]; " << std::endl;
+      
+//      CCTAG_COUT_VAR(medianSig);
+      
+      bool doAccumulate = false;
       for( std::size_t i = 0 ; i < imgSig.size(); ++i )
       {
-        if( imgSig[i] < medianSig )
-          accInf( imgSig[i] );
-        else
-          accSup( imgSig[i] );
+        if ( (!doAccumulate) && ( imgSig[i] < medianSig ) )
+          doAccumulate = true;
+          
+        if (doAccumulate)
+        {
+          if ( imgSig[i] < medianSig )
+            accInf( imgSig[i] );
+          else
+            accSup( imgSig[i] );
+        }
       }
       const double muw = boost::accumulators::mean( accSup );
       const double mub = boost::accumulators::mean( accInf );
+      
+//      CCTAG_COUT_VAR(muw); // todo: clean
+//      CCTAG_COUT_VAR(mub);
 
       // Find the nearest ID in rrBank
       const double stepX = (cut.endSig() - cut.beginSig()) / ( imgSig.size() - 1.0 );
@@ -130,7 +157,8 @@ bool orazioDistanceRobust(
       // imgSig and digit (i.e. generated profile)
       for( std::size_t idc = 0; idc < rrBank.size(); ++idc )
       {
-        // Compute profile - todo to be pre-computed
+        // Compute the idc-th profile from the radius ratio
+        // todo to be pre-computed
         double x = cut.beginSig();
         for( std::size_t i = 0; i < digit.size(); ++i )
         {
@@ -704,11 +732,11 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
     //if ( j > upperSize) // todo: validate with more tests on real data (e.g. grimstad, day01,img3)
     //  break;            // and clean
     
-    if ( rit->first < varMax*0.8)
+    if ( rit->first/varMax < 0.5 )
       break;
   }
   
-  // B. teratively erase cuts while minimizing the sum of the normalized gradients
+  // B. iteratively erase cuts while minimizing the sum of the normalized gradients
   // over all outer points.
   while( mapBestIdCutOuterPoint.size() >  selectSize)
   {
@@ -1135,29 +1163,21 @@ bool imageCenterOptimizationGlob(
             } catch(...) {
                 continue; 
             }
-
-            // C. Compute the 1D rectified signals of vCuts image cut based on the 
-            // transformation mTempHomography.
-            res = costFunctionGlob(mTempHomography, vCuts, src, readable );
-        }
-
-        // If at least one image cut has been properly read
-        if ( readable )
-        {
-#ifdef OPTIM_CENTER_VISUAL_DEBUG // todo: write a proper function in visual debug
-            cv::Mat output;
-            createRectifiedCutImage(vCuts, output);
-            cv::imwrite("/home/lilian/data/temp/" + std::to_string(k) + ".png", output);
-            ++k;
-#endif // OPTIM_CENTER_VISUAL_DEBUG        
-
-            // Update the residual and the optimized parameters
-            hasASolution = true;
-            if ( res < minRes )
-            {
-                minRes = res;
-                optimalPoint = point;
-                optimalHomography = mTempHomography;
+      
+            // If at least one image cut has been properly read
+            if ( readable )
+            {       
+        
+                // Update the residual and the optimized parameters
+                hasASolution = true;
+                if ( res < minRes )
+                {
+                    minRes = res;
+                    optimalPoint = point;
+                    optimalHomography = mTempHomography;
+                }
+            } else { // not readable
+                CCTAG_COUT_VAR_OPTIM(readable);
             }
         } else { // not readable
             CCTAG_COUT_VAR_OPTIM(readable);
@@ -1573,6 +1593,18 @@ int identify_step_2(
     // used
     // v0.1 for the identification: use the most redundant id over all the rectified cut.
     identSuccessful = orazioDistanceRobust( vScore, radiusRatios, vSelectedCuts, params._minIdentProba);
+    
+#ifdef VISUAL_DEBUG // todo: write a proper function in visual debug
+    cv::Mat output;
+    createRectifiedCutImage(vSelectedCuts, output);
+    CCTagVisualDebug::instance().initBackgroundImage(output);
+    CCTagVisualDebug::instance().newSession( "rectifiedSignal" + 
+      std::to_string(CCTagVisualDebug::instance().getMarkerIndex()) );
+    CCTagVisualDebug::instance().incrementMarkerIndex();
+    // Back to session refineConicPts
+    CCTagVisualDebug::instance().newSession( "refineConicPts" );
+#endif // OPTIM_CENTER_VISUAL_DEBUG
+    
 #ifdef GRIFF_DEBUG
     // todo: clean and mode this block into a dedicated function.
     if( identSuccessful )
