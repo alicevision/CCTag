@@ -114,15 +114,35 @@ bool orazioDistanceRobust(
 
       accumulator_set< double, features< tag::mean > > accInf;
       accumulator_set< double, features< tag::mean > > accSup;
+      
+//      std::cout << "sig = [ " ; // todo: clean
+//      for( std::size_t i = 0 ; i < imgSig.size(); ++i )
+//      {
+//            std::cout <<  imgSig[i] << " , "; 
+//      }
+//      std::cout << " ]; " << std::endl;
+      
+//      CCTAG_COUT_VAR(medianSig);
+      
+      bool doAccumulate = false;
       for( std::size_t i = 0 ; i < imgSig.size(); ++i )
       {
-        if( imgSig[i] < medianSig )
-          accInf( imgSig[i] );
-        else
-          accSup( imgSig[i] );
+        if ( (!doAccumulate) && ( imgSig[i] < medianSig ) )
+          doAccumulate = true;
+          
+        if (doAccumulate)
+        {
+          if ( imgSig[i] < medianSig )
+            accInf( imgSig[i] );
+          else
+            accSup( imgSig[i] );
+        }
       }
       const double muw = boost::accumulators::mean( accSup );
       const double mub = boost::accumulators::mean( accInf );
+      
+//      CCTAG_COUT_VAR(muw); // todo: clean
+//      CCTAG_COUT_VAR(mub);
 
       // Find the nearest ID in rrBank
       const double stepX = (cut.endSig() - cut.beginSig()) / ( imgSig.size() - 1.0 );
@@ -137,7 +157,8 @@ bool orazioDistanceRobust(
       // imgSig and digit (i.e. generated profile)
       for( std::size_t idc = 0; idc < rrBank.size(); ++idc )
       {
-        // Compute profile - todo to be pre-computed
+        // Compute the idc-th profile from the radius ratio
+        // todo to be pre-computed
         double x = cut.beginSig();
         for( std::size_t i = 0; i < digit.size(); ++i )
         {
