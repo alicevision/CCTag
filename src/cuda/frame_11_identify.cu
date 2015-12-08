@@ -131,6 +131,79 @@ void idGetSignals( NearbyPoint*         nPoint,
                                   nPoint->mInvHomography );
 }
 
+__global__
+void getSignalsAllNearbyPoints(
+    bool                               first_iteration,
+    cv::cuda::PtrStepSzb               src,
+    const popart::geometry::ellipse    ellipse,
+    const popart::geometry::matrix3x3  mT,
+    // const popart::geometry::matrix3x3  mInvT,
+    float2                             center,
+    const int                          vCutSize,
+    const float                        neighbourSize,
+    NearbyPoint*                       point_buffer,
+    const identification::CutStruct*   cut_buffer,
+    identification::CutSignals*        sig_buffer )
+{
+    const size_t gridNSample = tagParam.gridNSample;
+    const float  gridWidth   = neighbourSize;
+    const float  halfWidth   = gridWidth/2.0f;
+    const float  stepSize    = gridWidth * __frcp_rn( float(gridNSample-1) );
+
+    if( not first_iteration ) {
+        // the best center is located in point_buffer[0]
+        center = point_buffer[0].point;
+        // @lilian: why do we need this "center = mT * center" in every iteration?
+    }
+    mT.condition( center );
+
+    const int i = blockIdx.y;
+    const int j = blockIdx.z;
+    if( i >= gridNSample ) return;
+    if( j >= gridNSample ) return;
+
+    const int idx = j * gridNSample + i;
+
+
+    NearbyPoint* nPoint = &point_buffer[idx];
+    identification::CutSignals* signals = &sig_buffer[idx * vCutSize];
+
+    float2 condCenter = make_float2( center.x - halfWidth + i*stepSize,
+                                     center.y - halfWidth + j*stepSize );
+
+    popart::geometry::matrix3x3  mInvT;
+    mT.invert( mInvT ); // note: returns false if it fails
+    mInvT.condition( condCenter );
+
+    nPoint->point    = condCenter;
+    nPoint->result   = 0.0f;
+    nPoint->resSize  = 0;
+    nPoint->readable = true;
+    ellipse.computeHomographyFromImagedCenter( nPoint->point, nPoint->mHomography );
+    nPoint->mHomography.invert( nPoint->mInvHomography );
+
+
+#if 0
+    const dim3 block( 32, // we use this to sum up signals
+                      32, // 32 cuts in one block
+                      1 );
+    const dim3 grid(  grid_divide( vCutSize, 32 ), // ceil(#cuts/32) blocks needed
+                      1,
+                      1 );
+#else
+    const dim3 block( 32, 1, 1 ); // we use this to sum up signals
+    const dim3 grid( vCutSize, 1, 1 );
+#endif
+
+    popart::identification::idGetSignals
+        <<<grid,block>>>
+        ( nPoint,
+          src,
+          cut_buffer,
+          signals,
+          vCutSize );
+}
+
 /* All the signals have been computed for the homographies rolled
  * this NearbyPoint structure by the previous call to idGetSignals.
  * Now we want to compare all possible combinations of Cuts and
@@ -235,79 +308,6 @@ void idComputeResult( NearbyPoint*      point_buffer,
     __syncthreads();
   }
 #endif
-}
-
-__global__
-void getSignalsAllNearbyPoints(
-    bool                               first_iteration,
-    cv::cuda::PtrStepSzb               src,
-    const popart::geometry::ellipse    ellipse,
-    const popart::geometry::matrix3x3  mT,
-    // const popart::geometry::matrix3x3  mInvT,
-    float2                             center,
-    const int                          vCutSize,
-    const float                        neighbourSize,
-    NearbyPoint*                       point_buffer,
-    const identification::CutStruct*   cut_buffer,
-    identification::CutSignals*        sig_buffer )
-{
-    const size_t gridNSample = tagParam.gridNSample;
-    const float  gridWidth   = neighbourSize;
-    const float  halfWidth   = gridWidth/2.0f;
-    const float  stepSize    = gridWidth * __frcp_rn( float(gridNSample-1) );
-
-    if( not first_iteration ) {
-        // the best center is located in point_buffer[0]
-        center = point_buffer[0].point;
-        // @lilian: why do we need this "center = mT * center" in every iteration?
-    }
-    mT.condition( center );
-
-    const int i = blockIdx.x * 32 + threadIdx.x;
-    const int j = blockIdx.y * 32 + threadIdx.y;
-    if( i >= gridNSample ) return;
-    if( j >= gridNSample ) return;
-
-    const int idx = j * gridNSample + i;
-
-
-    NearbyPoint* nPoint = &point_buffer[idx];
-    identification::CutSignals* signals = &sig_buffer[idx * vCutSize];
-
-    float2 condCenter = make_float2( center.x - halfWidth + i*stepSize,
-                                     center.y - halfWidth + j*stepSize );
-
-    popart::geometry::matrix3x3  mInvT;
-    mT.invert( mInvT ); // note: returns false if it fails
-    mInvT.condition( condCenter );
-
-    nPoint->point    = condCenter;
-    nPoint->result   = 0.0f;
-    nPoint->resSize  = 0;
-    nPoint->readable = true;
-    ellipse.computeHomographyFromImagedCenter( nPoint->point, nPoint->mHomography );
-    nPoint->mHomography.invert( nPoint->mInvHomography );
-
-
-#if 1
-    const dim3 block( 32, // we use this to sum up signals
-                      32, // 32 cuts in one block
-                      1 );
-    const dim3 grid(  grid_divide( vCutSize, 32 ), // ceil(#cuts/32) blocks needed
-                      1,
-                      1 );
-#else
-    const dim3 block( 32, 1, 1 ); // we use this to sum up signals
-    const dim3 grid( vCutSize, 1, 1 );
-#endif
-
-    popart::identification::idGetSignals
-        <<<grid,block>>>
-        ( nPoint,
-          src,
-          cut_buffer,
-          signals,
-          vCutSize );
 }
 
 __global__
@@ -460,10 +460,17 @@ void Frame::idCostFunction(
         float neighSize = currentNeighbourSize * max( transformedEllipse.a(),
                                                       transformedEllipse.b() );
 
-        dim3 block( 32, 32, 1 );
-        dim3 grid( grid_divide( gridNSample, 32 ),
+#if 0
+        dim3 block( 1, 32, 32 );
+        dim3 grid( 1,
                    grid_divide( gridNSample, 32 ),
-                   1 );
+                   grid_divide( gridNSample, 32 ) );
+#else
+        dim3 block( 1, 1, 1 );
+        dim3 grid( 1,
+                   gridNSample,
+                   gridNSample );
+#endif
 
         popart::identification::getSignalsAllNearbyPoints
             <<<grid,block,0,tagStream>>>
