@@ -986,14 +986,6 @@ bool refineConicFamilyGlob(
     using namespace boost::numeric::ublas;
 
     if( cudaPipe ) {
-        cudaPipe->imageCenterOptLoop(
-            tagIndex,
-            outerEllipse,
-            optimalPoint,
-            vCuts.size(),
-            params,
-            cctag_pointer_buffer );
-
         bool success = cudaPipe->imageCenterRetrieve(
             tagIndex,      // in
             optimalPoint,  // out

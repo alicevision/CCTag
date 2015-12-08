@@ -850,7 +850,6 @@ void cctagDetection(CCTag::List& markers,
             pipe1->uploadCuts( numTags, vSelectedCuts, params );
             pipe1->makeCudaStreams( numTags );
 
-#if 0
             tagIndex = 0;
             for( CCTag& cctag : markers ) {
                 if( detected[tagIndex] == status::id_reliable ) {
@@ -865,7 +864,7 @@ void cctagDetection(CCTag::List& markers,
 
                 tagIndex++;
             }
-#endif
+            cudaDeviceSynchronize();
         }
 #endif // WITH_CUDA
 
