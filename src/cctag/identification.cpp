@@ -982,15 +982,21 @@ bool refineConicFamilyGlob(
         const cctag::Parameters params,
         popart::NearbyPoint* cctag_pointer_buffer )
 {
-  using namespace cctag::numerical;
-  using namespace boost::numeric::ublas;
+    using namespace cctag::numerical;
+    using namespace boost::numeric::ublas;
 
     if( cudaPipe ) {
-        bool success = cudaPipe->imageCenterOptLoop(
+        cudaPipe->imageCenterOptLoop(
+            tagIndex,
+            outerEllipse,
+            optimalPoint,
+            vCuts.size(),
+            params,
+            cctag_pointer_buffer );
+
+        bool success = cudaPipe->imageCenterRetrieve(
             tagIndex,      // in
-            outerEllipse,  // in
-            optimalPoint,  // in-out
-            vCuts.size(),  // in - cuts are already uploaded
+            optimalPoint,  // out
             mHomography,   // out
             params,
             cctag_pointer_buffer );
@@ -1425,6 +1431,12 @@ int identify_step_1(
     const double spendTime = d.total_milliseconds();
   }
 
+  if ( vSelectedCuts.size() == 0 )
+  {
+    CCTAG_COUT_DEBUG("Unable to select any cut.");
+    return status::no_selected_cuts; // todo: is class attributes the best option?
+  }
+
   /* This is a fake return value. The important thing is to
    * distinguish this from the return value
    * status::no_collected_cuts
@@ -1468,13 +1480,6 @@ int identify_step_2(
     CCTAG_COUT_OPTIM("Time in selectCut: " << spendTime << " ms");
   )
 #endif
-
-  if ( vSelectedCuts.size() == 0 )
-  {
-    //
-    CCTAG_COUT_DEBUG("Unable to select any cut.");
-    return status::no_selected_cuts; // todo: is class attributes the best option?
-  }
 
   // std::vector< cctag::ImageCut > vCuts;
   

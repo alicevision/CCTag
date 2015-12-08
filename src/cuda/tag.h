@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <opencv2/core.hpp>
+#include <cuda_runtime.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
@@ -32,6 +33,7 @@ class TagPipe
     std::vector<Frame*>         _frame;
     const cctag::Parameters&    _params;
     TagThreads                  _threads;
+    std::vector<cudaStream_t>   _tag_streams;
 
 public:
     TagPipe( const cctag::Parameters& params );
@@ -66,11 +68,17 @@ public:
     void checkTagAllocations( const int                numTags,
                               const cctag::Parameters& params );
 
-    bool imageCenterOptLoop(
+    void imageCenterOptLoop(
         const int                                  tagIndex,
         const cctag::numerical::geometry::Ellipse& ellipse,
-        cctag::Point2dN<double>&                   center,
+        const cctag::Point2dN<double>&             center,
         const int                                  vCutSize,
+        const cctag::Parameters&                   params,
+        NearbyPoint*                               cctag_pointer_buffer );
+
+    bool imageCenterRetrieve(
+        const int                                  tagIndex,
+        cctag::Point2dN<double>&                   center,
         cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
         const cctag::Parameters&                   params,
         NearbyPoint*                               cctag_pointer_buffer );
@@ -80,6 +88,8 @@ public:
     void uploadCuts( int                                 numTags,
                      const std::vector<cctag::ImageCut>* vCuts,
                      const cctag::Parameters&            params );
+
+    void makeCudaStreams( int numTags );
 
     void debug( unsigned char* pix,
                 const cctag::Parameters& params );

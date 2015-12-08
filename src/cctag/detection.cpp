@@ -848,6 +848,24 @@ void cctagDetection(CCTag::List& markers,
 #ifdef WITH_CUDA
         if( pipe1 ) {
             pipe1->uploadCuts( numTags, vSelectedCuts, params );
+            pipe1->makeCudaStreams( numTags );
+
+#if 0
+            tagIndex = 0;
+            for( CCTag& cctag : markers ) {
+                if( detected[tagIndex] == status::id_reliable ) {
+                    pipe1->imageCenterOptLoop(
+                        tagIndex,
+                        cctag.rescaledOuterEllipse(),
+                        cctag.centerImg(),
+                        vSelectedCuts[tagIndex].size(),
+                        params,
+                        cctag.getNearbyPointBuffer() );
+                }
+
+                tagIndex++;
+            }
+#endif
         }
 #endif // WITH_CUDA
 

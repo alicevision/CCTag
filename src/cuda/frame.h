@@ -225,29 +225,39 @@ protected:
 public:
     // implemented in frame_11_identify.cu
     __host__
-    bool imageCenterOptLoop(
+    void imageCenterOptLoop(
         const int                           tagIndex,     // in
+        cudaStream_t                        tagStream,    // in
         const popart::geometry::ellipse&    outerEllipse, // in
-        float2&                             center,       // in-out
+        const float2&                       center,       // in
         const int                           vCutSize,     // in
-        popart::geometry::matrix3x3&        bestHomographyOut, // out
-        const cctag::Parameters&            params,
+        const cctag::Parameters&            params,       // in
         NearbyPoint*                        cctag_pointer_buffer );
 
+    __host__
+    bool imageCenterRetrieve(
+        const int                           tagIndex,          // in
+        cudaStream_t                        tagStream,         // in
+        float2&                             bestPointOut,      // out
+        popart::geometry::matrix3x3&        bestHomographyOut, // out
+        const cctag::Parameters&            params,            // in
+        NearbyPoint*                        cctag_pointer_buffer );
+
+private:
     // implemented in frame_11_identify.cu
     __host__
-    float idCostFunction(
+    void idCostFunction(
         const int                           tagIndex,
+        cudaStream_t                        tagStream,
         int                                 iterations,
         const popart::geometry::ellipse&    ellipse,
         const float2                        center,
         const int                           vCutSize,     // in
         float                               currentNeighbourSize,
-        float2&                             bestPointOut,
-        popart::geometry::matrix3x3&        bestHomographyOut,
         const cctag::Parameters&            params,
         NearbyPoint*                        cctag_pointer_buffer );
 
+public:
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );

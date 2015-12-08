@@ -79,6 +79,12 @@ void TagPipe::initialize( const uint32_t pix_w,
 __host__
 void TagPipe::release( )
 {
+    int numTags = _tag_streams.size();
+    for( int i=0; i<numTags; i++ ) {
+        POP_CUDA_STREAM_DESTROY( _tag_streams[i] );
+    }
+    _tag_streams.clear();
+
     PinnedCounters::release( );
 }
 
@@ -471,12 +477,11 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
 }
 
 __host__
-bool TagPipe::imageCenterOptLoop(
+void TagPipe::imageCenterOptLoop(
     const int                                  tagIndex,
     const cctag::numerical::geometry::Ellipse& ellipse,
-    cctag::Point2dN<double>&                   center,
+    const cctag::Point2dN<double>&             center,
     const int                                  vCutSize,
-    cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
@@ -498,17 +503,36 @@ bool TagPipe::imageCenterOptLoop(
 
     popart::geometry::matrix3x3 bestHomography;
 
-    bool success = _frame[0]->imageCenterOptLoop( tagIndex,
-                                                  e,
-                                                  f,
-                                                  vCutSize,
-                                                  bestHomography,
-                                                  params,
-                                                  cctag_pointer_buffer );
+    _frame[0]->imageCenterOptLoop( tagIndex,
+                                   _tag_streams[tagIndex],
+                                   e,
+                                   f,
+                                   vCutSize,
+                                   params,
+                                   cctag_pointer_buffer );
+}
+
+__host__
+bool TagPipe::imageCenterRetrieve(
+    const int                                  tagIndex,
+    cctag::Point2dN<double>&                   center,
+    cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+    const cctag::Parameters&                   params,
+    NearbyPoint*                               cctag_pointer_buffer )
+{
+    float2                      bestPoint;
+    popart::geometry::matrix3x3 bestHomography;
+
+    bool success = _frame[0]->imageCenterRetrieve( tagIndex,
+                                                   _tag_streams[tagIndex],
+                                                   bestPoint,
+                                                   bestHomography,
+                                                   params,
+                                                   cctag_pointer_buffer );
 
     if( success ) {
-        center.x() = f.x;
-        center.y() = f.y;
+        center.x() = bestPoint.x;
+        center.y() = bestPoint.y;
 
     #pragma unroll
     for( int i=0; i<3; i++ ) {
@@ -597,13 +621,19 @@ void TagPipe::uploadCuts( int                                 numTags,
     }
 
     POP_CHK_CALL_IFSYNC;
-    POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( _frame[0]->getCutStructBuffer(),
-                                     _frame[0]->getCutStructBufferHost(),
-                                     numTags * max_cuts_per_Tag * sizeof(identification::CutStruct),
-                                     _frame[0]->_stream );
-    POP_CHK_CALL_IFSYNC;
+    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( _frame[0]->getCutStructBuffer(),
+                                    _frame[0]->getCutStructBufferHost(),
+                                    numTags * max_cuts_per_Tag * sizeof(identification::CutStruct) );
 }
 
+void TagPipe::makeCudaStreams( int numTags )
+{
+    for( int i=_tag_streams.size(); i<numTags; i++ ) {
+        cudaStream_t stream;
+        POP_CUDA_STREAM_CREATE( &stream );
+        _tag_streams.push_back( stream );
+    }
+}
 
 }; // namespace popart
 

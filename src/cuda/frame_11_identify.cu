@@ -407,17 +407,28 @@ void idBestNearbyPoint31max( NearbyPoint* point_buffer, const size_t gridSquare 
 
 } // namespace identification
 
+/**
+ * @pre the cuts for this tag have been uploaded.
+ * @param[in] tagIndex counter for tag, determines index in cut structure
+ * @param[in] iterations the caller defines how many refinement loop we execute
+ * @param[in] ellipse the parametrized formulation of the outer(?) ellipse
+ * @param[in] center the approximate center of the tag
+ * @param[in] vCutSize ?
+ 8 @param[in] currentNeighbourSize the search area for the center, decreasing with iterations
+ * @param[out] bestPointOut the center of the tag after all iterations
+ * @param[out] bestHomographyOut homography that rectifies the best center
+ * @param[in] params gives access to various program parameters
+ * @param[inout] pointer lock a small piece of page-locked memory for device-to-host copying of results
+ */
 __host__
-float Frame::idCostFunction(
-    const int                           tagIndex, // in - determines index in cut structure
+void Frame::idCostFunction(
+    const int                           tagIndex,
+    cudaStream_t                        tagStream,
     int                                 iterations,
     const popart::geometry::ellipse&    ellipse,
     const float2                        center,
     const int                           vCutSize,
-    // const std::vector<cctag::ImageCut>& vCuts,
     float                               currentNeighbourSize,
-    float2&                             bestPointOut,
-    popart::geometry::matrix3x3&        bestHomographyOut,
     const cctag::Parameters&            params,
     NearbyPoint*                        cctag_pointer_buffer )
 {
@@ -431,6 +442,9 @@ float Frame::idCostFunction(
     point_buffer  = getNearbyPointBuffer();
     cut_buffer    = getCutStructBuffer();
     signal_buffer = getSignalBuffer();
+
+    point_buffer  = &point_buffer[tagIndex * gridNSample * gridNSample];
+    signal_buffer = &signal_buffer[tagIndex * gridNSample * gridNSample];
 
     // should this ellipse change?
     popart::geometry::matrix3x3 mT;
@@ -455,7 +469,7 @@ float Frame::idCostFunction(
                    1 );
 
         popart::identification::getSignalsAllNearbyPoints
-            <<<grid,block,0,_stream>>>
+            <<<grid,block,0,tagStream>>>
             ( tagIndex,
               first_iteration,
               _d_plane,
@@ -485,8 +499,9 @@ float Frame::idCostFunction(
 #endif
 
         popart::identification::idComputeResult
-            <<<id_grid,id_block,0,_stream>>>
+            <<<id_grid,id_block,0,tagStream>>>
             ( tagIndex, point_buffer, cut_buffer, signal_buffer, vCutSize );
+        POP_CHK_CALL_IFSYNC;
 
         /* We search for the minimum of gridNSample x gridNSample
          * nearby points. Default for gridNSample is 5.
@@ -496,15 +511,13 @@ float Frame::idCostFunction(
         const int gridSquare = gridNSample * gridNSample;
 
         if( gridSquare < 32 ) {
-            POP_CHK_CALL_IFSYNC;
             popart::identification::idBestNearbyPoint31max
-                <<<1,32,0,_stream>>>
+                <<<1,32,0,tagStream>>>
                   ( point_buffer, gridSquare );
             POP_CHK_CALL_IFSYNC;
         } else {
-            POP_CHK_CALL_IFSYNC;
             popart::identification::idBestNearbyPoint32plus
-                <<<1,32,0,_stream>>>
+                <<<1,32,0,tagStream>>>
                   ( point_buffer, gridSquare );
             POP_CHK_CALL_IFSYNC;
         }
@@ -513,33 +526,15 @@ float Frame::idCostFunction(
 
         first_iteration = false;
     }
-
-    /* When this kernel finishes, the best point does not
-     * exist or it is stored in point_buffer[0]
-     */
-    POP_CHK_CALL_IFSYNC;
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( cctag_pointer_buffer,
-                                   point_buffer,
-                                   sizeof(popart::NearbyPoint),
-                                   _stream );
-    POP_CHK_CALL_IFSYNC;
-
-    cudaStreamSynchronize( _stream );
-    if( not cctag_pointer_buffer->readable ) {
-        return FLT_MAX;
-    }
-    bestPointOut      = cctag_pointer_buffer->point;
-    bestHomographyOut = cctag_pointer_buffer->mHomography;
-    return cctag_pointer_buffer->result / cctag_pointer_buffer->resSize;
 }
 
 __host__
-bool Frame::imageCenterOptLoop(
+void Frame::imageCenterOptLoop(
     const int                           tagIndex,     // in - determines index in cut structure
+    cudaStream_t                        tagStream,
     const popart::geometry::ellipse&    outerEllipse, // in
-    float2&                             center,       // in-out
+    const float2&                       center,       // in
     const int                           vCutSize,
-    popart::geometry::matrix3x3&        bestHomographyOut,
     const cctag::Parameters&            params,
     NearbyPoint*                        cctag_pointer_buffer )
 {
@@ -557,22 +552,49 @@ bool Frame::imageCenterOptLoop(
 
     neighbourSize = params._imagedCenterNeighbourSize;
 
-    float  residual;
-    float2 bestPointOut;
-    residual = idCostFunction( tagIndex,
-                               iterations,
-                               outerEllipse,
-                               center,
-                               vCutSize,
-                               neighbourSize,
-                               bestPointOut,
-                               bestHomographyOut,
-                               params,
-                               cctag_pointer_buffer );
+    idCostFunction( tagIndex,
+                    tagStream,
+                    iterations,
+                    outerEllipse,
+                    center,
+                    vCutSize,
+                    neighbourSize,
+                    params,
+                    cctag_pointer_buffer );
+}
 
-    if( residual == FLT_MAX ) return false;
-    center        =  bestPointOut;
-    neighbourSize /= (float)((gridNSample-1)/2) ;
+__host__
+bool Frame::imageCenterRetrieve(
+    const int                           tagIndex,     // in - determines index in cut structure
+    cudaStream_t                        tagStream,
+    float2&                             bestPointOut, // out
+    popart::geometry::matrix3x3&        bestHomographyOut, // out
+    const cctag::Parameters&            params,
+    NearbyPoint*                        cctag_pointer_buffer )
+{
+    const size_t gridNSample   = params._imagedCenterNGridSample;
+
+    NearbyPoint* point_buffer;
+    point_buffer  = getNearbyPointBuffer();
+    point_buffer  = &point_buffer[tagIndex * gridNSample * gridNSample];
+
+    /* When this kernel finishes, the best point does not
+     * exist or it is stored in point_buffer[0]
+     */
+    POP_CUDA_MEMCPY_TO_HOST_ASYNC( cctag_pointer_buffer,
+                                   point_buffer,
+                                   sizeof(popart::NearbyPoint),
+                                   tagStream );
+    POP_CHK_CALL_IFSYNC;
+
+    cudaStreamSynchronize( tagStream );
+
+    if( not cctag_pointer_buffer->readable ) {
+        return false;
+    }
+
+    bestPointOut      = cctag_pointer_buffer->point;
+    bestHomographyOut = cctag_pointer_buffer->mHomography;
     return true;
 }
 
