@@ -1502,7 +1502,12 @@ int identify_step_2(
                         cudaPipe,
                         ellipse,
                         params,
-                        cctag.getNearbyPointBuffer() );
+#ifdef WITH_CUDA
+                        cctag.getNearbyPointBuffer()
+#else
+                        0
+#endif
+                        );
   // End GPU ////////
   // Note Outputs (GPU->CPU):
   //        The main amount of data to transfert is only that way and is 'vSelectedCuts', 
