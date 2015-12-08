@@ -2,7 +2,6 @@
 #include <cctag/CCTag.hpp>
 #include <cctag/detection.hpp>
 #include <cctag/logtime.hpp>
-#include "cuda/device_prop.hpp"
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
@@ -75,11 +74,6 @@ void cctagDetection(
   }
 }
 
-void initCCTagDetection( )
-{
-    popart::device_prop_t deviceInfo;
-    deviceInfo.print( );
-}
 
 }
 
