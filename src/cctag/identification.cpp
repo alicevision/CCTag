@@ -703,7 +703,7 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
     //if ( j > upperSize) // todo: validate with more tests on real data (e.g. grimstad, day01,img3)
     //  break;            // and clean
     
-    if ( rit->first < varMax*0.8)
+    if ( rit->first/varMax < 0.5 )
       break;
   }
   
