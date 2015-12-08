@@ -103,21 +103,26 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
  * once for every 
  */
 __global__
-void idGetSignals( NearbyPoint*         nPoint,
-                   cv::cuda::PtrStepSzb src,
+void idGetSignals( cv::cuda::PtrStepSzb src,
+                   const int            vCutSize,
+                   const NearbyPoint*   point_buffer,
                    const CutStruct*     cut_buffer,
-                   CutSignals*          signals,
-                   const int            vCutSize )
+                   CutSignals*          sig_buffer )
 {
+    const size_t gridNSample = tagParam.gridNSample;
+    const int i = blockIdx.y;
+    const int j = blockIdx.z;
+    const int idx = j * gridNSample + i;
+
+    const NearbyPoint* nPoint = &point_buffer[idx];
+    identification::CutSignals* signals = &sig_buffer[idx * vCutSize];
+
     int myCutIdx = blockIdx.x * blockDim.y + threadIdx.y;
 
     if( myCutIdx >= vCutSize ) {
         // warps do never loose lockstep because of this
         return; // out of bounds
     }
-
-    // OK
-    // if( threadIdx.x == 0 ) { printf("My index: %d\n", myCutIdx ); }
 
     const CutStruct& myCut     = cut_buffer[myCutIdx];
     CutSignals*      mySignals = &signals[myCutIdx];
@@ -177,34 +182,6 @@ void initAllNearbyPoints(
     nPoint->readable = true;
     ellipse.computeHomographyFromImagedCenter( nPoint->point, nPoint->mHomography );
     nPoint->mHomography.invert( nPoint->mInvHomography );
-}
-
-__global__
-void getSignalsAllNearbyPoints(
-    cv::cuda::PtrStepSzb               src,
-    const int                          vCutSize,
-    NearbyPoint*                       point_buffer,
-    const identification::CutStruct*   cut_buffer,
-    identification::CutSignals*        sig_buffer )
-{
-    const size_t gridNSample = tagParam.gridNSample;
-    const int i = blockIdx.y;
-    const int j = blockIdx.z;
-    const int idx = j * gridNSample + i;
-
-    NearbyPoint* nPoint = &point_buffer[idx];
-    identification::CutSignals* signals = &sig_buffer[idx * vCutSize];
-
-    const dim3 block( 32, 1, 1 ); // we use this to sum up signals
-    const dim3 grid( vCutSize, 1, 1 );
-
-    popart::identification::idGetSignals
-        <<<grid,block>>>
-        ( nPoint,
-          src,
-          cut_buffer,
-          signals,
-          vCutSize );
 }
 
 /* All the signals have been computed for the homographies rolled
@@ -476,8 +453,11 @@ void Frame::idCostFunction(
               point_buffer );
         POP_CHK_CALL_IFSYNC;
 
-        popart::identification::getSignalsAllNearbyPoints
-            <<<grid,block,0,tagStream>>>
+        dim3 get_block( 32, vCutSize, 1 ); // we use this to sum up signals
+        dim3 get_grid( 1, gridNSample, gridNSample );
+
+        popart::identification::idGetSignals
+            <<<get_grid,get_block,0,tagStream>>>
             ( _d_plane,
               vCutSize,
               point_buffer,
