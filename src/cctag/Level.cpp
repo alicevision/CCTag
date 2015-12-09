@@ -28,9 +28,14 @@ Level::Level( std::size_t width, std::size_t height, int level, bool cuda_alloca
         _edges = new cv::Mat(height, width, CV_8UC1);
     }
     _temp = cv::Mat(height, width, CV_8UC1);
+
+    _processed.data = new int8_t[height * width];
+    _processed.step = width * sizeof(int8_t);
+    _processed.cols = width;
+    _processed.rows = height;
   
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
-  _edgesNotThin = cv::Mat(height, width, CV_8UC1);
+    _edgesNotThin = cv::Mat(height, width, CV_8UC1);
 #endif
   
 }
@@ -42,6 +47,7 @@ Level::~Level( )
     delete _dy;
     delete _mag;
     delete _edges;
+    delete _processed.data;
 }
 
 void Level::setLevel( const cv::Mat & src,
@@ -118,5 +124,34 @@ const cv::Mat & Level::getEdges() const
 {
     return *_edges;
 }
+
+void Level::resetProcessed( )
+{
+    memset( _processed.data, -1, _processed.cols * _processed.rows );
+}
+
+#if 0
+void Level::setProcessed( int x, int y, int8_t val )
+{
+    if( x >= 0 && x < _processed.cols && y >= 0 && y < _processed.rows ) {
+        _processed.ptr(y)[x] = val;
+    } else {
+        std::cerr << __FILE__ << ":" << __LINE__ << std::endl
+                  << "    Coordinates out of bounds" << std::endl;
+    }
+}
+
+int8_t Level::getProcessed( int x, int y ) const
+{
+    if( x >= 0 && x < _processed.cols && y >= 0 && y < _processed.rows ) {
+        return _processed.ptr(y)[x];
+    } else {
+        std::cerr << __FILE__ << ":" << __LINE__ << std::endl
+                  << "    Coordinates out of bounds" << std::endl;
+        return -1;
+    }
+}
+#endif
+
 
 }

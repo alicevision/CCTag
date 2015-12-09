@@ -2,6 +2,7 @@
 #define	_CCTAG_LEVEL_HPP
 
 #include <opencv2/opencv.hpp>
+#include "cuda/ptrstep.h"
 
 namespace popart {
     class TagPipe;
@@ -47,7 +48,20 @@ public:
   {
     return _rows;
   }
-  
+
+  void resetProcessed( );
+  // void setProcessed( int x, int y, int8_t val );
+  // int8_t getProcessed( int x, int y ) const;
+
+    inline void setProcessed( int x, int y, int8_t val )
+    {
+        _processed.ptr(y)[x] = val;
+    }
+
+    inline int8_t getProcessed( int x, int y ) const
+    {
+        return _processed.ptr(y)[x];
+    }
 
 private:
   int         _level;
@@ -62,6 +76,8 @@ private:
   cv::Mat* _src;
   cv::Mat* _edges;
   cv::Mat  _temp;
+
+  cv::cuda::PtrStepSz8s _processed;
   
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
   cv::Mat _edgesNotThin;

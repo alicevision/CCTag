@@ -7,11 +7,13 @@
 
 namespace cv {
     namespace cuda {
+        typedef PtrStepSz<int8_t>   PtrStepSz8s;
         typedef PtrStepSz<int16_t>  PtrStepSz16s;
         typedef PtrStepSz<uint32_t> PtrStepSz32u;
         typedef PtrStepSz<int32_t>  PtrStepSz32s;
         typedef PtrStepSz<uchar4>   PtrStepSzb4;
 
+        typedef PtrStep<int8_t>     PtrStep8s;
         typedef PtrStep<int16_t>    PtrStep16s;
         typedef PtrStep<uint32_t>   PtrStep32u;
         typedef PtrStep<int32_t>    PtrStep32s;

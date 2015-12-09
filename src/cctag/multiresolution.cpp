@@ -254,6 +254,7 @@ void cctagMultiresDetection_inner(
     cctagDetectionFromEdges(
         pyramidMarkers,
         vPoints,
+        level,
         level->getSrc(),
         winners,
         seeds,

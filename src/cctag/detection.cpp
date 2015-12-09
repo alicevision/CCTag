@@ -119,6 +119,7 @@ void constructFlowComponentFromSeed(
 }
 
 void completeFlowComponent(
+        Level* level,
         Candidate & candidate,
         WinnerMap & winners,
         std::vector<EdgePoint> & points,
@@ -197,9 +198,10 @@ void completeFlowComponent(
 
       bool goodInit = false;
 
-      goodInit = ellipseGrowingInit(points, filteredChildrens, outerEllipse);
+      goodInit = ellipseGrowingInit( level, points, filteredChildrens, outerEllipse);
 
-      ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
+      ellipseGrowing2( level,
+                       edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
                       params._ellipseGrowingEllipticHullWidth, nSegmentOut, 
                       nLabel, goodInit);
 
@@ -385,6 +387,7 @@ void flowComponentAssembling(
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
         std::vector<EdgePoint>& points,
+        Level*                  level,
         const cv::Mat&          src,
         WinnerMap&              winners,
         const std::vector<EdgePoint*>& seeds,
@@ -453,7 +456,7 @@ void cctagDetectionFromEdges(
   CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
   while (iCandidate < nFlowComponentToProcessLoopTwo)
   {
-    completeFlowComponent(*it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, params);
+    completeFlowComponent( level, *it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, params);
     ++it;
     ++iCandidate;
   }

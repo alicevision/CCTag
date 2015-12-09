@@ -7,6 +7,7 @@
 #include <cctag/params.hpp>
 #include <cctag/frame.hpp>
 #include "cctag/logtime.hpp"
+#include "cctag/Level.hpp"
 
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/serialization.hpp>
@@ -35,6 +36,7 @@ void cctagDetection(
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
         std::vector<EdgePoint>& points,
+        Level*                  level,
         const cv::Mat&          src,
         WinnerMap&              winners,
         const std::vector<EdgePoint*>& seeds,
