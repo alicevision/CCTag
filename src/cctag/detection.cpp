@@ -808,10 +808,6 @@ void cctagDetection(CCTag::List& markers,
 
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
-    if( markers.size() == 0 ) {
-        return;
-    }
-
 #ifdef WITH_CUDA
     /* identification in CUDA requires a host-side nearby point struct
      * in pinned memory for safe, non-blocking memcpy.
@@ -831,7 +827,7 @@ void cctagDetection(CCTag::List& markers,
         const int numTags  = markers.size();
 
 #ifdef WITH_CUDA
-        if( pipe1 ) {
+        if( pipe1 && numTags > 0 ) {
             pipe1->checkTagAllocations( numTags, params );
         }
 #endif // WITH_CUDA
@@ -852,7 +848,7 @@ void cctagDetection(CCTag::List& markers,
         }
 
 #ifdef WITH_CUDA
-        if( pipe1 ) {
+        if( pipe1 && numTags > 0 ) {
             pipe1->uploadCuts( numTags, vSelectedCuts, params );
             pipe1->makeCudaStreams( numTags );
 
