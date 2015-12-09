@@ -808,6 +808,10 @@ void cctagDetection(CCTag::List& markers,
 
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
+    if( markers.size() == 0 ) {
+        return;
+    }
+
 #ifdef WITH_CUDA
     /* identification in CUDA requires a host-side nearby point struct
      * in pinned memory for safe, non-blocking memcpy.

@@ -587,6 +587,8 @@ void TagPipe::uploadCuts( int                                 numTags,
                           const std::vector<cctag::ImageCut>* vCuts,
                           const cctag::Parameters&            params )
 {
+    if( numTags == 0 || vCuts == 0 || vCuts->size() == 0 ) return;
+
     identification::CutStruct* csptr_base = _frame[0]->getCutStructBufferHost();
 
     const int max_cuts_per_Tag = params._numCutsInIdentStep;
