@@ -73,10 +73,8 @@ public:
     , _scale(scale)
   {
     setInitRadius();
-    cctag::numerical::geometry::Ellipse aux = _outerEllipse;
-    aux.setCenter( Point2dN<double>(_outerEllipse.center().x()+0.5, _outerEllipse.center().y()+0.5 ) ); // todo: why + 0.5 is required ?
-    
-    cctag::numerical::geometry::scale(aux, _rescaledOuterEllipse, scale);
+    _outerEllipse.setCenter( Point2dN<double>(_outerEllipse.center().x()+0.5, _outerEllipse.center().y()+0.5 ) ); // todo: why + 0.5 is required ?
+    cctag::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
     
     _status = 0;
   }
@@ -298,6 +296,8 @@ public:
   {
     return isOverlappingEllipses(_rescaledOuterEllipse, marker.rescaledOuterEllipse());
   }
+  
+  bool isEqual(const CCTag& marker) const;
 
 #ifdef CCTAG_SERIALIZE
 

@@ -172,7 +172,8 @@ void update(
   BOOST_FOREACH(CCTag & currentMarker, markers)
   {
     // If markerToAdd is overlapping with a marker contained in markers then
-    if (currentMarker.isOverlapping(markerToAdd))
+    //if (currentMarker.isOverlapping(markerToAdd)) // todo: clean
+    if (currentMarker.isEqual(markerToAdd))       
     {
       if (markerToAdd.quality() > currentMarker.quality())
       {
