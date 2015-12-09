@@ -99,6 +99,9 @@ public:
     // copy the upper layer from the host to the device
     void upload( const unsigned char* image ); // implicitly assumed that w/h are the same as above
 
+    // called by every thread, unpins uploaded image in frame 0
+    void uploadComplete( );
+
     // Create a texture object this frame.
     // The caller must ensure that the Kind of texture object makes sense.
     void createTexture( FrameTexture::Kind kind );
@@ -325,8 +328,9 @@ private:
 
     Voting _vote;
 
-    FrameTexture*  _texture;
-    cudaEvent_t    _wait_for_upload;
+    FrameTexture*        _texture;
+    cudaEvent_t          _wait_for_upload;
+    const unsigned char* _image_to_upload;
 
 public:
     // if we run out of streams (there are 32), we may have to share

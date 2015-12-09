@@ -137,6 +137,7 @@ void TagPipe::handleframe( int i )
 
     if( i > 0 ) {
         _frame[i]->streamSync( ev ); // aysnc
+        _frame[i]->uploadComplete( ); // unpin image
         _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
     }
 
