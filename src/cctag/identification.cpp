@@ -1056,6 +1056,10 @@ bool refineConicFamilyGlob(
       return false;
     }
   }
+  
+  //CCTAG_COUT(sqrt(residual/vCuts.size()));
+  //if ( sqrt(residual/vCuts.size()) > 70 )
+  //  return false;
 
   // Measure the time spent in the optimization
   boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
