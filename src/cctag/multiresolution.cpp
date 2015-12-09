@@ -284,8 +284,6 @@ void cctagMultiresDetection(
 {
   //	* For each pyramid level:
   //	** launch CCTag detection based on the canny edge detection output.
-  
-  bool doUpdate = true; // todo@Lilian: add in the parameter file.
 
   std::map<std::size_t, CCTag::List> pyramidMarkers;
   std::vector<EdgePointsImage> vEdgeMaps;
@@ -319,6 +317,9 @@ void cctagMultiresDetection(
   if( durations ) durations->log( "after cctagMultiresDetection_inner" );
   
   // Delete overlapping markers while keeping the best ones.
+  
+  CCTag::List markersPrelim;
+  
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
   for (std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers ; ++i)
   // set the _numberOfProcessedMultiresLayers <= _numberOfMultiresLayers todo@Lilian
@@ -327,16 +328,16 @@ void cctagMultiresDetection(
 
     BOOST_FOREACH(const CCTag & marker, markersList)
     {
-      if (doUpdate)
-      {
-        update(markers, marker);
-      }
-      else
-      {
-        markers.push_back(new CCTag(marker));
-      }
+        update(markersPrelim, marker);
     }
   }
+  
+  // todo: in which case is this double check required ?
+  for(const CCTag & marker : markersPrelim)
+  {
+    update(markers, marker);
+  }
+  
   if( durations ) durations->log( "after update markers" );
   
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
