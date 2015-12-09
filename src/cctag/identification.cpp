@@ -1054,25 +1054,30 @@ bool refineConicFamilyGlob(
   
         double maxSemiAxis = std::max(outerEllipse.a(),outerEllipse.b());
   
-        // Tests against synthetic experiments have shown that we do not reach a precision
-        // better than 0.02 pixel.
-        while ( neighbourSize*maxSemiAxis > 0.02 )       
-        {
-            if ( imageCenterOptimizationGlob( mHomography,   // out
-                                              vCuts,         // out
-                                              optimalPoint,  // out
-                                              residual,      // out
-                                              neighbourSize,
-                                              src,
-                                              outerEllipse,
-                                              params ) )
-            {
-                CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
-                neighbourSize /= double((gridNSample-1)/2) ;
-            } else {
-                return false;
-            }
-        }
+
+  // Tests against synthetic experiments have shown that we do not reach a precision
+  // better than 0.02 pixel.
+  while ( neighbourSize*maxSemiAxis > 0.02 )       
+  {
+    if ( imageCenterOptimizationGlob( mHomography,   // out
+                                      vCuts,         // out
+                                      optimalPoint,  // out
+                                      residual,      // out
+                                      neighbourSize,
+                                      src,
+                                      outerEllipse,
+                                      params ) )
+    {
+      CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
+      neighbourSize /= double((gridNSample-1)/2) ;
+    }else{
+      return false;
+    }
+  }
+  
+  //CCTAG_COUT(sqrt(residual/vCuts.size()));
+  //if ( sqrt(residual/vCuts.size()) > 70 )
+  //  return false;
 
         // Measure the time spent in the optimization
         boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
