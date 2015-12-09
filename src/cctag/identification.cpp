@@ -19,7 +19,9 @@
 #include <cctag/geometry/Cercle.hpp>
 #include <cctag/talk.hpp>
 
+#ifdef WITH_CUDA
 #include "cuda/tag.h"
+#endif
 
 #include <terry/sampler/all.hpp>
 

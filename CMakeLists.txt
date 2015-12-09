@@ -12,7 +12,7 @@ site_name(MACHINE_NAME)
 if(EXISTS "${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake")
   include("${MACHINE_NAME}.cmake")
 else()
-  message(FATAL_ERROR "Compiling without ${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake" )
+  message(WARNING "Compiling without ${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake" )
 endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -pg")

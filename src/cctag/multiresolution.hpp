@@ -8,7 +8,9 @@
 #include <cctag/geometry/Cercle.hpp>
 #include <cctag/boostCv/cvImage.hpp>
 #include <cctag/ImagePyramid.hpp>
+#ifdef WITH_CUDA
 #include "cuda/tag.h"
+#endif
 #include "cctag/logtime.hpp"
 
 #include <terry/sampler/all.hpp>

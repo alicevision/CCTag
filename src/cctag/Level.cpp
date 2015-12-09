@@ -2,7 +2,9 @@
 #include <cctag/filter/cvRecode.hpp>
 #include <cctag/filter/thinning.hpp>
 #include "cctag/talk.hpp"
+#ifdef WITH_CUDA
 #include "cuda/tag.h"
+#endif
 
 namespace cctag {
 
