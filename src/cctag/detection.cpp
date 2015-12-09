@@ -26,7 +26,9 @@
 #include <cctag/global.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro
 #include <cctag/fileDebug.hpp>
+#ifdef WITH_CUDA
 #include "cuda/tag.h"
+#endif
 
 #include <boost/foreach.hpp>
 #include <boost/math/constants/constants.hpp>
