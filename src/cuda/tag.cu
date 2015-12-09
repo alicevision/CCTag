@@ -16,6 +16,7 @@
 #include "cctag/logtime.hpp"
 #include "cuda/onoff.h"
 #include "cuda/tag_threads.h"
+#include "cuda/tag_cut.h"
 
 using namespace std;
 
@@ -76,6 +77,18 @@ void TagPipe::initialize( const uint32_t pix_w,
 }
 
 __host__
+void TagPipe::release( )
+{
+    int numTags = _tag_streams.size();
+    for( int i=0; i<numTags; i++ ) {
+        POP_CUDA_STREAM_DESTROY( _tag_streams[i] );
+    }
+    _tag_streams.clear();
+
+    PinnedCounters::release( );
+}
+
+__host__
 uint32_t TagPipe::getWidth(  size_t layer ) const
 {
     return _frame[layer]->getWidth();
@@ -124,6 +137,7 @@ void TagPipe::handleframe( int i )
 
     if( i > 0 ) {
         _frame[i]->streamSync( ev ); // aysnc
+        _frame[i]->uploadComplete( ); // unpin image
         _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
     }
 
@@ -143,6 +157,9 @@ void TagPipe::handleframe( int i )
     time_vote->stop();
 #endif // not SHOW_DETAILED_TIMING
 
+    // note: without visual debug, only level 0 performs download
+    _frame[i]->applyPlaneDownload(); // async
+
     _frame[i]->applyGauss( _params ); // async
     _frame[i]->applyMag();  // async
 
@@ -153,7 +170,6 @@ void TagPipe::handleframe( int i )
     _frame[i]->applyVoteConstructLine();  // async
     _frame[i]->applyVoteSortUniq();  // async
 
-    _frame[i]->applyPlaneDownload(); // async
     _frame[i]->applyGaussDownload(); // async
     _frame[i]->applyMagDownload();
     _frame[i]->applyThinDownload(); // sync
@@ -461,36 +477,15 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
     delete [] plane.data;
 }
 
-double TagPipe::idCostFunction( int                                        level,
-                                const cctag::numerical::geometry::Ellipse& ellipse,
-                                const cctag::Point2dN<double>&             center,
-                                std::vector<cctag::ImageCut>&              vCuts,
-                                const size_t                               vCutMaxVecLen,
-                                const float                                neighbourSize,
-                                const size_t                               gridNSample,
-                                cctag::Point2dN<double>&                   bestPointOut,
-                                cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
-                                NearbyPoint*                               cctag_pointer_buffer )
+__host__
+void TagPipe::imageCenterOptLoop(
+    const int                                  tagIndex,
+    const cctag::numerical::geometry::Ellipse& ellipse,
+    const cctag::Point2dN<double>&             center,
+    const int                                  vCutSize,
+    const cctag::Parameters&                   params,
+    NearbyPoint*                               cctag_pointer_buffer )
 {
-    /* The first part of cctag::identification::getNearbyPoints() applies
-     * to all possible centers for the candidate tag. It is best to
-     * compute it on the host side.
-     * Computing the nearby centers is gradNSample X gridNSample size
-     * operation and best moved to the device side.
-     */
-/*
-    cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromEllipse( ellipse );
-    cctag::numerical::BoundedMatrix3x3d mInvT;
-    cctag::numerical::invert_3x3(mT,mInvT);
-
-    cctag::numerical::geometry::Ellipse transformedEllipse(ellipse);
-    cctag::viewGeometry::projectiveTransform( mInvT, transformedEllipse );
-    neighbourSize *= std::max(transformedEllipse.a(),transformedEllipse.b());
-
-    cctag::Point2dN<double> condCenter = center;
-    cctag::numerical::optimization::condition(condCenter, mT);
-*/
-
     popart::geometry::ellipse e( ellipse.matrix()(0,0),
                                  ellipse.matrix()(0,1),
                                  ellipse.matrix()(0,2),
@@ -507,20 +502,38 @@ double TagPipe::idCostFunction( int                                        level
                                  ellipse.angle() );
     float2 f = make_float2( center.x(), center.y() );
 
+    popart::geometry::matrix3x3 bestHomography;
+
+    _frame[0]->imageCenterOptLoop( tagIndex,
+                                   _tag_streams[tagIndex],
+                                   e,
+                                   f,
+                                   vCutSize,
+                                   params,
+                                   cctag_pointer_buffer );
+}
+
+__host__
+bool TagPipe::imageCenterRetrieve(
+    const int                                  tagIndex,
+    cctag::Point2dN<double>&                   center,
+    cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+    const cctag::Parameters&                   params,
+    NearbyPoint*                               cctag_pointer_buffer )
+{
     float2                      bestPoint;
     popart::geometry::matrix3x3 bestHomography;
-    double avg = _frame[level]->idCostFunction( e,
-                                                f,
-                                                vCuts,
-                                                vCutMaxVecLen,
-                                                neighbourSize,
-                                                gridNSample,
-                                                bestPoint,
-                                                bestHomography,
-                                                cctag_pointer_buffer );
-    if( avg < FLT_MAX ) {
-        bestPointOut.x() = bestPoint.x;
-        bestPointOut.y() = bestPoint.y;
+
+    bool success = _frame[0]->imageCenterRetrieve( tagIndex,
+                                                   _tag_streams[tagIndex],
+                                                   bestPoint,
+                                                   bestHomography,
+                                                   params,
+                                                   cctag_pointer_buffer );
+
+    if( success ) {
+        center.x() = bestPoint.x;
+        center.y() = bestPoint.y;
 
     #pragma unroll
     for( int i=0; i<3; i++ ) {
@@ -530,7 +543,99 @@ double TagPipe::idCostFunction( int                                        level
             }
         }
     }
-    return avg;
+    return success;
+}
+
+/** How much GPU-side memory do we need?
+ *  For each tag (numTags), we need gridNSample^2  nearby points.
+ *  For each tag (numTags) and each nearby point (gridNSample^2), we
+ *    need a signal buffer (sizeof(CutSignals)).
+ *    Note that sizeof(CutSignals) must also be >=
+ *    sizeof(float) * sampleCutLength + sizeof(uint32_t)
+ *  For each tag (numTags), we need space for max cut size
+ *    (params._numCutsInIdentStep) cuts without the signals.
+ */
+void TagPipe::checkTagAllocations( const int                numTags,
+                                   const cctag::Parameters& params )
+{
+    const size_t gridNSample   = params._imagedCenterNGridSample;
+
+    const size_t g = numTags * gridNSample * gridNSample;
+
+    if( g*sizeof(NearbyPoint) > _frame[0]->getNearbyPointBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold point search results"
+             << endl;
+        exit( -1 );
+    }
+
+    if( g*sizeof(identification::CutSignals) > _frame[0]->getSignalBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold all signal buffers"
+             << endl;
+        exit( -1 );
+    }
+
+    if( numTags * params._numCutsInIdentStep * sizeof(identification::CutStruct) > _frame[0]->getCutStructBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold all intermediate homographies" << endl;
+        exit( -1 );
+    }
+}
+
+__host__
+void TagPipe::uploadCuts( int                                 numTags,
+                          const std::vector<cctag::ImageCut>* vCuts,
+                          const cctag::Parameters&            params )
+{
+    if( numTags == 0 || vCuts == 0 || vCuts->size() == 0 ) return;
+
+    identification::CutStruct* csptr_base = _frame[0]->getCutStructBufferHost();
+
+    const int max_cuts_per_Tag = params._numCutsInIdentStep;
+
+    for( int tagIndex=0; tagIndex<numTags; tagIndex++ ) {
+        identification::CutStruct* csptr;
+        
+        csptr = &csptr_base[tagIndex * max_cuts_per_Tag];
+
+#if 1
+// #ifndef NDEBUG
+        if( vCuts[tagIndex].size() > max_cuts_per_Tag ) {
+            cerr << __FILE__ << "," << __LINE__ << ":" << endl
+                 << "    Programming error: assumption that number of cuts for a single tag is < params._numCutsInIdentStep is wrong" << endl;
+            exit( -1 );
+        }
+#endif // NDEBUG
+
+        std::vector<cctag::ImageCut>::const_iterator vit  = vCuts[tagIndex].begin();
+        std::vector<cctag::ImageCut>::const_iterator vend = vCuts[tagIndex].end();
+
+        for( ; vit!=vend; vit++ ) {
+            csptr->start.x     = vit->start().getX();
+            csptr->start.y     = vit->start().getY();
+            csptr->stop.x      = vit->stop().getX();
+            csptr->stop.y      = vit->stop().getY();
+            csptr->beginSig    = vit->beginSig();
+            csptr->endSig      = vit->endSig();
+            csptr->sigSize     = vit->imgSignal().size();
+            csptr++;
+        }
+    }
+
+    POP_CHK_CALL_IFSYNC;
+    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( _frame[0]->getCutStructBuffer(),
+                                    _frame[0]->getCutStructBufferHost(),
+                                    numTags * max_cuts_per_Tag * sizeof(identification::CutStruct) );
+}
+
+void TagPipe::makeCudaStreams( int numTags )
+{
+    for( int i=_tag_streams.size(); i<numTags; i++ ) {
+        cudaStream_t stream;
+        POP_CUDA_STREAM_CREATE( &stream );
+        _tag_streams.push_back( stream );
+    }
 }
 
 }; // namespace popart

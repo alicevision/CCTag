@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <opencv2/core.hpp>
+#include <cuda_runtime.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
@@ -32,6 +33,7 @@ class TagPipe
     std::vector<Frame*>         _frame;
     const cctag::Parameters&    _params;
     TagThreads                  _threads;
+    std::vector<cudaStream_t>   _tag_streams;
 
 public:
     TagPipe( const cctag::Parameters& params );
@@ -39,6 +41,7 @@ public:
     void initialize( const uint32_t pix_w,
                      const uint32_t pix_h,
                      cctag::logtime::Mgmt* durations );
+    void release( );
     void load( unsigned char* pix );
     void tagframe( );
     void handleframe( int layer );
@@ -62,20 +65,31 @@ public:
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
 
-    double idCostFunction( int                                        level,
-                           const cctag::numerical::geometry::Ellipse& ellipse,
-                           const cctag::Point2dN<double>&             center,
-                           std::vector<cctag::ImageCut>&              vCuts,
-                           const size_t                               vCutMaxVecLen,
-                           const float                                neighbourSize,
-                           const size_t                               gridNSample,
-                           cctag::Point2dN<double>&                   bestPoint,
-                           cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
-                           NearbyPoint*                               cctag_pointer_buffer );
+    void checkTagAllocations( const int                numTags,
+                              const cctag::Parameters& params );
 
-    size_t getSignalBufferByteSize( int level ) const;
+    void imageCenterOptLoop(
+        const int                                  tagIndex,
+        const cctag::numerical::geometry::Ellipse& ellipse,
+        const cctag::Point2dN<double>&             center,
+        const int                                  vCutSize,
+        const cctag::Parameters&                   params,
+        NearbyPoint*                               cctag_pointer_buffer );
 
-    void uploadCuts( int level, std::vector<cctag::ImageCut>& vCuts );
+    bool imageCenterRetrieve(
+        const int                                  tagIndex,
+        cctag::Point2dN<double>&                   center,
+        cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+        const cctag::Parameters&                   params,
+        NearbyPoint*                               cctag_pointer_buffer );
+
+    // size_t getSignalBufferByteSize( int level ) const;
+
+    void uploadCuts( int                                 numTags,
+                     const std::vector<cctag::ImageCut>* vCuts,
+                     const cctag::Parameters&            params );
+
+    void makeCudaStreams( int numTags );
 
     void debug( unsigned char* pix,
                 const cctag::Parameters& params );

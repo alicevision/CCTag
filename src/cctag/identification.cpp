@@ -530,6 +530,7 @@ double costSelectCutFun(
   return ndir - alpha * sumVar;
 }
 
+#if 0
 /**
  * @brief Select a subset of image cuts appropriate for the image center optimisation.
  * This selection aims at maximizing the variance of the image signal over all the 
@@ -672,7 +673,7 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     }
   }
 }
-
+#endif
 
 void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
         std::size_t selectSize,
@@ -989,6 +990,7 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @brief Compute the optimal homography/imaged center based on the 
  * signal in the image and  the outer ellipse, supposed to be image the unit circle.
  * 
+ * @param[in] tagIndex a sequence number for this tag
  * @param[out] mHomography optimal image->cctag homography
  * @param[out] optimalPoint optimal imaged center
  * @param[out] vCuts cuts holding the rectified 1D signals at the end of the optimization
@@ -998,6 +1000,7 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
+        const int tagIndex,
         cctag::numerical::BoundedMatrix3x3d & mHomography,
         Point2dN<double> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
@@ -1007,75 +1010,88 @@ bool refineConicFamilyGlob(
         const cctag::Parameters params,
         popart::NearbyPoint* cctag_pointer_buffer )
 {
-  using namespace cctag::numerical;
-  using namespace boost::numeric::ublas;
+    using namespace cctag::numerical;
+    using namespace boost::numeric::ublas;
 
-  // BOOST_ASSERT( vOuterPoints.size() > 0 );
-
-  // Visual debug
-  CCTagVisualDebug::instance().newSession( "refineConicPts" );
-  for(const cctag::ImageCut & cut : vCuts)
-  {
-    CCTagVisualDebug::instance().drawPoint( cut.stop(), cctag::color_red );
-  }
-  CCTagVisualDebug::instance().newSession( "centerOpt" );
-  CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_green );
-
-  boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-
-  // A. Perform the optimization ///////////////////////////////////////////////
-
-  // The neighbourhood size is 0.20*max(ellipse.a(),ellipse.b()), i.e. the max ellipse semi-axis
-  double neighbourSize = params._imagedCenterNeighbourSize;
-  double residual;
-
-  std::size_t gridNSample = params._imagedCenterNGridSample; // todo: check must be odd 
-
-  // The neighbourhood size is iteratively decreased, assuming the convexity of the 
-  // cost function within it.
-  
-  double maxSemiAxis = std::max(outerEllipse.a(),outerEllipse.b());
-  
-  // Tests against synthetic experiments have shown that we do not reach a precision
-  // better than 0.02 pixel.
-  while ( neighbourSize*maxSemiAxis > 0.02 )       
-  {
-    if ( imageCenterOptimizationGlob( mHomography,   // out
-                                      vCuts,         // out
-                                      optimalPoint,  // out
-                                      residual,      // out
-                                      neighbourSize,
-                                      gridNSample,
-                                      src,
-                                      cudaPipe,
-                                      outerEllipse,
-                                      params,
-                                      cctag_pointer_buffer ) )
+    // Visual debug
+    CCTagVisualDebug::instance().newSession( "refineConicPts" );
+    for(const cctag::ImageCut & cut : vCuts)
     {
-      CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
-      neighbourSize /= double((gridNSample-1)/2) ;
-    }else{
-      return false;
+        CCTagVisualDebug::instance().drawPoint( cut.stop(), cctag::color_red );
     }
-  }
+    CCTagVisualDebug::instance().newSession( "centerOpt" );
+    CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_green );
 
-  // Measure the time spent in the optimization
-  boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
-  boost::posix_time::time_duration d = tend - tstart;
-  const double spendTime = d.total_milliseconds();
-  DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
+#ifdef WITH_CUDA
+    if( cudaPipe ) {
+        bool success = cudaPipe->imageCenterRetrieve(
+            tagIndex,      // in
+            optimalPoint,  // out
+            mHomography,   // out
+            params,
+            cctag_pointer_buffer );
 
-  CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
+        if( not success ) {
+            return false;
+        }
+    } else { // not CUDA
+#endif // WITH_CUDA
+
+        boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
+
+        // A. Perform the optimization ///////////////////////////////////////////////
+
+        // The neighbourhood size is 0.20*max(ellipse.a(),ellipse.b()), i.e. the max ellipse semi-axis
+        double neighbourSize = params._imagedCenterNeighbourSize;
+        double residual;
+
+        std::size_t gridNSample = params._imagedCenterNGridSample; // todo: check must be odd 
+
+        // The neighbourhood size is iteratively decreased, assuming the convexity of the 
+        // cost function within it.
   
-  // B. Get the signal associated to the optimal homography/imaged center //////
-  {
-    boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-    getSignals(vCuts,mHomography,src);
-    boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
-    boost::posix_time::time_duration d = tend - tstart;
-    const double spendTime = d.total_milliseconds();
-  }
-  return true;
+        double maxSemiAxis = std::max(outerEllipse.a(),outerEllipse.b());
+  
+        // Tests against synthetic experiments have shown that we do not reach a precision
+        // better than 0.02 pixel.
+        while ( neighbourSize*maxSemiAxis > 0.02 )       
+        {
+            if ( imageCenterOptimizationGlob( mHomography,   // out
+                                              vCuts,         // out
+                                              optimalPoint,  // out
+                                              residual,      // out
+                                              neighbourSize,
+                                              src,
+                                              outerEllipse,
+                                              params ) )
+            {
+                CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_blue );
+                neighbourSize /= double((gridNSample-1)/2) ;
+            } else {
+                return false;
+            }
+        }
+
+        // Measure the time spent in the optimization
+        boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
+        boost::posix_time::time_duration d = tend - tstart;
+        const double spendTime = d.total_milliseconds();
+        DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
+
+#ifdef WITH_CUDA
+    } // not CUDA
+#endif // WITH_CUDA
+    CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
+  
+    // B. Get the signal associated to the optimal homography/imaged center //////
+    {
+        boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
+        getSignals(vCuts,mHomography,src);
+        boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
+        boost::posix_time::time_duration d = tend - tstart;
+        const double spendTime = d.total_milliseconds();
+    }
+    return true;
 }
 
 /**
@@ -1083,12 +1099,11 @@ bool refineConicFamilyGlob(
  * 
  * @param[out] mHomography optimal homography from the pixel plane to the cctag plane.
  * @param[out] vCuts vector of the image cuts whose the signal has been rectified w.r.t. the computed mHomography
- * @param[out] center optimal imaged center
+ * @param[in-out] center optimal imaged center
  * @param[out] minRes residual after optimization
  * @param[in] neighbourSize size of the neighbourhood to consider relatively to the outer ellipse dimensions
  * @param[in] gridNSample number of sample points along one dimension of the neighbourhood (e.g. grid)
  * @param[in] src source gray (uchar) image
- * @param[inout] cudaPipe CUDA object handle, changing
  * @param[in] outerEllipse outer ellipse
  * @param[in] params Parameters read from config file
  */
@@ -1098,90 +1113,64 @@ bool imageCenterOptimizationGlob(
         cctag::Point2dN<double> & center,
         double & minRes,
         const double neighbourSize,
-        const std::size_t gridNSample,
         const cv::Mat & src, 
-        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
-        const cctag::Parameters params,
-        popart::NearbyPoint* cctag_pointer_buffer )
+        const cctag::Parameters params )
 {
     cctag::Point2dN<double>             optimalPoint;
     cctag::numerical::BoundedMatrix3x3d optimalHomography;
     bool                                hasASolution = false;
 
-#ifdef WITH_CUDA
- if( cudaPipe ) {
-        double res;
+    using namespace cctag::numerical;
+    using namespace boost::numeric::ublas;
 
-        res = cudaPipe->idCostFunction( 0,
-                                        outerEllipse,
-                                        center,
-                                        vCuts,
-                                        params._sampleCutLength,
-                                        neighbourSize,
-                                        gridNSample,
-                                        optimalPoint,
-                                        optimalHomography,
-                                        cctag_pointer_buffer
-                                        );
-
-        if( res < FLT_MAX ) {
-            minRes = res;
-            hasASolution = true;
-        }
-    }
-    else
-    {
-#endif //  WITH_CUDA
-
-        using namespace cctag::numerical;
-        using namespace boost::numeric::ublas;
+    const size_t gridNSample   = params._imagedCenterNGridSample;
   
-        std::vector<cctag::Point2dN<double> > nearbyPoints;
-        // A. Get all the grid point nearby the center /////////////////////////////
-        getNearbyPoints( outerEllipse,  // in (ellipse)
-                         center,        // in (Point2d)
-                         nearbyPoints,  // out (vector<Point2d>)
-                         neighbourSize, // in (float)
-                         gridNSample,   // in (size_t)
-                         GRID );        // in (enum)
+    std::vector<cctag::Point2dN<double> > nearbyPoints;
+    // A. Get all the grid point nearby the center /////////////////////////////
+    getNearbyPoints( outerEllipse,  // in (ellipse)
+                     center,        // in (Point2d)
+                     nearbyPoints,  // out (vector<Point2d>)
+                     neighbourSize, // in (float)
+                     gridNSample,   // in (size_t)
+                     GRID );        // in (enum)
 
-        minRes = std::numeric_limits<double>::max();
-        BoundedMatrix3x3d mTempHomography;
+    minRes = std::numeric_limits<double>::max();
+    BoundedMatrix3x3d mTempHomography;
 
 #ifdef OPTIM_CENTER_VISUAL_DEBUG // Visual debug durign the optim
-        int k = 0;
+    int k = 0;
 #endif // OPTIM_CENTER_VISUAL_DEBUG   
-        // For all points nearby the center ////////////////////////////////////////
-        for(const cctag::Point2dN<double> & point : nearbyPoints)
+    // For all points nearby the center ////////////////////////////////////////
+    for(const cctag::Point2dN<double> & point : nearbyPoints)
+    {
+        CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
+
+        // B. Compute the homography so that the back projection of 'point' is the
+        // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
+
+        bool   readable = true;
+        double res;
+
         {
-            CCTagVisualDebug::instance().drawPoint( point , cctag::color_green );
-      
-            // B. Compute the homography so that the back projection of 'point' is the
-            // center, i.e. [0;0;1], and the back projected ellipse is the unit circle
-      
-            bool   readable = true;
-            double res;
-
+            try
             {
-                try
-                {
-                    computeHomographyFromEllipseAndImagedCenter(
-                        outerEllipse,     // in (ellipse)
-                        point,            // in (Point2d)
-                        mTempHomography); // out (matrix3x3)
-                } catch(...) {
-                    continue; 
-                }
-
-                // C. Compute the 1D rectified signals of vCuts image cut based on the 
-                // transformation mTempHomography.
-                res = costFunctionGlob(mTempHomography, vCuts, src, readable );
+                computeHomographyFromEllipseAndImagedCenter(
+                    outerEllipse,     // in (ellipse)
+                    point,            // in (Point2d)
+                    mTempHomography); // out (matrix3x3)
+            } catch(...) {
+                continue; 
             }
+
+            // C. Compute the 1D rectified signals of vCuts image cut based on the 
+            // transformation mTempHomography.
+            res = costFunctionGlob(mTempHomography, vCuts, src, readable );
+        }
       
-            // If at least one image cut has been properly read
-            if ( readable )
-            {       
+        // If at least one image cut has been properly read
+        if ( readable )
+        {       
         
                 // Update the residual and the optimized parameters
                 hasASolution = true;
@@ -1191,13 +1180,11 @@ bool imageCenterOptimizationGlob(
                     optimalPoint = point;
                     optimalHomography = mTempHomography;
                 }
-            } else { // not readable
+        } else { // not readable
                 CCTAG_COUT_VAR_OPTIM(readable);
-            }
-        } // for(point : nearbyPoints)
-#ifdef WITH_CUDA
-    }
-#endif // WITH_CUDA
+        }
+    } // for(point : nearbyPoints)
+
     center = optimalPoint;
     mHomography = optimalHomography;
     
@@ -1312,17 +1299,17 @@ double costFunctionGlob(
  *   ii) the outer ellipse + the obtained imaged center delivers the image->cctag homography
  *   iii) the rectified 1D signals are read and deliver the ID via a nearest neighbour
  *        approach where the distance to the cctag bank's profiles used is the one described in [Orazio et al. 2011]
+ * @param[in] tagIndex a sequence number assigned to this tag
  * @param[in] cctag whose center is to be optimized in conjunction with its associated homography.
- * @param[in] radiusRatios bank of radius ratios along with their associated IDs.
  * @param[in] src original gray scale image (original scale, uchar)
  * @param[in] params set of parameters
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
-int identify(
-  CCTag & cctag,
-  const std::vector< std::vector<double> > & radiusRatios, // todo: directly use the CCTagBank
+int identify_step_1(
+  const int tagIndex,
+  const CCTag & cctag,
+  std::vector<cctag::ImageCut>& vSelectedCuts,
   const cv::Mat &  src,
-  popart::TagPipe* cudaPipe,
   const cctag::Parameters & params)
 {
   // Get the outer ellipse in its original scale, i.e. in src.
@@ -1422,7 +1409,7 @@ int identify(
   
   // C. Select a sub sample of image cuts //////////////////////////////////////
   // Cheap in near future (CPU only)
-  std::vector< cctag::ImageCut > vSelectedCuts;
+
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
@@ -1460,7 +1447,47 @@ int identify(
     boost::posix_time::time_duration d = tend - tstart;
     const double spendTime = d.total_milliseconds();
   }
+
+  if ( vSelectedCuts.size() == 0 )
+  {
+    CCTAG_COUT_DEBUG("Unable to select any cut.");
+    return status::no_selected_cuts; // todo: is class attributes the best option?
+  }
+
+  /* This is a fake return value. The important thing is to
+   * distinguish this from the return value
+   * status::no_collected_cuts
+   */
+  return status::id_reliable;
+}
   
+/**
+ * @brief Identify a marker:
+ *   i) its imaged center is optimized: A. 1D image cuts are selected ; B. the optimization is performed 
+ *   ii) the outer ellipse + the obtained imaged center delivers the image->cctag homography
+ *   iii) the rectified 1D signals are read and deliver the ID via a nearest neighbour
+ *        approach where the distance to the cctag bank's profiles used is the one described in [Orazio et al. 2011]
+ * @param[in] tagIndex a sequence number assigned to this tag
+ * @param[inout] cctag whose center is to be optimized in conjunction with its associated homography.
+ * @param[in] vSelectedCuts Cuts selected for this tag, list stays constant, signals are recomputed
+ * @params[in] radiusRatios the Bank information
+ * @param[in] src original gray scale image (original scale, uchar)
+ * @param[inout] cudaPipe entry object for processing on the GPU
+ * @param[in] params set of parameters
+ * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
+ */
+int identify_step_2(
+  const int tagIndex,
+  CCTag & cctag,
+  std::vector<cctag::ImageCut>& vSelectedCuts,
+  const std::vector< std::vector<double> > & radiusRatios, // todo: directly use the CCTagBank
+  const cv::Mat &  src,
+  popart::TagPipe* cudaPipe,
+  const cctag::Parameters & params)
+{
+  // Get the outer ellipse in its original scale, i.e. in src.
+  const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
+
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
   DO_TALK(
@@ -1470,13 +1497,6 @@ int identify(
     CCTAG_COUT_OPTIM("Time in selectCut: " << spendTime << " ms");
   )
 #endif
-
-  if ( vSelectedCuts.size() == 0 )
-  {
-    //
-    CCTAG_COUT_DEBUG("Unable to select any cut.");
-    return status::no_selected_cuts; // todo: is class attributes the best option?
-  }
 
   // std::vector< cctag::ImageCut > vCuts;
   
@@ -1499,6 +1519,7 @@ int identify(
   //       iii) cctag.homography(): 3x3 float homography, cctag.centerImg(): 2 floats (x,y), ellipse: (see Ellipse.hpp)
   // Begin GPU //////
   bool hasConverged = refineConicFamilyGlob(
+                        tagIndex,
                         cctag.homography(),
                         cctag.centerImg(),
                         vSelectedCuts,
@@ -1586,6 +1607,7 @@ int identify(
 #endif // OPTIM_CENTER_VISUAL_DEBUG
     
 #ifdef GRIFF_DEBUG
+#error here
     // todo: clean and mode this block into a dedicated function.
     if( identSuccessful )
     {

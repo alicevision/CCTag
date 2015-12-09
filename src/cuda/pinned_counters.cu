@@ -24,12 +24,15 @@ PinnedCounters::PinnedCounters( )
 
 PinnedCounters::~PinnedCounters( )
 {
-    cudaFreeHost( pinned_counters._counters );
-    cudaFreeHost( pinned_counters._nearby_points );
 }
 
 void PinnedCounters::init( ) {
     pinned_counters.obj_init();
+}
+
+void PinnedCounters::release( ) {
+    POP_CUDA_FREE_HOST( pinned_counters._counters );
+    POP_CUDA_FREE_HOST( pinned_counters._nearby_points );
 }
 
 int& PinnedCounters::getCounter( )
@@ -51,16 +54,10 @@ void PinnedCounters::obj_init( )
 {
     _lock.lock();
     if( not _counters ) {
-        cudaError_t err;
-        err = cudaMallocHost( &_counters, _max_counters*sizeof(int) );
-
-        POP_CUDA_FATAL_TEST( err, "Could not allocate global int counters: " );
+        POP_CUDA_MALLOC_HOST( &_counters, _max_counters*sizeof(int) );
     }
     if( not _nearby_points ) {
-        cudaError_t err;
-        err = cudaMallocHost( &_nearby_points, _max_points*sizeof(NearbyPoint) );
-
-        POP_CUDA_FATAL_TEST( err, "Could not allocate global nearby point structs: " );
+        POP_CUDA_MALLOC_HOST( &_nearby_points, _max_points*sizeof(NearbyPoint) );
     }
     _lock.unlock();
 }

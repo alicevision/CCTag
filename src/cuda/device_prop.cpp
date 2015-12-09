@@ -69,9 +69,13 @@ void device_prop_t::print( )
                   << "," << ptr->maxGridSize[1]
                   << "," << ptr->maxGridSize[2] << "}" << endl
                   << "    Number of SM(x)s:      " << ptr->multiProcessorCount << endl
+                  << "    Registers per SM(x):   " << ptr->regsPerMultiprocessor << endl
+                  << "    Registers per block:   " << ptr->regsPerBlock << endl
                   << "    Concurrent kernels:    " << (ptr->concurrentKernels?"yes":"no") << endl
                   << "    Mapping host memory:   " << (ptr->canMapHostMemory?"yes":"no") << endl
                   << "    Unified addressing:    " << (ptr->unifiedAddressing?"yes":"no") << endl
+                  << "    Texture alignment:     " << ptr->textureAlignment << " byte" << endl
+                  << "    Pitch alignment:       " << ptr->texturePitchAlignment << " byte" << endl
                   << endl;
     }
 }

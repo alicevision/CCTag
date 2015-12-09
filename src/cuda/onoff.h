@@ -41,20 +41,19 @@
  * a new kernel.
  */
 // #undef USE_SEPARABLE_COMPILATION
-/* hysteresis fails without separable compilation */
-#undef USE_SEPARABLE_COMPILATION_FOR_HYST
-#undef USE_SEPARABLE_COMPILATION_FOR_GRADDESC
-#undef USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
-#undef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
-#undef USE_SEPARABLE_COMPILATION_FOR_EVAL
-#undef USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
+#define USE_SEPARABLE_COMPILATION_FOR_HYST
+#define USE_SEPARABLE_COMPILATION_FOR_GRADDESC
+#define USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
+#define USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
+#define USE_SEPARABLE_COMPILATION_FOR_EVAL
+#define USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 
 
 /* Init _d_intermediate to 0 before uploading. Wastes time,
  * for debugging only. Required because of crash -O3 but not
  * with -G
  */
-#define DEBUG_FRAME_UPLOAD_CUTS
+#undef DEBUG_FRAME_UPLOAD_CUTS
 
 /* Define if you want to compute identity both on GPU and CPU.
  * The GPU version takes precedence.
@@ -106,5 +105,5 @@
  * edge point coordinates to avoid randomness? If it appears that
  * this is the case, #define this.
  */
-#undef SORT_ALL_EDGECOORDS_IN_EXPORT
+#define SORT_ALL_EDGECOORDS_IN_EXPORT
 

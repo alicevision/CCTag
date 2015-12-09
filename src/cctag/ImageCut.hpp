@@ -64,13 +64,17 @@ public:
   
 private:
   
-  // Start point of the image cut
+  /** Start point of the image cut
+   * @todo This value is invalid after the optimization (neither CPU or GPU)
+   */
   Point2dN<double> _start;
   
   // Stop point of the image cut
   DirectedPoint2d<double> _stop;
   
-  // 1D rectified image signal along the segment [_start,_stop]
+  /** 1D rectified image signal along the segment [_start,_stop]
+   * @note For the GPU case, this information never exists on the CPU
+   */
   boost::numeric::ublas::vector<double> _imgSignal; //< image signal
   
   // False by default. This boolean reveals if any of the points lying on the segment

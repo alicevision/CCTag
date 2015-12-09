@@ -19,4 +19,5 @@ SET(CCTAG_NO_COUT 1)
 set(USE_CUDA true)
 
 # add_definitions("-DCCTAG_EXTRA_LAYER_DEBUG")
+# add_definitions("-DVISUAL_DEBUG")
 

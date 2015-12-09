@@ -160,7 +160,7 @@ void dp_call_eval_chosen( FrameMetaPtr             meta,
                           DevEdgeList<int>         chosen_idx,
                           DevEdgeList<int>         inner_points ) // input
 {
-    int listsize = meta.list_size_inner_points();
+    int listsize = meta.list_size_interm_inner_points();
 
     dim3 block( 32, 32, 1 );
     dim3 grid ( grid_divide( listsize, CONC_POINTS ), 1, 1 );
@@ -181,12 +181,14 @@ bool Frame::applyVoteEval( )
 {
 #ifndef NDEBUG
     _interm_inner_points.copySizeFromDevice( _stream, EdgeListCont );
+    POP_CHK_CALL_IFSYNC;
     _voters.copySizeFromDevice( _stream, EdgeListWait );
     cerr << "Debug voting (with separable compilation)"
          << " # seed indices 2: " << _interm_inner_points.host.size
          << " # chained edgeco: " << _voters.host.size << endl;
 #endif
 
+    POP_CHK_CALL_IFSYNC;
     vote::dp_call_eval_chosen
         <<<1,1,0,_stream>>>
         ( _meta,

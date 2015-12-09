@@ -808,6 +808,10 @@ void cctagDetection(CCTag::List& markers,
 
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
+    if( markers.size() == 0 ) {
+        return;
+    }
+
 #ifdef WITH_CUDA
     /* identification in CUDA requires a host-side nearby point struct
      * in pinned memory for safe, non-blocking memcpy.
@@ -823,21 +827,75 @@ void cctagDetection(CCTag::List& markers,
     if (params._doIdentification)
     {
       CCTagVisualDebug::instance().resetMarkerIndex();
-      
+
+        const int numTags  = markers.size();
+
+#ifdef WITH_CUDA
+        if( pipe1 ) {
+            pipe1->checkTagAllocations( numTags, params );
+        }
+#endif // WITH_CUDA
+
+        std::vector<cctag::ImageCut> vSelectedCuts[ numTags ];
+        int                          detected[ numTags ];
+        int                          tagIndex = 0;
+
+        for( const CCTag& cctag : markers ) {
+            detected[tagIndex] = cctag::identification::identify_step_1(
+                tagIndex,
+                cctag,
+                vSelectedCuts[tagIndex],
+                imagePyramid.getLevel(0)->getSrc(),
+                params );
+
+            tagIndex++;
+        }
+
+#ifdef WITH_CUDA
+        if( pipe1 ) {
+            pipe1->uploadCuts( numTags, vSelectedCuts, params );
+            pipe1->makeCudaStreams( numTags );
+
+            tagIndex = 0;
+            for( CCTag& cctag : markers ) {
+                if( detected[tagIndex] == status::id_reliable ) {
+                    pipe1->imageCenterOptLoop(
+                        tagIndex,
+                        cctag.rescaledOuterEllipse(),
+                        cctag.centerImg(),
+                        vSelectedCuts[tagIndex].size(),
+                        params,
+                        cctag.getNearbyPointBuffer() );
+                }
+
+                tagIndex++;
+            }
+            cudaDeviceSynchronize();
+        }
+#endif // WITH_CUDA
+
+        tagIndex = 0;
+
         CCTag::List::iterator it = markers.begin();
         while (it != markers.end())
         {
             CCTag & cctag = *it;
 
-            const int detected = cctag::identification::identify(
-                cctag,
-                bank.getMarkers(),
-                imagePyramid.getLevel(0)->getSrc(),
-                pipe1,
-                params );
-      
-            cctag.setStatus(detected);
+            if( detected[tagIndex] == status::id_reliable ) {
+                detected[tagIndex] = cctag::identification::identify_step_2(
+                    tagIndex,
+                    cctag,
+                    vSelectedCuts[tagIndex],
+                    bank.getMarkers(),
+                    imagePyramid.getLevel(0)->getSrc(),
+                    pipe1,
+                    params );
+            }
+
+            cctag.setStatus( detected[tagIndex] );
             ++it;
+
+            tagIndex++;
         }
         if( durations ) durations->log( "after cctag::identification::identify" );
     }

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string.h>
 #include <cuda_runtime.h>
+#include <sys/mman.h>
 #include "debug_macros.hpp"
 #include "pinned_counters.h"
 
@@ -29,7 +30,7 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     , _v_chosen_idx( _meta, List_size_chosen_idx )
     , _inner_points( _meta, List_size_inner_points )
     , _interm_inner_points( _meta, List_size_interm_inner_points )
-
+    , _image_to_upload( 0 )
 {
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
 #ifndef EDGE_LINKING_HOST_SIDE
@@ -106,14 +107,29 @@ void Frame::upload( const unsigned char* image )
            << " dest pitch=" << _d_plane.step
            << " height=" << _d_plane.rows
            << endl;)
+
+    // pin the image to memory
+    _image_to_upload = image;
+
+    mlock( _image_to_upload, getWidth() * getHeight() );
+
     POP_CUDA_MEMCPY_2D_ASYNC( _d_plane.data,
                               getPitch(),
-                              image,
+                              _image_to_upload,
                               getWidth(),
                               getWidth(),
                               getHeight(),
                               cudaMemcpyHostToDevice,
                               _stream );
+}
+
+void Frame::uploadComplete( )
+{
+    // unpin the image
+    if( _image_to_upload != 0 ) {
+        munlock( _image_to_upload, getWidth() * getHeight() );
+        _image_to_upload = 0;
+    }
 }
 
 void Frame::createTexture( FrameTexture::Kind kind )

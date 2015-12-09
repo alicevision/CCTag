@@ -220,18 +220,18 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE( _d_edges.data );
     POP_CUDA_FREE( _d_ring_output.data );
 
-    cudaFreeHost( _h_plane.data );
-    cudaFreeHost( _h_dx.data );
-    cudaFreeHost( _h_dy.data );
-    cudaFreeHost( _h_mag.data );
-    cudaFreeHost( _h_edges.data );
-    cudaFreeHost( _h_intermediate.data );
+    POP_CUDA_FREE_HOST( _h_plane.data );
+    POP_CUDA_FREE_HOST( _h_dx.data );
+    POP_CUDA_FREE_HOST( _h_dy.data );
+    POP_CUDA_FREE_HOST( _h_mag.data );
+    POP_CUDA_FREE_HOST( _h_edges.data );
+    POP_CUDA_FREE_HOST( _h_intermediate.data );
 #ifndef EDGE_LINKING_HOST_SIDE
     delete [] _h_ring_output.data;
 #endif
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
-    cudaFreeHost( _h_debug_map );
+    POP_CUDA_FREE_HOST( _h_debug_map );
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
     _all_edgecoords.release();

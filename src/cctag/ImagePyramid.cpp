@@ -27,6 +27,14 @@ ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::si
 
 void ImagePyramid::build( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params )
 {
+#ifdef WITH_CUDA
+    if( params->_useCuda ) {
+        std::cerr << __FILE__ << ":" << __LINE__ << std::endl
+                  << "    must not call " << __FUNCTION__ << " with CUDA enables" << std::endl;
+        exit( -1 );
+    }
+#endif // WITH_CUDA
+
     /* The pyramid building function is never called if CUDA is used.
      */
   _levels[0]->setLevel( src , thrLowCanny, thrHighCanny, params );

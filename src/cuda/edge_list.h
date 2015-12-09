@@ -109,7 +109,7 @@ protected:
     __host__
     void release( )
     {
-        cudaFreeHost( ptr );
+        POP_CUDA_FREE_HOST( ptr );
         ptr = 0;
     }
 };
@@ -191,6 +191,7 @@ public:
     void copySizeFromDevice( )
     {
         _meta.fromDevice( _e, host.size, 0 );
+        POP_CHK_CALL_IFSYNC;
     }
 #endif // NDEBUG
 
@@ -234,6 +235,7 @@ public:
                               dev.ptr,
                               sz * sizeof(T),
                               cudaMemcpyDeviceToHost );
+        POP_CHK_CALL_IFSYNC;
     }
     __host__
     void copyDataFromDeviceSync( )
@@ -242,6 +244,7 @@ public:
                               dev.ptr,
                               host.size * sizeof(T),
                               cudaMemcpyDeviceToHost );
+        POP_CHK_CALL_IFSYNC;
     }
 #endif // NDEBUG
 
@@ -257,6 +260,7 @@ public:
                                sz * sizeof(T),
                                cudaMemcpyDeviceToHost,
                                stream );
+        POP_CHK_CALL_IFSYNC;
         return true;
     }
 
@@ -271,6 +275,7 @@ public:
                                host.size * sizeof(T),
                                cudaMemcpyDeviceToHost,
                                stream );
+        POP_CHK_CALL_IFSYNC;
         return true;
     }
 

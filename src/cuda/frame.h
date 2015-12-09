@@ -99,6 +99,9 @@ public:
     // copy the upper layer from the host to the device
     void upload( const unsigned char* image ); // implicitly assumed that w/h are the same as above
 
+    // called by every thread, unpins uploaded image in frame 0
+    void uploadComplete( );
+
     // Create a texture object this frame.
     // The caller must ensure that the Kind of texture object makes sense.
     void createTexture( FrameTexture::Kind kind );
@@ -205,7 +208,7 @@ public:
     cv::Mat* getMag( ) const;
     cv::Mat* getEdges( ) const;
 
-private:
+protected:
     // implemented in frame_11_identify.cu
     /* to reuse various image-sized buffers, but retrieve their
      * bytesize to ensure that the new types fit into the
@@ -220,23 +223,44 @@ private:
     popart::identification::CutSignals*  getSignalBuffer( ) const;
     void                                 clearSignalBuffer( );
 
-private:
-    // implemented in frame_11_identify.cu
-    void uploadCuts( const std::vector<cctag::ImageCut>& vCuts );
+    friend class TagPipe;
 
 public:
     // implemented in frame_11_identify.cu
     __host__
-    double idCostFunction( const popart::geometry::ellipse&    ellipse,
-                           const float2                        center,
-                           const std::vector<cctag::ImageCut>& vCuts,
-                           const size_t                        vCutMaxVecLen,
-                           float                               neighbourSize,
-                           const size_t                        gridNSample,
-                           float2&                             bestPointOut,
-                           popart::geometry::matrix3x3&        bestHomographyOut,
-                           NearbyPoint*                        cctag_pointer_buffer );
+    void imageCenterOptLoop(
+        const int                           tagIndex,     // in
+        cudaStream_t                        tagStream,    // in
+        const popart::geometry::ellipse&    outerEllipse, // in
+        const float2&                       center,       // in
+        const int                           vCutSize,     // in
+        const cctag::Parameters&            params,       // in
+        NearbyPoint*                        cctag_pointer_buffer );
 
+    __host__
+    bool imageCenterRetrieve(
+        const int                           tagIndex,          // in
+        cudaStream_t                        tagStream,         // in
+        float2&                             bestPointOut,      // out
+        popart::geometry::matrix3x3&        bestHomographyOut, // out
+        const cctag::Parameters&            params,            // in
+        NearbyPoint*                        cctag_pointer_buffer );
+
+private:
+    // implemented in frame_11_identify.cu
+    __host__
+    void idCostFunction(
+        const int                           tagIndex,
+        cudaStream_t                        tagStream,
+        int                                 iterations,
+        const popart::geometry::ellipse&    ellipse,
+        const float2                        center,
+        const int                           vCutSize,     // in
+        float                               currentNeighbourSize,
+        const cctag::Parameters&            params,
+        NearbyPoint*                        cctag_pointer_buffer );
+
+public:
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
@@ -304,8 +328,9 @@ private:
 
     Voting _vote;
 
-    FrameTexture*  _texture;
-    cudaEvent_t    _wait_for_upload;
+    FrameTexture*        _texture;
+    cudaEvent_t          _wait_for_upload;
+    const unsigned char* _image_to_upload;
 
 public:
     // if we run out of streams (there are 32), we may have to share
