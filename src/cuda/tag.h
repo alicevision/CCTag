@@ -13,7 +13,6 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
 
-#include "cuda/tag_threads.h"
 #include "cctag/params.hpp"
 #include "cctag/types.hpp"
 #include "cctag/ImageCut.hpp"
@@ -21,6 +20,9 @@
 #include "cctag/geometry/point.hpp"
 #include "cctag/algebra/matrix/Matrix.hpp"
 #include "cctag/logtime.hpp"
+
+#include "cuda/tag_threads.h"
+#include "cuda/tag_cut.h"
 
 namespace popart
 {
@@ -35,6 +37,14 @@ class TagPipe
     const cctag::Parameters&    _params;
     TagThreads                  _threads;
     std::vector<cudaStream_t>   _tag_streams;
+
+    int   _nearbyPointBuffer_sz;
+    int   _signalBuffer_sz;
+    int   _cutStructBuffer_sz;
+    void* _nearbyPointBuffer;
+    identification::CutSignals* _signalBuffer;
+    identification::CutStruct* _cutStructBuffer;
+    identification::CutStruct* _cutStructBuffer_host;
 
 public:
     TagPipe( const cctag::Parameters& params );
@@ -66,6 +76,12 @@ public:
     cv::Mat* getDy( size_t layer ) const;
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
+
+    popart::identification::CutStruct*   getCutStructBuffer( ) const;
+    popart::identification::CutStruct*   getCutStructBufferHost( ) const;
+    popart::NearbyPoint*                 getNearbyPointBuffer( ) const;
+    popart::identification::CutSignals*  getSignalBuffer( ) const;
+    void                                 clearSignalBuffer( );
 
     void checkTagAllocations( const int                numTags,
                               const cctag::Parameters& params );

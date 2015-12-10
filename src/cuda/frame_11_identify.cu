@@ -1,12 +1,13 @@
 #include <cuda_runtime.h>
 
-#include "frame.h"
-#include "frameparam.h"
-#include "clamp.h"
-#include "geom_matrix.h"
-#include "geom_projtrans.h"
-#include "nearby_point.h"
-#include "tag_cut.h"
+#include "cuda/frame.h"
+#include "cuda/frameparam.h"
+#include "cuda/clamp.h"
+#include "cuda/geom_matrix.h"
+#include "cuda/geom_projtrans.h"
+#include "cuda/nearby_point.h"
+#include "cuda/tag_cut.h"
+#include "cuda/tag.h"
 
 #undef NO_ATOMIC
 
@@ -395,6 +396,7 @@ void idBestNearbyPoint31max( NearbyPoint* point_buffer, const size_t gridSquare 
  */
 __host__
 void Frame::idCostFunction(
+    TagPipe*                            tagPipe,
     const int                           tagIndex,
     cudaStream_t                        tagStream,
     int                                 iterations,
@@ -411,10 +413,10 @@ void Frame::idCostFunction(
     /* reusing various image-sized plane */
     NearbyPoint*                 point_buffer;
     identification::CutSignals*  sig_buffer;
-    const identification::CutStruct* cut_buffer = getCutStructBuffer();
+    const identification::CutStruct* cut_buffer = tagPipe->getCutStructBuffer();
 
-    point_buffer  = getNearbyPointBuffer();
-    sig_buffer    = getSignalBuffer();
+    point_buffer  = tagPipe->getNearbyPointBuffer();
+    sig_buffer    = tagPipe->getSignalBuffer();
 
     point_buffer  = &point_buffer[offset];
     sig_buffer    = &sig_buffer[offset * params._numCutsInIdentStep];
@@ -511,6 +513,7 @@ void Frame::idCostFunction(
 
 __host__
 void Frame::imageCenterOptLoop(
+    TagPipe*                            tagPipe,
     const int                           tagIndex,     // in - determines index in cut structure
     cudaStream_t                        tagStream,
     const popart::geometry::ellipse&    outerEllipse, // in
@@ -519,7 +522,7 @@ void Frame::imageCenterOptLoop(
     const cctag::Parameters&            params,
     NearbyPoint*                        cctag_pointer_buffer )
 {
-    clearSignalBuffer( );
+    tagPipe->clearSignalBuffer( );
 
     const float  maxSemiAxis   = std::max( outerEllipse.a(), outerEllipse.b() );
     const size_t gridNSample   = params._imagedCenterNGridSample;
@@ -533,7 +536,8 @@ void Frame::imageCenterOptLoop(
 
     neighbourSize = params._imagedCenterNeighbourSize;
 
-    idCostFunction( tagIndex,
+    idCostFunction( tagPipe,
+                    tagIndex,
                     tagStream,
                     iterations,
                     outerEllipse,
@@ -544,7 +548,7 @@ void Frame::imageCenterOptLoop(
                     cctag_pointer_buffer );
 
     NearbyPoint* point_buffer;
-    point_buffer  = getNearbyPointBuffer();
+    point_buffer  = tagPipe->getNearbyPointBuffer();
     point_buffer  = &point_buffer[tagIndex * gridNSample * gridNSample];
 
     /* When this kernel finishes, the best point does not
@@ -555,88 +559,6 @@ void Frame::imageCenterOptLoop(
                                    sizeof(popart::NearbyPoint),
                                    tagStream );
     POP_CHK_CALL_IFSYNC;
-}
-
-__host__
-bool Frame::imageCenterRetrieve(
-    const int                           tagIndex,     // in - determines index in cut structure
-    cudaStream_t                        tagStream,
-    float2&                             bestPointOut, // out
-    popart::geometry::matrix3x3&        bestHomographyOut, // out
-    const cctag::Parameters&            params,
-    NearbyPoint*                        cctag_pointer_buffer )
-{
-    if( not cctag_pointer_buffer->readable ) {
-        return false;
-    }
-
-    bestPointOut      = cctag_pointer_buffer->point;
-    bestHomographyOut = cctag_pointer_buffer->mHomography;
-    return true;
-}
-
-__host__
-size_t Frame::getCutStructBufferByteSize( ) const
-{
-    /* these are uint8_t */
-    return _d_mag.rows * _d_mag.step;
-}
-
-__host__
-identification::CutStruct* Frame::getCutStructBuffer( ) const
-{
-    return reinterpret_cast<identification::CutStruct*>( _d_mag.data );
-}
-
-__host__
-identification::CutStruct* Frame::getCutStructBufferHost( ) const
-{
-    return reinterpret_cast<identification::CutStruct*>( _h_mag.data );
-}
-
-__host__
-size_t Frame::getNearbyPointBufferByteSize( ) const
-{
-    /* these are uint32_t */
-    return _d_map.rows * _d_map.step;
-}
-
-__host__
-NearbyPoint* Frame::getNearbyPointBuffer( ) const
-{
-    return reinterpret_cast<NearbyPoint*>( _d_map.data );
-}
-
-__host__
-size_t Frame::getSignalBufferByteSize( ) const
-{
-    /* these are float */
-    return _d_intermediate.rows * _d_intermediate.step;
-}
-
-__host__
-identification::CutSignals* Frame::getSignalBuffer( ) const
-{
-    return reinterpret_cast<identification::CutSignals*>( _d_intermediate.data );
-}
-
-__host__
-void Frame::clearSignalBuffer( )
-{
-#ifdef DEBUG_FRAME_UPLOAD_CUTS
-    if( _d_intermediate.step != _h_intermediate.step ||
-        _d_intermediate.rows != _h_intermediate.rows ) {
-        cerr << "intermediate dimensions should be identical on host and dev"
-             << endl;
-        exit( -1 );
-    }
-    POP_CHK_CALL_IFSYNC;
-    POP_CUDA_MEMSET_ASYNC( _d_intermediate.data,
-                           -1,
-                           _h_intermediate.step * _h_intermediate.rows,
-                           _stream );
-    POP_CHK_CALL_IFSYNC;
-#endif // DEBUG_FRAME_UPLOAD_CUTS
 }
 
 }; // namespace popart

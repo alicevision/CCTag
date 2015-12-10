@@ -16,6 +16,7 @@
 #endif // WITH_CUDA
 
 #include "cctag/package.h"
+#include "cctag/packagePool.h"
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem.hpp>
@@ -204,6 +205,8 @@ int main(int argc, char** argv)
   }
   std::ofstream outputFile;
   outputFile.open( outputFileName );
+
+  popart::PackagePool pool( params, bank, 1 );
   
   if ( (ext == ".png") || (ext == ".jpg") || (ext == ".PNG") || (ext == ".JPG")) {
     POP_INFO("looking at image " << myPath.string());
@@ -222,14 +225,16 @@ int main(int argc, char** argv)
     }*/
 
     // Call the CCTag detection
-        popart::Package* package = new popart::Package( params, bank );
-        package->init( 0, graySrc );
+        popart::Package* package = pool.getPackage( );
 #ifdef PRINT_TO_CERR
-        package->detection( std::cerr, myPath.stem().string());
+        package->init( 0, graySrc, &std::cerr, myPath.stem().string());
 #else
-        package->detection( outputFile, myPath.stem().string());
+        package->init( 0, graySrc, &outputFile, myPath.stem().string());
 #endif
-} else if (ext == ".avi" )
+        package->detect( );
+        pool.waitAllPackagesIdle();
+  }
+  else if (ext == ".avi" )
   {
     CCTAG_COUT("*** Video mode ***");
     POP_INFO( "looking at video " << myPath.string() );
@@ -291,7 +296,6 @@ int main(int argc, char** argv)
     }
     frame_processor.join_all();
 #else // 0
-    popart::Package* package = new popart::Package( params, bank );
 
     for( cv::Mat* imgGray : frames ) {
         // Set the output folder
@@ -303,17 +307,19 @@ int main(int argc, char** argv)
         //bitwise_not ( imgGray, imgGrayInverted );
       
         // Call the CCTag detection
-        package->init( frameId, imgGray );
+        popart::Package* package = pool.getPackage( );
 #ifdef PRINT_TO_CERR
-        package->detection( std::cerr, outFileName.str());
+        package->init( frameId, imgGray, &std::cerr, outFileName.str());
 #else
-        package->detection( outputFile, outFileName.str());
+        package->init( frameId, imgGray, &outputFile, outFileName.str());
 #endif
+        package->detect( );
         ++frameId; 
         if( frameId % 100 == 0 ) {
             std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0/frameId << ") ";
         }
     }
+    pool.waitAllPackagesIdle();
 #endif // 0
     std::cerr << std::endl;
   } else if (bfs::is_directory(myPath)) {
@@ -325,8 +331,6 @@ int main(int argc, char** argv)
     std::sort(vFileInFolder.begin(), vFileInFolder.end());
 
     std::size_t frameId = 0;
-
-    popart::Package* package = new popart::Package( params, bank );
 
     for(const auto & fileInFolder : vFileInFolder) {
       const std::string subExt(bfs::extension(fileInFolder));
@@ -342,14 +346,17 @@ int main(int argc, char** argv)
         cv::cvtColor( src, *imgGray, CV_BGR2GRAY );
       
         // Call the CCTag detection
-        package->init( frameId, imgGray );
+        popart::Package* package = pool.getPackage( );
 #ifdef PRINT_TO_CERR
-        package->detection( std::cerr, fileInFolder.stem().string());
+        package->init( frameId, imgGray, &std::cerr, fileInFolder.stem().string());
 #else
-        package->detection( outputFile, fileInFolder.stem().string());
+        package->init( frameId, imgGray, &outputFile, fileInFolder.stem().string());
 #endif
+        package->detect( );
         ++frameId;
+
       }
+      pool.waitAllPackagesIdle();
     }
   }else
   {

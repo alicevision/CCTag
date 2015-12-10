@@ -23,8 +23,8 @@ public:
     FramePackage( int width, int height );
     ~FramePackage( );
 
-    void pin( );
-    void unpin( );
+    void pinAll( );
+    void unpinAll( );
 
 private:
     int                     _w;

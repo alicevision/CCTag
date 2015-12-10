@@ -70,7 +70,7 @@ FramePackage::~FramePackage( )
     delete [] _h_edges.data;
 }
 
-void FramePackage::pin( )
+void FramePackage::pinAll( )
 {
     mlock( _h_plane.data, _w * _h * sizeof(uint8_t) );
     mlock( _h_dx.data,    _w * _h * sizeof(int16_t) );
@@ -79,7 +79,7 @@ void FramePackage::pin( )
     mlock( _h_edges.data, _w * _h * sizeof(uint8_t) );
 }
 
-void FramePackage::unpin( )
+void FramePackage::unpinAll( )
 {
     munlock( _h_plane.data, _w * _h * sizeof(uint8_t) );
     munlock( _h_dx.data,    _w * _h * sizeof(int16_t) );

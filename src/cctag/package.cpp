@@ -1,4 +1,5 @@
 #include "cctag/package.h"
+#include "cctag/packagePool.h"
 
 #include "cctag/fileDebug.hpp"
 #include "cctag/visualDebug.hpp"
@@ -32,12 +33,22 @@ namespace bfs = boost::filesystem;
 namespace popart
 {
 
-Package::Package( const cctag::Parameters & params,
+/* This is not a joke.
+ * We need a global lock for the CUDA resources because
+ * we require all memory.
+ */
+boost::mutex Package::_lock_phase_1;
+
+Package::Package( PackagePool* pool,
+                  const cctag::Parameters & params,
                   const cctag::CCTagMarkersBank & bank )
-    : _src( 0 )
+    : _my_pool( pool )
+    , _src( 0 )
     , _params( params )
     , _bank( bank )
     , _framePackage( 0 )
+    , _readyForDetection( false )
+    , _detect_thread( &Package::detectionThread, this )
 {
     _numLayers = params._numberOfProcessedMultiresLayers;
 
@@ -54,7 +65,9 @@ void Package::resetTables( )
 }
 
 void Package::init( int            frameId,
-                    const cv::Mat* src )
+                    const cv::Mat* src,
+                    std::ostream*  output,
+                    std::string    debugFileName )
 {
     if( _src == 0 ) {
         // allocate memories
@@ -75,35 +88,69 @@ void Package::init( int            frameId,
             h = ( h >> 1 ) + ( h & 1 );
         }
     }
+
+    if (debugFileName == "") {
+      debugFileName = "00000";
+    }
+
+    _output        = output;
+    _debugFileName = debugFileName;
+
+    _markers.clear();
 }
 
 void Package::lockPhase1( )
 {
+    _lock_phase_1.lock();
+
     for( int i=0; i<_numLayers; i++ ) {
-        _framePackage[i]->pin( );
+        _framePackage[i]->pinAll( );
     }
 }
 
 void Package::unlockPhase1( )
 {
     for( int i=0; i<_numLayers; i++ ) {
-        _framePackage[i]->unpin( );
+        _framePackage[i]->unpinAll( );
+    }
+
+    _lock_phase_1.unlock();
+}
+
+void Package::detect( )
+{
+    _rfd_lock.lock();
+    _readyForDetection = true;
+    _rfd_cond.notify_all( );
+    _rfd_lock.unlock( );
+}
+
+void Package::detectionThread( )
+{
+    while( true ) {
+        _rfd_lock.lock();
+        while( _readyForDetection == false ) {
+            _rfd_cond.wait( _rfd_lock );
+        }
+        _rfd_lock.unlock( );
+
+        detectionRun( );
+
+        _rfd_lock.lock();
+        _readyForDetection = false;
+        _rfd_lock.unlock( );
+
+        _my_pool->returnPackage( this );
     }
 }
 
-void Package::detection( std::ostream & output,
-                         std::string debugFileName )
+void Package::detectionRun( )
 {
-    if (debugFileName == "") {
-      debugFileName = "00000";
-    }
-
     // Process markers detection
     boost::timer t;
-    boost::ptr_list<CCTag> markers;
 
     CCTagVisualDebug::instance().initBackgroundImage( *_src );
-    CCTagVisualDebug::instance().setImageFileName(debugFileName);
+    CCTagVisualDebug::instance().setImageFileName(_debugFileName);
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
 
     static cctag::logtime::Mgmt* durations = 0;
@@ -114,7 +161,7 @@ void Package::detection( std::ostream & output,
         durations->resetStartTime();
     }
 #endif
-    cctagDetection( this, markers, _frameId , *_src, _params, _bank, true, durations );
+    cctagDetection( this, _markers, _frameId , *_src, _params, _bank, true, durations );
 
     if( durations ) {
         durations->print( std::cerr );
@@ -130,10 +177,10 @@ void Package::detection( std::ostream & output,
     CCTAG_COUT_NOENDL("Id : ");
 
     int i = 0;
-    output << "#frame " << _frameId << '\n';
-    output << markers.size() << '\n';
-    BOOST_FOREACH(const cctag::CCTag & marker, markers) {
-      output << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
+    *_output << "#frame " << _frameId << '\n';
+    *_output << _markers.size() << '\n';
+    BOOST_FOREACH(const cctag::CCTag & marker, _markers) {
+      *_output << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
       if (i == 0) {
           CCTAG_COUT_NOENDL(marker.id() + 1);
       } else {

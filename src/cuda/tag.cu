@@ -28,6 +28,13 @@ namespace popart
 __host__
 TagPipe::TagPipe( const cctag::Parameters& params )
     : _params( params )
+    , _nearbyPointBuffer_sz( 0 )
+    , _signalBuffer_sz( 0 )
+    , _cutStructBuffer_sz( 0 )
+    , _nearbyPointBuffer( 0 )
+    , _signalBuffer( 0 )
+    , _cutStructBuffer( 0 )
+    , _cutStructBuffer_host( 0 )
 {
 }
 
@@ -510,7 +517,8 @@ void TagPipe::imageCenterOptLoop(
 
     popart::geometry::matrix3x3 bestHomography;
 
-    _frame[0]->imageCenterOptLoop( tagIndex,
+    _frame[0]->imageCenterOptLoop( this,
+                                   tagIndex,
                                    _tag_streams[tagIndex],
                                    e,
                                    f,
@@ -527,27 +535,23 @@ bool TagPipe::imageCenterRetrieve(
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
-    float2                      bestPoint;
-    popart::geometry::matrix3x3 bestHomography;
+    bool success;
 
-    bool success = _frame[0]->imageCenterRetrieve( tagIndex,
-                                                   _tag_streams[tagIndex],
-                                                   bestPoint,
-                                                   bestHomography,
-                                                   params,
-                                                   cctag_pointer_buffer );
+    if( not cctag_pointer_buffer->readable ) {
+        success = false;
+    } else {
+        center.x()     = cctag_pointer_buffer->point.x;
+        center.y()     = cctag_pointer_buffer->point.y;
 
-    if( success ) {
-        center.x() = bestPoint.x;
-        center.y() = bestPoint.y;
-
-    #pragma unroll
-    for( int i=0; i<3; i++ ) {
         #pragma unroll
-        for( int j=0; j<3; j++ ) {
-                bestHomographyOut(i,j) = bestHomography(i,j);
+        for( int i=0; i<3; i++ ) {
+            #pragma unroll
+            for( int j=0; j<3; j++ ) {
+                bestHomographyOut(i,j) = cctag_pointer_buffer->mHomography(i,j);
             }
         }
+
+        success = true;
     }
     return success;
 }
@@ -568,26 +572,96 @@ void TagPipe::checkTagAllocations( const int                numTags,
 
     const size_t g = numTags * gridNSample * gridNSample;
 
-    if( g*sizeof(NearbyPoint) > _frame[0]->getNearbyPointBufferByteSize() ) {
-        cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold point search results"
-             << endl;
-        exit( -1 );
+    if( g*sizeof(NearbyPoint) > _nearbyPointBuffer_sz ) {
+        _nearbyPointBuffer_sz = (int) ( g * sizeof(NearbyPoint) * 1.2f );
+
+        if( _nearbyPointBuffer != 0 ) {
+            POP_CUDA_FREE( _nearbyPointBuffer );
+        }
+
+        POP_CUDA_MALLOC( &_nearbyPointBuffer, _nearbyPointBuffer_sz );
     }
 
-    if( g*sizeof(identification::CutSignals) > _frame[0]->getSignalBufferByteSize() ) {
-        cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold all signal buffers"
-             << endl;
-        exit( -1 );
+    if( g > _signalBuffer_sz ) {
+        _signalBuffer_sz = (int)( g * 1.2f );
+
+        if( _signalBuffer != 0 ) {
+            POP_CUDA_FREE( _signalBuffer );
+        }
+
+        void* ptr;
+        POP_CUDA_MALLOC( &ptr, _signalBuffer_sz * sizeof(identification::CutSignals) );
+        _signalBuffer = reinterpret_cast<identification::CutSignals*>( ptr );
     }
 
-    if( numTags * params._numCutsInIdentStep * sizeof(identification::CutStruct) > _frame[0]->getCutStructBufferByteSize() ) {
-        cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold all intermediate homographies" << endl;
-        exit( -1 );
+    if( numTags * params._numCutsInIdentStep > _cutStructBuffer_sz ) {
+        _cutStructBuffer_sz = (int)( numTags * params._numCutsInIdentStep * 1.2f );
+
+        if( _cutStructBuffer != 0 ) {
+            POP_CUDA_FREE( _cutStructBuffer );
+        }
+
+        void* ptr;
+        POP_CUDA_MALLOC( &ptr, _cutStructBuffer_sz * sizeof(identification::CutStruct) );
+        _cutStructBuffer = reinterpret_cast<identification::CutStruct*>( ptr );
+
+        if( _cutStructBuffer_host != 0 ) {
+            delete [] _cutStructBuffer_host;
+        }
+
+        _cutStructBuffer_host = new identification::CutStruct [ _cutStructBuffer_sz ];
     }
 }
+
+// __host__ size_t TagPipe::getCutStructBufferByteSize( ) const { return _cutStructBuffer_sz; }
+
+__host__
+identification::CutStruct* TagPipe::getCutStructBuffer( ) const
+{
+    return _cutStructBuffer;
+}
+
+__host__
+identification::CutStruct* TagPipe::getCutStructBufferHost( ) const
+{
+    return _cutStructBuffer_host;
+}
+
+// __host__ size_t TagPipe::getNearbyPointBufferByteSize( ) const { return _nearbyPointBuffer_sz; }
+
+__host__
+NearbyPoint* TagPipe::getNearbyPointBuffer( ) const
+{
+    return reinterpret_cast<NearbyPoint*>( _nearbyPointBuffer );
+}
+
+// __host__ size_t TagPipe::getSignalBufferByteSize( ) const { return _signalBuffer_sz; }
+
+__host__
+identification::CutSignals* TagPipe::getSignalBuffer( ) const
+{
+    return _signalBuffer;
+}
+
+__host__
+void TagPipe::clearSignalBuffer( )
+{
+#ifdef DEBUG_FRAME_UPLOAD_CUTS
+    if( _d_intermediate.step != _h_intermediate.step ||
+        _d_intermediate.rows != _h_intermediate.rows ) {
+        cerr << "intermediate dimensions should be identical on host and dev"
+             << endl;
+        exit( -1 );
+    }
+    POP_CHK_CALL_IFSYNC;
+    POP_CUDA_MEMSET_ASYNC( _d_intermediate.data,
+                           -1,
+                           _h_intermediate.step * _h_intermediate.rows,
+                           _stream );
+    POP_CHK_CALL_IFSYNC;
+#endif // DEBUG_FRAME_UPLOAD_CUTS
+}
+
 
 __host__
 void TagPipe::uploadCuts( int                                 numTags,
@@ -596,7 +670,7 @@ void TagPipe::uploadCuts( int                                 numTags,
 {
     if( numTags == 0 || vCuts == 0 || vCuts->size() == 0 ) return;
 
-    identification::CutStruct* csptr_base = _frame[0]->getCutStructBufferHost();
+    identification::CutStruct* csptr_base = getCutStructBufferHost();
 
     const int max_cuts_per_Tag = params._numCutsInIdentStep;
 
@@ -630,8 +704,8 @@ void TagPipe::uploadCuts( int                                 numTags,
     }
 
     POP_CHK_CALL_IFSYNC;
-    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( _frame[0]->getCutStructBuffer(),
-                                    _frame[0]->getCutStructBufferHost(),
+    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( getCutStructBuffer(),
+                                    getCutStructBufferHost(),
                                     numTags * max_cuts_per_Tag * sizeof(identification::CutStruct) );
 }
 

@@ -46,6 +46,7 @@ struct CutSignals;
 } // identification
 struct NearbyPoint;
 class  FramePackage;
+class  TagPipe;
 
 /*************************************************************
  * FrameTexture
@@ -209,27 +210,11 @@ public:
     cv::Mat* getMag( ) const;
     cv::Mat* getEdges( ) const;
 
-protected:
-    // implemented in frame_11_identify.cu
-    /* to reuse various image-sized buffers, but retrieve their
-     * bytesize to ensure that the new types fit into the
-     * already allocated space.
-     */
-    size_t                               getCutStructBufferByteSize( ) const;
-    popart::identification::CutStruct*   getCutStructBuffer( ) const;
-    popart::identification::CutStruct*   getCutStructBufferHost( ) const;
-    size_t                               getNearbyPointBufferByteSize( ) const;
-    popart::NearbyPoint*                 getNearbyPointBuffer( ) const;
-    size_t                               getSignalBufferByteSize( ) const;
-    popart::identification::CutSignals*  getSignalBuffer( ) const;
-    void                                 clearSignalBuffer( );
-
-    friend class TagPipe;
-
 public:
     // implemented in frame_11_identify.cu
     __host__
     void imageCenterOptLoop(
+        TagPipe*                            tagPipe,      // in-modified
         const int                           tagIndex,     // in
         cudaStream_t                        tagStream,    // in
         const popart::geometry::ellipse&    outerEllipse, // in
@@ -238,19 +223,11 @@ public:
         const cctag::Parameters&            params,       // in
         NearbyPoint*                        cctag_pointer_buffer );
 
-    __host__
-    bool imageCenterRetrieve(
-        const int                           tagIndex,          // in
-        cudaStream_t                        tagStream,         // in
-        float2&                             bestPointOut,      // out
-        popart::geometry::matrix3x3&        bestHomographyOut, // out
-        const cctag::Parameters&            params,            // in
-        NearbyPoint*                        cctag_pointer_buffer );
-
 private:
     // implemented in frame_11_identify.cu
     __host__
     void idCostFunction(
+        TagPipe*                            tagPipe,      // in-modified
         const int                           tagIndex,
         cudaStream_t                        tagStream,
         int                                 iterations,
