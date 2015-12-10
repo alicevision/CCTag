@@ -10,6 +10,10 @@
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include <cassert>
+#include <set>
+#include <algorithm>
+#include <cassert>
 
 namespace cctag {
 namespace numerical {
@@ -42,6 +46,28 @@ V randperm( const std::size_t n )
 	}
 	return temp;
 }
+
+// Draw N unique values in the range of 0 .. (K-1)
+// and copy them in the container
+template <typename Container>
+void rand_n_k(Container &container, size_t N, size_t K)
+{
+    // If the number of element is small, we 
+    // might just try to do a linear search for values
+    // already drawn instead of using a set
+    std::set<size_t> values; 
+    assert(K>N);
+    while(values.size()<N)
+    {
+        values.insert(rand()%K);
+    }  
+       
+    container.resize(N);
+    // Note that the values are orderer, if you want them in random order
+    // use random_shuffle
+    copy(values.begin(), values.end(), container.begin());
+}
+
 
 // median(X) is the median value of the elements in X.
 double median( std::vector<double>& v );

@@ -582,12 +582,12 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
   double Sm = std::numeric_limits<double>::max();
   ublas::vector<std::size_t> idxSelected;
   idxSelected.resize(selectSize);
+
+  ublas::vector<std::size_t> randomIdx(selectSize); 
   for( std::size_t i = 0; i < cutsSelectionTrials; ++i )
   {
     // Get a random draw
-    ublas::vector<std::size_t> randomIdx = boost::numeric::ublas::subrange( 
-            cctag::numerical::randperm< ublas::vector<std::size_t> >( collectedCuts.size() ), 0, selectSize );
-    
+    cctag::numerical::rand_n_k(randomIdx, selectSize, collectedCuts.size()); 
     double cost = costSelectCutFun( varCuts, outerPoints, randomIdx );
     if ( cost < Sm )
     {
