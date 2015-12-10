@@ -14,6 +14,7 @@ using namespace std;
 namespace cctag {
 
 void cctagDetection(
+      popart::Package* package,
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
       const cv::Mat & graySrc,
@@ -45,10 +46,11 @@ void cctagDetection(
     bank = CCTagMarkersBank(cctagBankFilename);
   }
   
-  cctagDetection(markers, frame, graySrc, params, durations, &bank);
+  cctagDetection( package, markers, frame, graySrc, params, durations, &bank);
 }
 
 void cctagDetection(
+      popart::Package* package,
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
       const cv::Mat & graySrc,
@@ -61,10 +63,10 @@ void cctagDetection(
   if ( pBank == NULL)
   {
     CCTagMarkersBank bank(params._nCrowns);
-    cctag::cctagDetection(cctags, frame, graySrc, params, bank, false, durations);
-  }else
+    cctag::cctagDetection( package, cctags, frame, graySrc, params, bank, false, durations);
+  } else
   {
-    cctag::cctagDetection(cctags, frame, graySrc, params, *pBank, false, durations);
+    cctag::cctagDetection( package, cctags, frame, graySrc, params, *pBank, false, durations);
   }
   
   markers.clear();

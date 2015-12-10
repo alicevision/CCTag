@@ -94,6 +94,14 @@ int identify_step_2(
     popart::TagPipe* pipe,
 	const cctag::Parameters & params);
 
+int identify_step_3(
+    const int tagIndex,
+	CCTag & cctag,
+    std::vector<cctag::ImageCut>& vSelectedCuts,
+	const std::vector< std::vector<double> > & radiusRatios,
+	const cv::Mat & src,
+	const cctag::Parameters & params);
+
 typedef std::vector< std::vector<double> > RadiusRatioBank;
 typedef std::vector< std::pair< cctag::Point2dN<double>, cctag::ImageCut > > CutSelectionVec;
 

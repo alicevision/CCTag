@@ -26,6 +26,7 @@
 #include <cctag/global.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro
 #include <cctag/fileDebug.hpp>
+#include "cctag/package.h"
 #include "cuda/tag.h"
 
 #include <boost/foreach.hpp>
@@ -726,7 +727,9 @@ popart::TagPipe* initCuda( int      pipeId,
 }
 #endif // WITH_CUDA
 
-void cctagDetection(CCTag::List& markers,
+void cctagDetection(
+        popart::Package* package,
+        CCTag::List& markers,
         const std::size_t frame, 
         const cv::Mat & imgGraySrc,
         const Parameters & params,
@@ -735,6 +738,8 @@ void cctagDetection(CCTag::List& markers,
         cctag::logtime::Mgmt* durations )
 
 {
+    package->resetTables( );
+
     using namespace cctag;
     using namespace boost::numeric::ublas;
 
@@ -752,6 +757,8 @@ void cctagDetection(CCTag::List& markers,
                                imgGraySrc.rows,
                                params._numberOfProcessedMultiresLayers,
                                cuda_allocates );
+
+    package->lockPhase1( );
 
     popart::TagPipe* pipe1 = 0;
 #ifdef WITH_CUDA
@@ -798,16 +805,19 @@ void cctagDetection(CCTag::List& markers,
   
     if( durations ) durations->log( "before cctagMultiresDetection" );
 
-    cctagMultiresDetection( markers,
+    cctagMultiresDetection( package,
+                            markers,
                             imgGraySrc,
                             imagePyramid,
                             frame,
                             pipe1,
                             params,
                             durations );
+    // package->phase1 is unlocked inside cctagMultiresDetection
 
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
+    package->lockPhase2( );
 #ifdef WITH_CUDA
     /* identification in CUDA requires a host-side nearby point struct
      * in pinned memory for safe, non-blocking memcpy.
@@ -887,6 +897,36 @@ void cctagDetection(CCTag::List& markers,
                     pipe1,
                     params );
             }
+            ++it;
+
+            tagIndex++;
+        }
+
+#ifdef WITH_CUDA
+        cudaDeviceSynchronize();
+        /* Releasing all points in all threads in the process.
+         */
+        CCTag::releaseNearbyPointMemory();
+#endif
+
+        package->unlockPhase2( );
+
+        tagIndex = 0;
+
+        it = markers.begin();
+        while (it != markers.end())
+        {
+            CCTag & cctag = *it;
+
+            if( detected[tagIndex] == status::id_reliable ) {
+                detected[tagIndex] = cctag::identification::identify_step_3(
+                    tagIndex,
+                    cctag,
+                    vSelectedCuts[tagIndex],
+                    bank.getMarkers(),
+                    imagePyramid.getLevel(0)->getSrc(),
+                    params );
+            }
 
             cctag.setStatus( detected[tagIndex] );
             ++it;
@@ -894,13 +934,9 @@ void cctagDetection(CCTag::List& markers,
             tagIndex++;
         }
         if( durations ) durations->log( "after cctag::identification::identify" );
+    } else {
+        package->unlockPhase2( );
     }
-
-#ifdef WITH_CUDA
-    /* Releasing all points in all threads in the process.
-     */
-    CCTag::releaseNearbyPointMemory();
-#endif
   
     markers.sort();
 

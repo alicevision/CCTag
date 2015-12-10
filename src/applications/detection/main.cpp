@@ -1,5 +1,5 @@
-#define png_infopp_NULL (png_infopp)NULL
-#define int_p_NULL (int*)NULL
+// #define png_infopp_NULL (png_infopp)NULL
+// #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 
 #include "cctag/fileDebug.hpp"
@@ -9,6 +9,7 @@
 #include "cctag/view.hpp"
 #include "cctag/image.hpp"
 #include "cctag/cmdline.hpp"
+#include "cctag/package.h"
 
 #ifdef WITH_CUDA
 #include "cuda/device_prop.hpp"
@@ -49,6 +50,7 @@ namespace bfs = boost::filesystem;
 
 // static const std::string kUsageString = "Usage: detection image_file.png\n";
 
+#if 0
 void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ostream & output, std::string debugFileName = "")
 {
     if (debugFileName == "") {
@@ -100,6 +102,7 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     }
     CCTAG_COUT("");
 }
+#endif
 
 /*************************************************************/
 /*                    Main entry                             */
@@ -206,8 +209,8 @@ int main(int argc, char** argv)
     
     // Gray scale convertion
     cv::Mat src = cv::imread(cmdline._filename);
-    cv::Mat graySrc;
-    cv::cvtColor( src, graySrc, CV_BGR2GRAY );
+    cv::Mat* graySrc = new cv::Mat;
+    cv::cvtColor( src, *graySrc, CV_BGR2GRAY );
 
     // Upscale original image
     /*{
@@ -218,10 +221,12 @@ int main(int argc, char** argv)
     }*/
 
     // Call the CCTag detection
+        popart::Package* package = new popart::Package( params, bank );
+        package->init( 0, graySrc );
 #ifdef PRINT_TO_CERR
-    detection(0, graySrc, params, bank, std::cerr, myPath.stem().string());
+        package->detection( std::cerr, myPath.stem().string());
 #else
-    detection(0, graySrc, params, bank, outputFile, myPath.stem().string());
+        package->detection( outputFile, myPath.stem().string());
 #endif
 } else if (ext == ".avi" )
   {
@@ -285,6 +290,8 @@ int main(int argc, char** argv)
     }
     frame_processor.join_all();
 #else // 0
+    popart::Package* package = new popart::Package( params, bank );
+
     for( cv::Mat* imgGray : frames ) {
         // Set the output folder
         std::stringstream outFileName;
@@ -295,10 +302,11 @@ int main(int argc, char** argv)
         //bitwise_not ( imgGray, imgGrayInverted );
       
         // Call the CCTag detection
+        package->init( frameId, imgGray );
 #ifdef PRINT_TO_CERR
-        detection(frameId, *imgGray, params, bank, std::cerr, outFileName.str());
+        package->detection( std::cerr, outFileName.str());
 #else
-        detection(frameId, *imgGray, params, bank, outputFile, outFileName.str());
+        package->detection( outputFile, outFileName.str());
 #endif
         ++frameId; 
         if( frameId % 100 == 0 ) {
@@ -317,6 +325,8 @@ int main(int argc, char** argv)
 
     std::size_t frameId = 0;
 
+    popart::Package* package = new popart::Package( params, bank );
+
     for(const auto & fileInFolder : vFileInFolder) {
       const std::string subExt(bfs::extension(fileInFolder));
       
@@ -327,16 +337,17 @@ int main(int argc, char** argv)
 		cv::Mat src;
     	src = cv::imread(fileInFolder.string());
 
-        cv::Mat imgGray;
-        cv::cvtColor( src, imgGray, CV_BGR2GRAY );
+        cv::Mat* imgGray = new cv::Mat;
+        cv::cvtColor( src, *imgGray, CV_BGR2GRAY );
       
         // Call the CCTag detection
+        package->init( frameId, imgGray );
 #ifdef PRINT_TO_CERR
-        detection(frameId, imgGray, params, bank, std::cerr, fileInFolder.stem().string());
+        package->detection( std::cerr, fileInFolder.stem().string());
 #else
-        detection(frameId, imgGray, params, bank, outputFile, fileInFolder.stem().string());
+        package->detection( outputFile, fileInFolder.stem().string());
 #endif
-++frameId;
+        ++frameId;
       }
     }
   }else

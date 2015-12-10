@@ -75,12 +75,6 @@ bool orazioDistanceRobust(
   {
     return false;
   }
-#ifdef GRIFF_DEBUG
-  if( rrBank.size() == 0 )
-  {
-    return false;
-  }
-#endif // GRIFF_DEBUG
 
   for( const cctag::ImageCut & cut : cuts )
   {
@@ -150,9 +144,6 @@ bool orazioDistanceRobust(
       // vector of 1 or -1 values
       std::vector<double> digit( imgSig.size() );
 
-  #ifdef GRIFF_DEBUG
-      assert( rrBank.size() > 0 );
-  #endif // GRIFF_DEBUG
       // Loop over imgSig values, compute and sum the difference between 
       // imgSig and digit (i.e. generated profile)
       for( std::size_t idc = 0; idc < rrBank.size(); ++idc )
@@ -186,9 +177,6 @@ bool orazioDistanceRobust(
         sortedId[v] = idc;
       }
 
-  #ifdef GRIFF_DEBUG
-      assert( sortedId.size() > 0 );
-  #endif // GRIFF_DEBUG
       int k = 0;
       BOOST_REVERSE_FOREACH( const MapT::const_iterator::value_type & v, sortedId )
       {
@@ -199,13 +187,6 @@ bool orazioDistanceRobust(
         idSet.push_back(markerId);
         ++k;
       }
-
-  #ifdef GRIFF_DEBUG
-      assert( idSet.size() > 0 );
-      MarkerID _debug_m = idSet.front().first;
-      assert( _debug_m > 0 );
-      assert( vScore.size() > _debug_m );
-  #endif // GRIFF_DEBUG
 
       vScore[idSet.front().first].push_back(idSet.front().second);
     }
@@ -1461,6 +1442,39 @@ int identify_step_1(
   return status::id_reliable;
 }
   
+int identify_step_2(
+    const int tagIndex,
+    CCTag & cctag,
+    std::vector<cctag::ImageCut>& vSelectedCuts,
+    const std::vector< std::vector<double> > & radiusRatios, // todo: directly use the CCTagBank
+    const cv::Mat &  src,
+    popart::TagPipe* cudaPipe,
+    const cctag::Parameters & params)
+{
+  const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
+
+  bool hasConverged = refineConicFamilyGlob(
+                        tagIndex,
+                        cctag.homography(),
+                        cctag.centerImg(),
+                        vSelectedCuts,
+                        src,
+                        cudaPipe,
+                        ellipse,
+                        params,
+                        cctag.getNearbyPointBuffer()
+                        );
+
+  if( !hasConverged )
+  {
+    DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
+    CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
+    DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
+    return status::opti_has_diverged;
+  }
+  return status::id_reliable;
+}
+
 /**
  * @brief Identify a marker:
  *   i) its imaged center is optimized: A. 1D image cuts are selected ; B. the optimization is performed 
@@ -1476,14 +1490,13 @@ int identify_step_1(
  * @param[in] params set of parameters
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
-int identify_step_2(
-  const int tagIndex,
-  CCTag & cctag,
-  std::vector<cctag::ImageCut>& vSelectedCuts,
-  const std::vector< std::vector<double> > & radiusRatios, // todo: directly use the CCTagBank
-  const cv::Mat &  src,
-  popart::TagPipe* cudaPipe,
-  const cctag::Parameters & params)
+int identify_step_3(
+    const int tagIndex,
+    CCTag & cctag,
+    std::vector<cctag::ImageCut>& vSelectedCuts,
+    const std::vector< std::vector<double> > & radiusRatios, // todo: directly use the CCTagBank
+    const cv::Mat &  src,
+    const cctag::Parameters & params)
 {
   // Get the outer ellipse in its original scale, i.e. in src.
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
@@ -1517,6 +1530,7 @@ int identify_step_2(
   //       ii) _imgSignal in all ImageCut of vSelectedCuts do not need to be transfert,
   //       these signals will be collected inside the function.
   //       iii) cctag.homography(): 3x3 float homography, cctag.centerImg(): 2 floats (x,y), ellipse: (see Ellipse.hpp)
+#if 0
   // Begin GPU //////
   bool hasConverged = refineConicFamilyGlob(
                         tagIndex,
@@ -1527,11 +1541,7 @@ int identify_step_2(
                         cudaPipe,
                         ellipse,
                         params,
-#ifdef WITH_CUDA
                         cctag.getNearbyPointBuffer()
-#else
-                        0
-#endif
                         );
   // End GPU ////////
   // Note Outputs (GPU->CPU):
@@ -1547,6 +1557,7 @@ int identify_step_2(
     DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
     return status::opti_has_diverged;
   }
+#endif
 
 #ifdef CCTAG_OPTIM
   boost::posix_time::ptime t3(boost::posix_time::microsec_clock::local_time());
@@ -1606,13 +1617,6 @@ int identify_step_2(
     CCTagVisualDebug::instance().newSession( "refineConicPts" );
 #endif // OPTIM_CENTER_VISUAL_DEBUG
     
-#ifdef GRIFF_DEBUG
-#error here
-    // todo: clean and mode this block into a dedicated function.
-    if( identSuccessful )
-    {
-#endif // GRIFF_DEBUG
-
       int maxSize = 0;
       int i = 0;
       int iMax = 0;
@@ -1628,10 +1632,6 @@ int identify_step_2(
       }
 
       double score = 0;
-#ifdef GRIFF_DEBUG
-      assert( vScore.size() > 0 );
-      assert( vScore.size() > iMax );
-#endif // GRIFF_DEBUG
       BOOST_FOREACH(const double & proba, vScore[iMax])
       {
         score += proba;
@@ -1670,10 +1670,6 @@ int identify_step_2(
       }
 
       identSuccessful = (score > params._minIdentProba);
-#ifdef GRIFF_DEBUG
-    }
-#endif // GRIFF_DEBUG
-      
 #endif // INITIAL_1D_READING
 
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );

@@ -22,6 +22,10 @@
 
 //#define USE_RESIZE_OCV3
 
+namespace popart {
+class Package;
+}
+
 namespace cctag {
 
 struct CCTagParams
@@ -38,6 +42,7 @@ struct CCTagParams
  */
 
 void cctagMultiresDetection(
+        popart::Package* package,
         CCTag::List& markers,
         const cv::Mat& imgGraySrc,
         const ImagePyramid& imagePyramid,

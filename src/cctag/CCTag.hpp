@@ -353,6 +353,10 @@ public:
    *  this process.
    */
   static void releaseNearbyPointMemory( );
+#else
+  inline popart::NearbyPoint* getNearbyPointBuffer( ) {
+    return 0;
+  }
 #endif
 
   void serialize(boost::archive::text_oarchive & ar, const unsigned int version);

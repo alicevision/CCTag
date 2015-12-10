@@ -1,5 +1,4 @@
-#ifndef VISION_CCTAG_DETECTION_HPP_
-#define VISION_CCTAG_DETECTION_HPP_
+#pragma once
 
 #include <cctag/CCTag.hpp>
 #include <cctag/CCTagMarkersBank.hpp>
@@ -18,12 +17,17 @@
 #include <string>
 #include <vector>
 
+namespace popart {
+class Package;
+};
+
 namespace cctag {
 
 class EdgePoint;
 class EdgePointImage;
 
 void cctagDetection(
+        popart::Package* package,
         CCTag::List& markers,
         const std::size_t frame,
         const cv::Mat & graySrc,
@@ -51,6 +55,4 @@ void createImageForVoteResultDebug(
         std::size_t nLevel);
 
 } // namespace cctag
-
-#endif
 

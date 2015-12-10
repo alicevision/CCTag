@@ -9,6 +9,10 @@
 
 #include <opencv2/core/core.hpp>
 
+namespace popart {
+class Package;
+}
+
 namespace cctag {
 
 namespace logtime {
@@ -43,6 +47,7 @@ protected:
 
 // implemeted in cctag/ICCTag.cpp
 void cctagDetection(
+      popart::Package* package,
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
       const cv::Mat & graySrc,
@@ -53,6 +58,7 @@ void cctagDetection(
 
 // implemeted in cctag/ICCTag.cpp
 void cctagDetection(
+      popart::Package* package,
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
       const cv::Mat & graySrc,

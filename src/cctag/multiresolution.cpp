@@ -15,6 +15,7 @@
 #include <cctag/canny.hpp>
 #include <cctag/detection.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro
+#include <cctag/package.h>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/gil/image_view.hpp>
@@ -188,7 +189,37 @@ void update(
   }
 }
 
+void cctagMultiresDetection_download(
+        popart::Package*        package,
+        size_t                  i,
+        Level*                  level,
+        std::vector<EdgePoint>& vPoints,
+        EdgePointsImage&        vEdgeMap,
+        popart::TagPipe*        cuda_pipe,
+        const Parameters &      params,
+        cctag::logtime::Mgmt*   durations )
+{
+    // WinnerMap winners;
+    // std::vector<EdgePoint*> seeds;
+#if defined(WITH_CUDA)
+    if( cuda_pipe ) {
+        cuda_pipe->convertToHost( i, 
+                                  vPoints,
+                                  vEdgeMap,
+                                  package->seeds[i],
+                                  package->winners[i] );
+        if( durations ) {
+            cudaDeviceSynchronize();
+        }
+        level->setLevel( cuda_pipe, params );
+
+        CCTagVisualDebug::instance().setPyramidLevel(i);
+    }
+#endif // defined(WITH_CUDA)
+}
+
 void cctagMultiresDetection_inner(
+        popart::Package*        package,
         size_t                  i,
         CCTag::List&            pyramidMarkers,
         const cv::Mat&          imgGraySrc,
@@ -196,33 +227,21 @@ void cctagMultiresDetection_inner(
         const std::size_t       frame,
         std::vector<EdgePoint>& vPoints,
         EdgePointsImage&        vEdgeMap,
-        popart::TagPipe*        cuda_pipe,
+        bool                    cuda_computations,
         const Parameters &      params,
         cctag::logtime::Mgmt*   durations )
 {
     DO_TALK( CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::"); )
 
     // Data structure for getting vote winners
-    WinnerMap winners;
-    std::vector<EdgePoint*> seeds;
+    WinnerMap&               winners( package->winners[i] );
+    std::vector<EdgePoint*>& seeds( package->seeds[i] );
 
     boost::posix_time::time_duration d;
 
 #if defined(WITH_CUDA)
     // there is no point in measuring time in compare mode
-    if( cuda_pipe ) {
-    cuda_pipe->convertToHost( i, 
-                              vPoints,
-                              vEdgeMap,
-                              seeds,
-                              winners );
-    if( durations ) {
-        cudaDeviceSynchronize();
-    }
-    level->setLevel( cuda_pipe, params );
-
-    CCTagVisualDebug::instance().setPyramidLevel(i);
-} else { // not cuda_pipe
+    if( not cuda_computations ) {
 #endif // defined(WITH_CUDA)
     edgesPointsFromCanny( vPoints,
                           vEdgeMap,
@@ -273,6 +292,7 @@ void cctagMultiresDetection_inner(
 }
 
 void cctagMultiresDetection(
+        popart::Package* package,
         CCTag::List& markers,
         const cv::Mat& imgGraySrc,
         const ImagePyramid& imagePyramid,
@@ -286,32 +306,49 @@ void cctagMultiresDetection(
   
   bool doUpdate = true; // todo@Lilian: add in the parameter file.
 
-  std::map<std::size_t, CCTag::List> pyramidMarkers;
-  std::vector<EdgePointsImage> vEdgeMaps;
-  vEdgeMaps.reserve(imagePyramid.getNbLevels());
-  std::vector<std::vector<EdgePoint > > vPoints;
+  // std::map<std::size_t, CCTag::List> pyramidMarkers;
+  // std::vector<EdgePointsImage> vEdgeMaps;
+  // vEdgeMaps.reserve(imagePyramid.getNbLevels());
+  // std::vector<std::vector<EdgePoint > > vPoints;
+  CCTag::List            pyramidMarkers[ params._numberOfProcessedMultiresLayers ];
+  EdgePointsImage        vEdgeMaps     [ params._numberOfProcessedMultiresLayers ];
+  std::vector<EdgePoint> vPoints       [ params._numberOfProcessedMultiresLayers ];
 
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
+
   for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i ) {
-    pyramidMarkers.insert( std::pair<std::size_t, CCTag::List>( i, CCTag::List() ) );
+    // pyramidMarkers.insert( std::pair<std::size_t, CCTag::List>( i, CCTag::List() ) );
 
     // Create EdgePoints for every detected edge points in edges.
     // std::vector<EdgePoint> points;
     // vPoints.push_back(points);
-    vPoints.push_back( std::vector<EdgePoint>() );
+    // vPoints.push_back( std::vector<EdgePoint>() );
     
     // EdgePointsImage edgesMap;
     // vEdgeMaps.push_back(edgesMap);
-    vEdgeMaps.push_back( EdgePointsImage() );
+    // vEdgeMaps.push_back( EdgePointsImage() );
     
-    cctagMultiresDetection_inner( i,
+    cctagMultiresDetection_download( package,
+                                     i,
+                                     imagePyramid.getLevel(i),
+                                     vPoints[i],
+                                     vEdgeMaps[i],
+                                     cuda_pipe,
+                                     params,
+                                     durations );
+  }
+  package->unlockPhase1( );
+
+  for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i ) {
+    cctagMultiresDetection_inner( package,
+                                  i,
                                   pyramidMarkers[i],
                                   imgGraySrc,
                                   imagePyramid.getLevel(i),
                                   frame,
-                                  vPoints.back(),
-                                  vEdgeMaps.back(),
-                                  cuda_pipe,
+                                  vPoints[i], // vPoints.back(),
+                                  vEdgeMaps[i], // vEdgeMaps.back(),
+                                  ( cuda_pipe != 0 ),
                                   params,
                                   durations );
   }
