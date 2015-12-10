@@ -10,6 +10,7 @@
 
 #include "frame.h"
 #include "cctag/talk.hpp"
+#include "cuda/framepackage.h"
 
 namespace popart {
 
@@ -19,9 +20,14 @@ using namespace std;
  * Frame
  *************************************************************/
 
-Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe )
+Frame::Frame( FramePackage* pack, uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe )
     : _layer( my_layer )
     , _h_debug_hyst_edges( 0 )
+    , _h_plane( pack->_h_plane )
+    , _h_dx( pack->_h_dx )
+    , _h_dy( pack->_h_dy )
+    , _h_mag( pack->_h_mag )
+    , _h_edges( pack->_h_edges )
     , _texture( 0 )
     , _wait_for_upload( 0 )
     , _meta( my_pipe, my_layer )

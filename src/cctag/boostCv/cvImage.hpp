@@ -92,11 +92,11 @@ public:
 		_img = img;
 	}
 
-	const IplImage* const get() const { return _img; }
-	      IplImage*       get()       { return _img; }
+	const IplImage* get() const { return _img; }
+	      IplImage* get()       { return _img; }
 
-	const IplImage* const operator->() const { return _img; }
-	      IplImage*       operator->()       { return _img; }
+	const IplImage* operator->() const { return _img; }
+	      IplImage* operator->()       { return _img; }
 
 	IplImage* release() { IplImage* m = _img; _img = NULL; return m; }
 
@@ -134,11 +134,11 @@ public:
 		_img = img;
 	}
 
-	const IplImage* const get() const { return _img; }
-	      IplImage*       get()       { return _img; }
+	const IplImage* get() const { return _img; }
+	      IplImage* get()       { return _img; }
 
-	const IplImage* const operator->() const { return _img; }
-	      IplImage*       operator->()       { return _img; }
+	const IplImage* operator->() const { return _img; }
+	      IplImage* operator->()       { return _img; }
 
 	IplImage* release() { IplImage* m = _img; _img = NULL; return m; }
 

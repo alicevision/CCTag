@@ -7,6 +7,7 @@
 #include "cctag/view.hpp"
 #include "cctag/image.hpp"
 #include "cctag/cmdline.hpp"
+#include "cuda/framepackage.h"
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem.hpp>
@@ -17,6 +18,10 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
+
+#include <stdlib.h>
+#include <iostream>
+// #include <sys/mman.h>
 
 using namespace cctag;
 using boost::timer;
@@ -32,21 +37,24 @@ Package::Package( const cctag::Parameters & params,
     : _src( 0 )
     , _params( params )
     , _bank( bank )
+    , _framePackage( 0 )
 {
-    winners = new WinnerMap[ params._numberOfProcessedMultiresLayers ];
-    seeds   = new std::vector<EdgePoint*>[ params._numberOfProcessedMultiresLayers ];
+    _numLayers = params._numberOfProcessedMultiresLayers;
+
+    winners = new WinnerMap[ _numLayers ];
+    seeds   = new std::vector<EdgePoint*>[ _numLayers ];
 }
 
 void Package::resetTables( )
 {
-    for( int i=0; i<_params._numberOfProcessedMultiresLayers; i++ ) {
+    for( int i=0; i<_numLayers; i++ ) {
         winners[i].clear();
         seeds  [i].clear();
     }
 }
 
-void Package::init( int frameId,
-               const cv::Mat* src )
+void Package::init( int            frameId,
+                    const cv::Mat* src )
 {
     if( _src == 0 ) {
         // allocate memories
@@ -54,6 +62,33 @@ void Package::init( int frameId,
 
     _frameId = frameId;
     _src     = src;
+
+    if( _framePackage == 0 ) {
+        _framePackage = new FramePackage* [ _numLayers ];
+
+        uint32_t w = src->size().width;
+        uint32_t h = src->size().height;
+
+        for( int i=0; i<_numLayers; i++ ) {
+            _framePackage[i] = new FramePackage( w, h );
+            w = ( w >> 1 ) + ( w & 1 );
+            h = ( h >> 1 ) + ( h & 1 );
+        }
+    }
+}
+
+void Package::lockPhase1( )
+{
+    for( int i=0; i<_numLayers; i++ ) {
+        _framePackage[i]->pin( );
+    }
+}
+
+void Package::unlockPhase1( )
+{
+    for( int i=0; i<_numLayers; i++ ) {
+        _framePackage[i]->unpin( );
+    }
 }
 
 void Package::detection( std::ostream & output,

@@ -45,6 +45,7 @@ struct CutStruct;
 struct CutSignals;
 } // identification
 struct NearbyPoint;
+class  FramePackage;
 
 /*************************************************************
  * FrameTexture
@@ -83,7 +84,7 @@ class Frame
 {
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
-    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe = 0 );
+    Frame( FramePackage* pack, uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe = 0 );
     ~Frame( );
 
 public:
@@ -296,11 +297,11 @@ private:
 #endif // DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_hyst_edges;
 public: // HACK FOR DEBUGGING
-    cv::cuda::PtrStepSzb    _h_plane;
-    cv::cuda::PtrStepSz16s  _h_dx;
-    cv::cuda::PtrStepSz16s  _h_dy;
-    cv::cuda::PtrStepSz32u  _h_mag;
-    cv::cuda::PtrStepSzb    _h_edges;
+    cv::cuda::PtrStepSzb&    _h_plane;
+    cv::cuda::PtrStepSz16s&  _h_dx;
+    cv::cuda::PtrStepSz16s&  _h_dy;
+    cv::cuda::PtrStepSz32u&  _h_mag;
+    cv::cuda::PtrStepSzb&    _h_edges;
 
     cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
 private:

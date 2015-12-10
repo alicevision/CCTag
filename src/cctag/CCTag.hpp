@@ -65,8 +65,8 @@ public:
         int pyramidLevel,
         double scale,
         const double quality = 1.0)
-    : _centerImg(centerImg)
-    , _id(id)
+    : _id(id)
+    , _centerImg(centerImg)
     , _outerEllipse(outerEllipse)
     , _points(points)
     , _mHomography(homography)
@@ -84,18 +84,18 @@ public:
   }
 
   CCTag(const CCTag & cctag)
-    : _centerImg(cctag._centerImg)
+    : _radiusRatios(cctag._radiusRatios)
     , _nCircles(cctag._nCircles)
-    , _radiusRatios(cctag._radiusRatios)
     , _id(cctag._id)
+    , _centerImg(cctag._centerImg)
     , _outerEllipse(cctag._outerEllipse)
+    , _rescaledOuterEllipse(cctag._rescaledOuterEllipse)
     , _ellipses(cctag._ellipses)
     , _points(cctag._points)
     , _mHomography(cctag._mHomography)
     , _quality(cctag._quality)
     , _pyramidLevel(cctag._pyramidLevel)
     , _scale(cctag._scale)
-    , _rescaledOuterEllipse(cctag._rescaledOuterEllipse)
     , _status(cctag._status)
 #ifdef CCTAG_SERIALIZE
     , _flowComponents(cctag._flowComponents)

@@ -9,12 +9,13 @@
 #include "cctag/view.hpp"
 #include "cctag/image.hpp"
 #include "cctag/cmdline.hpp"
-#include "cctag/package.h"
 
 #ifdef WITH_CUDA
 #include "cuda/device_prop.hpp"
 #include "cuda/debug_macros.hpp"
 #endif // WITH_CUDA
+
+#include "cctag/package.h"
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem.hpp>

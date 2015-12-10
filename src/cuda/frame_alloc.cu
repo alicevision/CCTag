@@ -81,36 +81,6 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _d_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _d_ring_output.rows = EDGE_LINKING_MAX_ARCS;
 
-    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(uint8_t) );
-    _h_plane.data = (uint8_t*)ptr;
-    _h_plane.step = w * sizeof(uint8_t);
-    _h_plane.cols = w;
-    _h_plane.rows = h;
-
-    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int16_t) );
-    _h_dx.data = (int16_t*)ptr;
-    _h_dx.step = w * sizeof(int16_t);
-    _h_dx.cols = w;
-    _h_dx.rows = h;
-
-    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int16_t) );
-    _h_dy.data = (int16_t*)ptr;
-    _h_dy.step = w * sizeof(int16_t);
-    _h_dy.cols = w;
-    _h_dy.rows = h;
-
-    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int32_t) );
-    _h_mag.data = (uint32_t*)ptr;
-    _h_mag.step = w * sizeof(uint32_t);
-    _h_mag.cols = w;
-    _h_mag.rows = h;
-
-    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(uint8_t) );
-    _h_edges.data = (uint8_t*)ptr;
-    _h_edges.step = w * sizeof(uint8_t);
-    _h_edges.cols = w;
-    _h_edges.rows = h;
-
     POP_CUDA_MALLOC_HOST( &ptr, _d_intermediate.rows * _d_intermediate.step );
     _h_intermediate.data = (float*)ptr;
     _h_intermediate.step = _d_intermediate.step;
@@ -220,11 +190,6 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE( _d_edges.data );
     POP_CUDA_FREE( _d_ring_output.data );
 
-    POP_CUDA_FREE_HOST( _h_plane.data );
-    POP_CUDA_FREE_HOST( _h_dx.data );
-    POP_CUDA_FREE_HOST( _h_dy.data );
-    POP_CUDA_FREE_HOST( _h_mag.data );
-    POP_CUDA_FREE_HOST( _h_edges.data );
     POP_CUDA_FREE_HOST( _h_intermediate.data );
 #ifndef EDGE_LINKING_HOST_SIDE
     delete [] _h_ring_output.data;

@@ -1,3 +1,5 @@
+#include "cuda/onoff.h"
+
 #include "tag.h"
 #include "frame.h"
 #include "frameparam.h"
@@ -14,7 +16,8 @@
 #include "cctag/algebra/matrix/Matrix.hpp"
 
 #include "cctag/logtime.hpp"
-#include "cuda/onoff.h"
+
+#include "cctag/package.h"
 #include "cuda/tag_threads.h"
 #include "cuda/tag_cut.h"
 
@@ -29,7 +32,8 @@ TagPipe::TagPipe( const cctag::Parameters& params )
 }
 
 __host__
-void TagPipe::initialize( const uint32_t pix_w,
+void TagPipe::initialize( Package* package,
+                          const uint32_t pix_w,
                           const uint32_t pix_h,
                           cctag::logtime::Mgmt* durations )
 {
@@ -53,14 +57,16 @@ void TagPipe::initialize( const uint32_t pix_w,
 #ifdef USE_ONE_DOWNLOAD_STREAM
     cudaStream_t download_stream = 0;
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( f = new popart::Frame( w, h, i, download_stream ) ); // sync
+        FramePackage* pack = package->getFramePackage( i );
+        _frame.push_back( f = new popart::Frame( pack, w, h, i, download_stream ) ); // sync
         if( i==0 ) { download_stream = f->_download_stream; assert( download_stream != 0 ); }
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
 #else
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( f = new popart::Frame( w, h, i, 0 ) ); // sync
+        FramePackage* pack = package->getFramePackage( i );
+        _frame.push_back( f = new popart::Frame( pack, w, h, i, 0 ) ); // sync
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }

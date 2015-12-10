@@ -26,6 +26,7 @@
 #include <cctag/global.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro
 #include <cctag/fileDebug.hpp>
+
 #include "cctag/package.h"
 #include "cuda/tag.h"
 
@@ -700,7 +701,8 @@ void createImageForVoteResultDebug(
 }
 
 #ifdef WITH_CUDA
-popart::TagPipe* initCuda( int      pipeId,
+popart::TagPipe* initCuda( popart::Package* package,
+                           int      pipeId,
                            uint32_t width,
                            uint32_t height, 
                            const Parameters & params,
@@ -714,7 +716,7 @@ popart::TagPipe* initCuda( int      pipeId,
 
     if( not pipe1 ) {
         pipe1 = new popart::TagPipe( params );
-        pipe1->initialize( width, height, durations );
+        pipe1->initialize( package, width, height, durations );
         cudaPipelines[pipeId] = pipe1;
     } else {
         if( width  != pipe1->getWidth(0) ||
@@ -763,7 +765,8 @@ void cctagDetection(
     popart::TagPipe* pipe1 = 0;
 #ifdef WITH_CUDA
     if( params._useCuda ) {
-        pipe1 = initCuda( 0,
+        pipe1 = initCuda( package,
+                          0,
                           imgGraySrc.size().width,
 	                      imgGraySrc.size().height,
 	                      params,

@@ -27,6 +27,7 @@ namespace popart
 
 class Frame; // forward decl means cctag/*.cpp need not recompile for frame.h
 class NearbyPoint;
+class Package;
 
 class TagPipe
 {
@@ -38,7 +39,8 @@ class TagPipe
 public:
     TagPipe( const cctag::Parameters& params );
 
-    void initialize( const uint32_t pix_w,
+    void initialize( Package* package,
+                     const uint32_t pix_w,
                      const uint32_t pix_h,
                      cctag::logtime::Mgmt* durations );
     void release( );

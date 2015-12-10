@@ -15,7 +15,8 @@
 #include <cctag/canny.hpp>
 #include <cctag/detection.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro
-#include <cctag/package.h>
+
+#include "cctag/package.h"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/gil/image_view.hpp>
