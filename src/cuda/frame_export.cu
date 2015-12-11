@@ -122,13 +122,16 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
      * the threshold.
      * We sort them by number of votes first, and coordinates in case of collision.
      * We copy all of them into the host-side list.
-     *
-     * NOTE: move sorting to the GPU !!!
      */
+#if 0
+    // moved to the GPU: work UNTIL rows*cols*numEdgepoints overflows int64_t
+
     vote_index_sort sort_by_votes_and_coords( _voters.host );
     std::sort( _inner_points.host.ptr,
                _inner_points.host.ptr + _inner_points.host.size,
                sort_by_votes_and_coords );
+#endif
+
 
     // NVCC handles the std::list<...>() construct. GCC does not. Keeping alternative code.
 
