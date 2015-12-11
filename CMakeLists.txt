@@ -11,7 +11,9 @@ project( CCTag )
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
 
-include("${MACHINE_NAME}.cmake")
+if(EXISTS "${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake")
+  include("${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake")
+endif()
 
 set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -pg")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
@@ -119,10 +121,12 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_definitions(${OpenCV_DEFINITIONS})
 
 # FIND OPTPP
-find_package(OPTPP REQUIRED)
-include_directories(${OPTPP_INCLUDE_DIRS})
-# link_directories(${OPTPP_LIB_DIR})
-add_definitions(${OPTPP_DEFINITIONS})
+find_package(OPTPP)
+if(OPTPP_FOUND)
+  include_directories(${OPTPP_INCLUDE_DIRS})
+  # link_directories(${OPTPP_LIB_DIR})
+  add_definitions(${OPTPP_DEFINITIONS})
+endif()
 
 # FIND CERES
 find_package(Ceres REQUIRED)
@@ -155,6 +159,7 @@ find_package(OpenMP REQUIRED)
 
 # FIND GSL
 find_package(GSL REQUIRED)
+link_directories(${GSL_LINK_DIRECTORIES})
 
 add_subdirectory(src)
 

@@ -2,6 +2,8 @@
 
 #include <string>
 
+namespace cctag {
+
 class CmdLine
 {
 public:
@@ -24,5 +26,5 @@ public:
     void usage( const char* const argv0 );
 };
 
-extern CmdLine cmdline;
+}
 

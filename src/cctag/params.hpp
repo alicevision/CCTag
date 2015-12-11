@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef VISION_CCTAG_PARAMS_HPP_
-#define VISION_CCTAG_PARAMS_HPP_
-
 #include <boost/math/constants/constants.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -54,7 +51,11 @@ static const bool kDefaultSearchForAnotherSegment = true;
 static const bool kDefaultWriteOutput = false;
 static const bool kDefaultDoIdentification = true;
 static const uint32_t kDefaultMaxEdges = 20000;
+#ifdef WITH_CUDA
 static const bool kDefaultUseCuda = true;
+#else
+static const bool kDefaultUseCuda = false;
+#endif
 
 static const std::string kParamCannyThrLow( "kParamCannyThrLow" );
 static const std::string kParamCannyThrHigh( "kParamCannyThrHigh" );
@@ -185,6 +186,3 @@ struct Parameters
 };
 
 } // namespace cctag
-
-#endif
-

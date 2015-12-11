@@ -575,7 +575,7 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     mapVar.insert( v );
   }
 
-#ifdef SUBPIX_EDGE_OPTIM // undefined. Depreciated
+#if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM) // undefined. Depreciated
   // half size of the segment used to refine the external point of cut
   //const double halfWidth = cutLengthOuterPointRefine / 2.0;
 #endif // SUBPIX_EDGE_OPTIM
@@ -590,7 +590,7 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     BOOST_ASSERT( cut.stop().x() >= 0 && cut.stop().x() < src.cols );
     BOOST_ASSERT( cut.stop().y() >= 0 && cut.stop().y() < src.rows );
 
-#ifdef SUBPIX_EDGE_OPTIM
+#if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM)
     const double halfWidth = cutLengthOuterPointRefine / 2.0;
     cctag::numerical::BoundedVector2d gradDirection = cctag::numerical::unit( cut.stop().gradient() );
     BOOST_ASSERT( norm_2( gradDirection ) != 0 );
