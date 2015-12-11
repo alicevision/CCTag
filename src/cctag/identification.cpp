@@ -782,6 +782,51 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
   }
 }
 
+void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
+        std::size_t selectSize,
+        const cctag::numerical::geometry::Ellipse & outerEllipse,
+        std::vector<cctag::ImageCut> & collectedCuts,
+        const cv::Mat & src,
+        const double cutLengthOuterPointRefine,
+        const std::size_t numSamplesOuterEdgePointsRefinement,
+        const std::size_t cutsSelectionTrials )
+{
+  using namespace boost::numeric;
+  using namespace boost::accumulators;
+  using namespace cctag::numerical;
+  namespace ublas = boost::numeric::ublas;
+
+  selectSize = std::min( selectSize, collectedCuts.size() );
+
+  std::vector<double> varCuts;
+  varCuts.reserve(collectedCuts.size());
+  for( const cctag::ImageCut & cut : collectedCuts )
+  {
+    accumulator_set< double, features< tag::variance > > acc;
+    acc = std::for_each( cut.imgSignal().begin(), cut.imgSignal().end(), acc );
+    varCuts.push_back( variance( acc ) );
+  }
+  
+  const double varMax = *std::max_element(varCuts.begin(),varCuts.end());
+  
+  std::size_t iCut = 0;
+  std::size_t step = 5;
+  std::size_t iStart = 0;
+  while ( ( vSelectedCuts.size() < selectSize ) && (iStart < step) )
+  {
+    iCut = iStart;
+    while( iCut < collectedCuts.size() )
+    {
+      if ( varCuts[iCut]/varMax > 0.5 )
+      {
+        vSelectedCuts.push_back( collectedCuts[iCut] );
+      }
+      iCut += step;
+    }
+    ++iStart;
+  }
+}
+
 /**
  * @brief Collect rectified 1D signals along image cuts.
  * 
@@ -1435,8 +1480,20 @@ int identify_step_1(
 //            params._numSamplesOuterEdgePointsRefinement,
 //            params._cutsSelectionTrials
 //            );
+         
             
-    selectCutCheap(
+//    selectCutCheap(
+//            vSelectedCuts,
+//            params._numCutsInIdentStep,
+//            ellipse,
+//            cuts,
+//            src,
+//            cutLengthOuterPointRefine,
+//            params._numSamplesOuterEdgePointsRefinement,
+//            params._cutsSelectionTrials
+//            );
+
+    selectCutCheapUniform(
             vSelectedCuts,
             params._numCutsInIdentStep,
             ellipse,
