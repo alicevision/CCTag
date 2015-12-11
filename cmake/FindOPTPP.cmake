@@ -150,7 +150,7 @@ endif()
 
 
 if(OPTPP_FOUND)
-  set(OPTPP_DEFINITIONS "WITH_OPTPP=1")
+  set(OPTPP_DEFINITIONS "-DWITH_OPTPP=1")
   if(NOT OPTPP_FIND_QUIETLY)
     message(STATUS "Found OPTPP: headers at ${OPTPP_INCLUDE_DIRS}, libraries at ${OPTPP_LIBRARIES}")
   endif()
