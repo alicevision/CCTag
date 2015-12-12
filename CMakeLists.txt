@@ -110,6 +110,7 @@ IF(USE_CUDA)
   ENDIF(CUDA_FOUND)
 
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
+  cuda_find_library_local_first(CUDA_NVTOOLSEXT_LIBRARY nvToolsExt "\"nvToolsExt\" library")
 
 ELSE(USE_CUDA)
   message( STATUS "Avoid using CUDA" )

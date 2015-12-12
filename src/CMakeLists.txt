@@ -93,7 +93,8 @@ if(USE_CUDA)
                                      ${CUDA_LIBRARIES}
                                      ${OPTPP_LIBRARIES}
 				     ${Ceres_LIBRARIES}
-				     ${CUDA_CUDADEVRT_LIBRARY} )
+				     ${CUDA_CUDADEVRT_LIBRARY}
+				     ${CUDA_NVTOOLSEXT_LIBRARY} )
 
     CUDA_ADD_EXECUTABLE( testMemoryPool
                          applications/test/testMemoryPool.cpp )

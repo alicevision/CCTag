@@ -49,6 +49,7 @@
 #include <utility>
 #ifdef WITH_CUDA
 #include <cuda_runtime.h> // only for debugging
+#include <nvToolsExt.h>
 #endif // WITH_CUDA
 
 using namespace std;
@@ -84,8 +85,10 @@ void constructFlowComponentFromSeed(
 
     // Convex edge linking from the seed in both directions. The linking
     // is performed until the convexity is lost.
+nvtxRangePushA( "edgeLinking" );
     edgeLinking(edgesMap, convexEdgeSegment, seed, winners, 
             params._windowSizeOnInnerEllipticSegment, params._averageVoteMin);
+nvtxRangePop( );
 
     // Compute the average number of received points.
     int nReceivedVote = 0;
