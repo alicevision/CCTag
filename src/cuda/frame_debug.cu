@@ -238,7 +238,6 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     }
 #endif // DEBUG_WRITE_CHOSEN_AS_PPM
 #endif // NDEBUG
-#ifndef EDGE_LINKING_HOST_SIDE
 #ifndef NDEBUG
 #ifdef DEBUG_WRITE_LINKED_AS_PPM
     {
@@ -350,7 +349,6 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     }
 #endif // DEBUG_WRITE_LINKED_AS_PPM
 #endif // NDEBUG
-#endif // EDGE_LINKING_HOST_SIDE
 }
 
 }; // namespace popart

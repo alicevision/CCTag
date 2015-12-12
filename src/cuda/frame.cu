@@ -31,18 +31,19 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     , _inner_points( _meta, List_size_inner_points )
     , _interm_inner_points( _meta, List_size_interm_inner_points )
     , _image_to_upload( 0 )
+    , _d_ring_sort_keys( 0 )
+    , _d_ring_index( 0 )
 {
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
-#ifndef EDGE_LINKING_HOST_SIDE
     _h_ring_output.data = 0;
-#endif
 
     if( download_stream != 0 ) {
         _private_download_stream = false;
         _download_stream = download_stream;
     } else {
         _private_download_stream = true;
-        cudaStreamCreateWithFlags( &_download_stream, cudaStreamNonBlocking );
+        // cudaStreamCreateWithFlags( &_download_stream, cudaStreamNonBlocking );
+        cudaStreamCreate( &_download_stream );
     }
     POP_CUDA_STREAM_CREATE( &_stream );
 

@@ -1,41 +1,33 @@
 #include "onoff.h"
 
-#ifndef EDGE_LINKING_HOST_SIDE
-
 #include <vector>
 #include <math_constants.h>
+
+#include <boost/thread/mutex.hpp>
 
 #include "frame.h"
 #include "assist.h"
 #include "recursive_sweep.h"
 #include "cctag/talk.hpp" // for DO_TALK macro
 
-#undef  ONE_THREAD_ONLY // doesn't work?
 #undef  KERNEL_PRINT_ERROR_CAUSE
-#define KERNEL_PRINT_SUCCESS_CAUSE
+#undef  KERNEL_PRINT_SUCCESS_CAUSE
 
 using namespace std;
+
+// static boost::mutex debug_lock;
 
 namespace popart
 {
 
 namespace linking
 {
-#if 0
-__constant__
-static int xoff_select[8]    =   { 1,  1,  0, -1, -1, -1,  0,  1};
-
-__constant__
-static int yoff_select[2][8] = { { 0, -1, -1, -1,  0,  1,  1,  1},
-                                 { 0,  1,  1,  1,  0, -1, -1, -1} };
-#else
 __device__
 static const int xoff_select[8]    =   { 1,  1,  0, -1, -1, -1,  0,  1};
 
 __device__
 static const int yoff_select[2][8] = { { 0, -1, -1, -1,  0,  1,  1,  1},
                                        { 0,  1,  1,  1,  0, -1, -1, -1} };
-#endif
 
 enum Direction
 {
@@ -142,38 +134,18 @@ private:
     }
 };
 
-#ifdef ONE_THREAD_ONLY
-// include data in class
-#else // ONE_THREAD_ONLY
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
 __shared__ int4  edge_buffer[EDGE_LINKING_MAX_EDGE_LENGTH]; // convexEdgeSegment
 #else // DEBUG_LINKED_USE_INT4_BUFFER
 __shared__ int2  edge_buffer[EDGE_LINKING_MAX_EDGE_LENGTH]; // convexEdgeSegment
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
 __shared__ int   edge_index[2];
-#endif // ONE_THREAD_ONLY
 
 struct EdgeBuffer
 {
-#ifdef ONE_THREAD_ONLY
-    int2  edge_buffer[EDGE_LINKING_MAX_EDGE_LENGTH]; // convexEdgeSegment
-    int   edge_index[2];
-#endif // ONE_THREAD_ONLY
     __device__ inline
     void init( int2 start )
     {
-#ifdef ONE_THREAD_ONLY
-#ifdef DEBUG_LINKED_USE_INT4_BUFFER
-        edge_buffer[0].x  = start.x;
-        edge_buffer[0].y  = start.y;
-        edge_buffer[0].z  = Left;
-        edge_buffer[0].w  = 0;
-#else // DEBUG_LINKED_USE_INT4_BUFFER
-        edge_buffer[0]    = start;
-#endif // DEBUG_LINKED_USE_INT4_BUFFER
-        edge_index[Left]  = 1;
-        edge_index[Right] = 0;
-#else // ONE_THREAD_ONLY
         if( threadIdx.x == 0 ) {
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
             edge_buffer[0].x  = start.x;
@@ -187,7 +159,6 @@ struct EdgeBuffer
             edge_index[Right] = 0;
         }
         __syncthreads();
-#endif // ONE_THREAD_ONLY
     }
 
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
@@ -206,6 +177,23 @@ struct EdgeBuffer
         retval.y = edge_buffer[idx].y;
         return retval;
     }
+    __device__ inline
+    int2 getPrevious( Direction d )
+    {
+        int2 retval;
+        int  idx;
+        if( d == Left ) {
+            idx = edge_index[Left];
+            dec( idx );
+            dec( idx );
+        } else {
+            idx = edge_index[Right];
+            inc( idx );
+        }
+        retval.x = edge_buffer[idx].x;
+        retval.y = edge_buffer[idx].y;
+        return retval;
+    }
 #else // DEBUG_LINKED_USE_INT4_BUFFER
     __device__ inline
     const int2& get( Direction d )
@@ -219,11 +207,25 @@ struct EdgeBuffer
         }
         return edge_buffer[idx];
     }
+    __device__ inline
+    const int2& getPrevious( Direction d )
+    {
+        int idx;
+        if( d == Left ) {
+            idx = edge_index[Left];
+            dec( idx );
+            dec( idx );
+        } else {
+            idx = edge_index[Right];
+            inc( idx );
+        }
+        return edge_buffer[idx];
+    }
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
 
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
     __device__ inline
-    void append( Direction d, int2 val, int offset, float angle )
+    void append( Direction d, int2 val, short2 grad, int offset, float angle )
     {
         if( d == Left ) {
             const int idx = edge_index[Left];
@@ -260,6 +262,28 @@ struct EdgeBuffer
         }
     }
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
+
+    __device__ bool isAlreadyIn( const int2& pt ) {
+        int limit = edge_index[Left];
+        int i     = 0;
+        while( i != limit ) {
+            if( edge_buffer[i].x == pt.x && edge_buffer[i].y == pt.y ) {
+                return true;
+            }
+            inc( i );
+        }
+        limit = edge_index[Right];
+        if( limit != 0 ) {
+            i = 0;
+            do {
+                dec( i );
+                if( edge_buffer[i].x == pt.x && edge_buffer[i].y == pt.y ) {
+                    return true;
+                }
+            } while( i != limit );
+        }
+        return false;
+    }
 
     __device__ inline
     int size() const
@@ -300,6 +324,47 @@ private:
     }
 };
 
+#if 0
+__global__
+void verify( int  num,
+             int* d_ring_index,
+             int* d_ring_sort_keys,
+             cv::cuda::PtrStepSzInt2 d_ring_output )
+{
+    int ct;
+    printf("Direct:\n");
+    ct = 0;
+    for( int i = 0; i<num; i++ ) {
+        int key = d_ring_sort_keys[i];
+        if( key == 0 ) { ct++; continue; }
+        printf("Line %d, counter %d\n", i, key );
+    }
+    printf("... and %d zeros\n", ct );
+    printf("Sorted:\n");
+    ct = 0;
+    for( int i = 0; i<num; i++ ) {
+        int offset = d_ring_index[i];
+        int key    = d_ring_sort_keys[i];
+        if( key == 0 ) { ct++; continue; }
+        printf("Line %d, index %d counter %d\n", i, offset, key );
+    }
+    printf("... and %d zeros\n", ct );
+}
+#endif
+
+__global__
+void edge_init_sort_keys( FrameMetaPtr meta,
+                          int*         d_ring_sort_keys,
+                          int*         d_ring_index )
+{
+    int limit = meta.ring_counter_max();
+    int idx   = blockIdx.x * blockDim.x + threadIdx.x;
+    if( idx < limit ) {
+        d_ring_index[idx]     = idx;
+        d_ring_sort_keys[idx] = 0;
+    }
+}
+
 /**
  * @param p Starting seed
  * @param triplepoints          List of all edge points that were potential voters
@@ -310,14 +375,17 @@ private:
  * @param param_averageVoteMin
  */
 __device__
-void edge_linking_seed( const TriplePoint*           p,
-                        DevEdgeList<TriplePoint>     triplepoints,
+void edge_linking_seed( FrameMetaPtr                 meta,
+                        const TriplePoint*           p,
+                        DevEdgeList<TriplePoint>     voters,
                         cv::cuda::PtrStepSz32s       edgepoint_index_table, // coord->triplepoint
                         cv::cuda::PtrStepSzb         edges,
                         cv::cuda::PtrStepSz16s       d_dx,
                         cv::cuda::PtrStepSz16s       d_dy,
-                        FrameMetaPtr&                meta,
                         cv::cuda::PtrStepSzInt2      d_ring_output,
+                        int                          my_ring_index,
+                        int*                         d_ring_index,
+                        int*                         d_ring_sort_keys,
                         const size_t param_windowSizeOnInnerEllipticSegment,
                         const float  param_averageVoteMin )
 {
@@ -362,8 +430,8 @@ void edge_linking_seed( const TriplePoint*           p,
 
         // Angle refers to the gradient direction angle (might be optimized):
         short2 tcg; // this cycle gradients
-        tcg.x = d_dx.ptr(tcc.y)[tcc.y];
-        tcg.y = d_dy.ptr(tcc.y)[tcc.y];
+        tcg.x = d_dx.ptr(tcc.y)[tcc.x];
+        tcg.y = d_dy.ptr(tcc.y)[tcc.x];
         float atanval = atan2f( tcg.x, tcg.y );
 
         float angle = fmodf( atanval + 2.0f * CUDART_PI_F, 2.0f * CUDART_PI_F );
@@ -374,75 +442,6 @@ void edge_linking_seed( const TriplePoint*           p,
                               / (2.0f * CUDART_PI_F) ) * 8.0f ) - 1;
 
         // int j = threadIdx.x; // 0..7
-#ifdef ONE_THREAD_ONLY
-        int j = 0;
-        while( j<8 ) {
-            // winner is always the lowest j that finds a point
-            int  off_index = ( direction == Right ) ?  ( ( 8 - shifting + j ) % 8 )
-                                                    :  (     ( shifting + j ) % 8 );
-            assert( off_index >= 0 );
-            assert( off_index <  8 );
-            int xoffset = xoff_select[off_index];
-            int yoffset = yoff_select[direction][off_index];
-            int2 new_point = make_int2( tcc.x + xoffset, tcc.y + yoffset );
-
-            if( ( new_point.x >= 0 && new_point.x < edges.cols ) &&
-                ( new_point.y >= 0 && new_point.y < edges.rows ) &&
-                ( edges.ptr(new_point.y)[new_point.x] > 0 ) )
-            {
-                // This j has found a point.
-
-                float s;
-                float c;
-                __sincosf( phi.diff(), &s, &c );
-                s = ( direction == Left ) ? s : -s;
-
-                //
-                // three conditions to conclude CONVEXITY_LOST
-                //
-                bool stop;
-                stop = ( ( ( phi.size() == param_windowSizeOnInnerEllipticSegment ) &&
-                         ( s <  0.0f   ) ) ||
-                         ( ( s < -0.707f ) && ( c > 0.0f ) ) ||
-                         ( ( s <  0.0f   ) && ( c < 0.0f ) ) );
-                if( stop ) {
-                    if( direction == Right ) {
-                        found = CONVEXITY_LOST;
-                        break;
-                    } else {
-                        found           = STILL_SEARCHING;
-                        direction       = Right;
-                        other_direction = Left;
-                        phi.set_direction( Right );
-                    }
-                } else {
-                    found = STILL_SEARCHING;
-                    buf.append( direction, new_point );
-                    int idx = edgepoint_index_table.ptr(new_point.y)[new_point.x];
-                    if( idx > 0 ) {
-                        assert( idx < triplepoints.Size() );
-                        TriplePoint* ptr = &triplepoints.ptr[idx];
-                        averageVoteCollect += ptr->_winnerSize;
-                    }
-                }
-
-                break;
-            }
-            j++;
-        }
-        if( found == STILL_SEARCHING ) {
-            // checked all 8 directions, but no point found
-            if( direction == Right ) {
-                found = EDGE_NOT_FOUND;
-                continue;
-            }
-            found           = STILL_SEARCHING;
-            direction       = Right;
-            other_direction = Left;
-            phi.set_direction( Right );
-            continue;
-        }
-#else // not ONE_THREAD_ONLY
 #if 0
         int j = 7 - threadIdx.x; // counting backwards, so that the winner in __ffs
                                  // is identical to winner in loop code that starts
@@ -469,7 +468,17 @@ void edge_linking_seed( const TriplePoint*           p,
             // point, and has its coordinates in new_point
             point_found = true;
         }
-        uint32_t any_point_found = __ballot( point_found );
+
+        // bring threads back into sync
+        bool any_point_found = __any( point_found );
+
+        if( any_point_found ) {
+            if( point_found ) {
+                point_found = not buf.isAlreadyIn( new_point );
+            }
+
+            any_point_found = __any( point_found );
+        }
 
         if( not any_point_found ) {
             if( direction == Right ) {
@@ -488,21 +497,20 @@ void edge_linking_seed( const TriplePoint*           p,
         // We can identify the highest threadId / lowest rotation value j
         uint32_t computer = __ffs( any_point_found ) - 1;
 #else
-        if( point_found == false ) j = 8;
-        j = min( j, __shfl_xor( j, 4 ) );
-        j = min( j, __shfl_xor( j, 2 ) );
-        j = min( j, __shfl_xor( j, 1 ) );
+        if( point_found == false ) {
+            j = 8;
+        }
+        j = min( j, __shfl_down( j, 4 ) );
+        j = min( j, __shfl_down( j, 2 ) );
+        j = min( j, __shfl_down( j, 1 ) );
+        j =         __shfl     ( j, 0 );
         assert( j < 8 );
 #endif
 
         found = LOW_FLOW;
 
         float winnerSize = 0.0f;
-#if 0
-        if( threadIdx.x == computer ) {
-#else
         if( threadIdx.x == j ) {
-#endif
             //
             // The whole if/else block is identical for all j.
             // No reason to do it more than once. Astonishingly,
@@ -526,7 +534,7 @@ void edge_linking_seed( const TriplePoint*           p,
             
             if( not stop ) {
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
-                buf.append( direction, new_point, shifting, atanval*100 );
+                buf.append( direction, new_point, tcg, shifting, atanval*100 );
 #else // DEBUG_LINKED_USE_INT4_BUFFER
                 buf.append( direction, new_point );
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
@@ -534,8 +542,8 @@ void edge_linking_seed( const TriplePoint*           p,
                 if( idx > 0 ) {
                     // ptr can be any seed or voter candidate, and its _winnerSize
                     // may be 0
-                    assert( idx < triplepoints.Size() );
-                    TriplePoint* ptr = &triplepoints.ptr[idx];
+                    assert( idx < meta.list_size_voters() );
+                    TriplePoint* ptr = &voters.ptr[idx];
                     winnerSize = ptr->_winnerSize;
                 }
 
@@ -547,19 +555,23 @@ void edge_linking_seed( const TriplePoint*           p,
         } // end of asynchronous block
         assert( found == LOW_FLOW || found == FOUND_NEXT || found == CONVEXITY_LOST );
 
+        __threadfence_block();
+
         // both FOUND_NEXT and CONVEXITY_LOST are > LOW_FLOW
-        found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 4 ) );
-        found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 2 ) );
-        found = (StopCondition)max( (int)found, __shfl_xor( (int)found, 1 ) );
+        found = (StopCondition)max( (int)found, __shfl_down( (int)found, 4 ) );
+        found = (StopCondition)max( (int)found, __shfl_down( (int)found, 2 ) );
+        found = (StopCondition)max( (int)found, __shfl_down( (int)found, 1 ) );
+        found = (StopCondition)                 __shfl     ( (int)found, 0 );
 
         assert( found == FOUND_NEXT || found == CONVEXITY_LOST );
 
         if( found == FOUND_NEXT ) {
             found      = STILL_SEARCHING;
             // only the thread going into the if() is not null
-            winnerSize = winnerSize + __shfl_xor( winnerSize, 1 );
-            winnerSize = winnerSize + __shfl_xor( winnerSize, 2 );
-            winnerSize = winnerSize + __shfl_xor( winnerSize, 4 );
+            winnerSize = winnerSize + __shfl_down( winnerSize, 1 );
+            winnerSize = winnerSize + __shfl_down( winnerSize, 2 );
+            winnerSize = winnerSize + __shfl_down( winnerSize, 4 );
+            winnerSize =              __shfl     ( winnerSize, 0 );
             averageVoteCollect += winnerSize;
         } else {
             assert( found == CONVEXITY_LOST );
@@ -572,7 +584,6 @@ void edge_linking_seed( const TriplePoint*           p,
             other_direction = Left;
             phi.set_direction( Right );
         }
-#endif // ONE_THREAD_ONLY
 
         ++i;
 
@@ -583,16 +594,14 @@ void edge_linking_seed( const TriplePoint*           p,
         found = VOTE_LOW;
     }
 
-#ifdef ONE_THREAD_ONLY
-    if( true )
-#else // ONE_THREAD_ONLY
     if( threadIdx.x == 0 )
-#endif // ONE_THREAD_ONLY
     {
-        if( (i == EDGE_LINKING_MAX_EDGE_LENGTH) || (found == CONVEXITY_LOST) || (found == FULL_CIRCLE) ) {
+        if( (i == EDGE_LINKING_MAX_EDGE_LENGTH) || (found == CONVEXITY_LOST) || (found == FULL_CIRCLE) || ( found == EDGE_NOT_FOUND ) ) {
             int convexEdgeSegmentSize = buf.size();
             if (convexEdgeSegmentSize > param_windowSizeOnInnerEllipticSegment) {
-                int write_index = atomicAdd( &meta.ring_counter(), 1 );
+                int write_index = d_ring_index[ my_ring_index ];
+
+                // int write_index = atomicAdd( &meta.ring_counter(), 1 );
                 if( write_index <= meta.ring_counter_max() ) {
 #ifdef KERNEL_PRINT_SUCCESS_CAUSE
                     const char* c;
@@ -600,6 +609,8 @@ void edge_linking_seed( const TriplePoint*           p,
                         c = "max length";
                     } if( found == CONVEXITY_LOST ) {
                         c = "conv lost";
+                    } if( found == EDGE_NOT_FOUND ) {
+                        c = "no edge";
                     } else {
                         c = "full circle";
                     }
@@ -610,22 +621,30 @@ void edge_linking_seed( const TriplePoint*           p,
                            write_index );
 #endif // KERNEL_PRINT_SUCCESS_CAUSE
                     buf.copy( d_ring_output, write_index );
+
+                    d_ring_sort_keys[ write_index ] = convexEdgeSegmentSize;
                 }
 #ifdef KERNEL_PRINT_ERROR_CAUSE
                 else {
                     printf("From (%d,%d): %d (average vote %f) - skip, max number of arcs reached (%d)\n", p->coord.x, p->coord.y, i, averageVote, meta.ring_counter_max() );
                 }
 #endif // KERNEL_PRINT_ERROR_CAUSE
-            }
+            } else {
+                int write_index = d_ring_index[ my_ring_index ];
+                if( write_index <= meta.ring_counter_max() ) {
+                    d_ring_sort_keys[ write_index ] = 0;
+                }
 #ifdef KERNEL_PRINT_ERROR_CAUSE
-            else {
                 int d = param_windowSizeOnInnerEllipticSegment;
                 printf("From (%d,%d): %d (average vote %f) - skip, edge segment size %d <= %d\n", p->coord.x, p->coord.y, i, averageVote, convexEdgeSegmentSize, d );
-            }
 #endif // KERNEL_PRINT_ERROR_CAUSE
-        }
+            }
+        } else {
+            int write_index = d_ring_index[ my_ring_index ];
+            if( write_index <= meta.ring_counter_max() ) {
+                d_ring_sort_keys[ write_index ] = 0;
+            }
 #ifdef KERNEL_PRINT_ERROR_CAUSE
-        else {
             const char* c;
             switch(found) {
                 case LOW_FLOW : c = "LOW_FLOW"; break;
@@ -639,8 +658,8 @@ void edge_linking_seed( const TriplePoint*           p,
                 default: c = "UNKNOWN code"; break;
             }
             printf("From (%d,%d): %d (average vote %f) - skip, not max length, not convexity lost, but %s\n", p->coord.x, p->coord.y, i, averageVote, c );
-        }
 #endif // KERNEL_PRINT_ERROR_CAUSE
+        }
     }
 }
 
@@ -656,47 +675,240 @@ void edge_linking_seed( const TriplePoint*           p,
  * @param param_averageVoteMin
  */
 __global__
-void edge_linking( DevEdgeList<TriplePoint>     triplepoints,
+void edge_linking( FrameMetaPtr                 meta,
+                   DevEdgeList<TriplePoint>     voters,
+                   int                          starting_offset,
                    DevEdgeList<int>             seed_indices,
                    cv::cuda::PtrStepSz32s       edgepoint_index_table,
                    cv::cuda::PtrStepSzb         edges,
                    cv::cuda::PtrStepSz16s       d_dx,
                    cv::cuda::PtrStepSz16s       d_dy,
-                   FrameMetaPtr                 meta,
                    cv::cuda::PtrStepSzInt2      d_ring_output,
+                   int                          d_ring_start_index,
+                   int*                         d_ring_index,
+                   int*                         d_ring_sort_keys,
                    size_t param_windowSizeOnInnerEllipticSegment,
                    float  param_averageVoteMin )
 {
-    const int       offset    = blockIdx.x;
+    const int limit = meta.ring_counter_max();
+
+    const int offset = starting_offset + blockIdx.x;
 
     // The first seed index is always invalid
+    // Should never happen
     if( offset == 0 ) return;
 
+    // The arc spanned by this seed does not fit into the array in this round
+    if( offset + d_ring_start_index > limit ) return;
+
+    const int my_ring_index = d_ring_start_index + offset;
+
     int idx = seed_indices.ptr[offset];
-    if( idx >= triplepoints.Size() ) return;
+    if( idx >= meta.list_size_voters() ) return;
 
-    TriplePoint* p = &triplepoints.ptr[idx];
+    TriplePoint* p = &voters.ptr[idx];
 
-    edge_linking_seed( p,
-                       triplepoints,
+    edge_linking_seed( meta,
+                       p,
+                       voters,
                        edgepoint_index_table,
                        edges,
                        d_dx,
                        d_dy,
-                       meta,
                        d_ring_output,
+                       my_ring_index,
+                       d_ring_index,
+                       d_ring_sort_keys,
                        param_windowSizeOnInnerEllipticSegment,
                        param_averageVoteMin );
-    __threadfence(); // should push the atomic meta values to CPU
+}
+
+__global__
+void edge_exclude_seed( FrameMetaPtr                 meta,
+                        int                          round,
+                        DevEdgeList<TriplePoint>     voters,
+                        int                          starting_offset,
+                        DevEdgeList<int>             seed_indices,
+                        cv::cuda::PtrStepSzInt2      d_ring_output,
+                        int                          my_ring_index,
+                        int*                         d_ring_index,
+                        int*                         d_ring_sort_keys )
+{
+    int offset = blockIdx.x;
+    int search_in_offset = offset - round;
+
+    if( search_in_offset < 0 ) return;
+    if( d_ring_sort_keys[offset] == 0 ) return;
+    if( d_ring_sort_keys[search_in_offset] == 0 ) return;
+
+    int seed_index           = d_ring_index[offset];
+    int search_in_seed_index = d_ring_index[search_in_offset];
+    int pt_index             = seed_indices.ptr[seed_index];
+
+    TriplePoint* p = &voters.ptr[ pt_index ];
+    int2 coord = p->coord;
+
+    bool same = false;
+    int i = threadIdx.x;
+    while( __any( i<EDGE_LINKING_MAX_RING_BUFFER_SIZE ) ) {
+        bool tst = false;
+        if( i < EDGE_LINKING_MAX_RING_BUFFER_SIZE ) {
+            tst = ( coord.x == d_ring_output.ptr(search_in_seed_index)[i].x )
+               && ( coord.y == d_ring_output.ptr(search_in_seed_index)[i].y );
+        }
+        if( __any( tst ) ) {
+            same = true;
+            break;
+        }
+        i += blockDim.x;
+    }
+
+    if( same ) {
+        for( int i=0; i<EDGE_LINKING_MAX_RING_BUFFER_SIZE; i++ ) {
+            d_ring_output.ptr(seed_index)[i].x = 0;
+            d_ring_output.ptr(seed_index)[i].y = 0;
+        }
+        if( threadIdx.x == 0 ) {
+            d_ring_sort_keys[offset] = 0;
+        }
+    }
+}
+
+__global__
+void edge_count_block( FrameMetaPtr meta, int* d_ring_sort_keys )
+{
+    int offset = threadIdx.x;
+    while( not __any( offset >= EDGE_LINKING_MAX_ARCS ) )
+    {
+        bool isNull = ( d_ring_sort_keys[offset] == 0 );
+        if( __any( isNull ) ) {
+            int ct = isNull ? offset : EDGE_LINKING_MAX_ARCS;
+            ct = min( ct, __shfl_down( ct, 16 ) );
+            ct = min( ct, __shfl_down( ct,  8 ) );
+            ct = min( ct, __shfl_down( ct,  4 ) );
+            ct = min( ct, __shfl_down( ct,  2 ) );
+            ct = min( ct, __shfl_down( ct,  1 ) );
+            if( threadIdx.x == 0 ) {
+                meta.ring_counter() = ct;
+            }
+            return;
+        }
+        offset += 32;
+    }
 }
 
 }; // namespace linking
 
 __host__
+void Frame::applyLinkExcludeSeeds( int starting_offset )
+{
+    int ring_counter;
+    _meta.fromDevice( Ring_counter, ring_counter, _stream );
+    cudaStreamSynchronize( _stream );
+
+    dim3 block( 32, 1, 1 );
+    dim3 grid( ring_counter, 1, 1 );
+
+    for( int loop = 1; loop < ring_counter; loop++ ) {
+        linking::edge_exclude_seed
+            <<<grid,block,0,_stream>>>
+            ( _meta,
+              loop,
+              _voters.dev,
+              starting_offset,
+              _inner_points.dev,
+              _d_ring_output,
+              0,
+              _d_ring_index,
+              _d_ring_sort_keys );
+    }
+}
+
+__host__
+void Frame::applyLinkSortByLength( )
+{
+    cudaStreamSynchronize( _stream );
+
+    cudaError_t err;
+
+    int* counter1 = (int*)_d_ring_sort_keys;
+    int* counter2 = (int*)_d_intermediate.ptr(0);
+    cub::DoubleBuffer<int> keys( counter1, counter2 );
+
+    int* index1   = (int*)_d_ring_index;
+    int* index2   = (int*)_d_intermediate.ptr(_d_intermediate.rows/2);
+    cub::DoubleBuffer<int> values( index1, index2 );
+
+    if( _d_intermediate.rows/2 * _d_intermediate.step < EDGE_LINKING_MAX_ARCS * sizeof(int) ) {
+        std::cerr << __FILE__ << ":" << __LINE__ << std::endl
+                  << "    _d_intermediate is too small for sorting arc segment indices" << std::endl;
+        exit( -1 );
+    }
+
+    void*  assist_buffer = (void*)_d_map.data;
+    size_t assist_buffer_sz = 0;
+
+    err = cub::DeviceRadixSort::SortPairsDescending(
+                0,
+                assist_buffer_sz,
+                keys,
+                values,
+                EDGE_LINKING_MAX_ARCS,
+                0,
+                sizeof(int)*8,
+                _stream,
+                DEBUG_CUB_FUNCTIONS );
+
+    if( err != cudaSuccess ) {
+        std::cerr << "cub::DeviceRadixSort::SortPairs init step failed. Crashing." << std::endl;
+        std::cerr << "Error message: " << cudaGetErrorString( err ) << std::endl;
+        exit(-1);
+    }
+    if( assist_buffer_sz >= _d_map.step * _d_map.rows ) {
+        std::cerr << "cub::DeviceRadixSort::SortPairs requires too much intermediate memory. Crashing." << std::endl;
+        exit( -1 );
+    }
+
+    err = cub::DeviceRadixSort::SortPairsDescending(
+                assist_buffer,
+                assist_buffer_sz,
+                keys,
+                values,
+                EDGE_LINKING_MAX_ARCS,
+                0,
+                sizeof(int)*8,
+                _stream,
+                DEBUG_CUB_FUNCTIONS );
+
+    if( err != cudaSuccess ) {
+        std::cerr << "cub::DeviceRadixSort::SortPairs compute step failed. Crashing." << std::endl;
+        std::cerr << "Error message: " << cudaGetErrorString( err ) << std::endl;
+        exit(-1);
+    }
+
+    POP_CHK_CALL_IFSYNC;
+
+    if( keys.Current() != counter1 ) {
+        err = cudaMemcpyAsync( counter1, counter2, EDGE_LINKING_MAX_ARCS*sizeof(int), cudaMemcpyDeviceToDevice, _stream );
+    }
+    if( values.Current() != index1 ) {
+        err = cudaMemcpyAsync( index1, index2, EDGE_LINKING_MAX_ARCS*sizeof(int), cudaMemcpyDeviceToDevice, _stream );
+    }
+
+    POP_CHK_CALL_IFSYNC;
+
+    dim3 ct_block( 32, 1, 1 );
+    dim3 ct_grid( 1, 1, 1 );
+
+    linking::edge_count_block
+        <<<ct_grid,ct_block,0,_stream>>>
+        ( _meta,
+          _d_ring_sort_keys );
+}
+
+__host__
 void Frame::applyLink( const cctag::Parameters& params )
 {
-    DO_TALK( cout << "Enter " << __FUNCTION__ << endl; )
-
     if( params._windowSizeOnInnerEllipticSegment > EDGE_LINKING_MAX_RING_BUFFER_SIZE ) {
         cerr << "Error in " << __FILE__ << ":" << __LINE__ << ":" << endl
              << "    static maximum of parameter ring buffer size is "
@@ -708,18 +920,17 @@ void Frame::applyLink( const cctag::Parameters& params )
     }
 
     if( _inner_points.host.size <= 0 ) {
-        DO_TALK( cout << "Leave " << __FUNCTION__ << endl; )
         // We have note found any seed, return
         return;
     }
 
-#ifndef NDEBUG
+#if 0
     POP_CUDA_SYNC( _stream );
-    cout << "  Searching arcs from " << _inner_points.host.size << " seeds" << endl;
-    cout << "  Parameters: _windowSizeOnInnerEllipticSegment="
-         << params._windowSizeOnInnerEllipticSegment << endl
-         << "              _averageVoteMin=" << params._averageVoteMin << endl;
-#endif // NDEBUG
+    std::cerr << "  Searching arcs from " << _inner_points.host.size << " seeds" << std::endl;
+    std::cerr << "  Parameters: _windowSizeOnInnerEllipticSegment="
+         << params._windowSizeOnInnerEllipticSegment << std::endl
+         << "              _averageVoteMin=" << params._averageVoteMin << std::endl;
+#endif
 
     /* Both init steps should be done in another stream, earlier. No reason to do
      * this synchronously.
@@ -728,39 +939,57 @@ void Frame::applyLink( const cctag::Parameters& params )
 
     POP_CUDA_MEMSET_ASYNC( _d_ring_output.data, 0, _d_ring_output.step*_d_ring_output.rows, _stream );
 
-    dim3 block;
-    dim3 grid;
+
+    dim3 init_block( 32, 1, 1 );
+    dim3 init_grid ( grid_divide( EDGE_LINKING_MAX_ARCS, 32 ), 1, 1 );
+
+    linking::edge_init_sort_keys
+        <<<init_grid,init_block,0,_stream>>>
+        ( _meta,
+          _d_ring_sort_keys,
+          _d_ring_index );
+
+    // cudaStreamSynchronize( _stream );
+    // linking::verify<<<1,1,0,_stream>>> ( EDGE_LINKING_MAX_ARCS, _d_ring_index, _d_ring_sort_keys, _d_ring_output );
 
     /* Seeds have an index in the _inner_points list.
      * For each of those seeds, mark their coordinate with a label.
      * This label is their index in the _inner_points list, because
      * it is a unique int strictly > 0
      */
-#ifdef ONE_THREAD_ONLY
-    block.x = 1;
-#else // ONE_THREAD_ONLY
-    block.x = 8;
-#endif // ONE_THREAD_ONLY
-    block.y = 1;
-    block.z = 1;
-    grid.x  = _inner_points.host.size;
-    grid.y  = 1;
-    grid.z  = 1;
+    dim3 link_block( 8, 1, 1 );
+    dim3 link_grid ( _inner_points.host.size, 1, 1 );
 
     linking::edge_linking
-        <<<grid,block,0,_stream>>>
-        ( _voters.dev,
+        <<<link_grid,link_block,0,_stream>>>
+        ( _meta,
+          _voters.dev,
+          1,                   // we start with seed 1 because seed 0 is always invalid
           _inner_points.dev,
           _vote._d_edgepoint_index_table,
           _d_edges,
           _d_dx,
           _d_dy,
-          _meta,
           _d_ring_output,
+          0,
+          _d_ring_index,
+          _d_ring_sort_keys,
           params._windowSizeOnInnerEllipticSegment,
           params._averageVoteMin );
 
-    POP_CHK_CALL_IFSYNC;
+    // linking::verify<<<1,1,0,_stream>>> ( EDGE_LINKING_MAX_ARCS, _d_ring_index, _d_ring_sort_keys, _d_ring_output );
+
+    applyLinkSortByLength( );
+
+    applyLinkExcludeSeeds( 1 ); // we start with seed 1 because seed 0 is always invalid
+
+    applyLinkSortByLength( );
+
+    // linking::verify<<<1,1,0,_stream>>> ( EDGE_LINKING_MAX_ARCS, _d_ring_index, _d_ring_sort_keys, _d_ring_output );
+
+    int ring_counter;
+    _meta.fromDevice( Ring_counter, ring_counter, _stream );
+    POP_CUDA_SYNC( _stream );
 
     POP_CUDA_MEMCPY_2D_ASYNC( _h_ring_output.data, _h_ring_output.step,
                               _d_ring_output.data, _d_ring_output.step,
@@ -771,17 +1000,25 @@ void Frame::applyLink( const cctag::Parameters& params )
 
     POP_CHK_CALL_IFSYNC;
 
-#ifndef NDEBUG
-    int ring_counter;
-    _meta.fromDevice( Ring_counter, ring_counter, _stream );
-    POP_CUDA_SYNC( _stream );
-    cout << "  Found arcs from " << ring_counter << " seeds" << endl;
-#endif // NDEBUG
+#if 0
+// #ifndef NDEBUG
+    std::cerr << "  Found arcs from " << ring_counter << " seeds" << std::endl;
+    for( int y = 0; y<_h_ring_output.rows; y++ ) {
 
-    DO_TALK( cout << "Leave " << __FUNCTION__ << endl; )
+        if( _h_ring_output.ptr(y)[0].x == 0 &&
+            _h_ring_output.ptr(y)[0].y == 0 ) continue;
+
+        std::cerr << "Row " << y << ": ";
+        for( int x = 0; x<_h_ring_output.cols; x++ ) {
+            std::cerr << "(" << _h_ring_output.ptr(y)[x].x
+                      << "," << _h_ring_output.ptr(y)[x].y << ") ";
+
+            if( _h_ring_output.ptr(y)[x].x == 0 &&
+                _h_ring_output.ptr(y)[x].y == 0 ) break;
+        }
+        std::cerr << std::endl;
+    }
+#endif // NDEBUG
 }
 }; // namespace popart
-
-
-#endif // EDGE_LINKING_HOST_SIDE
 

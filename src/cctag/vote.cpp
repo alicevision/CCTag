@@ -237,7 +237,10 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         while ((i < maxLength) && (found) && (averageVote >= averageVoteMin) )
         {
 
-            float angle = std::fmod(float(std::atan2(p->_grad.y(), p->_grad.x())) + 2.0f * boost::math::constants::pi<float>(), 2.0f * boost::math::constants::pi<float>());
+            float angle = std::fmod(
+                float( std::atan2( p->_grad.y(),
+                                   p->_grad.x() ) ) + 2.0f * boost::math::constants::pi<float>(),
+                2.0f * boost::math::constants::pi<float>());
             phi.push_back(angle);
             //sumPhi += angle;
 
@@ -271,8 +274,10 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                     }
 
                     if (sx >= 0 && sx < int( img.shape()[0]) &&
-                            sy >= 0 && sy < int( img.shape()[1]) &&
-                            img[sx][sy] && processed.find(std::pair<int, int>(sx, sy)) == processed.end()) {
+                        sy >= 0 && sy < int( img.shape()[1]) &&
+                        img[sx][sy] &&
+                        processed.find(std::pair<int, int>(sx, sy)) == processed.end())
+                    {
                         if (phi.size() == windowSizeOnInnerEllipticSegment) // (ok, resolu avec la multiresolution) TODO , 4 est un paramètre de l'algorithme, + les motifs à détecter sont importants, + la taille de la fenêtre doit être grande
                         {
                             // Check if convexity has been lost (concavity)

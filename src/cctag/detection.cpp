@@ -439,6 +439,15 @@ void cctagDetectionFromEdges(
     assert( seeds[iSeed] );
     constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
   }
+#if 0
+    for( const Candidate& cand : vCandidateLoopOne ) {
+        std::cerr << "From seed (" << cand._seed->x() << "," << cand._seed->y() << ") :" << std::endl;
+        for( const EdgePoint* ep : cand._convexEdgeSegment ) {
+            std::cerr << " (" << ep->x() << "," << ep->y() << ")";
+        }
+        std::cerr << std::endl;
+    }
+#endif
 
   const std::size_t nFlowComponentToProcessLoopTwo = 
           std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);

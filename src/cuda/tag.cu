@@ -179,6 +179,8 @@ void TagPipe::handleframe( int i )
 
     _frame[i]->applyVoteDownload();   // sync!
 
+    _frame[i]->applyLink( _params );   // sync!
+
     cudaStreamSynchronize( _frame[i]->_stream );
     cudaStreamSynchronize( _frame[i]->_download_stream );
 
