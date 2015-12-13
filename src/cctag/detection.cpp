@@ -403,7 +403,9 @@ void cctagDetectionFromEdges(
   // using namespace boost::gil;
 
   // Call for debug only. Write the vote result as an image.
+#ifdef CCTAG_SERIALIZE 
   createImageForVoteResultDebug(src, winners, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
+#endif // CCTAG_SERIALIZE 
 
   // Set some timers
   boost::timer t3;
@@ -672,12 +674,12 @@ void cctagDetectionFromEdges(
 }
 
 
+#ifdef CCTAG_SERIALIZE 
 void createImageForVoteResultDebug(
         const cv::Mat & src,
         const WinnerMap & winners,
         std::size_t nLevel)
 {
-#ifdef CCTAG_SERIALIZE 
   {
     std::size_t mx = 0;
     
@@ -709,8 +711,8 @@ void createImageForVoteResultDebug(
     CCTagVisualDebug::instance().initBackgroundImage(imgVote);
     CCTagVisualDebug::instance().newSession(outFilenameVote.str());
   }
-#endif
 }
+#endif
 
 #ifdef WITH_CUDA
 popart::TagPipe* initCuda( int      pipeId,
