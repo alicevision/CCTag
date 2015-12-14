@@ -58,8 +58,8 @@ void initChainedEdgeCoords( FrameMetaPtr meta, DevEdgeList<TriplePoint> voters )
 }
 
 __device__
-bool gradient_descent_inner( const int                    idx,
-                             const int                    idy,
+bool gradient_descent_inner( const short                  idx,
+                             const short                  idy,
                              int                          direction,
                              int4&                        out_edge_info,
                              short2&                      out_edge_d,

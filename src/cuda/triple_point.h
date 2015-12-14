@@ -12,8 +12,8 @@ namespace popart {
  *************************************************************/
 struct TriplePoint
 {
-    int2  coord;
-    int2  d;     // hold d.x = dx, d.y = dy
+    short2  coord;
+    short2  d;     // hold d.x = dx, d.y = dy
     struct {
         int2  befor;
         int2  after;
@@ -28,7 +28,7 @@ struct TriplePoint
 #ifndef NDEBUG
     int   _coords_collect_idx;
     int   _coords_idx;
-    int2  _coords[12];
+    short2  _coords[12];
 
     __device__ inline void debug_init( );
     __device__ inline void debug_add( int2 c );
@@ -51,7 +51,7 @@ inline void TriplePoint::debug_init( )
 }
 
 __device__
-inline void TriplePoint::debug_add( int2 c )
+inline void TriplePoint::debug_add( short2 c )
 {
     if( _coords_collect_idx >= 12 ) return;
     _coords[_coords_collect_idx].x = c.x;
