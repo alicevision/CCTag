@@ -822,7 +822,7 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
       break; 
     
     iCut = iStart;
-    while( iCut < collectedCuts.size() )
+    while( ( iCut < collectedCuts.size() ) && ( vSelectedCuts.size() < selectSize ) )
     {
       if ( varCuts[iCut]/varMax > 0.5 )
       {
