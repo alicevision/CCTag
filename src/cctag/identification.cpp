@@ -812,8 +812,15 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
   std::size_t iCut = 0;
   std::size_t step = 5;
   std::size_t iStart = 0;
-  while ( ( vSelectedCuts.size() < selectSize ) && (iStart < step) )
+  
+  vSelectedCuts.clear();
+  vSelectedCuts.reserve(selectSize);
+  
+  while ( vSelectedCuts.size() < selectSize )
   {
+    if (iStart >= step)
+      break; 
+    
     iCut = iStart;
     while( iCut < collectedCuts.size() )
     {
