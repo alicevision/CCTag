@@ -1,12 +1,15 @@
 #include <cctag/ICCTag.hpp>
 #include <cctag/CCTag.hpp>
 #include <cctag/detection.hpp>
+#include <cctag/logtime.hpp>
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 
 #include <fstream>
+
+using namespace std;
 
 namespace cctag {
 
@@ -15,6 +18,7 @@ void cctagDetection(
       const std::size_t frame,
       const cv::Mat & graySrc,
       const std::size_t nCrowns,
+      logtime::Mgmt* durations,
       const std::string & parameterFilename,
       const std::string & cctagBankFilename)
 {
@@ -41,7 +45,7 @@ void cctagDetection(
     bank = CCTagMarkersBank(cctagBankFilename);
   }
   
-  cctagDetection(markers, frame, graySrc,params,&bank);
+  cctagDetection(markers, frame, graySrc, params, durations, &bank);
 }
 
 void cctagDetection(
@@ -49,6 +53,7 @@ void cctagDetection(
       const std::size_t frame,
       const cv::Mat & graySrc,
       const cctag::Parameters & params,
+      logtime::Mgmt* durations,
       const CCTagMarkersBank * pBank)
 {
   boost::ptr_list<cctag::CCTag> cctags;
@@ -56,10 +61,10 @@ void cctagDetection(
   if ( pBank == NULL)
   {
     CCTagMarkersBank bank(params._nCrowns);
-    cctag::cctagDetection(cctags, frame, graySrc, params, bank);
+    cctag::cctagDetection(cctags, frame, graySrc, params, bank, false, durations);
   }else
   {
-    cctag::cctagDetection(cctags, frame, graySrc, params, *pBank);
+    cctag::cctagDetection(cctags, frame, graySrc, params, *pBank, false, durations);
   }
   
   markers.clear();
@@ -68,6 +73,7 @@ void cctagDetection(
     markers.push_back(new cctag::CCTag(cctag));
   }
 }
+
 
 }
 

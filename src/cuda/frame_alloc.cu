@@ -1,7 +1,4 @@
-// #include <iostream>
-// #include <limits>
 #include <cuda_runtime.h>
-// #include <stdio.h>
 #include "debug_macros.hpp"
 
 #include "frame.h"
@@ -14,7 +11,7 @@ using namespace std;
 __host__
 void Frame::allocRequiredMem( const cctag::Parameters& params )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
+    _meta.toDevice( Ring_counter_max, EDGE_LINKING_MAX_ARCS, _stream );
 
     void* ptr;
     const size_t w = getWidth();
@@ -84,57 +81,78 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _d_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _d_ring_output.rows = EDGE_LINKING_MAX_ARCS;
 
-    _h_dx.data = new int16_t[ w * h ];
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(uint8_t) );
+    _h_plane.data = (uint8_t*)ptr;
+    _h_plane.step = w * sizeof(uint8_t);
+    _h_plane.cols = w;
+    _h_plane.rows = h;
+
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int16_t) );
+    _h_dx.data = (int16_t*)ptr;
     _h_dx.step = w * sizeof(int16_t);
     _h_dx.cols = w;
     _h_dx.rows = h;
 
-    _h_dy.data = new int16_t[ w * h ];
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int16_t) );
+    _h_dy.data = (int16_t*)ptr;
     _h_dy.step = w * sizeof(int16_t);
     _h_dy.cols = w;
     _h_dy.rows = h;
 
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int32_t) );
+    _h_mag.data = (uint32_t*)ptr;
+    _h_mag.step = w * sizeof(uint32_t);
+    _h_mag.cols = w;
+    _h_mag.rows = h;
+
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(uint8_t) );
+    _h_edges.data = (uint8_t*)ptr;
+    _h_edges.step = w * sizeof(uint8_t);
+    _h_edges.cols = w;
+    _h_edges.rows = h;
+
+    POP_CUDA_MALLOC_HOST( &ptr, _d_intermediate.rows * _d_intermediate.step );
+    _h_intermediate.data = (float*)ptr;
+    _h_intermediate.step = _d_intermediate.step;
+    _h_intermediate.cols = _d_intermediate.cols;
+    _h_intermediate.rows = _d_intermediate.rows;
+
+#ifndef EDGE_LINKING_HOST_SIDE
     _h_ring_output.data = new cv::cuda::PtrStepInt2_base_t[EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH];
+    // POP_CUDA_MALLOC_HOST( &ptr, EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t) );
+    // _h_ring_output.data = (cv::cuda::PtrStepInt2_base_t*)ptr;
     _h_ring_output.step = EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t);
     _h_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
     _h_ring_output.rows = EDGE_LINKING_MAX_ARCS;
-
-    POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _d_hysteresis_block_counter = (int*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _d_connect_component_block_counter = (int*)ptr;
-
-    POP_CUDA_MALLOC( &ptr, sizeof(int) );
-    _d_ring_counter = (int*)ptr;
-    _d_ring_counter_max = EDGE_LINKING_MAX_ARCS;
-
-#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
-    _h_debug_plane  = new unsigned char[ w * h ];
-#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
-
-#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
-    _h_debug_smooth = new float[ w * h ];
-#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
-
-#ifdef DEBUG_WRITE_MAG_AS_PGM
-    _h_debug_mag = new uint32_t[ w * h ];
-#endif // DEBUG_WRITE_MAG_AS_PGM
+#endif // EDGE_LINKING_HOST_SIDE
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
-    _h_debug_map = new unsigned char[ w * h ];
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(unsigned char) );
+    _h_debug_map = (unsigned char*)ptr;
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-    _vote.alloc( params, w, h );
+    _all_edgecoords     .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _voters             .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _v_chosen_idx       .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _inner_points       .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _interm_inner_points.alloc( EDGE_POINT_MAX, EdgeListDevOnly );
 
-    // cerr << "Leave " << __FUNCTION__ << endl;
+    POP_CUDA_MALLOC( &ptr, EDGE_POINT_MAX * sizeof(float) );
+    _v_chosen_flow_length = (float*)ptr;
+
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
+    assert( p % _vote._d_edgepoint_index_table.elemSize() == 0 );
+    _vote._d_edgepoint_index_table.data = (int32_t*)ptr;
+    _vote._d_edgepoint_index_table.step = p;
+    _vote._d_edgepoint_index_table.cols = w;
+    _vote._d_edgepoint_index_table.rows = h;
+
+    POP_CUDA_MALLOC_HOST( &_d_interm_int, sizeof(int) );
 }
 
 __host__
 void Frame::initRequiredMem( )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
-
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
                            _d_smooth.step * _d_smooth.rows,
@@ -170,14 +188,21 @@ void Frame::initRequiredMem( )
                            _d_edges.step * _d_edges.rows,
                            _stream );
 
-    _vote.init( _stream );
+    _all_edgecoords.init( _stream );
+    _voters        .init( _stream );
+    _v_chosen_idx  .init( _stream );
+    _inner_points  .init( _stream );
+    _interm_inner_points.init( _stream );
 
-    // POP_CUDA_MEMSET_ASYNC( _d_next_edge_after.data,
-    //                        0,
-    //                        _d_next_edge_after.step * _d_next_edge_after.rows,
-    //                        _stream );
+    POP_CUDA_MEMSET_ASYNC( _v_chosen_flow_length,
+                           0,
+                           EDGE_POINT_MAX * sizeof(float),
+                           _stream );
 
-    // cerr << "Leave " << __FUNCTION__ << endl;
+    POP_CUDA_MEMSET_ASYNC( _vote._d_edgepoint_index_table.data,
+                           0,
+                           _vote._d_edgepoint_index_table.step * _vote._d_edgepoint_index_table.rows,
+                           _stream );
 }
 
 void Frame::releaseRequiredMem( )
@@ -195,68 +220,28 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE( _d_edges.data );
     POP_CUDA_FREE( _d_ring_output.data );
 
-    POP_CUDA_FREE( _d_hysteresis_block_counter );
-    POP_CUDA_FREE( _d_connect_component_block_counter );
-    POP_CUDA_FREE( _d_ring_counter );
-
-    delete [] _h_dx.data;
-    delete [] _h_dy.data;
+    POP_CUDA_FREE_HOST( _h_plane.data );
+    POP_CUDA_FREE_HOST( _h_dx.data );
+    POP_CUDA_FREE_HOST( _h_dy.data );
+    POP_CUDA_FREE_HOST( _h_mag.data );
+    POP_CUDA_FREE_HOST( _h_edges.data );
+    POP_CUDA_FREE_HOST( _h_intermediate.data );
+#ifndef EDGE_LINKING_HOST_SIDE
     delete [] _h_ring_output.data;
+#endif
 
-#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
-    delete [] _h_debug_plane;
-#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
-#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
-    delete [] _h_debug_smooth;
-#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
-#ifdef DEBUG_WRITE_MAG_AS_PGM
-    delete [] _h_debug_mag;
-#endif // DEBUG_WRITE_MAG_AS_PGM
 #ifdef DEBUG_WRITE_MAP_AS_PGM
-    delete [] _h_debug_map;
+    POP_CUDA_FREE_HOST( _h_debug_map );
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-    _vote.release();
-}
-
-void Voting::alloc( const cctag::Parameters& params, size_t w, size_t h )
-{
-    _all_edgecoords    .alloc( params._maxEdges, EdgeListBoth );
-    _chained_edgecoords.alloc( params._maxEdges, EdgeListBoth );
-    _seed_indices      .alloc( params._maxEdges, EdgeListBoth );
-    _seed_indices_2    .alloc( params._maxEdges, EdgeListDevOnly );
-
-    void*  ptr;
-    size_t p;
-
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
-    assert( p % _d_edgepoint_index_table.elemSize() == 0 );
-    _d_edgepoint_index_table.data = (int32_t*)ptr;
-    _d_edgepoint_index_table.step = p;
-    _d_edgepoint_index_table.cols = w;
-    _d_edgepoint_index_table.rows = h;
-}
-
-void Voting::init( cudaStream_t stream )
-{
-    _all_edgecoords    .init( stream );
-    _chained_edgecoords.init( stream );
-    _seed_indices      .init( stream );
-    _seed_indices_2    .init( stream );
-
-    POP_CUDA_MEMSET_ASYNC( _d_edgepoint_index_table.data,
-                           0,
-                           _d_edgepoint_index_table.step * _d_edgepoint_index_table.rows,
-                           stream );
-}
-
-void Voting::release( )
-{
-    _all_edgecoords    .release();
-    _chained_edgecoords.release();
-    _seed_indices      .release();
-    _seed_indices_2    .release();
-    POP_CUDA_FREE( _d_edgepoint_index_table.data );
+    _all_edgecoords.release();
+    _voters        .release();
+    _v_chosen_idx  .release();
+    _inner_points  .release();
+    _interm_inner_points.release();
+    POP_CUDA_FREE( _v_chosen_flow_length );
+    POP_CUDA_FREE( _vote._d_edgepoint_index_table.data );
+    POP_CUDA_FREE( _d_interm_int );
 }
 
 }; // namespace popart

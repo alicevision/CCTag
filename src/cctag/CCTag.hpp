@@ -24,7 +24,9 @@
 #include <boost/throw_exception.hpp>
 #include <boost/archive/text_oarchive.hpp>
 
-// #include <opencv2/core/types_c.h>
+#ifdef WITH_CUDA
+#include "cuda/pinned_counters.h"
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -52,6 +54,7 @@ public:
     , _status(0)
   {
     setInitRadius();
+    _mHomography.clear();
   }
 
   CCTag(const MarkerID id,
@@ -72,10 +75,8 @@ public:
     , _scale(scale)
   {
     setInitRadius();
-    cctag::numerical::geometry::Ellipse aux = _outerEllipse;
-    aux.setCenter( Point2dN<double>(_outerEllipse.center().x()+0.5, _outerEllipse.center().y()+0.5 ) ); // todo: why + 0.5 is required ?
-    
-    cctag::numerical::geometry::scale(aux, _rescaledOuterEllipse, scale);
+    _outerEllipse.setCenter( Point2dN<double>(_outerEllipse.center().x()+0.5, _outerEllipse.center().y()+0.5 ) ); // todo: why + 0.5 is required ?
+    cctag::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
     
     _status = 0;
   }
@@ -105,7 +106,7 @@ public:
   }
 
 #ifndef NDEBUG
-  void print( std::ostream& ostr ) const;
+  void printTag( std::ostream& ostr ) const;
 #endif
 
   void scale(const double s);
@@ -297,6 +298,8 @@ public:
   {
     return isOverlappingEllipses(_rescaledOuterEllipse, marker.rescaledOuterEllipse());
   }
+  
+  bool isEqual(const CCTag& marker) const;
 
 #ifdef CCTAG_SERIALIZE
 
@@ -333,6 +336,25 @@ public:
   }
 #endif
 
+#ifdef WITH_CUDA
+  /** Get a pointer to pinned memory for this tag.
+   *  It cannot be released for this tag.
+   *  Instead, releaseNearbyPointMemory() invalidates all such
+   *  pointers in the process.
+   */
+  void acquireNearbyPointMemory( );
+
+  inline popart::NearbyPoint* getNearbyPointBuffer( ) {
+    return _cuda_result;
+  }
+
+  /** Release all pinned memory associated with NearbyPoints.
+   *  Invalidates pointers in all objects and in all threads in
+   *  this process.
+   */
+  static void releaseNearbyPointMemory( );
+#endif
+
   void serialize(boost::archive::text_oarchive & ar, const unsigned int version);
 
 protected:
@@ -360,9 +382,16 @@ protected:
   std::vector< std::vector< DirectedPoint2d<double> > > _points;
   cctag::numerical::BoundedMatrix3x3d _mHomography;
   double _quality;
-  int _pyramidLevel;
+  int    _pyramidLevel;
   double _scale;
-  int _status;
+  int    _status;
+#ifdef WITH_CUDA
+  /** Pointer into pinned memory page.
+   *  Valid from the construction of the CCTag until identify()
+   *  is complete.
+   */
+  popart::NearbyPoint* _cuda_result;
+#endif
 
 #ifdef CCTAG_SERIALIZE
   std::vector<CCTagFlowComponent> _flowComponents;

@@ -26,7 +26,9 @@
 #include <cctag/global.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro
 #include <cctag/fileDebug.hpp>
+#ifdef WITH_CUDA
 #include "cuda/tag.h"
+#endif
 
 #include <boost/foreach.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -45,9 +47,22 @@
 #include <sstream>
 #include <list>
 #include <utility>
+#ifdef WITH_CUDA
+#include <cuda_runtime.h> // only for debugging
+#endif // WITH_CUDA
+
+using namespace std;
 
 namespace cctag
 {
+
+/* These are the CUDA pipelines that we instantiate for parallel processing.
+ * We need at least one.
+ * It is uncertain whether the CPU code can handle parallel pipe, but the CUDA
+ * code should be able to.
+ * BEWARE: this is untested
+ */
+std::vector<popart::TagPipe*> cudaPipelines;
 
 void constructFlowComponentFromSeed(
         EdgePoint * seed,
@@ -56,6 +71,7 @@ void constructFlowComponentFromSeed(
         std::list<Candidate> & vCandidateLoopOne,
         const Parameters & params)
 {
+  assert( seed );
   // Check if the seed has already been processed, i.e. belongs to an already
   // reconstructed flow component.
   if (!seed->_processedIn)
@@ -123,7 +139,7 @@ void completeFlowComponent(
 
       if (childrens.size() < params._minPointsSegmentCandidate)
       {
-        DO_TALK( CCTAG_COUT_DEBUG(" childrens.size() < minPointsSegmentCandidate "); ) return;
+        return;
       }
 
       candidate._score = childrens.size();
@@ -250,11 +266,8 @@ void completeFlowComponent(
     catch (cv::Exception& e)
     {
       DO_TALK( CCTAG_COUT_DEBUG( "OpenCV exception" ); )
-#ifdef WITH_CUDA
-      e.what();
-#else
+
       const char* err_msg = e.what();
-#endif
     }
   }
   catch (...)
@@ -367,11 +380,7 @@ void flowComponentAssembling(
 
   boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d = tstop - tstart;
-#ifdef WITH_CUDA
-  d.total_milliseconds();
-#else
   const double spendTime = d.total_milliseconds();
-#endif
 }
 
 
@@ -385,20 +394,10 @@ void cctagDetectionFromEdges(
         const std::size_t frame,
         int pyramidLevel,
         double scale,
-        const Parameters & params)
+        const Parameters & params,
+        cctag::logtime::Mgmt* durations )
 {
-  // POP_ENTER;
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
-#endif
-  using namespace boost::gil;
-
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-  boost::posix_time::time_duration d = t1 - t0;
-  const double spendTime = d.total_milliseconds();
-  DO_TALK( CCTAG_COUT_OPTIM("Time in vote: " << spendTime << " ms"); )
-#endif
+  // using namespace boost::gil;
 
   // Call for debug only. Write the vote result as an image.
   createImageForVoteResultDebug(src, winners, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
@@ -434,6 +433,7 @@ void cctagDetectionFromEdges(
   // will be collected and constitute the initial data of a flow component.
   for (int iSeed = 0; iSeed < nSeedsToProcess; ++iSeed)
   {
+    assert( seeds[iSeed] );
     constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
   }
 
@@ -472,7 +472,6 @@ void cctagDetectionFromEdges(
   boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d1 = tstop1 - tstart0;
   const double spendTime1 = d1.total_milliseconds();
-  DO_TALK( CCTAG_COUT_OPTIM("Time in the 1st loop: " << spendTime1 << " ms"); )
 
 #if defined CCTAG_SERIALIZE && defined DEBUG
   std::stringstream outFlowComponentsAssembling;
@@ -556,6 +555,7 @@ void cctagDetectionFromEdges(
 
       cctag::Point2dN<double> markerCenter;
       cctag::numerical::BoundedMatrix3x3d markerHomography;
+      markerHomography.clear();
 
       const double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
 
@@ -630,11 +630,21 @@ void cctagDetectionFromEdges(
       
       // New quality
 
-      markers.push_back(new CCTag(-1, outerEllipse.center(), cctagPoints,
-              outerEllipse, markerHomography, pyramidLevel, scale, quality2));
+      CCTag* tag = new CCTag( -1,
+                              outerEllipse.center(),
+                              cctagPoints,
+                              outerEllipse,
+                              markerHomography,
+                              pyramidLevel,
+                              scale,
+                              quality2 );
 #ifdef CCTAG_SERIALIZE
-      markers.back().setFlowComponents(componentCandidates);
+      tag->setFlowComponents( componentCandidates ); // markers.back().setFlowComponents(componentCandidates);
+#endif
+      markers.push_back( tag ); // markers takes responsibility for delete
+#ifdef CCTAG_SERIALIZE
 #ifdef DEBUG
+
       CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PASS_ALLTESTS);
       CCTagFileDebug::instance().incrementFlowComponentIndex(0);
 #endif
@@ -655,12 +665,6 @@ void cctagDetectionFromEdges(
   boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d2 = tstop2 - tstop1;
   const double spendTime2 = d2.total_milliseconds();
-  DO_TALK( CCTAG_COUT_OPTIM("Time in the 2nd loop: " << spendTime2 << " ms"); )
-
-  //	markers.sort();
-
-  DO_TALK( CCTAG_COUT_DEBUG("Markers creation time: " << t3.elapsed()); )
-  // POP_LEAVE;
 }
 
 
@@ -704,165 +708,220 @@ void createImageForVoteResultDebug(
 #endif
 }
 
+#ifdef WITH_CUDA
+popart::TagPipe* initCuda( int      pipeId,
+                           uint32_t width,
+                           uint32_t height, 
+                           const Parameters & params,
+                           cctag::logtime::Mgmt* durations )
+{
+    if( cudaPipelines.size() <= pipeId ) {
+        cudaPipelines.resize( pipeId+1 );
+    }
+
+    popart::TagPipe* pipe1 = cudaPipelines[pipeId];
+
+    if( not pipe1 ) {
+        pipe1 = new popart::TagPipe( params );
+        pipe1->initialize( width, height, durations );
+        cudaPipelines[pipeId] = pipe1;
+    } else {
+        if( width  != pipe1->getWidth(0) ||
+            height != pipe1->getHeight(0) ) {
+            std::cerr << "We cannot change the input frame resolution (yet)" << std::endl;
+            exit( -1 );
+        }
+    }
+    return pipe1;
+}
+#endif // WITH_CUDA
+
 void cctagDetection(CCTag::List& markers,
         const std::size_t frame, 
         const cv::Mat & imgGraySrc,
         const Parameters & params,
         const cctag::CCTagMarkersBank & bank,
-        const bool bDisplayEllipses)
+        const bool bDisplayEllipses,
+        cctag::logtime::Mgmt* durations )
+
 {
-  // POP_ENTER;
-  using namespace cctag;
-  using namespace boost::numeric::ublas;
-  //using namespace boost::gil;
+    using namespace cctag;
+    using namespace boost::numeric::ublas;
 
-#ifdef CCTAG_OPTIM
-  boost::posix_time::time_duration duration;
-#endif // CCTAG_OPTIM
+    if( durations ) durations->log( "start" );
   
-  std::srand(1);
-  
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t0(boost::posix_time::microsec_clock::local_time());
-#endif // CCTAG_OPTIM
-  
-  ImagePyramid imagePyramid(imgGraySrc.cols, imgGraySrc.rows, params._numberOfProcessedMultiresLayers);
-
-  popart::TagPipe* pipe1 = 0;
-
+    std::srand(1);
 
 #ifdef WITH_CUDA
-  // Case 1: we have compiled with CUDA, and we can use the
-  // command line to switch it on or off.
-  if( params._useCuda ) {
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
-    #endif // CCTAG_OPTIM
-    pipe1 = new popart::TagPipe;
-    
-    uint32_t w = imgGraySrc.size().width;
-    uint32_t h = imgGraySrc.size().height;
-    pipe1->initialize( w, h, params );
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
-    duration = t10 - t00;
-    CCTAG_COUT_OPTIM("Time in GPU init: " << duration.total_milliseconds() << " ms");
-    #endif // CCTAG_OPTIM
+    bool cuda_allocates = params._useCuda;
+#else
+    bool cuda_allocates = false;
+#endif
+  
+    ImagePyramid imagePyramid( imgGraySrc.cols,
+                               imgGraySrc.rows,
+                               params._numberOfProcessedMultiresLayers,
+                               cuda_allocates );
 
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
-    #endif // CCTAG_OPTIM
-    // unsigned char* pix = frame.data;
-    assert( imgGraySrc.elemSize() == 1 );
-    assert( imgGraySrc.isContinuous() );
-    assert( imgGraySrc.type() == CV_8U );
-    unsigned char* pix = imgGraySrc.data;
+    popart::TagPipe* pipe1 = 0;
+#ifdef WITH_CUDA
+    if( params._useCuda ) {
+        pipe1 = initCuda( 0,
+                          imgGraySrc.size().width,
+	                      imgGraySrc.size().height,
+	                      params,
+	                      durations );
 
-    pipe1->load( pix );
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
-    duration = t11 - t01;
-    CCTAG_COUT_OPTIM("Time in GPU load: " << duration.total_milliseconds() << " ms");
-    #endif // CCTAG_OPTIM
+        if( durations ) durations->log( "after initCuda" );
 
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t02(boost::posix_time::microsec_clock::local_time());
-    #endif // CCTAG_OPTIM
-    pipe1->tagframe( params ); // pix, w, h, params );
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t12(boost::posix_time::microsec_clock::local_time());
-    duration = t12 - t02;
-    CCTAG_COUT_OPTIM("Time in GPU tag: " << duration.total_milliseconds() << " ms");
-    #endif // CCTAG_OPTIM
+        assert( imgGraySrc.elemSize() == 1 );
+        assert( imgGraySrc.isContinuous() );
+        assert( imgGraySrc.type() == CV_8U );
+        unsigned char* pix = imgGraySrc.data;
+
+        pipe1->load( pix );
+
+        if( durations ) {
+            cudaDeviceSynchronize();
+            durations->log( "after CUDA load" );
+        }
+
+        pipe1->tagframe( ); // pix, w, h, params );
+
+        if( durations ) durations->log( "after CUDA stages" );
 
 #ifndef NDEBUG
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t03(boost::posix_time::microsec_clock::local_time());
-    #endif // CCTAG_OPTIM
-    pipe1->debug( pix, params );
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t13(boost::posix_time::microsec_clock::local_time());
-    duration = t13 - t03;
-    CCTAG_COUT_OPTIM("Time in GPU debug: " << duration.total_milliseconds() << " ms");
-    #endif // CCTAG_OPTIM
+        pipe1->debug( pix, params );
+        if( durations ) durations->log( "after CUDA debug" );
 #endif // not NDEBUG
-  }
-#ifndef WITH_CUDA_COMPARE_MODE
-  // Case 1(a): command line decides whether we use GPU or CPU
-  // Case 1(b): in compare mode, we always execute CPU code
-  else {
-#endif // WITH_CUDA_COMPARE_MODE
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t04(boost::posix_time::microsec_clock::local_time());
-    #endif // CCTAG_OPTIM
-    imagePyramid.build(imgGraySrc, params._cannyThrLow, params._cannyThrHigh, &params );
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t14(boost::posix_time::microsec_clock::local_time());
-    duration = t14 - t04;
-    CCTAG_COUT_OPTIM("Time in CPU buildPryamid: " << duration.total_milliseconds() << " ms");
-    #endif // CCTAG_OPTIM
-#ifndef WITH_CUDA_COMPARE_MODE
-  }
-#endif // WITH_CUDA_COMPARE_MODE
-#else // not WITH_CUDA
-  #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t05(boost::posix_time::microsec_clock::local_time());
-  #endif // CCTAG_OPTIM
-  // Case 1: we don't use CUDA
-  imagePyramid.build(imgGraySrc, params._cannyThrLow, params._cannyThrHigh, &params );
-  #ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t15(boost::posix_time::microsec_clock::local_time());
-  duration = t15 - t05;
-  DO_TALK( CCTAG_COUT_OPTIM("Time in CPU buildPryamid: " << duration.total_milliseconds() << " ms"); )
-  #endif // CCTAG_OPTIM
+    } else { // not params.useCuda
+#endif // WITH_CUDA
+
+        imagePyramid.build( imgGraySrc,
+                            params._cannyThrLow,
+                            params._cannyThrHigh,
+                            &params );
+
+#ifdef WITH_CUDA
+    } // not params.useCuda
 #endif // WITH_CUDA
   
-  cctagMultiresDetection( markers, imgGraySrc, imagePyramid, frame, pipe1, params );
+    if( durations ) durations->log( "before cctagMultiresDetection" );
 
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
-  duration = t1 - t0;
-  DO_TALK( CCTAG_COUT_OPTIM("TIME IN DETECTION: " << duration.total_milliseconds() << " ms"); )
-#endif
-  
-  CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
-  // Identification step
-  if (params._doIdentification)
-  {
-    CCTag::List::iterator it = markers.begin();
-    while (it != markers.end())
-    {
-      CCTag & cctag = *it;
+    cctagMultiresDetection( markers,
+                            imgGraySrc,
+                            imagePyramid,
+                            frame,
+                            pipe1,
+                            params,
+                            durations );
 
-      const int detected = cctag::identification::identify(
-              cctag,
-              bank.getMarkers(),
-              imagePyramid.getLevel(0)->getSrc(),
-              params);
-      
-      cctag.setStatus(detected);
-      ++it;
+    if( durations ) durations->log( "after cctagMultiresDetection" );
+
+#ifdef WITH_CUDA
+    /* identification in CUDA requires a host-side nearby point struct
+     * in pinned memory for safe, non-blocking memcpy.
+     */
+    for( CCTag& tag : markers ) {
+        tag.acquireNearbyPointMemory( );
     }
-#ifdef CCTAG_OPTIM
-      boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
-      duration = t2 - t1;
-      const double spendTime2 = duration.total_milliseconds();
-      CCTAG_COUT_OPTIM("TIME IN IDENTIFICATION: " << spendTime2 << " ms");
-#endif
-  }
+#endif // WITH_CUDA
   
-  markers.sort();
+    CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
 
-  CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
-  CCTagVisualDebug::instance().writeIdentificationView(markers);
-  CCTagFileDebug::instance().newSession("identification.txt");
+    // Identification step
+    if (params._doIdentification)
+    {
+      CCTagVisualDebug::instance().resetMarkerIndex();
 
-  BOOST_FOREACH(const CCTag & marker, markers)
-  {
-    CCTagFileDebug::instance().outputMarkerInfos(marker);
-  }
+        const int numTags  = markers.size();
 
-  // POP_LEAVE;
+#ifdef WITH_CUDA
+        if( pipe1 && numTags > 0 ) {
+            pipe1->checkTagAllocations( numTags, params );
+        }
+#endif // WITH_CUDA
+
+        std::vector<cctag::ImageCut> vSelectedCuts[ numTags ];
+        int                          detected[ numTags ];
+        int                          tagIndex = 0;
+
+        for( const CCTag& cctag : markers ) {
+            detected[tagIndex] = cctag::identification::identify_step_1(
+                tagIndex,
+                cctag,
+                vSelectedCuts[tagIndex],
+                imagePyramid.getLevel(0)->getSrc(),
+                params );
+
+            tagIndex++;
+        }
+
+#ifdef WITH_CUDA
+        if( pipe1 && numTags > 0 ) {
+            pipe1->uploadCuts( numTags, vSelectedCuts, params );
+            pipe1->makeCudaStreams( numTags );
+
+            tagIndex = 0;
+            for( CCTag& cctag : markers ) {
+                if( detected[tagIndex] == status::id_reliable ) {
+                    pipe1->imageCenterOptLoop(
+                        tagIndex,
+                        cctag.rescaledOuterEllipse(),
+                        cctag.centerImg(),
+                        vSelectedCuts[tagIndex].size(),
+                        params,
+                        cctag.getNearbyPointBuffer() );
+                }
+
+                tagIndex++;
+            }
+            cudaDeviceSynchronize();
+        }
+#endif // WITH_CUDA
+
+        tagIndex = 0;
+
+        CCTag::List::iterator it = markers.begin();
+        while (it != markers.end())
+        {
+            CCTag & cctag = *it;
+
+            if( detected[tagIndex] == status::id_reliable ) {
+                detected[tagIndex] = cctag::identification::identify_step_2(
+                    tagIndex,
+                    cctag,
+                    vSelectedCuts[tagIndex],
+                    bank.getMarkers(),
+                    imagePyramid.getLevel(0)->getSrc(),
+                    pipe1,
+                    params );
+            }
+
+            cctag.setStatus( detected[tagIndex] );
+            ++it;
+
+            tagIndex++;
+        }
+        if( durations ) durations->log( "after cctag::identification::identify" );
+    }
+
+#ifdef WITH_CUDA
+    /* Releasing all points in all threads in the process.
+     */
+    CCTag::releaseNearbyPointMemory();
+#endif
+  
+    markers.sort();
+
+    CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
+    CCTagVisualDebug::instance().writeIdentificationView(markers);
+    CCTagFileDebug::instance().newSession("identification.txt");
+
+    BOOST_FOREACH(const CCTag & marker, markers)
+    {
+        CCTagFileDebug::instance().outputMarkerInfos(marker);
+    }
 }
 
 } // namespace cctag

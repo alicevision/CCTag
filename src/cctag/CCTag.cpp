@@ -46,6 +46,25 @@ const boost::array<double, 5> CCTag::_radiusRatiosInit =
   (29.0 / 25.0)
 };
 
+bool CCTag::isEqual(const CCTag& marker) const
+{
+  using namespace cctag::numerical::geometry;
+  
+  Ellipse centerEllipseA = _rescaledOuterEllipse;
+  centerEllipseA.setA( centerEllipseA.b()*0.2 );
+  centerEllipseA.setB( centerEllipseA.b()*0.2 );
+  
+  Ellipse centerEllipseB = marker.rescaledOuterEllipse();
+  centerEllipseB.setA( centerEllipseB.b()*0.2 );
+  centerEllipseB.setB( centerEllipseB.b()*0.2 );
+  
+  bool sameSemiAxis =
+            ( std::abs( _rescaledOuterEllipse.a()/marker.rescaledOuterEllipse().a() - 1 ) < 0.3 ) &&
+            ( std::abs( _rescaledOuterEllipse.b()/marker.rescaledOuterEllipse().b() - 1 ) < 0.3 );
+  
+  return isOverlappingEllipses(centerEllipseA, centerEllipseB) && sameSemiAxis;
+}
+
 void CCTag::condition(const cctag::numerical::BoundedMatrix3x3d & mT, const cctag::numerical::BoundedMatrix3x3d & mInvT)
 {
   using namespace cctag::numerical::geometry;
@@ -91,6 +110,18 @@ void CCTag::scale(const double s)
   _outerEllipse.setB(_outerEllipse.b() * s);
 }
 
+#ifdef WITH_CUDA
+void CCTag::acquireNearbyPointMemory( )
+{
+    _cuda_result = popart::PinnedCounters::getPointPtr();
+}
+
+void CCTag::releaseNearbyPointMemory( )
+{
+    popart::PinnedCounters::releaseAllPoints();
+}
+#endif
+
 void CCTag::serialize(boost::archive::text_oarchive & ar, const unsigned int version)
 {
   ar & BOOST_SERIALIZATION_NVP(_nCircles);
@@ -115,7 +146,7 @@ void CCTag::serialize(boost::archive::text_oarchive & ar, const unsigned int ver
 #ifndef NDEBUG
 using namespace std;
 
-void CCTag::print( std::ostream& ostr ) const
+void CCTag::printTag( std::ostream& ostr ) const
 {
     ostr << setprecision(4)
          << "CCTag:" << endl

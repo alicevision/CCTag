@@ -31,7 +31,7 @@ int main(int argc, char** argv)
   
   const std::size_t nLevels = 4;
   
-  cctag::MemoryPool::instance().allocateImagePyramid(width, height, nLevels);
+  cctag::MemoryPool::instance().allocateImagePyramid( width, height, nLevels, false );
   
   ptime t2(microsec_clock::local_time());
   time_duration d = t2 - t1;

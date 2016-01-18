@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef VISION_CCTAG_PARAMS_HPP_
-#define VISION_CCTAG_PARAMS_HPP_
-
 #include <boost/math/constants/constants.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/nvp.hpp>
@@ -30,7 +27,7 @@ static const float kDefaultRatioVoting        = 4.f;
 static const float kDefaultAverageVoteMin        = 0.f;
 static const double kDefaultThrMedianDistanceEllipse = 3.0;
 static const std::size_t kDefaultMaximumNbSeeds = 500;
-static const std::size_t kDefaultMaximumNbCandidatesLoopTwo = 30;
+static const std::size_t kDefaultMaximumNbCandidatesLoopTwo = 40;//30;
 static const float kDefaultCannyThrLow      =  0.01f ;//0.002
 static const float kDefaultCannyThrHigh     =  0.04f ;// 0.04
 static const std::size_t kDefaultMinPointsSegmentCandidate =  10;
@@ -48,13 +45,17 @@ static const std::size_t kDefaultSampleCutLength = 100;
 static const std::size_t kDefaultImagedCenterNGridSample = 5; // must be odd otherwise the ellipse center will not be included 
                                                               // in the nearby points.
 static const double kDefaultImagedCenterNeighbourSize = 0.20;
-static const double kDefaultMinIdentProba = 1e-6;//1e-4
+static const double kDefaultMinIdentProba = 1e-6;//1e-6
 static const bool kDefaultUseLMDif = true;
 static const bool kDefaultSearchForAnotherSegment = true;
 static const bool kDefaultWriteOutput = false;
 static const bool kDefaultDoIdentification = true;
 static const uint32_t kDefaultMaxEdges = 20000;
+#ifdef WITH_CUDA
 static const bool kDefaultUseCuda = true;
+#else
+static const bool kDefaultUseCuda = false;
+#endif
 
 static const std::string kParamCannyThrLow( "kParamCannyThrLow" );
 static const std::string kParamCannyThrHigh( "kParamCannyThrHigh" );
@@ -185,6 +186,3 @@ struct Parameters
 };
 
 } // namespace cctag
-
-#endif
-

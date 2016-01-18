@@ -29,51 +29,13 @@
 #include <map>
 
 #ifdef WITH_CUDA
-#ifdef WITH_CUDA_COMPARE_MODE
+#include <cuda_runtime.h> // only for debugging!!!
 #include "cuda/tag.h"
 #endif
-#endif
 
-#undef LOOK_AT_EDGE_DETAILS
 
 namespace cctag
 {
-
-#ifdef LOOK_AT_EDGE_DETAILS
-struct EdgeDebugIndex
-{
-    int _x;
-    int _y;
-    EdgeDebugIndex( int x, int y )
-        : _x( x )
-        , _y( y )
-    { }
-};
-struct EdgeDebug
-{
-    const EdgePoint* _cpu;
-    const EdgePoint* _gpu;
-
-    EdgeDebug( const EdgePoint* cpu, const EdgePoint* gpu )
-        : _cpu( cpu )
-        , _gpu( gpu )
-    { }
-};
-const bool operator<( const EdgeDebugIndex& l, const EdgeDebugIndex& r )
-{
-    if( l._x < r._x ) return true;
-    if( l._x > r._x ) return false;
-    if( l._y < r._y ) return true;
-    // if( l._y > r._y ) return false;
-    return false;
-}
-
-typedef std::map<EdgeDebugIndex,EdgeDebug>                 EdgeDebugMap;
-typedef std::pair<EdgeDebugIndex,EdgeDebug>                EdgeDebugPair;
-typedef std::map<EdgeDebugIndex,EdgeDebug>::iterator       EdgeDebugIt;
-typedef std::map<EdgeDebugIndex,EdgeDebug>::const_iterator EdgeDebugCit;
-
-#endif // LOOK_AT_EDGE_DETAILS
 
 /* @brief Add markers from a list to another, deleting duplicates.
  *
@@ -210,7 +172,8 @@ void update(
   BOOST_FOREACH(CCTag & currentMarker, markers)
   {
     // If markerToAdd is overlapping with a marker contained in markers then
-    if (currentMarker.isOverlapping(markerToAdd))
+    //if (currentMarker.isOverlapping(markerToAdd)) // todo: clean
+    if (currentMarker.isEqual(markerToAdd))       
     {
       if (markerToAdd.quality() > currentMarker.quality())
       {
@@ -230,12 +193,13 @@ void cctagMultiresDetection_inner(
         size_t                  i,
         CCTag::List&            pyramidMarkers,
         const cv::Mat&          imgGraySrc,
-        const Level*            level,
+        Level*                  level,
         const std::size_t       frame,
         std::vector<EdgePoint>& vPoints,
         EdgePointsImage&        vEdgeMap,
         popart::TagPipe*        cuda_pipe,
-        const Parameters &      params )
+        const Parameters &      params,
+        cctag::logtime::Mgmt*   durations )
 {
     DO_TALK( CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::"); )
 
@@ -245,97 +209,30 @@ void cctagMultiresDetection_inner(
 
     boost::posix_time::time_duration d;
 
-#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
-    std::vector<EdgePoint>  cuda_debug_vPoints;
-    EdgePointsImage         cuda_debug_vEdgeMap;
-    WinnerMap               cuda_debug_winners;
-    std::vector<EdgePoint*> cuda_debug_seeds;
-#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
-
-#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+#if defined(WITH_CUDA)
     // there is no point in measuring time in compare mode
     if( cuda_pipe ) {
-        #ifdef CCTAG_OPTIM
-        boost::posix_time::ptime t00(boost::posix_time::microsec_clock::local_time());
-        #endif
-        cuda_pipe->download( i, 
-                             cuda_debug_vPoints,
-                             cuda_debug_vEdgeMap,
-                             cuda_debug_seeds,
-                             cuda_debug_winners );
-        #ifdef CCTAG_OPTIM
-        boost::posix_time::ptime t10(boost::posix_time::microsec_clock::local_time());
-        d = t10 - t00;
-        CCTAG_COUT_OPTIM("Time in GPU download: " << d.total_milliseconds() << " ms");
-        #endif
+    cuda_pipe->convertToHost( i, 
+                              vPoints,
+                              vEdgeMap,
+                              seeds,
+                              winners );
+    if( durations ) {
+        cudaDeviceSynchronize();
     }
-#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
+    level->setLevel( cuda_pipe, params );
 
-#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
-    // there is no point in measuring time in compare mode
-    if( cuda_pipe ) {
-        #ifdef CCTAG_OPTIM
-        boost::posix_time::ptime t01(boost::posix_time::microsec_clock::local_time());
-        #endif
-        cuda_pipe->download( i, 
-                             vPoints,
-                             vEdgeMap,
-                             seeds,
-                             winners );
-        #ifdef CCTAG_OPTIM
-        boost::posix_time::ptime t11(boost::posix_time::microsec_clock::local_time());
-        boost::posix_time::time_duration d = t11 - t01;
-        CCTAG_COUT_OPTIM("Time in GPU download: " << d.total_milliseconds() << " ms");
-        #endif
-    }
-#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
-
-#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
-    if( not cuda_pipe ) {
-#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t02(boost::posix_time::microsec_clock::local_time());
-    #endif
+    CCTagVisualDebug::instance().setPyramidLevel(i);
+} else { // not cuda_pipe
+#endif // defined(WITH_CUDA)
     edgesPointsFromCanny( vPoints,
                           vEdgeMap,
                           level->getEdges(),
                           level->getDx(),
                           level->getDy());
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t12(boost::posix_time::microsec_clock::local_time());
-    d = t12 - t02;
-    DO_TALK( CCTAG_COUT_OPTIM("Time in CPU Edge extraction: " << d.total_milliseconds() << " ms"); )
-    #endif
-#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
-    } // not cuda_pipe
-#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
 
     CCTagVisualDebug::instance().setPyramidLevel(i);
 
-#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
-    if( cuda_pipe ) {
-        std::cout << "Number of edge points: "
-                  << vPoints.size() << " (CPU)"
-                  << cuda_debug_vPoints.size() << " (GPU)" << std::endl;
-        std::cout << "X-size: " << vEdgeMap.shape()[0]
-                  << " Y-size: " << vEdgeMap.shape()[1] << " (CPU) "
-                  << "X-size: " << cuda_debug_vEdgeMap.shape()[0]
-                  << " Y-size: " << cuda_debug_vEdgeMap.shape()[1] << " (GPU)"
-                  << std::endl;
-
-        popart::TagPipe::debug_cpu_origin( i, level->getSrc(), params );
-        popart::TagPipe::debug_cpu_edge_out( i, level->getEdges(), params );
-        popart::TagPipe::debug_cpu_dxdy_out( cuda_pipe, i, level->getDx(), level->getDy(), params );
-        popart::TagPipe::debug_cmp_edge_table( i, vEdgeMap, cuda_debug_vEdgeMap, params );
-    }
-#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
-
-#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
-    if( not cuda_pipe ) {
-#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t03(boost::posix_time::microsec_clock::local_time());
-    #endif
     // Voting procedure applied on every edge points.
     vote( vPoints,
           seeds,        // output
@@ -349,97 +246,12 @@ void cctagMultiresDetection_inner(
         // Sort the seeds based on the number of received votes.
         std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
     }
-    #ifdef CCTAG_OPTIM
-    boost::posix_time::ptime t13(boost::posix_time::microsec_clock::local_time());
-    d = t13 - t03;
-    DO_TALK( CCTAG_COUT_OPTIM("Time in CPU vote and sort: " << d.total_milliseconds() << " ms"); )
-    #endif
-#if defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+
+#if defined(WITH_CUDA)
     } // not cuda_pipe
-#endif // defined(WITH_CUDA) && not defined(WITH_CUDA_COMPARE_MODE)
+#endif // defined(WITH_CUDA)
 
-#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
-    if( cuda_pipe ) {
-#ifdef LOOK_AT_EDGE_DETAILS
-        if( params._debugDir != "" ) {
-            EdgeDebugMap theMap;
 
-            std::vector<EdgePoint>::const_iterator it, end;
-
-            it  = vPoints.begin();
-            end = vPoints.end();
-            for( ; it!=end; it++ ) {
-                const EdgePoint& e = *it;
-                theMap.insert(
-                    EdgeDebugPair(
-                        EdgeDebugIndex( e.x(), e.y() ),
-                        EdgeDebug( &e, 0 ) ) );
-            }
-
-            it  = cuda_debug_vPoints.begin();
-            end = cuda_debug_vPoints.end();
-            for( ; it!=end; it++ ) {
-                const EdgePoint& e = *it;
-                EdgeDebugIndex idx( e.x(), e.y() );
-                EdgeDebugIt eit = theMap.find( idx );
-                if( eit == theMap.end() ) {
-                    theMap.insert(
-                        EdgeDebugPair(
-                            idx,
-                            EdgeDebug( 0, &e ) ) );
-                } else {
-                    eit->second._gpu = &e;
-                }
-            }
-
-            std::ostringstream epu;
-            epu << params._debugDir << "vpoints-cpu.txt";
-            std::ofstream epu_out( epu.str() );
-
-            EdgeDebugIt ecit  = theMap.begin();
-            EdgeDebugIt ecend = theMap.end();
-            for( ; ecit != ecend; ecit++ ) {
-                epu_out << "(" << ecit->first._x << "," << ecit->first._y << ")"
-                        << std::endl;
-            }
-            epu_out.close();
-
-            // "(" << e.x() << "," << e.y() << "," << e.w() << ")"
-            // " g=(" << e._grad.x() << "," << e._grad.y() << "," << e._grad.w() << ")"
-            // double _normGrad;
-            // EdgePoint* _before;
-            // EdgePoint* _after;
-            // ssize_t _processed;
-            // bool _processedIn;
-            // ssize_t _isMax;
-            // ssize_t _edgeLinked;
-            // ssize_t _nSegmentOut; // std::size_t _nSegmentOut;
-            // float _flowLength;
-            // bool _processedAux;
-        }
-#endif // LOOK_AT_EDGE_DETAILS
-        
-#if 0
-        cctagDetectionFromEdges(
-                pyramidMarkers,
-                vPoints, // cuda_debug_vPoints,
-                level->getSrc(),
-                winners, // cuda_debug_winners,
-                seeds, // cuda_debug_seeds,
-                vEdgeMap, // cuda_debug_vEdgeMap,
-                frame, i, std::pow(2.0, (int) i), params);
-#else
-        cctagDetectionFromEdges(
-                pyramidMarkers,
-                cuda_debug_vPoints,
-                level->getSrc(),
-                cuda_debug_winners,
-                cuda_debug_seeds,
-                cuda_debug_vEdgeMap,
-                frame, i, std::pow(2.0, (int) i), params);
-#endif
-    } else {
-#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
     cctagDetectionFromEdges(
         pyramidMarkers,
         vPoints,
@@ -447,11 +259,9 @@ void cctagMultiresDetection_inner(
         winners,
         seeds,
         vEdgeMap,
-        frame, i, std::pow(2.0, (int) i), params);
-#if defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
-    }
-#endif // defined(WITH_CUDA) && defined(WITH_CUDA_COMPARE_MODE)
-    
+        frame, i, std::pow(2.0, (int) i), params,
+        durations );
+
     CCTagVisualDebug::instance().initBackgroundImage(level->getSrc());
     std::stringstream outFilename2;
     outFilename2 << "viewLevel" << i;
@@ -469,13 +279,11 @@ void cctagMultiresDetection(
         const ImagePyramid& imagePyramid,
         const std::size_t   frame,
         popart::TagPipe*    cuda_pipe,
-        const Parameters&   params)
+        const Parameters&   params,
+        cctag::logtime::Mgmt* durations )
 {
-    // POP_ENTER;
   //	* For each pyramid level:
   //	** launch CCTag detection based on the canny edge detection output.
-  
-  bool doUpdate = true; // todo@Lilian: add in the parameter file.
 
   std::map<std::size_t, CCTag::List> pyramidMarkers;
   std::vector<EdgePointsImage> vEdgeMaps;
@@ -503,10 +311,15 @@ void cctagMultiresDetection(
                                   vPoints.back(),
                                   vEdgeMaps.back(),
                                   cuda_pipe,
-                                  params );
+                                  params,
+                                  durations );
   }
+  if( durations ) durations->log( "after cctagMultiresDetection_inner" );
   
   // Delete overlapping markers while keeping the best ones.
+  
+  CCTag::List markersPrelim;
+  
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
   for (std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers ; ++i)
   // set the _numberOfProcessedMultiresLayers <= _numberOfMultiresLayers todo@Lilian
@@ -515,16 +328,17 @@ void cctagMultiresDetection(
 
     BOOST_FOREACH(const CCTag & marker, markersList)
     {
-      if (doUpdate)
-      {
-        update(markers, marker);
-      }
-      else
-      {
-        markers.push_back(new CCTag(marker));
-      }
+        update(markersPrelim, marker);
     }
   }
+  
+  // todo: in which case is this double check required ?
+  for(const CCTag & marker : markersPrelim)
+  {
+    update(markers, marker);
+  }
+  
+  if( durations ) durations->log( "after update markers" );
   
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
   CCTagVisualDebug::instance().writeLocalizationView(markers);
@@ -564,8 +378,8 @@ void cctagMultiresDetection(
               pointsInHull,
               rescaledOuterEllipsePoints,
               SmFinal,
-              params._threshRobustEstimationOfOuterEllipse, //20.0 before
-              INV_GRAD_WEIGHT, // INV_GRAD_WEIGHT: NO_WEIGHT before 
+              20.0,
+              NO_WEIGHT,
               60); 
       
       #ifdef CCTAG_OPTIM
@@ -608,6 +422,7 @@ void cctagMultiresDetection(
       marker.setRescaledOuterEllipsePoints(marker.points().back());
     }
   }
+  if( durations ) durations->log( "after marker projection" );
   
   // Log
   CCTagFileDebug::instance().newSession("data.txt");

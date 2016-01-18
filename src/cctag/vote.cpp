@@ -459,12 +459,12 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             }
 
             std::size_t counter = 0;
-
+            std::vector<int> perm(5);
             while (counter < 70)
             {
                 // Random subset of 5 points from pts
-                const std::vector<int> perm = cctag::numerical::randperm< std::vector<int> >(pts.size());
-
+                //const std::vector<int> perm = cctag::numerical::randperm< std::vector<int> >(pts.size());
+                cctag::numerical::rand_n_k(perm, 5, pts.size());
                 bounded_matrix<double, 5, 5> A(5, 5);
                 bounded_vector<double, 5> b(5);
 
@@ -593,9 +593,11 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         const std::vector<EdgePoint*> & anotherOuterEllipsePoints = anotherCandidate._outerEllipsePoints;
 
         numerical::geometry::Ellipse qm;
-        double Sm = 10000000000000.0;
+        double Sm = std::numeric_limits<double>::max();
         const double f = 1.0;
 
+
+        // Copy/Align content of outerEllipsePoints
         std::vector<bounded_vector<double, 3> > pts;
         pts.reserve(outerEllipsePoints.size());
         for (std::vector<EdgePoint*>::iterator it = outerEllipsePoints.begin(); it != outerEllipsePoints.end(); ++it) {
@@ -603,7 +605,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             pts.push_back(*(*it));
         }
 
-
+        // Copy/Align content of anotherOuterEllipsePoints
         std::vector<bounded_vector<double, 3> > anotherPts;
         anotherPts.reserve(anotherOuterEllipsePoints.size());
         for (std::vector<EdgePoint*>::const_iterator it = anotherOuterEllipsePoints.begin(); it != anotherOuterEllipsePoints.end(); ++it) {
@@ -621,25 +623,32 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
         double S1m, S2m;
 
+        std::vector<int> permutations(5);
+        std::vector<cctag::Point2dN< double > > points;
         while (cnt < 100)
         {
+            points.clear(); // Capacity is kept, but the elements are all erased
             // Random subset of 5 points from pts
-            const std::vector<int> perm = cctag::numerical::randperm< std::vector<int> >(outerEllipsePoints.size());
-
-            std::vector<cctag::Point2dN< double > > points;
-
-            std::vector<int>::const_iterator it = perm.begin();
-            for (std::size_t i = 0; i < 4; ++i) {
+            cctag::numerical::rand_n_k(permutations, 5, outerEllipsePoints.size());
+            
+            std::vector<int>::const_iterator it = permutations.begin();
+            for (size_t i = 0; i < 4; ++i) {
                 points.push_back(Point2dN<double>(double(pts[*it](0)), double(pts[*it](1))));
                 ++it;
             }
 
-            const std::vector<int> anotherPerm = cctag::numerical::randperm< std::vector<int> >(anotherOuterEllipsePoints.size());
+            //const std::vector<int> anotherPerm = cctag::numerical::randperm< std::vector<int> >(anotherOuterEllipsePoints.size());
+            cctag::numerical::rand_n_k(permutations, 5, anotherOuterEllipsePoints.size());
 
-            it = anotherPerm.begin();
-            for (std::size_t i = 0; i < 4; ++i) {
+            it = permutations.begin();
+            for (size_t i = 0; i < 4; ++i) {
                 points.push_back(Point2dN<double>(double(anotherOuterEllipsePoints[*it]->x()), double(anotherOuterEllipsePoints[*it]->y())));
                 ++it;
+            }
+
+            if( points.size() < 5 ) {
+                std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
+                continue;
             }
 
             numerical::geometry::Ellipse eToto;

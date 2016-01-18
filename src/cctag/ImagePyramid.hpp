@@ -18,7 +18,7 @@ class ImagePyramid
 public:
   ImagePyramid();
   
-  ImagePyramid( const std::size_t width, const std::size_t height, const std::size_t nLevels );
+  ImagePyramid( const std::size_t width, const std::size_t height, const std::size_t nLevels, bool cuda_allocates );
   
   ~ImagePyramid();
 
@@ -26,6 +26,8 @@ public:
   
   std::size_t getNbLevels() const;
   
+    /* The pyramid building function is never called if CUDA is used.
+     */
   void build(const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params );
   void output();
 

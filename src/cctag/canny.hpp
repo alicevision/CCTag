@@ -10,13 +10,10 @@
 #include <opencv2/imgproc/types_c.h>
 #include <vector>
 
-namespace cctag
-{
-class EdgePoint;
-}
 
-namespace cctag
-{
+namespace cctag {
+
+class EdgePoint;
 
 void edgesPointsFromCanny(
         std::vector<EdgePoint>& points,

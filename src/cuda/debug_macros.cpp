@@ -116,6 +116,13 @@ void pop_cuda_free( void* ptr, const char* file, uint32_t line )
     POP_CUDA_FATAL_TEST_FL( err, "cudaFree failed to release device memory: ", file, line );
 }
 
+void pop_cuda_free_host( void* ptr, const char* file, uint32_t line )
+{
+    cudaError_t err;
+    err = cudaFreeHost( ptr );
+    POP_CUDA_FATAL_TEST_FL( err, "cudaFree failed to release device memory: ", file, line );
+}
+
 void pop_cuda_memcpy_async( void* dst, const void* src, size_t sz, cudaMemcpyKind type, cudaStream_t stream, const char* file, size_t line )
 {
     if( cuda_only_sync_calls ) {

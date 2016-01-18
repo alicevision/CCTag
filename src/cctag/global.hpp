@@ -76,7 +76,7 @@ namespace std {
  * @param[in] ... : all parameters with an operator << defined
  * @brief terminal display
  **/
- #define CCTAG_COUT(... )  ::std::cout << __FUNCTION__ << ":" << __LINE__ << ": " << __VA_ARGS__ << ::std::endl
+ #define CCTAG_COUT(... )  ::std::cout << __FILE__ << ":" << __LINE__ << ": " << __VA_ARGS__ << ::std::endl
  #define CCTAG_COUT_NOENDL(... )  ::std::cout << __VA_ARGS__
  #define CCTAG_CERR(... )  ::std::cerr << __VA_ARGS__ << ::std::endl
  #define CCTAG_CERR_NOENDL(... )  ::std::cerr << __VA_ARGS__

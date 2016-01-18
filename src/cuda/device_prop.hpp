@@ -10,7 +10,7 @@ class device_prop_t
     int _num_devices;
     std::vector<cudaDeviceProp*> _properties;
 public:
-    device_prop_t( );
+    device_prop_t( bool output = false );
     ~device_prop_t( );
 
     void print( );

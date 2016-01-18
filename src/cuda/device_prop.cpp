@@ -8,7 +8,7 @@ using namespace std;
 
 namespace popart {
 
-device_prop_t::device_prop_t( )
+device_prop_t::device_prop_t( bool output )
 {
     cudaError_t err;
 
@@ -21,7 +21,26 @@ device_prop_t::device_prop_t( )
         err = cudaGetDeviceProperties( p, n );
         POP_CUDA_FATAL_TEST( err, "Cannot get properties for a device" );
     }
-    err = cudaSetDevice( 0 );
+
+    int chosenDevice = 0;
+    for( int n=1; n<_num_devices; n++ ) {
+        assert( _properties[chosenDevice] );
+        assert( _properties[n] );
+        if( _properties[chosenDevice]->major < _properties[n]->major ||
+            ( _properties[chosenDevice]->major == _properties[n]->major &&
+              _properties[chosenDevice]->minor < _properties[n]->minor ) ) {
+            chosenDevice = n;
+        }
+    }
+
+    if( output && _num_devices > 1 ) {
+        cerr << "Choosing CUDA device with compute capability "
+             << _properties[chosenDevice]->major << "."
+             << _properties[chosenDevice]->minor
+             << " (dev " << chosenDevice << ")" << endl;
+    }
+
+    err = cudaSetDevice( chosenDevice );
     POP_CUDA_FATAL_TEST( err, "Cannot set device 0" );
 }
 
@@ -50,9 +69,13 @@ void device_prop_t::print( )
                   << "," << ptr->maxGridSize[1]
                   << "," << ptr->maxGridSize[2] << "}" << endl
                   << "    Number of SM(x)s:      " << ptr->multiProcessorCount << endl
+                  << "    Registers per SM(x):   " << ptr->regsPerMultiprocessor << endl
+                  << "    Registers per block:   " << ptr->regsPerBlock << endl
                   << "    Concurrent kernels:    " << (ptr->concurrentKernels?"yes":"no") << endl
                   << "    Mapping host memory:   " << (ptr->canMapHostMemory?"yes":"no") << endl
                   << "    Unified addressing:    " << (ptr->unifiedAddressing?"yes":"no") << endl
+                  << "    Texture alignment:     " << ptr->textureAlignment << " byte" << endl
+                  << "    Pitch alignment:       " << ptr->texturePitchAlignment << " byte" << endl
                   << endl;
     }
 }

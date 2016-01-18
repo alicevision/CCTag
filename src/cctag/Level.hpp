@@ -3,6 +3,10 @@
 
 #include <opencv2/opencv.hpp>
 
+namespace popart {
+    class TagPipe;
+};
+
 namespace cctag {
 
 class Parameters;
@@ -11,12 +15,19 @@ class Level
 {
 public:
   
-  Level( std::size_t width, std::size_t height, int debug_info_level );
+  Level( std::size_t width, std::size_t height, int debug_info_level, bool cuda_allocates = false );
   
+  ~Level( );
+
   void setLevel( const cv::Mat & src,
                  const double thrLowCanny,
                  const double thrHighCanny,
                  const cctag::Parameters* params );
+#ifdef WITH_CUDA
+  void setLevel( popart::TagPipe* cuda_pipe,
+                 const cctag::Parameters& params );
+#endif // WITH_CUDA
+
   const cv::Mat & getSrc() const;
   const cv::Mat & getDx() const;
   const cv::Mat & getDy() const;
@@ -29,24 +40,28 @@ public:
   
   inline std::size_t width() const
   {
-    return _src.cols;
+    return _cols;
   }
   
   inline std::size_t height() const
   {
-    return _src.rows;
+    return _rows;
   }
   
 
 private:
-  int _debug_info_level;
+  int         _level;
+  bool        _cuda_allocates;
+  bool        _mat_initialized_from_cuda;
+  std::size_t _cols;
+  std::size_t _rows;
   
-  cv::Mat _dx;
-  cv::Mat _dy;
-  cv::Mat _mag;
-  cv::Mat _src;
-  cv::Mat _edges;
-  cv::Mat _temp;
+  cv::Mat* _dx;
+  cv::Mat* _dy;
+  cv::Mat* _mag;
+  cv::Mat* _src;
+  cv::Mat* _edges;
+  cv::Mat  _temp;
   
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
   cv::Mat _edgesNotThin;

@@ -4,46 +4,26 @@
 #include <assert.h>
 #include <string>
 #include <vector>
+#include <opencv2/core/core.hpp>
 
-// #include <opencv2/core/cuda_types.hpp>
+#include "onoff.h"
 
 #include "cctag/params.hpp"
 #include "cctag/types.hpp"
-#include "frame_vote.h"
+#include "cctag/ImageCut.hpp"
+#include "frame_07_vote.h"
 #include "triple_point.h"
-
-#define DEBUG_WRITE_ORIGINAL_AS_PGM
-#define DEBUG_WRITE_ORIGINAL_AS_ASCII
-#undef  DEBUG_WRITE_GAUSSIAN_AS_PGM   // no longer computed
-#undef  DEBUG_WRITE_GAUSSIAN_AS_ASCII // no longer computed
-#define DEBUG_WRITE_DX_AS_PGM
-#define DEBUG_WRITE_DX_AS_ASCII
-#define DEBUG_WRITE_DY_AS_PGM
-#define DEBUG_WRITE_DY_AS_ASCII
-#define DEBUG_WRITE_MAG_AS_PGM
-#define DEBUG_WRITE_MAG_AS_ASCII
-#define DEBUG_WRITE_MAP_AS_PGM
-#define DEBUG_WRITE_MAP_AS_ASCII
-#define DEBUG_WRITE_HYSTEDGES_AS_PGM
-#define DEBUG_WRITE_EDGES_AS_PGM
-#define DEBUG_WRITE_EDGELIST_AS_PPM
-#define DEBUG_WRITE_EDGELIST_AS_ASCII
-#define DEBUG_WRITE_VOTERS_AS_PPM
-#define DEBUG_WRITE_CHOSEN_AS_PPM
-#define DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
-#define DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
-#define DEBUG_WRITE_LINKED_AS_PPM
-#define DEBUG_WRITE_LINKED_AS_PPM_INTENSE
-#define DEBUG_WRITE_LINKED_AS_ASCII
-#define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
-
-#undef  DEBUG_RETURN_AFTER_GRADIENT_DESCENT
-#undef  DEBUG_RETURN_AFTER_CONSTRUCT_LINE
-#define DEBUG_LINKED_USE_INT4_BUFFER
+#include "cuda/geom_ellipse.h"
+#include "cuda/framemeta.h"
+#include "cuda/ptrstep.h"
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
-#define EDGE_LINKING_HOST_SIDE
+/* This must replace params._maxEdges. That configuration variable
+ * is definitely not big enough for finding all edge points in a 1K
+ * image.
+ */
+#define EDGE_POINT_MAX                  1000000
 
 #define EDGE_LINKING_MAX_EDGE_LENGTH        100
 #define EDGE_LINKING_MAX_ARCS             10000
@@ -58,32 +38,13 @@
 #define GAUSS_TABLE  0 // Gauss parameters
 #define GAUSS_DERIV 16 // first derivative
 
-namespace cv {
-    namespace cuda {
-        typedef PtrStepSz<int16_t>  PtrStepSz16s;
-        typedef PtrStepSz<uint32_t> PtrStepSz32u;
-        typedef PtrStepSz<int32_t>  PtrStepSz32s;
-
-        typedef PtrStep<int16_t>    PtrStep16s;
-        typedef PtrStep<uint32_t>   PtrStep32u;
-        typedef PtrStep<int32_t>    PtrStep32s;
-
-#ifdef DEBUG_LINKED_USE_INT4_BUFFER
-        typedef PtrStepSz<int4>     PtrStepSzInt2;
-        typedef PtrStep<int4>       PtrStepInt2;
-        typedef int4                PtrStepInt2_base_t;
-#else // DEBUG_LINKED_USE_INT4_BUFFER
-        typedef PtrStepSz<int2>     PtrStepSzInt2;
-        typedef PtrStep<int2>       PtrStepInt2;
-        typedef int2                PtrStepInt2_base_t;
-#endif // DEBUG_LINKED_USE_INT4_BUFFER
-    }
-};
-
-
 namespace popart {
-
-typedef cudaEvent_t FrameEvent;
+namespace identification {
+// locally defined in frame_ident.cu only
+struct CutStruct;
+struct CutSignals;
+} // identification
+struct NearbyPoint;
 
 /*************************************************************
  * FrameTexture
@@ -120,12 +81,12 @@ private:
  *************************************************************/
 class Frame
 {
-
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
-    Frame( uint32_t width, uint32_t height, int my_layer );
+    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe = 0 );
     ~Frame( );
 
+public:
     int getLayer() const { return _layer; }
 
     // Copy manually created Gauss filter tables to constant memory
@@ -138,6 +99,9 @@ public:
     // copy the upper layer from the host to the device
     void upload( const unsigned char* image ); // implicitly assumed that w/h are the same as above
 
+    // called by every thread, unpins uploaded image in frame 0
+    void uploadComplete( );
+
     // Create a texture object this frame.
     // The caller must ensure that the Kind of texture object makes sense.
     void createTexture( FrameTexture::Kind kind );
@@ -145,22 +109,20 @@ public:
     void deleteTexture( ); // Delete it. Done anyway in the destructor.
 
     // initialize this frame from other's normalized texture
-    void fillFromTexture( Frame& src );
-    void fillFromFrame( Frame& src );
+    // void fillFromFrame( Frame& src );
 
     inline cudaTextureObject_t getTex( ) {
         assert( _texture );
         return _texture->getTex( );
     }
 
-    void allocUploadEvent( );
-    void deleteUploadEvent( );
-    FrameEvent addUploadEvent( );
-    void allocDoneEvent( );
-    void deleteDoneEvent( );
-    FrameEvent addDoneEvent( );
+    void        allocUploadEvent( );
+    void        deleteUploadEvent( );
+    void        addUploadEvent( );
+    cudaEvent_t getUploadEvent( );
+
     void streamSync( ); // Wait for the asynchronous ops to finish
-    void streamSync( FrameEvent ev ); // Wait for ev to happen (in another stream)
+    void streamSync( cudaEvent_t ev ); // Wait for ev to happen (in another stream)
 
     // return the downscaled sibling "scale". The count it 0-based, 0 is this Frame
     Frame* getScale( uint32_t scale );
@@ -175,23 +137,61 @@ public:
     void initRequiredMem( );
     void releaseRequiredMem( );
 
-    // implemented in frame_gaussian.cu
+    // implemented in frame_01_tex.cu
+    void fillFromTexture( Frame& src );
+
+    // implemented in frame_01_tex.cu
+    void applyPlaneDownload( );
+
+    // implemented in frame_02_gaussian.cu
     void applyGauss( const cctag::Parameters& param );
 
-    // implemented in frame_magmap.cu
-    void applyMag( const cctag::Parameters& param );
+    // implemented in frame_02_gaussian.cu
+    void applyGaussDownload( );
 
-    // implemented in frame_hyst.cu
-    void applyHyst( const cctag::Parameters& param );
+    // implemented in frame_03_magmap.cu
+    void applyMag( );
 
-    // implemented in frame_thin.cu
-    void applyThinning( const cctag::Parameters& param );
+    // implemented in frame_03_magmap.cu
+    void applyMagDownload( );
 
-    // implemented in frame_graddesc.cu
-    bool applyDesc( const cctag::Parameters& param );
+    // implemented in frame_04_hyst.cu
+    void applyHyst( );
 
-    // implemented in frame_vote.cu
-    void applyVote( const cctag::Parameters& param );
+    // implemented in frame_05_thin.cu
+    void applyThinning( );
+    void applyThinDownload( );
+
+    // implemented in frame_06_graddesc.cu
+    bool applyDesc( );
+
+    // implemented in frame_07a_vote_line.cu
+    bool applyVoteConstructLine( );
+
+    // implemented in frame_07b_vote_sort_uniq_dp.cu
+    // implemented in frame_07b_vote_sort_uniq_nodp.cu
+    bool applyVoteSortUniq( );
+
+#ifndef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
+private:
+    // implemented in frame_07b_vote_sort_nodp.cu
+    // called by applyVoteSortUniqNoDP
+    bool applyVoteSortNoDP( );
+    void applyVoteUniqNoDP( );
+public:
+#endif // not USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
+
+    // implemented in frame_07c_eval.cu
+    bool applyVoteEval( );
+
+    // implemented in frame_07d_vote_if.cu
+    bool applyVoteIf( );
+
+    // implemented in frame_07e_graddesc.cu
+    void applyVoteDownload( );
+
+    // implemented in frame_07_vote.cu
+    void applyVote( );
 
     // implemented in frame_link.cu
     void applyLink( const cctag::Parameters& param );
@@ -202,6 +202,65 @@ public:
                       std::vector<cctag::EdgePoint*>& seeds,
                       cctag::WinnerMap&               winners );
 
+    cv::Mat* getPlane( ) const;
+    cv::Mat* getDx( ) const;
+    cv::Mat* getDy( ) const;
+    cv::Mat* getMag( ) const;
+    cv::Mat* getEdges( ) const;
+
+protected:
+    // implemented in frame_11_identify.cu
+    /* to reuse various image-sized buffers, but retrieve their
+     * bytesize to ensure that the new types fit into the
+     * already allocated space.
+     */
+    size_t                               getCutStructBufferByteSize( ) const;
+    popart::identification::CutStruct*   getCutStructBuffer( ) const;
+    popart::identification::CutStruct*   getCutStructBufferHost( ) const;
+    size_t                               getNearbyPointBufferByteSize( ) const;
+    popart::NearbyPoint*                 getNearbyPointBuffer( ) const;
+    size_t                               getSignalBufferByteSize( ) const;
+    popart::identification::CutSignals*  getSignalBuffer( ) const;
+    void                                 clearSignalBuffer( );
+
+    friend class TagPipe;
+
+public:
+    // implemented in frame_11_identify.cu
+    __host__
+    void imageCenterOptLoop(
+        const int                           tagIndex,     // in
+        cudaStream_t                        tagStream,    // in
+        const popart::geometry::ellipse&    outerEllipse, // in
+        const float2&                       center,       // in
+        const int                           vCutSize,     // in
+        const cctag::Parameters&            params,       // in
+        NearbyPoint*                        cctag_pointer_buffer );
+
+    __host__
+    bool imageCenterRetrieve(
+        const int                           tagIndex,          // in
+        cudaStream_t                        tagStream,         // in
+        float2&                             bestPointOut,      // out
+        popart::geometry::matrix3x3&        bestHomographyOut, // out
+        const cctag::Parameters&            params,            // in
+        NearbyPoint*                        cctag_pointer_buffer );
+
+private:
+    // implemented in frame_11_identify.cu
+    __host__
+    void idCostFunction(
+        const int                           tagIndex,
+        cudaStream_t                        tagStream,
+        int                                 iterations,
+        const popart::geometry::ellipse&    ellipse,
+        const float2                        center,
+        const int                           vCutSize,     // in
+        float                               currentNeighbourSize,
+        const cctag::Parameters&            params,
+        NearbyPoint*                        cctag_pointer_buffer );
+
+public:
     void hostDebugDownload( const cctag::Parameters& params ); // async
 
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
@@ -214,14 +273,12 @@ public:
 private:
     Frame( );  // forbidden
     Frame( const Frame& );  // forbidden
+    Frame& operator=( const Frame& ); // forbidden
 
 private:
     int                     _layer;
 
-    int*                    _d_hysteresis_block_counter;
-    int*                    _d_connect_component_block_counter;
-    int*                    _d_ring_counter;
-    int                     _d_ring_counter_max;
+    FrameMetaPtr            _meta; // lots of small variables
 
     cv::cuda::PtrStepSzb    _d_plane;
     cv::cuda::PtrStepSzf    _d_intermediate;
@@ -234,36 +291,66 @@ private:
     cv::cuda::PtrStepSzb    _d_edges;
     cv::cuda::PtrStepSzInt2 _d_ring_output;
 
-#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
-    unsigned char*          _h_debug_plane;
-#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
-#ifdef DEBUG_WRITE_GAUSSIAN_AS_PGM
-    float*                  _h_debug_smooth;
-#endif // DEBUG_WRITE_GAUSSIAN_AS_PGM
-#ifdef DEBUG_WRITE_MAG_AS_PGM
-    uint32_t*               _h_debug_mag;
-#endif // DEBUG_WRITE_MAG_AS_PGM
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_map;
 #endif // DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_hyst_edges;
-    unsigned char*          _h_debug_edges;
 public: // HACK FOR DEBUGGING
+    cv::cuda::PtrStepSzb    _h_plane;
     cv::cuda::PtrStepSz16s  _h_dx;
     cv::cuda::PtrStepSz16s  _h_dy;
+    cv::cuda::PtrStepSz32u  _h_mag;
+    cv::cuda::PtrStepSzb    _h_edges;
+
+    cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
 private:
+#ifndef EDGE_LINKING_HOST_SIDE
     cv::cuda::PtrStepSzInt2 _h_ring_output;
+#endif
+
+    // Stores coordinates of all edges. Valid after thinning.
+    EdgeList<int2>         _all_edgecoords;
+
+    // Stores all points that are recognized as potential voters
+    // in gradient descent.
+    EdgeList<TriplePoint>  _voters;
+    float*                 _v_chosen_flow_length;
+    EdgeList<int>          _v_chosen_idx;
+
+    EdgeList<int>          _inner_points;
+    EdgeList<int>          _interm_inner_points;
+
+    /* A single int allocated on the device as an intermediate
+     * value. Some CUB calls needs such a thing. Waste of space
+     * but necessary.
+     */
+    int*                   _d_interm_int;
 
     Voting _vote;
 
-    FrameTexture*  _texture;
-    FrameEvent*    _wait_for_upload;
-    FrameEvent*    _wait_done;
+    FrameTexture*        _texture;
+    cudaEvent_t          _wait_for_upload;
+    const unsigned char* _image_to_upload;
 
+public:
     // if we run out of streams (there are 32), we may have to share
     // bool         _stream_inherited;
-public:
     cudaStream_t _stream;
+    bool         _private_download_stream;
+    cudaStream_t _download_stream;
+
+    cudaEvent_t  _stream_done;
+    cudaEvent_t  _download_stream_done;
+
+    struct {
+        cudaEvent_t  plane;
+        cudaEvent_t  dxdy;
+        cudaEvent_t  magmap;
+        cudaEvent_t  edgecoords1;
+        cudaEvent_t  edgecoords2;
+        cudaEvent_t  descent1;
+        cudaEvent_t  descent2;
+    }            _download_ready_event;
 };
 
 }; // namespace popart

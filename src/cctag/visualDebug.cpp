@@ -64,6 +64,27 @@ int CCTagVisualDebug::getPyramidLevel() {
     return _pyramidLevel;
 }
 
+void CCTagVisualDebug::resetMarkerIndex() 
+{
+#ifdef CCTAG_SERIALIZE
+  _markerIndex = 0;;
+#endif
+}
+
+void CCTagVisualDebug::incrementMarkerIndex() 
+{
+#ifdef CCTAG_SERIALIZE
+  ++_markerIndex;
+#endif
+}
+
+std::size_t CCTagVisualDebug::getMarkerIndex() 
+{
+#ifdef CCTAG_SERIALIZE
+  return _markerIndex;
+#endif
+}
+
 std::string CCTagVisualDebug::getPath() const {
   return _path;
 }
@@ -96,6 +117,9 @@ void CCTagVisualDebug::newSession(const std::string & sessionName) {
   // Don't erase old sessions
   if (_sessions.find(sessionName) == _sessions.end()) {
       _sessions[sessionName] = _backImage;
+  }else
+  {
+    _backImage = _sessions[sessionName];
   }
 #endif
 }
@@ -245,13 +269,13 @@ std::string CCTagVisualDebug::getImageFileName() const {
 }
 
 void CCTagVisualDebug::out(const std::string & filename) const {
-#if defined CCTAG_SERIALIZE && defined VISUAL_DEBUG
+#if defined(CCTAG_SERIALIZE) && defined(VISUAL_DEBUG)
   cv::imwrite(filename, _backImage);
 #endif
 }
 
 void CCTagVisualDebug::outPutAllSessions() const {
-#if defined CCTAG_SERIALIZE && defined VISUAL_DEBUG
+#if defined(CCTAG_SERIALIZE) && defined(VISUAL_DEBUG)
     BOOST_FOREACH(const Sessions::const_iterator::value_type & v, _sessions) {
         const std::string filename = _path + "/" + v.first + ".png";
         cv::imwrite(filename, v.second);

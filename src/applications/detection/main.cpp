@@ -39,6 +39,8 @@
 #include <fstream>
 #include <exception>
 
+#define PRINT_TO_CERR
+
 using namespace cctag;
 using boost::timer;
 
@@ -47,7 +49,7 @@ namespace bfs = boost::filesystem;
 
 // static const std::string kUsageString = "Usage: detection image_file.png\n";
 
-void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ofstream & output, std::string debugFileName = "")
+void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ostream & output, std::string debugFileName = "")
 {
     if (debugFileName == "") {
       debugFileName = "00000";
@@ -61,7 +63,19 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     CCTagVisualDebug::instance().setImageFileName(debugFileName);
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
 
-    cctagDetection(markers, frameId , src, params, bank, true);  
+    static cctag::logtime::Mgmt* durations = 0;
+#if 0
+    if( not durations ) {
+        durations = new cctag::logtime::Mgmt( 25 );
+    } else {
+        durations->resetStartTime();
+    }
+#endif
+    cctagDetection( markers, frameId , src, params, bank, true, durations );
+
+    if( durations ) {
+        durations->print( std::cerr );
+    }
 
     CCTagFileDebug::instance().outPutAllSessions();
     CCTagFileDebug::instance().clearSessions();
@@ -92,6 +106,8 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
 /*************************************************************/
 int main(int argc, char** argv)
 {
+  CmdLine cmdline;
+
   if( cmdline.parse( argc, argv ) == false ) {
     cmdline.usage( argv[0] );
     return EXIT_FAILURE;
@@ -153,14 +169,18 @@ int main(int argc, char** argv)
 #ifdef WITH_CUDA
   if( cmdline._useCuda ) {
     params.setUseCuda( true );
+  } else {
+    params.setUseCuda( false );
   }
 
   if( cmdline._debugDir != "" ) {
     params.setDebugDir( cmdline._debugDir );
   }
 
-  popart::device_prop_t deviceInfo;
+  popart::device_prop_t deviceInfo( false );
+#if 0
   deviceInfo.print( );
+#endif
 #endif // WITH_CUDA
 
   bfs::path myPath( cmdline._filename );
@@ -198,8 +218,11 @@ int main(int argc, char** argv)
     }*/
 
     // Call the CCTag detection
+#ifdef PRINT_TO_CERR
+    detection(0, graySrc, params, bank, std::cerr, myPath.stem().string());
+#else
     detection(0, graySrc, params, bank, outputFile, myPath.stem().string());
-  //detection(0, my_view, params, bank, outputFile, myPath.stem().string());
+#endif
 } else if (ext == ".avi" )
   {
     CCTAG_COUT("*** Video mode ***");
@@ -272,7 +295,11 @@ int main(int argc, char** argv)
         //bitwise_not ( imgGray, imgGrayInverted );
       
         // Call the CCTag detection
+#ifdef PRINT_TO_CERR
+        detection(frameId, *imgGray, params, bank, std::cerr, outFileName.str());
+#else
         detection(frameId, *imgGray, params, bank, outputFile, outFileName.str());
+#endif
         ++frameId; 
         if( frameId % 100 == 0 ) {
             std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0/frameId << ") ";
@@ -304,7 +331,11 @@ int main(int argc, char** argv)
         cv::cvtColor( src, imgGray, CV_BGR2GRAY );
       
         // Call the CCTag detection
+#ifdef PRINT_TO_CERR
+        detection(frameId, imgGray, params, bank, std::cerr, fileInFolder.stem().string());
+#else
         detection(frameId, imgGray, params, bank, outputFile, fileInFolder.stem().string());
+#endif
 ++frameId;
       }
     }

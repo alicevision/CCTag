@@ -9,6 +9,7 @@
 
 #include "openMVG/numeric/numeric.h"
 
+namespace cctag {
 namespace openMVG {
 namespace image {
 
@@ -82,7 +83,7 @@ public:
     : Base(red, green, blue, alpha){}
   explicit inline Rgba(const Base& val) : Base(val) {}
   explicit inline Rgba(const T val=0): Base(val,val,val,1.0) {}
-  inline Rgba(const RGBColor val)
+  inline Rgba(const RGBColor& val)
     : Base(val.r(),val.g(),val.b(),static_cast<T>(1)) {}
   //-- construction method
   //------------------------------
@@ -141,6 +142,7 @@ const RGBColor MAGENTA(255,0,255);
 
 } // namespace image
 } // namespace openMVG
+} // namespace cctag
 
 #endif // OPENMVG_IMAGE_PIXELTYPES_HPP
 

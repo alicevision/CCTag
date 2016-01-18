@@ -4,12 +4,12 @@
 #include <fstream>
 #include <string.h>
 #include <cuda_runtime.h>
+#include <sys/mman.h>
 #include "debug_macros.hpp"
+#include "pinned_counters.h"
 
 #include "frame.h"
 #include "cctag/talk.hpp"
-// #include "clamp.h"
-// #include "frame_gaussian.h"
 
 namespace popart {
 
@@ -19,19 +19,44 @@ using namespace std;
  * Frame
  *************************************************************/
 
-Frame::Frame( uint32_t width, uint32_t height, int my_layer )
+Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe )
     : _layer( my_layer )
     , _h_debug_hyst_edges( 0 )
-    , _h_debug_edges( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
-    , _wait_done( 0 )
+    , _meta( my_pipe, my_layer )
+    , _all_edgecoords( _meta, List_size_all_edgecoords )
+    , _voters( _meta, List_size_voters )
+    , _v_chosen_idx( _meta, List_size_chosen_idx )
+    , _inner_points( _meta, List_size_inner_points )
+    , _interm_inner_points( _meta, List_size_interm_inner_points )
+    , _image_to_upload( 0 )
 {
-#warning This should be unique
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
+#ifndef EDGE_LINKING_HOST_SIDE
     _h_ring_output.data = 0;
+#endif
 
+    if( download_stream != 0 ) {
+        _private_download_stream = false;
+        _download_stream = download_stream;
+    } else {
+        _private_download_stream = true;
+        cudaStreamCreateWithFlags( &_download_stream, cudaStreamNonBlocking );
+    }
     POP_CUDA_STREAM_CREATE( &_stream );
+
+    // POP_CUDA_EVENT_CREATE( &_download_ready_event );
+    // at least in older CUDA versions, events blocked parallelism
+    cudaEventCreateWithFlags( &_stream_done,                      cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_stream_done,             cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.plane,       cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.dxdy,        cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.magmap,      cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.edgecoords1, cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.edgecoords2, cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.descent1,    cudaEventDisableTiming);
+    cudaEventCreateWithFlags( &_download_ready_event.descent2,    cudaEventDisableTiming);
 
     size_t pitch;
     POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width, height );
@@ -54,10 +79,24 @@ Frame::~Frame( )
 
     // host-side plane for debugging
     delete [] _h_debug_hyst_edges;
-    delete [] _h_debug_edges;
 
     // required host-side planes
     delete _texture;
+
+    cudaEventDestroy( _stream_done );
+    cudaEventDestroy( _download_stream_done );
+    cudaEventDestroy( _download_ready_event.plane );
+    cudaEventDestroy( _download_ready_event.dxdy );
+    cudaEventDestroy( _download_ready_event.magmap );
+    cudaEventDestroy( _download_ready_event.edgecoords1 );
+    cudaEventDestroy( _download_ready_event.edgecoords2 );
+    cudaEventDestroy( _download_ready_event.descent1 );
+    cudaEventDestroy( _download_ready_event.descent2 );
+
+    if( _private_download_stream ) {
+        POP_CUDA_STREAM_DESTROY( _download_stream );
+    }
+    POP_CUDA_STREAM_DESTROY( _stream );
 }
 
 void Frame::upload( const unsigned char* image )
@@ -68,13 +107,29 @@ void Frame::upload( const unsigned char* image )
            << " dest pitch=" << _d_plane.step
            << " height=" << _d_plane.rows
            << endl;)
+
+    // pin the image to memory
+    _image_to_upload = image;
+
+    mlock( _image_to_upload, getWidth() * getHeight() );
+
     POP_CUDA_MEMCPY_2D_ASYNC( _d_plane.data,
                               getPitch(),
-                              image,
+                              _image_to_upload,
                               getWidth(),
                               getWidth(),
                               getHeight(),
-                              cudaMemcpyHostToDevice, _stream );
+                              cudaMemcpyHostToDevice,
+                              _stream );
+}
+
+void Frame::uploadComplete( )
+{
+    // unpin the image
+    if( _image_to_upload != 0 ) {
+        munlock( _image_to_upload, getWidth() * getHeight() );
+        _image_to_upload = 0;
+    }
 }
 
 void Frame::createTexture( FrameTexture::Kind kind )
@@ -84,6 +139,7 @@ void Frame::createTexture( FrameTexture::Kind kind )
     _texture = new FrameTexture( _d_plane );
 }
 
+#if 0
 __global__
 void cu_fill_from_frame( unsigned char* dst, uint32_t pitch, uint32_t width, uint32_t height, unsigned char* src, uint32_t spitch, uint32_t swidth, uint32_t sheight )
 {
@@ -114,34 +170,7 @@ void Frame::fillFromFrame( Frame& src )
         ( _d_plane, getPitch(), getWidth(), getHeight(), src._d_plane, src.getPitch(), src.getWidth(), src.getHeight() );
     POP_CHK_CALL_IFSYNC;
 }
-
-__global__
-// void cu_fill_from_texture( unsigned char* dst, uint32_t pitch, uint32_t width, uint32_t height, cudaTextureObject_t tex )
-void cu_fill_from_texture( cv::cuda::PtrStepSzb dst, cudaTextureObject_t tex )
-{
-    uint32_t idy = blockIdx.y;
-    uint32_t idx = blockIdx.x * 32 + threadIdx.x;
-    if( idy >= dst.rows ) return;
-    if( idx >= dst.step ) return;
-    bool nix = ( idx < dst.cols );
-    float d = tex2D<float>( tex, float(idx)/float(dst.cols), float(idy)/float(dst.rows) );
-    dst.ptr(idy)[idx] = nix ? (unsigned char)( d * 255 ) : 0;
-}
-
-void Frame::fillFromTexture( Frame& src )
-{
-    dim3 grid;
-    dim3 block;
-    block.x = 32;
-    grid.x  = ( getWidth() / 32 ) + ( getWidth() % 32 == 0 ? 0 : 1 );
-    grid.y  = getHeight();
-
-    cu_fill_from_texture
-        <<<grid,block,0,_stream>>>
-        // ( _d_plane, getPitch(), getWidth(), getHeight(), src.getTex() );
-        ( _d_plane, src.getTex() );
-    POP_CHK_CALL_IFSYNC;
-}
+#endif
 
 void Frame::deleteTexture( )
 {
@@ -151,50 +180,26 @@ void Frame::deleteTexture( )
 
 void Frame::allocUploadEvent( )
 {
-    _wait_for_upload = new FrameEvent;
-
     cudaError_t err;
-    err = cudaEventCreateWithFlags( _wait_for_upload, cudaEventDisableTiming );
+    err = cudaEventCreateWithFlags( &_wait_for_upload, cudaEventDisableTiming );
     POP_CUDA_FATAL_TEST( err, "Could not create a non-timing event: " );
 }
 
 void Frame::deleteUploadEvent( )
 {
-    if( not _wait_for_upload ) return;
-    cudaEventDestroy( *_wait_for_upload );
-    delete _wait_for_upload;
+    cudaEventDestroy( _wait_for_upload );
 }
 
-FrameEvent Frame::addUploadEvent( )
+void Frame::addUploadEvent( )
 {
     cudaError_t err;
-    err = cudaEventRecord( *_wait_for_upload, _stream );
+    err = cudaEventRecord( _wait_for_upload, _stream );
     POP_CUDA_FATAL_TEST( err, "Could not insert an event into a stream: " );
-    return *_wait_for_upload;
 }
 
-void Frame::allocDoneEvent( )
+cudaEvent_t Frame::getUploadEvent( )
 {
-    _wait_done = new FrameEvent;
-
-    cudaError_t err;
-    err = cudaEventCreateWithFlags( _wait_done, cudaEventDisableTiming );
-    POP_CUDA_FATAL_TEST( err, "Could not create a non-timing event: " );
-}
-
-void Frame::deleteDoneEvent( )
-{
-    if( not _wait_done ) return;
-    cudaEventDestroy( *_wait_done );
-    delete _wait_done;
-}
-
-FrameEvent Frame::addDoneEvent( )
-{
-    cudaError_t err;
-    err = cudaEventRecord( *_wait_done, _stream );
-    POP_CUDA_FATAL_TEST( err, "Could not insert an event into a stream: " );
-    return *_wait_done;
+    return _wait_for_upload;
 }
 
 void Frame::streamSync( )
@@ -202,7 +207,7 @@ void Frame::streamSync( )
     cudaStreamSynchronize( _stream );
 }
 
-void Frame::streamSync( FrameEvent ev )
+void Frame::streamSync( cudaEvent_t ev )
 {
     cudaStreamWaitEvent( _stream, ev, 0 );
 }

@@ -1,5 +1,4 @@
-#ifndef _CCTAG_CCTAG_IDENTIFICATION_HPP_
-#define	_CCTAG_CCTAG_IDENTIFICATION_HPP_
+#pragma once
 
 #include <cctag/visualDebug.hpp>
 #include <cctag/ellipseGrowing.hpp>
@@ -35,6 +34,11 @@
 
 //#define NAIVE_SELECTCUT
 
+namespace popart {
+class TagPipe;
+class NearbyPoint;
+};
+
 namespace cctag {
 namespace identification {
 
@@ -50,16 +54,44 @@ enum NeighborType {
  *   ii) the outer ellipse + the obtained imaged center delivers the image->cctag homography
  *   iii) the rectified 1D signals are read and deliver the ID via a nearest neighbour
  *        approach where the distance to the cctag bank's profiles used is the one described in [Orazio et al. 2011]
+ * @param[in] tagIndex a sequence number assigned to this tag
  * @param[in] cctag whose center is to be optimized in conjunction with its associated homography.
+ * @param[out] vSelectedCuts step 1 does nothing else than create cuts for this tag
  * @param[in] radiusRatios bank of radius ratios along with their associated IDs.
  * @param[in] src original gray scale image (original scale, uchar)
  * @param[in] params set of parameters
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
-int identify(
+int identify_step_1(
+    const int tagIndex,
+	const CCTag & cctag,
+    std::vector<cctag::ImageCut>& vSelectedCuts,
+	// const std::vector< std::vector<double> > & radiusRatios,
+	const cv::Mat & src,
+    // popart::TagPipe* pipe,
+	const cctag::Parameters & params);
+
+/**
+ * @brief Identify a marker:
+ *   i) its imaged center is optimized: A. 1D image cuts are selected ; B. the optimization is performed 
+ *   ii) the outer ellipse + the obtained imaged center delivers the image->cctag homography
+ *   iii) the rectified 1D signals are read and deliver the ID via a nearest neighbour
+ *        approach where the distance to the cctag bank's profiles used is the one described in [Orazio et al. 2011]
+ * @param[in] tagIndex a sequence number assigned to this tag
+ * @param[in] cctag whose center is to be optimized in conjunction with its associated homography.
+ * @param[in] vSelectedCuts pre-generated cuts
+ * @param[in] radiusRatios bank of radius ratios along with their associated IDs.
+ * @param[in] src original gray scale image (original scale, uchar)
+ * @param[in] params set of parameters
+ * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
+ */
+int identify_step_2(
+    const int tagIndex,
 	CCTag & cctag,
+    std::vector<cctag::ImageCut>& vSelectedCuts,
 	const std::vector< std::vector<double> > & radiusRatios,
 	const cv::Mat & src,
+    popart::TagPipe* pipe,
 	const cctag::Parameters & params);
 
 typedef std::vector< std::vector<double> > RadiusRatioBank;
@@ -248,7 +280,6 @@ void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use
         const cv::Mat & src,
         const cv::Mat & dx,
         const cv::Mat & dy );
-}
 #endif // NAIVE_SELECTCUT
 
 /**
@@ -267,6 +298,7 @@ void getSignals(
  * @brief Compute the optimal homography/imaged center based on the 
  * signal in the image and  the outer ellipse, supposed to be image the unit circle.
  * 
+ * @param[in] tagIndex a sequence number for this tag
  * @param[out] mHomography image->cctag homography to optimize
  * @param[out] optimalPoint imaged center to optimize
  * @param[out] vCuts cuts holding the rectified 1D signals at the end of the optimization
@@ -276,12 +308,15 @@ void getSignals(
  * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
+        const int tagIndex,
         cctag::numerical::BoundedMatrix3x3d & mHomography,
         Point2dN<double> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
+        popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::Parameters params);
+        const cctag::Parameters params,
+        popart::NearbyPoint* cctag_pointer_buffer );
 
 /**
  * @brief Convex optimization of the imaged center within a point's neighbourhood.
@@ -293,7 +328,9 @@ bool refineConicFamilyGlob(
  * @param[in] neighbourSize size of the neighbourhood to consider relatively to the outer ellipse dimensions
  * @param[in] gridNSample number of sample points along one dimension of the neighbourhood (e.g. grid)
  * @param[in] src source gray (uchar) image
+ * @param[inout] cudaPipe CUDA object handle, changing
  * @param[in] outerEllipse outer ellipse
+ * @param[in] params Parameters read from config file
  */
 bool imageCenterOptimizationGlob(
         cctag::numerical::BoundedMatrix3x3d & mHomography,
@@ -301,9 +338,9 @@ bool imageCenterOptimizationGlob(
         cctag::Point2dN<double> & center,
         double & minRes,
         const double neighbourSize,
-        const std::size_t gridNSample,
         const cv::Mat & src, 
-        const cctag::numerical::geometry::Ellipse & outerEllipse);
+        const cctag::numerical::geometry::Ellipse & outerEllipse,
+        const cctag::Parameters params );
 
 
 /**
@@ -459,4 +496,3 @@ bool orazioDistance(
 } // namespace identification
 } // namespace cctag
 
-#endif

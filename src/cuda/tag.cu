@@ -1,25 +1,40 @@
 #include "tag.h"
 #include "frame.h"
+#include "frameparam.h"
 #include "debug_macros.hpp"
 #include "keep_time.hpp"
+#include "pinned_counters.h"
 #include <sstream>
 #include <iostream>
 #include <fstream>
 
 #include "debug_image.h"
 #include "cctag/talk.hpp"
+#include "cuda/geom_ellipse.h"
+#include "cctag/algebra/matrix/Matrix.hpp"
+
+#include "cctag/logtime.hpp"
+#include "cuda/onoff.h"
+#include "cuda/tag_threads.h"
+#include "cuda/tag_cut.h"
 
 using namespace std;
 
 namespace popart
 {
+__host__
+TagPipe::TagPipe( const cctag::Parameters& params )
+    : _params( params )
+{
+}
 
 __host__
 void TagPipe::initialize( const uint32_t pix_w,
                           const uint32_t pix_h,
-                          const cctag::Parameters& params )
+                          cctag::logtime::Mgmt* durations )
 {
-    DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
+    PinnedCounters::init( );
+
     static bool tables_initialized = false;
     if( not tables_initialized ) {
         tables_initialized = true;
@@ -27,180 +42,209 @@ void TagPipe::initialize( const uint32_t pix_w,
         Frame::initThinningTable( );
     }
 
-    int num_layers = params._numberOfMultiresLayers;
+    FrameParam::init( _params );
+
+    int num_layers = _params._numberOfMultiresLayers;
     _frame.reserve( num_layers );
 
     uint32_t w = pix_w;
     uint32_t h = pix_h;
+    popart::Frame* f;
+#ifdef USE_ONE_DOWNLOAD_STREAM
+    cudaStream_t download_stream = 0;
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( new popart::Frame( w, h, i ) ); // sync
+        _frame.push_back( f = new popart::Frame( w, h, i, download_stream ) ); // sync
+        if( i==0 ) { download_stream = f->_download_stream; assert( download_stream != 0 ); }
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
+#else
+    for( int i=0; i<num_layers; i++ ) {
+        _frame.push_back( f = new popart::Frame( w, h, i, 0 ) ); // sync
+        w = ( w >> 1 ) + ( w & 1 );
+        h = ( h >> 1 ) + ( h & 1 );
+    }
+#endif
 
     _frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float); // sync
     _frame[0]->allocUploadEvent( ); // sync
 
     for( int i=0; i<num_layers; i++ ) {
-        _frame[i]->allocRequiredMem( params ); // sync
-        _frame[i]->allocDoneEvent( ); // sync
+        _frame[i]->allocRequiredMem( _params ); // sync
     }
 
-    DO_TALK( cerr << "Leave " << __FUNCTION__ << endl; )
+    _threads.init( this, num_layers );
+}
+
+__host__
+void TagPipe::release( )
+{
+    int numTags = _tag_streams.size();
+    for( int i=0; i<numTags; i++ ) {
+        POP_CUDA_STREAM_DESTROY( _tag_streams[i] );
+    }
+    _tag_streams.clear();
+
+    PinnedCounters::release( );
+}
+
+__host__
+uint32_t TagPipe::getWidth(  size_t layer ) const
+{
+    return _frame[layer]->getWidth();
+}
+
+__host__
+uint32_t TagPipe::getHeight( size_t layer ) const
+{
+    return _frame[layer]->getHeight();
 }
 
 __host__
 void TagPipe::load( unsigned char* pix )
 {
-    DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
-
-    KeepTime t( _frame[0]->_stream );
-    t.start();
-
     _frame[0]->upload( pix ); // async
-
-    t.stop();
-    t.report( "Time for frame upload " );
-
-    DO_TALK( cerr << "Leave " << __FUNCTION__ << endl; )
+    _frame[0]->addUploadEvent( ); // async
 }
 
 __host__
-void TagPipe::tagframe( const cctag::Parameters& params )
+void TagPipe::tagframe( )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
+    _threads.oneRound( );
+}
 
-    int num_layers = _frame.size();
+__host__
+void TagPipe::handleframe( int i )
+{
+#ifdef SHOW_DETAILED_TIMING
+    KeepTime* time_gauss;
+    KeepTime* time_mag;
+    KeepTime* time_hyst;
+    KeepTime* time_thin;
+    KeepTime* time_desc;
+    KeepTime* time_vote;
+    time_gauss = new KeepTime( _frame[i]->_stream );
+    time_mag   = new KeepTime( _frame[i]->_stream );
+    time_hyst  = new KeepTime( _frame[i]->_stream );
+    time_thin  = new KeepTime( _frame[i]->_stream );
+    time_desc  = new KeepTime( _frame[i]->_stream );
+    time_vote  = new KeepTime( _frame[i]->_stream );
+#endif
 
-#ifndef NDEBUG
-    KeepTime* time_gauss[num_layers];
-    KeepTime* time_mag  [num_layers];
-    KeepTime* time_hyst [num_layers];
-    KeepTime* time_thin [num_layers];
-    KeepTime* time_desc [num_layers];
-    KeepTime* time_vote [num_layers];
-    for( int i=0; i<num_layers; i++ ) {
-        time_gauss[i] = new KeepTime( _frame[i]->_stream );
-        time_mag  [i] = new KeepTime( _frame[i]->_stream );
-        time_hyst [i] = new KeepTime( _frame[i]->_stream );
-        time_thin [i] = new KeepTime( _frame[i]->_stream );
-        time_desc [i] = new KeepTime( _frame[i]->_stream );
-        time_vote [i] = new KeepTime( _frame[i]->_stream );
-    }
-#endif // not NDEBUG
+    _frame[i]->initRequiredMem( ); // async
 
-    KeepTime t( _frame[0]->_stream );
-    t.start();
+    cudaEvent_t ev = _frame[0]->getUploadEvent( ); // async
 
-    for( int i=0; i<num_layers; i++ ) {
-        _frame[i]->initRequiredMem( ); // async
-    }
-
-    FrameEvent ev = _frame[0]->addUploadEvent( ); // async
-
-    for( int i=1; i<num_layers; i++ ) {
+    if( i > 0 ) {
         _frame[i]->streamSync( ev ); // aysnc
+        _frame[i]->uploadComplete( ); // unpin image
         _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
-        // _frame[i]->fillFromFrame( *(_frame[0]) );
     }
 
-    for( int i=0; i<num_layers; i++ ) {
-        bool success;
-#ifndef NDEBUG
-        time_gauss[i]->start();
-        _frame[i]->applyGauss( params ); // async
-        time_gauss[i]->stop();
-        POP_CHK_CALL_IFSYNC;
-        time_mag[i]->start();
-        _frame[i]->applyMag(   params );  // async
-        time_mag[i]->stop();
-        POP_CHK_CALL_IFSYNC;
-        time_hyst[i]->start();
-        _frame[i]->applyHyst(  params );  // async
-        POP_CHK_CALL_IFSYNC;
-        time_hyst[i]->stop();
-        time_thin[i]->start();
-        _frame[i]->applyThinning(  params );  // async
-        time_thin[i]->stop();
-        POP_CHK_CALL_IFSYNC;
-        time_desc[i]->start();
-        success = _frame[i]->applyDesc(  params );  // async
-        time_desc[i]->stop();
-        POP_CHK_CALL_IFSYNC;
+#ifdef SHOW_DETAILED_TIMING
+#error SHOW_DETAILED_TIMING needs to be rewritten
+    time_gauss->start();
+    time_gauss->stop();
+    time_mag->start();
+    time_mag->stop();
+    time_hyst->start();
+    time_hyst->stop();
+    time_thin->start();
+    time_thin->stop();
+    time_desc->start();
+    time_desc->stop();
+    time_vote->start();
+    time_vote->stop();
+#endif // not SHOW_DETAILED_TIMING
 
-        if( not success ) continue;
+    // note: without visual debug, only level 0 performs download
+    _frame[i]->applyPlaneDownload(); // async
 
-        time_vote[i]->start();
-        _frame[i]->applyVote(  params );  // async
-        time_vote[i]->stop();
-        POP_CHK_CALL_IFSYNC;
-#else
-        _frame[i]->applyGauss( params ); // async
-        POP_CHK_CALL_IFSYNC;
-        _frame[i]->applyMag(   params );  // async
-        POP_CHK_CALL_IFSYNC;
-        _frame[i]->applyHyst(  params );  // async
-        POP_CHK_CALL_IFSYNC;
-        _frame[i]->applyThinning(  params );  // async
-        POP_CHK_CALL_IFSYNC;
-        success = _frame[i]->applyDesc(  params );  // async
-        POP_CHK_CALL_IFSYNC;
+    _frame[i]->applyGauss( _params ); // async
+    _frame[i]->applyMag();  // async
 
-        if( not success ) continue;
+    _frame[i]->applyHyst();  // async
+    _frame[i]->applyThinning();  // async
 
-        _frame[i]->applyVote(  params );  // async
-        POP_CHK_CALL_IFSYNC;
+    _frame[i]->applyDesc();  // async
+    _frame[i]->applyVoteConstructLine();  // async
+    _frame[i]->applyVoteSortUniq();  // async
+
+    _frame[i]->applyGaussDownload(); // async
+    _frame[i]->applyMagDownload();
+    _frame[i]->applyThinDownload(); // sync
+
+    _frame[i]->applyVoteEval();  // async
+    _frame[i]->applyVoteIf();  // async
+
+    _frame[i]->applyVoteDownload();   // sync!
+
+    cudaStreamSynchronize( _frame[i]->_stream );
+    cudaStreamSynchronize( _frame[i]->_download_stream );
+
+
+#ifdef SHOW_DETAILED_TIMING
+    time_gauss->report( "time for Gauss " );
+    time_mag  ->report( "time for Mag   " );
+    time_hyst ->report( "time for Hyst  " );
+    time_thin ->report( "time for Thin  " );
+    time_desc ->report( "time for Desc  " );
+    time_vote ->report( "time for Vote  " );
+    delete time_gauss;
+    delete time_mag;
+    delete time_hyst;
+    delete time_thin;
+    delete time_desc;
+    delete time_vote;
 #endif // not NDEBUG
-
-        // _frame[i]->applyLink(  params );  // async
-    }
-
-    FrameEvent doneEv[num_layers];
-    for( int i=1; i<num_layers; i++ ) {
-        doneEv[i] = _frame[i]->addDoneEvent( ); // async
-    }
-    for( int i=1; i<num_layers; i++ ) {
-        _frame[0]->streamSync( doneEv[i] ); // aysnc
-    }
-    t.stop();
-    t.report( "Time for all frames " );
-
-#ifndef NDEBUG
-    for( int i=0; i<num_layers; i++ ) {
-        DO_TALK(
-          time_gauss[i]->report( "time for Gauss " );
-          time_mag  [i]->report( "time for Mag   " );
-          time_hyst [i]->report( "time for Hyst  " );
-          time_thin [i]->report( "time for Thin  " );
-          time_desc [i]->report( "time for Desc  " );
-          time_vote [i]->report( "time for Vote  " );
-        )
-        delete time_gauss[i];
-        delete time_mag  [i];
-        delete time_hyst [i];
-        delete time_thin [i];
-        delete time_desc [i];
-        delete time_vote [i];
-    }
-#endif // not NDEBUG
-
-    // cerr << "Leave " << __FUNCTION__ << endl;
 }
 
 __host__
-void TagPipe::download( size_t                          layer,
-                        std::vector<cctag::EdgePoint>&  vPoints,
-                        cctag::EdgePointsImage&         edgeImage,
-                        std::vector<cctag::EdgePoint*>& seeds,
-                        cctag::WinnerMap&               winners )
+void TagPipe::convertToHost( size_t                          layer,
+                             std::vector<cctag::EdgePoint>&  vPoints,
+                             cctag::EdgePointsImage&         edgeImage,
+                             std::vector<cctag::EdgePoint*>& seeds,
+                             cctag::WinnerMap&               winners )
 {
-    // cerr << "Enter " << __FUNCTION__ << endl;
-
     assert( layer < _frame.size() );
 
     _frame[layer]->applyExport( vPoints, edgeImage, seeds, winners );
 
-    // cerr << "Leave " << __FUNCTION__ << endl;
+}
+
+__host__
+cv::Mat* TagPipe::getPlane( size_t layer ) const
+{
+    assert( layer < getNumOctaves() );
+    return _frame[layer]->getPlane();
+}
+
+__host__
+cv::Mat* TagPipe::getDx( size_t layer ) const
+{
+    assert( layer < getNumOctaves() );
+    return _frame[layer]->getDx();
+}
+
+__host__
+cv::Mat* TagPipe::getDy( size_t layer ) const
+{
+    assert( layer < getNumOctaves() );
+    return _frame[layer]->getDy();
+}
+
+__host__
+cv::Mat* TagPipe::getMag( size_t layer ) const
+{
+    assert( layer < getNumOctaves() );
+    return _frame[layer]->getMag();
+}
+
+__host__
+cv::Mat* TagPipe::getEdges( size_t layer ) const
+{
+    assert( layer < getNumOctaves() );
+    return _frame[layer]->getEdges();
 }
 
 __host__
@@ -431,6 +475,167 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
     }
 
     delete [] plane.data;
+}
+
+__host__
+void TagPipe::imageCenterOptLoop(
+    const int                                  tagIndex,
+    const cctag::numerical::geometry::Ellipse& ellipse,
+    const cctag::Point2dN<double>&             center,
+    const int                                  vCutSize,
+    const cctag::Parameters&                   params,
+    NearbyPoint*                               cctag_pointer_buffer )
+{
+    popart::geometry::ellipse e( ellipse.matrix()(0,0),
+                                 ellipse.matrix()(0,1),
+                                 ellipse.matrix()(0,2),
+                                 ellipse.matrix()(1,0),
+                                 ellipse.matrix()(1,1),
+                                 ellipse.matrix()(1,2),
+                                 ellipse.matrix()(2,0),
+                                 ellipse.matrix()(2,1),
+                                 ellipse.matrix()(2,2),
+                                 ellipse.center().x(),
+                                 ellipse.center().y(),
+                                 ellipse.a(),
+                                 ellipse.b(),
+                                 ellipse.angle() );
+    float2 f = make_float2( center.x(), center.y() );
+
+    popart::geometry::matrix3x3 bestHomography;
+
+    _frame[0]->imageCenterOptLoop( tagIndex,
+                                   _tag_streams[tagIndex],
+                                   e,
+                                   f,
+                                   vCutSize,
+                                   params,
+                                   cctag_pointer_buffer );
+}
+
+__host__
+bool TagPipe::imageCenterRetrieve(
+    const int                                  tagIndex,
+    cctag::Point2dN<double>&                   center,
+    cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+    const cctag::Parameters&                   params,
+    NearbyPoint*                               cctag_pointer_buffer )
+{
+    float2                      bestPoint;
+    popart::geometry::matrix3x3 bestHomography;
+
+    bool success = _frame[0]->imageCenterRetrieve( tagIndex,
+                                                   _tag_streams[tagIndex],
+                                                   bestPoint,
+                                                   bestHomography,
+                                                   params,
+                                                   cctag_pointer_buffer );
+
+    if( success ) {
+        center.x() = bestPoint.x;
+        center.y() = bestPoint.y;
+
+    #pragma unroll
+    for( int i=0; i<3; i++ ) {
+        #pragma unroll
+        for( int j=0; j<3; j++ ) {
+                bestHomographyOut(i,j) = bestHomography(i,j);
+            }
+        }
+    }
+    return success;
+}
+
+/** How much GPU-side memory do we need?
+ *  For each tag (numTags), we need gridNSample^2  nearby points.
+ *  For each tag (numTags) and each nearby point (gridNSample^2), we
+ *    need a signal buffer (sizeof(CutSignals)).
+ *    Note that sizeof(CutSignals) must also be >=
+ *    sizeof(float) * sampleCutLength + sizeof(uint32_t)
+ *  For each tag (numTags), we need space for max cut size
+ *    (params._numCutsInIdentStep) cuts without the signals.
+ */
+void TagPipe::checkTagAllocations( const int                numTags,
+                                   const cctag::Parameters& params )
+{
+    const size_t gridNSample   = params._imagedCenterNGridSample;
+
+    const size_t g = numTags * gridNSample * gridNSample;
+
+    if( g*sizeof(NearbyPoint) > _frame[0]->getNearbyPointBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold point search results"
+             << endl;
+        exit( -1 );
+    }
+
+    if( g*sizeof(identification::CutSignals) > _frame[0]->getSignalBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold all signal buffers"
+             << endl;
+        exit( -1 );
+    }
+
+    if( numTags * params._numCutsInIdentStep * sizeof(identification::CutStruct) > _frame[0]->getCutStructBufferByteSize() ) {
+        cerr << __FILE__ << ":" << __LINE__
+             << "ERROR: re-interpreted image plane too small to hold all intermediate homographies" << endl;
+        exit( -1 );
+    }
+}
+
+__host__
+void TagPipe::uploadCuts( int                                 numTags,
+                          const std::vector<cctag::ImageCut>* vCuts,
+                          const cctag::Parameters&            params )
+{
+    if( numTags == 0 || vCuts == 0 || vCuts->size() == 0 ) return;
+
+    identification::CutStruct* csptr_base = _frame[0]->getCutStructBufferHost();
+
+    const int max_cuts_per_Tag = params._numCutsInIdentStep;
+
+    for( int tagIndex=0; tagIndex<numTags; tagIndex++ ) {
+        identification::CutStruct* csptr;
+        
+        csptr = &csptr_base[tagIndex * max_cuts_per_Tag];
+
+#if 1
+// #ifndef NDEBUG
+        if( vCuts[tagIndex].size() > max_cuts_per_Tag ) {
+            cerr << __FILE__ << "," << __LINE__ << ":" << endl
+                 << "    Programming error: assumption that number of cuts for a single tag is < params._numCutsInIdentStep is wrong" << endl;
+            exit( -1 );
+        }
+#endif // NDEBUG
+
+        std::vector<cctag::ImageCut>::const_iterator vit  = vCuts[tagIndex].begin();
+        std::vector<cctag::ImageCut>::const_iterator vend = vCuts[tagIndex].end();
+
+        for( ; vit!=vend; vit++ ) {
+            csptr->start.x     = vit->start().getX();
+            csptr->start.y     = vit->start().getY();
+            csptr->stop.x      = vit->stop().getX();
+            csptr->stop.y      = vit->stop().getY();
+            csptr->beginSig    = vit->beginSig();
+            csptr->endSig      = vit->endSig();
+            csptr->sigSize     = vit->imgSignal().size();
+            csptr++;
+        }
+    }
+
+    POP_CHK_CALL_IFSYNC;
+    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( _frame[0]->getCutStructBuffer(),
+                                    _frame[0]->getCutStructBufferHost(),
+                                    numTags * max_cuts_per_Tag * sizeof(identification::CutStruct) );
+}
+
+void TagPipe::makeCudaStreams( int numTags )
+{
+    for( int i=_tag_streams.size(); i<numTags; i++ ) {
+        cudaStream_t stream;
+        POP_CUDA_STREAM_CREATE( &stream );
+        _tag_streams.push_back( stream );
+    }
 }
 
 }; // namespace popart

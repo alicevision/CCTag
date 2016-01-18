@@ -76,8 +76,6 @@ int main( int argc, char*argv[] )
     if( pxsz != 255 )
         usage( argv[0], string("File ") + argv[3] + string( " is not single-byte encoded" ) );
 
-    cout << "Image size is " << w1 << "x" << h1 << endl;
-
     unsigned char* data_in1 = new unsigned char[ w1 * h1 ];
     unsigned char* data_in2 = new unsigned char[ w1 * h1 ];
     if1.read( (char*)data_in1, w1 * h1 );
@@ -87,14 +85,6 @@ int main( int argc, char*argv[] )
     if( if2.fail() )
         usage( argv[0], string("File ") + argv[3] + string( " contains too few bytes" ) );
 
-    ofstream of(argv[1] );
-    if( not of.is_open() )
-        usage( argv[0], string("File ") + argv[1] + string( " could not be opened for writing" ) );
-
-    of << "P5" << endl
-       << w1 << " " << h1 << endl
-       << pxsz << endl;
-
     unsigned char* data_out = new unsigned char[ w1 * h1 ];
     uint32_t different = 0;
 
@@ -102,12 +92,24 @@ int main( int argc, char*argv[] )
         data_out[i] = (unsigned char) abs( (int)data_in1[i] - (int)data_in2[i] );
         if( data_out[i] != 0 ) different += 1;
     }
-    of.write( (const char*)data_out, w1*h1 );
+
+    if( different > 0 ) {
+        ofstream of(argv[1] );
+        if( not of.is_open() )
+            usage( argv[0], string("File ") + argv[1] + string( " could not be opened for writing" ) );
+
+        of << "P5" << endl
+           << w1 << " " << h1 << endl
+           << pxsz << endl;
+
+        of.write( (const char*)data_out, w1*h1 );
+    }
     
     if( different == 0 ) {
-        cout << "Files " << argv[1] << " and " << argv[2] << " are identical" << endl;
+        // cout << "Files " << argv[2] << " and " << argv[3] << " are identical" << endl;
     } else {
-        cout << "Files " << argv[1] << " and " << argv[2] << " differ in " << different << " bytes" << endl;
+        cout << "Image size is " << w1 << "x" << h1 << endl;
+        cout << "Files " << argv[2] << " and " << argv[3] << " differ in " << different << " bytes" << endl;
     }
 }
 

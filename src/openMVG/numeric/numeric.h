@@ -47,6 +47,7 @@
 #include <iostream>
 #include <vector>
 
+namespace cctag {
 namespace openMVG {
 
 // Check MSVC
@@ -412,6 +413,7 @@ namespace openMVG {
 
 
 } // namespace openMVG
+} // namespace cctag
 
 
 #endif  // OPENMVG_NUMERIC_NUMERIC_H

@@ -24,6 +24,7 @@
 //-- Pixel access is done with operator(y,x)
 //  [2/3/2011 pierre MOULON]
 //---------------------------
+namespace cctag {
 namespace openMVG {
 namespace image {
 
@@ -91,5 +92,6 @@ protected :
 
 } // namespace image
 } // namespace openMVG
+} // namespace cctag
 
 #endif // OPENMVG_IMAGE_IMAGE_HPP
