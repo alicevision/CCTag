@@ -25,9 +25,6 @@
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 
-#include <terry/sampler/all.hpp>
-#include <terry/sampler/resample_subimage.hpp>
-
 #include <opencv/cv.h>
 #include <opencv2/videoio.hpp>
 #include <opencv2/core/core.hpp>

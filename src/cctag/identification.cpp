@@ -23,8 +23,6 @@
 #include "cuda/tag.h"
 #endif
 
-#include <terry/sampler/all.hpp>
-
 #include <openMVG/image/sample.hpp>
 
 #include <opencv2/opencv.hpp>

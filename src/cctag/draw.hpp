@@ -6,8 +6,6 @@
 #include <cctag/boostCv/cvImage.hpp>
 #include <cctag/geometry/ellipseFromPoints.hpp>
 
-#include <terry/numeric/init.hpp>
-
 #include <boost/gil/image.hpp>
 #include <boost/foreach.hpp>
 

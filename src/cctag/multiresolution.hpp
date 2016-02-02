@@ -13,16 +13,9 @@
 #endif
 #include "cctag/logtime.hpp"
 
-#include <terry/sampler/all.hpp>
-#include <terry/sampler/resample_subimage.hpp>
-
-#include <boost/gil/image.hpp>
-
 #include <cstddef>
 #include <cmath>
 #include <vector>
-
-//#define USE_RESIZE_OCV3
 
 namespace cctag {
 
@@ -108,17 +101,12 @@ private:
 	}
 	void buildImageAtScale( Image& image, const View& srcView, const double scale )
 	{
-		using namespace boost::gil;
                 image.recreate( scale * srcView.width(), scale * srcView.height() );
-#ifndef USE_RESIZE_OCV3
-                  terry::resize_view( srcView, boost::gil::view( image ), terry::sampler::bilinear_sampler() );
-#else
                   boostCv::CvImageView cvviewSrc(srcView);
                   IplImage * img = cvviewSrc.get();
 
                   boostCv::CvImageView cvviewDst(boost::gil::view( image ));
                   cvResize(img, cvviewDst.get());
-#endif
 	}
 private:
 	View _srcView; // if we use an external source view (for root image)

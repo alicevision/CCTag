@@ -13,8 +13,6 @@
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/boostCv/cvImage.hpp>
 
-#include <terry/sampler/all.hpp>
-
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
