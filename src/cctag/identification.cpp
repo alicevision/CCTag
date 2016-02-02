@@ -23,8 +23,6 @@
 #include "cuda/tag.h"
 #endif
 
-#include <openMVG/image/sample.hpp>
-
 #include <opencv2/opencv.hpp>
 
 #include <boost/accumulators/statistics/mean.hpp>
@@ -292,14 +290,6 @@ void extractSignalUsingHomography(
     {
       // Bilinear interpolation
       cut.imgSignal()(i) = getPixelBilinear( src, xRes, yRes);
-      
-      //openMVG::image::Sampler2d<openMVG::image::SamplerCubic> sampleFunctor;
-      // //SamplerCubic
-      // //SamplerSpline64
-      // //SamplerCubic
-      // //SamplerLinear
-      // cut.imgSignal()(i) = sampleFunctor.operator()<double>( src , float(xRes), float(yRes));
-      
     }
     else
     {
@@ -347,13 +337,6 @@ void extractSignalUsingHomographyDeprec(
     if ( hp.x() >= 1.0 && hp.x() <= src.cols-1 &&
          hp.y() >= 1.0 && hp.y() <= src.rows-1 )
     {
-      // openMVG::image::Sampler2d<openMVG::image::SamplerCubic> sampleFunctor;
-      // //SamplerCubic
-      // //SamplerSpline64
-      // //SamplerCubic
-      // //SamplerLinear
-      // double pixVal = sampleFunctor.operator()<double>( src , float(hp.y()), float(hp.x()));
-      
       // Bilinear interpolation
       rectifiedCut.imgSignal()(i) = getPixelBilinear( src, hp.x(), hp.y());
     }
