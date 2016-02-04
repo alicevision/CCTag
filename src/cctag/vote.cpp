@@ -1,6 +1,6 @@
 #define BOOST_UBLAS_TYPE_CHECK 0
 
-#include <cctag/brensenham.hpp>
+#include <cctag/Bresenham.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/types.hpp>
 #include <cctag/vote.hpp>
