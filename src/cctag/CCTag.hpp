@@ -12,7 +12,7 @@
 #include <cctag/types.hpp>
 #include <cctag/ICCTag.hpp>
 #include <cctag/viewGeometry/2DTransform.hpp>
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/serialization.hpp>

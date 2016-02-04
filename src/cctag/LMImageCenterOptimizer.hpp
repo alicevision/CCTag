@@ -5,7 +5,7 @@
 
 #ifdef WITH_CMINPACK
 
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 

@@ -22,7 +22,7 @@
 #include <cctag/types.hpp>
 #include <cctag/image.hpp>
 #include <cctag/Canny.hpp>
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro
 #ifdef WITH_CUDA
 #include "cuda/tag.h"

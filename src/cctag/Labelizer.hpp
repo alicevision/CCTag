@@ -4,7 +4,7 @@
 #include <cctag/EdgePoint.hpp>
 #include <cctag/Label.hpp>
 #include <cctag/filter/thinning.hpp>
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 
 #include <opencv/cv.h>
 #include <opencv/highgui.h>

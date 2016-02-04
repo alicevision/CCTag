@@ -1,5 +1,5 @@
 #include <cctag/CCTag.hpp>
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 #include <cctag/DataSerialization.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>

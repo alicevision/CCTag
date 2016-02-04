@@ -1,6 +1,6 @@
 #include <cctag/CCTagMarkersBank.hpp>
 #include <cctag/progBase/exceptions.hpp>
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 
 #include <boost/numeric/conversion/bounds.hpp>
 #include <boost/throw_exception.hpp>

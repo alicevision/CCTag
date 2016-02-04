@@ -12,7 +12,7 @@
 #include <cctag/geometry/distance.hpp>
 #include <cctag/geometry/ellipseFromPoints.hpp>
 #include <cctag/statistic/statistic.hpp>
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 #include <cctag/visualDebug.hpp>
 
 #include <boost/foreach.hpp>

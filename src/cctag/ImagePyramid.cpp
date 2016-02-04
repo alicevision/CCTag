@@ -1,4 +1,4 @@
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 #include <cctag/ImagePyramid.hpp>
 #include <cctag/visualDebug.hpp>
 

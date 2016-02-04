@@ -2,7 +2,7 @@
 #include <cctag/ImageCut.hpp>
 #include <cctag/geometry/distance.hpp>
 #include <cctag/progBase/exceptions.hpp>
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 
 #ifdef WITH_OPTPP
 #include <OptQNewton.h>

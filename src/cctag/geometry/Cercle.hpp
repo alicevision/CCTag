@@ -4,7 +4,7 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>

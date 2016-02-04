@@ -1,4 +1,4 @@
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 #include <cctag/toolbox.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/geometry/point.hpp>

@@ -3,7 +3,7 @@
 #ifndef VISION_IMAGECENTEROPTIMIZER_HPP_
 #define	VISION_IMAGECENTEROPTIMIZER_HPP_
 
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/ImageCut.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>

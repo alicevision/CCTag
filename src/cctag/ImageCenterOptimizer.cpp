@@ -8,7 +8,7 @@
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/geometry/distance.hpp>
 #include <cctag/progBase/exceptions.hpp>
-#include <cctag/global.hpp>
+#include <cctag/Global.hpp>
 
 #include <OptQNewton.h>
 
