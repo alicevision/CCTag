@@ -2,7 +2,7 @@
 #define _CCTAG_EXCEPTIONS_HPP_
 
 #include "boost_error_info_sstream.hpp"
-#include "system/backtrace.hpp"
+#include "backtrace.hpp"
 
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/exception/errinfo_file_name.hpp>
