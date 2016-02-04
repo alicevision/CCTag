@@ -95,22 +95,12 @@ if(USE_CUDA)
 				     ${Ceres_LIBRARIES}
 				     ${CUDA_CUDADEVRT_LIBRARY} )
 
-    CUDA_ADD_EXECUTABLE( testMemoryPool
-                         applications/test/testMemoryPool.cpp )
-    TARGET_LINK_LIBRARIES( testMemoryPool CCTag
-                                          CCTagCuda
-					  ${CUDA_LIBRARIES} 
-				          ${CUDA_CUDADEVRT_LIBRARY} )
-
     install(TARGETS CCTag CCTagCuda LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 else(USE_CUDA)
     ADD_EXECUTABLE( detection ${CCTagDetect_cpp} )
     target_link_libraries( detection CCTag
                                      ${OPTPP_LIBRARIES}
 				     ${Ceres_LIBRARIES} )
-    ADD_EXECUTABLE( testMemoryPool
-                    applications/test/testMemoryPool.cpp )
-    TARGET_LINK_LIBRARIES( testMemoryPool CCTag )
 
     install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 endif(USE_CUDA)
@@ -124,8 +114,6 @@ set( FILES_TO_DEPLOY
       ./cctag/params.hpp
       ./cctag/talk.hpp
       ./cctag/CCTagMarkersBank.hpp
-      ./cctag/progBase/MemoryPool.hpp
-      ./cctag/progBase/IMemoryPool.hpp
       ./cctag/progBase/pattern/Singleton.hpp
       ./cctag/logtime.hpp)
 

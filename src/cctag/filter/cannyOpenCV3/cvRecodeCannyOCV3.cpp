@@ -452,7 +452,6 @@ void cv::RecodedCanny( InputArray _src, OutputArray _dst,
 
     CV_Assert( depth == CV_8U );
     
-    //cctag::MemoryPool::instance().allocateImagePyramid(_dst, size.width, size.height);
     //_dst.create(size, CV_8U);
 
     if (!L2gradient && (aperture_size & CV_CANNY_L2_GRADIENT) == CV_CANNY_L2_GRADIENT)
