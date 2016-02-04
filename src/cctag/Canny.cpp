@@ -1,4 +1,4 @@
-#include <cctag/canny.hpp>
+#include <cctag/Canny.hpp>
 
 #include <boost/gil/image_view.hpp>
 

@@ -12,7 +12,7 @@
 #include <cctag/geometry/ellipseFromPoints.hpp>
 #include <cctag/toolbox.hpp>
 #include <cctag/image.hpp>
-#include <cctag/canny.hpp>
+#include <cctag/Canny.hpp>
 #include <cctag/detection.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro
 

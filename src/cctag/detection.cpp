@@ -22,7 +22,7 @@
 #include <cctag/toolbox/gilTools.hpp>
 #include <cctag/types.hpp>
 #include <cctag/image.hpp>
-#include <cctag/canny.hpp>
+#include <cctag/Canny.hpp>
 #include <cctag/global.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro
 #include <cctag/fileDebug.hpp>
