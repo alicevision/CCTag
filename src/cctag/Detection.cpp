@@ -12,7 +12,7 @@
 #include <cctag/EllipseFittingWithGradient.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/point.hpp>
-#include <cctag/frame.hpp>
+//#include <cctag/frame.hpp>
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/ellipseFromPoints.hpp>

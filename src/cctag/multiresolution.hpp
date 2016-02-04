@@ -3,7 +3,7 @@
 
 #include <cctag/CCTag.hpp>
 #include <cctag/params.hpp>
-#include <cctag/frame.hpp>
+//#include <cctag/frame.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Cercle.hpp>
 #include <cctag/boostCv/cvImage.hpp>
