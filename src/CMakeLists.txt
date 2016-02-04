@@ -114,8 +114,8 @@ set( FILES_TO_DEPLOY
       ./cctag/params.hpp
       ./cctag/talk.hpp
       ./cctag/CCTagMarkersBank.hpp
-      ./cctag/progBase/pattern/Singleton.hpp
-      ./cctag/logtime.hpp)
+      ./cctag/progBase/Singleton.hpp
+      ./cctag/LogTime.hpp)
 
 foreach ( file ${FILES_TO_DEPLOY} )
 get_filename_component( dir ${file} DIRECTORY )
