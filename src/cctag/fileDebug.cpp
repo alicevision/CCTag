@@ -1,6 +1,6 @@
 #include <cctag/fileDebug.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
-#include <cctag/dataSerialization.hpp>
+#include <cctag/DataSerialization.hpp>
 
 #include <boost/filesystem.hpp>
 

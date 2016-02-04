@@ -1,6 +1,6 @@
 #include <cctag/CCTag.hpp>
 #include <cctag/global.hpp>
-#include <cctag/dataSerialization.hpp>
+#include <cctag/DataSerialization.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/statistic/statistic.hpp>
