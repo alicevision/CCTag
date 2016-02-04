@@ -20,7 +20,7 @@
 #include "cctag/geometry/Ellipse.hpp"
 #include "cctag/geometry/point.hpp"
 #include "cctag/algebra/matrix/Matrix.hpp"
-#include "cctag/logtime.hpp"
+#include "cctag/LogTime.hpp"
 
 namespace popart
 {

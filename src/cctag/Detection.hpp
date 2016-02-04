@@ -5,7 +5,7 @@
 #include <cctag/CCTagMarkersBank.hpp>
 #include <cctag/types.hpp>
 #include <cctag/params.hpp>
-#include "cctag/logtime.hpp"
+#include "cctag/LogTime.hpp"
 
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/serialization.hpp>
