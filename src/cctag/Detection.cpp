@@ -2,7 +2,7 @@
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 
-#include <cctag/fileDebug.hpp>
+#include <cctag/FileDebug.hpp>
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/Detection.hpp>
 #include <cctag/vote.hpp>
@@ -25,7 +25,6 @@
 #include <cctag/Canny.hpp>
 #include <cctag/global.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro
-#include <cctag/fileDebug.hpp>
 #ifdef WITH_CUDA
 #include "cuda/tag.h"
 #endif

@@ -1,5 +1,5 @@
 #include <cctag/visualDebug.hpp>
-#include <cctag/fileDebug.hpp>
+#include <cctag/FileDebug.hpp>
 
 #include <boost/filesystem.hpp>
 #include <opencv2/opencv.hpp>

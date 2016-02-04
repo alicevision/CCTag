@@ -1,6 +1,6 @@
 #include <cctag/EdgePoint.hpp>
 #include <cctag/Bresenham.hpp>
-#include <cctag/fileDebug.hpp>
+#include <cctag/FileDebug.hpp>
 
 #include <cctag/toolbox/gilTools.hpp>
 
