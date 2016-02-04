@@ -5,7 +5,7 @@
 
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/bindings/lapack/geev.hpp>
-#include <boostLapackExtension/ggev.hpp>
+#include <cctag/algebra/ggev.hpp> // formerly boostLapackExtension
 
 namespace cctag {
 namespace numerical {
