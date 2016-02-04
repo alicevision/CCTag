@@ -4,7 +4,7 @@
 #include <cctag/toolbox.hpp>
 #include <cctag/visualDebug.hpp>
 #include <cctag/fileDebug.hpp>
-#include <cctag/ellipseFittingWithGradient.hpp>
+#include <cctag/EllipseFittingWithGradient.hpp>
 #include <cctag/geometry/Cercle.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/global.hpp>

@@ -9,7 +9,7 @@
 #include <cctag/visualDebug.hpp>
 #include <cctag/multiresolution.hpp>
 #include <cctag/miscellaneous.hpp>
-#include <cctag/ellipseFittingWithGradient.hpp>
+#include <cctag/EllipseFittingWithGradient.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/frame.hpp>
