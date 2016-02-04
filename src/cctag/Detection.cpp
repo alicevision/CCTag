@@ -3,7 +3,7 @@
 #include <boost/gil/extension/io/png_io.hpp>
 
 #include <cctag/fileDebug.hpp>
-#include <cctag/ellipseGrowing.hpp>
+#include <cctag/EllipseGrowing.hpp>
 #include <cctag/Detection.hpp>
 #include <cctag/vote.hpp>
 #include <cctag/visualDebug.hpp>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cctag/visualDebug.hpp>
-#include <cctag/ellipseGrowing.hpp>
+#include <cctag/EllipseGrowing.hpp>
 #include <cctag/ImageCut.hpp>
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/geometry/Ellipse.hpp>

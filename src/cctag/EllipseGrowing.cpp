@@ -1,4 +1,4 @@
-#include <cctag/ellipseGrowing.hpp>
+#include <cctag/EllipseGrowing.hpp>
 #include <cctag/CCTag.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/toolbox.hpp>

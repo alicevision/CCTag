@@ -2,7 +2,7 @@
 #define VISION_MARKER_CCTAG_CCTAG_HPP
 
 #include <cctag/types.hpp>
-#include <cctag/ellipseGrowing.hpp>
+#include <cctag/EllipseGrowing.hpp>
 #include <cctag/Candidate.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/point.hpp>
