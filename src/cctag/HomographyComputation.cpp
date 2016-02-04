@@ -1,5 +1,5 @@
 #include <cctag/CCTag.hpp>
-#include <cctag/homographyComputation.hpp>
+#include <cctag/HomographyComputation.hpp>
 #include <cctag/algebra/lapack.hpp>
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/geometry/point.hpp>
