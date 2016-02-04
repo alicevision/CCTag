@@ -1,7 +1,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <string>
-#include "cmdline.hpp"
+#include "CmdLine.hpp"
 
 namespace cctag {
 

@@ -8,7 +8,7 @@
 #include "cctag/detection.hpp"
 #include "cctag/view.hpp"
 #include "cctag/image.hpp"
-#include "cctag/cmdline.hpp"
+#include "cctag/CmdLine.hpp"
 
 #ifdef WITH_CUDA
 #include "cuda/device_prop.hpp"
