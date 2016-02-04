@@ -4,7 +4,7 @@
 #include <cctag/draw.hpp>
 #include <cctag/progBase/Singleton.hpp>
 #include <cctag/geometry/point.hpp>
-#include <cctag/colors.hpp>
+#include <cctag/Colors.hpp>
 #include <cctag/CCTag.hpp>
 
 #include <boost/filesystem.hpp>
