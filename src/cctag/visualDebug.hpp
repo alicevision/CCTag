@@ -2,7 +2,7 @@
 #define	_CCTAG_CCTAG_VISUALDEBUG_HPP_
 
 #include <cctag/draw.hpp>
-#include <cctag/progBase/pattern/Singleton.hpp>
+#include <cctag/progBase/Singleton.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/colors.hpp>
 #include <cctag/CCTag.hpp>
