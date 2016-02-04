@@ -1,6 +1,6 @@
 #include <cctag/ICCTag.hpp>
 #include <cctag/CCTag.hpp>
-#include <cctag/detection.hpp>
+#include <cctag/Detection.hpp>
 #include <cctag/logtime.hpp>
 
 #include <boost/foreach.hpp>

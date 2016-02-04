@@ -5,7 +5,7 @@
 #include "cctag/fileDebug.hpp"
 #include "cctag/visualDebug.hpp"
 #include "cctag/progBase/exceptions.hpp"
-#include "cctag/detection.hpp"
+#include "cctag/Detection.hpp"
 #include "cctag/view.hpp"
 #include "cctag/image.hpp"
 #include "cctag/CmdLine.hpp"
