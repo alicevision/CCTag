@@ -7,7 +7,7 @@
 
 #include <cctag/view.hpp>
 #include <cctag/Debug.hpp>
-#include <cctag/image.hpp>
+#include <cctag/GrayConversion.hpp>
 
 #include <boost/gil/extension/io/jpeg_io.hpp>
 #include <boost/gil/extension/io/png_io.hpp>

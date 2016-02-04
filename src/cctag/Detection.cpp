@@ -16,11 +16,10 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/ellipseFromPoints.hpp>
 #include <cctag/CCTag.hpp>
-#include <cctag/identification.hpp>
+#include <cctag/Identification.hpp>
 #include <cctag/toolbox.hpp>
 #include <cctag/toolbox/gilTools.hpp>
 #include <cctag/types.hpp>
-#include <cctag/image.hpp>
 #include <cctag/Canny.hpp>
 #include <cctag/Global.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro

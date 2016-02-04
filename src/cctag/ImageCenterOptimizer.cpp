@@ -1,7 +1,7 @@
 #ifdef USE_IMAGE_CENTER_OPT // undefined. Depreciated
 
 #include <cctag/ImageCenterOptimizer.hpp>
-#include <cctag/identification.hpp>
+#include <cctag/Identification.hpp>
 #include <cctag/visualDebug.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>

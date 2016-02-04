@@ -11,7 +11,6 @@
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/geometry/ellipseFromPoints.hpp>
 #include <cctag/toolbox.hpp>
-#include <cctag/image.hpp>
 #include <cctag/Canny.hpp>
 #include <cctag/Detection.hpp>
 #include <cctag/talk.hpp> // for DO_TALK macro

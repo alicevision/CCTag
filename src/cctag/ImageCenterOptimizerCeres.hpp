@@ -19,7 +19,7 @@
 #include <boost/gil/typedefs.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
-#include "identification.hpp"
+#include "Identification.hpp"
 
 #include <cstddef>
 #include <vector>
