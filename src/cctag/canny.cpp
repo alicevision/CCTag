@@ -11,11 +11,6 @@
 #include <boost/timer.hpp>
 #endif
 
-#ifdef CCTAG_USE_TUTTLE
-#include <boost/preprocessor/stringize.hpp>
-#include <tuttle/host/InputBufferNode.hpp>
-#endif
-
 namespace cctag
 {
 
