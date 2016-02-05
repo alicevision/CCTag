@@ -3,7 +3,7 @@
 
 #include <cctag/geometry/Point.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
-#include <cctag/statistic/statistic.hpp>
+#include <cctag/Statistic.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>

@@ -11,7 +11,7 @@
 #include <cctag/Fitting.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/statistic/statistic.hpp>
+#include <cctag/Statistic.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>
 #include <cctag/CCTag.hpp>

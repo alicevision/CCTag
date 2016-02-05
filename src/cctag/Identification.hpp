@@ -8,7 +8,7 @@
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/algebra/Invert.hpp>
-#include <cctag/statistic/statistic.hpp>
+#include <cctag/Statistic.hpp>
 #include <cctag/boostCv/cvImage.hpp>
 
 #include <opencv2/imgproc/imgproc.hpp>

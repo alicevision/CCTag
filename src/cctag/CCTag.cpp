@@ -3,7 +3,7 @@
 #include <cctag/DataSerialization.hpp>
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/statistic/statistic.hpp>
+#include <cctag/Statistic.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/optimization/conditioner.hpp>

@@ -11,7 +11,7 @@
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>
-#include <cctag/statistic/statistic.hpp>
+#include <cctag/Statistic.hpp>
 #include <cctag/utils/Defines.hpp>
 #include <cctag/utils/VisualDebug.hpp>
 

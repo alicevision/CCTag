@@ -1,4 +1,4 @@
-#include "statistic.hpp"
+#include "Statistic.hpp"
 
 #include <cstdlib>
 
