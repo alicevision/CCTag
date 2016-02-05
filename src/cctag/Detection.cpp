@@ -5,7 +5,7 @@
 #include <cctag/FileDebug.hpp>
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/Detection.hpp>
-#include <cctag/vote.hpp>
+#include <cctag/Vote.hpp>
 #include <cctag/VisualDebug.hpp>
 #include <cctag/Multiresolution.hpp>
 #include <cctag/Fitting.hpp>
