@@ -1,7 +1,7 @@
 #ifndef _CCTAG_NUMERICAL_ELLIPSE_HPP_
 #define _CCTAG_NUMERICAL_ELLIPSE_HPP_
 
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>

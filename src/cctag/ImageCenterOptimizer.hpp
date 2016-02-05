@@ -4,7 +4,7 @@
 #define	VISION_IMAGECENTEROPTIMIZER_HPP_
 
 #include <cctag/Global.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <cctag/ImageCut.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/geometry/Ellipse.hpp>

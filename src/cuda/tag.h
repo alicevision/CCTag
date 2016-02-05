@@ -18,7 +18,7 @@
 #include "cctag/Types.hpp"
 #include "cctag/ImageCut.hpp"
 #include "cctag/geometry/Ellipse.hpp"
-#include "cctag/geometry/point.hpp"
+#include "cctag/geometry/Point.hpp"
 #include "cctag/algebra/matrix/Matrix.hpp"
 #include "cctag/LogTime.hpp"
 

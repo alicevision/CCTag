@@ -3,7 +3,7 @@
 
 #include <cctag/geometry/EllipseFromPoints.hpp>
 #include <cctag/progBase/Singleton.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <cctag/Colors.hpp>
 #include <cctag/CCTag.hpp>
 

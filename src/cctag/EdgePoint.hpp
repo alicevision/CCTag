@@ -1,7 +1,7 @@
 #ifndef VISION_EDGEPOINT_HPP_
 #define VISION_EDGEPOINT_HPP_
 
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 
 #include <cstddef>
 #include <sys/types.h>

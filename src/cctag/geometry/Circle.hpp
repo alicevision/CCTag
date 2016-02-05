@@ -2,7 +2,7 @@
 #define _CCTAG_NUMERICAL_CIRCLE_HPP_
 
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/Global.hpp>
 

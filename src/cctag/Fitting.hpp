@@ -3,7 +3,7 @@
 
 #include <cctag/EdgePoint.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <boost/foreach.hpp>
 
 #include <list>

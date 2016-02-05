@@ -45,7 +45,7 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <cctag/Fitting.hpp>
 #include <cmath>
 #include <float.h>

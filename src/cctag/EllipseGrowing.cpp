@@ -6,7 +6,7 @@
 #include <cctag/FileDebug.hpp>
 #include <cctag/Fitting.hpp>
 #include <cctag/geometry/Circle.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <cctag/Global.hpp>
 #include <cctag/Talk.hpp> // for DO_TALK macro
 #include <cctag/algebra/invert.hpp>

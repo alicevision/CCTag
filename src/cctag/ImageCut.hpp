@@ -1,7 +1,7 @@
 #ifndef _CCTAG_LINE_HPP_
 #define	_CCTAG_LINE_HPP_
 
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <cctag/Params.hpp>
 
 #include <boost/numeric/ublas/vector.hpp>

@@ -7,7 +7,7 @@
 
 #include <rom/numerical/algebra/matrix/Matrix.hpp>
 #include <rom/numerical/algebra/matrix/io.hpp>
-#include <rom/baseType/point.hpp>
+#include <rom/baseType/Point.hpp>
 
 #include <opencv2/legacy/compat.hpp>
 #include <opencv2/core/core_c.h>

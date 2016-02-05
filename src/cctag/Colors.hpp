@@ -1,7 +1,7 @@
 #ifndef _CCTAG_COLORS_HPP_
 #define	_CCTAG_COLORS_HPP_
 
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 
 #include <boost/array.hpp>
 

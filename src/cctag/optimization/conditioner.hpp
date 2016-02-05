@@ -1,7 +1,7 @@
 #ifndef _CCTAG_CONDITIONER_HPP_
 #define _CCTAG_CONDITIONER_HPP_
 
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/geometry/Ellipse.hpp>

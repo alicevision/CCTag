@@ -1,5 +1,5 @@
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/progBase/exceptions.hpp>
 #include <cctag/Global.hpp>

@@ -10,7 +10,7 @@
 #include <cctag/Multiresolution.hpp>
 #include <cctag/Fitting.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>

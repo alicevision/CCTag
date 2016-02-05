@@ -2,7 +2,7 @@
 #define _CCTAG_BRENSENHAM_HPP_
 
 #include <cctag/Labelizer.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 
 #include <cstddef>
 

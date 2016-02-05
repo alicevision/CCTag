@@ -5,7 +5,7 @@
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/Candidate.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>

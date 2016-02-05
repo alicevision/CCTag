@@ -1,6 +1,6 @@
 #include <cctag/Global.hpp>
 #include <cctag/geometry/Circle.hpp>
-#include <cctag/geometry/point.hpp>
+#include <cctag/geometry/Point.hpp>
 
 
 namespace cctag {
