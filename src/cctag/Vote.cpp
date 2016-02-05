@@ -13,7 +13,7 @@
 #include <cctag/geometry/EllipseFromPoints.hpp>
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/Global.hpp>
-#include <cctag/VisualDebug.hpp>
+#include <cctag/utils/VisualDebug.hpp>
 
 #include <boost/foreach.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>

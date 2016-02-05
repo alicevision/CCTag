@@ -5,7 +5,7 @@
 #include <limits>
 
 #include <cctag/Multiresolution.hpp>
-#include <cctag/VisualDebug.hpp>
+#include <cctag/utils/VisualDebug.hpp>
 #include <cctag/FileDebug.hpp>
 #include <cctag/Vote.hpp>
 #include <cctag/EllipseGrowing.hpp>

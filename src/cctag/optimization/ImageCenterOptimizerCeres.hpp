@@ -3,7 +3,7 @@
 #ifndef VISION_IMAGECENTEROPTIMIZERCERES_HPP
 #define	VISION_IMAGECENTEROPTIMIZERCERES_HPP
 
-#include <cctag/VisualDebug.hpp>
+#include <cctag/utils/VisualDebug.hpp>
 #include <cctag/Global.hpp>
 #include <cctag/geometry/Point.hpp>
 #include <cctag/ImageCut.hpp>

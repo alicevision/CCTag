@@ -3,7 +3,7 @@
 #include <boost/gil/extension/io/png_io.hpp>
 
 #include "cctag/FileDebug.hpp"
-#include "cctag/VisualDebug.hpp"
+#include "cctag/utils/VisualDebug.hpp"
 #include "cctag/utils/exceptions.hpp"
 #include "cctag/Detection.hpp"
 #include "cctag/View.hpp"

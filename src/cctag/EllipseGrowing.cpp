@@ -2,7 +2,7 @@
 #include <cctag/CCTag.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/Fitting.hpp>
-#include <cctag/VisualDebug.hpp>
+#include <cctag/utils/VisualDebug.hpp>
 #include <cctag/FileDebug.hpp>
 #include <cctag/Fitting.hpp>
 #include <cctag/geometry/Circle.hpp>

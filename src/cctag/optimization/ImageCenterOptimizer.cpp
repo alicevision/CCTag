@@ -2,7 +2,7 @@
 
 #include <cctag/optimization/ImageCenterOptimizer.hpp>
 #include <cctag/Identification.hpp>
-#include <cctag/VisualDebug.hpp>
+#include <cctag/utils/VisualDebug.hpp>
 #include <cctag/geometry/Point.hpp>
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/optimization/conditioner.hpp>

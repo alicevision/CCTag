@@ -1,4 +1,4 @@
-#include <cctag/VisualDebug.hpp>
+#include <cctag/utils/VisualDebug.hpp>
 #include <cctag/FileDebug.hpp>
 
 #include <boost/filesystem.hpp>
