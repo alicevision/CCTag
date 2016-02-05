@@ -3,7 +3,7 @@
 
 #undef WITH_CUDA_COMPARE_MODE
 
-#include <cctag/utils/system.hpp>
+#include <cctag/utils/System.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Assert needs to be everywhere

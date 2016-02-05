@@ -1,7 +1,7 @@
 #ifndef _CCTAG_EXCEPTIONS_HPP_
 #define _CCTAG_EXCEPTIONS_HPP_
 
-#include "backtrace.hpp"
+#include "Backtrace.hpp"
 
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/exception/errinfo_file_name.hpp>

@@ -7,7 +7,7 @@
 //
 #define BOOST_SOURCE
 
-#include "backtrace.hpp"
+#include "Backtrace.hpp"
 
 #if defined(__linux) || defined(__APPLE__) || defined(__sun)
 #define BOOST_HAVE_EXECINFO
