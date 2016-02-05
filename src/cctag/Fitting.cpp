@@ -39,7 +39,7 @@
 #include <cctag/Fitting.hpp>
 #include <cctag/Global.hpp>
 #include <cctag/algebra/invert.hpp>
-#include <cctag/algebra/lapack.hpp>
+#include <cctag/algebra/norm.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>
 #include <cctag/geometry/Ellipse.hpp>

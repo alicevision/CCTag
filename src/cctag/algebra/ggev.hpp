@@ -1,6 +1,5 @@
 #ifndef _GGEV_HPP
 #define	_GGEV_HPP
-#include "lapack_add.h"
 #include <boost/numeric/bindings/traits/type_traits.hpp>
 #include <boost/numeric/bindings/traits/traits.hpp>
 #include <boost/numeric/bindings/lapack/lapack.h>
@@ -15,6 +14,28 @@
 
 #include <cassert>
 
+#ifdef	__cplusplus
+extern "C" {
+#endif
+
+/********************************************/
+/* generalized eigenvalue/eigenvector */
+
+
+	void LAPACK_DGGEV(char const* jobz, char *jobvr, int const* n,
+                     double* a, int const* lda, double* b, int const* ldb,
+                     double *alphar, double *alphai,
+					 double *beta, double *vl, int *ldvl, double *vr,
+					 int *ldvr, double *work, int *lwork, int *info);
+
+/********************************************/
+/* norm computation */
+
+	double LAPACK_DLANGE( char *norm, int *m, int *n, double *a, int *lda, double *work );
+
+#ifdef	__cplusplus
+}
+#endif
 
 namespace boost { namespace numeric { namespace bindings {
 

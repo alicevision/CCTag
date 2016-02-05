@@ -1,5 +1,5 @@
-#ifndef _CCTAG_NUMERICAL_LAPACK_HPP_
-#define	_CCTAG_NUMERICAL_LAPACK_HPP_
+#ifndef _CCTAG_NUMERICAL_NORM_HPP_
+#define	_CCTAG_NUMERICAL_NORM_HPP_
 
 #include <cctag/algebra/svd.hpp>
 
