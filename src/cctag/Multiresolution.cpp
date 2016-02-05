@@ -6,7 +6,7 @@
 
 #include <cctag/Multiresolution.hpp>
 #include <cctag/utils/VisualDebug.hpp>
-#include <cctag/FileDebug.hpp>
+#include <cctag/utils/FileDebug.hpp>
 #include <cctag/Vote.hpp>
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>

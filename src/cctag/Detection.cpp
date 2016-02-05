@@ -2,7 +2,7 @@
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 
-#include <cctag/FileDebug.hpp>
+#include <cctag/utils/FileDebug.hpp>
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/Detection.hpp>
 #include <cctag/Vote.hpp>

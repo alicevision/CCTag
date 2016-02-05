@@ -6,7 +6,7 @@
 #include <cctag/Vote.hpp>
 #include <cctag/Fitting.hpp>
 #include <cctag/EllipseGrowing.hpp>
-#include <cctag/FileDebug.hpp>
+#include <cctag/utils/FileDebug.hpp>
 #include <cctag/geometry/Point.hpp>
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Distance.hpp>
