@@ -1,7 +1,7 @@
 #include <cctag/SubPixEdgeOptimizer.hpp>
 #include <cctag/ImageCut.hpp>
 #include <cctag/geometry/Distance.hpp>
-#include <cctag/progBase/exceptions.hpp>
+#include <cctag/utils/exceptions.hpp>
 #include <cctag/Global.hpp>
 
 #ifdef WITH_OPTPP

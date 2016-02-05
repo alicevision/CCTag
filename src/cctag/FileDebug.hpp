@@ -2,7 +2,7 @@
 #define	_CCTAG_CCTAGOUTPUT_HPP_
 
 #include <cctag/Global.hpp>
-#include <cctag/progBase/Singleton.hpp>
+#include <cctag/utils/Singleton.hpp>
 #include <cctag/CCTag.hpp>
 
 #include <boost/ptr_container/ptr_map.hpp>

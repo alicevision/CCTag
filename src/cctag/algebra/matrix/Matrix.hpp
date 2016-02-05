@@ -1,7 +1,7 @@
 #ifndef _CCTAG_NUMERICAL_MATRIX_HPP_
 #define	_CCTAG_NUMERICAL_MATRIX_HPP_
 
-#include <cctag/progBase/Allocator.hpp>
+#include <cctag/utils/Allocator.hpp>
 
 #include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/matrix.hpp>

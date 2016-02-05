@@ -6,7 +6,7 @@
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/geometry/Distance.hpp>
-#include <cctag/progBase/exceptions.hpp>
+#include <cctag/utils/exceptions.hpp>
 #include <cctag/Global.hpp>
 
 #include <terry/sampler/all.hpp>

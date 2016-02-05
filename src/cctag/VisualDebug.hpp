@@ -2,7 +2,7 @@
 #define	_CCTAG_CCTAG_VISUALDEBUG_HPP_
 
 #include <cctag/geometry/EllipseFromPoints.hpp>
-#include <cctag/progBase/Singleton.hpp>
+#include <cctag/utils/Singleton.hpp>
 #include <cctag/geometry/Point.hpp>
 #include <cctag/Colors.hpp>
 #include <cctag/CCTag.hpp>

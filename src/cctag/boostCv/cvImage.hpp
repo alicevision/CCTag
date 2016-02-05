@@ -1,7 +1,7 @@
 #ifndef _CCTAG_CVIMAGE_HPP_
 #define	_CCTAG_CVIMAGE_HPP_
 
-#include <cctag/progBase/exceptions.hpp>
+#include <cctag/utils/exceptions.hpp>
 #include <cctag/Global.hpp>
 
 #include <boost/gil/gil_all.hpp>
