@@ -5,7 +5,7 @@
 #include <iostream>
 #include <limits>
 
-#include <cctag/view.hpp>
+#include <cctag/View.hpp>
 #include <cctag/Debug.hpp>
 #include <cctag/GrayConversion.hpp>
 
