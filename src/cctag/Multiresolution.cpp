@@ -9,7 +9,7 @@
 #include <cctag/FileDebug.hpp>
 #include <cctag/Vote.hpp>
 #include <cctag/EllipseGrowing.hpp>
-#include <cctag/geometry/ellipseFromPoints.hpp>
+#include <cctag/geometry/EllipseFromPoints.hpp>
 #include <cctag/Fitting.hpp>
 #include <cctag/Canny.hpp>
 #include <cctag/Detection.hpp>

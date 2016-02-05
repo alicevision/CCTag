@@ -13,7 +13,7 @@
 #include <cctag/geometry/point.hpp>
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/geometry/ellipseFromPoints.hpp>
+#include <cctag/geometry/EllipseFromPoints.hpp>
 #include <cctag/CCTag.hpp>
 #include <cctag/Identification.hpp>
 #include <cctag/Fitting.hpp>

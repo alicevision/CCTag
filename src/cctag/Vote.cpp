@@ -10,7 +10,7 @@
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/geometry/Distance.hpp>
-#include <cctag/geometry/ellipseFromPoints.hpp>
+#include <cctag/geometry/EllipseFromPoints.hpp>
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/Global.hpp>
 #include <cctag/VisualDebug.hpp>

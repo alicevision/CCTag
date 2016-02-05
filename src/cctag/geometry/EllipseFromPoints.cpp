@@ -1,5 +1,5 @@
 #include <cctag/Global.hpp>
-#include <cctag/geometry/ellipseFromPoints.hpp>
+#include <cctag/geometry/EllipseFromPoints.hpp>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/mat.hpp>

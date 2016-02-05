@@ -44,7 +44,7 @@
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Distance.hpp>
-#include <cctag/geometry/ellipseFromPoints.hpp>
+#include <cctag/geometry/EllipseFromPoints.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/Fitting.hpp>
 #include <cmath>
