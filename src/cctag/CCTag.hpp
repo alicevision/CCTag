@@ -1,7 +1,7 @@
 #ifndef VISION_MARKER_CCTAG_CCTAG_HPP
 #define VISION_MARKER_CCTAG_CCTAG_HPP
 
-#include <cctag/types.hpp>
+#include <cctag/Types.hpp>
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/Candidate.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
@@ -9,7 +9,7 @@
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/types.hpp>
+#include <cctag/Types.hpp>
 #include <cctag/ICCTag.hpp>
 #include <cctag/viewGeometry/2DTransform.hpp>
 #include <cctag/Global.hpp>

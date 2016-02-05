@@ -9,7 +9,7 @@
 #include "onoff.h"
 
 #include "cctag/Params.hpp"
-#include "cctag/types.hpp"
+#include "cctag/Types.hpp"
 #include "cctag/ImageCut.hpp"
 #include "frame_07_vote.h"
 #include "triple_point.h"

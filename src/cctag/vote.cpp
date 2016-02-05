@@ -2,7 +2,7 @@
 
 #include <cctag/Bresenham.hpp>
 #include <cctag/EdgePoint.hpp>
-#include <cctag/types.hpp>
+#include <cctag/Types.hpp>
 #include <cctag/vote.hpp>
 #include <cctag/Fitting.hpp>
 #include <cctag/EllipseGrowing.hpp>

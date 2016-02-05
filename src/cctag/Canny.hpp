@@ -1,7 +1,7 @@
 #ifndef VISION_CCTAG_CANNY_HPP_
 #define VISION_CCTAG_CANNY_HPP_
 
-#include <cctag/types.hpp>
+#include <cctag/Types.hpp>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/core_c.h>

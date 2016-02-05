@@ -15,7 +15,7 @@
 
 #include "cuda/tag_threads.h"
 #include "cctag/Params.hpp"
-#include "cctag/types.hpp"
+#include "cctag/Types.hpp"
 #include "cctag/ImageCut.hpp"
 #include "cctag/geometry/Ellipse.hpp"
 #include "cctag/geometry/point.hpp"

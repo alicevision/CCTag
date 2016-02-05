@@ -18,7 +18,7 @@
 #include <cctag/Identification.hpp>
 #include <cctag/Fitting.hpp>
 #include <cctag/filter/gilTools.hpp>
-#include <cctag/types.hpp>
+#include <cctag/Types.hpp>
 #include <cctag/Canny.hpp>
 #include <cctag/Global.hpp>
 #include <cctag/Talk.hpp> // for DO_TALK macro

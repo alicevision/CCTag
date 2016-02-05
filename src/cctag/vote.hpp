@@ -3,7 +3,7 @@
 
 #include <cctag/Params.hpp>
 #include <cctag/EdgePoint.hpp>
-#include <cctag/types.hpp>
+#include <cctag/Types.hpp>
 #include <cctag/Candidate.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
