@@ -1,6 +1,6 @@
 #pragma once
  
-#include "cctag/params.hpp"
+#include "cctag/Params.hpp"
 #include <cuda_runtime.h>
 
 namespace popart {

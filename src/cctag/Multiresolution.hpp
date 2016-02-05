@@ -2,7 +2,7 @@
 #define VISION_CCTAG_MULTIRESOLUTION_HPP_
 
 #include <cctag/CCTag.hpp>
-#include <cctag/params.hpp>
+#include <cctag/Params.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Cercle.hpp>
 #include <cctag/boostCv/cvImage.hpp>

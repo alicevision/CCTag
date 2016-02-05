@@ -1,7 +1,7 @@
 #ifndef PONCTUALCCTAG_HPP
 #define	PONCTUALCCTAG_HPP
 
-#include <cctag/params.hpp>
+#include <cctag/Params.hpp>
 #include <cctag/CCTagMarkersBank.hpp>
 
 #include <boost/ptr_container/ptr_list.hpp>

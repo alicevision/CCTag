@@ -11,7 +11,7 @@
 #include <boost/thread/condition.hpp>
 
 // #include "cuda/onoff.h"
-// #include "cctag/params.hpp"
+// #include "cctag/Params.hpp"
 // #include "cctag/types.hpp"
 // #include "cctag/ImageCut.hpp"
 // #include "cctag/geometry/Ellipse.hpp"

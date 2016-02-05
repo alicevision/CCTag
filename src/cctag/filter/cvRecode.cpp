@@ -8,7 +8,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "cctag/filter/cvRecode.hpp"
-#include "cctag/params.hpp"
+#include "cctag/Params.hpp"
 #include "cctag/talk.hpp" // do DO_TALK macro
 
 #include <boost/gil/image_view.hpp>

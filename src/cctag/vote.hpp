@@ -1,7 +1,7 @@
 #ifndef VISION_CCTAG_VOTE_HPP_
 #define VISION_CCTAG_VOTE_HPP_
 
-#include <cctag/params.hpp>
+#include <cctag/Params.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/types.hpp>
 #include <cctag/Candidate.hpp>

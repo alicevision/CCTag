@@ -8,7 +8,7 @@
 // #include <opencv2/core/cuda_types.hpp>
 
 #include "frame.h"
-// #include "../cctag/params.hpp"
+// #include "../cctag/Params.hpp"
 // #include "frame_vote.h"
 #include "triple_point.h"
 
