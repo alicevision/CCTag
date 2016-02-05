@@ -10,7 +10,7 @@
 #include <cctag/vote.hpp>
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/geometry/ellipseFromPoints.hpp>
-#include <cctag/toolbox.hpp>
+#include <cctag/Fitting.hpp>
 #include <cctag/Canny.hpp>
 #include <cctag/Detection.hpp>
 #include <cctag/Talk.hpp> // for DO_TALK macro

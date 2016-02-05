@@ -8,7 +8,7 @@
 #include <cctag/vote.hpp>
 #include <cctag/visualDebug.hpp>
 #include <cctag/Multiresolution.hpp>
-#include <cctag/EllipseFittingWithGradient.hpp>
+#include <cctag/Fitting.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/statistic/statistic.hpp>
@@ -16,7 +16,7 @@
 #include <cctag/geometry/ellipseFromPoints.hpp>
 #include <cctag/CCTag.hpp>
 #include <cctag/Identification.hpp>
-#include <cctag/toolbox.hpp>
+#include <cctag/Fitting.hpp>
 #include <cctag/toolbox/gilTools.hpp>
 #include <cctag/types.hpp>
 #include <cctag/Canny.hpp>

@@ -4,7 +4,7 @@
 #include <cctag/EdgePoint.hpp>
 #include <cctag/types.hpp>
 #include <cctag/vote.hpp>
-#include <cctag/toolbox.hpp>
+#include <cctag/Fitting.hpp>
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/FileDebug.hpp>
 #include <cctag/geometry/point.hpp>
