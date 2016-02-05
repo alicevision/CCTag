@@ -16,7 +16,7 @@
 #include <cctag/LMImageCenterOptimizer.hpp>
 #endif // USE_IMAGE_CENTER_OPT
 
-#include <cctag/geometry/Cercle.hpp>
+#include <cctag/geometry/Circle.hpp>
 #include <cctag/Talk.hpp>
 
 #ifdef WITH_CUDA
@@ -1706,7 +1706,7 @@ int identify_step_2(
 
         for(const double radiusRatio : cctag.radiusRatios())
         {
-          cctag::numerical::geometry::Cercle circle(1.0 / radiusRatio);
+          cctag::numerical::geometry::Circle circle(1.0 / radiusRatio);
           ellipses.push_back(cctag::numerical::geometry::Ellipse(
                   prec_prod(trans(mInvH), prec_prod<bounded_matrix<double, 3, 3> >(circle.matrix(), mInvH))));
         }

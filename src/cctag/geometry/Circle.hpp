@@ -1,5 +1,5 @@
-#ifndef _CCTAG_NUMERICAL_CERCLE_HPP_
-#define _CCTAG_NUMERICAL_CERCLE_HPP_
+#ifndef _CCTAG_NUMERICAL_CIRCLE_HPP_
+#define _CCTAG_NUMERICAL_CIRCLE_HPP_
 
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/point.hpp>
@@ -19,19 +19,19 @@ namespace geometry {
 
 using namespace boost::numeric::ublas;
 
-class Cercle : public Ellipse
+class Circle : public Ellipse
 {
 public:
 
-	Cercle() : Ellipse() {}
+	Circle() : Ellipse() {}
 
-	Cercle( const double r );
+	Circle( const double r );
 
-	Cercle( const Point2dN<double>& center, const double r );
-	virtual ~Cercle();
+	Circle( const Point2dN<double>& center, const double r );
+	virtual ~Circle();
 
 	template <typename T>
-	Cercle( const Point2dN<T> & p1, const Point2dN<T> & p2, const Point2dN<T> & p3 )
+	Circle( const Point2dN<T> & p1, const Point2dN<T> & p2, const Point2dN<T> & p3 )
 	{
 		const T x1 = p1.x();
 		const T y1 = p1.y();

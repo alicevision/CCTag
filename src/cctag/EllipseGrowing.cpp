@@ -5,7 +5,7 @@
 #include <cctag/VisualDebug.hpp>
 #include <cctag/FileDebug.hpp>
 #include <cctag/Fitting.hpp>
-#include <cctag/geometry/Cercle.hpp>
+#include <cctag/geometry/Circle.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/Global.hpp>
 #include <cctag/Talk.hpp> // for DO_TALK macro
@@ -236,7 +236,7 @@ bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2dN<i
  * @param iMin2
  * @return the circle
  */
-numerical::geometry::Cercle computeCircleFromOuterEllipsePoints(const std::vector<EdgePoint*>& filteredChildrens, const Point2dN<int> & p1, const Point2dN<int> & p2)
+numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vector<EdgePoint*>& filteredChildrens, const Point2dN<int> & p1, const Point2dN<int> & p2)
 {
   using namespace boost::numeric::ublas;
   // Compute the line passing through filteredChildrens[iMin1] and filteredChildrens[iMin2] and
@@ -313,7 +313,7 @@ numerical::geometry::Cercle computeCircleFromOuterEllipsePoints(const std::vecto
   //CCTAG_COUT("Create a circle \n" << Point2dN<double>(p1->x(), p1->y()) << " \n " << Point2dN<double>(p2->x(), p2->y())
   //	<< " \n" << equiPoint );
 
-  numerical::geometry::Cercle resCircle(Point2dN<double>(p1.x(), p1.y()), Point2dN<double>(p2.x(), p2.y()), equiPoint);
+  numerical::geometry::Circle resCircle(Point2dN<double>(p1.x(), p1.y()), Point2dN<double>(p2.x(), p2.y()), equiPoint);
   
   return resCircle;
 }

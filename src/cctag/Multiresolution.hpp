@@ -4,7 +4,7 @@
 #include <cctag/CCTag.hpp>
 #include <cctag/Params.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/geometry/Cercle.hpp>
+#include <cctag/geometry/Circle.hpp>
 #include <cctag/boostCv/cvImage.hpp>
 #include <cctag/ImagePyramid.hpp>
 #ifdef WITH_CUDA

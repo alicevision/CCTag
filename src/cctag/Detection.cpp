@@ -304,7 +304,7 @@ void flowComponentAssembling(
   int i = 0;
 
   double ratioExpension = 2.5;
-  numerical::geometry::Cercle circularResearchArea(
+  numerical::geometry::Circle circularResearchArea(
          Point2dN<double>( candidate._seed->x(), candidate._seed->y() ),
          candidate._seed->_flowLength * ratioExpension);
 
