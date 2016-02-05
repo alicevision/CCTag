@@ -44,9 +44,9 @@ namespace std {
 #endif
 
 #ifdef DEBUG
- #include "debug.hpp"
+ #include "Debug.hpp"
 #else
- #include "release.hpp"
+ #include "Release.hpp"
 #endif
 
 #ifndef CCTAG_PAUSE
@@ -135,9 +135,9 @@ namespace std {
 ////////////////////////////////////////////////////////////////////////////////
 // Some specifics things to debug or release version
 #ifdef DEBUG
- #include "debug.hpp"
+ #include "Debug.hpp"
 #else
- #include "release.hpp"
+ #include "Release.hpp"
 #endif
 
 #ifdef CCTAG_OPTIM
