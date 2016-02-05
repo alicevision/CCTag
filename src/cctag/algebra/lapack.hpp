@@ -3,7 +3,6 @@
 
 #include <cctag/algebra/svd.hpp>
 #include <cctag/algebra/ggev.hpp> // formerly boostLapackExtension
-#include <cctag/algebra/lange.hpp>// formerly boostLapackExtension  
 
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/bindings/lapack/gesvd.hpp>
@@ -18,18 +17,6 @@
 namespace cctag {
 namespace numerical {
 
-	/**
-	 *@return Frobenius norm of the input matrix
-	 */
-	template<class MatA>
-	inline typename MatA::value_type normFro( const MatA & a )
-	{
-		using namespace boost::numeric::ublas;
-		namespace lapack = boost::numeric::bindings::lapack;
-		typedef typename MatA::value_type T;
-		matrix<T, column_major> aw = a;
-		return lapack::lange( 'F', aw );
-	}
 
 	/**
 	 *@return The largest singular value ( max( svd( a ) ) )
