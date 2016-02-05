@@ -8,7 +8,7 @@
 #include <cctag/geometry/Cercle.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/Global.hpp>
-#include <cctag/talk.hpp> // for DO_TALK macro
+#include <cctag/Talk.hpp> // for DO_TALK macro
 #include <cctag/algebra/invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 

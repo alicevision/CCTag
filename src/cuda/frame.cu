@@ -9,7 +9,7 @@
 #include "pinned_counters.h"
 
 #include "frame.h"
-#include "cctag/talk.hpp"
+#include "cctag/Talk.hpp"
 
 namespace popart {
 

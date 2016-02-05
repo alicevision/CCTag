@@ -9,7 +9,7 @@
 #include <fstream>
 
 #include "debug_image.h"
-#include "cctag/talk.hpp"
+#include "cctag/Talk.hpp"
 #include "cuda/geom_ellipse.h"
 #include "cctag/algebra/matrix/Matrix.hpp"
 

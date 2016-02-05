@@ -1,7 +1,7 @@
 #include <cctag/Level.hpp>
 #include <cctag/filter/cvRecode.hpp>
 #include <cctag/filter/thinning.hpp>
-#include "cctag/talk.hpp"
+#include "cctag/Talk.hpp"
 #ifdef WITH_CUDA
 #include "cuda/tag.h"
 #endif
