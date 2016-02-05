@@ -1,6 +1,6 @@
 #ifdef USE_IMAGE_CENTER_OPT_CERES // undefined. Depreciated
 
-#include <cctag/ImageCenterOptimizerCeres.hpp>
+#include <cctag/optimization/ImageCenterOptimizerCeres.hpp>
 #include <cctag/VisualDebug.hpp>
 #include <cctag/geometry/Point.hpp>
 #include <cctag/algebra/Invert.hpp>

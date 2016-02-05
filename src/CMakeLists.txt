@@ -81,7 +81,7 @@ SET(CCTAG_LINK_LIBRARIES
 target_link_libraries( CCTag PUBLIC ${CCTAG_LINK_LIBRARIES} )
 target_include_directories( CCTag PUBLIC .)
 
-set(CCTagDetect_cpp ./applications/detection/main.cpp)
+set(CCTagDetect_cpp ./applications/detection/main.cpp ./applications/detection/CmdLine.cpp)
 
 if(USE_CUDA)
     set_source_files_properties( ${CCTagDetect_cpp}

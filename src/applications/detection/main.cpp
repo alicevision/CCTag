@@ -7,7 +7,7 @@
 #include "cctag/utils/exceptions.hpp"
 #include "cctag/Detection.hpp"
 #include "cctag/View.hpp"
-#include "cctag/CmdLine.hpp"
+#include "CmdLine.hpp"
 
 #ifdef WITH_CUDA
 #include "cuda/device_prop.hpp"
