@@ -17,7 +17,7 @@
 #endif // USE_IMAGE_CENTER_OPT
 
 #include <cctag/geometry/Circle.hpp>
-#include <cctag/Talk.hpp>
+#include <cctag/utils/Talk.hpp>
 
 #ifdef WITH_CUDA
 #include "cuda/tag.h"

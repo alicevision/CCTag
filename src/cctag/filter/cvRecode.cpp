@@ -9,7 +9,7 @@
 
 #include "cctag/filter/cvRecode.hpp"
 #include "cctag/Params.hpp"
-#include "cctag/Talk.hpp" // do DO_TALK macro
+#include "cctag/utils/Talk.hpp" // do DO_TALK macro
 
 #include <boost/gil/image_view.hpp>
 #include <boost/timer.hpp>

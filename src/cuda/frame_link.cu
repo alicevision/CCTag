@@ -8,7 +8,7 @@
 #include "frame.h"
 #include "assist.h"
 #include "recursive_sweep.h"
-#include "cctag/Talk.hpp" // for DO_TALK macro
+#include "cctag/utils/Talk.hpp" // for DO_TALK macro
 
 #undef  ONE_THREAD_ONLY // doesn't work?
 #undef  KERNEL_PRINT_ERROR_CAUSE

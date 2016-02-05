@@ -13,7 +13,7 @@
 #include <cctag/Fitting.hpp>
 #include <cctag/Canny.hpp>
 #include <cctag/Detection.hpp>
-#include <cctag/Talk.hpp> // for DO_TALK macro
+#include <cctag/utils/Talk.hpp> // for DO_TALK macro
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/gil/image_view.hpp>

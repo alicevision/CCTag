@@ -21,7 +21,7 @@
 #include <cctag/Types.hpp>
 #include <cctag/Canny.hpp>
 #include <cctag/Global.hpp>
-#include <cctag/Talk.hpp> // for DO_TALK macro
+#include <cctag/utils/Talk.hpp> // for DO_TALK macro
 #ifdef WITH_CUDA
 #include "cuda/tag.h"
 #endif
