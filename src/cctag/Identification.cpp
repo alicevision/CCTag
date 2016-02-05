@@ -1,6 +1,5 @@
 #include <cctag/Identification.hpp>
 #include <cctag/ImageCut.hpp>
-#include <cctag/algebra/eig.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>
