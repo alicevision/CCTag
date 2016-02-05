@@ -4,7 +4,7 @@
 #include <cctag/LMImageCenterOptimizer.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/algebra/invert.hpp>
-#include <cctag/geometry/distance.hpp>
+#include <cctag/geometry/Distance.hpp>
 
 #include <cminpack.h>
 

@@ -4,7 +4,7 @@
 #include <cctag/Types.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/geometry/distance.hpp>
+#include <cctag/geometry/Distance.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_expression.hpp>

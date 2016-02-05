@@ -5,7 +5,7 @@
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/optimization/conditioner.hpp>
-#include <cctag/geometry/distance.hpp>
+#include <cctag/geometry/Distance.hpp>
 #include <cctag/progBase/exceptions.hpp>
 #include <cctag/Global.hpp>
 

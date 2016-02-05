@@ -5,7 +5,7 @@
 #include <cctag/ImageCut.hpp>
 #include <cctag/algebra/matrix/operation.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/geometry/distance.hpp>
+#include <cctag/geometry/Distance.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/algebra/eig.hpp>
