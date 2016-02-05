@@ -13,7 +13,7 @@
 #ifdef USE_IMAGE_CENTER_OPT // undefined. Depreciated
 #include <cctag/ImageCenterOptimizerCeres.hpp>
 #include <cctag/ImageCenterOptimizer.hpp>
-#include <cctag/LMImageCenterOptimizer.hpp>
+#include <cctag/optimization/LMImageCenterOptimizer.hpp>
 #endif // USE_IMAGE_CENTER_OPT
 
 #include <cctag/geometry/Circle.hpp>

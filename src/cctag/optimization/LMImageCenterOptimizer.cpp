@@ -1,7 +1,7 @@
 #ifdef USE_IMAGE_CENTER_OPT_MINPACK // undefined. Depreciated
 
 #ifdef WITH_CMINPACK
-#include <cctag/LMImageCenterOptimizer.hpp>
+#include <cctag/optimization/LMImageCenterOptimizer.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Distance.hpp>
