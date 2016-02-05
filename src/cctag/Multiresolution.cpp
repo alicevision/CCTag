@@ -4,7 +4,7 @@
 #include <boost/gil/image_view_factory.hpp>
 #include <limits>
 
-#include <cctag/multiresolution.hpp>
+#include <cctag/Multiresolution.hpp>
 #include <cctag/visualDebug.hpp>
 #include <cctag/FileDebug.hpp>
 #include <cctag/vote.hpp>

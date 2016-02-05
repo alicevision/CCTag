@@ -7,8 +7,7 @@
 #include <cctag/Detection.hpp>
 #include <cctag/vote.hpp>
 #include <cctag/visualDebug.hpp>
-#include <cctag/multiresolution.hpp>
-//#include <cctag/miscellaneous.hpp>
+#include <cctag/Multiresolution.hpp>
 #include <cctag/EllipseFittingWithGradient.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/point.hpp>
