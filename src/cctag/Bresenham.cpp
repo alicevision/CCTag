@@ -2,7 +2,7 @@
 #include <cctag/Bresenham.hpp>
 #include <cctag/FileDebug.hpp>
 
-#include <cctag/toolbox/gilTools.hpp>
+#include <cctag/filter/gilTools.hpp>
 
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/gil_all.hpp>

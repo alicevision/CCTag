@@ -17,7 +17,7 @@
 #include <cctag/CCTag.hpp>
 #include <cctag/Identification.hpp>
 #include <cctag/Fitting.hpp>
-#include <cctag/toolbox/gilTools.hpp>
+#include <cctag/filter/gilTools.hpp>
 #include <cctag/types.hpp>
 #include <cctag/Canny.hpp>
 #include <cctag/Global.hpp>
