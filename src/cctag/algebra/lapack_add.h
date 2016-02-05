@@ -2,7 +2,22 @@
 #define	_LAPACK_ADD_H
 
 #include <boost/numeric/bindings/traits/type.h>
-#include "lapack_names.h"
+
+#ifndef BOOST_NUMERIC_BINDINGS_USE_CLAPACK
+#  include <boost/numeric/bindings/traits/fortran.h>
+#else
+#  define FORTRAN_ID( id ) id##_
+#endif
+
+/********************************************/
+/* generalized eigenvalue/eigenvector */
+
+#define LAPACK_DGGEV FORTRAN_ID( dggev )
+
+/********************************************/
+/* norm computation */
+
+#define LAPACK_DLANGE FORTRAN_ID( dlange )
 
 #ifndef BOOST_NUMERIC_BINDINGS_NO_STRUCTURE_CHECK
 #  define BOOST_NUMERIC_BINDINGS_FORTRAN

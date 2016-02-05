@@ -2,17 +2,6 @@
 #define	_CCTAG_NUMERICAL_LAPACK_HPP_
 
 #include <cctag/algebra/svd.hpp>
-#include <cctag/algebra/ggev.hpp> // formerly boostLapackExtension
-
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/bindings/lapack/gesvd.hpp>
-#include <boost/numeric/bindings/lapack/geev.hpp>
-#include <boost/numeric/bindings/lapack/sygv.hpp>
-#include <boost/numeric/ublas/banded.hpp>
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include <boost/numeric/bindings/traits/std_vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
 
 namespace cctag {
 namespace numerical {
