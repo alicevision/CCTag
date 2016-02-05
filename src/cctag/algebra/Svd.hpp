@@ -45,6 +45,6 @@ void svds( const MatA & a, MatU & u, MatV & v, MatS & s, const std::size_t k );
 }
 }
 
-#include "svd.tcc"
+#include "Svd.tcc"
 
 #endif

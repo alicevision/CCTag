@@ -2,6 +2,7 @@
 #include <cctag/ImageCut.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
+#include <cctag/algebra/Svd.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/viewGeometry/2DTransform.hpp>
