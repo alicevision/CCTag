@@ -5,7 +5,7 @@
 #include <cctag/algebra/Svd.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>
 #include <cctag/optimization/conditioner.hpp>
-#include <cctag/viewGeometry/2DTransform.hpp>
+#include <cctag/geometry/2DTransform.hpp>
 
 #undef SUBPIX_EDGE_OPTIM
 #include <cctag/SubPixEdgeOptimizer.hpp>

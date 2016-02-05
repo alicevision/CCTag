@@ -11,7 +11,7 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/Types.hpp>
 #include <cctag/ICCTag.hpp>
-#include <cctag/viewGeometry/2DTransform.hpp>
+#include <cctag/geometry/2DTransform.hpp>
 #include <cctag/Global.hpp>
 
 #include <boost/serialization/nvp.hpp>
