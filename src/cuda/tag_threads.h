@@ -17,7 +17,7 @@
 // #include "cctag/geometry/Ellipse.hpp"
 // #include "cctag/geometry/Point.hpp"
 // #include "cctag/algebra/matrix/Matrix.hpp"
-// #include "cctag/LogTime.hpp"
+// #include "cctag/utils/LogTime.hpp"
 
 namespace popart
 {

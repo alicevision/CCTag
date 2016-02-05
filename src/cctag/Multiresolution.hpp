@@ -10,7 +10,7 @@
 #ifdef WITH_CUDA
 #include "cuda/tag.h"
 #endif
-#include "cctag/LogTime.hpp"
+#include "cctag/utils/LogTime.hpp"
 
 #include <cstddef>
 #include <cmath>

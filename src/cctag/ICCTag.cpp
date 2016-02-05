@@ -1,7 +1,7 @@
 #include <cctag/ICCTag.hpp>
 #include <cctag/CCTag.hpp>
 #include <cctag/Detection.hpp>
-#include <cctag/LogTime.hpp>
+#include <cctag/utils/LogTime.hpp>
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
