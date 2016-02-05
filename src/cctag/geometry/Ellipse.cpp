@@ -2,7 +2,7 @@
 #include <cctag/geometry/Point.hpp>
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/utils/exceptions.hpp>
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 
 #include <boost/math/special_functions/sign.hpp>
 #include <boost/numeric/ublas/banded.hpp>

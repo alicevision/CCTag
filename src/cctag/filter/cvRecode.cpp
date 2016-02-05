@@ -1,4 +1,4 @@
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/core_c.h>

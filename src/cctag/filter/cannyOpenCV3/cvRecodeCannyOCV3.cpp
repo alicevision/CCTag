@@ -42,7 +42,7 @@
 
 #include "cvRecodeCannyOCV3.hpp"
 
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 
 #include <boost/timer/timer.hpp>
 #include "boost/date_time/posix_time/posix_time.hpp"

@@ -6,7 +6,7 @@
 #include <limits>
 
 #include <cctag/View.hpp>
-#include <cctag/Debug.hpp>
+#include <cctag/utils/Defines.hpp>
 #include <cctag/GrayConversion.hpp>
 
 #include <boost/gil/extension/io/jpeg_io.hpp>

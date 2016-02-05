@@ -1,7 +1,7 @@
 #ifndef _CCTAG_CCTAGOUTPUT_HPP_
 #define	_CCTAG_CCTAGOUTPUT_HPP_
 
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 #include <cctag/utils/Singleton.hpp>
 #include <cctag/CCTag.hpp>
 

@@ -2,7 +2,7 @@
 
 #include <boost/gil/image_view.hpp>
 
-#include "Global.hpp"
+#include "utils/Defines.hpp"
 
 //#define USE_CANNY_OCV3
 #ifdef USE_CANNY_OCV3

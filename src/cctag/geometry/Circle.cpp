@@ -1,4 +1,4 @@
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 #include <cctag/geometry/Circle.hpp>
 #include <cctag/geometry/Point.hpp>
 

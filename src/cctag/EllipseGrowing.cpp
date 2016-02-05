@@ -7,7 +7,7 @@
 #include <cctag/Fitting.hpp>
 #include <cctag/geometry/Circle.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 #include <cctag/utils/Talk.hpp> // for DO_TALK macro
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>

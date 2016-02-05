@@ -2,7 +2,7 @@
 #define	_CCTAG_CVIMAGE_HPP_
 
 #include <cctag/utils/exceptions.hpp>
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 
 #include <boost/gil/gil_all.hpp>
 #include <boost/type_traits/is_signed.hpp>

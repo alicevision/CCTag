@@ -1,4 +1,4 @@
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>
 
 #include <opencv2/core/core.hpp>

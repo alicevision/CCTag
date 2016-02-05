@@ -1,5 +1,5 @@
 #include <cctag/CCTagFlowComponent.hpp>
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 
 namespace cctag
 {

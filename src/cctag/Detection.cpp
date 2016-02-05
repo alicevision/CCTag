@@ -20,7 +20,7 @@
 #include <cctag/filter/gilTools.hpp>
 #include <cctag/Types.hpp>
 #include <cctag/Canny.hpp>
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 #include <cctag/utils/Talk.hpp> // for DO_TALK macro
 #ifdef WITH_CUDA
 #include "cuda/tag.h"

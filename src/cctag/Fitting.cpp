@@ -37,7 +37,7 @@
 #include <boost/numeric/ublas/vector_expression.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/Fitting.hpp>
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/algebra/Norm.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>

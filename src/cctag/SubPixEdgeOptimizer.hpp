@@ -4,7 +4,7 @@
 #define SUBPIX_EDGE_OPTIM
 
 #include <cctag/geometry/Point.hpp>
-#include <cctag/Global.hpp>
+#include <cctag/utils/Defines.hpp>
 
 #ifdef WITH_OPTPP
 #include <OPT++_config.h>
