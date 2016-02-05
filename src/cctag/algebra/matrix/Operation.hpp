@@ -2,7 +2,7 @@
 #define	_CCTAG_NUMERICAL_ALGEBRA_OPERATION_HPP_
 
 #include "Matrix.hpp"
-#include "../determinant.hpp"
+#include "../Determinant.hpp"
 #include "../../progBase/exceptions.hpp"
 
 #include <cmath>
