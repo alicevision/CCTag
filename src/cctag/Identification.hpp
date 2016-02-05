@@ -3,7 +3,7 @@
 #include <cctag/VisualDebug.hpp>
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/ImageCut.hpp>
-#include <cctag/algebra/matrix/operation.hpp>
+#include <cctag/algebra/matrix/Operation.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>

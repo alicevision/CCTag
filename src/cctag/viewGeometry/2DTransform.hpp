@@ -2,7 +2,7 @@
 #define _CCTAG_2DTRANSFORM_HPP_
 
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/algebra/matrix/operation.hpp>
+#include <cctag/algebra/matrix/Operation.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>

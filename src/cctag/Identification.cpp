@@ -3,7 +3,7 @@
 #include <cctag/algebra/eig.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
-#include <cctag/algebra/matrix/operation.hpp>
+#include <cctag/algebra/matrix/Operation.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/viewGeometry/2DTransform.hpp>
 
