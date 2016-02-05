@@ -1,5 +1,5 @@
 #include <cctag/CCTagMarkersBank.hpp>
-#include <cctag/utils/exceptions.hpp>
+#include <cctag/utils/Exceptions.hpp>
 #include <cctag/utils/Defines.hpp>
 
 #include <boost/numeric/conversion/bounds.hpp>

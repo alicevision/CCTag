@@ -1,7 +1,7 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Point.hpp>
 #include <cctag/algebra/Invert.hpp>
-#include <cctag/utils/exceptions.hpp>
+#include <cctag/utils/Exceptions.hpp>
 #include <cctag/utils/Defines.hpp>
 
 #include <boost/math/special_functions/sign.hpp>

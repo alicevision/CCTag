@@ -3,7 +3,7 @@
 
 #include "Matrix.hpp"
 #include "../Determinant.hpp"
-#include "../../utils/exceptions.hpp"
+#include "../../utils/Exceptions.hpp"
 
 #include <cmath>
 

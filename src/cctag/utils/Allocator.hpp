@@ -1,7 +1,7 @@
 #ifndef _CCTAG_ALLOCATOR_HPP_
 #define	_CCTAG_ALLOCATOR_HPP_
 
-#include "exceptions.hpp"
+#include "Exceptions.hpp"
 
 #include <boost/numeric/ublas/vector.hpp>
 

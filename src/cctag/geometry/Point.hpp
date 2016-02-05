@@ -1,7 +1,7 @@
 #ifndef _CCTAG_POINT_HPP_
 #define	_CCTAG_POINT_HPP_
 
-#include <cctag/utils/exceptions.hpp>
+#include <cctag/utils/Exceptions.hpp>
 
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/numeric/ublas/vector.hpp>
