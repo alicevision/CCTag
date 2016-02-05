@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cctag/visualDebug.hpp>
+#include <cctag/VisualDebug.hpp>
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/ImageCut.hpp>
 #include <cctag/algebra/matrix/operation.hpp>

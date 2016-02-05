@@ -1,7 +1,7 @@
 #ifdef USE_IMAGE_CENTER_OPT_CERES // undefined. Depreciated
 
 #include <cctag/ImageCenterOptimizerCeres.hpp>
-#include <cctag/visualDebug.hpp>
+#include <cctag/VisualDebug.hpp>
 #include <cctag/geometry/point.hpp>
 #include <cctag/algebra/invert.hpp>
 #include <cctag/optimization/conditioner.hpp>

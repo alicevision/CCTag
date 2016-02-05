@@ -1,6 +1,6 @@
 #include <cctag/Global.hpp>
 #include <cctag/ImagePyramid.hpp>
-#include <cctag/visualDebug.hpp>
+#include <cctag/VisualDebug.hpp>
 
 #include <opencv2/imgproc/imgproc.hpp>
 
