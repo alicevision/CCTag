@@ -38,7 +38,7 @@
 #include <cctag/EdgePoint.hpp>
 #include <cctag/Fitting.hpp>
 #include <cctag/Global.hpp>
-#include <cctag/algebra/invert.hpp>
+#include <cctag/algebra/Invert.hpp>
 #include <cctag/algebra/Norm.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>

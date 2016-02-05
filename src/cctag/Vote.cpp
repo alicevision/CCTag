@@ -8,7 +8,7 @@
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/FileDebug.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/invert.hpp>
+#include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>
 #include <cctag/statistic/statistic.hpp>

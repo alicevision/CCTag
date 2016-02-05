@@ -3,7 +3,7 @@
 
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/invert.hpp>
+#include <cctag/algebra/Invert.hpp>
 #include <cctag/Global.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>

@@ -3,7 +3,7 @@
 #ifdef WITH_CMINPACK
 #include <cctag/LMImageCenterOptimizer.hpp>
 #include <cctag/optimization/conditioner.hpp>
-#include <cctag/algebra/invert.hpp>
+#include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Distance.hpp>
 
 #include <cminpack.h>

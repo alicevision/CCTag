@@ -9,7 +9,7 @@
 #include <cctag/geometry/Point.hpp>
 #include <cctag/Global.hpp>
 #include <cctag/Talk.hpp> // for DO_TALK macro
-#include <cctag/algebra/invert.hpp>
+#include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
 #include <opencv2/core/core_c.h>

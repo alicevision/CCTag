@@ -1,6 +1,6 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/invert.hpp>
+#include <cctag/algebra/Invert.hpp>
 #include <cctag/progBase/exceptions.hpp>
 #include <cctag/Global.hpp>
 

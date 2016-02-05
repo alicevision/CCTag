@@ -1,7 +1,7 @@
 #include <cctag/CCTag.hpp>
 #include <cctag/Global.hpp>
 #include <cctag/DataSerialization.hpp>
-#include <cctag/algebra/invert.hpp>
+#include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>

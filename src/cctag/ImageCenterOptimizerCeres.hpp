@@ -9,7 +9,7 @@
 #include <cctag/ImageCut.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/algebra/invert.hpp>
+#include <cctag/algebra/Invert.hpp>
 #include <cctag/optimization/conditioner.hpp>
 
 #include <ceres/ceres.h>

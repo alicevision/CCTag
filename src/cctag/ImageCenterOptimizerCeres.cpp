@@ -3,7 +3,7 @@
 #include <cctag/ImageCenterOptimizerCeres.hpp>
 #include <cctag/VisualDebug.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/invert.hpp>
+#include <cctag/algebra/Invert.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/progBase/exceptions.hpp>

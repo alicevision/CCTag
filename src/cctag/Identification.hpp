@@ -7,7 +7,7 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/algebra/matrix/Matrix.hpp>
-#include <cctag/algebra/invert.hpp>
+#include <cctag/algebra/Invert.hpp>
 #include <cctag/statistic/statistic.hpp>
 #include <cctag/boostCv/cvImage.hpp>
 
