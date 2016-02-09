@@ -110,11 +110,11 @@ TARGET_LINK_LIBRARIES( pgmdiff PUBLIC ${Boost_LIBRARIES} )
 
 set( FILES_TO_DEPLOY
       ./cctag/ICCTag.hpp
-      ./cctag/params.hpp
-      ./cctag/talk.hpp
+      ./cctag/Params.hpp
       ./cctag/CCTagMarkersBank.hpp
-      ./cctag/progBase/Singleton.hpp
-      ./cctag/LogTime.hpp)
+      ./cctag/utils/Talk.hpp
+      ./cctag/utils/Singleton.hpp
+      ./cctag/utils/LogTime.hpp)
 
 foreach ( file ${FILES_TO_DEPLOY} )
 get_filename_component( dir ${file} DIRECTORY )
