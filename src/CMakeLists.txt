@@ -109,7 +109,6 @@ ADD_EXECUTABLE( pgmdiff playground/pgmdiff.cc )
 TARGET_LINK_LIBRARIES( pgmdiff PUBLIC ${Boost_LIBRARIES} )
 
 set( FILES_TO_DEPLOY
-      ./cctag/view.hpp
       ./cctag/ICCTag.hpp
       ./cctag/params.hpp
       ./cctag/talk.hpp

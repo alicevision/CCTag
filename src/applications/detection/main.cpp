@@ -6,7 +6,6 @@
 #include "cctag/utils/VisualDebug.hpp"
 #include "cctag/utils/Exceptions.hpp"
 #include "cctag/Detection.hpp"
-#include "cctag/View.hpp"
 #include "CmdLine.hpp"
 
 #ifdef WITH_CUDA
