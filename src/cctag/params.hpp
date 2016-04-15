@@ -95,6 +95,11 @@ static const std::size_t kWeight = INV_GRAD_WEIGHT; // todo@L
 struct Parameters
 {
   friend class boost::serialization::access;
+  
+  static bool ParametersOverrideChecked;
+  static bool ParametersOverrideLoaded;
+  static Parameters ParametersOverride;
+  static void LoadParametersOverride();
 
   Parameters(const std::size_t nCrowns);
 
