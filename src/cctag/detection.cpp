@@ -394,10 +394,12 @@ void cctagDetectionFromEdges(
         const std::size_t frame,
         int pyramidLevel,
         double scale,
-        const Parameters & params,
+        const Parameters & providedParams,
         cctag::logtime::Mgmt* durations )
 {
   // using namespace boost::gil;
+  const Parameters& params = Parameters::ParametersOverrideLoaded ?
+    Parameters::ParametersOverride : providedParams;
 
   // Call for debug only. Write the vote result as an image.
   createImageForVoteResultDebug(src, winners, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
@@ -739,7 +741,7 @@ popart::TagPipe* initCuda( int      pipeId,
 void cctagDetection(CCTag::List& markers,
         const std::size_t frame, 
         const cv::Mat & imgGraySrc,
-        const Parameters & params,
+        const Parameters & providedParams,
         const cctag::CCTagMarkersBank & bank,
         const bool bDisplayEllipses,
         cctag::logtime::Mgmt* durations )
@@ -747,6 +749,9 @@ void cctagDetection(CCTag::List& markers,
 {
     using namespace cctag;
     using namespace boost::numeric::ublas;
+    
+    const Parameters& params = Parameters::ParametersOverrideLoaded ?
+      Parameters::ParametersOverride : providedParams;
 
     if( durations ) durations->log( "start" );
   
