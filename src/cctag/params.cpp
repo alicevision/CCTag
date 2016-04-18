@@ -1,9 +1,30 @@
 #include "params.hpp"
-
+#include <stdlib.h>
 #include <iostream>
+#include <fstream>
+#include <boost/archive/xml_iarchive.hpp>
 
 namespace cctag
 {
+
+bool Parameters::ParametersOverrideChecked = false;
+bool Parameters::ParametersOverrideLoaded = false;
+Parameters Parameters::ParametersOverride(3); // # of rings will be loaded from the file anyway
+
+void Parameters::LoadParametersOverride()
+{
+  const char* path = getenv("CCTAG_PARAMETERS_OVERRIDE");
+  if (!path) path = "./CCTagParametersOverride.xml";
+  std::ifstream ifs(path);
+  if (!ifs)
+    return;
+  
+  boost::archive::xml_iarchive ia(ifs);
+  ia >> boost::serialization::make_nvp("CCTagsParams", ParametersOverride);
+  ParametersOverrideLoaded = true;
+  std::cout << "CCTag: loaded parameters override file: " << path << std::endl;
+}
+
 Parameters::Parameters(const std::size_t nCrowns)
     : _cannyThrLow( kDefaultCannyThrLow )
     , _cannyThrHigh( kDefaultCannyThrHigh )
@@ -40,6 +61,11 @@ Parameters::Parameters(const std::size_t nCrowns)
     , _debugDir( "" )
 {
     _nCircles = 2*_nCrowns;
+    
+    if (!ParametersOverrideChecked) {
+      ParametersOverrideChecked = true;
+      LoadParametersOverride();
+    }
 }
 
 void Parameters::setDebugDir( const std::string& debugDir )
