@@ -22,7 +22,7 @@ void Parameters::LoadParametersOverride()
   boost::archive::xml_iarchive ia(ifs);
   ia >> boost::serialization::make_nvp("CCTagsParams", ParametersOverride);
   ParametersOverrideLoaded = true;
-  std::cout << "CCTag: loaded parameters override file: " << path;
+  std::cout << "CCTag: loaded parameters override file: " << path << std::endl;
 }
 
 Parameters::Parameters(const std::size_t nCrowns)
