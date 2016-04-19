@@ -34,14 +34,14 @@ struct DetectedTag
 struct DetectionLog
 {
   std::string filename;
-  cctag::Parameters parameters;
   size_t frame;
+  cctag::Parameters parameters;
   float elapsedTime;
   std::vector<DetectedTag> tags;
   
-  DetectionLog(const std::string& filename, const cctag::Parameters& parameters,
-    size_t frame, float elapsedTime, const CCTag::List& markers) :
-    filename(filename), parameters(parameters), frame(frame), elapsedTime(elapsedTime),
+  DetectionLog(const std::string& filename, size_t frame, const cctag::Parameters& parameters,
+    float elapsedTime, const CCTag::List& markers) :
+    filename(filename), frame(frame), parameters(parameters), elapsedTime(elapsedTime),
     tags(markers.begin(), markers.end())
   { }
   
@@ -55,3 +55,5 @@ struct DetectionLog
     ar & BOOST_SERIALIZATION_NVP(tags);
   }
 };
+
+void Detect();

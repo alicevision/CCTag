@@ -85,7 +85,9 @@ target_include_directories( CCTag PUBLIC .)
 
 set(CCTagDetect_cpp ./applications/detection/main.cpp ./applications/detection/CmdLine.cpp)
 
-set(CCTagRegression_cpp ./applications/regression/main.cpp)
+set(CCTagRegression_cpp
+  ./applications/regression/main.cpp
+  ./applications/regression/Regression.cpp)
 set_source_files_properties(${CCTagRegression_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
 
 if(USE_CUDA)
@@ -108,11 +110,6 @@ else(USE_CUDA)
 
     install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 endif(USE_CUDA)
-
-#############################################################################
-
-
-
 
 #############################################################################
 
