@@ -1,53 +1,88 @@
+#include <chrono>
+#include <stdexcept>
+#include <boost/algorithm/string.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/opencv.hpp>
 #include "Regression.h"
 
-void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ostream & output, std::string debugFileName = "")
+using namespace cctag;
+
+FrameLog FrameLog::detect(size_t frame, const cv::Mat& src, const Parameters& parameters,
+  const cctag::CCTagMarkersBank& bank)
 {
-    if (debugFileName == "") {
-      debugFileName = "00000";
-    }
-    
-    // Process markers detection
-    boost::timer t;
-    boost::ptr_list<CCTag> markers;
-    
-    CCTagVisualDebug::instance().initBackgroundImage(src);
-    CCTagVisualDebug::instance().setImageFileName(debugFileName);
-    CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
+  using namespace std::chrono;
+  CCTag::List markers;
+  
+  const auto t0 = high_resolution_clock::now();
+  cctagDetection(markers, frame, src, parameters, bank, true, nullptr);
+  const auto t1 = high_resolution_clock::now();
+  const auto td = duration_cast<milliseconds>(t1 - t0).count() / 1000.f;
+  
+  return FrameLog(frame, td, markers);
+}
 
-    static cctag::logtime::Mgmt* durations = 0;
-#if 0
-    if( not durations ) {
-        durations = new cctag::logtime::Mgmt( 25 );
-    } else {
-        durations->resetStartTime();
-    }
-#endif
-    cctagDetection( markers, frameId , src, params, bank, true, durations );
+bool FileLog::isSupportedImage(const std::string& filename)
+{
+  using namespace boost::algorithm;
+  return iends_with(filename, ".png") || iends_with(filename, ".jpg");
+}
 
-    if( durations ) {
-        durations->print( std::cerr );
-    }
+bool FileLog::isSupportedVideo(const std::string& filename)
+{
+  using namespace boost::algorithm;
+  return iends_with(filename, ".avi");
+}
 
-    CCTagFileDebug::instance().outPutAllSessions();
-    CCTagFileDebug::instance().clearSessions();
-    CCTagVisualDebug::instance().outPutAllSessions();
-    CCTagVisualDebug::instance().clearSessions();
+bool FileLog::isSupportedFormat(const std::string& filename)
+{
+  return isSupportedImage(filename) || isSupportedVideo(filename);
+}
 
-    CCTAG_COUT( markers.size() << " markers.");
-    CCTAG_COUT("Total time: " << t.elapsed());
-    CCTAG_COUT_NOENDL("Id : ");
+FileLog FileLog::detect(const std::string& filename, const Parameters& parameters)
+{
+  if (parameters._nCrowns != 3 && parameters._nCrowns != 4)
+    throw std::runtime_error("FileLog: unsupported number of crowns; can only be 3 or 4");
+  if (isSupportedImage(filename))
+    return detectImage(filename, parameters);
+  if(isSupportedVideo(filename))
+    return detectVideo(filename, parameters);
+  throw std::runtime_error(std::string("FileLog: unsupported format for file ") + filename);
+}
 
-    int i = 0;
-    output << "#frame " << frameId << '\n';
-    output << markers.size() << '\n';
-    BOOST_FOREACH(const cctag::CCTag & marker, markers) {
-      output << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
-      if (i == 0) {
-          CCTAG_COUT_NOENDL(marker.id() + 1);
-      } else {
-          CCTAG_COUT_NOENDL(", " << marker.id() + 1);
-      }
-      ++i;
-    }
-    CCTAG_COUT("");
+FileLog FileLog::detectImage(const std::string& filename, const cctag::Parameters& parameters)
+{
+  FileLog fileLog(filename, parameters);
+  CCTagMarkersBank bank(parameters._nCrowns);
+
+  cv::Mat src, gray;
+  src = cv::imread(filename);
+  if (src.empty())
+    throw std::runtime_error(std::string("FileLog: unable to read image file: ") + filename);
+  cv::cvtColor(src, gray, CV_BGR2GRAY);
+  
+  auto frameLog = FrameLog::detect(0, gray, parameters, bank);
+  fileLog.frameLogs.push_back(frameLog);
+  return fileLog;
+}
+
+FileLog FileLog::detectVideo(const std::string& filename, const cctag::Parameters& parameters)
+{
+  FileLog fileLog(filename, parameters);
+  CCTagMarkersBank bank(parameters._nCrowns);
+  
+  cv::VideoCapture video(filename.c_str());
+  if (!video.isOpened())
+    throw std::runtime_error("FileLog: unable to open video file: " + filename);
+  
+  const size_t lastFrame = video.get(CV_CAP_PROP_FRAME_COUNT);
+  cv::Mat src, gray;
+  
+  for (size_t i = 0; i < lastFrame; ++i) {
+    video >> src;
+    cv::cvtColor(src, gray, CV_BGR2GRAY);
+    auto frameLog = FrameLog::detect(i, gray, parameters, bank);
+    fileLog.frameLogs.push_back(frameLog);
+  }
+  
+  return fileLog;
 }

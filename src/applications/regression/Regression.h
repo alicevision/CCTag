@@ -10,12 +10,11 @@
 // Contains cctag info that is compared during regression testing.
 struct DetectedTag
 {
-  static constexpr float POSITION_EPSILON = 0.5;  // sub-pixel accuracy claimed in the paper
   int id, status;
   double x, y, quality;
   
   // NB: we DO want implicit conversion for easy conversion of containers of CCTags
-  DetectedTag(const CCTag& marker) :
+  DetectedTag(const cctag::CCTag& marker) :
     id(marker.id()), status(marker.getStatus()),
     x(marker.x()), y(marker.y()), quality(marker.quality())
   { }
@@ -31,18 +30,36 @@ struct DetectedTag
   }
 };
 
-struct DetectionLog
+struct FrameLog
 {
-  std::string filename;
   size_t frame;
-  cctag::Parameters parameters;
   float elapsedTime;
   std::vector<DetectedTag> tags;
   
-  DetectionLog(const std::string& filename, size_t frame, const cctag::Parameters& parameters,
-    float elapsedTime, const CCTag::List& markers) :
-    filename(filename), frame(frame), parameters(parameters), elapsedTime(elapsedTime),
-    tags(markers.begin(), markers.end())
+  FrameLog(size_t frame, float elapsedTime, const cctag::CCTag::List& markers) :
+    frame(frame), elapsedTime(elapsedTime), tags(markers.begin(), markers.end())
+  { }
+  
+  template<typename Archive>
+  void serialize(Archive& ar, const unsigned)
+  {
+    ar & BOOST_SERIALIZATION_NVP(frame);
+    ar & BOOST_SERIALIZATION_NVP(elapsedTime);
+    ar & BOOST_SERIALIZATION_NVP(tags);
+  }
+  
+  static FrameLog detect(size_t frame, const cv::Mat& src, const cctag::Parameters& parameters,
+    const cctag::CCTagMarkersBank& bank);
+};
+
+struct FileLog
+{
+  std::string filename;
+  cctag::Parameters parameters;
+  std::vector<FrameLog> frameLogs;
+  
+  FileLog(const std::string& filename, const cctag::Parameters& parameters) :
+    filename(filename), parameters(parameters)
   { }
   
   template<typename Archive>
@@ -50,10 +67,15 @@ struct DetectionLog
   {
     ar & BOOST_SERIALIZATION_NVP(filename);
     ar & BOOST_SERIALIZATION_NVP(parameters);
-    ar & BOOST_SERIALIZATION_NVP(frame);
-    ar & BOOST_SERIALIZATION_NVP(elapsedTime);
-    ar & BOOST_SERIALIZATION_NVP(tags);
+    ar & BOOST_SERIALIZATION_NVP(frameLogs);
   }
-};
 
-void Detect();
+  static bool isSupportedFormat(const std::string& filename);
+  static FileLog detect(const std::string& filename, const cctag::Parameters& parameters);
+  
+private:
+  static bool isSupportedImage(const std::string& filename);
+  static bool isSupportedVideo(const std::string& filename);
+  static FileLog detectImage(const std::string& filename, const cctag::Parameters& parameters);
+  static FileLog detectVideo(const std::string& filename, const cctag::Parameters& parameters);
+};
