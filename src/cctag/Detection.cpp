@@ -394,8 +394,8 @@ void cctagDetectionFromEdges(
         cctag::logtime::Mgmt* durations )
 {
   // using namespace boost::gil;
-  const Parameters& params = Parameters::ParametersOverrideLoaded ?
-    Parameters::ParametersOverride : providedParams;
+  const Parameters& params = Parameters::OverrideLoaded ?
+    Parameters::Override : providedParams;
 
   // Call for debug only. Write the vote result as an image.
   createImageForVoteResultDebug(src, winners, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
@@ -746,8 +746,8 @@ void cctagDetection(CCTag::List& markers,
     using namespace cctag;
     using namespace boost::numeric::ublas;
     
-    const Parameters& params = Parameters::ParametersOverrideLoaded ?
-      Parameters::ParametersOverride : providedParams;
+    const Parameters& params = Parameters::OverrideLoaded ?
+      Parameters::Override : providedParams;
 
     if( durations ) durations->log( "start" );
   

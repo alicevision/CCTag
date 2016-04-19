@@ -96,12 +96,12 @@ struct Parameters
 {
   friend class boost::serialization::access;
   
-  static bool ParametersOverrideChecked;
-  static bool ParametersOverrideLoaded;
-  static Parameters ParametersOverride;
-  static void LoadParametersOverride();
+  static bool OverrideChecked;
+  static bool OverrideLoaded;
+  static Parameters Override;
+  static void LoadOverride();
 
-  Parameters(const std::size_t nCrowns);
+  Parameters(const std::size_t nCrowns = kDefaultNCrowns);
 
   float _cannyThrLow; // canny low threshold
   float _cannyThrHigh; // canny high threshold
