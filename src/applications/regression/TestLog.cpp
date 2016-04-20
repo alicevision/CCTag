@@ -3,7 +3,7 @@
 #include <boost/algorithm/string.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/opencv.hpp>
-#include "Regression.h"
+#include "TestLog.h"
 
 using namespace cctag;
 

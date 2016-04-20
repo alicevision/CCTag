@@ -22,7 +22,6 @@
 #include <fstream>
 #include <exception>
 
-#include "Regression.h"
 #ifdef WITH_CUDA
 #include "cuda/device_prop.hpp"
 #include "cuda/debug_macros.hpp"
