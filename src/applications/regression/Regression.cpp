@@ -1,27 +1,30 @@
 #include "Regression.h"
 
+static std::vector<boost::filesystem::path> CollectFiles(const boost::filesystem::path dirPath)
+{
+  using namespace boost::filesystem;
+  std::vector<path> filePaths;
+  
+  directory_iterator it(dirPath), end;
+  while (it != end) {
+    auto de = *it++;
+    if (de.status().type() == regular_file)
+      filePaths.push_back(canonical(de.path()));
+  }
+  
+  return filePaths;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 TestRunner::TestRunner(const std::string& inputDir, const std::string& outputDir) :
   _inputDirPath(inputDir), _outputDirPath(outputDir)
 {
-  collectInputFiles();
-}
-
-void TestRunner::collectInputFiles()
-{
-  using namespace boost::filesystem;
-
   if (!exists(_inputDirPath) || !is_directory(_inputDirPath))
     throw std::runtime_error("TestRunner: inputDir is not a directory");
   if (!exists(_outputDirPath) || !is_directory(_outputDirPath))
     throw std::runtime_error("TestRunner: outputDir is not a directory");
-  
-  directory_iterator it(_inputDirPath), end;
-  
-  while (it != end) {
-    auto de = *it++;
-    if (de.status().type() == regular_file)
-      _inputFilePaths.push_back(canonical(de.path()));
-  }
+  _inputFilePaths = CollectFiles(inputDir);
 }
 
 // Input directory must contain images.
@@ -50,3 +53,7 @@ void TestRunner::generateTestResults()
     fileLog.save(outputPath.native());
   }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
