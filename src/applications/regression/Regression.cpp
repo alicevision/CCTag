@@ -1,4 +1,4 @@
-#include "TestRunner.h"
+#include "Regression.h"
 
 TestRunner::TestRunner(const std::string& inputDir, const std::string& outputDir) :
   _inputDirPath(inputDir), _outputDirPath(outputDir)
