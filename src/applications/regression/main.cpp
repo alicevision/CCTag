@@ -16,27 +16,22 @@ static std::string ParseOptions(int argc, char **argv)
   using namespace boost::program_options;
   std::string mode;
   
-  options_description all_desc("Mode options");
+  options_description all_desc("Mode and common options");
   all_desc.add_options()
     ("generate-reference", "Generate reference results from a set of images")
     ("generate-test", "Generate test results based on reference results")
     ("check", "Check two sets of results")
+    ("reference-dir", value<std::string>(&InputDir), "Directory with reference results")
+    ("output-dir", value<std::string>(&OtherDir), "Output directory for test results [data will be overwritten!]")
     ("help", "Print help");
   
   options_description ref_desc("Generate reference options");
   ref_desc.add_options()
     ("input-dir", value<std::string>(&InputDir), "Input directory for images")
-    ("output-dir", value<std::string>(&OtherDir), "Output directory for results [data will be overwritten!]")
     ("parameters", value<std::string>(&ParametersFile), "Detection parameters file");
-  
-  options_description test_desc("Generate test options");
-  test_desc.add_options()
-    ("reference-dir", value<std::string>(&InputDir), "Directory with reference results")
-    ("output-dir", value<std::string>(&OtherDir), "Output directory for test results [data will be overwritten!]");
   
   options_description check_desc("Check options");
   check_desc.add_options()
-    ("reference-dir", value<std::string>(&InputDir), "Directory with reference results")
     ("check-dir", value<std::string>(&OtherDir), "Directory with results to check")
     ("epsilon", value<float>(&Epsilon), "Position tolerance for x/y coordinates");
   
@@ -52,7 +47,7 @@ static std::string ParseOptions(int argc, char **argv)
   
   if (vm.count("generate-reference")) {
     if (!vm.count("input-dir") || !vm.count("output-dir") || !vm.count("parameters"))
-      throw error("All generate options are mandatory for --generate-reference");
+      throw error("generate-reference: input-dir, output-dir and parameters are mandatory");
     mode = "generate-reference";
   }
   
@@ -62,7 +57,7 @@ static std::string ParseOptions(int argc, char **argv)
     if (vm.count("parameters"))
       throw error("Cannot specify parameters for --generate-test");
     if (!vm.count("reference-dir") || !vm.count("output-dir"))
-      throw error("All test options are mandatory for --generate-test");
+      throw error("generate-test: reference-dir and output-dir are mandatory");
     mode = "generate-test";
   }
   
@@ -72,7 +67,8 @@ static std::string ParseOptions(int argc, char **argv)
     if (vm.count("parameters"))
       throw error("Cannot specify parameters for --generate-test");
     if (!vm.count("reference-dir") || !vm.count("check-dir") || !vm.count("epsilon"))
-      throw error("All test options are mandatory for --check");
+      throw error("check: reference-dir, check-dir and epsilon are mandatory");
+    mode = "check";
   }
   
   if (mode.empty())

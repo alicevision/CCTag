@@ -74,7 +74,7 @@ bool TestChecker::check()
       check(testFilePath);
     }
     catch (check_error& e) {
-      std::clog << "  FAILED: " << e.what();
+      std::clog << "  FAILED: " << e.what() << std::endl;
       _failed = true;
     }
   }
@@ -142,12 +142,12 @@ void TestChecker::compare(const DetectedTag& referenceTag, const DetectedTag& te
   
   if (ref_reliable && test_reliable) {
     if (referenceTag.id != testTag.id)
-      throw check_error(std::string("tags with different IDs frame") + std::to_string(frame));
+      throw check_error(std::string("tags with different IDs frame ") + std::to_string(frame));
 
     float dx = fabs(referenceTag.x - testTag.x);
     float dy = fabs(referenceTag.y - testTag.y);
     if (dx > _epsilon || dy > _epsilon)
-      throw check_error(std::string("tags at different positions in frame") + std::to_string(frame));
+      throw check_error(std::string("tags at different positions in frame ") + std::to_string(frame));
   }
 }
 
