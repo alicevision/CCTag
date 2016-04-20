@@ -9,8 +9,6 @@
 // Contains cctag info that is compared during regression testing.
 struct DetectedTag
 {
-  static float EQUALITY_EPSILON;  // configurable
-  
   int id, status;
   double x, y, quality;
   
@@ -31,9 +29,6 @@ struct DetectedTag
     id(marker.id()), status(marker.getStatus()),
     x(marker.x()), y(marker.y()), quality(marker.quality())
   { }
-  
-  bool operator==(const DetectedTag&) const;
-
 };
 
 struct FrameLog
@@ -55,8 +50,6 @@ struct FrameLog
   FrameLog(size_t frame, float elapsedTime, const cctag::CCTag::List& markers) :
     frame(frame), elapsedTime(elapsedTime), tags(markers.begin(), markers.end())
   { }
-  
-  bool operator==(const FrameLog&) const;
 
   static FrameLog detect(size_t frame, const cv::Mat& src, const cctag::Parameters& parameters,
     const cctag::CCTagMarkersBank& bank);

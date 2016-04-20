@@ -12,24 +12,6 @@
 
 using namespace cctag;
 
-float DetectedTag::EQUALITY_EPSILON = 0.5;
-
-bool DetectedTag::operator==(const DetectedTag& other) const
-{
-  if (status != cctag::status::id_reliable || other.status != cctag::status::id_reliable)
-    throw std::logic_error("DetectedTag::==: status not reliable");
-  return (fabs(x-other.x) <= EQUALITY_EPSILON) && (fabs(y-other.y) <= EQUALITY_EPSILON);
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-bool FrameLog::operator==(const FrameLog& other) const
-{
-  if (frame != other.frame)
-    throw std::logic_error("FrameLog::==: comparing different frames");
-  return tags == other.tags;
-}
-
 FrameLog FrameLog::detect(size_t frame, const cv::Mat& src, const Parameters& parameters,
   const cctag::CCTagMarkersBank& bank)
 {
