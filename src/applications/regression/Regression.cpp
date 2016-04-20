@@ -123,6 +123,32 @@ void TestChecker::compare(FrameLog& referenceLog, FrameLog& testLog, size_t fram
   if (!SortTags(testLog))
     throw check_error("test log contains duplicate IDs");
   
+  _elapsedDiffAcc(testLog.elapsedTime - referenceLog.elapsedTime);
+  
+  const size_t tagCount = referenceLog.tags.size();
+  for (size_t i = 0; i < tagCount; ++i) {
+    _qualityDiffAcc(testLog.tags[i].quality - referenceLog.tags[i].quality);
+    compare(referenceLog.tags[i], testLog.tags[i], frame);
+  }
+}
+
+void TestChecker::compare(const DetectedTag& referenceTag, const DetectedTag& testTag, size_t frame)
+{
+  const bool ref_reliable = referenceTag.status == cctag::status::id_reliable;
+  const bool test_reliable = testTag.status == cctag::status::id_reliable;
+  
+  if (ref_reliable ^ test_reliable)
+    throw check_error(std::string("tags of different status in frame ") + std::to_string(frame));
+  
+  if (ref_reliable && test_reliable) {
+    if (referenceTag.id != testTag.id)
+      throw check_error(std::string("tags with different IDs frame") + std::to_string(frame));
+
+    float dx = fabs(referenceTag.x - testTag.x);
+    float dy = fabs(referenceTag.y - testTag.y);
+    if (dx > _epsilon || dy > _epsilon)
+      throw check_error(std::string("tags at different positions in frame") + std::to_string(frame));
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////
