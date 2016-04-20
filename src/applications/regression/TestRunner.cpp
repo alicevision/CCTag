@@ -1,12 +1,12 @@
 #include "TestRunner.h"
 
-TestRunner::TestRunner(const std::string& inputDir, const std::string& outputDir, const cctag::Parameters parameters) :
-  _inputDirPath(inputDir), _outputDirPath(outputDir), _parameters(parameters)
+TestRunner::TestRunner(const std::string& inputDir, const std::string& outputDir) :
+  _inputDirPath(inputDir), _outputDirPath(outputDir)
 {
-  collectFiles();
+  collectInputFiles();
 }
 
-void TestRunner::collectFiles()
+void TestRunner::collectInputFiles()
 {
   using namespace boost::filesystem;
 
@@ -24,13 +24,29 @@ void TestRunner::collectFiles()
   }
 }
 
-void TestRunner::detect()
+// Input directory must contain images.
+void TestRunner::generateReferenceResults(const cctag::Parameters& parameters)
 {
   size_t i = 1, count = _inputFilePaths.size();
   for (const auto& inputFilePath: _inputFilePaths) {
-    std::clog << "Processing file " << i++ << "/" << count << ": " << inputFilePath;
-    FileLog fileLog = FileLog::detect(inputFilePath.native(), _parameters);
+    std::clog << "Processing file " << i++ << "/" << count << ": " << inputFilePath << std::endl;
+    FileLog fileLog = FileLog::detect(inputFilePath.native(), parameters);
     auto outputPath = _outputDirPath / inputFilePath.filename().replace_extension(".xml");
+    fileLog.save(outputPath.native());
+  }
+}
+
+// Input directory must contain XML files; parameters and input file will be read from those.
+void TestRunner::generateTestResults()
+{
+  size_t i = 1, count = _inputFilePaths.size();
+  for (const auto& inputFilePath: _inputFilePaths)
+  if (inputFilePath.extension() == ".xml") {
+    std::clog << "Processing file " << i++ << "/" << count << ": " << inputFilePath << std::endl;
+    FileLog fileLog;
+    fileLog.load(inputFilePath.native());
+    fileLog = FileLog::detect(fileLog.filename, fileLog.parameters);
+    auto outputPath = _outputDirPath / inputFilePath.filename();
     fileLog.save(outputPath.native());
   }
 }
