@@ -5,13 +5,14 @@
 
 class TestRunner
 {
-  boost::filesystem::path _imageDir;
-  boost::filesystem::path _resultDir;
-  cctag::Parameters _parameters;
+  const boost::filesystem::path _inputDirPath;
+  const boost::filesystem::path _outputDirPath;
+  const cctag::Parameters _parameters;
+  std::vector<boost::filesystem::path> _inputFilePaths;
   
-  std::vector<boost::filesystem::path> _imagePaths;
+  void collectFiles();
   
 public:
-  TestRunner(const std::string& imageDir, const std::string& resultDir, const cctag::Parameters parameters);
-  void run();
+  TestRunner(const std::string& inputDir, const std::string& outputDir, const cctag::Parameters parameters);
+  void detect();
 };
