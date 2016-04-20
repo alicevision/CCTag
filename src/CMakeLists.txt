@@ -87,7 +87,8 @@ set(CCTagDetect_cpp ./applications/detection/main.cpp ./applications/detection/C
 
 set(CCTagRegression_cpp
   ./applications/regression/main.cpp
-  ./applications/regression/TestLog.cpp)
+  ./applications/regression/TestLog.cpp
+  ./applications/regression/TestRunner.cpp)
 set_source_files_properties(${CCTagRegression_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
 
 if(USE_CUDA)
