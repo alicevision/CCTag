@@ -82,8 +82,9 @@ struct FileLog
     filename(filename), parameters(parameters)
   { }
   
-  static void save(const std::string& filename, const FileLog& fileLog);
-  static FileLog load(const std::string& filename);
+  void save(const std::string& filename);
+  void load(const std::string& filename);
+  
   static bool isSupportedFormat(const std::string& filename);
   static FileLog detect(const std::string& filename, const cctag::Parameters& parameters);
   

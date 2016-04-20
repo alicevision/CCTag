@@ -48,20 +48,18 @@ FrameLog FrameLog::detect(size_t frame, const cv::Mat& src, const Parameters& pa
 
 static const char* TOPLEVEL_XML_ELEMENT("FileLog");
 
-void FileLog::save(const std::string& filename, const FileLog& fileLog)
+void FileLog::save(const std::string& filename)
 {
   std::ofstream ofs(filename);
   boost::archive::xml_oarchive oa(ofs);
-  oa << boost::serialization::make_nvp(TOPLEVEL_XML_ELEMENT, fileLog);
+  oa << boost::serialization::make_nvp(TOPLEVEL_XML_ELEMENT, *this);
 }
 
-FileLog FileLog::load(const std::string& filename)
+void FileLog::load(const std::string& filename)
 {
-  FileLog fileLog;
   std::ifstream ifs(filename);
   boost::archive::xml_iarchive ia(ifs);
-  ia >> boost::serialization::make_nvp(TOPLEVEL_XML_ELEMENT, fileLog);
-  return fileLog;
+  ia >> boost::serialization::make_nvp(TOPLEVEL_XML_ELEMENT, *this);
 }
 
 bool FileLog::isSupportedImage(const std::string& filename)
