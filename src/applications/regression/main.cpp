@@ -52,7 +52,7 @@ static std::string ParseOptions(int argc, char **argv)
   
   if (vm.count("generate-reference")) {
     if (!vm.count("input-dir") || !vm.count("output-dir") || !vm.count("parameters"))
-      throw error("All generate options are mandatory for --generate");
+      throw error("All generate options are mandatory for --generate-reference");
     mode = "generate-reference";
   }
   
