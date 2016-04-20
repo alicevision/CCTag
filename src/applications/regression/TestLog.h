@@ -1,6 +1,5 @@
 #pragma once
 
-#include <math.h>
 #include <vector>
 #include <opencv/cv.h>
 #include <boost/serialization/nvp.hpp>
@@ -10,14 +9,10 @@
 // Contains cctag info that is compared during regression testing.
 struct DetectedTag
 {
+  static float EQUALITY_EPSILON;  // configurable
+  
   int id, status;
   double x, y, quality;
-  
-  // NB: we DO want implicit conversion for easy conversion of containers of CCTags
-  DetectedTag(const cctag::CCTag& marker) :
-    id(marker.id()), status(marker.getStatus()),
-    x(marker.x()), y(marker.y()), quality(marker.quality())
-  { }
   
   template<typename Archive>
   void serialize(Archive& ar, const unsigned)
@@ -28,6 +23,17 @@ struct DetectedTag
     ar & BOOST_SERIALIZATION_NVP(y);
     ar & BOOST_SERIALIZATION_NVP(quality);
   }
+
+  DetectedTag() = default;
+  
+  // NB: we DO want implicit conversion for easy conversion of containers of CCTags
+  DetectedTag(const cctag::CCTag& marker) :
+    id(marker.id()), status(marker.getStatus()),
+    x(marker.x()), y(marker.y()), quality(marker.quality())
+  { }
+  
+  bool operator==(const DetectedTag&) const;
+
 };
 
 struct FrameLog
@@ -35,10 +41,6 @@ struct FrameLog
   size_t frame;
   float elapsedTime;
   std::vector<DetectedTag> tags;
-  
-  FrameLog(size_t frame, float elapsedTime, const cctag::CCTag::List& markers) :
-    frame(frame), elapsedTime(elapsedTime), tags(markers.begin(), markers.end())
-  { }
   
   template<typename Archive>
   void serialize(Archive& ar, const unsigned)
@@ -48,6 +50,14 @@ struct FrameLog
     ar & BOOST_SERIALIZATION_NVP(tags);
   }
   
+  FrameLog() = default;
+  
+  FrameLog(size_t frame, float elapsedTime, const cctag::CCTag::List& markers) :
+    frame(frame), elapsedTime(elapsedTime), tags(markers.begin(), markers.end())
+  { }
+  
+  bool operator==(const FrameLog&) const;
+
   static FrameLog detect(size_t frame, const cv::Mat& src, const cctag::Parameters& parameters,
     const cctag::CCTagMarkersBank& bank);
 };
@@ -58,10 +68,6 @@ struct FileLog
   cctag::Parameters parameters;
   std::vector<FrameLog> frameLogs;
   
-  FileLog(const std::string& filename, const cctag::Parameters& parameters) :
-    filename(filename), parameters(parameters)
-  { }
-  
   template<typename Archive>
   void serialize(Archive& ar, const unsigned)
   {
@@ -69,7 +75,15 @@ struct FileLog
     ar & BOOST_SERIALIZATION_NVP(parameters);
     ar & BOOST_SERIALIZATION_NVP(frameLogs);
   }
+  
+  FileLog() = default;
 
+  FileLog(const std::string& filename, const cctag::Parameters& parameters) :
+    filename(filename), parameters(parameters)
+  { }
+  
+  static void save(const std::string& filename, const FileLog& fileLog);
+  static FileLog load(const std::string& filename);
   static bool isSupportedFormat(const std::string& filename);
   static FileLog detect(const std::string& filename, const cctag::Parameters& parameters);
   

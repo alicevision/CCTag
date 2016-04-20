@@ -1,11 +1,34 @@
+#include <math.h>
+#include <fstream>
 #include <chrono>
 #include <stdexcept>
 #include <boost/algorithm/string.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/opencv.hpp>
 #include "TestLog.h"
 
 using namespace cctag;
+
+float DetectedTag::EQUALITY_EPSILON = 0.5;
+
+bool DetectedTag::operator==(const DetectedTag& other) const
+{
+  if (status != cctag::status::id_reliable || other.status != cctag::status::id_reliable)
+    throw std::logic_error("DetectedTag::==: status not reliable");
+  return (fabs(x-other.x) <= EQUALITY_EPSILON) && (fabs(y-other.y) <= EQUALITY_EPSILON);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool FrameLog::operator==(const FrameLog& other) const
+{
+  if (frame != other.frame)
+    throw std::logic_error("FrameLog::==: comparing different frames");
+  return tags == other.tags;
+}
 
 FrameLog FrameLog::detect(size_t frame, const cv::Mat& src, const Parameters& parameters,
   const cctag::CCTagMarkersBank& bank)
@@ -19,6 +42,26 @@ FrameLog FrameLog::detect(size_t frame, const cv::Mat& src, const Parameters& pa
   const auto td = duration_cast<milliseconds>(t1 - t0).count() / 1000.f;
   
   return FrameLog(frame, td, markers);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+static const char* TOPLEVEL_XML_ELEMENT("FileLog");
+
+void FileLog::save(const std::string& filename, const FileLog& fileLog)
+{
+  std::ofstream ofs(filename);
+  boost::archive::xml_oarchive oa(ofs);
+  oa << boost::serialization::make_nvp(TOPLEVEL_XML_ELEMENT, fileLog);
+}
+
+FileLog FileLog::load(const std::string& filename)
+{
+  FileLog fileLog;
+  std::ifstream ifs(filename);
+  boost::archive::xml_iarchive ia(ifs);
+  ia >> boost::serialization::make_nvp(TOPLEVEL_XML_ELEMENT, fileLog);
+  return fileLog;
 }
 
 bool FileLog::isSupportedImage(const std::string& filename)
