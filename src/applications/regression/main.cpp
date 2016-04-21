@@ -10,6 +10,8 @@ static std::string InputDir;
 static std::string OtherDir;
 static std::string ParametersFile;
 static float Epsilon;
+static bool CudaOverride = false;
+static bool UseCuda;
 
 static std::string ParseOptions(int argc, char **argv)
 {
@@ -21,6 +23,8 @@ static std::string ParseOptions(int argc, char **argv)
     ("generate-reference", "Generate reference results from a set of images")
     ("generate-test", "Generate test results based on reference results")
     ("check", "Check two sets of results")
+    ("use-cuda", value<bool>(&UseCuda)->notifier([](bool) { CudaOverride = true; }),
+      "Overrides implementation specified by parameters")
     ("help", "Print help");
   
   options_description data_desc("Data specification options");
