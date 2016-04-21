@@ -6,8 +6,8 @@ static bool SortTags(FrameLog& log);
 
 /////////////////////////////////////////////////////////////////////////////
 
-TestRunner::TestRunner(const std::string& inputDir, const std::string& outputDir) :
-  _inputDirPath(inputDir), _outputDirPath(outputDir)
+TestRunner::TestRunner(const std::string& inputDir, const std::string& outputDir, boost::optional<bool> useCuda) :
+  _inputDirPath(inputDir), _outputDirPath(outputDir), _useCuda(useCuda)
 {
   if (!exists(_inputDirPath) || !is_directory(_inputDirPath))
     throw std::runtime_error("TestRunner: inputDir is not a directory");
@@ -16,9 +16,17 @@ TestRunner::TestRunner(const std::string& inputDir, const std::string& outputDir
   _inputFilePaths = CollectFiles(_inputDirPath);
 }
 
-// Input directory must contain images.
-void TestRunner::generateReferenceResults(const cctag::Parameters& parameters)
+void TestRunner::adjustParameters(cctag::Parameters& parameters)
 {
+  if (_useCuda)
+    parameters._useCuda = *_useCuda;
+}
+
+// Input directory must contain images.
+// NB! parameters is by-val since we may need to adjust them.
+void TestRunner::generateReferenceResults(cctag::Parameters parameters)
+{
+  adjustParameters(parameters);
   size_t i = 1, count = _inputFilePaths.size();
   for (const auto& inputFilePath: _inputFilePaths) {
     std::clog << "Processing file " << i++ << "/" << count << ": " << inputFilePath << std::endl;
@@ -37,6 +45,7 @@ void TestRunner::generateTestResults()
     std::clog << "Processing file " << i++ << "/" << count << ": " << inputFilePath << std::endl;
     FileLog fileLog;
     fileLog.load(inputFilePath.native());
+    adjustParameters(fileLog.parameters);
     fileLog = FileLog::detect(fileLog.filename, fileLog.parameters);
     auto outputPath = _outputDirPath / inputFilePath.filename();
     fileLog.save(outputPath.native());

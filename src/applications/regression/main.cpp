@@ -10,8 +10,7 @@ static std::string InputDir;
 static std::string OtherDir;
 static std::string ParametersFile;
 static float Epsilon;
-static bool CudaOverride = false;
-static bool UseCuda;
+static boost::optional<bool> UseCuda;
 
 static std::string ParseOptions(int argc, char **argv)
 {
@@ -23,7 +22,7 @@ static std::string ParseOptions(int argc, char **argv)
     ("generate-reference", "Generate reference results from a set of images")
     ("generate-test", "Generate test results based on reference results")
     ("check", "Check two sets of results")
-    ("use-cuda", value<bool>(&UseCuda)->notifier([](bool) { CudaOverride = true; }),
+    ("use-cuda", value<bool>()->notifier([](bool v) { UseCuda = v; }),
       "Overrides implementation specified by parameters")
     ("help", "Print help");
   
@@ -81,7 +80,7 @@ static std::string ParseOptions(int argc, char **argv)
 
 static void GenerateReference()
 {
-  TestRunner testRunner(InputDir, OtherDir);
+  TestRunner testRunner(InputDir, OtherDir, UseCuda);
   cctag::Parameters parameters;
   
   {
@@ -111,13 +110,16 @@ int main(int argc, char **argv)
   try {
     auto mode = ParseOptions(argc, argv);
     
+    if (UseCuda) std::clog << "CUDA override SET to: " << *UseCuda << std::endl;
+    else std::clog << "CUDA override NOT SET; will use parameters" << std::endl;
+    
     if (mode == "generate-reference") {
       GenerateReference();
       return 0;
     }
     
     if (mode == "generate-test") {
-      TestRunner testRunner(InputDir, OtherDir);
+      TestRunner testRunner(InputDir, OtherDir, UseCuda);
       testRunner.generateTestResults();
       return 0;
     }

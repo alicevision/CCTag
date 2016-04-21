@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
@@ -14,11 +15,14 @@ class TestRunner
 {
   const boost::filesystem::path _inputDirPath;
   const boost::filesystem::path _outputDirPath;
+  const boost::optional<bool> _useCuda;
   std::vector<boost::filesystem::path> _inputFilePaths;
   
+  void adjustParameters(cctag::Parameters& parameters);
+  
 public:
-  TestRunner(const std::string& inputDir, const std::string& outputDir);
-  void generateReferenceResults(const cctag::Parameters& parameters);
+  TestRunner(const std::string& inputDir, const std::string& outputDir, boost::optional<bool> useCuda);
+  void generateReferenceResults(cctag::Parameters parameters);
   void generateTestResults();
 };
 
