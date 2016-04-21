@@ -16,26 +16,23 @@ static std::string ParseOptions(int argc, char **argv)
   using namespace boost::program_options;
   std::string mode;
   
-  options_description all_desc("Mode and common options");
+  options_description all_desc("Mode options");
   all_desc.add_options()
     ("generate-reference", "Generate reference results from a set of images")
     ("generate-test", "Generate test results based on reference results")
     ("check", "Check two sets of results")
-    ("reference-dir", value<std::string>(&InputDir), "Directory with reference results")
-    ("output-dir", value<std::string>(&OtherDir), "Output directory for test results [data will be overwritten!]")
     ("help", "Print help");
   
-  options_description ref_desc("Generate reference options");
-  ref_desc.add_options()
+  options_description data_desc("Data specification options");
+  data_desc.add_options()
+    ("reference-dir", value<std::string>(&InputDir), "Directory with reference results")
     ("input-dir", value<std::string>(&InputDir), "Input directory for images")
-    ("parameters", value<std::string>(&ParametersFile), "Detection parameters file");
-  
-  options_description check_desc("Check options");
-  check_desc.add_options()
+    ("output-dir", value<std::string>(&OtherDir), "Output directory for test results [data will be overwritten!]")
+    ("parameters", value<std::string>(&ParametersFile), "Detection parameters file")
     ("check-dir", value<std::string>(&OtherDir), "Directory with results to check")
     ("epsilon", value<float>(&Epsilon), "Position tolerance for x/y coordinates");
   
-  all_desc.add(ref_desc).add(check_desc);
+  all_desc.add(data_desc);
   
   variables_map vm;
   store(parse_command_line(argc, argv, all_desc), vm);
