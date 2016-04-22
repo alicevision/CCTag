@@ -28,7 +28,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/matrix_expression.hpp>
 #include <boost/numeric/ublas/vector.hpp>
-#include <boost/unordered/unordered_map.hpp>
+#include <boost/container/flat_set.hpp>
 
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -205,24 +205,32 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
     CCTAG_COUT_LILIAN("Elapsed time for vote: " << t.elapsed());
 }
 
+    static inline unsigned packxy(int x, int y)
+    {
+      unsigned ux = x, uy = y;
+      return (ux << 16) | (uy & 0xFFFF);
+    }
+
     void edgeLinking(const EdgePointsImage& img, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax,
             WinnerMap& winners, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
-        boost::unordered_set< std::pair<int, int> > processed;
+        
+        boost::container::flat_set<unsigned int> processed; // (x,y) packed in 32 bits
         if (pmax) {
             // Add current max point
             convexEdgeSegment.push_back(pmax);
             pmax->_processedIn = true;
 
-            processed.insert(std::pair < int, int > ((int) pmax->x(), (int) pmax->y()));
+            processed.insert(packxy(pmax->x(), pmax->y()));
             // Link left
             edgeLinkingDir(img, processed, pmax, 1, convexEdgeSegment, winners, windowSizeOnInnerEllipticSegment, averageVoteMin);
             // Link right
             edgeLinkingDir(img, processed, pmax, -1, convexEdgeSegment, winners, windowSizeOnInnerEllipticSegment, averageVoteMin);
         }
     }
-
-    void edgeLinkingDir(const EdgePointsImage& img, boost::unordered_set< std::pair<int, int> >& processed, EdgePoint* p, const int dir,
+    
+    void edgeLinkingDir(const EdgePointsImage& img, boost::container::flat_set<unsigned int>& processed, EdgePoint* p, const int dir,
             std::list<EdgePoint*>& convexEdgeSegment, WinnerMap& winners, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
+        
         std::list<float> phi;
         std::size_t i = 0;
         bool found = true;
@@ -272,7 +280,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
                     if (sx >= 0 && sx < int( img.shape()[0]) &&
                             sy >= 0 && sy < int( img.shape()[1]) &&
-                            img[sx][sy] && processed.find(std::pair<int, int>(sx, sy)) == processed.end()) {
+                            img[sx][sy] && processed.find(packxy(sx, sy)) == processed.end()) {
                         if (phi.size() == windowSizeOnInnerEllipticSegment) // (ok, resolu avec la multiresolution) TODO , 4 est un paramètre de l'algorithme, + les motifs à détecter sont importants, + la taille de la fenêtre doit être grande
                         {
                             // Check if convexity has been lost (concavity)
@@ -289,7 +297,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                             }
                         }
                         if (stop == 0) {
-                            processed.insert(std::pair < int, int > ((int) p->x(), (int) p->y()));
+                            processed.insert(packxy(p->x(), p->y()));
                             /* if no thinning, uncomment this part */
                             ///////////////Bloc lié à la différence de réponse du détecteur de contour//////////////////////
                             /*{
@@ -342,7 +350,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                             stop = 1; // Found
 
                         }
-                        processed.insert(std::pair < int, int > ((int) p->x(), (int) p->y()));
+                        processed.insert(packxy(p->x(), p->y()));
                     }
                 }
                 ++j;

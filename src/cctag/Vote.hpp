@@ -7,7 +7,7 @@
 #include <cctag/Candidate.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
-#include <boost/unordered/unordered_set.hpp>
+#include <boost/container/flat_set.hpp>
 
 #include <cstddef>
 #include <list>
@@ -45,7 +45,7 @@ void edgeLinking( const EdgePointsImage& img, std::list<EdgePoint*>& convexEdgeS
 /** @brief Edge linking in a given direction
  * @param edges resulting edges sorted points
  */
-void edgeLinkingDir( const EdgePointsImage& img, boost::unordered_set<std::pair<int, int> >& processed,
+void edgeLinkingDir( const EdgePointsImage& img, boost::container::flat_set<unsigned int>& processed,
 	EdgePoint* p, const int dir, std::list<EdgePoint*>& convexEdgeSegment,
 	WinnerMap& winners, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
