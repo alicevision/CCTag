@@ -16,7 +16,7 @@ namespace cctag {
  */
 typedef boost::multi_array<EdgePoint*, 2> EdgePointsImage;
 
-typedef boost::unordered_map< EdgePoint*, std::list< EdgePoint* > > WinnerMap;  ///< associate a winner with its voters
+typedef boost::unordered_map< EdgePoint*, std::vector< EdgePoint* > > WinnerMap;  ///< associate a winner with its voters
 
 } // namespace cctag
 

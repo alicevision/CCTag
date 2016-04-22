@@ -680,7 +680,7 @@ void createImageForVoteResultDebug(
     for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
     {
       EdgePoint* winner = itr->first;
-      std::list<EdgePoint*> v = itr->second;
+      const std::vector<EdgePoint*>& v = itr->second;
       if (mx < v.size())
       {
         mx = v.size();
@@ -690,7 +690,7 @@ void createImageForVoteResultDebug(
     for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
     {
       EdgePoint* winner = itr->first;
-      std::list<EdgePoint*> v = itr->second;
+      const std::vector<EdgePoint*>& v = itr->second;
       imgVote.at<uchar>(winner->y(),winner->x()) = (unsigned char) ((v.size() * 10.0));
     }
 

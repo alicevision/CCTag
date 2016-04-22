@@ -147,7 +147,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
          * points that voted for this inner point candidate.
          */
         winners.insert( std::pair<cctag::EdgePoint*,
-                                  std::list<cctag::EdgePoint*> >( ep, std::list<cctag::EdgePoint*>() ) );
+                                  std::vector<cctag::EdgePoint*> >( ep, std::vector<cctag::EdgePoint*>() ) );
     }
 
     /* Block 4
