@@ -6,69 +6,69 @@
 
 #include "Regression.h"
 
-static std::string InputDir;
-static std::string OtherDir;
+static std::string SourceDir;
+static std::string DestinationDir;
 static std::string ParametersFile;
 static float Epsilon;
+static boost::optional<bool> UseCuda;
 
 static std::string ParseOptions(int argc, char **argv)
 {
   using namespace boost::program_options;
   std::string mode;
   
-  options_description all_desc("Mode and common options");
+  options_description all_desc("Mode options");
   all_desc.add_options()
-    ("generate-reference", "Generate reference results from a set of images")
-    ("generate-test", "Generate test results based on reference results")
-    ("check", "Check two sets of results")
-    ("reference-dir", value<std::string>(&InputDir), "Directory with reference results")
-    ("output-dir", value<std::string>(&OtherDir), "Output directory for test results [data will be overwritten!]")
+    ("gen-ref", "Generate reference results from images in the source directory")
+    ("gen-test", "Generate test results based on settings from reference results in the source directory")
+    ("compare", "Compare reference results in the source directory with results in the destination directory")
+    ("use-cuda", value<bool>()->notifier([](bool v) { UseCuda = v; }),
+      "Overrides implementation specified by parameters")
     ("help", "Print help");
   
-  options_description ref_desc("Generate reference options");
-  ref_desc.add_options()
-    ("input-dir", value<std::string>(&InputDir), "Input directory for images")
-    ("parameters", value<std::string>(&ParametersFile), "Detection parameters file");
+  options_description data_desc("Data specification options");
+  data_desc.add_options()
+    ("src-dir", value<std::string>(&SourceDir), "Source directory")
+    ("dst-dir", value<std::string>(&DestinationDir), "Destination directory")
+    ("parameters", value<std::string>(&ParametersFile), "Detection parameters file")
+    ("epsilon", value<float>(&Epsilon)->default_value(0.5f), "Position tolerance for x/y coordinates");
   
-  options_description check_desc("Check options");
-  check_desc.add_options()
-    ("check-dir", value<std::string>(&OtherDir), "Directory with results to check")
-    ("epsilon", value<float>(&Epsilon), "Position tolerance for x/y coordinates");
-  
-  all_desc.add(ref_desc).add(check_desc);
+  all_desc.add(data_desc);
   
   variables_map vm;
   store(parse_command_line(argc, argv, all_desc), vm);
   
   if (vm.count("help")) {
     std::cout << all_desc << std::endl;
+    std::cout << "WARNING: 'generate' modes overwrite data in the destination directory!" << std::endl;
+    std::cout << std::endl;
     exit(0);
   }
   
-  if (vm.count("generate-reference")) {
-    if (!vm.count("input-dir") || !vm.count("output-dir") || !vm.count("parameters"))
+  if (vm.count("gen-ref")) {
+    if (!vm.count("src-dir") || !vm.count("dst-dir") || !vm.count("parameters"))
       throw error("generate-reference: input-dir, output-dir and parameters are mandatory");
-    mode = "generate-reference";
+    mode = "gen-ref";
   }
   
-  if (vm.count("generate-test")) {
+  if (vm.count("gen-test")) {
     if (!mode.empty())
       throw error("only one mode option can be specified");
     if (vm.count("parameters"))
-      throw error("Cannot specify parameters for --generate-test");
-    if (!vm.count("reference-dir") || !vm.count("output-dir"))
-      throw error("generate-test: reference-dir and output-dir are mandatory");
-    mode = "generate-test";
+      throw error("Cannot specify parameters for gen-test");
+    if (!vm.count("src-dir") || !vm.count("dst-dir"))
+      throw error("gen-test: src-dir and dst-dir are mandatory");
+    mode = "gen-test";
   }
   
-  if (vm.count("check")) {
+  if (vm.count("compare")) {
     if (!mode.empty())
       throw error("only one mode option can be specified");
     if (vm.count("parameters"))
-      throw error("Cannot specify parameters for --generate-test");
-    if (!vm.count("reference-dir") || !vm.count("check-dir") || !vm.count("epsilon"))
-      throw error("check: reference-dir, check-dir and epsilon are mandatory");
-    mode = "check";
+      throw error("Cannot specify parameters for compare");
+    if (!vm.count("src-dir") || !vm.count("dst-dir"))
+      throw error("check: src-dir and dst-dir are mandatory");
+    mode = "compare";
   }
   
   if (mode.empty())
@@ -80,7 +80,7 @@ static std::string ParseOptions(int argc, char **argv)
 
 static void GenerateReference()
 {
-  TestRunner testRunner(InputDir, OtherDir);
+  TestRunner testRunner(SourceDir, DestinationDir, UseCuda);
   cctag::Parameters parameters;
   
   {
@@ -94,7 +94,7 @@ static void GenerateReference()
 
 static bool ReportChecks()
 {
-  TestChecker testChecker(InputDir, OtherDir, Epsilon);
+  TestChecker testChecker(SourceDir, DestinationDir, Epsilon);
   bool ok = testChecker.check();
   
   if (ok) std::clog << "All checks PASSED" << std::endl;
@@ -110,18 +110,21 @@ int main(int argc, char **argv)
   try {
     auto mode = ParseOptions(argc, argv);
     
-    if (mode == "generate-reference") {
+    if (UseCuda) std::clog << "CUDA override SET to: " << *UseCuda << std::endl;
+    else std::clog << "CUDA override NOT SET; will use parameters" << std::endl;
+    
+    if (mode == "gen-ref") {
       GenerateReference();
       return 0;
     }
     
-    if (mode == "generate-test") {
-      TestRunner testRunner(InputDir, OtherDir);
+    if (mode == "gen-test") {
+      TestRunner testRunner(SourceDir, DestinationDir, UseCuda);
       testRunner.generateTestResults();
       return 0;
     }
     
-    if (mode == "check") {
+    if (mode == "compare") {
       bool ok = ReportChecks();
       return ok ? 0 : 1;
     }
@@ -133,7 +136,7 @@ int main(int argc, char **argv)
     std::cerr << "Run with --help to see invocation synopsis." << std::endl;
   }
   catch (std::exception& e) {
-    std::cerr << "FATAL ERROR: " << e.what();
+    std::cerr << "FATAL ERROR: " << e.what() << std::endl;
   }
   return 1;
 }

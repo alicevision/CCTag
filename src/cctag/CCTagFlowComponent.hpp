@@ -33,7 +33,7 @@ public:
   cctag::numerical::geometry::Ellipse _outerEllipse;
   std::vector<std::vector<EdgePoint> > _fieldLines;
   std::vector<std::vector<EdgePoint> > _filteredFieldLines;
-  std::list<EdgePoint> _convexEdgeSegment;
+  std::list<EdgePoint> _convexEdgeSegment;  // inner arc
   EdgePoint _seed;
   std::size_t _nCircles;
 
