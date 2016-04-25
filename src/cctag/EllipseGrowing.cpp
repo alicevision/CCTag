@@ -343,13 +343,6 @@ bool ellipseGrowingInit(std::vector<EdgePoint> & points, const std::vector<EdgeP
     goodInit = false;
   }
 
-  // todo@Lilian is this loop still required?
-
-  BOOST_FOREACH(EdgePoint & p, points)
-  {
-    p._processed = -1;
-  }
-
   return goodInit;
 }
 
@@ -377,8 +370,6 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
           isInHull(qIn, qOut, e) &&
           e->_processed != runId)
       {
-        e->_processed = runId;
-
         bounded_vector<double, 2> gradE(2);
         gradE(0) = e->_grad.x();
         gradE(1) = e->_grad.y();
@@ -389,6 +380,7 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
         if (inner_prod(gradE, eO) < 0)
         {
           pts.push_back(e);
+          e->_processed = runId;
           connectedPoint(pts, runId, img, qIn, qOut, sx, sy);
         }
       }
@@ -415,7 +407,7 @@ void computeHull(const numerical::geometry::Ellipse& ellipse, double delta,
 void ellipseHull(const EdgePointsImage& img,
         std::vector<EdgePoint*>& pts,
         numerical::geometry::Ellipse& ellipse,
-        double delta)
+        double delta, const std::size_t runId)
 {
   numerical::geometry::Ellipse qIn, qOut;
   computeHull(ellipse, delta, qIn, qOut);
@@ -425,66 +417,18 @@ void ellipseHull(const EdgePointsImage& img,
   for (std::size_t i = 0; i < initSize; ++i)
   {
     EdgePoint *e = pts[i];
-    connectedPoint(pts, 0, img, qIn, qOut, e->x(), e->y());
+    connectedPoint(pts, runId, img, qIn, qOut, e->x(), e->y());
   }
 }
 
-void ellipseGrowing(const EdgePointsImage& img,
+void ellipseGrowing2(
+        const EdgePointsImage& img,
         const std::vector<EdgePoint*>& filteredChildrens, 
         std::vector<EdgePoint*>& outerEllipsePoints,
         numerical::geometry::Ellipse& ellipse,
-        const double ellipseGrowingEllipticHullWidth, 
-        std::size_t & nSegmentOut,
-        std::size_t & nLabel,
-        bool goodInit)
-{
-  outerEllipsePoints.reserve(filteredChildrens.size()*3);
-
-  BOOST_FOREACH(EdgePoint * children, filteredChildrens)
-  {
-    outerEllipsePoints.push_back(children);
-    children->_processed = 0;
-  }
-
-  int lastSizePoints = 0;
-  // ellipse is initialized by ellipseGrowingInit
-
-  int nIter = 0;
-
-  while (outerEllipsePoints.size() - lastSizePoints > 0)
-  {
-    lastSizePoints = outerEllipsePoints.size();
-
-    if ((nIter == 0) && (!goodInit))
-    {
-      ellipseHull(img, outerEllipsePoints, ellipse, 3);
-    }
-    else
-    {
-      ellipseHull(img, outerEllipsePoints, ellipse, ellipseGrowingEllipticHullWidth);
-    }
-
-    // Compute the new ellipse which fits oulierEllipsePoints
-    numerical::ellipseFitting(ellipse, outerEllipsePoints);
-
-    //CCTAG_TCOUT(ellipse.matrix());
-
-    ++nIter;
-  }
-
-  BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
-  {
-    p->_processed = -1;
-  }
-  
-}
-
-void ellipseGrowing2(const EdgePointsImage& img,
-        const std::vector<EdgePoint*>& filteredChildrens, 
-        std::vector<EdgePoint*>& outerEllipsePoints, numerical::geometry::Ellipse& ellipse,
         const double ellipseGrowingEllipticHullWidth,
         std::size_t & nSegmentOut,
-        std::size_t & nLabel,
+        std::size_t & runId,
         bool goodInit)
 {
   outerEllipsePoints.reserve(filteredChildrens.size()*3);
@@ -492,7 +436,7 @@ void ellipseGrowing2(const EdgePointsImage& img,
   BOOST_FOREACH(EdgePoint * children, filteredChildrens)
   {
     outerEllipsePoints.push_back(children);
-    children->_processed = 0;
+    children->_processed = runId;
   }
 
   int lastSizePoints = 0;
@@ -523,7 +467,7 @@ void ellipseGrowing2(const EdgePointsImage& img,
         }
       }
 
-      ellipseHull(img, outerEllipsePoints, ellipse, ellipseGrowingEllipticHullWidth);
+      ellipseHull(img, outerEllipsePoints, ellipse, ellipseGrowingEllipticHullWidth, runId);
       edgePointsSets.push_back(outerEllipsePoints);
       ellipsesSets.push_back(ellipse);
 
@@ -551,8 +495,21 @@ void ellipseGrowing2(const EdgePointsImage& img,
     }
     outerEllipsePoints = edgePointsSets[nIterMax];
     ellipse = ellipsesSets[nIterMax];
+    
+    // Set all the processed edge points as not processed as only a subset of them
+    // correspond to outerEllipsePoints which must be finally set to runId.
+    for(auto & vedgePoint: edgePointsSets)
+    {
+      for(auto & point: vedgePoint)
+        point->_processed = -1; // Could be any value different of runId
+    }
+    // Set as processed all the outerEllipsePoints
+    for(auto & point: outerEllipsePoints)
+    {
+      point->_processed = runId;
+    }
+    
   }
-
   lastSizePoints = 0;
   nIter = 0;
 
@@ -563,17 +520,13 @@ void ellipseGrowing2(const EdgePointsImage& img,
   {
     lastSizePoints = outerEllipsePoints.size();
 
-    ellipseHull(img, outerEllipsePoints, ellipse, ellipseGrowingEllipticHullWidth);
+    ellipseHull(img, outerEllipsePoints, ellipse, ellipseGrowingEllipticHullWidth, runId);
     // Compute the new ellipse which fits oulierEllipsePoints
     numerical::ellipseFitting(ellipse, outerEllipsePoints);
 
     ++nIter;
   }
 
-  BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
-  {
-    p->_processed = -1;
-  }
 }
 
 } // namespace cctag
