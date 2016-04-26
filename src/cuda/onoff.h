@@ -107,3 +107,8 @@
  */
 #define SORT_ALL_EDGECOORDS_IN_EXPORT
 
+/* Affects Detection.cpp
+ * Flips this switch to use CUDA code for identification or not
+ */
+#define CUDA_IDENTIFICATION false
+

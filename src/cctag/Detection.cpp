@@ -821,11 +821,13 @@ void cctagDetection(CCTag::List& markers,
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
 #ifdef WITH_CUDA
-    /* identification in CUDA requires a host-side nearby point struct
-     * in pinned memory for safe, non-blocking memcpy.
-     */
-    for( CCTag& tag : markers ) {
-        tag.acquireNearbyPointMemory( );
+    if( CUDA_IDENTIFICATION && pipe1 ) {
+        /* identification in CUDA requires a host-side nearby point struct
+         * in pinned memory for safe, non-blocking memcpy.
+         */
+        for( CCTag& tag : markers ) {
+            tag.acquireNearbyPointMemory( );
+        }
     }
 #endif // WITH_CUDA
   
@@ -839,7 +841,7 @@ void cctagDetection(CCTag::List& markers,
         const int numTags  = markers.size();
 
 #ifdef WITH_CUDA
-        if( pipe1 && numTags > 0 ) {
+        if( CUDA_IDENTIFICATION && pipe1 && numTags > 0 ) {
             pipe1->checkTagAllocations( numTags, params );
         }
 #endif // WITH_CUDA
@@ -860,7 +862,7 @@ void cctagDetection(CCTag::List& markers,
         }
 
 #ifdef WITH_CUDA
-        if( pipe1 && numTags > 0 ) {
+        if( CUDA_IDENTIFICATION && pipe1 && numTags > 0 ) {
             pipe1->uploadCuts( numTags, vSelectedCuts, params );
             pipe1->makeCudaStreams( numTags );
 
@@ -896,7 +898,7 @@ void cctagDetection(CCTag::List& markers,
                     vSelectedCuts[tagIndex],
                     bank.getMarkers(),
                     imagePyramid.getLevel(0)->getSrc(),
-                    pipe1,
+                    CUDA_IDENTIFICATION ? pipe1 : 0,
                     params );
             }
 
@@ -909,9 +911,11 @@ void cctagDetection(CCTag::List& markers,
     }
 
 #ifdef WITH_CUDA
-    /* Releasing all points in all threads in the process.
-     */
-    CCTag::releaseNearbyPointMemory();
+    if( CUDA_IDENTIFICATION && pipe1 ) {
+        /* Releasing all points in all threads in the process.
+         */
+        CCTag::releaseNearbyPointMemory();
+    }
 #endif
   
     markers.sort();
