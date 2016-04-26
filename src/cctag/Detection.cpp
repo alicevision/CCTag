@@ -43,6 +43,7 @@
 #include <sstream>
 #include <list>
 #include <utility>
+#include <memory>
 #include <omp.h>
 #ifdef WITH_CUDA
 #include <cuda_runtime.h> // only for debugging
@@ -52,6 +53,8 @@ using namespace std;
 
 namespace cctag
 {
+
+namespace { using CandidatePtr = std::unique_ptr<Candidate>; }
 
 /* These are the CUDA pipelines that we instantiate for parallel processing.
  * We need at least one.
@@ -65,7 +68,7 @@ void constructFlowComponentFromSeed(
         EdgePoint * seed,
         const EdgePointsImage& edgesMap,
         WinnerMap & winners, 
-        std::vector<Candidate> & vCandidateLoopOne,
+        std::vector<CandidatePtr> & vCandidateLoopOne,
         const Parameters & params)
 {
   assert( seed );
@@ -74,10 +77,10 @@ void constructFlowComponentFromSeed(
   if (!seed->_processedIn)
   {
 
-    Candidate candidate;
+    CandidatePtr candidate(new Candidate);
 
-    candidate._seed = seed;
-    std::list<EdgePoint*> & convexEdgeSegment = candidate._convexEdgeSegment;
+    candidate->_seed = seed;
+    std::list<EdgePoint*> & convexEdgeSegment = candidate->_convexEdgeSegment;
 
     // Convex edge linking from the seed in both directions. The linking
     // is performed until the convexity is lost.
@@ -99,10 +102,10 @@ void constructFlowComponentFromSeed(
 
     // All flow components WILL BE next sorted based on this characteristic (scalar); descending order
 #if 1
-    candidate._averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
+    candidate->_averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
     auto it = std::lower_bound(vCandidateLoopOne.begin(), vCandidateLoopOne.end(), candidate,
-      [](const Candidate& c1, const Candidate& c2) { return c1._averageReceivedVote > c2._averageReceivedVote; });
-    vCandidateLoopOne.insert(it, candidate);
+      [](const CandidatePtr& c1, const CandidatePtr& c2) { return c1->_averageReceivedVote > c2->_averageReceivedVote; });
+    vCandidateLoopOne.insert(it, std::move(candidate));
 #else
     if (vCandidateLoopOne.size() > 0)
     {
@@ -431,7 +434,7 @@ void cctagDetectionFromEdges(
   
   const std::size_t nSeedsToProcess = std::min(seeds.size(), nMaximumNbSeeds);
 
-  std::vector<Candidate> vCandidateLoopOne;
+  std::vector<CandidatePtr> vCandidateLoopOne;
 
   // Process all the nSeedsToProcess-first seeds.
   // In the following loop, a seed will lead to a flow component if it lies
@@ -462,7 +465,7 @@ void cctagDetectionFromEdges(
   for (size_t iCandidate = 0; iCandidate < nFlowComponentToProcessLoopTwo; ++iCandidate)
   {
     size_t runId = iCandidate;
-    completeFlowComponent(vCandidateLoopOne[iCandidate], winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, runId, params);
+    completeFlowComponent(*vCandidateLoopOne[iCandidate], winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, runId, params);
   }
 
   DO_TALK(
