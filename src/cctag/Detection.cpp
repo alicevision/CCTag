@@ -123,6 +123,7 @@ void completeFlowComponent(
         const EdgePointsImage& edgesMap,
         std::vector<Candidate> & vCandidateLoopTwo,
         std::size_t & nSegmentOut,
+        std::size_t & runId,
         const Parameters & params)
 {
   try
@@ -199,8 +200,8 @@ void completeFlowComponent(
 
       ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
                       params._ellipseGrowingEllipticHullWidth, nSegmentOut, 
-                      nLabel, goodInit);
-
+                      runId, goodInit);
+       
       candidate._nLabel = nLabel;
 
       std::vector<double> vDistFinal;
@@ -453,7 +454,7 @@ void cctagDetectionFromEdges(
   CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
   while (iCandidate < nFlowComponentToProcessLoopTwo)
   {
-    completeFlowComponent(*it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, params);
+    completeFlowComponent(*it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, iCandidate, params);
     ++it;
     ++iCandidate;
   }

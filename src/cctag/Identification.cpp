@@ -1540,16 +1540,6 @@ int identify_step_2(
   // Get the outer ellipse in its original scale, i.e. in src.
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
 
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
-  DO_TALK(
-
-    d = t2 - t1;
-    spendTime = d.total_milliseconds();
-    CCTAG_COUT_OPTIM("Time in selectCut: " << spendTime << " ms");
-  )
-#endif
-
   // std::vector< cctag::ImageCut > vCuts;
   
   {
@@ -1599,16 +1589,7 @@ int identify_step_2(
     DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
     return status::opti_has_diverged;
   }
-
-#ifdef CCTAG_OPTIM
-  boost::posix_time::ptime t3(boost::posix_time::microsec_clock::local_time());
-  DO_TALK(
-
-    d = t3 - t2;
-    spendTime = d.total_milliseconds();
-    CCTAG_COUT_OPTIM("Time in refineConicFamily: " << spendTime << " ms");
-  )
-#endif
+  
   }
   
   MarkerID id = -1;
