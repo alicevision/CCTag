@@ -43,6 +43,7 @@
 #include <sstream>
 #include <list>
 #include <utility>
+#include <omp.h>
 #ifdef WITH_CUDA
 #include <cuda_runtime.h> // only for debugging
 #endif // WITH_CUDA
@@ -64,7 +65,7 @@ void constructFlowComponentFromSeed(
         EdgePoint * seed,
         const EdgePointsImage& edgesMap,
         WinnerMap & winners, 
-        std::list<Candidate> & vCandidateLoopOne,
+        std::vector<Candidate> & vCandidateLoopOne,
         const Parameters & params)
 {
   assert( seed );
@@ -96,12 +97,16 @@ void constructFlowComponentFromSeed(
       }
     }
 
-    // All flow components WILL BE next sorted based on this characteristic (scalar)
+    // All flow components WILL BE next sorted based on this characteristic (scalar); descending order
+#if 1
     candidate._averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
-
+    auto it = std::lower_bound(vCandidateLoopOne.begin(), vCandidateLoopOne.end(), candidate,
+      [](const Candidate& c1, const Candidate& c2) { return c1._averageReceivedVote > c2._averageReceivedVote; });
+    vCandidateLoopOne.insert(it, candidate);
+#else
     if (vCandidateLoopOne.size() > 0)
     {
-      std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
+      auto it = vCandidateLoopOne.begin();
       while ( ((*it)._averageReceivedVote > candidate._averageReceivedVote) 
               && ( it != vCandidateLoopOne.end() ) )
       {
@@ -113,6 +118,7 @@ void constructFlowComponentFromSeed(
     {
       vCandidateLoopOne.push_back(candidate);
     }
+#endif
   }
 }
 
@@ -177,8 +183,11 @@ void completeFlowComponent(
 
         if (nSegmentCommon == -1)
         {
-          nLabel = nSegmentOut;
-          ++nSegmentOut;
+#pragma omp critical (G3633564c0b9c11e69a77448a5b9a696f)
+          {
+            nLabel = nSegmentOut;
+            ++nSegmentOut;
+          }
         }
         else
         {
@@ -422,7 +431,7 @@ void cctagDetectionFromEdges(
   
   const std::size_t nSeedsToProcess = std::min(seeds.size(), nMaximumNbSeeds);
 
-  std::list<Candidate> vCandidateLoopOne;
+  std::vector<Candidate> vCandidateLoopOne;
 
   // Process all the nSeedsToProcess-first seeds.
   // In the following loop, a seed will lead to a flow component if it lies
@@ -441,9 +450,6 @@ void cctagDetectionFromEdges(
   std::vector<Candidate> vCandidateLoopTwo;
   vCandidateLoopTwo.reserve(nFlowComponentToProcessLoopTwo);
 
-  std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
-  std::size_t iCandidate = 0;
-
   // Second main loop:
   // From the flow components selected in the first loop, the outer ellipse will
   // be here entirely recovered.
@@ -451,11 +457,12 @@ void cctagDetectionFromEdges(
 
   CCTagVisualDebug::instance().initBackgroundImage(src);
   CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
-  while (iCandidate < nFlowComponentToProcessLoopTwo)
+  
+//#pragma omp parallel for
+  for (size_t iCandidate = 0; iCandidate < nFlowComponentToProcessLoopTwo; ++iCandidate)
   {
-    completeFlowComponent(*it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, iCandidate, params);
-    ++it;
-    ++iCandidate;
+    size_t runId = iCandidate;
+    completeFlowComponent(vCandidateLoopOne[iCandidate], winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, runId, params);
   }
 
   DO_TALK(
