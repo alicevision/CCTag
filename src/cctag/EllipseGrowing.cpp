@@ -427,8 +427,7 @@ void ellipseGrowing2(
         std::vector<EdgePoint*>& outerEllipsePoints,
         numerical::geometry::Ellipse& ellipse,
         const double ellipseGrowingEllipticHullWidth,
-        std::size_t & nSegmentOut,
-        std::size_t & runId,
+        std::size_t runId,
         bool goodInit)
 {
   outerEllipsePoints.reserve(filteredChildrens.size()*3);

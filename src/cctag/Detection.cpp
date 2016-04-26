@@ -199,8 +199,7 @@ void completeFlowComponent(
       goodInit = ellipseGrowingInit(points, filteredChildrens, outerEllipse);
 
       ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
-                      params._ellipseGrowingEllipticHullWidth, nSegmentOut, 
-                      runId, goodInit);
+                      params._ellipseGrowingEllipticHullWidth, runId, goodInit);
        
       candidate._nLabel = nLabel;
 
