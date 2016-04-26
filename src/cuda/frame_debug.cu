@@ -144,9 +144,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     DebugImage::writePGMscaled( filename + "-04-hystedges.pgm", hystedges );
 #endif // DEBUG_WRITE_HYSTEDGES_AS_PGM
 
-#ifndef NDEBUG
     const cv::cuda::PtrStepSzb&  edges = _h_edges;
-#endif // NDEBUG
 
 #ifdef DEBUG_WRITE_EDGES_AS_PGM
     DebugImage::writePGMscaled( filename + "-05-edges.pgm", edges );
@@ -162,7 +160,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
          * Confirmed that this works
          */
         vector<int2> out;
-        _vote._all_edgecoords.debug_out( EDGE_POINT_MAX, out );
+        _all_edgecoords.debug_out( EDGE_POINT_MAX, out );
 
         PtrStepSzbNull edgelistplane( edges.cols, edges.rows );
         DebugImage::plotPoints( out, edgelistplane.e, false, DebugImage::BLUE );
@@ -183,9 +181,12 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
          * These points have no before or after information yet.
          * The size of this list has not been copied to the host yet.
          */
+        _voters.copySizeFromDevice();
+#if 0
         POP_CUDA_MEMCPY_TO_HOST_SYNC( &_voters.host.size,
                                       _voters.dev.getSizePtr(),
                                       sizeof(int) );
+#endif
 
         vector<TriplePoint> out;
         _voters.debug_out(  EDGE_POINT_MAX, out );
