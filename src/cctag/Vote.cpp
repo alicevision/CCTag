@@ -566,7 +566,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
             BOOST_FOREACH(EdgePoint * e, childrens) {
 
-                double distFinal;
+                double distFinal = 1e300;
 
                 if (weightedType == NO_WEIGHT) {
                   distFinal = numerical::distancePointEllipse(*e, qm, f);

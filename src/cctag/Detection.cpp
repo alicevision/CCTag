@@ -257,6 +257,7 @@ void completeFlowComponent(
         return;
       }
 
+#pragma omp critical (G3633564c0b9c11e69a77448a5b9a696f)
       vCandidateLoopTwo.push_back(candidate);
 
 #ifdef CCTAG_SERIALIZE
@@ -461,7 +462,7 @@ void cctagDetectionFromEdges(
   CCTagVisualDebug::instance().initBackgroundImage(src);
   CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
   
-//#pragma omp parallel for
+#pragma omp parallel
   for (size_t iCandidate = 0; iCandidate < nFlowComponentToProcessLoopTwo; ++iCandidate)
   {
     size_t runId = iCandidate;
