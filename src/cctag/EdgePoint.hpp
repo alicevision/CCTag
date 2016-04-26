@@ -21,7 +21,7 @@ public:
     , _normGrad( -1.0 )
     , _before( NULL )
     , _after( NULL )
-    , _processed( -1 )
+    , _processed( 0 )
     , _processedIn( false )
     , _isMax( -1 )
     , _edgeLinked( -1 )
@@ -37,7 +37,7 @@ public:
     , _normGrad ( p._normGrad )
     , _before( p._before )
     , _after( p._after )
-    , _processed( -1 )
+    , _processed( 0 )
     , _processedIn( false )
     , _isMax( -1 )
     , _edgeLinked( -1 )
@@ -50,7 +50,7 @@ public:
     : cctag::Point2dN<int>( vx, vy )
     , _before( NULL )
     , _after( NULL )
-    , _processed( -1 )
+    , _processed( 0 )
     , _processedIn( false )
     , _isMax( -1 )
     , _edgeLinked( -1 )
@@ -89,7 +89,7 @@ public:
   double _normGrad;
   EdgePoint* _before;
   EdgePoint* _after;
-  ssize_t _processed;
+  size_t _processed;
   bool _processedIn;
   ssize_t _isMax;
   ssize_t _edgeLinked;

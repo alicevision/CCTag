@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <omp.h>
 
 namespace cctag
 {
@@ -352,7 +353,8 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
 {
   using namespace boost::numeric::ublas;
   BOOST_ASSERT(img[x][y]);
-  img[x][y]->_processed = runId; // Set as processed
+  const size_t threadMask = (size_t)1 << runId;
+  img[x][y]->_processed |= threadMask;  // Set as processed
 
   static int xoff[] = {1, 1, 0, -1, -1, -1, 0, 1};
   static int yoff[] = {0, -1, -1, -1, 0, 1, 1, 1};
@@ -368,7 +370,7 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
 
       if (e && // If unprocessed
           isInHull(qIn, qOut, e) &&
-          e->_processed != runId)
+          !(e->_processed & threadMask))
       {
         bounded_vector<double, 2> gradE(2);
         gradE(0) = e->_grad.x();
@@ -380,7 +382,7 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
         if (inner_prod(gradE, eO) < 0)
         {
           pts.push_back(e);
-          e->_processed = runId;
+          e->_processed |= threadMask;
           connectedPoint(pts, runId, img, qIn, qOut, sx, sy);
         }
       }
@@ -430,12 +432,13 @@ void ellipseGrowing2(
         std::size_t runId,
         bool goodInit)
 {
+  const size_t threadMask = (size_t)1 << runId;
   outerEllipsePoints.reserve(filteredChildrens.size()*3);
 
   BOOST_FOREACH(EdgePoint * children, filteredChildrens)
   {
     outerEllipsePoints.push_back(children);
-    children->_processed = runId;
+    children->_processed |= threadMask;
   }
 
   int lastSizePoints = 0;
@@ -500,12 +503,12 @@ void ellipseGrowing2(
     for(auto & vedgePoint: edgePointsSets)
     {
       for(auto & point: vedgePoint)
-        point->_processed = -1; // Could be any value different of runId
+        point->_processed &= ~threadMask; // Could be any value different of runId
     }
     // Set as processed all the outerEllipsePoints
     for(auto & point: outerEllipsePoints)
     {
-      point->_processed = runId;
+      point->_processed |= threadMask;
     }
     
   }
