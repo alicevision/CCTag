@@ -53,7 +53,7 @@ void edgeLinkingDir( const EdgePointsImage& img, boost::container::flat_set<unsi
  * @param edges list of edges
  * @param childrens resulting childrens
  */
-void childrensOf( std::list<EdgePoint*>& edges, WinnerMap& winnerMap, std::list<EdgePoint*>& childrens );
+void childrensOf(const std::list<EdgePoint*>& edges, WinnerMap& winnerMap, std::list<EdgePoint*>& childrens );
 
 /** @brief Concaten all childrens of each points
  * @param [in/out] edges list of childrens points (from a winner)

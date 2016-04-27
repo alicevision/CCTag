@@ -380,7 +380,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         return;
     }
 
-    void childrensOf(std::list<EdgePoint*>& edges, WinnerMap& winnerMap, std::list<EdgePoint*>& childrens) {
+    void childrensOf(const std::list<EdgePoint*>& edges, WinnerMap& winnerMap, std::list<EdgePoint*>& childrens) {
         std::size_t voteMax = 1;
 
         // OPTI@Lilian : the maximum vote can be computed in the edge linking step with low cost.
@@ -389,13 +389,14 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             voteMax = std::max(voteMax, winnerMap[e].size());
         }
 
-        BOOST_FOREACH(EdgePoint * e, edges) {
-            if (winnerMap[e].size()) {
+        for (EdgePoint* e: edges) {
+            const auto& edgePoints = winnerMap[e]; 
+            if (edgePoints.size()) {
                 //childrens.splice( childrens.end(), winnerMap[e] );
 
-                if (winnerMap[e].size() >= voteMax / 14) // keep outer ellipse point associated with small curvature ! ( near to the osculting circle).  delete this line @Lilian ?
+                if (edgePoints.size() >= voteMax / 14) // keep outer ellipse point associated with small curvature ! ( near to the osculting circle).  delete this line @Lilian ?
                 {
-                    childrens.insert(childrens.end(), winnerMap[e].begin(), winnerMap[e].end());
+                    childrens.insert(childrens.end(), edgePoints.begin(), edgePoints.end());
                 }
             }
         }

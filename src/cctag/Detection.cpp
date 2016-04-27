@@ -128,11 +128,11 @@ void constructFlowComponentFromSeed(
 void completeFlowComponent(
         Candidate & candidate,
         WinnerMap & winners,
-        std::vector<EdgePoint> & points,
+        const std::vector<EdgePoint> & points,
         const EdgePointsImage& edgesMap,
         std::vector<Candidate> & vCandidateLoopTwo,
-        std::size_t & nSegmentOut,
-        std::size_t & runId,
+        std::size_t& nSegmentOut,
+        std::size_t runId,
         const Parameters & params)
 {
   try
@@ -462,7 +462,7 @@ void cctagDetectionFromEdges(
   CCTagVisualDebug::instance().initBackgroundImage(src);
   CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
   
-#pragma omp parallel
+//#pragma omp parallel
   for (size_t iCandidate = 0; iCandidate < nFlowComponentToProcessLoopTwo; ++iCandidate)
   {
     size_t runId = iCandidate;

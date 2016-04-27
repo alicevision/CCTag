@@ -319,7 +319,7 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
   return resCircle;
 }
 
-bool ellipseGrowingInit(std::vector<EdgePoint> & points, const std::vector<EdgePoint*>& filteredChildrens, numerical::geometry::Ellipse& ellipse)
+bool ellipseGrowingInit(const std::vector<EdgePoint> & points, const std::vector<EdgePoint*>& filteredChildrens, numerical::geometry::Ellipse& ellipse)
 {
 
   Point2dN<int> p1;
