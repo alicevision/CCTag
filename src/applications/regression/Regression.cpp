@@ -1,6 +1,7 @@
 #include <algorithm>
 #include "Regression.h"
 
+static void RemoveAllFiles(const boost::filesystem::path dirPath);
 static std::vector<boost::filesystem::path> CollectFiles(const boost::filesystem::path dirPath);
 static bool SortTags(FrameLog& log);
 
@@ -13,6 +14,7 @@ TestRunner::TestRunner(const std::string& inputDir, const std::string& outputDir
     throw std::runtime_error("TestRunner: inputDir is not a directory");
   if (!exists(_outputDirPath) || !is_directory(_outputDirPath))
     throw std::runtime_error("TestRunner: outputDir is not a directory");
+  RemoveAllFiles(_outputDirPath);
   _inputFilePaths = CollectFiles(_inputDirPath);
 }
 
@@ -161,6 +163,13 @@ void TestChecker::compare(const DetectedTag& referenceTag, const DetectedTag& te
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+static void RemoveAllFiles(const boost::filesystem::path dirPath)
+{
+  using namespace boost::filesystem;
+  remove_all(dirPath);
+  create_directories(dirPath);
+}
 
 static std::vector<boost::filesystem::path> CollectFiles(const boost::filesystem::path dirPath)
 {
