@@ -199,8 +199,7 @@ public:
     // implemented in frame_export.cu
     bool applyExport( std::vector<cctag::EdgePoint>&  vPoints,
                       cctag::EdgePointsImage&         edgesMap,
-                      std::vector<cctag::EdgePoint*>& seeds,
-                      cctag::WinnerMap&               winners );
+                      std::vector<cctag::EdgePoint*>& seeds);
 
     cv::Mat* getPlane( ) const;
     cv::Mat* getDx( ) const;

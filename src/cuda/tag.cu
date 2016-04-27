@@ -203,12 +203,11 @@ __host__
 void TagPipe::convertToHost( size_t                          layer,
                              std::vector<cctag::EdgePoint>&  vPoints,
                              cctag::EdgePointsImage&         edgeImage,
-                             std::vector<cctag::EdgePoint*>& seeds,
-                             cctag::WinnerMap&               winners )
+                             std::vector<cctag::EdgePoint*>& seeds)
 {
     assert( layer < _frame.size() );
 
-    _frame[layer]->applyExport( vPoints, edgeImage, seeds, winners );
+    _frame[layer]->applyExport( vPoints, edgeImage, seeds );
 
 }
 

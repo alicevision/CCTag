@@ -203,7 +203,6 @@ void cctagMultiresDetection_inner(
     DO_TALK( CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::"); )
 
     // Data structure for getting vote winners
-    WinnerMap winners;
     std::vector<EdgePoint*> seeds;
 
     boost::posix_time::time_duration d;
@@ -214,8 +213,7 @@ void cctagMultiresDetection_inner(
     cuda_pipe->convertToHost( i, 
                               vPoints,
                               vEdgeMap,
-                              seeds,
-                              winners );
+                              seeds);
     if( durations ) {
         cudaDeviceSynchronize();
     }
@@ -236,7 +234,6 @@ void cctagMultiresDetection_inner(
     vote( vPoints,
           seeds,        // output
           vEdgeMap,
-          winners,      // output
           level->getDx(),
           level->getDy(),
           params );
@@ -255,7 +252,6 @@ void cctagMultiresDetection_inner(
         pyramidMarkers,
         vPoints,
         level->getSrc(),
-        winners,
         seeds,
         vEdgeMap,
         frame, i, std::pow(2.0, (int) i), params,

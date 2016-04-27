@@ -52,12 +52,11 @@ namespace cctag {
  * seeds: edge points having received enough votes to be considered as a seed, i.e.
  * as an edge point belonging on an inner elliptical arc of a cctag.
  * edgesMap: map of all the edge points
- * winners: map associating all seeds to their voters
  * cannyGradX: X derivative of the gray image
  * cannyGradY: Y derivative of the gray image
  */
 void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
-        const EdgePointsImage & edgesMap, WinnerMap& winners,
+        const EdgePointsImage & edgesMap,
         const cv::Mat & dx,
         const cv::Mat & dy,
         const Parameters & params)
@@ -187,18 +186,18 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         // Check if winner was found
         if (choosen) {
             // Associate winner with its voter (add the current point)
-            winners[choosen].push_back(&p);
+            choosen->_voters.push_back(&p);
 
             // update flow length average scale factor
-            choosen->_flowLength = (choosen->_flowLength * (winners[choosen].size() - 1) + totalDistance) / winners[choosen].size();
+            choosen->_flowLength = (choosen->_flowLength * (choosen->_voters.size() - 1) + totalDistance) / choosen->_voters.size();
 
             // If choosen has a number of votes greater than one of
             // the edge points, then update max.
-            if (winners[choosen].size() >= params._minVotesToSelectCandidate) {
+            if (choosen->_voters.size() >= params._minVotesToSelectCandidate) {
                 if (choosen->_isMax == -1) {
                     seeds.push_back(choosen);
                 }
-                choosen->_isMax = winners[choosen].size();
+                choosen->_isMax = choosen->_voters.size();
             }
         }
     }
@@ -212,7 +211,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
     }
 
     void edgeLinking(const EdgePointsImage& img, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax,
-            WinnerMap& winners, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
+            std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
         
         boost::container::flat_set<unsigned int> processed; // (x,y) packed in 32 bits
         if (pmax) {
@@ -222,14 +221,14 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
             processed.insert(packxy(pmax->x(), pmax->y()));
             // Link left
-            edgeLinkingDir(img, processed, pmax, 1, convexEdgeSegment, winners, windowSizeOnInnerEllipticSegment, averageVoteMin);
+            edgeLinkingDir(img, processed, pmax, 1, convexEdgeSegment, windowSizeOnInnerEllipticSegment, averageVoteMin);
             // Link right
-            edgeLinkingDir(img, processed, pmax, -1, convexEdgeSegment, winners, windowSizeOnInnerEllipticSegment, averageVoteMin);
+            edgeLinkingDir(img, processed, pmax, -1, convexEdgeSegment, windowSizeOnInnerEllipticSegment, averageVoteMin);
         }
     }
     
     void edgeLinkingDir(const EdgePointsImage& img, boost::container::flat_set<unsigned int>& processed, EdgePoint* p, const int dir,
-            std::list<EdgePoint*>& convexEdgeSegment, WinnerMap& winners, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
+            std::list<EdgePoint*>& convexEdgeSegment, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
         
         std::list<float> phi;
         std::size_t i = 0;
@@ -240,7 +239,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         int stop = 0;
         std::size_t maxLength = 100;
 
-        float averageVote = winners[p].size();
+        float averageVote = p->_voters.size();
 
         while ((i < maxLength) && (found) && (averageVote >= averageVoteMin) )
         {
@@ -346,7 +345,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                             } else {
                                 convexEdgeSegment.push_front(p);
                             }
-                            averageVote = (averageVote*convexEdgeSegment.size() + winners[p].size() )/ ( convexEdgeSegment.size()+1.0 );
+                            averageVote = (averageVote*convexEdgeSegment.size() + p->_voters.size() )/ ( convexEdgeSegment.size()+1.0 );
                             stop = 1; // Found
 
                         }
@@ -380,7 +379,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         return;
     }
 
-    void childrensOf(const std::list<EdgePoint*>& edges, WinnerMap& winnerMap, std::list<EdgePoint*>& childrens) {
+    void childrensOf(const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& childrens) {
         std::size_t voteMax = 1;
 
         // OPTI@Lilian : the maximum vote can be computed in the edge linking step with low cost.
@@ -388,12 +387,12 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         BOOST_FOREACH(EdgePoint * e, edges) {
 #pragma omp critical (G23fcedca0c4211e6a2e9305a3a7ae691)
           {
-            voteMax = std::max(voteMax, winnerMap[e].size());
+            voteMax = std::max(voteMax, e->_voters.size());
           }
         }
 
         for (EdgePoint* e: edges) {
-            const auto& edgePoints = winnerMap[e]; 
+            const auto& edgePoints = e->_voters; 
             if (edgePoints.size()) {
                 //childrens.splice( childrens.end(), winnerMap[e] );
 

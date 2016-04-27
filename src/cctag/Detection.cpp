@@ -67,7 +67,6 @@ std::vector<popart::TagPipe*> cudaPipelines;
 void constructFlowComponentFromSeed(
         EdgePoint * seed,
         const EdgePointsImage& edgesMap,
-        WinnerMap & winners, 
         std::vector<CandidatePtr> & vCandidateLoopOne,
         const Parameters & params)
 {
@@ -84,7 +83,7 @@ void constructFlowComponentFromSeed(
 
     // Convex edge linking from the seed in both directions. The linking
     // is performed until the convexity is lost.
-    edgeLinking(edgesMap, convexEdgeSegment, seed, winners, 
+    edgeLinking(edgesMap, convexEdgeSegment, seed,
             params._windowSizeOnInnerEllipticSegment, params._averageVoteMin);
 
     // Compute the average number of received points.
@@ -93,8 +92,8 @@ void constructFlowComponentFromSeed(
 
     BOOST_FOREACH(EdgePoint * p, convexEdgeSegment)
     {
-      nReceivedVote += winners[p].size();
-      if (winners[p].size() > 0)
+      nReceivedVote += p->_voters.size();
+      if (p->_voters.size() > 0)
       {
         ++nVotedPoints;
       }
@@ -127,7 +126,6 @@ void constructFlowComponentFromSeed(
 
 void completeFlowComponent(
         Candidate & candidate,
-        WinnerMap & winners,
         const std::vector<EdgePoint> & points,
         const EdgePointsImage& edgesMap,
         std::vector<Candidate> & vCandidateLoopTwo,
@@ -141,7 +139,7 @@ void completeFlowComponent(
     {
       std::list<EdgePoint*> childrens;
 
-      childrensOf(candidate._convexEdgeSegment, winners, childrens);
+      childrensOf(candidate._convexEdgeSegment, childrens);
 
       if (childrens.size() < params._minPointsSegmentCandidate)
       {
@@ -397,7 +395,6 @@ void cctagDetectionFromEdges(
         CCTag::List&            markers,
         std::vector<EdgePoint>& points,
         const cv::Mat&          src,
-        WinnerMap&              winners,
         const std::vector<EdgePoint*>& seeds,
         const EdgePointsImage& edgesMap,
         const std::size_t frame,
@@ -411,7 +408,7 @@ void cctagDetectionFromEdges(
     Parameters::Override : providedParams;
 
   // Call for debug only. Write the vote result as an image.
-  createImageForVoteResultDebug(src, winners, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
+  createImageForVoteResultDebug(src, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
 
   // Set some timers
   boost::timer t3;
@@ -445,7 +442,7 @@ void cctagDetectionFromEdges(
   for (int iSeed = 0; iSeed < nSeedsToProcess; ++iSeed)
   {
     assert( seeds[iSeed] );
-    constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
+    constructFlowComponentFromSeed(seeds[iSeed], edgesMap, vCandidateLoopOne, params);
   }
 
   const std::size_t nFlowComponentToProcessLoopTwo = 
@@ -466,7 +463,7 @@ void cctagDetectionFromEdges(
   for (size_t iCandidate = 0; iCandidate < nFlowComponentToProcessLoopTwo; ++iCandidate)
   {
     size_t runId = iCandidate;
-    completeFlowComponent(*vCandidateLoopOne[iCandidate], winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, runId, params);
+    completeFlowComponent(*vCandidateLoopOne[iCandidate], points, edgesMap, vCandidateLoopTwo, nSegmentOut, runId, params);
   }
 
   DO_TALK(
@@ -688,10 +685,9 @@ void cctagDetectionFromEdges(
 
 void createImageForVoteResultDebug(
         const cv::Mat & src,
-        const WinnerMap & winners,
         std::size_t nLevel)
 {
-#ifdef CCTAG_SERIALIZE 
+#if defined(CCTAG_SERIALIZE) && 0 // lilian fixme!
   {
     std::size_t mx = 0;
     

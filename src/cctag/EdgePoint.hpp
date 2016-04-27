@@ -85,6 +85,7 @@ public:
 
   friend std::ostream& operator<<( std::ostream& os, const EdgePoint& eP );
 
+  std::vector<EdgePoint*> _voters;
   cctag::Point2dN<double> _grad;
   double _normGrad;
   EdgePoint* _before;

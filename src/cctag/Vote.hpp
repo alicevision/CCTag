@@ -26,12 +26,11 @@ namespace cctag {
  * seeds: edge points having received enough votes to be considered as a seed, i.e.
  * as an edge point belonging on an inner elliptical arc of a cctag.
  * edgesMap: map of all the edge points
- * winners: map associating all seeds to their voters
  * cannyGradX: X derivative of the gray image
  * cannyGradY: Y derivative of the gray image
  */
 void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
-        const EdgePointsImage & edgesMap, WinnerMap& winners,
+        const EdgePointsImage & edgesMap,
         const cv::Mat & dx,
         const cv::Mat & dy,
         const Parameters & params);
@@ -40,20 +39,20 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
  * @param[out] convexEdgeSegment
  */
 void edgeLinking( const EdgePointsImage& img, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax, 
-	WinnerMap& winners, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
+	std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
 /** @brief Edge linking in a given direction
  * @param edges resulting edges sorted points
  */
 void edgeLinkingDir( const EdgePointsImage& img, boost::container::flat_set<unsigned int>& processed,
 	EdgePoint* p, const int dir, std::list<EdgePoint*>& convexEdgeSegment,
-	WinnerMap& winners, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
+	std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
 /** @brief Concaten all childrens of each points
  * @param edges list of edges
  * @param childrens resulting childrens
  */
-void childrensOf(const std::list<EdgePoint*>& edges, WinnerMap& winnerMap, std::list<EdgePoint*>& childrens );
+void childrensOf(const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& childrens );
 
 /** @brief Concaten all childrens of each points
  * @param [in/out] edges list of childrens points (from a winner)

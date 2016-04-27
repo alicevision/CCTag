@@ -35,7 +35,6 @@ void cctagDetectionFromEdges(
         CCTag::List&            markers,
         std::vector<EdgePoint>& points,
         const cv::Mat&          src,
-        WinnerMap&              winners,
         const std::vector<EdgePoint*>& seeds,
         const EdgePointsImage&  edgesMap,
         const std::size_t       frame,
@@ -46,7 +45,6 @@ void cctagDetectionFromEdges(
 
 void createImageForVoteResultDebug(
         const cv::Mat & src,
-        const WinnerMap & winners,
         std::size_t nLevel);
 
 } // namespace cctag

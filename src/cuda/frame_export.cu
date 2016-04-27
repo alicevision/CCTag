@@ -13,8 +13,7 @@ using namespace std;
 
 bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
                          cctag::EdgePointsImage&         out_edgemap,
-                         std::vector<cctag::EdgePoint*>& out_seedlist,
-                         cctag::WinnerMap&               winners )
+                         std::vector<cctag::EdgePoint*>& out_seedlist)
 {
     // cerr << "Enter " << __FUNCTION__ << endl;
 
@@ -141,13 +140,6 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
         cctag::EdgePoint* ep = out_edgemap[pt.coord.x][pt.coord.y];
 
         out_seedlist[i] = ep;
-
-        /* Create an map of lists that contains an empty list for every
-         * inner point candidate. This list will be filled with outer
-         * points that voted for this inner point candidate.
-         */
-        winners.insert( std::pair<cctag::EdgePoint*,
-                                  std::vector<cctag::EdgePoint*> >( ep, std::vector<cctag::EdgePoint*>() ) );
     }
 
     /* Block 4
@@ -162,10 +154,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
         if( vote != 0 ) {
             const TriplePoint& point = _voters.host.ptr[ vote ];
             cctag::EdgePoint* potential_seed = out_edgemap[point.coord.x][point.coord.y];
-            if( winners.find(potential_seed) != winners.end() ) {
-                cctag::EdgePoint* this_voter = out_edgemap[pt.coord.x][pt.coord.y];
-                winners[potential_seed].push_back( this_voter );
-            }
+            potential_seed->_voters.push_back(out_edgemap[pt.coord.x][pt.coord.y]);
         }
     }
     // cerr << "Leave " << __FUNCTION__ << " (ok)" << endl;
