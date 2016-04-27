@@ -462,7 +462,7 @@ void cctagDetectionFromEdges(
   CCTagVisualDebug::instance().initBackgroundImage(src);
   CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
   
-//#pragma omp parallel
+#pragma omp parallel for schedule(dynamic, 4)
   for (size_t iCandidate = 0; iCandidate < nFlowComponentToProcessLoopTwo; ++iCandidate)
   {
     size_t runId = iCandidate;
@@ -489,8 +489,13 @@ void cctagDetectionFromEdges(
   CCTagFileDebug::instance().initFlowComponentsIndex(2);
 #endif
 
-  BOOST_FOREACH(const Candidate & candidate, vCandidateLoopTwo)
+  const size_t candidateLoopTwoCount = vCandidateLoopTwo.size();
+  
+#pragma omp parallel for schedule(dynamic, 4)
+  for (size_t iCandidate = 0; iCandidate < candidateLoopTwoCount; ++iCandidate)
   {
+    const Candidate& candidate = vCandidateLoopTwo[iCandidate];
+
 #ifdef CCTAG_SERIALIZE
     CCTagFileDebug::instance().resetFlowComponent();
     std::vector<Candidate> componentCandidates;
@@ -499,10 +504,9 @@ void cctagDetectionFromEdges(
 #endif
 #endif
 
-    // todo@Lilian: remove copies -- find another solution
+    // TODO: remove copying
     std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
     cctag::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
-    std::vector<EdgePoint*> filteredChildrens = candidate._filteredChildrens;
 
     std::vector< std::vector< DirectedPoint2d<double> > > cctagPoints;
 
@@ -583,6 +587,7 @@ void cctagDetectionFromEdges(
       double resSquare = 0;
       double distMax = 0;
 
+      // TODO: omp parallel reduction
       BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
       {
         double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
@@ -650,7 +655,11 @@ void cctagDetectionFromEdges(
 #ifdef CCTAG_SERIALIZE
       tag->setFlowComponents( componentCandidates ); // markers.back().setFlowComponents(componentCandidates);
 #endif
-      markers.push_back( tag ); // markers takes responsibility for delete
+      
+#pragma omp critical (G3d2d664c0c4911e68911305a3a7ae691)
+      {
+        markers.push_back( tag ); // markers takes responsibility for delete
+      }
 #ifdef CCTAG_SERIALIZE
 #ifdef DEBUG
 
