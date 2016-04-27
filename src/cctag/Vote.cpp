@@ -385,10 +385,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         // OPTI@Lilian : the maximum vote can be computed in the edge linking step with low cost.
 
         BOOST_FOREACH(EdgePoint * e, edges) {
-#pragma omp critical (G23fcedca0c4211e6a2e9305a3a7ae691)
-          {
-            voteMax = std::max(voteMax, e->_voters.size());
-          }
+          voteMax = std::max(voteMax, e->_voters.size());
         }
 
         for (EdgePoint* e: edges) {
