@@ -25,7 +25,18 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
     assert( out_edgemap.size() == 0 );
     assert( out_seedlist.size() == 0 );
     assert( winners.size() == 0 );
-    assert( vote_sz <= all_sz );
+#ifndef NDEBUG
+    /* The voters are 1-based, the edge points are 0-based.
+     * When all edge points are voters, voters can be one
+     * higher.
+     */
+    if( vote_sz > all_sz + 1 ) {
+        cerr << __FILE__ << "," << __LINE__ << endl
+             << "    Number of votes " << vote_sz
+             << " is larger than allowed (" << all_sz << ")" << endl;
+        assert( vote_sz <= all_sz + 1 );
+    }
+#endif
 
     if( vote_sz <= 0 ) {
         // no voting happened, no need for edge linking,
