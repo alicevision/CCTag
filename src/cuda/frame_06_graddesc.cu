@@ -262,15 +262,11 @@ void gradient_descent( FrameMetaPtr                 meta,
     uint32_t ct   = __popc( mask );    // horizontal reduce
     assert( ct <= 32 );
 
-#if 0
-    uint32_t leader = __ffs(mask) - 1; // the highest thread id with indicator==true
-#else
-    uint32_t leader = 0;
-#endif
     int write_index = -1;
-    if( threadIdx.x == leader ) {
-        // leader gets warp's offset from global value and increases it
-        // not that it is initialized with 1 to ensure that 0 represents a NULL pointer
+    if( threadIdx.x == 0 ) {
+        // getting warp's offset from global value and increases it
+        // not that it is initialized with 1 to ensure that 0
+        // represents a NULL pointer
         write_index = atomicAdd( &meta.list_size_voters(), (int)ct );
 
         if( meta.list_size_voters() > EDGE_POINT_MAX ) {
@@ -287,7 +283,7 @@ void gradient_descent( FrameMetaPtr                 meta,
     }
     // assert( *chained_edgecoord_list_sz >= 2*all_edgecoord_list_sz );
 
-    write_index = __shfl( write_index, leader ); // broadcast warp write index to all
+    write_index = __shfl( write_index, 0 ); // broadcast warp write index
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
     assert( write_index >= 0 );
