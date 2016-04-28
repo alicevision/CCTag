@@ -21,6 +21,8 @@ struct TriplePoint
 
     int   _winnerSize;
     float _flowLength;
+
+    __device__ inline void init( );
 #ifndef NDEBUG
     int   _coords_collect_idx;
     int   _coords_idx;
@@ -37,6 +39,17 @@ struct TriplePoint
     std::string debug_out( ) const;
 #endif
 };
+
+__device__
+inline void TriplePoint::init()
+{
+    coord.x = coord.y = 0;
+    d.x = d.y = 0;
+    descending.befor.x = descending.befor.y = 0;
+    descending.after.x = descending.after.y = 0;
+    _winnerSize = 0;
+    _flowLength = 0.0f;
+}
 
 #ifndef NDEBUG
 __device__

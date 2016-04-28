@@ -33,7 +33,7 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
     stpY = d_sign( dy );
     e   += a;
     x   += stpX;
-    if( e >= 0.5 ) {
+    if( e >= 0.5f ) {
         y += stpY;
         e -= 1.0f;
     }
@@ -43,6 +43,9 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
 __device__
 inline void initChainedEdgeCoords_2( FrameMetaPtr& meta, DevEdgeList<TriplePoint>& voters )
 {
+    TriplePoint& tp = voters.ptr[0];
+    tp.init();
+
     /* Note: the initial _voters.dev.size is set to 1 because it is used
      * as an index for writing points into an array. Starting the counter
      * at 1 allows to distinguish unchained points (0) from chained
@@ -234,6 +237,7 @@ void gradient_descent( FrameMetaPtr                 meta,
     if( threadIdx.y == 1 ) return;
 
     TriplePoint out_edge;
+    out_edge.init();
     out_edge.coord.x = keep ? out_edge_info.x : 0;
     out_edge.coord.y = keep ? out_edge_info.y : 0;
     out_edge.d.x     = keep ? out_edge_d.x : 0;
@@ -242,10 +246,10 @@ void gradient_descent( FrameMetaPtr                 meta,
     out_edge.descending.befor.y = keep ? merge_directions[0][threadIdx.x].y : 0;
     out_edge.descending.after.x = keep ? merge_directions[1][threadIdx.x].x : 0;
     out_edge.descending.after.y = keep ? merge_directions[1][threadIdx.x].y : 0;
-    // out_edge.my_vote            = 0;
+    // out_edge.my_vote            = 0; - now in a separate allocation
     // out_edge.chosen_flow_length = 0.0f; - now in a separate allocation
-    out_edge._winnerSize        = 0;
-    out_edge._flowLength        = 0.0f;
+    // out_edge._winnerSize        = 0; - now in init
+    // out_edge._flowLength        = 0.0f; - now in init
 
     assert( not outOfBounds( out_edge.descending.befor.x, out_edge.descending.befor.y, edgepoint_index_table ) );
     assert( not outOfBounds( out_edge.descending.after.x, out_edge.descending.after.y, edgepoint_index_table ) );
