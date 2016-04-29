@@ -110,5 +110,5 @@
 /* Affects Detection.cpp
  * Flips this switch to use CUDA code for identification or not
  */
-#define CUDA_IDENTIFICATION false
+#undef CUDA_IDENTIFICATION
 

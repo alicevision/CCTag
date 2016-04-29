@@ -820,8 +820,8 @@ void cctagDetection(CCTag::List& markers,
 
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
-#ifdef WITH_CUDA
-    if( CUDA_IDENTIFICATION && pipe1 ) {
+#if defined(WITH_CUDA) && defined(CUDA_IDENTIFICATION)
+    if( pipe1 ) {
         /* identification in CUDA requires a host-side nearby point struct
          * in pinned memory for safe, non-blocking memcpy.
          */
@@ -840,8 +840,10 @@ void cctagDetection(CCTag::List& markers,
 
         const int numTags  = markers.size();
 
-#ifdef WITH_CUDA
-        if( CUDA_IDENTIFICATION && pipe1 && numTags > 0 ) {
+        cerr << "# markers: " << numTags << endl;
+
+#if defined(WITH_CUDA) && defined(CUDA_IDENTIFICATION)
+        if( pipe1 && numTags > 0 ) {
             pipe1->checkTagAllocations( numTags, params );
         }
 #endif // WITH_CUDA
@@ -861,8 +863,8 @@ void cctagDetection(CCTag::List& markers,
             tagIndex++;
         }
 
-#ifdef WITH_CUDA
-        if( CUDA_IDENTIFICATION && pipe1 && numTags > 0 ) {
+#if defined(WITH_CUDA) && defined(CUDA_IDENTIFICATION)
+        if( pipe1 && numTags > 0 ) {
             pipe1->uploadCuts( numTags, vSelectedCuts, params );
             pipe1->makeCudaStreams( numTags );
 
@@ -893,7 +895,7 @@ void cctagDetection(CCTag::List& markers,
             }
             cudaDeviceSynchronize();
         }
-#endif // WITH_CUDA
+#endif // defined(WITH_CUDA) && defined(CUDA_IDENTIFICATION)
 
         tagIndex = 0;
 
@@ -909,7 +911,11 @@ void cctagDetection(CCTag::List& markers,
                     vSelectedCuts[tagIndex],
                     bank.getMarkers(),
                     imagePyramid.getLevel(0)->getSrc(),
-                    CUDA_IDENTIFICATION ? pipe1 : 0,
+#if defined(WITH_CUDA) && defined(CUDA_IDENTIFICATION)
+                    pipe1,
+#else
+                    0,
+#endif
                     params );
             }
 
@@ -921,8 +927,8 @@ void cctagDetection(CCTag::List& markers,
         if( durations ) durations->log( "after cctag::identification::identify" );
     }
 
-#ifdef WITH_CUDA
-    if( CUDA_IDENTIFICATION && pipe1 ) {
+#if defined(WITH_CUDA) && defined(CUDA_IDENTIFICATION)
+    if( pipe1 ) {
         /* Releasing all points in all threads in the process.
          */
         CCTag::releaseNearbyPointMemory();
