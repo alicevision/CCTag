@@ -282,7 +282,7 @@ private:
 
     cv::cuda::PtrStepSzb    _d_plane;
     cv::cuda::PtrStepSzf    _d_intermediate;
-    cv::cuda::PtrStepSzf    _d_smooth;
+    // cv::cuda::PtrStepSzf    _d_smooth;
     cv::cuda::PtrStepSz16s  _d_dx; // cv::cuda::PtrStepSzf _d_dx;
     cv::cuda::PtrStepSz16s  _d_dy; // cv::cuda::PtrStepSzf _d_dy;
     cv::cuda::PtrStepSz32u  _d_mag;

@@ -18,12 +18,12 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     const size_t h = getHeight();
     size_t p;
 
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
-    assert( p % _d_smooth.elemSize() == 0 );
-    _d_smooth.data = (float*)ptr;
-    _d_smooth.step = p;
-    _d_smooth.cols = w;
-    _d_smooth.rows = h;
+    // POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(float), h );
+    // assert( p % _d_smooth.elemSize() == 0 );
+    // _d_smooth.data = (float*)ptr;
+    // _d_smooth.step = p;
+    // _d_smooth.cols = w;
+    // _d_smooth.rows = h;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int16_t), h );
     assert( p % _d_dx.elemSize() == 0 );
@@ -210,7 +210,7 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE( _d_plane.data );
 
     // allocated in allocRequiredMem
-    POP_CUDA_FREE( _d_smooth.data );
+    // POP_CUDA_FREE( _d_smooth.data );
     POP_CUDA_FREE( _d_dx.data );
     POP_CUDA_FREE( _d_dy.data );
     POP_CUDA_FREE( _d_intermediate.data );
