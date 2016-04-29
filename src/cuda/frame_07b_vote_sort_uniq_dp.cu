@@ -31,6 +31,8 @@ void dp_call_03_sort_uniq(
 {
     cudaError_t  err;
 
+    meta.list_size_interm_inner_points() = 0;
+
     int listsize = meta.list_size_inner_points();
 
     if( listsize == 0 ) return;
@@ -65,11 +67,9 @@ void dp_call_03_sort_uniq(
                                           0,   // use stream 0
                                           DEBUG_CUB_FUNCTIONS );
     if( err != cudaSuccess ) {
-        meta.list_size_interm_inner_points() = 0;
         return;
     }
     if( assist_buffer_sz > intermediate.step * intermediate.rows ) {
-        meta.list_size_interm_inner_points() = 0;
         return;
     }
 #else // not CUB_INIT_CALLS
