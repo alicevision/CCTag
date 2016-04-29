@@ -564,7 +564,7 @@ void cctagDetectionFromEdges(
       }
 
       cctag::Point2d<Eigen::Vector3f> markerCenter;
-      Eigen::Matrix3f markerHomography;
+      Eigen::Matrix3f markerHomography = Eigen::Matrix3f::Zero();
 
       const float ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
 

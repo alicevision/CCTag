@@ -685,8 +685,7 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
   std::size_t upperSize = std::max((std::size_t) ((float)collectedCuts.size()/5.f) , selectSize); // Greater than the final size, 
                                                                                    // Cuts will then be removed iteratively.
   std::size_t j = 0;
-  BoundedVector2d sumDeriv;
-  sumDeriv.clear();
+  Eigen::Vector2f sumDeriv = Eigen::Vector2f::Zero();
   std::map< std::size_t, cctag::DirectedPoint2d<Eigen::Vector3f> > mapBestIdCutOuterPoint;
   
   // Reverse iterator over the variance values from the highest to the smallest one
@@ -727,11 +726,11 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
     
     for(const auto & idCutOuterPoint : mapBestIdCutOuterPoint)
     {
-      BoundedVector2d derivTmp = sumDeriv;
+      Eigen::Vector2f derivTmp = sumDeriv;
       derivTmp(0) -= idCutOuterPoint.second.dX();
       derivTmp(1) -= idCutOuterPoint.second.dY();
       
-      float normTmp = ublas::norm_2( derivTmp );
+      float normTmp = derivTmp.norm();
       
       if ( normTmp < normMin )
       {

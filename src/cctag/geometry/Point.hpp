@@ -66,8 +66,9 @@ class DirectedPoint2d : public Point2d<T>
 
 public:
 	DirectedPoint2d()
-		: Point2d<T>(), _grad(0, 0)
+		: Point2d<T>()
 	{
+                  _grad.fill(0.f);
         }
                 
         DirectedPoint2d(const This& p) = default;
