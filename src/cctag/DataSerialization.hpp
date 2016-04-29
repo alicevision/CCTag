@@ -17,21 +17,21 @@ namespace cctag {
 
   void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet);
 
-  void serializePoint(boost::archive::text_oarchive & ar, const Point2dN<double> & point);
+  void serializePoint(boost::archive::text_oarchive & ar, const Point2d<Eigen::Vector3f> & point);
 // todo templater function above and bellow.
-  void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<double> & point);
+  void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<Eigen::Vector3f> & point);
 
   void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e);
 
-  void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< DirectedPoint2d<double> > & points);
+  void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< DirectedPoint2d<Eigen::Vector3f> > & points);
 
-  void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< DirectedPoint2d<double> > > & points);
+  void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > & points);
 
   void serializeEllipse(boost::archive::text_oarchive & ar, const cctag::numerical::geometry::Ellipse & ellipse);
 
   void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cctag::numerical::geometry::Ellipse> & ellipses);
 
-  void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const cctag::numerical::BoundedMatrix3x3d & matrix);
+  void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const Eigen::Matrix3f& matrix);
 
   void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowComponent & flowComponent);
 

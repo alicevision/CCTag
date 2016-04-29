@@ -1,6 +1,6 @@
 #ifndef _CCTAG_CVMAT_HPP
 #define	_CCTAG_CVMAT_HPP
-
+#if 0
 #ifndef BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #endif
@@ -365,7 +365,7 @@ namespace boostCv {
 //------------------------------------------------------------------------------
 
 	/**
-	 * @todo specialization for std::vector< Point2dN<double> >
+	 * @todo specialization for std::vector< Point2d<Eigen::Vector3f> >
 	 */
 	template<typename T>
 	inline CvMatView createCvMatView( std::vector<T> & m )
@@ -430,5 +430,5 @@ inline std::ostream& operator<<( std::ostream& os, const cctag::boostCv::CvMatCo
 	return os;
 }
 
-
+#endif
 #endif

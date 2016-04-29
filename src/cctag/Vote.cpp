@@ -452,7 +452,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
               {
                 ++k;
                 pts.push_back(*edgePoint);
-                CCTagVisualDebug::instance().drawPoint(cctag::Point2dN<double>(pts.back()), cctag::color_red);
+                CCTagVisualDebug::instance().drawPoint(cctag::Point2d<Eigen::Vector3f>(pts.back()), cctag::color_red);
 
                 if (weightedType == INV_GRAD_WEIGHT) {
                   weights.push_back(255 / (edgePoint->_normGrad));
@@ -591,7 +591,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             std::vector<EdgePoint*>& outerEllipsePoints,
             const std::vector<EdgePoint*>& filteredChildrens,
             const Candidate & anotherCandidate,
-            std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
+            std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
             std::size_t numCircles,
             double thrMedianDistanceEllipse)
     {
@@ -641,7 +641,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             
             std::vector<int>::const_iterator it = permutations.begin();
             for (size_t i = 0; i < 4; ++i) {
-                points.push_back(Point2dN<double>(double(pts[*it](0)), double(pts[*it](1))));
+                points.push_back(Point2d<Eigen::Vector3f>(double(pts[*it](0)), double(pts[*it](1))));
                 ++it;
             }
 
@@ -650,7 +650,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
             it = permutations.begin();
             for (size_t i = 0; i < 4; ++i) {
-                points.push_back(Point2dN<double>(double(anotherOuterEllipsePoints[*it]->x()), double(anotherOuterEllipsePoints[*it]->y())));
+                points.push_back(Point2d<Eigen::Vector3f>(double(anotherOuterEllipsePoints[*it]->x()), double(anotherOuterEllipsePoints[*it]->y())));
                 ++it;
             }
 

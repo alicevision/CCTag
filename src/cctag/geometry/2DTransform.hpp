@@ -1,42 +1,42 @@
 #ifndef _CCTAG_2DTRANSFORM_HPP_
 #define _CCTAG_2DTRANSFORM_HPP_
 
+#include <vector>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector.hpp>
 #include <boost/foreach.hpp>
-#include <vector>
+#include <Eigen/Core>
 
 namespace cctag {
 namespace viewGeometry {
 
-namespace ublas = boost::numeric::ublas;
-
 template<class C>
-inline void projectiveTransform( const ublas::bounded_matrix<double, 3, 3>& tr, std::vector<C>& v )
+inline void projectiveTransform( const Eigen::Matrix3f& tr, std::vector<C>& v )
 {
-	BOOST_FOREACH( C & p, v )
-	{
-		C ptAux = (C) ublas::prec_prod( tr, p );
-		p = cctag::numerical::normalize( ptAux );
-	}
+  for (const auto& p : v) {
+    auto pf = p.template cast<float>();
+    C ptAux = tr * pf;
+    p = cctag::numerical::normalize( ptAux );
+  }
 }
 
-inline void projectiveTransform( const ublas::bounded_matrix<double, 3, 3>& tr, cctag::numerical::geometry::Ellipse& ellipse )
+inline void projectiveTransform( const Eigen::Matrix3f& tr, cctag::numerical::geometry::Ellipse& ellipse )
 {
-	ellipse.setMatrix(
-        ublas::prec_prod(
-            ublas::trans( tr ),
-            (ublas::bounded_matrix<double, 3, 3>)ublas::prec_prod(
-                ellipse.matrix(),
-                tr ) ) );
+  auto m = tr.transpose() * ellipse.matrix() * tr;
+  ellipse.setMatrix(m);
+	//ellipse.setMatrix(
+        //ublas::prec_prod(
+        //    ublas::trans( tr ),
+        //    (ublas::bounded_matrix<double, 3, 3>)ublas::prec_prod(
+        //        ellipse.matrix(),
+        //        tr ) ) );
 }
 
-inline void projectiveTransform( const ublas::bounded_matrix<double, 3, 3>& tr, const ublas::bounded_matrix<double, 3, 3>& ttr, cctag::numerical::geometry::Ellipse& ellipse )
+inline void projectiveTransform( const Eigen::Matrix3f& tr, const Eigen::Matrix3f& ttr, cctag::numerical::geometry::Ellipse& ellipse )
 {
-	ellipse.setMatrix( ublas::prec_prod( ttr, ( ublas::bounded_matrix<double, 3, 3>) ublas::prec_prod( ellipse.matrix(), tr ) ) );
+  auto m = ttr * ellipse.matrix() * tr;
+  ellipse.setMatrix(m);
+	//ellipse.setMatrix( ublas::prec_prod( ttr, ( ublas::bounded_matrix<double, 3, 3>) ublas::prec_prod( ellipse.matrix(), tr ) ) );
 }
 
 } // namespace viewGeometry

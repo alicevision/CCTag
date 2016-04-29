@@ -114,12 +114,12 @@ void SubPixEdgeOptimizer::subPix( int n, const NEWMAT::ColumnVector& x, double& 
 	result = NLPFunction;
 }
 
-Point2dN<double> SubPixEdgeOptimizer::operator()( const double widthContour, const double xp, const double imin, const double imax )
+Point2d<Eigen::Vector3f> SubPixEdgeOptimizer::operator()( const double widthContour, const double xp, const double imin, const double imax )
 {
 	using namespace OPTPP;
 	using namespace NEWMAT;
 
-	Point2dN<double> res;
+	Point2d<Eigen::Vector3f> res;
 	//  Create a Nonlinear problem object
 	_widthContour = widthContour;
 	_xp = xp;
@@ -148,8 +148,8 @@ Point2dN<double> SubPixEdgeOptimizer::operator()( const double widthContour, con
 	// CCTAG_TCOUT( "imax : " << x_sol(4) ); //don't delete.
 
 	// Point raffiné à retourner :
-	res.setX( x_sol(2) );
-	res.setY( _a * x_sol(2) + _b );
+	res.x() = ( x_sol(2) );
+	res.y() = ( _a * x_sol(2) + _b );
 
 	//CCTAG_TCOUT( "p0raffine : (" << res ); //don't delete.
 

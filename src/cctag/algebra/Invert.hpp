@@ -2,6 +2,7 @@
 
 #ifndef _CCTAG_NUMERICAL_INVERT_MATRIX_HPP_
 #define _CCTAG_NUMERICAL_INVERT_MATRIX_HPP_
+#if 0
 //
 // The following code inverts the matrix input using LU-decomposition
 // with backsubstitution of unit vectors.
@@ -164,5 +165,5 @@ double determinant( boost::numeric::ublas::matrix_expression<Matrix> const& mat_
 
 }
 }
-
+#endif
 #endif

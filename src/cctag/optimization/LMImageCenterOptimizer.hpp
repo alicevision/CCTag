@@ -16,7 +16,7 @@ namespace cctag {
 class LMImageCenterOptimizer
 {
 public:
-	typedef std::vector< cctag::Point2dN<double> > VecExtPoints;
+	typedef std::vector< cctag::Point2d<Eigen::Vector3f> > VecExtPoints;
 public:
 	LMImageCenterOptimizer();
 	virtual ~LMImageCenterOptimizer();
@@ -30,7 +30,7 @@ public:
 	static int homology( void* p, int m, int n, const double* x, double* fvec, int iflag );
 
 private:
-	cctag::Point2dN<double> _pToRefine;
+	cctag::Point2d<Eigen::Vector3f> _pToRefine;
 };
 
 } // namespace cctag

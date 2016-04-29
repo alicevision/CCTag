@@ -76,7 +76,7 @@ bool isAnotherSegment(
         std::vector<EdgePoint*>&  outerEllipsePoints,
         const std::vector<EdgePoint*>& filteredChildrens,
         const Candidate & anotherCandidate,
-        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
+        std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
         std::size_t numCircles,
         double thrMedianDistanceEllipse);
 

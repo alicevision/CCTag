@@ -406,8 +406,8 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
 	BOOST_FOREACH(const EdgePoint* point, vPoint){
 		pts.push_back(point->x());
 		pts.push_back(point->y());
-		grad.push_back(point->_grad.x());
-		grad.push_back(point->_grad.y());
+		grad.push_back(point->gradient()(0));
+		grad.push_back(point->gradient()(1));
 	}
 
 	std::vector<double> param;
@@ -423,10 +423,10 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                                  &buff, &size_buff_max,
                                  &param[0] );
 
-	ellipse = cctag::numerical::geometry::Ellipse(Point2dN<double>(param[0],param[1]), param[2], param[3], param[4]);
+	ellipse = cctag::numerical::geometry::Ellipse(Point2d<Eigen::Vector3f>(param[0],param[1]), param[2], param[3], param[4]);
 }
 
-        double innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, double thrCosDiffMax, Point2dN<int> & p1, Point2dN<int> & p2) {
+        double innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, double thrCosDiffMax, Point2d<Eigen::Vector3i> & p1, Point2d<Eigen::Vector3i> & p2) {
             using namespace boost::numeric;
             //using namespace cctag::numerical;
 
@@ -447,13 +447,13 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                 //sumDeriv(0) += gradient(0)/normGrad;
                 //sumDeriv(1) += gradient(1)/normGrad;
 
-                normGrad = std::sqrt(p0->_grad.x() * p0->_grad.x() + p0->_grad.y() * p0->_grad.y());
+                normGrad = std::sqrt(p0->gradient()(0) * p0->gradient()(0) + p0->gradient()(1) * p0->gradient()(1));
 
                 //CCTAG_COUT_VAR(normGrad);
 
                 // Step 1
-                double gx0 = p0->_grad.x() / normGrad;
-                double gy0 = p0->_grad.y() / normGrad;
+                double gx0 = p0->gradient()(0) / normGrad;
+                double gy0 = p0->gradient()(1) / normGrad;
 
                 std::vector<cctag::EdgePoint*>::const_iterator it = ++filteredChildrens.begin();
 
@@ -461,10 +461,10 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                     EdgePoint* pCurrent = *it;
 
                     // TODO Revoir les structure de donnée pour les points 2D et définir un produit scalaire utilisé ici
-                    normGrad = std::sqrt(pCurrent->_grad.x() * pCurrent->_grad.x() + pCurrent->_grad.y() * pCurrent->_grad.y());
+                    normGrad = std::sqrt(pCurrent->gradient()(0) * pCurrent->gradient()(0) + pCurrent->gradient()(1) * pCurrent->gradient()(1));
 
-                    double gx = pCurrent->_grad.x() / normGrad;
-                    double gy = pCurrent->_grad.y() / normGrad;
+                    double gx = pCurrent->gradient()(0) / normGrad;
+                    double gy = pCurrent->gradient()(1) / normGrad;
 
                     double innerProd = gx0 * gx + gy0 * gy;
 
@@ -485,9 +485,9 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                     }
                 }
 
-                normGrad = std::sqrt(pAngle1->_grad.x() * pAngle1->_grad.x() + pAngle1->_grad.y() * pAngle1->_grad.y());
-                double gxmin = pAngle1->_grad.x() / normGrad;
-                double gymin = pAngle1->_grad.y() / normGrad;
+                normGrad = std::sqrt(pAngle1->gradient()(0) * pAngle1->gradient()(0) + pAngle1->gradient()(1) * pAngle1->gradient()(1));
+                double gxmin = pAngle1->gradient()(0) / normGrad;
+                double gymin = pAngle1->gradient()(1) / normGrad;
 
                 // Step 2, compute the minimum inner product
                 min = 1.0;
@@ -500,10 +500,10 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                 for (; it != filteredChildrens.end(); ++it) {
                     EdgePoint* pCurrent = *it;
                     // TODO Revoir les structure de donnée pour les point 2D et définir un produit scalaire utilisé ici
-                    normGrad = std::sqrt(pCurrent->_grad.x() * pCurrent->_grad.x() + pCurrent->_grad.y() * pCurrent->_grad.y());
+                    normGrad = std::sqrt(pCurrent->gradient()(0) * pCurrent->gradient()(0) + pCurrent->gradient()(1) * pCurrent->gradient()(1));
 
-                    double chgx = pCurrent->_grad.x() / normGrad;
-                    double chgy = pCurrent->_grad.y() / normGrad;
+                    double chgx = pCurrent->gradient()(0) / normGrad;
+                    double chgy = pCurrent->gradient()(1) / normGrad;
 
                     double innerProd = gxmin * chgx + gymin * chgy;
 
@@ -515,7 +515,7 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                         pAngle2 = pCurrent;
                     }
 
-                    double dist = cctag::numerical::distancePoints2D(p1, (Point2dN<int>)(*pCurrent));
+                    double dist = cctag::numerical::distancePoints2D(p1, (Point2d<Eigen::Vector3i>)(*pCurrent));
                     if (dist > distMax) {
                         distMax = dist;
                         p2 = *pCurrent;
@@ -526,11 +526,11 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
             return min;
         }
 
-        void ellipseFitting(cctag::numerical::geometry::Ellipse& e, const std::vector< Point2dN<double> >& points) {
+        void ellipseFitting(cctag::numerical::geometry::Ellipse& e, const std::vector< Point2d<Eigen::Vector3f> >& points) {
             std::vector<cv::Point2f> cvPoints;
             cvPoints.reserve(points.size());
 
-            BOOST_FOREACH(const Point2dN<double> & p, points) {
+            BOOST_FOREACH(const Point2d<Eigen::Vector3f> & p, points) {
                 cvPoints.push_back(cv::Point2f(p.x(), p.y()));
             }
 
@@ -549,7 +549,7 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
             if ((a == 0) || (b == 0))
                 CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after cv::fitEllipse => line or point."));
 
-            e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
+            e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), a, b, angle);
         }
         
 void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points )
@@ -576,7 +576,7 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<c
 	if ( ( a == 0) || ( b == 0 ) )
 		CCTAG_THROW( exception::BadHandle() << exception::dev( "Degenerate ellipse after cv::fitEllipse => line or point." ) );
 
-	e.setParameters( Point2dN<double>( xC, yC ), a, b, angle );
+	e.setParameters( Point2d<Eigen::Vector3f>( xC, yC ), a, b, angle );
 }
 
 void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points) {
@@ -619,7 +619,7 @@ void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cct
                 CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate circle in circleFitting."));
             }
 
-            e.setParameters(Point2dN<double>(xC, yC), radius, radius, 0);
+            e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), radius, radius, 0);
         }
 
 void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cctag::EdgePoint*>& points )
@@ -646,7 +646,7 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cct
             if ((a == 0) || (b == 0))
                 CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after cv::fitEllipse => line or point."));
 
-            e.setParameters(Point2dN<double>(xC, yC), a, b, angle);
+            e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), a, b, angle);
         }
 
         bool matrixFromFile(const std::string& filename, std::list<cctag::EdgePoint>& edgepoints) {
@@ -697,9 +697,7 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cct
             //double t21 = atan2(-A,B);
             //double t22 = t21+M_PI;
 
-            ublas::bounded_vector<double, 3> pt1(3);
-            ublas::bounded_vector<double, 3> pt2(3);
-
+            Eigen::Vector3f pt1, pt2;
             ellipsePoint(ellipse, t11, pt1);
             ellipsePoint(ellipse, t12, pt2);
 

@@ -40,8 +40,8 @@ double LMImageCenterOptimizer::operator()( CCTag & cctagToRefine )
 	// L'initialisation de lmdif_
 
 	int m = 0; // nombre d'equations
-	std::vector< std::vector< Point2dN<double> > >::const_iterator ite = cctagToRefine.points().end() - 1;
-	for( std::vector< std::vector< Point2dN<double> > >::const_iterator it = cctagToRefine.points().begin(); it != ite; ++it )
+	std::vector< std::vector< Point2d<Eigen::Vector3f> > >::const_iterator ite = cctagToRefine.points().end() - 1;
+	for( std::vector< std::vector< Point2d<Eigen::Vector3f> > >::const_iterator it = cctagToRefine.points().begin(); it != ite; ++it )
 	{
 		m += it->size();
 	}
@@ -114,11 +114,11 @@ int LMImageCenterOptimizer::homology( void* p, int m, int n, const double* x, do
 	int i = 0;
 	int j = 0;
 
-	std::vector< std::vector< Point2dN<double> > >::const_iterator itEllipsesEnd = cctag->points().end() - 1;
+	std::vector< std::vector< Point2d<Eigen::Vector3f> > >::const_iterator itEllipsesEnd = cctag->points().end() - 1;
 	const double* currentX = &x[2];
 	std::vector<double>::iterator itRadius = cctag->radiusRatios().begin();
 
-	for( std::vector< std::vector< Point2dN<double> > >::const_iterator itEllipsesPts = cctag->points().begin(); itEllipsesPts != itEllipsesEnd; ++itEllipsesPts )
+	for( std::vector< std::vector< Point2d<Eigen::Vector3f> > >::const_iterator itEllipsesPts = cctag->points().begin(); itEllipsesPts != itEllipsesEnd; ++itEllipsesPts )
 	{
 		*itRadius = *currentX;
 
@@ -129,7 +129,7 @@ int LMImageCenterOptimizer::homology( void* p, int m, int n, const double* x, do
 		cctag::numerical::geometry::Ellipse l;
 		l.setMatrix( Q1 );
 
-		BOOST_FOREACH( const Point2dN<double> &p, *itEllipsesPts )
+		BOOST_FOREACH( const Point2d<Eigen::Vector3f> &p, *itEllipsesPts )
 		{
 			fvec[j] = cctag::numerical::distancePointEllipse( p, l, f );
 			++j;

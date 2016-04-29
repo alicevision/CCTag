@@ -39,14 +39,14 @@ public:
 
     void newSession(const std::string & sessionName);
 
-    void drawText(const cctag::Point2dN<double> & p, const std::string & text, const cctag::Color & color);
+    void drawText(const cctag::Point2d<Eigen::Vector3f> & p, const std::string & text, const cctag::Color & color);
 
-    void drawPoint(const cctag::Point2dN<double> & p, const cctag::Color & color);
-    void drawPoint(const cctag::DirectedPoint2d<double> & point, const cctag::Color & color);
+    void drawPoint(const cctag::Point2d<Eigen::Vector3f> & p, const cctag::Color & color);
+    void drawPoint(const cctag::DirectedPoint2d<Eigen::Vector3f> & point, const cctag::Color & color);
 
-    void drawPoints(const std::vector<cctag::Point2dN<double> > & pts, const cctag::Color & color);
+    void drawPoints(const std::vector<cctag::Point2d<Eigen::Vector3f> > & pts, const cctag::Color & color);
     // todo templater la function ci-dessus avec celle ci-dessous
-    void drawPoints(const std::vector<cctag::DirectedPoint2d<double> > & points, const cctag::Color & color);
+    void drawPoints(const std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > & points, const cctag::Color & color);
 
     void drawMarker(const cctag::CCTag& marker, bool drawScaledMarker = true);
 

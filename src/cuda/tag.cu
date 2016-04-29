@@ -480,7 +480,7 @@ __host__
 void TagPipe::imageCenterOptLoop(
     const int                                  tagIndex,
     const cctag::numerical::geometry::Ellipse& ellipse,
-    const cctag::Point2dN<double>&             center,
+    const cctag::Point2d<Eigen::Vector3f>&     center,
     const int                                  vCutSize,
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
@@ -515,8 +515,8 @@ void TagPipe::imageCenterOptLoop(
 __host__
 bool TagPipe::imageCenterRetrieve(
     const int                                  tagIndex,
-    cctag::Point2dN<double>&                   center,
-    cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+    cctag::Point2d<Eigen::Vector3f>&           center,
+    Eigen::Matrix3f&                           bestHomographyOut,
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
@@ -611,10 +611,10 @@ void TagPipe::uploadCuts( int                                 numTags,
         std::vector<cctag::ImageCut>::const_iterator vend = vCuts[tagIndex].end();
 
         for( ; vit!=vend; vit++ ) {
-            csptr->start.x     = vit->start().getX();
-            csptr->start.y     = vit->start().getY();
-            csptr->stop.x      = vit->stop().getX();
-            csptr->stop.y      = vit->stop().getY();
+            csptr->start.x     = vit->start().x();
+            csptr->start.y     = vit->start().y();
+            csptr->stop.x      = vit->stop().x();
+            csptr->stop.y      = vit->stop().y();
             csptr->beginSig    = vit->beginSig();
             csptr->endSig      = vit->endSig();
             csptr->sigSize     = vit->imgSignal().size();

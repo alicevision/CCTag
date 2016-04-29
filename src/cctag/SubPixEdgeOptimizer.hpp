@@ -42,7 +42,7 @@ public:
 	 * @param[in] imin initial minimum signal
 	 * @param[in] imax initial maximum signal
 	 */
-	Point2dN<double> operator()(const double widthContour, const double xp, const double imin, const double imax);
+	Point2d<Eigen::Vector3f> operator()(const double widthContour, const double xp, const double imin, const double imax);
 
 	inline void initFcn()
 	{

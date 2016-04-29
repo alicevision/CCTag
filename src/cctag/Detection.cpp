@@ -298,7 +298,7 @@ void flowComponentAssembling(
         const std::vector<Candidate> & vCandidateLoopTwo,
         numerical::geometry::Ellipse & outerEllipse,
         std::vector<EdgePoint*>& outerEllipsePoints,
-        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
+        std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
         const Parameters & params
 #ifndef CCTAG_SERIALIZE
         )
@@ -316,7 +316,7 @@ void flowComponentAssembling(
 
   double ratioExpension = 2.5;
   numerical::geometry::Circle circularResearchArea(
-         Point2dN<double>( candidate._seed->x(), candidate._seed->y() ),
+         Point2d<Eigen::Vector3f>( candidate._seed->x(), candidate._seed->y() ),
          candidate._seed->_flowLength * ratioExpension);
 
   // Search for another segment
@@ -330,7 +330,7 @@ void flowComponentAssembling(
                 && (anotherCandidate._seed->_flowLength / candidate._seed->_flowLength < 1.5))
         {
           if (isInEllipse(circularResearchArea, 
-                  cctag::Point2dN<double>(double(anotherCandidate._seed->x()), double(anotherCandidate._seed->y()))))
+                  cctag::Point2d<Eigen::Vector3f>(double(anotherCandidate._seed->x()), double(anotherCandidate._seed->y()))))
           {
             if (anotherCandidate._score > score)
             {
@@ -505,7 +505,7 @@ void cctagDetectionFromEdges(
     std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
     cctag::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
 
-    std::vector< std::vector< DirectedPoint2d<double> > > cctagPoints;
+    std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > cctagPoints;
 
     try
     {
@@ -563,7 +563,7 @@ void cctagDetectionFromEdges(
               continue;
       }
 
-      cctag::Point2dN<double> markerCenter;
+      cctag::Point2d<Eigen::Vector3f> markerCenter;
       cctag::numerical::BoundedMatrix3x3d markerHomography;
       markerHomography.clear();
 
@@ -622,7 +622,7 @@ void cctagDetectionFromEdges(
         continue;
       }
 
-      std::vector< Point2dN<int> > vPoint;
+      std::vector< Point2d<Eigen::Vector3i> > vPoint;
 
       double quality2 = 0;
 

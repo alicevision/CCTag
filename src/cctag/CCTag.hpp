@@ -58,8 +58,8 @@ public:
   }
 
   CCTag(const MarkerID id,
-        const cctag::Point2dN<double> & centerImg,
-        const std::vector< std::vector< DirectedPoint2d<double> > > & points,
+        const cctag::Point2d<Eigen::Vector3f> & centerImg,
+        const std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > & points,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::numerical::BoundedMatrix3x3d & homography,
         int pyramidLevel,
@@ -75,7 +75,7 @@ public:
     , _scale(scale)
   {
     setInitRadius();
-    _outerEllipse.setCenter( Point2dN<double>(_outerEllipse.center().x()+0.5, _outerEllipse.center().y()+0.5 ) ); // todo: why + 0.5 is required ?
+    _outerEllipse.setCenter( Point2d<Eigen::Vector3f>(_outerEllipse.center().x()+0.5, _outerEllipse.center().y()+0.5 ) ); // todo: why + 0.5 is required ?
     cctag::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
     
     _status = 0;
@@ -112,11 +112,11 @@ public:
   void scale(const double s);
 
   double x() const {
-    return _centerImg.getX();
+    return _centerImg.x();
   }
   
   double y() const {
-    return _centerImg.getY();
+    return _centerImg.y();
   }
   
   std::size_t nCircles()
@@ -129,12 +129,12 @@ public:
     return _mHomography;
   }
   
-  Point2dN<double> & centerImg()
+  Point2d<Eigen::Vector3f> & centerImg()
   {
     return _centerImg;
   }
   
-  void setCenterImg( const cctag::Point2dN<double>& center )
+  void setCenterImg( const cctag::Point2d<Eigen::Vector3f>& center )
   {
     _centerImg = center;
   }
@@ -154,12 +154,12 @@ public:
     return _outerEllipse;
   }
 
-  const std::vector< DirectedPoint2d<double> > & rescaledOuterEllipsePoints() const
+  const std::vector< DirectedPoint2d<Eigen::Vector3f> > & rescaledOuterEllipsePoints() const
   {
     return _rescaledOuterEllipsePoints;
   }
 
-  const std::vector< std::vector< DirectedPoint2d<double> > >& points() const
+  const std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& points() const
   {
     return _points;
   }
@@ -234,7 +234,7 @@ public:
     _rescaledOuterEllipse = rescaledOuterEllipse;
   }
 
-  void setRescaledOuterEllipsePoints(const std::vector< DirectedPoint2d<double> > & outerEllipsePoints)
+  void setRescaledOuterEllipsePoints(const std::vector< DirectedPoint2d<Eigen::Vector3f> > & outerEllipsePoints)
   {
     _rescaledOuterEllipsePoints = outerEllipsePoints;
   }
@@ -374,12 +374,12 @@ protected:
   std::size_t _nCircles;
   MarkerID _id;
   IdSet _idSet;
-  cctag::Point2dN<double> _centerImg;
+  cctag::Point2d<Eigen::Vector3f> _centerImg;
   cctag::numerical::geometry::Ellipse _outerEllipse;
   cctag::numerical::geometry::Ellipse _rescaledOuterEllipse;
-  std::vector< DirectedPoint2d<double> > _rescaledOuterEllipsePoints;
+  std::vector< DirectedPoint2d<Eigen::Vector3f> > _rescaledOuterEllipsePoints;
   std::vector<cctag::numerical::geometry::Ellipse> _ellipses;
-  std::vector< std::vector< DirectedPoint2d<double> > > _points;
+  std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > _points;
   cctag::numerical::BoundedMatrix3x3d _mHomography;
   double _quality;
   int    _pyramidLevel;

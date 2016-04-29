@@ -3,12 +3,8 @@
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/utils/Exceptions.hpp>
 #include <cctag/utils/Defines.hpp>
-
 #include <boost/math/special_functions/sign.hpp>
-#include <boost/numeric/ublas/banded.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix_expression.hpp>
+#include <Eigen/Core>
 
 #include <algorithm>
 #include <cmath>
@@ -19,18 +15,18 @@ namespace geometry {
 
 using namespace boost::numeric::ublas;
 
-Ellipse::Ellipse( const bounded_matrix<double, 3, 3>& matrix )
+Ellipse::Ellipse( const Eigen::Matrix3f& matrix )
 {
 	_matrix = matrix;
 	computeParameters();
 }
 
-Ellipse::Ellipse( const Point2dN<double>& center, const double a, const double b, const double angle )
+Ellipse::Ellipse( const Point2d<Eigen::Vector3f>& center, const double a, const double b, const double angle )
 {
 	init( center, a, b, angle );
 }
 
-void Ellipse::init( const Point2dN<double>& center, const double a, const double b, const double angle )
+void Ellipse::init( const Point2d<Eigen::Vector3f>& center, const double a, const double b, const double angle )
 {
 	if( a < 0.0 || b < 0.0 )
 	{
@@ -46,13 +42,13 @@ void Ellipse::init( const Point2dN<double>& center, const double a, const double
 	computeMatrix();
 }
 
-void Ellipse::setMatrix( const bounded_matrix<double, 3, 3>& matrix )
+void Ellipse::setMatrix( const Eigen::Matrix3f& matrix )
 {
 	_matrix = matrix;
 	computeParameters();
 }
 
-void Ellipse::setParameters( const Point2dN<double>& center, const double a, const double b, const double angle )
+void Ellipse::setParameters( const Point2d<Eigen::Vector3f>& center, const double a, const double b, const double angle )
 {
 	if( a < 0.0 || b < 0.0 )
 	{
@@ -66,7 +62,7 @@ void Ellipse::setParameters( const Point2dN<double>& center, const double a, con
 	computeMatrix();
 }
 
-void Ellipse::setCenter( const Point2dN<double>& center )
+void Ellipse::setCenter( const Point2d<Eigen::Vector3f>& center )
 {
 	_center = center;
 	computeMatrix();
@@ -102,15 +98,16 @@ void Ellipse::setAngle( const double angle )
 
 Ellipse Ellipse::transform(const Matrix& mT) const
 {
-	using namespace boost::numeric::ublas;
-	const Matrix a = prec_prod( boost::numeric::ublas::trans(mT), _matrix );
-	const Matrix mET = prec_prod( a, mT );
-	return Ellipse( mET );
+  auto a = mT.transpose() * _matrix;
+  auto mET = a * mT;
+  //const Matrix a = prec_prod( boost::numeric::ublas::trans(mT), _matrix );
+  //const Matrix mET = prec_prod( a, mT );
+  return Ellipse( mET );
 }
 
 void Ellipse::computeParameters()
 {
-	bounded_vector<double, 6> par;
+        Eigen::VectorXf par(6);
 	par( 0 ) = _matrix( 0, 0 );
 	par( 1 ) = 2.0 * _matrix( 0, 1 );
 	par( 2 ) = _matrix( 1, 1 );
@@ -133,7 +130,7 @@ void Ellipse::computeParameters()
 
 	if( Auu == 0 || Avv == 0 )
 	{
-		_center = Point2dN<double>( 0.0, 0.0 );
+		_center = Point2d<Eigen::Vector3f>( 0.0, 0.0 );
 		_a      = 0.0;
 		_b      = 0.0;
 		_angle  = 0.0;
@@ -144,7 +141,7 @@ void Ellipse::computeParameters()
 		const double tvCentre = -Av / ( 2.0 * Avv );
 		const double wCentre  = Ao - Auu * tuCentre * tuCentre - Avv * tvCentre * tvCentre;
 
-		_center = Point2dN<double>( tuCentre * cost - tvCentre * sint, tuCentre * sint + tvCentre * cost );
+		_center = Point2d<Eigen::Vector3f>( tuCentre * cost - tvCentre * sint, tuCentre * sint + tvCentre * cost );
 
 		const double Ru = -wCentre / Auu;
 		const double Rv = -wCentre / Avv;
@@ -226,21 +223,24 @@ void Ellipse::getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual)
 
 void Ellipse::computeMatrix()
 {
-  bounded_matrix<double, 3, 3> tmp;
+  Eigen::Matrix3f tmp;
   tmp( 0, 0 ) = std::cos( _angle ); tmp( 0, 1 ) = -std::sin( _angle ); tmp( 0, 2 ) = _center.x();
   tmp( 1, 0 ) = std::sin( _angle ); tmp( 1, 1 ) =  std::cos( _angle ); tmp( 1, 2 ) = _center.y();
   tmp( 2, 0 ) =             0.0; tmp( 2, 1 ) =              0.0; tmp( 2, 2 ) =        1.0;
 
-  bounded_matrix<double, 3, 3> tmpInv;
-  diagonal_matrix<double> diag( 3, 3 );
+  Eigen::Matrix3f tmpInv;
+  Eigen::Matrix3f diag; diag.setIdentity();
   diag( 0, 0 ) =  1.0 / ( _a * _a );
   diag( 1, 1 ) =  1.0 / ( _b * _b );
   diag( 2, 2 ) = -1.0;
+  
+  bool invertible;
+  tmp.computeInverseWithCheck(tmpInv, invertible);
 
-  if( invert( tmp, tmpInv ) )
+  if( invertible )
   {
-          _matrix = prec_prod( diag, tmpInv );
-          _matrix = prec_prod( trans( tmpInv ), _matrix );
+          _matrix = diag * tmpInv;
+          _matrix = tmpInv.transpose() * _matrix;
   }
   else
   {
@@ -251,7 +251,7 @@ void Ellipse::computeMatrix()
 
 void scale(const Ellipse & ellipse, Ellipse & rescaleEllipse, double scale)
 {
-  rescaleEllipse.setCenter(Point2dN<double>( ellipse.center().x() * scale, ellipse.center().y() * scale ));
+  rescaleEllipse.setCenter(Point2d<Eigen::Vector3f>( ellipse.center().x() * scale, ellipse.center().y() * scale ));
   rescaleEllipse.setA(ellipse.a() * scale);
   rescaleEllipse.setB(ellipse.b() * scale);
   rescaleEllipse.setAngle(ellipse.angle());
@@ -271,8 +271,8 @@ std::ostream& operator<<(std::ostream& os, const Ellipse& e)
  */
 void getSortedOuterPoints(
         const Ellipse & ellipse,
-        const std::vector< cctag::DirectedPoint2d<double> > & points,
-        std::vector< cctag::DirectedPoint2d<double> > & resPoints,
+        const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & points,
+        std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & resPoints,
         const std::size_t requestedSize)
 {
   // map with the key = angle and the point index

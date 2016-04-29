@@ -29,7 +29,7 @@ namespace identification {
 
 struct TotoFunctor {
 
-	typedef std::vector< cctag::Point2dN<double> > VecExtPoints;
+	typedef std::vector< cctag::Point2d<Eigen::Vector3f> > VecExtPoints;
 	typedef std::vector< cctag::ImageCut > VecSignals;
 
 
@@ -43,7 +43,7 @@ struct TotoFunctor {
 
     bool operator()(const double* const x, double* residual) const {
 	
-    cctag::Point2dN<double> centerExtEllipse( x[0], x[1] );
+    cctag::Point2d<Eigen::Vector3f> centerExtEllipse( x[0], x[1] );
 
 	cctag::numerical::optimization::condition(centerExtEllipse, _mInvT);
 	//CCTAG_TCOUT_VAR( centerExtEllipse );

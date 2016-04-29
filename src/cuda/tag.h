@@ -70,14 +70,14 @@ public:
     void imageCenterOptLoop(
         const int                                  tagIndex,
         const cctag::numerical::geometry::Ellipse& ellipse,
-        const cctag::Point2dN<double>&             center,
+        const cctag::Point2d<Eigen::Vector3f>&             center,
         const int                                  vCutSize,
         const cctag::Parameters&                   params,
         NearbyPoint*                               cctag_pointer_buffer );
 
     bool imageCenterRetrieve(
         const int                                  tagIndex,
-        cctag::Point2dN<double>&                   center,
+        cctag::Point2d<Eigen::Vector3f>&                   center,
         cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
         const cctag::Parameters&                   params,
         NearbyPoint*                               cctag_pointer_buffer );

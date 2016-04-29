@@ -23,7 +23,7 @@ void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet) {
     }
 }
 
-void serializePoint(boost::archive::text_oarchive & ar, const Point2dN<double> & point) {
+void serializePoint(boost::archive::text_oarchive & ar, const Point2d<Eigen::Vector3f> & point) {
     const double x = point.x();
     const double y = point.y();
 
@@ -32,7 +32,7 @@ void serializePoint(boost::archive::text_oarchive & ar, const Point2dN<double> &
 }
 
 // todo templater function above and bellow.
-void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<double> & point) {
+void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<Eigen::Vector3f> & point) {
     const double x = point.x();
     const double y = point.y();
 
@@ -43,8 +43,8 @@ void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<do
 void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e) {
     const int x = e.x();
     const int y = e.y();
-    const double gx = e._grad.x();
-    const double gy = e._grad.y();
+    const double gx = e.gradient()(0);
+    const double gy = e.gradient()(1);
 
     ar & BOOST_SERIALIZATION_NVP(x);
     ar & BOOST_SERIALIZATION_NVP(y);
@@ -52,20 +52,20 @@ void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e)
     ar & BOOST_SERIALIZATION_NVP(gy);
 }
 
-void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< DirectedPoint2d<double> > & points) {
+void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< DirectedPoint2d<Eigen::Vector3f> > & points) {
     const int sizePoints = points.size();
     ar & BOOST_SERIALIZATION_NVP(sizePoints);
 
-    BOOST_FOREACH(const DirectedPoint2d<double> & point, points) {
+    BOOST_FOREACH(const DirectedPoint2d<Eigen::Vector3f> & point, points) {
         serializePoint(ar, point);
     }
 }
 
-void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< DirectedPoint2d<double> > > & points) {
+void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > & points) {
     const int sizePoints = points.size();
     ar & BOOST_SERIALIZATION_NVP(sizePoints);
 
-    BOOST_FOREACH(const std::vector< DirectedPoint2d<double> > & subPoints, points) {
+    BOOST_FOREACH(const std::vector< DirectedPoint2d<Eigen::Vector3f> > & subPoints, points) {
         serializeVecPoint(ar, subPoints);
     }
 }
@@ -83,7 +83,7 @@ void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cct
     }
 }
 
-void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const cctag::numerical::BoundedMatrix3x3d & matrix) {
+void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const Eigen::Matrix3f & matrix) {
     ar & BOOST_SERIALIZATION_NVP(matrix(0, 0));
     ar & BOOST_SERIALIZATION_NVP(matrix(1, 0));
     ar & BOOST_SERIALIZATION_NVP(matrix(2, 0));

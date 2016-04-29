@@ -61,7 +61,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 
 	This *this_ptr = static_cast<This*>( objPtr );
 
-	cctag::Point2dN<double> centerExtEllipse( x(1), x(2) );
+	cctag::Point2d<Eigen::Vector3f> centerExtEllipse( x(1), x(2) );
 
 	cctag::numerical::optimization::condition(centerExtEllipse, this_ptr->_mInvT);
 
@@ -106,12 +106,12 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 	result = NLPFunction;
 }
 
-Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double> & pToRefine, const std::size_t lengthSig, const cv::Mat & src, const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT)
+Point2d<Eigen::Vector3f> ImageCenterOptimizer::operator()( const cctag::Point2d<Eigen::Vector3f> & pToRefine, const std::size_t lengthSig, const cv::Mat & src, const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT)
 {
 	using namespace OPTPP;
 	using namespace NEWMAT;
 
-	Point2dN<double> res;
+	Point2d<Eigen::Vector3f> res;
 
 	//  Create a Nonlinear problem object
 	_pToRefine = pToRefine;

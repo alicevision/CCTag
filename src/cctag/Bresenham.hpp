@@ -13,10 +13,6 @@ namespace cctag {
 
 class EdgePoint;
 
-EdgePoint* bresenham( const boost::multi_array<EdgePoint*, 2> & canny, const EdgePoint& p1, const int dir, const std::size_t nmax );
-
-void bresenham( const boost::gil::gray8_view_t & sView, const cctag::Point2dN<int>& p, const cctag::Point2dN<float>& dir, const std::size_t nmax );
-
 /** @brief descent in the gradient direction from a maximum gradient point (magnitude sense) to another one.
  *
  */

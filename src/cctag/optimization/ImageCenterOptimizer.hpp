@@ -32,7 +32,7 @@ class ImageCenterOptimizer : public OPTPP::FDNLF1
 public:
 	typedef ImageCenterOptimizer This;
 	typedef OPTPP::FDNLF1 Parent;
-	typedef std::vector< cctag::Point2dN<double> > VecExtPoints;
+	typedef std::vector< cctag::Point2d<Eigen::Vector3f> > VecExtPoints;
 	typedef std::vector< cctag::ImageCut > VecSignals;
 
 public:
@@ -45,8 +45,8 @@ public:
 	 * @param[in] pToRefine initial point to refine
 	 * @return refined 2D point
 	 */
-	Point2dN<double> operator()(
-                const cctag::Point2dN<double> & pToRefine,
+	Point2d<Eigen::Vector3f> operator()(
+                const cctag::Point2d<Eigen::Vector3f> & pToRefine,
                 const std::size_t lengthSig,
                 const cv::Mat & src,
                 const cctag::numerical::geometry::Ellipse & outerEllipse,
@@ -74,7 +74,7 @@ private:
 
 private:
 	const VecExtPoints & _vecExtPoints;
-	cctag::Point2dN<double> _pToRefine;
+	cctag::Point2d<Eigen::Vector3f> _pToRefine;
 	std::size_t _lengthSig;
 	cv::Mat _src;
 	cctag::numerical::geometry::Ellipse _ellipse;

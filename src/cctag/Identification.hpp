@@ -91,7 +91,7 @@ int identify_step_2(
 	const cctag::Parameters & params);
 
 typedef std::vector< std::vector<double> > RadiusRatioBank;
-typedef std::vector< std::pair< cctag::Point2dN<double>, cctag::ImageCut > > CutSelectionVec;
+typedef std::vector< std::pair< cctag::Point2d<Eigen::Vector3f>, cctag::ImageCut > > CutSelectionVec;
 
 /**
  * @brief Apply a planar homography to a 2D point.
@@ -180,8 +180,8 @@ void cutInterpolated(
 void collectCuts(
         std::vector<cctag::ImageCut> & cuts, 
         const cv::Mat & src,
-        const cctag::Point2dN<double> & center,
-        const std::vector< cctag::DirectedPoint2d<double> > & outerPoints,
+        const cctag::Point2d<Eigen::Vector3f> & center,
+        const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
         const std::size_t sampleCutLength,
         const std::size_t startOffset );
 
@@ -232,7 +232,7 @@ inline float getPixelBilinear(const cv::Mat & src, float x, float y)
  */
 double costSelectCutFun(
         const std::vector<double> & varCuts,
-        const std::vector< cctag::DirectedPoint2d<double> > & outerPoints,
+        const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
         const boost::numeric::ublas::vector<std::size_t> & randomIdx,
         const double alpha = 10 );
 
@@ -271,7 +271,7 @@ void selectCutCheap(
 #ifdef NAIVE_SELECTCUT
 void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use DirectedPoint instead
         std::vector< cctag::ImageCut > & vSelectedCuts,
-        std::vector< cctag::Point2dN<double> > & prSelection,
+        std::vector< cctag::Point2d<Eigen::Vector3f> > & prSelection,
         std::size_t selectSize, const std::vector<cctag::ImageCut> & collectedCuts,
         const cv::Mat & src,
         const cv::Mat & dx,
@@ -306,7 +306,7 @@ void getSignals(
 bool refineConicFamilyGlob(
         const int tagIndex,
         cctag::numerical::BoundedMatrix3x3d & mHomography,
-        Point2dN<double> & optimalPoint,
+        Point2d<Eigen::Vector3f> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
         popart::TagPipe* cudaPipe,
@@ -331,7 +331,7 @@ bool refineConicFamilyGlob(
 bool imageCenterOptimizationGlob(
         cctag::numerical::BoundedMatrix3x3d & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
-        cctag::Point2dN<double> & center,
+        cctag::Point2d<Eigen::Vector3f> & center,
         double & minRes,
         const double neighbourSize,
         const cv::Mat & src, 
@@ -352,8 +352,8 @@ bool imageCenterOptimizationGlob(
  */
 void getNearbyPoints(
           const cctag::numerical::geometry::Ellipse & ellipse,
-          const cctag::Point2dN<double> & center,
-          std::vector<cctag::Point2dN<double> > & nearbyPoints,
+          const cctag::Point2d<Eigen::Vector3f> & center,
+          std::vector<cctag::Point2d<Eigen::Vector3f> > & nearbyPoints,
           const double neighbourSize,
           const std::size_t gridNSample,
           const NeighborType neighborType);
@@ -369,7 +369,7 @@ void getNearbyPoints(
  */
 void computeHomographyFromEllipseAndImagedCenter(
         const cctag::numerical::geometry::Ellipse & ellipse,
-        const cctag::Point2dN<double> & center,
+        const cctag::Point2d<Eigen::Vector3f> & center,
         cctag::numerical::BoundedMatrix3x3d & mHomography);
 
 /**
@@ -447,8 +447,8 @@ inline double dis( const double sig, const double val, const double mub, const d
  */
 void centerScaleRotateHomography(
         cctag::numerical::BoundedMatrix3x3d & mHomography,
-	const cctag::Point2dN<double> & center,
-	const cctag::DirectedPoint2d<double> & point);
+	const cctag::Point2d<Eigen::Vector3f> & center,
+	const cctag::DirectedPoint2d<Eigen::Vector3f> & point);
 
 /* depreciated */
 bool refineConicFamily(
@@ -457,7 +457,7 @@ bool refineConicFamily(
         const std::size_t lengthSig,
         const cv::Mat & src,
         const cctag::numerical::geometry::Ellipse & ellipse,
-        const std::vector< cctag::Point2dN<double> > & pr,
+        const std::vector< cctag::Point2d<Eigen::Vector3f> > & pr,
         const bool useLmDif );
 
 /* depreciated */
@@ -467,17 +467,17 @@ bool refineConicFamily(
  * @param yi
  * @param mH
  */
-inline cctag::Point2dN<double> getHPoint(
+inline cctag::Point2d<Eigen::Vector3f> getHPoint(
         const double xi,
         const double yi,
-        const cctag::numerical::BoundedMatrix3x3d & mH )
+        const Eigen::Matrix3f& mH )
 {
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
-  BoundedVector3d vh;
+  Eigen::Vector3f vh;
   vh( 0 ) = xi; vh( 1 ) = yi; vh( 2 ) = 1.0;
 
-  return cctag::Point2dN<double>( prec_prod<BoundedVector3d>( mH, vh ) );
+  return cctag::Point2d<Eigen::Vector3f>(mH * vh);
 }
 
 /* depreciated */

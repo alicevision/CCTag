@@ -21,13 +21,17 @@ class CCTag;
 
 inline bool isInEllipse(
         const cctag::numerical::geometry::Ellipse& ellipse,
-        const Point2dN<double> & p)
+        const Point2d<Eigen::Vector3f> & p)
 {
   using namespace boost::numeric::ublas;
   // x'Q x > 0
-  return ( ( inner_prod( p, prec_prod( ellipse.matrix(), p ) ) ) *
-           inner_prod( ellipse.center(), prec_prod( ellipse.matrix(), ellipse.center() ))
-           > 0 );
+  auto s1 = p.dot(ellipse.matrix() * p);
+  auto s2 = p.dot(ellipse.matrix() * ellipse.center());
+  return s1 * s2 > 0;
+  
+  //return ( ( inner_prod( p, prec_prod( ellipse.matrix(), p ) ) ) *
+  //         inner_prod( ellipse.center(), prec_prod( ellipse.matrix(), ellipse.center() ))
+  //         > 0 );
 }
 
 /**
@@ -44,15 +48,15 @@ inline bool isOverlappingEllipses(
 }
 
 bool initMarkerCenter(
-        cctag::Point2dN<double> & markerCenter,
-        const std::vector< std::vector< Point2dN<double> > > & markerPoints,
+        cctag::Point2d<Eigen::Vector3f> & markerCenter,
+        const std::vector< std::vector< Point2d<Eigen::Vector3f> > > & markerPoints,
         int realPixelPerimeter);
 
 bool addCandidateFlowtoCCTag(
         const std::vector< EdgePoint* > & filteredChildrens,
         const std::vector< EdgePoint* > & outerEllipsePoints,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
-        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
+        std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
         std::size_t numCircles);
 
 bool ellipseGrowingInit(
@@ -69,21 +73,28 @@ bool ellipseGrowingInit(
  */
 inline bool isInHull( const cctag::numerical::geometry::Ellipse& qIn, const cctag::numerical::geometry::Ellipse& qOut, const EdgePoint* p )
 {
-  using namespace boost::numeric;
-  return ( ublas::inner_prod( *p, ublas::prec_prod( qIn.matrix(), *p ) ) * ublas::inner_prod( *p, ublas::prec_prod( qOut.matrix(), *p ) ) < 0 ) ;
+  Eigen::Vector3f pf = p->cast<float>();
+  float s1 = pf.dot(qIn.matrix() * pf);
+  float s2 = pf.dot(qOut.matrix() * pf);
+  return s1 * s2 < 0;
+  //return ( ublas::inner_prod( *p, ublas::prec_prod( qIn.matrix(), *p ) ) * ublas::inner_prod( *p, ublas::prec_prod( qOut.matrix(), *p ) ) < 0 ) ;
 }
 
-inline bool isInHull( const cctag::numerical::geometry::Ellipse& qIn, const cctag::numerical::geometry::Ellipse& qOut, const Point2dN<double> p )
+inline bool isInHull( const cctag::numerical::geometry::Ellipse& qIn, const cctag::numerical::geometry::Ellipse& qOut, const Point2d<Eigen::Vector3f>& p )
 {
-  using namespace boost::numeric;
-  return ( ublas::inner_prod( p, ublas::prec_prod( qIn.matrix(), p ) ) * ublas::inner_prod( p, ublas::prec_prod( qOut.matrix(), p ) ) < 0 ) ;
+  float s1 = p.dot(qIn.matrix() * p);
+  float s2 = p.dot(qOut.matrix() * p);
+  return s1 * s2 < 0;
+  //return ( ublas::inner_prod( p, ublas::prec_prod( qIn.matrix(), p ) ) * ublas::inner_prod( p, ublas::prec_prod( qOut.matrix(), p ) ) < 0 ) ;
 }
 
 // todo@Lilian to be templated
-inline bool isOnTheSameSide(const Point2dN<double> & p1, const Point2dN<double> &  p2, boost::numeric::ublas::bounded_vector<double, 3> line)
+inline bool isOnTheSameSide(const Point2d<Eigen::Vector3f> & p1, const Point2d<Eigen::Vector3f> &  p2, const Eigen::Vector3f& line)
 {
-  using namespace boost::numeric;
-  return ( ublas::inner_prod( p1, line ) * ublas::inner_prod( p2, line ) > 0 ) ;
+  auto s1 = p1.dot(line);
+  auto s2 = p2.dot(line);
+  return s1 * s2 > 0;
+  //return ( ublas::inner_prod( p1, line ) * ublas::inner_prod( p2, line ) > 0 ) ;
 }
 
 /** @brief Search recursively connected points from a point and add it in pts if it is in the ellipse hull

@@ -2,17 +2,14 @@
 #define _CCTAG_DISTANCE_HPP_
 
 #include <cctag/geometry/Ellipse.hpp>
-
-#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/math/special_functions/pow.hpp>
 #include <boost/units/cmath.hpp>
 #include <boost/foreach.hpp>
 #include <boost/math/special_functions/pow.hpp>
+#include <Eigen/Dense>
 
 namespace cctag {
 namespace numerical {
-
-namespace ublas = boost::numeric::ublas;
 
 template<class T, class U>
 inline double distancePoints2D( const T& p1, const U& p2 ) // TODO modifier les accès, considérer p1, p2 comme des bounded_vector
@@ -37,9 +34,10 @@ inline double distancePoints3D( const T& p1, const T& p2 ) // TODO modifier les 
 }
 
 // Compute (point-polar) distance between a point and an ellipse represented by its 3x3 matrix.
-inline double distancePointEllipse( const ublas::bounded_vector<double, 3>& p, const ublas::bounded_matrix<double, 3, 3> & Q, const double f )
+// TODO@lilian: f is always equal to 1, remove it
+inline double distancePointEllipse(const Eigen::Vector3f& p, const Eigen::Matrix3f& Q, const double f )
 {
-	ublas::bounded_vector<double, 6> aux( 6 );
+	Eigen::VectorXf aux( 6 );
 
 	aux( 0 ) = p( 0 ) * p( 0 );
 	aux( 1 ) = 2 * p( 0 ) * p( 1 );
@@ -53,32 +51,27 @@ inline double distancePointEllipse( const ublas::bounded_vector<double, 3>& p, c
 	double tmp2  = p( 0 ) * Q( 0, 1 ) + p( 1 ) * Q( 1, 1 ) + p( 2 ) * Q( 1, 2 );
 	double denom = tmp1 * tmp1 + tmp2 * tmp2;
 
-	ublas::bounded_vector<double, 6> qL;
+	Eigen::VectorXf qL(6);
 	qL( 0 ) = Q( 0, 0 ) ; qL( 1 ) = Q( 0, 1 ) ; qL( 2 ) = Q( 0, 2 ) ;
 	qL( 3 ) = Q( 1, 1 ) ; qL( 4 ) = Q( 1, 2 ) ;
 	qL( 5 ) = Q( 2, 2 );
-	return boost::math::pow<2>( ublas::inner_prod( aux, qL ) ) / denom;
+	return boost::math::pow<2>( aux.dot(qL) ) / denom;
 }
 
-inline double distancePointEllipse( const ublas::bounded_vector<double, 3>& p, const geometry::Ellipse& q, const double f )
+inline double distancePointEllipse( const Eigen::Vector3f& p, const geometry::Ellipse& q, const double f )
 {
-	const ublas::bounded_matrix<double, 3, 3>& Q = q.matrix();
-
+	const auto& Q = q.matrix();
 	return distancePointEllipse( p, Q, f );
 }
 
 // Compute the distance between points and an ellipse
 //template<class T>
-inline void distancePointEllipse( std::vector<double>& dist, const std::vector<ublas::bounded_vector<double, 3> >& pts, const geometry::Ellipse& q, const double f )
+inline void distancePointEllipse( std::vector<double>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q, const double f )
 {
 	dist.clear();
 	dist.reserve( pts.size() );
-	typedef ublas::bounded_vector<double, 3> Point;
-
-	BOOST_FOREACH( const Point &p, pts )
-	{
-		dist.push_back( distancePointEllipse( p, q, f ) );
-	}
+        for (const auto& p : pts)
+          dist.push_back( distancePointEllipse( p, q, f ) );
 }
 
 }

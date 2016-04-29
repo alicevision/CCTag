@@ -80,7 +80,7 @@ void CCTag::condition(const cctag::numerical::BoundedMatrix3x3d & mT, const ccta
     cctag::numerical::normalizeDet1(ellipse.matrix());
   }
 
-  BOOST_FOREACH(std::vector<cctag::DirectedPoint2d<double> > & points, _points)
+  BOOST_FOREACH(std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > & points, _points)
   {
     cctag::numerical::optimization::condition(points, mT);
   }
@@ -91,10 +91,10 @@ void CCTag::condition(const cctag::numerical::BoundedMatrix3x3d & mT, const ccta
 void CCTag::scale(const double s)
 {
 
-  BOOST_FOREACH(std::vector< DirectedPoint2d<double> > &vp, _points)
+  BOOST_FOREACH(std::vector< DirectedPoint2d<Eigen::Vector3f> > &vp, _points)
   {
 
-    BOOST_FOREACH(DirectedPoint2d<double> & p, vp)
+    BOOST_FOREACH(DirectedPoint2d<Eigen::Vector3f> & p, vp)
     {
       p.setX(p.x() * s);
       p.setY(p.y() * s);
@@ -104,7 +104,7 @@ void CCTag::scale(const double s)
   _centerImg.setX(_centerImg.x() * s);
   _centerImg.setY(_centerImg.y() * s);
   
-  _outerEllipse.setCenter(Point2dN<double>(_outerEllipse.center().x() * s,
+  _outerEllipse.setCenter(Point2d<Eigen::Vector3f>(_outerEllipse.center().x() * s,
                           _outerEllipse.center().y() * s));
   _outerEllipse.setA(_outerEllipse.a() * s);
   _outerEllipse.setB(_outerEllipse.b() * s);
@@ -172,9 +172,9 @@ void CCTag::printTag( std::ostream& ostr ) const
     }
     ostr << "    rescaledOuterEllipse: " << _rescaledOuterEllipse << endl
          << "    Points: " << endl;
-    for( const std::vector< DirectedPoint2d<double> >& v : _points ) {
+    for( const std::vector< DirectedPoint2d<Eigen::Vector3f> >& v : _points ) {
 	ostr << "        ";
-    	for( const DirectedPoint2d<double>& p : v ) {
+    	for( const DirectedPoint2d<Eigen::Vector3f>& p : v ) {
             ostr << "(" << p.x() << "," << p.y() << ") ";
     	}
 	ostr << endl;
