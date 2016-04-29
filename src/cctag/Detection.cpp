@@ -767,6 +767,8 @@ void cctagDetection(CCTag::List& markers,
 
     popart::TagPipe* pipe1 = 0;
 #ifdef WITH_CUDA
+    unsigned char* pix = 0;
+
     if( params._useCuda ) {
         pipe1 = initCuda( 0,
                           imgGraySrc.size().width,
@@ -779,7 +781,7 @@ void cctagDetection(CCTag::List& markers,
         assert( imgGraySrc.elemSize() == 1 );
         assert( imgGraySrc.isContinuous() );
         assert( imgGraySrc.type() == CV_8U );
-        unsigned char* pix = imgGraySrc.data;
+        pix = imgGraySrc.data;
 
         pipe1->load( pix );
 
@@ -933,6 +935,10 @@ void cctagDetection(CCTag::List& markers,
          */
         CCTag::releaseNearbyPointMemory();
     }
+#endif
+
+#if defined(WITH_CUDA)
+    // pipe1->debug( pix, params );
 #endif
   
     markers.sort();
