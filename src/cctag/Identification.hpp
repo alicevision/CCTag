@@ -445,10 +445,12 @@ inline float dis( const float sig, const float val, const float mub, const float
  * @param point
  * @return 
  */
+#if 0
 void centerScaleRotateHomography(
         Eigen::Matrix3f & mHomography,
 	const cctag::Point2d<Eigen::Vector3f> & center,
 	const cctag::DirectedPoint2d<Eigen::Vector3f> & point);
+#endif
 
 /* depreciated */
 bool refineConicFamily(

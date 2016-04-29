@@ -1782,6 +1782,7 @@ void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use
 }
 #endif // NAIVE_SELECTCUT
 
+#if 0
 void centerScaleRotateHomography(
         Eigen::Matrix3f & mHomography,
 	const cctag::Point2d<Eigen::Vector3f> & center,
@@ -1829,6 +1830,7 @@ void centerScaleRotateHomography(
     mHomography = mHomography*mScaleRotation;
   }
 }
+#endif
 
 /* depreciated */
 bool orazioDistance( IdSet& idSet, const RadiusRatioBank & rrBank,
