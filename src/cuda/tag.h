@@ -92,7 +92,7 @@ public:
     void makeCudaStreams( int numTags );
 
     void debug( unsigned char* pix,
-                const cctag::Parameters& params );
+                cctag::Parameters params );
 
     static void debug_cpu_origin( int                      layer,
                                   const cv::Mat&           img,

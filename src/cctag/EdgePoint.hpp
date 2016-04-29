@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <cmath>
 #include <iosfwd>
+#include <stdio.h>
 
 namespace cctag
 {
@@ -81,6 +82,10 @@ public:
   inline double normGradient() const
   {
     return _normGrad ;
+  }
+
+  inline void print( FILE* fileHandle ) const {
+    fprintf( fileHandle, "(%d,%d) (%3.3g,%3.3g) %3.3g %ld %ld %ld %f %d\n", x(), y(), _grad.x(), _grad.y(), _normGrad, _isMax, _edgeLinked, _nSegmentOut, _flowLength, _processedAux );
   }
 
   friend std::ostream& operator<<( std::ostream& os, const EdgePoint& eP );

@@ -181,9 +181,9 @@ bool Frame::applyVoteEval( )
 {
 #ifndef NDEBUG
     _interm_inner_points.copySizeFromDevice( _stream, EdgeListCont );
-    POP_CHK_CALL_IFSYNC;
     _voters.copySizeFromDevice( _stream, EdgeListWait );
-    cerr << "Debug voting (with separable compilation)"
+    cudaDeviceSynchronize();
+    std::cerr << __func__ << " l " << _layer << ": DP"
          << " # seed indices 2: " << _interm_inner_points.host.size
          << " # chained edgeco: " << _voters.host.size << endl;
 #endif
@@ -208,18 +208,7 @@ bool Frame::applyVoteEval( )
      * value d_num_selected_out from the device before the voting
      * step.
      */
-// #ifndef NDEBUG
-#if 0
-    _voters.copySizeFromDevice( _stream, EdgeListCont );
-#endif
     _interm_inner_points.copySizeFromDevice( _stream, EdgeListWait );
-
-// #ifndef NDEBUG
-#if 0
-    cerr << "Debug voting (without separable compilation)"
-         << " # inner points: " << _interm_inner_points.host.size
-         << " # voters      : " << _voters.host.size << endl;
-#endif
 
     /* Add number of voters to chosen inner points, and
      * add average flow length to chosen inner points.

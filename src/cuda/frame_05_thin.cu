@@ -178,10 +178,10 @@ void Frame::applyThinning( )
     int val;
     _meta.fromDevice( Num_edges_thinned, val, _stream );
     _all_edgecoords.copySizeFromDevice( _stream, EdgeListWait );
-    std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-              << "num of edge points after thinning: " << val << std::endl
-              << "num of edge points added to list:  " << _all_edgecoords.host.size << std::endl
-              << "edgemax: " << EDGE_POINT_MAX << std::endl;
+    std::cerr << __func__ << " l " << _layer << ":"
+              << " #edgepoints after thinning: " << val
+              << " #kept: " << _all_edgecoords.host.size
+              << " edgemax: " << EDGE_POINT_MAX << std::endl;
     _all_edgecoords.copyDataFromDeviceSync( );
 
 #else // NDEBUG

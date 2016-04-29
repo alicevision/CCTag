@@ -18,7 +18,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
 {
     // cerr << "Enter " << __FUNCTION__ << endl;
 
-    int vote_sz = _voters.host.size;
+    const int vote_sz = _voters.host.size;
     int all_sz  = _all_edgecoords.host.size;
 
     assert( out_edgelist.size() == 0 );
@@ -26,6 +26,11 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
     assert( out_seedlist.size() == 0 );
     assert( winners.size() == 0 );
 #ifndef NDEBUG
+    cerr << __func__ << " l " << _layer << ":"
+         << " #inner pts " << _inner_points.host.size
+         << " #edge pts " << all_sz
+         << " #voters " << vote_sz
+         << endl;
     /* The voters are 1-based, the edge points are 0-based.
      * When all edge points are voters, voters can be one
      * higher.
@@ -180,6 +185,60 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
         }
     }
     // cerr << "Leave " << __FUNCTION__ << " (ok)" << endl;
+#if 1 // #ifndef NDEBUG
+    std::cerr << __func__ << " l " << _layer << ":"
+         << " #inner pts " << _inner_points.host.size << "==" << out_seedlist.size()
+         << " #edge pts " << all_sz << "==" << out_edgelist.size()
+         << " #voters " << vote_sz
+         << " " << out_edgemap.size()
+         << " " << winners.size()
+         << endl;
+
+    char fileName[100];
+    sprintf( fileName, "giggle-%d-XXXXXX", _layer );
+    int fd = mkstemp( fileName );
+    FILE* fileHandle = fdopen( fd, "w" );
+    cerr << "fileName: " << fileName << endl;
+
+    std::vector<cctag::EdgePoint>::const_iterator it  = out_edgelist.begin();
+    std::vector<cctag::EdgePoint>::const_iterator end = out_edgelist.end();
+    int len = end - it;
+    fprintf( fileHandle, "out-edgelist len %d (%d)\n", len, _all_edgecoords.host.size );
+    for( ; it!=end; it++ ) {
+        it->print( fileHandle );
+    }
+    std::vector<cctag::EdgePoint*>::const_iterator pit  = out_seedlist.begin();
+    std::vector<cctag::EdgePoint*>::const_iterator pend = out_seedlist.end();
+    len = pend - pit;
+    fprintf( fileHandle, "out-seedlist len %d (%d)\n", len, _inner_points.host.size  );
+    for( ; pit!=pend; pit++ ) {
+        fprintf( fileHandle, "%d %d\n", (*pit)->x(), (*pit)->y() );
+    }
+
+    fprintf( fileHandle, "dev-sided flowLen & winnerSize\n" );
+    std::set<std::string> collectSet;
+    for( int i=1; i<vote_sz; i++ ) {
+        const TriplePoint& pt = _voters.host.ptr[i];
+        ostringstream s;
+        s << "(" << pt.coord.x << "," << pt.coord.y << ") "
+          << "(" << pt.d.x << "," << pt.d.y << ") "
+          << "(" << pt.descending.befor.x << "," << pt.descending.befor.y << ") "
+          << "(" << pt.descending.after.x << "," << pt.descending.after.y << ") "
+          << setprecision(10)
+          << pt._flowLength << " "
+          << pt._winnerSize;
+        collectSet.insert( s.str() );
+    }
+    std::set<std::string>::const_iterator sit  = collectSet.begin();
+    std::set<std::string>::const_iterator send = collectSet.end();
+    for( ; sit!=send; sit++ ) {
+        std::string s = *sit;
+        fprintf( fileHandle, "%s\n", s.c_str() );
+    }
+
+    fclose( fileHandle );
+#endif
+
     return true;
 }
 

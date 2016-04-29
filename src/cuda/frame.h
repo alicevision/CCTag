@@ -276,7 +276,7 @@ private:
     Frame& operator=( const Frame& ); // forbidden
 
 private:
-    int                     _layer;
+    const int               _layer;
 
     FrameMetaPtr            _meta; // lots of small variables
 

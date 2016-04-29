@@ -100,9 +100,15 @@ uint32_t TagPipe::getHeight( size_t layer ) const
     return _frame[layer]->getHeight();
 }
 
+static int ct = 0;
+
 __host__
 void TagPipe::load( unsigned char* pix )
 {
+    cerr << endl
+         << "==== Loading frame " << ct++ << " ====" << endl
+         << endl;
+
     _frame[0]->upload( pix ); // async
     _frame[0]->addUploadEvent( ); // async
 }
@@ -248,11 +254,21 @@ cv::Mat* TagPipe::getEdges( size_t layer ) const
 }
 
 __host__
-void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
+void TagPipe::debug( unsigned char* pix, cctag::Parameters params )
 {
     DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
 
     if( true ) {
+#if 0
+        char tmpnamebuffer[100];
+        tmpnam( tmpnamebuffer );
+        mkdir( tmpnamebuffer, 0777 );
+        fprintf( stderr, "Creating directory %s\n", tmpnamebuffer );
+        if( params._debugDir == "" ) {
+            params._debugDir = string(tmpnamebuffer) + "/";
+        }
+#endif
+
         if( params._debugDir == "" ) {
             DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
                 << ": debugDir not set, not writing debug output" << endl; )

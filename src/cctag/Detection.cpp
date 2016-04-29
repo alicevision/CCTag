@@ -878,6 +878,17 @@ void cctagDetection(CCTag::List& markers,
                         cctag.getNearbyPointBuffer() );
                 }
 
+#ifndef NDEBUG
+                cudaDeviceSynchronize();
+                popart::NearbyPoint* p = cctag.getNearbyPointBuffer();
+
+                cerr << "Tag " << tagIndex << " "
+                     << "(" << p->point.x << "," << p->point.y << ") "
+                     << "res " << p->result << " "
+                     << "sz " << p->resSize << " "
+                     << "readble " << p->readable << endl;
+#endif
+
                 tagIndex++;
             }
             cudaDeviceSynchronize();

@@ -178,6 +178,14 @@ bool Frame::applyVoteSortUniq( )
         std::swap( _inner_points.dev.ptr, _interm_inner_points.dev.ptr );
     }
 
+#ifndef NDEBUG
+    _interm_inner_points.copySizeFromDevice( _stream, EdgeListCont );
+    _inner_points.copySizeFromDevice( _stream, EdgeListWait );
+    cudaDeviceSynchronize();
+    std::cerr << __func__ << " l " << _layer << ": DP"
+         << " # pts before srt/uniq: " << _inner_points.host.size
+         << " # pts after srt/uniq: " << _interm_inner_points.host.size << endl;
+#endif
     return true;
 }
 

@@ -298,7 +298,8 @@ void gradient_descent( FrameMetaPtr                 meta,
 
         /* At this point we know that we will keep the point.
          * Obviously, pointer chains in CUDA are tricky, but we can use index
-         * chains based on the element's offset index in chained_edgecoord_list.
+         * chains based on the element's offset index in
+         * chained_edgecoord_list.
          */
         edgepoint_index_table.ptr(out_edge.coord.y)[out_edge.coord.x] = write_index;
 
@@ -367,6 +368,14 @@ bool Frame::applyDesc( )
           _voters.dev,                    // output
           _vote._d_edgepoint_index_table ); // output
     POP_CHK_CALL_IFSYNC;
+#ifndef NDEBUG
+    _all_edgecoords.copySizeFromDevice( _stream, EdgeListWait );
+    _voters.copySizeFromDevice( _stream, EdgeListWait );
+    cudaStreamSynchronize( _stream );
+    std::cerr << __func__ << " l " << _layer << ": DP"
+         << " #voters: " << _voters.host.size
+         << " #edges: " << _all_edgecoords.host.size << endl;
+#endif
     return true;
 }
 #else // not USE_SEPARABLE_COMPILATION_FOR_GRADDESC
@@ -405,6 +414,14 @@ bool Frame::applyDesc( )
           _voters.dev,    // output - TriplePoints with before/after info
           _vote._d_edgepoint_index_table ); // output - table, map coord to TriplePoint index
     POP_CHK_CALL_IFSYNC;
+
+#ifndef NDEBUG
+    _voters.copySizeFromDevice( _stream, EdgeListWait );
+    cudaStreamSynchronize( _stream );
+    std::cerr << __func__ << " l " << _layer << ": no DP"
+         << ": #voters: " << _voters.host.size
+         << " #edges: " << _all_edgecoords.host.size << endl;
+#endif
 
     return true;
 }

@@ -242,7 +242,7 @@ void DebugImage::plotPoints( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb 
 
     vector<TriplePoint>::const_iterator cit, cend;
     cend = v.end();
-    cout << "Plotting in image of size " << img.cols << " x " << img.rows << endl;
+    // cout << "Plotting in image of size " << img.cols << " x " << img.rows << endl;
     for( cit=v.begin(); cit!=cend; cit++ ) {
         if( outOfBounds( cit->coord.x, cit->coord.y, img ) ) {
             cout << "Coord of point (" << cit->coord.x << "," << cit->coord.y << ") is out of bounds (line " << __LINE__ << ")" << endl;
@@ -258,7 +258,7 @@ void DebugImage::plotPoints( const vector<int2>& v, cv::cuda::PtrStepSzb img, bo
 
     vector<int2>::const_iterator cit, cend;
     cend = v.end();
-    cout << "Plotting " << v.size() << " int2 coordinates into image of size " << img.cols << " x " << img.rows << endl;
+    // cout << "Plotting " << v.size() << " int2 coordinates into image of size " << img.cols << " x " << img.rows << endl;
     for( cit=v.begin(); cit!=cend; cit++ ) {
         if( outOfBounds( cit->x, cit->y, img ) ) {
             cout << "Coord of point (" << cit->x << "," << cit->y << ") is out of bounds (line " << __LINE__ << ")" << endl;
