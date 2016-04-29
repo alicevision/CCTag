@@ -259,7 +259,7 @@ void TagPipe::debug( unsigned char* pix, cctag::Parameters params )
     DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
 
     if( true ) {
-#if 0
+#if 1
         char tmpnamebuffer[100];
         tmpnam( tmpnamebuffer );
         mkdir( tmpnamebuffer, 0777 );
