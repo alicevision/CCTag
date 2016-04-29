@@ -16,6 +16,12 @@ TagThread::TagThread( TagThreads* creator, TagPipe* pipe, int layer )
     , _my_layer( layer )
 { }
 
+#define FORCE_SERIALIZE_LAYERS
+
+#ifdef FORCE_SERIALIZE_LAYERS
+static boost::mutex serialize;
+#endif
+
 void TagThread::call( void )
 {
     _creator->startWait( );
@@ -23,7 +29,13 @@ void TagThread::call( void )
     while( true ) {
         _creator->frameReadyWait( );
 
+#ifdef FORCE_SERIALIZE_LAYERS
+        serialize.lock();
+#endif
         _pipe->handleframe( _my_layer );
+#ifdef FORCE_SERIALIZE_LAYERS
+        serialize.unlock();
+#endif
 
         _creator->frameDonePost( );
     }
