@@ -76,8 +76,8 @@ void count_winners( FrameMetaPtr&                   meta,
         flow_length[point]  = __shfl     ( flow_length[point],  0 );
     }
 
-    __shared__ int   winner_array[CONC_POINTS][32];
-    __shared__ float length_array[CONC_POINTS][32];
+    __shared__ int    winner_array[CONC_POINTS][32];
+    __shared__ float  length_array[CONC_POINTS][32];
 
     if( threadIdx.x < CONC_POINTS ) {
         const int point = threadIdx.x;
@@ -93,6 +93,7 @@ void count_winners( FrameMetaPtr&                   meta,
 
         if( inner_point[point] == 0 ) return;
 
+#if 1
         winner_size[point] = winner_array[point][threadIdx.x];
         flow_length[point] = length_array[point][threadIdx.x];
 
@@ -112,6 +113,41 @@ void count_winners( FrameMetaPtr&                   meta,
             inner_point[point]->_winnerSize = winner_size[point];
             inner_point[point]->_flowLength = flow_length[point] / winner_size[point];
         }
+#else
+        int   winsz = winner_array[point][threadIdx.x];
+        float flowl = length_array[point][threadIdx.x];
+
+        winsz += __shfl_down( winsz, 16 );
+        winsz += __shfl_down( winsz,  8 );
+        winsz += __shfl_down( winsz,  4 );
+        winsz += __shfl_down( winsz,  2 );
+        winsz += __shfl_down( winsz,  1 );
+        winsz  = __shfl     ( winsz,  0 );
+
+#if 1
+        flowl += __shfl_down( flowl, 16 );
+        flowl += __shfl_down( flowl,  8 );
+        flowl += __shfl_down( flowl,  4 );
+        flowl += __shfl_down( flowl,  2 );
+        flowl += __shfl_down( flowl,  1 );
+
+        if( threadIdx.x == 0 ) {
+            inner_point[point]->_winnerSize = winsz;
+            inner_point[point]->_flowLength = flowl / winsz;
+        }
+#else
+        flowl = min( flowl, __shfl_down( flowl, 16 ) );
+        flowl = min( flowl, __shfl_down( flowl,  8 ) );
+        flowl = min( flowl, __shfl_down( flowl,  4 ) );
+        flowl = min( flowl, __shfl_down( flowl,  2 ) );
+        flowl = min( flowl, __shfl_down( flowl,  1 ) );
+
+        if( threadIdx.x == 0 ) {
+            inner_point[point]->_winnerSize = winsz;
+            inner_point[point]->_flowLength = flowl;
+        }
+#endif
+#endif
     }
 }
 
