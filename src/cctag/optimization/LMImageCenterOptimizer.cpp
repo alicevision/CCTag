@@ -104,8 +104,8 @@ int LMImageCenterOptimizer::homology( void* p, int m, int n, const double* x, do
 
 	identity_matrix<double> eye( 3, 3 );
 
-	cctag->centerImg().setX( x[0] );
-	cctag->centerImg().setY( x[1] );
+	cctag->centerImg().x() = x[0];
+	cctag->centerImg().y() = x[1];
 
 	const bounded_matrix<double, 3, 3> & Q0   = cctag->outerEllipse().matrix();
 	bounded_vector<double, 3> l       = prec_prod( Q0, cctag->centerImg() );

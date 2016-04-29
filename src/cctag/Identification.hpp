@@ -105,7 +105,7 @@ typedef std::vector< std::pair< cctag::Point2d<Eigen::Vector3f>, cctag::ImageCut
 inline void applyHomography(
         double & xRes,
         double & yRes,
-        const cctag::numerical::BoundedMatrix3x3d & mHomography,
+        const Eigen::Matrix3f & mHomography,
         const double x,
         const double y)
 {
@@ -144,14 +144,14 @@ bool orazioDistanceRobust(
 void extractSignalUsingHomography(
         cctag::ImageCut & cut,
         const cv::Mat & src,
-        const cctag::numerical::BoundedMatrix3x3d & mHomography,
-        const cctag::numerical::BoundedMatrix3x3d & mInvHomography);
+        const Eigen::Matrix3f & mHomography,
+        const Eigen::Matrix3f & mInvHomography);
 
 /* depreciated */
 void extractSignalUsingHomographyDeprec(
         cctag::ImageCut & rectifiedSig,
         const cv::Mat & src,
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        Eigen::Matrix3f & mHomography,
         std::size_t nSamples = 100,
         const double begin = 0.0,
         const double end = 1.0 );
@@ -287,7 +287,7 @@ void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use
  */
 void getSignals(
         std::vector< cctag::ImageCut > & vCuts,
-        const cctag::numerical::BoundedMatrix3x3d & mHomography,
+        const Eigen::Matrix3f & mHomography,
         const cv::Mat & src);
 
 /**
@@ -305,7 +305,7 @@ void getSignals(
  */
 bool refineConicFamilyGlob(
         const int tagIndex,
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        Eigen::Matrix3f & mHomography,
         Point2d<Eigen::Vector3f> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
@@ -329,7 +329,7 @@ bool refineConicFamilyGlob(
  * @param[in] params Parameters read from config file
  */
 bool imageCenterOptimizationGlob(
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        Eigen::Matrix3f & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
         cctag::Point2d<Eigen::Vector3f> & center,
         double & minRes,
@@ -370,7 +370,7 @@ void getNearbyPoints(
 void computeHomographyFromEllipseAndImagedCenter(
         const cctag::numerical::geometry::Ellipse & ellipse,
         const cctag::Point2d<Eigen::Vector3f> & center,
-        cctag::numerical::BoundedMatrix3x3d & mHomography);
+        Eigen::Matrix3f & mHomography);
 
 /**
  * @brief Compute the residual of the optimization which is the average of the square of the 
@@ -384,7 +384,7 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @return residual
  */
 double costFunctionGlob(
-        const cctag::numerical::BoundedMatrix3x3d & mHomography,
+        const Eigen::Matrix3f & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
         const cv::Mat & src,
         bool & flag);
@@ -446,7 +446,7 @@ inline double dis( const double sig, const double val, const double mub, const d
  * @return 
  */
 void centerScaleRotateHomography(
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        Eigen::Matrix3f & mHomography,
 	const cctag::Point2d<Eigen::Vector3f> & center,
 	const cctag::DirectedPoint2d<Eigen::Vector3f> & point);
 

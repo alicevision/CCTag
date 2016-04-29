@@ -5,6 +5,8 @@
 #include "../Determinant.hpp"
 #include "../../utils/Exceptions.hpp"
 
+#include <Eigen/Core>
+
 #include <cmath>
 
 namespace cctag {
@@ -23,21 +25,14 @@ typename Matrix::value_type trace(const Matrix& m)
     return tr;
 }
 
-template<class Matrix>
-Matrix& normalizeDet1( Matrix& m )
+Eigen::Matrix3f& normalizeDet1( Eigen::Matrix3f& m )
 {
-	typedef typename Matrix::value_type T;
 
-	if( m.size1() != m.size2())
-	{
-		CCTAG_THROW( exception::Bug()
-			<< exception::dev("Matrix must be square!" ) );
-	}
-	const T d = det( m );
-	if( d == 0 )
+	const float det = m.determinant();
+	if( det == 0 )
 		return m;
 
-	const T s = ( ( d >= 0 ) ? 1 : -1 ) / T( std::pow( std::abs( d ), 1.0 / m.size1() ) );
+	const float s = ( ( det >= 0 ) ? 1 : -1 ) / std::pow( std::abs( det ), 1.0 / 3 );
 	m = s * m;
 	return m;
 }

@@ -117,8 +117,8 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
     const Point2d<Eigen::Vector3f> outerPoint(p->x(), p->y());
 
     Eigen::Vector3f lineThroughCenter;
-    double a = outerPoint.x() - outerEllipse.center().x();
-    double b = outerPoint.y() - outerEllipse.center().y();
+    float a = outerPoint.x() - outerEllipse.center().x();
+    float b = outerPoint.y() - outerEllipse.center().y();
     lineThroughCenter(0) = a;
     lineThroughCenter(1) = b;
     lineThroughCenter(2) = -a * outerEllipse.center().x() - b * outerEllipse.center().y();
@@ -142,7 +142,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
         p->_processedAux = true;
         vProcessedEdgePoint.push_back(p);
 
-        double normGrad = sqrt(p->gradient()(0) * p->gradient()(0) + p->gradient()(1) * p->gradient()(1));
+        float normGrad = sqrt(p->gradient()(0) * p->gradient()(0) + p->gradient()(1) * p->gradient()(1));
 
         gradE(0) = p->gradient()(0) / normGrad;
         gradE(1) = p->gradient()(1) / normGrad;
@@ -150,7 +150,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
         toto(0) = outerEllipse.center().x() - p->x();
         toto(1) = outerEllipse.center().y() - p->y();
 
-        double distancePointToCenter = sqrt(toto(0) * toto(0) + toto(1) * toto(1));
+        float distancePointToCenter = sqrt(toto(0) * toto(0) + toto(1) * toto(1));
         toto(0) /= distancePointToCenter;
         toto(1) /= distancePointToCenter;
 
@@ -159,7 +159,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
         if (isInEllipse(outerEllipse, pointToAdd) && isOnTheSameSide(outerPoint, pointToAdd, lineThroughCenter))
           // isInHull( innerBoundEllipse, outerEllipse, pMid ) && isInHull( innerBoundEllipse, outerEllipse, pointToAdd ) &&
         {
-          if ((double(-dir) * gradE.dot(toto) < -0.5) && (j >= numCircles - 2))
+          if ((float(-dir) * gradE.dot(toto) < -0.5) && (j >= numCircles - 2))
           {
             ++nGradientOut;
           }
@@ -193,7 +193,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
 
   //std::cin.ignore().get();
 
-  if (double(nGradientOut) / double(nAddedPoint) > 0.5)
+  if (float(nGradientOut) / float(nAddedPoint) > 0.5)
   {
     cctagPoints.clear();
     CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(BAD_GRAD_WHILE_ASSEMBLING);
@@ -222,9 +222,9 @@ bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2d<Ei
   BOOST_ASSERT(filteredChildrens.size() >= 5);
 
   // TODO constante à associer à la classe de l'algorithme... et choisir la meilleure valeur
-  static const double thrCosDiffMax = 0.25; //std::cos( boost::math::constants::pi<double>() / 2.0 );
+  static const float thrCosDiffMax = 0.25; //std::cos( boost::math::constants::pi<double>() / 2.0 );
 
-  const double min = numerical::innerProdMin(filteredChildrens, thrCosDiffMax, p1, p2);
+  const float min = numerical::innerProdMin(filteredChildrens, thrCosDiffMax, p1, p2);
 
   return min <= thrCosDiffMax;
 }
@@ -266,16 +266,16 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
   l(1) = aux(1);
   l(2) = 1;
 
-  const double normL = std::sqrt(boost::math::pow<2>(l(0)) + boost::math::pow<2>(l(1)));
+  const float normL = std::sqrt(boost::math::pow<2>(l(0)) + boost::math::pow<2>(l(1)));
 
   //double distMax = std::abs( inner_prod( *( filteredChildrens[0] ), l ) ) / normL;
 
   const EdgePoint * pMax = filteredChildrens.front();
-  double distMax = std::min(
+  float distMax = std::min(
                     cctag::numerical::distancePoints2D((Point2d<Eigen::Vector3i>)(*pMax), p1),
                     cctag::numerical::distancePoints2D((Point2d<Eigen::Vector3i>)(*pMax), p2));
 
-  double dist;
+  float dist;
 
   BOOST_FOREACH(const EdgePoint * const e, filteredChildrens)
   {

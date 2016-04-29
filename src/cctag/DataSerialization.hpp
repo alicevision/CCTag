@@ -31,7 +31,7 @@ namespace cctag {
 
   void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cctag::numerical::geometry::Ellipse> & ellipses);
 
-  void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const Eigen::Matrix3f& matrix);
+  void serializeMatrix3f(boost::archive::text_oarchive & ar, const Eigen::Matrix3f& matrix);
 
   void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowComponent & flowComponent);
 

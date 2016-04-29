@@ -236,8 +236,8 @@ void createRectifiedCutImage(const std::vector<ImageCut> & vCuts, cv::Mat & outp
 void extractSignalUsingHomography(
         cctag::ImageCut & cut,
         const cv::Mat & src,
-        const cctag::numerical::BoundedMatrix3x3d & mHomography,
-        const cctag::numerical::BoundedMatrix3x3d & mInvHomography)
+        const Eigen::Matrix3f & mHomography,
+        const Eigen::Matrix3f & mInvHomography)
 {
   using namespace boost;
   using namespace boost::numeric::ublas;
@@ -306,7 +306,7 @@ void extractSignalUsingHomography(
 void extractSignalUsingHomographyDeprec(
         cctag::ImageCut & rectifiedCut,
         const cv::Mat & src,
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        Eigen::Matrix3f & mHomography,
         std::size_t nSamples,
         const double begin,
         const double end)
@@ -639,8 +639,8 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
       if ( cctag::numerical::distancePoints2D( cut.stop(), refinedPoint ) < halfWidth )
       {
         // x and y are refined. The gradient is kept as it was because the refinement.
-        cut.stop().setX( refinedPoint.x() );
-        cut.stop().setY( refinedPoint.y() );
+        cut.stop().x() = refinedPoint.x();
+        cut.stop().y() = refinedPoint.y();
         //cut.stop() = cctag::DirectedPoint2d<Eigen::Vector3f>(refinedPoint.x(),refinedPoint.y(),cut.stop().dX(), cut.stop().dY());
         vSelectedCuts.push_back( cut );
       }
@@ -825,10 +825,10 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
 // Expensive (GPU) @Carsten
 void getSignals(
         std::vector< cctag::ImageCut > & vCuts,
-        const cctag::numerical::BoundedMatrix3x3d & mHomography,
+        const Eigen::Matrix3f & mHomography,
         const cv::Mat & src)
 {
-  cctag::numerical::BoundedMatrix3x3d mInvHomography;
+  Eigen::Matrix3f mInvHomography;
   cctag::numerical::invert(mHomography, mInvHomography); // closed form: invert_3x3( const Matrix& A, Matrix& result ) is actually called which call det(const ublas::bounded_matrix<T,3,3> & m)
   for( cctag::ImageCut & cut : vCuts )
   {
@@ -849,19 +849,19 @@ void getSignals(
 /* depreciated */
 #if 0
 void computeHomographyFromEllipseAndImagedCenter(
-        const cctag::numerical::BoundedMatrix3x3d & mEllipse,
+        const Eigen::Matrix3f & mEllipse,
         const cctag::Point2d<Eigen::Vector3f> & center,
-        cctag::numerical::BoundedMatrix3x3d & mHomography)
+        Eigen::Matrix3f & mHomography)
  {
     using namespace cctag::numerical;
     using namespace boost::numeric::ublas;
   
-  cctag::numerical::BoundedMatrix3x3d mA;
+  Eigen::Matrix3f mA;
   invert( mEllipse, mA );
-  cctag::numerical::BoundedMatrix3x3d mO = outer_prod( center, center );
+  Eigen::Matrix3f mO = outer_prod( center, center );
   diagonal_matrix<double> vpg;
 
-  cctag::numerical::BoundedMatrix3x3d mVG;
+  Eigen::Matrix3f mVG;
   // Compute eig(inv(A),center*center')
   eig( mA, mO, mVG, vpg ); // Warning : compute GENERALIZED eigvalues, take 4 parameters !
                            // eig(a,b,c) compute eigenvalues of a, call a different 
@@ -891,7 +891,7 @@ void computeHomographyFromEllipseAndImagedCenter(
     s( i, i ) = std::sqrt( s( i, i ) );
   }
 
-  cctag::numerical::BoundedMatrix3x3d mU = prec_prod( u, s );
+  Eigen::Matrix3f mU = prec_prod( u, s );
 
   column( mHomography, 0 ) = column( mU, 0 );
   column( mHomography, 1 ) = column( mU, 1 );
@@ -902,12 +902,12 @@ void computeHomographyFromEllipseAndImagedCenter(
   // and the the back projected outer ellipse is of unit radius.
   
   // Translation part
-  cctag::numerical::BoundedMatrix3x3d mInvHomography;
+  Eigen::Matrix3f mInvHomography;
   invert( mHomography, mInvHomography );
   
   // Back projection of the image center
   Point2d<Eigen::Vector3f> backProjCenter = prec_prod< BoundedVector3d >( mInvHomography, center );
-  BoundedMatrix3x3d mTranslation; // todo Initialize with eye(3).
+  Eigen::Matrix3f mTranslation; // todo Initialize with eye(3).
   mTranslation( 0, 0 ) = 1.0;
   mTranslation( 0, 1 ) = 0.0;
   mTranslation( 0, 2 ) = backProjCenter.x();
@@ -928,7 +928,7 @@ void computeHomographyFromEllipseAndImagedCenter(
   const double scale = ( backProjectedOuterEllipse.a() + backProjectedOuterEllipse.b() ) / 2.0;
   //CCTAG_COUT_VAR(backProjectedOuterEllipse);
 
-  BoundedMatrix3x3d mScale;
+  Eigen::Matrix3f mScale;
   mScale( 0, 0 ) = scale; // todo Initialize with eye(3).
   mScale( 0, 1 ) = 0.0;
   mScale( 0, 2 ) = 0.0;
@@ -963,14 +963,14 @@ void computeHomographyFromEllipseAndImagedCenter(
 void computeHomographyFromEllipseAndImagedCenter(
         const cctag::numerical::geometry::Ellipse & ellipse,
         const cctag::Point2d<Eigen::Vector3f> & center,
-        cctag::numerical::BoundedMatrix3x3d & mHomography)
+        Eigen::Matrix3f & mHomography)
  {
     using namespace cctag::numerical;
     using namespace boost::numeric::ublas;
 
-    cctag::numerical::BoundedMatrix3x3d mCanonic(3,3);
-    cctag::numerical::BoundedMatrix3x3d mTCan(3,3);
-    cctag::numerical::BoundedMatrix3x3d mTInvCan(3,3);
+    Eigen::Matrix3f mCanonic(3,3);
+    Eigen::Matrix3f mTCan(3,3);
+    Eigen::Matrix3f mTInvCan(3,3);
     
     ellipse.getCanonicForm(mCanonic, mTCan, mTInvCan);
     
@@ -1005,7 +1005,7 @@ void computeHomographyFromEllipseAndImagedCenter(
     mHomography(1,2) = -Q33*yc;
     mHomography(2,2) = -Q33;
 
-    cctag::numerical::BoundedMatrix3x3d mDiag = identity_matrix<double>( 3 );
+    Eigen::Matrix3f mDiag = identity_matrix<double>( 3 );
     mDiag(0,0) = sqrt((Q22*Q33/Q11*(Q11*xc*xc + Q22*yc*yc + Q33)));
     mDiag(1,1) = Q33;
     mDiag(2,2) = sqrt(-Q22*(Q11*xc*xc + Q33));
@@ -1036,7 +1036,7 @@ void computeHomographyFromEllipseAndImagedCenter(
  */
 bool refineConicFamilyGlob(
         const int tagIndex,
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        Eigen::Matrix3f & mHomography,
         Point2d<Eigen::Vector3f> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
@@ -1148,7 +1148,7 @@ bool refineConicFamilyGlob(
  * @param[in] params Parameters read from config file
  */
 bool imageCenterOptimizationGlob(
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        Eigen::Matrix3f & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
         cctag::Point2d<Eigen::Vector3f> & center,
         double & minRes,
@@ -1158,7 +1158,7 @@ bool imageCenterOptimizationGlob(
         const cctag::Parameters params )
 {
     cctag::Point2d<Eigen::Vector3f>             optimalPoint;
-    cctag::numerical::BoundedMatrix3x3d optimalHomography;
+    Eigen::Matrix3f optimalHomography;
     bool                                hasASolution = false;
 
     using namespace cctag::numerical;
@@ -1176,7 +1176,7 @@ bool imageCenterOptimizationGlob(
                      GRID );        // in (enum)
 
     minRes = std::numeric_limits<double>::max();
-    BoundedMatrix3x3d mTempHomography;
+    Eigen::Matrix3f mTempHomography;
 
 #ifdef OPTIM_CENTER_VISUAL_DEBUG // Visual debug durign the optim
     int k = 0;
@@ -1252,8 +1252,8 @@ void getNearbyPoints(
 {
   nearbyPoints.clear();
 
-  cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromEllipse( ellipse );
-  cctag::numerical::BoundedMatrix3x3d mInvT;
+  Eigen::Matrix3f mT = cctag::numerical::optimization::conditionerFromEllipse( ellipse );
+  Eigen::Matrix3f mInvT;
   cctag::numerical::invert_3x3(mT,mInvT);
   
   cctag::numerical::geometry::Ellipse transformedEllipse(ellipse);
@@ -1296,7 +1296,7 @@ void getNearbyPoints(
  */
 // Expensive (GPU) @Carsten
 double costFunctionGlob(
-        const cctag::numerical::BoundedMatrix3x3d & mHomography,
+        const Eigen::Matrix3f & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
         const cv::Mat & src,
         bool & flag)
@@ -1790,20 +1790,20 @@ void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use
 #endif // NAIVE_SELECTCUT
 
 void centerScaleRotateHomography(
-        cctag::numerical::BoundedMatrix3x3d & mHomography,
+        Eigen::Matrix3f & mHomography,
 	const cctag::Point2d<Eigen::Vector3f> & center,
 	const cctag::DirectedPoint2d<Eigen::Vector3f> & point)
 {
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
 
-  cctag::numerical::BoundedMatrix3x3d mInvHomography;
+  Eigen::Matrix3f mInvHomography;
   invert( mHomography, mInvHomography );
   
   // Back projection of the image center
   Point2d<Eigen::Vector3f> backProjCenter = prec_prod< BoundedVector3d >( mInvHomography, center );
   {
-    BoundedMatrix3x3d mTranslation;
+    Eigen::Matrix3f mTranslation;
     mTranslation( 0, 0 ) = 1.0;
     mTranslation( 0, 1 ) = 0.0;
     mTranslation( 0, 2 ) = backProjCenter.x();
@@ -1823,7 +1823,7 @@ void centerScaleRotateHomography(
   const double scale = norm_2( subrange( backProjCenter, 0, 2 ) );
   BoundedVector3d rescaledBackProjCenter  = backProjCenter/scale;
   {
-    BoundedMatrix3x3d mScaleRotation;
+    Eigen::Matrix3f mScaleRotation;
     mScaleRotation( 0, 0 ) = scale*rescaledBackProjCenter(0);
     mScaleRotation( 0, 1 ) = -scale*rescaledBackProjCenter(1);
     mScaleRotation( 0, 2 ) = 0.0;
@@ -1973,7 +1973,7 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
 
-  cctag::numerical::BoundedMatrix3x3d & mH = cctag.homography();
+  Eigen::Matrix3f & mH = cctag.homography();
   Point2d<Eigen::Vector3f> & oRefined = cctag.centerImg();
 
 
@@ -2012,8 +2012,8 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
     // Optimization conditioning
-    cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromPoints( pr );
-    //cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromEllipse( ellipse );
+    Eigen::Matrix3f mT = cctag::numerical::optimization::conditionerFromPoints( pr );
+    //Eigen::Matrix3f mT = cctag::numerical::optimization::conditionerFromEllipse( ellipse );
 
     oRefined = opt( oRefined, lengthSig, src, ellipse, mT );
 
@@ -2049,8 +2049,8 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     //oRefined = opt( oRefined, lengthSig, sourceView, ellipse.matrix() );
 
     // Optimization conditioning
-    cctag::numerical::BoundedMatrix3x3d mT = cctag::numerical::optimization::conditionerFromPoints( pr );
-    cctag::numerical::BoundedMatrix3x3d mInvT;
+    Eigen::Matrix3f mT = cctag::numerical::optimization::conditionerFromPoints( pr );
+    Eigen::Matrix3f mInvT;
     cctag::numerical::invert_3x3(mT,mInvT);
 
     cctag::numerical::optimization::condition(oRefined, mT);
@@ -2079,8 +2079,8 @@ bool refineConicFamily( CCTag & cctag, std::vector< cctag::ImageCut > & fsig,
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-    oRefined.setX(x[0]);
-    oRefined.setY(x[1]);
+    oRefined.x() = x[0];
+    oRefined.y() = x[1];
 
     cctag::numerical::optimization::condition(oRefined, mInvT);
     /**********************************************************************/

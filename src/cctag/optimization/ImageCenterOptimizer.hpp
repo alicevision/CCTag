@@ -50,7 +50,7 @@ public:
                 const std::size_t lengthSig,
                 const cv::Mat & src,
                 const cctag::numerical::geometry::Ellipse & outerEllipse,
-                const cctag::numerical::BoundedMatrix3x3d & mT );
+                const Eigen::Matrix3f & mT );
 
 	inline void initFcn()
 	{
@@ -79,8 +79,8 @@ private:
 	cv::Mat _src;
 	cctag::numerical::geometry::Ellipse _ellipse;
 	std::size_t _numIter;
-	cctag::numerical::BoundedMatrix3x3d _mT;
-	cctag::numerical::BoundedMatrix3x3d _mInvT;
+	Eigen::Matrix3f _mT;
+	Eigen::Matrix3f _mInvT;
 };
 
 } // namespace identification

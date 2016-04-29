@@ -70,7 +70,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 	//CCTagVisualDebug::instance().drawText( centerExtEllipse, boost::lexical_cast<std::string>(this_ptr->_numIter), cctag::color_white );
 	CCTagVisualDebug::instance().drawPoint( centerExtEllipse, cctag::color_blue );
 
-	cctag::numerical::BoundedMatrix3x3d mH;
+	Eigen::Matrix3f mH;
 	VecSignals vecSig;
 	if ( !getSignals( mH, vecSig, this_ptr->_lengthSig, centerExtEllipse, this_ptr->_vecExtPoints, this_ptr->_src, this_ptr->_ellipse.matrix() ) )
 	{
@@ -95,18 +95,15 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 
 	++this_ptr->_numIter;
 
-	//double penalty = 0;
-	//double distanceToCentre = cctag::numerical::distancePoints2D( centerExtEllipse, this_ptr->_ellipse.center() );
-	//if ( distanceToCentre > 0.2*std::min(this_ptr->_ellipse.a(), this_ptr->_ellipse.b()) )
-	//{
-	//	penalty += 1000000*distanceToCentre/std::min(this_ptr->_ellipse.a(), this_ptr->_ellipse.b());
-	//}
-
-	fx = res;//+penalty;
+	fx = res;
 	result = NLPFunction;
 }
 
-Point2d<Eigen::Vector3f> ImageCenterOptimizer::operator()( const cctag::Point2d<Eigen::Vector3f> & pToRefine, const std::size_t lengthSig, const cv::Mat & src, const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT)
+Point2d<Eigen::Vector3f> ImageCenterOptimizer::operator()( const cctag::Point2d<Eigen::Vector3f> & pToRefine, 
+                const std::size_t lengthSig,
+                const cv::Mat & src,
+                const cctag::numerical::geometry::Ellipse & outerEllipse,
+                const Eigen::Matrix3f & mT)
 {
 	using namespace OPTPP;
 	using namespace NEWMAT;
@@ -147,8 +144,8 @@ Point2d<Eigen::Vector3f> ImageCenterOptimizer::operator()( const cctag::Point2d<
 	//#ifdef REG_TEST
 	ColumnVector x_sol = getXc();
 	// Point raffiné à retourner :
-	res.setX( x_sol( 1 ) );
-	res.setY( x_sol( 2 ) );
+	res.x() = x_sol( 1 );
+	res.y() = x_sol( 2 );
 
 	cctag::numerical::optimization::condition(res, _mInvT);
 

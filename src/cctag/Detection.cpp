@@ -564,8 +564,7 @@ void cctagDetectionFromEdges(
       }
 
       cctag::Point2d<Eigen::Vector3f> markerCenter;
-      cctag::numerical::BoundedMatrix3x3d markerHomography;
-      markerHomography.clear();
+      Eigen::Matrix3f markerHomography;
 
       const double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
 
@@ -628,7 +627,7 @@ void cctagDetectionFromEdges(
 
       BOOST_FOREACH(const EdgePoint* p, outerEllipsePoints)
       {
-        quality2 += p->_normGrad; // ***
+        quality2 += p->normGradient(); // ***
         
         //double theta = atan2(p->y() - outerEllipse.center().y(), p->x() - outerEllipse.center().x()); // cf. supp.
         //quality2 += std::abs(-sin(theta)*p->gradient().x() + cos(theta)*p->gradient().y()); // cf. supp.

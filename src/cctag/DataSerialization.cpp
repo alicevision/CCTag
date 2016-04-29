@@ -71,7 +71,7 @@ void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std:
 }
 
 void serializeEllipse(boost::archive::text_oarchive & ar, const cctag::numerical::geometry::Ellipse & ellipse) {
-    serializeBoundedMatrix3x3d(ar, ellipse.matrix());
+    serializeMatrix3f(ar, ellipse.matrix());
 }
 
 void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cctag::numerical::geometry::Ellipse> & ellipses) {
@@ -83,7 +83,7 @@ void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cct
     }
 }
 
-void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const Eigen::Matrix3f & matrix) {
+void serializeMatrix3f(boost::archive::text_oarchive & ar, const Eigen::Matrix3f & matrix) {
     ar & BOOST_SERIALIZATION_NVP(matrix(0, 0));
     ar & BOOST_SERIALIZATION_NVP(matrix(1, 0));
     ar & BOOST_SERIALIZATION_NVP(matrix(2, 0));

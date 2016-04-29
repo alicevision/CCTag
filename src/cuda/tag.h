@@ -78,7 +78,7 @@ public:
     bool imageCenterRetrieve(
         const int                                  tagIndex,
         cctag::Point2d<Eigen::Vector3f>&                   center,
-        cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+        Eigen::Matrix3f&       bestHomographyOut,
         const cctag::Parameters&                   params,
         NearbyPoint*                               cctag_pointer_buffer );
 

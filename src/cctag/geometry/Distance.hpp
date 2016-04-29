@@ -12,30 +12,16 @@ namespace cctag {
 namespace numerical {
 
 template<class T, class U>
-inline double distancePoints2D( const T& p1, const U& p2 ) // TODO modifier les accès, considérer p1, p2 comme des bounded_vector
+inline float distancePoints2D( const T& p1, const U& p2 ) // TODO modifier les accès, considérer p1, p2 comme des bounded_vector
 {
-	return std::sqrt( (double)boost::math::pow<2>( p2.x() - p1.x() ) +
+	return std::sqrt( (float)boost::math::pow<2>( p2.x() - p1.x() ) +
 	                  boost::math::pow<2>( p2.y() - p1.y() ) );
-}
-
-template<class T>
-inline double powDistancePoints2D( const T& p1, const T& p2 ) // TODO modifier les accès, considérer p1, p2 comme des bounded_vector
-{
-	return boost::math::pow<2>( p2.x() - p1.x() ) +
-	       boost::math::pow<2>( p2.y() - p1.y() );
-}
-
-template<class T>
-inline double distancePoints3D( const T& p1, const T& p2 ) // TODO modifier les accès, considérer p1, p2 comme des bounded_vector
-{
-	return std::sqrt( (double)( p2.x() - p1.x() ) * ( p2.x() - p1.x() ) +
-	                  ( p2.y() - p1.y() ) * ( p2.y() - p1.y() ) +
-	                  ( p2.z() - p1.z() ) * ( p2.z() - p1.z() ) );
 }
 
 // Compute (point-polar) distance between a point and an ellipse represented by its 3x3 matrix.
 // TODO@lilian: f is always equal to 1, remove it
-inline double distancePointEllipse(const Eigen::Vector3f& p, const Eigen::Matrix3f& Q, const double f )
+template <class T>
+inline float distancePointEllipse(const T & p, const Eigen::Matrix3f& Q, const float f )
 {
 	Eigen::VectorXf aux( 6 );
 
@@ -47,9 +33,9 @@ inline double distancePointEllipse(const Eigen::Vector3f& p, const Eigen::Matrix
 	aux( 5 ) = f * f;
 
 	//sdist = ([pts(:,1).*pts(:,1) 2*pts(:,1).*pts(:,2) pts(:,2).*pts(:,2) 2*f*pts(:,1) 2*f*pts(:,2) f*f*ones(n,1)]*Q([1;2;5;7;8;9])).^2./((pts*Q([1;2;3])).^2+(pts*Q([2;5;8])).^2);
-	double tmp1  = p( 0 ) * Q( 0, 0 ) + p( 1 ) * Q( 0, 1 ) + p( 2 ) * Q( 0, 2 );
-	double tmp2  = p( 0 ) * Q( 0, 1 ) + p( 1 ) * Q( 1, 1 ) + p( 2 ) * Q( 1, 2 );
-	double denom = tmp1 * tmp1 + tmp2 * tmp2;
+	float tmp1  = p( 0 ) * Q( 0, 0 ) + p( 1 ) * Q( 0, 1 ) + p( 2 ) * Q( 0, 2 );
+	float tmp2  = p( 0 ) * Q( 0, 1 ) + p( 1 ) * Q( 1, 1 ) + p( 2 ) * Q( 1, 2 );
+	float denom = tmp1 * tmp1 + tmp2 * tmp2;
 
 	Eigen::VectorXf qL(6);
 	qL( 0 ) = Q( 0, 0 ) ; qL( 1 ) = Q( 0, 1 ) ; qL( 2 ) = Q( 0, 2 ) ;
@@ -58,7 +44,7 @@ inline double distancePointEllipse(const Eigen::Vector3f& p, const Eigen::Matrix
 	return boost::math::pow<2>( aux.dot(qL) ) / denom;
 }
 
-inline double distancePointEllipse( const Eigen::Vector3f& p, const geometry::Ellipse& q, const double f )
+inline float distancePointEllipse( const Eigen::Vector3f& p, const geometry::Ellipse& q, const float f )
 {
 	const auto& Q = q.matrix();
 	return distancePointEllipse( p, Q, f );

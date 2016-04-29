@@ -65,7 +65,7 @@ bool CCTag::isEqual(const CCTag& marker) const
   return isOverlappingEllipses(centerEllipseA, centerEllipseB) && sameSemiAxis;
 }
 
-void CCTag::condition(const cctag::numerical::BoundedMatrix3x3d & mT, const cctag::numerical::BoundedMatrix3x3d & mInvT)
+void CCTag::condition(const Eigen::Matrix3f & mT, const Eigen::Matrix3f & mInvT)
 {
   using namespace cctag::numerical::geometry;
 
@@ -96,13 +96,13 @@ void CCTag::scale(const double s)
 
     BOOST_FOREACH(DirectedPoint2d<Eigen::Vector3f> & p, vp)
     {
-      p.setX(p.x() * s);
-      p.setY(p.y() * s);
+      p.x() = p.x() * s;
+      p.y() = p.y() * s;
     }
   }
 
-  _centerImg.setX(_centerImg.x() * s);
-  _centerImg.setY(_centerImg.y() * s);
+  _centerImg.x() = _centerImg.x() * s;
+  _centerImg.y() = _centerImg.y() * s;
   
   _outerEllipse.setCenter(Point2d<Eigen::Vector3f>(_outerEllipse.center().x() * s,
                           _outerEllipse.center().y() * s));
@@ -136,7 +136,7 @@ void CCTag::serialize(boost::archive::text_oarchive & ar, const unsigned int ver
   ar & BOOST_SERIALIZATION_NVP(_quality);
   serializePoints(ar, _points);
   serializeEllipses(ar, _ellipses);
-  serializeBoundedMatrix3x3d(ar, _mHomography);
+  serializeMatrix3f(ar, _mHomography);
   serializePoint(ar, _centerImg);
 #ifdef CCTAG_SERIALIZE
   serializeFlowComponents(ar, _flowComponents);
@@ -150,7 +150,7 @@ void CCTag::printTag( std::ostream& ostr ) const
 {
     ostr << setprecision(4)
          << "CCTag:" << endl
-	 << "    (" << _centerImg.getX() << "," << _centerImg.getY() << ")" << endl
+	 << "    (" << _centerImg.x() << "," << _centerImg.y() << ")" << endl
          << "    nCircles: " << _nCircles << endl
 	 << "    radius ratios: ";
     for( double x : _radiusRatios ) {

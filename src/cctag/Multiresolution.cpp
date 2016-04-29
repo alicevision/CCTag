@@ -67,9 +67,11 @@ bool intersectLineToTwoEllipses(
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
-        if (boost::numeric::ublas::inner_prod(
-                subrange(edgePoint->gradient(), 0, 2),
-                subrange(qIn.center() - (*edgePoint), 0, 2)) < 0)
+        Eigen::Vector2f centerToPoint;
+        centerToPoint(0) = qIn.center().x() - (*edgePoint).x();
+        centerToPoint(1) = qIn.center().y() - (*edgePoint).y();
+        
+        if (edgePoint->gradient().dot(centerToPoint) < 0)
         {
           pointsInHull.push_back(edgePoint);
         }
@@ -81,9 +83,11 @@ bool intersectLineToTwoEllipses(
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
-        if (boost::numeric::ublas::inner_prod(
-                subrange(edgePoint->gradient(), 0, 2),
-                subrange(qIn.center() - (*edgePoint), 0, 2)) < 0)
+        Eigen::Vector2f centerToPoint;
+        centerToPoint(0) = qIn.center().x() - (*edgePoint).x();
+        centerToPoint(1) = qIn.center().y() - (*edgePoint).y();
+        
+        if (edgePoint->gradient().dot(centerToPoint) < 0)
         {
           pointsInHull.push_back(edgePoint);
         }
@@ -101,9 +105,12 @@ bool intersectLineToTwoEllipses(
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
-        if (boost::numeric::ublas::inner_prod(
-                subrange(edgePoint->gradient(), 0, 2),
-                subrange(qIn.center() - (*edgePoint), 0, 2)) < 0)
+        
+        Eigen::Vector2f centerToPoint;
+        centerToPoint(0) = qIn.center().x() - (*edgePoint).x();
+        centerToPoint(1) = qIn.center().y() - (*edgePoint).y();
+        
+        if (edgePoint->gradient().dot(centerToPoint) < 0)
         {
           pointsInHull.push_back(edgePoint);
         }
@@ -118,9 +125,11 @@ bool intersectLineToTwoEllipses(
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
-        if (boost::numeric::ublas::inner_prod(
-                subrange(edgePoint->gradient(), 0, 2),
-                subrange(qIn.center() - (*edgePoint), 0, 2)) < 0)
+        Eigen::Vector2f centerToPoint;
+        centerToPoint(0) = qIn.center().x() - (*edgePoint).x();
+        centerToPoint(1) = qIn.center().y() - (*edgePoint).y();
+        
+        if (edgePoint->gradient().dot(centerToPoint) < 0)
         {
           pointsInHull.push_back(edgePoint);
         }
@@ -396,14 +405,14 @@ void cctagMultiresDetection(
         {
           rescaledOuterEllipsePointsDouble.push_back(
                   DirectedPoint2d<Eigen::Vector3f>(e->x(), e->y(),
-                  e->_grad.x(),
-                  e->_grad.y())
+                  e->gradient()(0),
+                  e->gradient()(1))
           );
           
           CCTagVisualDebug::instance().drawPoint(Point2d<Eigen::Vector3f>(e->x(), e->y()), cctag::color_red);
         }
         //marker.setCenterImg(rescaledOuterEllipse.center());                                                                // todo
-        marker.setCenterImg(cctag::Point2d<Eigen::Vector3f>(marker.centerImg().getX() * scale, marker.centerImg().getY() * scale));  // decide between these two lines
+        marker.setCenterImg(cctag::Point2d<Eigen::Vector3f>(marker.centerImg().x() * scale, marker.centerImg().y() * scale));  // decide between these two lines
         marker.setRescaledOuterEllipse(rescaledOuterEllipse);
         marker.setRescaledOuterEllipsePoints(rescaledOuterEllipsePointsDouble);
       }

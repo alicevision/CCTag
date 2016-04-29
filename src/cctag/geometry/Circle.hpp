@@ -50,7 +50,8 @@ public:
 		bb( 0 ) = ( x1 + x2 ) / 2 * ( x2 - x1 ) + ( y1 + y2 ) / 2 * ( y2 - y1 );
 		bb( 1 ) = ( x1 + x3 ) / 2 * ( x3 - x1 ) + ( y1 + y3 ) / 2 * ( y3 - y1 );
 
-		auto aux = A.colPivHouseholderQr().solve(bb);
+		//auto aux = A.colPivHouseholderQr().solve(bb);
+                auto aux = A.inverse()*bb;
 
 		double xc = aux( 0 );
 		double yc = aux( 1 );

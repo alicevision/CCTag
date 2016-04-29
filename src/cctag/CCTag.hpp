@@ -54,14 +54,13 @@ public:
     , _status(0)
   {
     setInitRadius();
-    _mHomography.clear();
   }
 
   CCTag(const MarkerID id,
         const cctag::Point2d<Eigen::Vector3f> & centerImg,
         const std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > & points,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::numerical::BoundedMatrix3x3d & homography,
+        const Eigen::Matrix3f & homography,
         int pyramidLevel,
         double scale,
         const double quality = 1.0)
@@ -124,7 +123,7 @@ public:
     return _nCircles;
   }
 
-  const cctag::numerical::BoundedMatrix3x3d & homography() const
+  const Eigen::Matrix3f & homography() const
   {
     return _mHomography;
   }
@@ -139,12 +138,12 @@ public:
     _centerImg = center;
   }
 
-  cctag::numerical::BoundedMatrix3x3d & homography()
+  Eigen::Matrix3f & homography()
   {
     return _mHomography;
   }
 
-  void setHomography(const cctag::numerical::BoundedMatrix3x3d & homography)
+  void setHomography(const Eigen::Matrix3f & homography)
   {
     _mHomography = homography;
   }
@@ -292,7 +291,7 @@ public:
     return new CCTag(*this);
   }
 
-  void condition(const cctag::numerical::BoundedMatrix3x3d & mT, const cctag::numerical::BoundedMatrix3x3d & mInvT);
+  void condition(const Eigen::Matrix3f & mT, const Eigen::Matrix3f & mInvT);
 
   bool isOverlapping(const CCTag& marker) const
   {
@@ -380,7 +379,7 @@ protected:
   std::vector< DirectedPoint2d<Eigen::Vector3f> > _rescaledOuterEllipsePoints;
   std::vector<cctag::numerical::geometry::Ellipse> _ellipses;
   std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > _points;
-  cctag::numerical::BoundedMatrix3x3d _mHomography;
+  Eigen::Matrix3f _mHomography;
   double _quality;
   int    _pyramidLevel;
   double _scale;
