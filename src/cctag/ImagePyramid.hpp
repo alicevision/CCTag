@@ -28,7 +28,7 @@ public:
   
     /* The pyramid building function is never called if CUDA is used.
      */
-  void build(const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params );
+  void build(const cv::Mat & src, const float thrLowCanny, const float thrHighCanny, const cctag::Parameters* params );
   void output();
 
 private:

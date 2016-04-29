@@ -42,7 +42,7 @@ public:
 	 * @param[in] imin initial minimum signal
 	 * @param[in] imax initial maximum signal
 	 */
-	Point2d<Eigen::Vector3f> operator()(const double widthContour, const double xp, const double imin, const double imax);
+	Point2d<Eigen::Vector3f> operator()(const float widthContour, const float xp, const float imin, const float imax);
 
 	inline void initFcn()
 	{
@@ -66,11 +66,11 @@ private:
 
 private:
 	const cctag::ImageCut & _line;
-	double _a, _b;
-	double _widthContour;
-	double _xp;
-	double _imin;
-	double _imax;
+	float _a, _b;
+	float _widthContour;
+	float _xp;
+	float _imin;
+	float _imax;
 };
 
 #endif // SUBPIX_EDGE_OPTIM // undefined. Depreciated

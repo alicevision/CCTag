@@ -36,7 +36,7 @@
 namespace cctag
 {
 
-typedef std::vector< std::pair< MarkerID, double > > IdSet;
+typedef std::vector< std::pair< MarkerID, float > > IdSet;
 
 namespace ublas = boost::numeric::ublas;
 
@@ -62,8 +62,8 @@ public:
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const Eigen::Matrix3f & homography,
         int pyramidLevel,
-        double scale,
-        const double quality = 1.0)
+        float scale,
+        const float quality = 1.f)
     : _centerImg(centerImg)
     , _id(id)
     , _outerEllipse(outerEllipse)
@@ -74,7 +74,7 @@ public:
     , _scale(scale)
   {
     setInitRadius();
-    _outerEllipse.setCenter( Point2d<Eigen::Vector3f>(_outerEllipse.center().x()+0.5, _outerEllipse.center().y()+0.5 ) ); // todo: why + 0.5 is required ?
+    _outerEllipse.setCenter( Point2d<Eigen::Vector3f>(_outerEllipse.center().x()+0.5f, _outerEllipse.center().y()+0.5f ) ); // todo: why + 0.5f is required ?
     cctag::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
     
     _status = 0;
@@ -108,13 +108,13 @@ public:
   void printTag( std::ostream& ostr ) const;
 #endif
 
-  void scale(const double s);
+  void scale(const float s);
 
-  double x() const {
+  float x() const {
     return _centerImg.x();
   }
   
-  double y() const {
+  float y() const {
     return _centerImg.y();
   }
   
@@ -163,42 +163,42 @@ public:
     return _points;
   }
 
-  static const boost::array<double, 5> & radiusRatiosInit()
+  static const boost::array<float, 5> & radiusRatiosInit()
   {
     return _radiusRatiosInit;
   }
 
-  const std::vector<double>& radiusRatios() const
+  const std::vector<float>& radiusRatios() const
   {
     return _radiusRatios;
   }
 
-  std::vector<double> & radiusRatios()
+  std::vector<float> & radiusRatios()
   {
     return _radiusRatios;
   }
 
-  void setRadiusRatios(const std::vector<double> radiusRatios)
+  void setRadiusRatios(const std::vector<float> radiusRatios)
   {
     _radiusRatios = radiusRatios;
   }
 
-  double quality() const
+  float quality() const
   {
     return _quality;
   }
 
-  void setQuality(const double quality)
+  void setQuality(const float quality)
   {
     _quality = quality;
   }
 
-  double scale() const
+  float scale() const
   {
     return _scale;
   }
 
-  void setScale(const double scale)
+  void setScale(const float scale)
   {
     _scale = scale;
   }
@@ -367,8 +367,8 @@ protected:
   }
 
 protected:
-  static const boost::array<double, 5> _radiusRatiosInit;
-  std::vector<double> _radiusRatios;
+  static const boost::array<float, 5> _radiusRatiosInit;
+  std::vector<float> _radiusRatios;
 
   std::size_t _nCircles;
   MarkerID _id;
@@ -380,9 +380,9 @@ protected:
   std::vector<cctag::numerical::geometry::Ellipse> _ellipses;
   std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > _points;
   Eigen::Matrix3f _mHomography;
-  double _quality;
+  float _quality;
   int    _pyramidLevel;
-  double _scale;
+  float _scale;
   int    _status;
 #ifdef WITH_CUDA
   /** Pointer into pinned memory page.

@@ -146,7 +146,7 @@ void CCTagVisualDebug::drawPoint(const cctag::Point2d<Eigen::Vector3f> & point, 
     cvColor.val[1] = 255*color[1]; 
     cvColor.val[2] = 255*color[2]; 
     _backImage.at<cv::Vec3b>(point.y(),point.x()) = cvColor;
-    //cv::rectangle(_backImage, cvPoint(point.x()-1.0,point.y()-1.0), cvPoint(point.x()+1.0,point.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
+    //cv::rectangle(_backImage, cvPoint(point.x()-1.f,point.y()-1.f), cvPoint(point.x()+1.f,point.y()+1.f), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
   }
 #endif // CCTAG_SERIALIZE
 }
@@ -165,7 +165,7 @@ void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<Eigen::Vector3f> &
     cv::Point p2(point.x() + point.dX(),point.y() + point.dY());
     cv::arrowedLine( _backImage, p1, p2, cv::Scalar(255*color[0], 255*color[1], 255*color[2]) );
     
-    //cv::rectangle(_backImage, cvPoint(point.x()-1.0,point.y()-1.0), cvPoint(point.x()+1.0,point.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
+    //cv::rectangle(_backImage, cvPoint(point.x()-1.f,point.y()-1.f), cvPoint(point.x()+1.f,point.y()+1.f), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
   }
 #endif // CCTAG_SERIALIZE
 }

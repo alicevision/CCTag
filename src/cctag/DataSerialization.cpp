@@ -2,11 +2,11 @@
 
 namespace cctag {
 
-void serializeRadiusRatios(boost::archive::text_oarchive & ar, const std::vector<double> & radiusRatios) {
+void serializeRadiusRatios(boost::archive::text_oarchive & ar, const std::vector<float> & radiusRatios) {
     const int sizeRadiusRatios = radiusRatios.size();
     ar & BOOST_SERIALIZATION_NVP(sizeRadiusRatios);
 
-    BOOST_FOREACH(const double & ratio, radiusRatios) {
+    BOOST_FOREACH(const float & ratio, radiusRatios) {
         ar & BOOST_SERIALIZATION_NVP(ratio);
     }
 }
@@ -15,7 +15,7 @@ void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet) {
     const int sizeIdSet = idSet.size();
     ar & BOOST_SERIALIZATION_NVP(sizeIdSet);
 
-    typedef std::pair< MarkerID, double > IdPair;
+    typedef std::pair< MarkerID, float > IdPair;
 
     BOOST_FOREACH(const IdPair & idPair, idSet) {
         ar & BOOST_SERIALIZATION_NVP(idPair.first);
@@ -24,8 +24,8 @@ void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet) {
 }
 
 void serializePoint(boost::archive::text_oarchive & ar, const Point2d<Eigen::Vector3f> & point) {
-    const double x = point.x();
-    const double y = point.y();
+    const float x = point.x();
+    const float y = point.y();
 
     ar & BOOST_SERIALIZATION_NVP(x);
     ar & BOOST_SERIALIZATION_NVP(y);
@@ -33,8 +33,8 @@ void serializePoint(boost::archive::text_oarchive & ar, const Point2d<Eigen::Vec
 
 // todo templater function above and bellow.
 void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<Eigen::Vector3f> & point) {
-    const double x = point.x();
-    const double y = point.y();
+    const float x = point.x();
+    const float y = point.y();
 
     ar & BOOST_SERIALIZATION_NVP(x);
     ar & BOOST_SERIALIZATION_NVP(y);
@@ -43,8 +43,8 @@ void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<Ei
 void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e) {
     const int x = e.x();
     const int y = e.y();
-    const double gx = e.gradient()(0);
-    const double gy = e.gradient()(1);
+    const float gx = e.gradient()(0);
+    const float gy = e.gradient()(1);
 
     ar & BOOST_SERIALIZATION_NVP(x);
     ar & BOOST_SERIALIZATION_NVP(y);

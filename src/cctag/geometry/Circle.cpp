@@ -7,13 +7,13 @@ namespace cctag {
 namespace numerical {
 namespace geometry {
 
-Circle::Circle( const Point2d<Eigen::Vector3f>& center, const double r )
-	: Ellipse( center, r, r, 0.0 )
+Circle::Circle( const Point2d<Eigen::Vector3f>& center, const float r )
+	: Ellipse( center, r, r, 0.f )
 {
 }
 
-Circle::Circle( const double r )
-	: Ellipse( Point2d<Eigen::Vector3f>(0.0, 0.0) , r, r, 0.0 )
+Circle::Circle( const float r )
+	: Ellipse( Point2d<Eigen::Vector3f>(0.f, 0.f) , r, r, 0.f )
 {
 }
 

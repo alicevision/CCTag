@@ -33,8 +33,8 @@ void cvRecodedCanny(
   cv::Mat& imgCanny,
   cv::Mat& imgDX,
   cv::Mat& imgDY,
-  double low_thresh,
-  double high_thresh,
+  float low_thresh,
+  float high_thresh,
   int aperture_size,
   int debug_info_level,
   const cctag::Parameters* params )
@@ -73,7 +73,7 @@ void cvRecodedCanny(
 
   if( low_thresh > high_thresh )
   {
-    double t;
+    float t;
     CV_SWAP( low_thresh, high_thresh, t );
   }
 
@@ -181,7 +181,7 @@ void cvRecodedCanny(
       CV_MAT_ELEM( *kernelDGau1D, float, 1, 0 ) = -0.066653979229454  ;
       CV_MAT_ELEM( *kernelDGau1D, float, 2, 0 ) = -0.541341132946452  ;
       CV_MAT_ELEM( *kernelDGau1D, float, 3, 0 ) = -1.213061319425269  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 4, 0 ) = 0.0  ;
+      CV_MAT_ELEM( *kernelDGau1D, float, 4, 0 ) = 0.f  ;
       CV_MAT_ELEM( *kernelDGau1D, float, 5, 0 ) = 1.213061319425269  ;
       CV_MAT_ELEM( *kernelDGau1D, float, 6, 0 ) = 0.541341132946452  ;
       CV_MAT_ELEM( *kernelDGau1D, float, 7, 0 ) = 0.066653979229454  ;
@@ -453,9 +453,9 @@ void cvRecodedCanny(
           x = _dx[j];
           y = _dy[j];
 #ifdef USE_INTEGER_REP
-          _mag[j] = (int)rintf( (float)std::sqrt( (double)x * x + (double)y * y ) );
+          _mag[j] = (int)rintf( (float)std::sqrt( (float)x * x + (float)y * y ) );
 #else
-          _magf[j] = (float)std::sqrt( (double)x * x + (double)y * y );
+          _magf[j] = (float)std::sqrt( (float)x * x + (float)y * y );
 #endif
           if (_dx[j] > 200){
       std::cout << _dx[j] << ", ";

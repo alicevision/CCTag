@@ -29,14 +29,14 @@ void optimizeCenterCeres(cctag::Point2d<Eigen::Vector3f> initCenter, const TotoF
 
 //cctag::Point2d<Eigen::Vector3f> initCenter(400,400);
 
-	std::vector<double> x;
+	std::vector<float> x;
 	//x.reserve(2);
 
 	x[0] = initCenter.x();
 	x[1] = initCenter.y();
 
-  //double x = 0.5;
-  //const double initial_x = x;
+  //float x = 0.5f;
+  //const float initial_x = x;
 
   // Build the problem.
   ceres::Problem problem;

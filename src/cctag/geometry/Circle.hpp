@@ -12,17 +12,15 @@ namespace cctag {
 namespace numerical {
 namespace geometry {
 
-using namespace boost::numeric::ublas;
-
 class Circle : public Ellipse
 {
 public:
 
 	Circle() : Ellipse() {}
 
-	Circle( const double r );
+	Circle( const float r );
 
-	Circle( const Point2d<Eigen::Vector3f>& center, const double r );
+	Circle( const Point2d<Eigen::Vector3f>& center, const float r );
 
 	template <typename T>
 	Circle( const Point2d<T> & p1, const Point2d<T> & p2, const Point2d<T> & p3 )
@@ -53,12 +51,12 @@ public:
 		//auto aux = A.colPivHouseholderQr().solve(bb);
                 auto aux = A.inverse()*bb;
 
-		double xc = aux( 0 );
-		double yc = aux( 1 );
-		double r = sqrt( ( x1 - xc ) * ( x1 - xc ) + ( y1 - yc ) * ( y1 - yc ) );
+		float xc = aux( 0 );
+		float yc = aux( 1 );
+		float r = sqrt( ( x1 - xc ) * ( x1 - xc ) + ( y1 - yc ) * ( y1 - yc ) );
 
 		Point2d<Eigen::Vector3f> c( xc, yc );
-		Ellipse::init( c, r, r, 0.0 );
+		Ellipse::init( c, r, r, 0.f );
 	}
 
 private:

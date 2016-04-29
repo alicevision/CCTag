@@ -47,7 +47,7 @@ public:
 		}
 		x() /= w();
 		y() /= w();
-		w() = 1.0;
+		w() = 1.f;
 		return *this;
 	}
 };

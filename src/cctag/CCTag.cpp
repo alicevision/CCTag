@@ -37,7 +37,7 @@ namespace ublas = boost::numeric::ublas;
 namespace optimization = cctag::numerical::optimization;
 
 // todo@Lilian : used in the initRadiusRatio called in the CCTag constructor. Need to be changed while reading the CCTagBank build from the textFile.
-const boost::array<double, 5> CCTag::_radiusRatiosInit =
+const boost::array<float, 5> CCTag::_radiusRatiosInit =
 {
   (29.0 / 9.0),
   (29.0 / 13.0),
@@ -88,7 +88,7 @@ void CCTag::condition(const Eigen::Matrix3f & mT, const Eigen::Matrix3f & mInvT)
   cctag::numerical::optimization::condition(_centerImg, mT);
 }
 
-void CCTag::scale(const double s)
+void CCTag::scale(const float s)
 {
 
   BOOST_FOREACH(std::vector< DirectedPoint2d<Eigen::Vector3f> > &vp, _points)
@@ -153,7 +153,7 @@ void CCTag::printTag( std::ostream& ostr ) const
 	 << "    (" << _centerImg.x() << "," << _centerImg.y() << ")" << endl
          << "    nCircles: " << _nCircles << endl
 	 << "    radius ratios: ";
-    for( double x : _radiusRatios ) {
+    for( float x : _radiusRatios ) {
         ostr << x << " ";
     }
     ostr << endl

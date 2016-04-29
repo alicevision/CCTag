@@ -13,7 +13,7 @@
 
 namespace cctag {
 
-  void serializeRadiusRatios(boost::archive::text_oarchive & ar, const std::vector<double> & radiusRatios);
+  void serializeRadiusRatios(boost::archive::text_oarchive & ar, const std::vector<float> & radiusRatios);
 
   void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet);
 

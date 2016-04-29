@@ -40,6 +40,8 @@
 //
 //M*/
 
+#if 0
+
 #include "cvRecodeCannyOCV3.hpp"
 
 #include <cctag/utils/Defines.hpp>
@@ -848,3 +850,5 @@ void cvCanny( const CvArr* image, CvArr* edges, double threshold1,
 }
 
 /* End of file. */
+
+#endif

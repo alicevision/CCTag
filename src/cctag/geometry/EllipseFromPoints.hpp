@@ -19,11 +19,11 @@ namespace cctag {
 namespace numerical {
 namespace geometry {
 
-Point2d<Eigen::Vector3f> extractEllipsePointAtAngle( const Ellipse & ellipse, double theta );
+Point2d<Eigen::Vector3f> extractEllipsePointAtAngle( const Ellipse & ellipse, float theta );
 ///@todo rename this function
 void points( const Ellipse & ellipse, const std::size_t nb, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts );
 ///@todo rename this function
-void points( const Ellipse & ellipse, const std::size_t nb, const double phi1, const double phi2, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts );
+void points( const Ellipse & ellipse, const std::size_t nb, const float phi1, const float phi2, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts );
 
 template <class T>
 void fitEllipse(const std::vector<cctag::Point2d<T>> & points, Ellipse& e )
@@ -34,18 +34,18 @@ void fitEllipse(const std::vector<cctag::Point2d<T>> & points, Ellipse& e )
 		cvpts.push_back( cv::Point2f(pt.x(), pt.y()));
         
 	const cv::RotatedRect rR = cv::fitEllipse( cv::Mat( cvpts ) );
-	const double xC           = rR.center.x;
-	const double yC           = rR.center.y;
+	const float xC           = rR.center.x;
+	const float yC           = rR.center.y;
 
-	const double b = rR.size.height / 2.0;
-	const double a = rR.size.width / 2.0;
+	const float b = rR.size.height / 2.0;
+	const float a = rR.size.width / 2.0;
 
-	const double angle = rR.angle * boost::math::constants::pi<double>() / 180.0;
+	const float angle = rR.angle * boost::math::constants::pi<float>() / 180.0;
 
 	e.setParameters( Point2d<Eigen::Vector3f>( xC, yC ), a, b, angle );
 }
 
-void ellipsePoint( const cctag::numerical::geometry::Ellipse& ellipse, double theta, cctag::numerical::BoundedVector3d& pt );
+void ellipsePoint( const cctag::numerical::geometry::Ellipse& ellipse, float theta, Eigen::Vector3f& pt );
 
 
 void computeIntermediatePoints(const Ellipse & ellipse, Point2d<Eigen::Vector3i> & pt11, Point2d<Eigen::Vector3i> & pt12, Point2d<Eigen::Vector3i> & pt21, Point2d<Eigen::Vector3i> & pt22);
@@ -66,7 +66,7 @@ std::size_t rasterizeEllipsePerimeter( const Ellipse & ellipse );
  * @param[in] y ordonate for which we compute x values of intersections
  * @return intersected points sorted in ascend order (returns x coordinates: 0, 1, or 2 points).
  */
-std::vector<double> intersectEllipseWithLine( const numerical::geometry::Ellipse& ellipse, const double y, bool horizontal);
+std::vector<float> intersectEllipseWithLine( const numerical::geometry::Ellipse& ellipse, const float y, bool horizontal);
 
 }
 }

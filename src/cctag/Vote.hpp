@@ -60,12 +60,12 @@ void childrensOf(const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& chil
 void outlierRemoval(
         const std::list<EdgePoint*>& childrens,
         std::vector<EdgePoint*>& filteredChildrens,
-        double & SmFinal,
-        double threshold,
+        float & SmFinal,
+        float threshold,
         std::size_t weightedType = NO_WEIGHT,
         const std::size_t maxSize = std::numeric_limits<int>::max());
 
-//void outlierRemoval( std::vector<EdgePoint*>& childrens, double & SmFinal, double threshold, std::size_t weightedType = 0 ); //todo@Lilian : templater le outlierRemoval
+//void outlierRemoval( std::vector<EdgePoint*>& childrens, float & SmFinal, float threshold, std::size_t weightedType = 0 ); //todo@Lilian : templater le outlierRemoval
 
 /** @brief Search for another segment after the ellipse growinf procedure
  * @param points from the first elliptical segment
@@ -78,7 +78,7 @@ bool isAnotherSegment(
         const Candidate & anotherCandidate,
         std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
         std::size_t numCircles,
-        double thrMedianDistanceEllipse);
+        float thrMedianDistanceEllipse);
 
 } // namespace cctag
 

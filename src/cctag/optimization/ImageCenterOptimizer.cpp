@@ -50,7 +50,7 @@ void ImageCenterOptimizer::initOpt( int ndim, NEWMAT::ColumnVector& x )
  * @param[out] result, un truc de optpp, je sais pas pour l'instant à quoi ça sert
  * @param[in] objPtr
  */
-void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& x, double& fx, int& result, void *objPtr )
+void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& x, float& fx, int& result, void *objPtr )
 {
 	using namespace OPTPP;
 
@@ -79,7 +79,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 		return;
 	}
 
-	double res = 0;
+	float res = 0;
         std::size_t resSize = 0;
 	for( std::size_t i = 0; i < vecSig.size() - 1; ++i )
 	{

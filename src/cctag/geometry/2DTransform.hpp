@@ -27,7 +27,7 @@ inline void projectiveTransform( const Eigen::Matrix3f& tr, cctag::numerical::ge
 	//ellipse.setMatrix(
         //ublas::prec_prod(
         //    ublas::trans( tr ),
-        //    (ublas::bounded_matrix<double, 3, 3>)ublas::prec_prod(
+        //    (ublas::bounded_matrix<float, 3, 3>)ublas::prec_prod(
         //        ellipse.matrix(),
         //        tr ) ) );
 }
@@ -36,7 +36,7 @@ inline void projectiveTransform( const Eigen::Matrix3f& tr, const Eigen::Matrix3
 {
   auto m = ttr * ellipse.matrix() * tr;
   ellipse.setMatrix(m);
-	//ellipse.setMatrix( ublas::prec_prod( ttr, ( ublas::bounded_matrix<double, 3, 3>) ublas::prec_prod( ellipse.matrix(), tr ) ) );
+	//ellipse.setMatrix( ublas::prec_prod( ttr, ( ublas::bounded_matrix<float, 3, 3>) ublas::prec_prod( ellipse.matrix(), tr ) ) );
 }
 
 } // namespace viewGeometry

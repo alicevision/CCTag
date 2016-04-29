@@ -41,7 +41,7 @@ struct TotoFunctor {
   }
 
 
-    bool operator()(const double* const x, double* residual) const {
+    bool operator()(const float* const x, float* residual) const {
 	
     cctag::Point2d<Eigen::Vector3f> centerExtEllipse( x[0], x[1] );
 

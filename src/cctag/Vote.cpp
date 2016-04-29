@@ -100,10 +100,10 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
         // Length of the reconstructed field line approximation between the two
         // extremities.
-        totalDistance = 0.0;
+        totalDistance = 0.f;
 
         if (current) {
-            cosDiffTheta = -inner_prod(subrange(p._grad, 0, 2), subrange(current->_grad, 0, 2));
+            cosDiffTheta = -p.gradient().dot(current->gradient());
             if (cosDiffTheta >= params._angleVoting) {
                 lastDist = cctag::numerical::distancePoints2D(p, *current);
                 vDist.push_back(lastDist);
@@ -123,7 +123,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                     }
                     
                     // Check the difference of two consecutive angles
-                    cosDiffTheta = -inner_prod(subrange(target->_grad, 0, 2), subrange(current->_grad, 0, 2));
+                    cosDiffTheta = -target->gradient().dot(current->gradient());
                     if (cosDiffTheta >= params._angleVoting) {
                         dist = cctag::numerical::distancePoints2D(*target, *current);
                         vDist.push_back(dist);
@@ -147,7 +147,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                             if (!target) {
                                 break;
                             }
-                            cosDiffTheta = -inner_prod(subrange(target->_grad, 0, 2), subrange(current->_grad, 0, 2));
+                            cosDiffTheta = -target->gradient().dot(current->gradient());
                             if (cosDiffTheta >= params._angleVoting) {
                                 dist = cctag::numerical::distancePoints2D(*target, *current);
                                 vDist.push_back(dist);
@@ -244,7 +244,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         while ((i < maxLength) && (found) && (averageVote >= averageVoteMin) )
         {
 
-            float angle = std::fmod(float(std::atan2(p->_grad.y(), p->_grad.x())) + 2.0f * boost::math::constants::pi<float>(), 2.0f * boost::math::constants::pi<float>());
+            float angle = std::fmod(float(std::atan2(p->gradient()(1), p->gradient()(0))) + 2.0f * boost::math::constants::pi<float>(), 2.0f * boost::math::constants::pi<float>());
             phi.push_back(angle);
             //sumPhi += angle;
 
@@ -345,7 +345,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                             } else {
                                 convexEdgeSegment.push_front(p);
                             }
-                            averageVote = (averageVote*convexEdgeSegment.size() + p->_voters.size() )/ ( convexEdgeSegment.size()+1.0 );
+                            averageVote = (averageVote*convexEdgeSegment.size() + p->_voters.size() )/ ( convexEdgeSegment.size()+1.f );
                             stop = 1; // Found
 
                         }
@@ -404,8 +404,8 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
     void outlierRemoval(
             const std::list<EdgePoint*>& childrens,
             std::vector<EdgePoint*>& filteredChildrens,
-            double & SmFinal,
-            double threshold,
+            float & SmFinal,
+            float threshold,
             std::size_t weightedType,
             const std::size_t maxSize)
     {
@@ -424,18 +424,18 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         // Precondition
         if (nSubsampleSize >= 5) {
             numerical::geometry::Ellipse qm;
-            double Sm = 10000000.0;
-            const double f = 1.0;
+            float Sm = 10000000.0;
+            const float f = 1.f;
 
             // TODO, le passage en coordonnées homogène pas nécessaire, il faut alors modifier
             // la résolution du système linéaire ci-dessous
 
             // Create matrix containing homogeneous coordinates of childrens
 
-            std::vector<bounded_vector<double, 3> > pts;
+            std::vector<Eigen::Vector3f> pts;
             pts.reserve(childrens.size());
 
-            std::vector<double> weights;
+            std::vector<float> weights;
             weights.reserve(childrens.size());
 
             // Store a subset of EdgePoint* on which the robust ellipse estimation will
@@ -451,15 +451,15 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
               if (iEdgePoint == std::size_t(k*step) )
               {
                 ++k;
-                pts.push_back(*edgePoint);
+                pts.push_back(edgePoint->cast<float>());
                 CCTagVisualDebug::instance().drawPoint(cctag::Point2d<Eigen::Vector3f>(pts.back()), cctag::color_red);
 
                 if (weightedType == INV_GRAD_WEIGHT) {
-                  weights.push_back(255 / (edgePoint->_normGrad));
+                  weights.push_back(255 / (edgePoint->normGradient()));
                 }
                 
                 if (weightedType == INV_SQUARE_GRAD_WEIGHT) {
-                  weights.push_back(255 / (edgePoint->_normGrad)*(edgePoint->_normGrad));
+                  weights.push_back(255 / (edgePoint->normGradient())*(edgePoint->normGradient()));
                 }
                 
               }
@@ -473,8 +473,9 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 // Random subset of 5 points from pts
                 //const std::vector<int> perm = cctag::numerical::randperm< std::vector<int> >(pts.size());
                 cctag::numerical::rand_n_k(perm, 5, pts.size());
-                bounded_matrix<double, 5, 5> A(5, 5);
-                bounded_vector<double, 5> b(5);
+                Eigen::MatrixXf A(5,5);
+                A.fill(0.f);
+                Eigen::VectorXf b(5);
 
                 // todo: use a closed-form solution instead of a gaussian pivot in invert
                 // The entire function could then be efficiently implemented on GPU
@@ -487,35 +488,34 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
                     b(i) = -f * f;
                 }
+                
+                // If A is invertible
+                if (A.determinant() != 0.f) {
+                  
+                    Eigen::VectorXf temp(5);
+                    // With PartialPivLU, A MUST be square and invertible. Speed: ++
+                    temp = A.lu().solve(b);
 
-                bounded_matrix<double, 5, 5> AInv(5, 5);
-                if (cctag::numerical::invert(A, AInv)) {
-                    bounded_vector<double, 5> temp(5);
-
-                    temp = prec_prod(AInv, b);
-
-                    //Ellipse(const bounded_matrix<double, 3, 3> & matrix)
+                    //Ellipse(const bounded_matrix<float, 3, 3> & matrix)
                     //param = (inv(A)*(-f*f*ones(5,1)))';
 
                     // The conic encoded in temp is an ellipse ?
                     if (temp(0) * temp(2) - temp(1) * temp(1) > 0) {
-                        bounded_matrix<double, 3, 3> Q;
-                        Q.clear();
+                        Eigen::Matrix3f Q = Eigen::Matrix3f::Zero();
                         Q(0, 0) = temp(0);
                         Q(0, 1) = Q(1, 0) = temp(1);
                         Q(0, 2) = Q(2, 0) = temp(3);
                         Q(1, 1) = temp(2);
                         Q(1, 2) = Q(2, 1) = temp(4);
-                        Q(2, 2) = 1.0;
+                        Q(2, 2) = 1.f;
 
                         try {
 
                             numerical::geometry::Ellipse q(Q);
 
-                            // Provisoire, cas dégénéré : l'ellipse est 2 droite, cas ou 3 ou 4 points sont alignés sur les 5
-                            //bounded_vector<double, 5> paramQ;
-                            //q.computeParams(paramQ);
-                            double ratioSemiAxes = q.a() / q.b();
+                            // Provisoire, cas dégénéré :
+                            // l'ellipse est 2 droite, cas ou 3 ou 4 points sont alignés sur les 5
+                            float ratioSemiAxes = q.a() / q.b();
 
 
                             // if "search for another convex segment" is disabled, uncomment this bloc -- todo@Lilian
@@ -527,23 +527,22 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                             // We compute the median from the set of points pts
 
                             //% distance between pts and Q : (xa'Qxa)²/||PkQxa||² with Pk = diag(1,1,0)
-                            std::vector<double> dist;
+                            std::vector<float> dist;
                             numerical::distancePointEllipse(dist, pts, q, f);
 
-                            if (weightedType != NO_WEIGHT) // todo...
+                            if (weightedType != NO_WEIGHT) // todo
                             {
                                 for (int iDist = 0; iDist < dist.size(); ++iDist) {
                                     dist[iDist] = dist[iDist] * weights[iDist];
                                 }
                             }
 
-                            const double S = numerical::medianRef(dist);
+                            const float S = numerical::medianRef(dist);
 
                             if (S < Sm) {
                                 counter = 0;
                                 qm = numerical::geometry::Ellipse(Q);
                                 Sm = S;
-                                //CCTAG_COUT(Sm);
                             } else {
                                 ++counter;
                             }
@@ -558,7 +557,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 }
             }
 
-            std::vector<double> vDistFinal;
+            std::vector<float> vDistFinal;
             vDistFinal.clear();
             vDistFinal.reserve(childrens.size());
 
@@ -566,14 +565,14 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
             BOOST_FOREACH(EdgePoint * e, childrens) {
 
-                double distFinal = 1e300;
+                float distFinal = 1e300;
 
                 if (weightedType == NO_WEIGHT) {
                   distFinal = numerical::distancePointEllipse(*e, qm, f);
                 } else if (weightedType == INV_GRAD_WEIGHT) {
-                  distFinal = numerical::distancePointEllipse(*e, qm, f)*255 / (e->_normGrad);
+                  distFinal = numerical::distancePointEllipse(*e, qm, f)*255 / (e->normGradient());
                 } else if (weightedType == INV_SQUARE_GRAD_WEIGHT) {
-                  distFinal = numerical::distancePointEllipse(*e, qm, f)*255 / ((e->_normGrad)*(e->_normGrad));
+                  distFinal = numerical::distancePointEllipse(*e, qm, f)*255 / ((e->normGradient())*(e->normGradient()));
                 }
  
                 if (distFinal < threshold * Sm) {
@@ -593,7 +592,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             const Candidate & anotherCandidate,
             std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
             std::size_t numCircles,
-            double thrMedianDistanceEllipse)
+            float thrMedianDistanceEllipse)
     {
 
         using namespace boost::numeric::ublas;
@@ -601,38 +600,39 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         const std::vector<EdgePoint*> & anotherOuterEllipsePoints = anotherCandidate._outerEllipsePoints;
 
         numerical::geometry::Ellipse qm;
-        double Sm = std::numeric_limits<double>::max();
-        const double f = 1.0;
+        float Sm = std::numeric_limits<float>::max();
+        const float f = 1.f;
 
 
         // Copy/Align content of outerEllipsePoints
-        std::vector<bounded_vector<double, 3> > pts;
+        std::vector<Eigen::Vector3f> pts;
         pts.reserve(outerEllipsePoints.size());
         for (std::vector<EdgePoint*>::iterator it = outerEllipsePoints.begin(); it != outerEllipsePoints.end(); ++it) {
             // on fait des recopies !! todo@Lilian, idem dans outlierRemoval -- degeulasse --
-            pts.push_back(*(*it));
+            pts.push_back((*it)->cast<float>());
         }
 
         // Copy/Align content of anotherOuterEllipsePoints
-        std::vector<bounded_vector<double, 3> > anotherPts;
+        std::vector<Eigen::Vector3f> anotherPts;
         anotherPts.reserve(anotherOuterEllipsePoints.size());
         for (std::vector<EdgePoint*>::const_iterator it = anotherOuterEllipsePoints.begin(); it != anotherOuterEllipsePoints.end(); ++it) {
-            // on fait des recopies !! todo@Lilian, idem dans outlierRemoval -- degeulasse --
-            anotherPts.push_back(*(*it));
+            // todo@Lilian: avoid copy, idem in outlierRemoval
+            anotherPts.push_back((*it)->cast<float>());
         }
 
         // distance between pts and Q : (xa'Qxa)²/||PkQxa||² with Pk = diag(1,1,0)
-        std::vector<double> distRef;
+        std::vector<float> distRef;
         numerical::distancePointEllipse(distRef, pts, outerEllipse, f);
 
-        const double SRef = numerical::medianRef(distRef);
+        const float SRef = numerical::medianRef(distRef);
 
         std::size_t cnt = 0;
 
-        double S1m, S2m;
+        float S1m, S2m;
 
         std::vector<int> permutations(5);
-        std::vector<cctag::Point2dN< double > > points;
+        std::vector<cctag::Point2d<Eigen::Vector3f> > points;
+        points.reserve(5);
         while (cnt < 100)
         {
             points.clear(); // Capacity is kept, but the elements are all erased
@@ -641,7 +641,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             
             std::vector<int>::const_iterator it = permutations.begin();
             for (size_t i = 0; i < 4; ++i) {
-                points.push_back(Point2d<Eigen::Vector3f>(double(pts[*it](0)), double(pts[*it](1))));
+                points.push_back(Point2d<Eigen::Vector3f>(float(pts[*it](0)), float(pts[*it](1))));
                 ++it;
             }
 
@@ -650,7 +650,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
             it = permutations.begin();
             for (size_t i = 0; i < 4; ++i) {
-                points.push_back(Point2d<Eigen::Vector3f>(double(anotherOuterEllipsePoints[*it]->x()), double(anotherOuterEllipsePoints[*it]->y())));
+                points.push_back(Point2d<Eigen::Vector3f>(float(anotherOuterEllipsePoints[*it]->x()), float(anotherOuterEllipsePoints[*it]->y())));
                 ++it;
             }
 
@@ -666,10 +666,9 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 
                 numerical::geometry::Ellipse q(eToto.matrix());
 
-                // Provisoire, cas dégénéré : l'ellipse est 2 droite, cas ou 3 ou 4 points sont alignés sur les 5
-                //bounded_vector<double, 5> paramQ;
-                //q.computeParams(paramQ);
-                double ratioSemiAxes = q.a() / q.b();
+                // Cas dégénéré:
+                // l'ellipse est 2 droite, cas ou 3 ou 4 points sont alignés sur les 5
+                float ratioSemiAxes = q.a() / q.b();
 
                 if ((ratioSemiAxes < 0.12) || (ratioSemiAxes > 8)) {
                     ++cnt;
@@ -679,7 +678,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 // We compute the median from the set of points pts
 
                 //% distance between pts and Q : (xa'Qxa)²/||PkQxa||² with Pk = diag(1,1,0)
-                std::vector<double> dist;
+                std::vector<float> dist;
                 numerical::distancePointEllipse(dist, pts, q, f);
 
                 //for(int iDist=0 ; iDist < dist.size() ; ++iDist)
@@ -687,15 +686,15 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 //	dist[iDist] = dist[iDist]*weights[iDist];
                 //}
 
-                const double S1 = numerical::medianRef(dist);
+                const float S1 = numerical::medianRef(dist);
 
-                std::vector<double> anotherDist;
+                std::vector<float> anotherDist;
 
                 numerical::distancePointEllipse(anotherDist, anotherPts, q, f);
 
-                const double S2 = numerical::medianRef(anotherDist);
+                const float S2 = numerical::medianRef(anotherDist);
 
-                const double S = S1 + S2;
+                const float S = S1 + S2;
 
                 if (S < Sm) {
                     cnt = 0;
@@ -712,7 +711,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             }
         }
 
-        double thr = 6;
+        float thr = 6;
 
         if (Sm < thr * SRef) {
 
@@ -730,18 +729,18 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             // Compute the new ellipse which fits oulierEllipsePoints
             numerical::ellipseFitting(outerEllipseTemp, outerEllipsePointsTemp);
 
-            double quality = (double) outerEllipsePointsTemp.size() / (double) rasterizeEllipsePerimeter(outerEllipseTemp);
+            float quality = (float) outerEllipsePointsTemp.size() / (float) rasterizeEllipsePerimeter(outerEllipseTemp);
 
             if (quality < 1.1) { // replace by 1 and perform an outlier removal after the ellipse growing. todo@Lilian
-                std::vector<double> vDistFinal;
+                std::vector<float> vDistFinal;
                 vDistFinal.reserve(outerEllipsePointsTemp.size());
 
                 BOOST_FOREACH(EdgePoint * p, outerEllipsePointsTemp) {
-                    double distFinal = numerical::distancePointEllipse(*p, outerEllipseTemp, 1.0);
+                    float distFinal = numerical::distancePointEllipse(*p, outerEllipseTemp, 1.f);
                     vDistFinal.push_back(distFinal);
                 }
-                const double SmFinal = numerical::medianRef(vDistFinal);
-                //const double thrMedianDistanceEllipse = 3; // todo@Lilian -- utiliser le meme seuil que dans la main loop 1
+                const float SmFinal = numerical::medianRef(vDistFinal);
+                //const float thrMedianDistanceEllipse = 3; // todo@Lilian -- utiliser le meme seuil que dans la main loop 1
 
                 if (SmFinal < thrMedianDistanceEllipse) {
                     if (addCandidateFlowtoCCTag(anotherCandidate._filteredChildrens, anotherOuterEllipsePoints, outerEllipseTemp, cctagPoints, numCircles)) {

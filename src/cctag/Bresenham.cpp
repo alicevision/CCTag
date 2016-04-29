@@ -20,7 +20,7 @@ static void updateXY(const float & dx, const float & dy, int & x, int & y,  floa
 	stpY = boost::math::sign<int>(dy);
 	e += a;
 	x += stpX;
-	if (e>=0.5)
+	if (e>=0.5f)
 	{
 		y += stpY;
 		e -= 1;

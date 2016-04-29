@@ -70,7 +70,7 @@ private:
 	/// @brief Optimization initialization function.
 	void initOpt( int ndim, NEWMAT::ColumnVector& x );
 	/// @brief Optimization cost function.
-	static void optimizePointFun( int n, const NEWMAT::ColumnVector& x, double& fx, int& result, void* );
+	static void optimizePointFun( int n, const NEWMAT::ColumnVector& x, float& fx, int& result, void* );
 
 private:
 	const VecExtPoints & _vecExtPoints;

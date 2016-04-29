@@ -25,15 +25,15 @@ static const int kDefaultThrGradientMagInVote = 2500;
 static const float kDefaultAngleVoting        = 0.0f;
 static const float kDefaultRatioVoting        = 4.f;
 static const float kDefaultAverageVoteMin        = 0.f;
-static const double kDefaultThrMedianDistanceEllipse = 3.0;
+static const float kDefaultThrMedianDistanceEllipse = 3.0;
 static const std::size_t kDefaultMaximumNbSeeds = 500;
 static const std::size_t kDefaultMaximumNbCandidatesLoopTwo = 40;//30;
 static const float kDefaultCannyThrLow      =  0.01f ;//0.002
 static const float kDefaultCannyThrHigh     =  0.04f ;// 0.04
 static const std::size_t kDefaultMinPointsSegmentCandidate =  10;
 static const std::size_t kDefaultMinVotesToSelectCandidate =  3;
-static const double kDefaultThreshRobustEstimationOfOuterEllipse =  30.0;
-static const double kDefaultEllipseGrowingEllipticHullWidth =  2.3;
+static const float kDefaultThreshRobustEstimationOfOuterEllipse =  30.0;
+static const float kDefaultEllipseGrowingEllipticHullWidth =  2.3;
 static const std::size_t kDefaultWindowSizeOnInnerEllipticSegment =  20;
 static const std::size_t kDefaultNumberOfMultiresLayers = 4;
 static const std::size_t kDefaultNumberOfProcessedMultiresLayers = 4;
@@ -44,8 +44,8 @@ static const std::size_t kDefaultCutsSelectionTrials = 500;//10000;
 static const std::size_t kDefaultSampleCutLength = 100;
 static const std::size_t kDefaultImagedCenterNGridSample = 5; // must be odd otherwise the ellipse center will not be included 
                                                               // in the nearby points.
-static const double kDefaultImagedCenterNeighbourSize = 0.20;
-static const double kDefaultMinIdentProba = 1e-6;//1e-6
+static const float kDefaultImagedCenterNeighbourSize = 0.20;
+static const float kDefaultMinIdentProba = 1e-6;//1e-6
 static const bool kDefaultUseLMDif = true;
 static const bool kDefaultSearchForAnotherSegment = true;
 static const bool kDefaultWriteOutput = false;
@@ -115,7 +115,7 @@ struct Parameters
   float _ratioVoting; // maximum distance ratio between of gradient directions of two consecutive
   // edge points.
   float _averageVoteMin;
-  double _thrMedianDistanceEllipse;
+  float _thrMedianDistanceEllipse;
   std::size_t _maximumNbSeeds; // number of seeds to process as potential candidates
   std::size_t _maximumNbCandidatesLoopTwo;
   std::size_t _nCrowns; // number of crowns
@@ -123,8 +123,8 @@ struct Parameters
   std::size_t _minPointsSegmentCandidate; // minimal number of points on the outer ellipse to select an inner segment candidate
   std::size_t _minVotesToSelectCandidate; // minimum number of received votes to select an edge
   // point as a new seed.
-  double _threshRobustEstimationOfOuterEllipse; // LMeDs threshold on robust estimation of the outer ellipse
-  double _ellipseGrowingEllipticHullWidth; // width of elliptic hull in ellipse growing
+  float _threshRobustEstimationOfOuterEllipse; // LMeDs threshold on robust estimation of the outer ellipse
+  float _ellipseGrowingEllipticHullWidth; // width of elliptic hull in ellipse growing
   std::size_t _windowSizeOnInnerEllipticSegment; // window size on the inner elliptic segment
   std::size_t _numberOfMultiresLayers; // number of multi-resolution layers
   std::size_t _numberOfProcessedMultiresLayers; // number of processed layers in multi-resolution
@@ -134,8 +134,8 @@ struct Parameters
   std::size_t _cutsSelectionTrials; // number of trials in cuts selection
   std::size_t _sampleCutLength; // sample cut length
   std::size_t  _imagedCenterNGridSample; // number of point sample along the square grid side (e.g. 5 for a grid of 5x5=25 points)
-  double _imagedCenterNeighbourSize; // grid width relatively to the length of longest semi-axis of the outer ellipse
-  double _minIdentProba; // minimal probability of delivered by the identification algorithm
+  float _imagedCenterNeighbourSize; // grid width relatively to the length of longest semi-axis of the outer ellipse
+  float _minIdentProba; // minimal probability of delivered by the identification algorithm
   // to consider a candidate as a CCTag
   bool _useLMDif;
   bool _searchForAnotherSegment; // is CCTag can be made of many flow components (2).

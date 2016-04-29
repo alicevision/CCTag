@@ -10,7 +10,7 @@
 struct DetectedTag
 {
   int id, status;
-  double x, y, quality;
+  float x, y, quality;
   
   template<typename Archive>
   void serialize(Archive& ar, const unsigned)

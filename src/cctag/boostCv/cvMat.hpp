@@ -22,7 +22,7 @@ namespace boostCv {
 	 * @brief Retrieve OpenCV defines from template parameters
 	 */
 	template<class T> struct CvMatGetBaseType { /*CvMatGetType(){ BOOST_STATIC_ASSERT(false); }*/ };
-	template<> struct CvMatGetBaseType<double> { static const int value = CV_64F; };
+	template<> struct CvMatGetBaseType<float> { static const int value = CV_64F; };
 	template<> struct CvMatGetBaseType<float> { static const int value = CV_32F; };
 	template<> struct CvMatGetBaseType<unsigned char> { static const int value = CV_8U; };
 	template<> struct CvMatGetBaseType<char> { static const int value = CV_8S; };

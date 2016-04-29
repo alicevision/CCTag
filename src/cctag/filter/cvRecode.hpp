@@ -12,8 +12,8 @@ void cvRecodedCanny(
   cv::Mat& imgCanny,
   cv::Mat& imgDX,
   cv::Mat& imgDY,
-  double low_thresh,
-  double high_thresh,
+  float low_thresh,
+  float high_thresh,
   int aperture_size,
   int debug_info_level,
   const cctag::Parameters* params );

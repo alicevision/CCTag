@@ -22,21 +22,21 @@ class ICCTag
 public:
 
 	ICCTag()
-		: _x( 0.0 )
-		, _y( 0.0 )
+		: _x( 0.f )
+		, _y( 0.f )
 		, _id( -1 )
 	{ }
                 
-        virtual double x() const = 0;
-        virtual double y() const = 0;
+        virtual float x() const = 0;
+        virtual float y() const = 0;
         virtual MarkerID id() const = 0;
         virtual int getStatus() const = 0;
 
 	virtual ~ICCTag() {}
 
 protected:
-	double _x;
-	double _y;
+	float _x;
+	float _y;
 	MarkerID _id;
         int _status;
 };

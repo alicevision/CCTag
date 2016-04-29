@@ -39,7 +39,7 @@ void cctagDetectionFromEdges(
         const EdgePointsImage&  edgesMap,
         const std::size_t       frame,
         int pyramidLevel,
-        double scale,
+        float scale,
         const Parameters & params,
         logtime::Mgmt* durations );
 

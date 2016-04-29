@@ -159,7 +159,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
         if (isInEllipse(outerEllipse, pointToAdd) && isOnTheSameSide(outerPoint, pointToAdd, lineThroughCenter))
           // isInHull( innerBoundEllipse, outerEllipse, pMid ) && isInHull( innerBoundEllipse, outerEllipse, pointToAdd ) &&
         {
-          if ((float(-dir) * gradE.dot(toto) < -0.5) && (j >= numCircles - 2))
+          if ((float(-dir) * gradE.dot(toto) < -0.5f) && (j >= numCircles - 2))
           {
             ++nGradientOut;
           }
@@ -193,7 +193,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
 
   //std::cin.ignore().get();
 
-  if (float(nGradientOut) / float(nAddedPoint) > 0.5)
+  if (float(nGradientOut) / float(nAddedPoint) > 0.5f)
   {
     cctagPoints.clear();
     CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(BAD_GRAD_WHILE_ASSEMBLING);
@@ -222,7 +222,7 @@ bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2d<Ei
   BOOST_ASSERT(filteredChildrens.size() >= 5);
 
   // TODO constante à associer à la classe de l'algorithme... et choisir la meilleure valeur
-  static const float thrCosDiffMax = 0.25; //std::cos( boost::math::constants::pi<double>() / 2.0 );
+  static const float thrCosDiffMax = 0.25; //std::cos( boost::math::constants::pi<float>() / 2.0 );
 
   const float min = numerical::innerProdMin(filteredChildrens, thrCosDiffMax, p1, p2);
 
@@ -268,7 +268,7 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
 
   const float normL = std::sqrt(boost::math::pow<2>(l(0)) + boost::math::pow<2>(l(1)));
 
-  //double distMax = std::abs( inner_prod( *( filteredChildrens[0] ), l ) ) / normL;
+  //float distMax = std::abs( inner_prod( *( filteredChildrens[0] ), l ) ) / normL;
 
   const EdgePoint * pMax = filteredChildrens.front();
   float distMax = std::min(
@@ -293,13 +293,13 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
   //CCTAG_COUT_VAR_DEBUG(std::abs( inner_prod( *( filteredChildrens[iMax] ), l ) ) / normL);
 
   Point2d<Eigen::Vector3f> equiPoint;
-  double distanceToAdd = cctag::numerical::distancePoints2D(p1, p2) / 50; // match to the max/min of semi-axis ratio for an outer ellipse of a flow candidate
+  float distanceToAdd = cctag::numerical::distancePoints2D(p1, p2) / 50; // match to the max/min of semi-axis ratio for an outer ellipse of a flow candidate
 
   if (std::abs(pMax->cast<float>().dot(l)) / normL < 1e-6)
   {
-    double normGrad = std::sqrt(pMax->gradient()(0) * pMax->gradient()(0) + pMax->gradient()(1) * pMax->gradient()(1));
-    double gx = pMax->gradient()(0) / normGrad;
-    double gy = pMax->gradient()(1) / normGrad;
+    float normGrad = std::sqrt(pMax->gradient()(0) * pMax->gradient()(0) + pMax->gradient()(1) * pMax->gradient()(1));
+    float gx = pMax->gradient()(0) / normGrad;
+    float gy = pMax->gradient()(1) / normGrad;
     equiPoint.x() = (pMax->x() + distanceToAdd * gx);
     equiPoint.y() = (pMax->y() + distanceToAdd * gy);
   }
@@ -389,14 +389,14 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
   }
 }
 
-void computeHull(const numerical::geometry::Ellipse& ellipse, double delta,
+void computeHull(const numerical::geometry::Ellipse& ellipse, float delta,
         numerical::geometry::Ellipse& qIn, numerical::geometry::Ellipse& qOut)
 {
   qIn = numerical::geometry::Ellipse(cctag::Point2d<Eigen::Vector3f>(
           ellipse.center().x(),
           ellipse.center().y()),
-          std::max(ellipse.a() - delta, 0.001),
-          std::max(ellipse.b() - delta, 0.001),
+          std::max(ellipse.a() - delta, 0.001f),
+          std::max(ellipse.b() - delta, 0.001f),
           ellipse.angle());
   qOut = numerical::geometry::Ellipse(cctag::Point2d<Eigen::Vector3f>(ellipse.center().x(),
           ellipse.center().y()),
@@ -408,7 +408,7 @@ void computeHull(const numerical::geometry::Ellipse& ellipse, double delta,
 void ellipseHull(const EdgePointsImage& img,
         std::vector<EdgePoint*>& pts,
         numerical::geometry::Ellipse& ellipse,
-        double delta, const std::size_t runId)
+        float delta, const std::size_t runId)
 {
   numerical::geometry::Ellipse qIn, qOut;
   computeHull(ellipse, delta, qIn, qOut);
@@ -427,7 +427,7 @@ void ellipseGrowing2(
         const std::vector<EdgePoint*>& filteredChildrens, 
         std::vector<EdgePoint*>& outerEllipsePoints,
         numerical::geometry::Ellipse& ellipse,
-        const double ellipseGrowingEllipticHullWidth,
+        const float ellipseGrowingEllipticHullWidth,
         std::size_t runId,
         bool goodInit)
 {

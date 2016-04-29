@@ -48,8 +48,8 @@ bool intersectLineToTwoEllipses(
         const EdgePointsImage & edgesMap,
         std::list<EdgePoint*> & pointsInHull)
 {
-  std::vector<double> intersectionsOut = numerical::geometry::intersectEllipseWithLine(qOut, y, true);
-  std::vector<double> intersectionsIn = numerical::geometry::intersectEllipseWithLine(qIn, y, true);
+  std::vector<float> intersectionsOut = numerical::geometry::intersectEllipseWithLine(qOut, y, true);
+  std::vector<float> intersectionsIn = numerical::geometry::intersectEllipseWithLine(qIn, y, true);
   BOOST_ASSERT(intersectionsOut.size() <= 2);
   BOOST_ASSERT(intersectionsIn.size() <= 2);
   if ((intersectionsOut.size() == 2) && (intersectionsIn.size() == 2))
@@ -146,13 +146,13 @@ bool intersectLineToTwoEllipses(
 void selectEdgePointInEllipticHull(
         const EdgePointsImage & edgesMap,
         const numerical::geometry::Ellipse & outerEllipse,
-        double scale,
+        float scale,
         std::list<EdgePoint*> & pointsInHull)
 {
   numerical::geometry::Ellipse qIn, qOut;
   computeHull(outerEllipse, scale, qIn, qOut);
 
-  const double yCenter = outerEllipse.center().y();
+  const float yCenter = outerEllipse.center().y();
 
   int maxY = std::max(int(yCenter), 0);
   int minY = std::min(int(yCenter), int(edgesMap.shape()[1]) - 1);
@@ -336,7 +336,7 @@ void cctagMultiresDetection(
     }
   }
   
-  // todo: in which case is this double check required ?
+  // todo: in which case is this float check required ?
   for(const CCTag & marker : markersPrelim)
   {
     update(markers, marker);
@@ -358,7 +358,7 @@ void cctagMultiresDetection(
     if (i > 0)
     {
       BOOST_ASSERT( i < params._numberOfMultiresLayers );
-      double scale = marker.scale(); // pow( 2.0, (double)i );
+      float scale = marker.scale(); // pow( 2.0, (float)i );
 
       cctag::numerical::geometry::Ellipse rescaledOuterEllipse = marker.rescaledOuterEllipse();
 
@@ -376,7 +376,7 @@ void cctagMultiresDetection(
       
       std::vector<EdgePoint*> rescaledOuterEllipsePoints;
 
-      double SmFinal = 1e+10;
+      float SmFinal = 1e+10;
       
       cctag::outlierRemoval(
               pointsInHull,

@@ -25,17 +25,7 @@ typename Matrix::value_type trace(const Matrix& m)
     return tr;
 }
 
-Eigen::Matrix3f& normalizeDet1( Eigen::Matrix3f& m )
-{
-
-	const float det = m.determinant();
-	if( det == 0 )
-		return m;
-
-	const float s = ( ( det >= 0 ) ? 1 : -1 ) / std::pow( std::abs( det ), 1.0 / 3 );
-	m = s * m;
-	return m;
-}
+Eigen::Matrix3f& normalizeDet1( Eigen::Matrix3f& m );
 
 template<class M>
 M& matSqrt( M& S )
@@ -85,7 +75,7 @@ inline V normalize(const V & v)
 	V ret = v;
 	ret( 0 ) /= ret( 2 );
 	ret( 1 ) /= ret( 2 );
-	ret( 2 ) = 1.0;
+	ret( 2 ) = 1.f;
 	return ret;
 }
 

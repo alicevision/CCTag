@@ -148,7 +148,7 @@ void completeFlowComponent(
 
       candidate._score = childrens.size();
 
-      double SmFinal = 1e+10;
+      float SmFinal = 1e+10;
 
       std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
 
@@ -213,17 +213,17 @@ void completeFlowComponent(
        
       candidate._nLabel = nLabel;
 
-      std::vector<double> vDistFinal;
+      std::vector<float> vDistFinal;
       vDistFinal.clear();
       vDistFinal.reserve(outerEllipsePoints.size());
 
       // Clean point (egdePoints*) to ellipse distance with inheritance 
       // -- the current solution is dirty --
-      double distMax = 0;
+      float distMax = 0;
 
       BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
       {
-        double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
+        float distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.f);
         vDistFinal.push_back(distFinal);
 
         if (distFinal > distMax)
@@ -241,14 +241,14 @@ void completeFlowComponent(
         return;
       }
 
-      double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
+      float quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
       if (quality > 1.1)
       {
         DO_TALK( CCTAG_COUT_DEBUG("Quality too high!"); )
         return;
       }
 
-      double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
+      float ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
       if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20))
       {
         DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
@@ -293,7 +293,7 @@ void completeFlowComponent(
  cctagPoints: set of points constituting the final cctag 
  params: parameters of the system's algorithm */
 void flowComponentAssembling(
-        double & quality,
+        float & quality,
         const Candidate & candidate,
         const std::vector<Candidate> & vCandidateLoopTwo,
         numerical::geometry::Ellipse & outerEllipse,
@@ -314,7 +314,7 @@ void flowComponentAssembling(
   int iMax = 0;
   int i = 0;
 
-  double ratioExpension = 2.5;
+  float ratioExpension = 2.5;
   numerical::geometry::Circle circularResearchArea(
          Point2d<Eigen::Vector3f>( candidate._seed->x(), candidate._seed->y() ),
          candidate._seed->_flowLength * ratioExpension);
@@ -330,7 +330,7 @@ void flowComponentAssembling(
                 && (anotherCandidate._seed->_flowLength / candidate._seed->_flowLength < 1.5))
         {
           if (isInEllipse(circularResearchArea, 
-                  cctag::Point2d<Eigen::Vector3f>(double(anotherCandidate._seed->x()), double(anotherCandidate._seed->y()))))
+                  cctag::Point2d<Eigen::Vector3f>(float(anotherCandidate._seed->x()), float(anotherCandidate._seed->y()))))
           {
             if (anotherCandidate._score > score)
             {
@@ -376,7 +376,7 @@ void flowComponentAssembling(
             cctagPoints, params._nCrowns * 2,
             params._thrMedianDistanceEllipse) )
     {
-      quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
+      quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
 
 #ifdef CCTAG_SERIALIZE
       componentCandidates.push_back(selectedCandidate);
@@ -387,7 +387,7 @@ void flowComponentAssembling(
 
   boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d = tstop - tstart;
-  const double spendTime = d.total_milliseconds();
+  const float spendTime = d.total_milliseconds();
 }
 
 
@@ -399,7 +399,7 @@ void cctagDetectionFromEdges(
         const EdgePointsImage& edgesMap,
         const std::size_t frame,
         int pyramidLevel,
-        double scale,
+        float scale,
         const Parameters & providedParams,
         cctag::logtime::Mgmt* durations )
 {
@@ -477,7 +477,7 @@ void cctagDetectionFromEdges(
 
   boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d1 = tstop1 - tstart0;
-  const double spendTime1 = d1.total_milliseconds();
+  const float spendTime1 = d1.total_milliseconds();
 
 #if defined CCTAG_SERIALIZE && defined DEBUG
   std::stringstream outFlowComponentsAssembling;
@@ -509,7 +509,7 @@ void cctagDetectionFromEdges(
 
     try
     {
-      double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
+      float quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
 
       if (params._searchForAnotherSegment)
       {
@@ -549,14 +549,14 @@ void cctagDetectionFromEdges(
       
       int realPixelPerimeter = rasterizeEllipsePerimeter(rescaleEllipse);
 
-      double realSizeOuterEllipsePoints = quality*realPixelPerimeter;
+      float realSizeOuterEllipsePoints = quality*realPixelPerimeter;
 
       // Naive reject condition todo@Lilian
       if ( ( ( quality <= 0.35 ) && ( realSizeOuterEllipsePoints >= 300.0 ) ) ||//0.35
-               ( ( quality <= 0.45 ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||//0.45
-               ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||//0.50
-               ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||//0.5
-               ( ( quality <= 0.96 ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||//0.96
+               ( ( quality <= 0.45f ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||
+               ( ( quality <= 0.5f ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||
+               ( ( quality <= 0.5f ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||
+               ( ( quality <= 0.96f ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||
                ( realSizeOuterEllipsePoints < 50.0  ) )
       {
               DO_TALK( CCTAG_COUT_DEBUG( "Not enough outer ellipse points: realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality ); )
@@ -566,7 +566,7 @@ void cctagDetectionFromEdges(
       cctag::Point2d<Eigen::Vector3f> markerCenter;
       Eigen::Matrix3f markerHomography;
 
-      const double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
+      const float ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
 
       if (ratioSemiAxes > 8.0 || ratioSemiAxes < 0.125)
       {
@@ -576,17 +576,17 @@ void cctagDetectionFromEdges(
         continue;
       }
 
-      std::vector<double> vDistFinal;
+      std::vector<float> vDistFinal;
       vDistFinal.clear();
       vDistFinal.reserve(outerEllipsePoints.size());
 
-      double resSquare = 0;
-      double distMax = 0;
+      float resSquare = 0;
+      float distMax = 0;
 
       // TODO: omp parallel reduction
       BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
       {
-        double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
+        float distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.f);
         resSquare += distFinal; //*distFinal;
 
         if (distFinal > distMax)
@@ -623,13 +623,13 @@ void cctagDetectionFromEdges(
 
       std::vector< Point2d<Eigen::Vector3i> > vPoint;
 
-      double quality2 = 0;
+      float quality2 = 0;
 
       BOOST_FOREACH(const EdgePoint* p, outerEllipsePoints)
       {
         quality2 += p->normGradient(); // ***
         
-        //double theta = atan2(p->y() - outerEllipse.center().y(), p->x() - outerEllipse.center().x()); // cf. supp.
+        //float theta = atan2(p->y() - outerEllipse.center().y(), p->x() - outerEllipse.center().x()); // cf. supp.
         //quality2 += std::abs(-sin(theta)*p->gradient().x() + cos(theta)*p->gradient().y()); // cf. supp.
       }
 
@@ -678,7 +678,7 @@ void cctagDetectionFromEdges(
 
   boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d2 = tstop2 - tstop1;
-  const double spendTime2 = d2.total_milliseconds();
+  const float spendTime2 = d2.total_milliseconds();
 }
 
 

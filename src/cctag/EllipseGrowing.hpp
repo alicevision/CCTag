@@ -110,14 +110,14 @@ void connectedPoint( std::vector<EdgePoint*>& pts, const int runId, const EdgePo
  * @param ellipse ellipse from which the hull is computed
  * @param delta larger of the hull
  */
-void computeHull( const cctag::numerical::geometry::Ellipse& ellipse, double delta, cctag::numerical::geometry::Ellipse& qIn, cctag::numerical::geometry::Ellipse& qOut );
+void computeHull( const cctag::numerical::geometry::Ellipse& ellipse, float delta, cctag::numerical::geometry::Ellipse& qIn, cctag::numerical::geometry::Ellipse& qOut );
 
 /** @brief Ellipse hull
  * @param[in,out] pts initial points to compute all the points which are in the hull formed by the ellipse
  * which fits pt. New points will be added in pts
  * @param ellipse ellipse is an optionnal parameter if the user decide to choose his hull from an ellipse
  */
-void ellipseHull( const EdgePointsImage& img, std::vector<EdgePoint*>& pts, cctag::numerical::geometry::Ellipse& ellipse, double delta, const std::size_t runId);
+void ellipseHull( const EdgePointsImage& img, std::vector<EdgePoint*>& pts, cctag::numerical::geometry::Ellipse& ellipse, float delta, const std::size_t runId);
 
 /** @brief Ellipse growing
  * @param childrens vote winner children points
@@ -128,7 +128,7 @@ void ellipseHull( const EdgePointsImage& img, std::vector<EdgePoint*>& pts, ccta
 
 void ellipseGrowing2( const EdgePointsImage& img, const std::vector<EdgePoint*>& filteredChildrens,
                       std::vector<EdgePoint*>& outerEllipsePoints, numerical::geometry::Ellipse& ellipse,
-                      const double ellipseGrowingEllipticHullWidth, std::size_t nLabel, bool goodInit);
+                      const float ellipseGrowingEllipticHullWidth, std::size_t nLabel, bool goodInit);
 
 } // namespace cctag
 

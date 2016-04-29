@@ -17,34 +17,34 @@ public:
 	Ellipse()
                 : _matrix(Eigen::Matrix3f::Zero())
                 , _center(0, 0)
-		, _a( 0.0 )
-		, _b( 0.0 )
-		, _angle( 0.0 )
+		, _a( 0.f )
+		, _b( 0.f )
+		, _angle( 0.f )
 	{
 	}
 
 	Ellipse( const Matrix& matrix );
-	Ellipse( const Point2d<Eigen::Vector3f>& center, const double a, const double b, const double angle );
+	Ellipse( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle );
 
 	inline const Matrix& matrix() const { return _matrix; }
 	inline Matrix& matrix() { return _matrix; }
 	inline const Point2d<Eigen::Vector3f>& center() const { return _center; }
 	inline Point2d<Eigen::Vector3f>& center() { return _center; }
-	inline double a() const      { return _a; }
-	inline double b() const      { return _b; }
-	inline double angle() const  { return _angle; }
+	inline float a() const      { return _a; }
+	inline float b() const      { return _b; }
+	inline float angle() const  { return _angle; }
 
 	void setMatrix( const Matrix& matrix );
 
-	void setParameters( const Point2d<Eigen::Vector3f>& center, const double a, const double b, const double angle );
+	void setParameters( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle );
 
 	void setCenter( const Point2d<Eigen::Vector3f>& center );
 
-	void setA( const double a );
+	void setA( const float a );
 
-	void setB( const double b );
+	void setB( const float b );
 
-	void setAngle( const double angle );
+	void setAngle( const float angle );
 
 	Ellipse transform(const Matrix& mT) const;
 
@@ -54,16 +54,16 @@ public:
         
         void getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual) const;
 
-	void init( const Point2d<Eigen::Vector3f>& center, const double a, const double b, const double angle );
+	void init( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle );
 
 	friend  std::ostream& operator<<(std::ostream& os, const Ellipse& e);
 
 protected:
 	Eigen::Matrix3f _matrix;
 	Point2d<Eigen::Vector3f> _center;
-	double _a;
-	double _b;
-	double _angle;
+	float _a;
+	float _b;
+	float _angle;
 };
 
 void getSortedOuterPoints(
@@ -72,7 +72,7 @@ void getSortedOuterPoints(
         std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & resPoints,
         const std::size_t requestedSize);
 
-void scale(const Ellipse & ellipse, Ellipse & rescaleEllipse, double scale);
+void scale(const Ellipse & ellipse, Ellipse & rescaleEllipse, float scale);
 
 }
 }

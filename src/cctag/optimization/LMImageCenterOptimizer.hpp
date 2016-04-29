@@ -26,8 +26,8 @@ public:
 	 * @param[in] cctagToRefine initial cctag to refine
 	 * @return residual error
 	 */
-	double operator()( CCTag & cctagToRefine );
-	static int homology( void* p, int m, int n, const double* x, double* fvec, int iflag );
+	float operator()( CCTag & cctagToRefine );
+	static int homology( void* p, int m, int n, const float* x, float* fvec, int iflag );
 
 private:
 	cctag::Point2d<Eigen::Vector3f> _pToRefine;

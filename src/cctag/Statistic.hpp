@@ -70,15 +70,15 @@ void rand_n_k(Container &container, size_t N, size_t K)
 
 
 // median(X) is the median value of the elements in X.
-double median( std::vector<double>& v );
+float median( std::vector<float>& v );
 
-// Compute the mean of a vector of bounded_vector<double,3>* considered as Point2dN (i.e. of size 2)
+// Compute the mean of a vector of bounded_vector<float,3>* considered as Point2dN (i.e. of size 2)
 template<class V>
-ublas::bounded_vector<double, 3> mean( const V& v )
+ublas::bounded_vector<float, 3> mean( const V& v )
 {
-	ublas::bounded_vector<double, 3> mv;
-	mv( 0 ) = 0.0;
-	mv( 1 ) = 0.0;
+	ublas::bounded_vector<float, 3> mv;
+	mv( 0 ) = 0.f;
+	mv( 1 ) = 0.f;
 
 	for( typename V::const_iterator it = v.begin(); it != v.end() ; ++it )
 	{
@@ -88,25 +88,25 @@ ublas::bounded_vector<double, 3> mean( const V& v )
 
 	mv( 0 ) /= v.size();
 	mv( 1 ) /= v.size();
-	mv( 2 ) = 1.0;
+	mv( 2 ) = 1.f;
 
 	return mv;
 }
 
-// Compute the standard deviation of a vector of bounded_vector<double,3>* considered as Point2dN (i.e. of size 2)
+// Compute the standard deviation of a vector of bounded_vector<float,3>* considered as Point2dN (i.e. of size 2)
 template<class V>
-ublas::bounded_vector<double, 3> stdDev( const V& v )
+ublas::bounded_vector<float, 3> stdDev( const V& v )
 {
-	ublas::bounded_vector<double, 3> mv  = mean( v );
-	ublas::bounded_vector<double, 3> var = stdDev( v, mv );
+	ublas::bounded_vector<float, 3> mv  = mean( v );
+	ublas::bounded_vector<float, 3> var = stdDev( v, mv );
 	return var;
 }
 
-// Compute the standard deviation of a vector of bounded_vector<double,3>* considered as Point2dN (i.e. of size 2)
+// Compute the standard deviation of a vector of bounded_vector<float,3>* considered as Point2dN (i.e. of size 2)
 template<class V>
-ublas::bounded_vector<double, 3> stdDev( const V& v, const ublas::bounded_vector<double, 3>& mv )
+ublas::bounded_vector<float, 3> stdDev( const V& v, const ublas::bounded_vector<float, 3>& mv )
 {
-	ublas::bounded_vector<double, 3> var;
+	ublas::bounded_vector<float, 3> var;
 	var( 0 ) = 0;
 	var( 1 ) = 0;
 
@@ -118,20 +118,20 @@ ublas::bounded_vector<double, 3> stdDev( const V& v, const ublas::bounded_vector
 
 	var( 0 ) = sqrt( var( 0 ) / v.size() );
 	var( 1 ) = sqrt( var( 1 ) / v.size() );
-	var( 2 ) = 1.0;
+	var( 2 ) = 1.f;
 
 	return var;
 }
 
 template<class V>
-inline double median( V v )
+inline float median( V v )
 {
 	std::sort( v.begin(), v.end() );
 	return v[v.size() / 2];
 }
 
 template<class V>
-inline double medianRef( V & v )
+inline float medianRef( V & v )
 {
 	std::sort( v.begin(), v.end() );
 	return v[v.size() / 2];

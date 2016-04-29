@@ -18,7 +18,7 @@ class EdgePoint : public cctag::Point2d<Eigen::Vector3i>
 public:
   EdgePoint()
     : Point2d(0, 0)
-    , _normGrad( -1.0 )
+    , _normGrad( -1.f )
     , _before( NULL )
     , _after( NULL )
     , _processed( 0 )
@@ -76,7 +76,7 @@ public:
     return _grad ;
   }
 
-  double normGradient() const
+  float normGradient() const
   {
     return _normGrad ;
   }
@@ -96,7 +96,7 @@ public:
   
 private:
   Eigen::Vector2f _grad;
-  double _normGrad;
+  float _normGrad;
 };
 
 inline bool receivedMoreVoteThan(const EdgePoint * const p1,  const EdgePoint * const p2)

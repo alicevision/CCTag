@@ -18,12 +18,12 @@ public:
   }
  
   ImageCut( Point2d<Eigen::Vector3f> pStart, DirectedPoint2d<Eigen::Vector3f> pStop )
-  : _start(pStart), _stop(pStop), _outOfBounds(false), _beginSig(0.0), _endSig(1.0)
+  : _start(pStart), _stop(pStop), _outOfBounds(false), _beginSig(0.f), _endSig(1.f)
   {
     _imgSignal.resize(cctag::kDefaultSampleCutLength);
   }
   
-  ImageCut( Point2d<Eigen::Vector3f> pStart, DirectedPoint2d<Eigen::Vector3f> pStop, const double start, const double stop)
+  ImageCut( Point2d<Eigen::Vector3f> pStart, DirectedPoint2d<Eigen::Vector3f> pStop, const float start, const float stop)
   : _start(pStart), _stop(pStop), _outOfBounds(false), _beginSig(start), _endSig(stop)
   {
     _imgSignal.resize(cctag::kDefaultSampleCutLength);
@@ -31,12 +31,12 @@ public:
   }
   
   ImageCut( Point2d<Eigen::Vector3f> pStart, DirectedPoint2d<Eigen::Vector3f> pStop, const std::size_t nSamples)
-  : _start(pStart), _stop(pStop), _beginSig(0.0), _endSig(1.0), _outOfBounds(false)
+  : _start(pStart), _stop(pStop), _beginSig(0.f), _endSig(1.f), _outOfBounds(false)
   {
     _imgSignal.resize(nSamples);
   }
     
-  ImageCut( Point2d<Eigen::Vector3f> pStart, DirectedPoint2d<Eigen::Vector3f> pStop, const double start, const double stop, const std::size_t nSamples)
+  ImageCut( Point2d<Eigen::Vector3f> pStart, DirectedPoint2d<Eigen::Vector3f> pStop, const float start, const float stop, const std::size_t nSamples)
   : _start(pStart), _stop(pStop), _outOfBounds(false), _beginSig(start), _endSig(stop)
   {
     _imgSignal.resize(nSamples);
@@ -49,12 +49,12 @@ public:
   const DirectedPoint2d<Eigen::Vector3f> & stop() const { return _stop; }
   DirectedPoint2d<Eigen::Vector3f> & stop() { return _stop; }
   
-  const boost::numeric::ublas::vector<double> & imgSignal() const { return _imgSignal; }
-  boost::numeric::ublas::vector<double> & imgSignal() { return _imgSignal; }
+  const boost::numeric::ublas::vector<float> & imgSignal() const { return _imgSignal; }
+  boost::numeric::ublas::vector<float> & imgSignal() { return _imgSignal; }
   
-  double beginSig() const { return _beginSig; }
+  float beginSig() const { return _beginSig; }
   
-  double endSig() const { return _endSig; }
+  float endSig() const { return _endSig; }
   
   bool outOfBounds() const { return _outOfBounds; }
   
@@ -75,7 +75,7 @@ private:
   /** 1D rectified image signal along the segment [_start,_stop]
    * @note For the GPU case, this information never exists on the CPU
    */
-  boost::numeric::ublas::vector<double> _imgSignal; //< image signal
+  boost::numeric::ublas::vector<float> _imgSignal; //< image signal
   
   // False by default. This boolean reveals if any of the points lying on the segment
   // [_start, _stop] are outside of the image
@@ -84,12 +84,12 @@ private:
   // Scalar value in [0,1] representing from where, along the segment [_start,_stop] 
   // whose extremities corresponds to 0 and 1 resp., the image signal in stored in 
   // _imgSignal 
-  double _beginSig;
+  float _beginSig;
   
   // Scalar value in [_beginSig,1] representing to where, along the segment [_start,_stop] 
   // whose extremities corresponds to 0 and 1 resp., the image signal in stored in 
   // _imgSignal
-  double _endSig;
+  float _endSig;
   
 };
 

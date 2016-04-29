@@ -25,14 +25,16 @@ inline float distancePointEllipse(const T & p, const Eigen::Matrix3f& Q, const f
 {
 	Eigen::VectorXf aux( 6 );
 
-	aux( 0 ) = p( 0 ) * p( 0 );
-	aux( 1 ) = 2 * p( 0 ) * p( 1 );
-	aux( 2 ) = 2* f* p( 0 );
-	aux( 3 ) = p( 1 ) * p( 1 );
-	aux( 4 ) = 2* f* p( 1 );
+        float x = p.x();
+        float y = p.y();
+        
+	aux( 0 ) = x*x;
+	aux( 1 ) = 2 * x * y;
+	aux( 2 ) = 2* f* x;
+	aux( 3 ) = y * y;
+	aux( 4 ) = 2* f* y;
 	aux( 5 ) = f * f;
 
-	//sdist = ([pts(:,1).*pts(:,1) 2*pts(:,1).*pts(:,2) pts(:,2).*pts(:,2) 2*f*pts(:,1) 2*f*pts(:,2) f*f*ones(n,1)]*Q([1;2;5;7;8;9])).^2./((pts*Q([1;2;3])).^2+(pts*Q([2;5;8])).^2);
 	float tmp1  = p( 0 ) * Q( 0, 0 ) + p( 1 ) * Q( 0, 1 ) + p( 2 ) * Q( 0, 2 );
 	float tmp2  = p( 0 ) * Q( 0, 1 ) + p( 1 ) * Q( 1, 1 ) + p( 2 ) * Q( 1, 2 );
 	float denom = tmp1 * tmp1 + tmp2 * tmp2;
@@ -44,7 +46,8 @@ inline float distancePointEllipse(const T & p, const Eigen::Matrix3f& Q, const f
 	return boost::math::pow<2>( aux.dot(qL) ) / denom;
 }
 
-inline float distancePointEllipse( const Eigen::Vector3f& p, const geometry::Ellipse& q, const float f )
+template <class T>
+inline float distancePointEllipse( const T & p, const geometry::Ellipse& q, const float f )
 {
 	const auto& Q = q.matrix();
 	return distancePointEllipse( p, Q, f );
@@ -52,7 +55,7 @@ inline float distancePointEllipse( const Eigen::Vector3f& p, const geometry::Ell
 
 // Compute the distance between points and an ellipse
 //template<class T>
-inline void distancePointEllipse( std::vector<double>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q, const double f )
+inline void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q, const float f )
 {
 	dist.clear();
 	dist.reserve( pts.size() );

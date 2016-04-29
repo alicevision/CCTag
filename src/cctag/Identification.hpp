@@ -62,7 +62,7 @@ int identify_step_1(
     const int tagIndex,
 	const CCTag & cctag,
     std::vector<cctag::ImageCut>& vSelectedCuts,
-	// const std::vector< std::vector<double> > & radiusRatios,
+	// const std::vector< std::vector<float> > & radiusRatios,
 	const cv::Mat & src,
     // popart::TagPipe* pipe,
 	const cctag::Parameters & params);
@@ -85,12 +85,12 @@ int identify_step_2(
     const int tagIndex,
 	CCTag & cctag,
     std::vector<cctag::ImageCut>& vSelectedCuts,
-	const std::vector< std::vector<double> > & radiusRatios,
+	const std::vector< std::vector<float> > & radiusRatios,
 	const cv::Mat & src,
     popart::TagPipe* pipe,
 	const cctag::Parameters & params);
 
-typedef std::vector< std::vector<double> > RadiusRatioBank;
+typedef std::vector< std::vector<float> > RadiusRatioBank;
 typedef std::vector< std::pair< cctag::Point2d<Eigen::Vector3f>, cctag::ImageCut > > CutSelectionVec;
 
 /**
@@ -103,15 +103,15 @@ typedef std::vector< std::pair< cctag::Point2d<Eigen::Vector3f>, cctag::ImageCut
  * @param[in] y coordinate of the point to be transformed
  */
 inline void applyHomography(
-        double & xRes,
-        double & yRes,
+        float & xRes,
+        float & yRes,
         const Eigen::Matrix3f & mHomography,
-        const double x,
-        const double y)
+        const float x,
+        const float y)
 {
-  double u = mHomography(0,0)*x + mHomography(0,1)*y + mHomography(0,2);
-  double v = mHomography(1,0)*x + mHomography(1,1)*y + mHomography(1,2);
-  double w = mHomography(2,0)*x + mHomography(2,1)*y + mHomography(2,2);
+  float u = mHomography(0,0)*x + mHomography(0,1)*y + mHomography(0,2);
+  float v = mHomography(1,0)*x + mHomography(1,1)*y + mHomography(1,2);
+  float w = mHomography(2,0)*x + mHomography(2,1)*y + mHomography(2,2);
   xRes = u/w;
   yRes = v/w;
 }
@@ -128,10 +128,10 @@ inline void applyHomography(
 // todo: change the data structure here: map for id+scores, thresholding with minIdentProba
 // outside of this function
 bool orazioDistanceRobust(
-        std::vector<std::list<double> > & vScore,
+        std::vector<std::list<float> > & vScore,
         const RadiusRatioBank & rrBank,
         const std::vector<cctag::ImageCut> & cuts,
-        const double minIdentProba);
+        const float minIdentProba);
 
 /**
  * @brief Extract a rectified 1D signal along an image cut based on an homography.
@@ -153,8 +153,8 @@ void extractSignalUsingHomographyDeprec(
         const cv::Mat & src,
         Eigen::Matrix3f & mHomography,
         std::size_t nSamples = 100,
-        const double begin = 0.0,
-        const double end = 1.0 );
+        const float begin = 0.f,
+        const float end = 1.f );
 
 /**
  * @brief Extract a regularly sampled 1D signal along an image cut.
@@ -230,11 +230,11 @@ inline float getPixelBilinear(const cv::Mat & src, float x, float y)
  * @param[in] alpha magic hyper parameter
  * @return score
  */
-double costSelectCutFun(
-        const std::vector<double> & varCuts,
+float costSelectCutFun(
+        const std::vector<float> & varCuts,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
         const boost::numeric::ublas::vector<std::size_t> & randomIdx,
-        const double alpha = 10 );
+        const float alpha = 10 );
 
 /**
  * @brief Select a subset of image cuts appropriate for the image center optimisation.
@@ -254,7 +254,7 @@ void selectCut(
         std::size_t selectSize,
         std::vector<cctag::ImageCut> & collectedCuts,
         const cv::Mat & src,
-        const double refinedSegSize,
+        const float refinedSegSize,
         const std::size_t numSamplesOuterEdgePointsRefinement,
         const std::size_t cutsSelectionTrials );
 
@@ -264,7 +264,7 @@ void selectCutCheap(
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         std::vector<cctag::ImageCut> & collectedCuts,
         const cv::Mat & src,
-        const double refinedSegSize,
+        const float refinedSegSize,
         const std::size_t numSamplesOuterEdgePointsRefinement,
         const std::size_t cutsSelectionTrials );
 
@@ -332,8 +332,8 @@ bool imageCenterOptimizationGlob(
         Eigen::Matrix3f & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
         cctag::Point2d<Eigen::Vector3f> & center,
-        double & minRes,
-        const double neighbourSize,
+        float & minRes,
+        const float neighbourSize,
         const cv::Mat & src, 
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params );
@@ -354,7 +354,7 @@ void getNearbyPoints(
           const cctag::numerical::geometry::Ellipse & ellipse,
           const cctag::Point2d<Eigen::Vector3f> & center,
           std::vector<cctag::Point2d<Eigen::Vector3f> > & nearbyPoints,
-          const double neighbourSize,
+          const float neighbourSize,
           const std::size_t gridNSample,
           const NeighborType neighborType);
 
@@ -383,7 +383,7 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @param[out] flag: true if at least one image cut has been readable (within the image bounds), false otherwise.
  * @return residual
  */
-double costFunctionGlob(
+float costFunctionGlob(
         const Eigen::Matrix3f & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
         const cv::Mat & src,
@@ -425,15 +425,15 @@ typename VecT::value_type computeMedian( const VecT& vec )
   return ( output[s-1] + output[s-2] ) / 2.0;
 }
 
-inline double dis( const double sig, const double val, const double mub, const double muw, const double varSubS )
+inline float dis( const float sig, const float val, const float mub, const float muw, const float varSubS )
 {
   if ( val == -1 )
   {
-          return boost::math::pow<2>( std::max( sig - mub, 0.0 ) ) / ( 2.0 * varSubS );
+          return boost::math::pow<2>( std::max( sig - mub, 0.f ) ) / ( 2.0 * varSubS );
   }
   else
   {
-          return boost::math::pow<2>( std::min( sig - muw, 0.0 ) ) / ( 2.0 * varSubS );
+          return boost::math::pow<2>( std::min( sig - muw, 0.f ) ) / ( 2.0 * varSubS );
   }
 }
 
@@ -468,14 +468,14 @@ bool refineConicFamily(
  * @param mH
  */
 inline cctag::Point2d<Eigen::Vector3f> getHPoint(
-        const double xi,
-        const double yi,
+        const float xi,
+        const float yi,
         const Eigen::Matrix3f& mH )
 {
   using namespace cctag::numerical;
   using namespace boost::numeric::ublas;
   Eigen::Vector3f vh;
-  vh( 0 ) = xi; vh( 1 ) = yi; vh( 2 ) = 1.0;
+  vh( 0 ) = xi; vh( 1 ) = yi; vh( 2 ) = 1.f;
 
   return cctag::Point2d<Eigen::Vector3f>(mH * vh);
 }
@@ -486,7 +486,7 @@ bool orazioDistance(
         const RadiusRatioBank & rrBank,
         const std::vector<cctag::ImageCut> & cuts,
         const std::size_t startOffset,
-        const double minIdentProba,
+        const float minIdentProba,
         std::size_t sizeIds);
 
 } // namespace identification

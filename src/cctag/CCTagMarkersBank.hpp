@@ -25,17 +25,17 @@ public:
   virtual ~CCTagMarkersBank();
 
   void read( const std::string & file );
-  std::size_t identify( const std::vector<double> & marker ) const;
-  inline const std::vector< std::vector<double> > & getMarkers() const
+  std::size_t identify( const std::vector<float> & marker ) const;
+  inline const std::vector< std::vector<float> > & getMarkers() const
   {
     return _markers;
   }
 
 private:
   template <typename Iterator>
-  bool cctagLineParse( Iterator first, Iterator last, std::vector<double>& rr )
+  bool cctagLineParse( Iterator first, Iterator last, std::vector<float>& rr )
   {
-    double n;
+    float n;
     using boost::phoenix::ref;
     using boost::phoenix::push_back;
     using namespace boost::spirit::qi;
@@ -57,10 +57,10 @@ private:
     return r;
   }
   
-  static const double idThreeCrowns[32][5];
-  static const double idFourCrowns[128][7];
+  static const float idThreeCrowns[32][5];
+  static const float idFourCrowns[128][7];
   
-  std::vector< std::vector<double> > _markers;
+  std::vector< std::vector<float> > _markers;
 
 };
 
