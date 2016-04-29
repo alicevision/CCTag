@@ -27,7 +27,7 @@ void edgesPointsFromCanny(
   edgePointsMap.resize( boost::extents[width][height] );
   std::fill( edgePointsMap.origin(), edgePointsMap.origin() + edgePointsMap.size(), (EdgePoint*)NULL );
   
-  points.reserve( width * height / 2 ); // todo: allocate that in the memory pool @Lilian
+  points.reserve( width * height / 2 );
 
   for( int y = 0 ; y < height ; ++y )
   {

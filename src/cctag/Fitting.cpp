@@ -406,8 +406,8 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
 	BOOST_FOREACH(const EdgePoint* point, vPoint){
 		pts.push_back(point->x());
 		pts.push_back(point->y());
-		grad.push_back(point->gradient()(0));
-		grad.push_back(point->gradient()(1));
+		grad.push_back(point->dX());
+		grad.push_back(point->dY());
 	}
 
 	std::vector<float> param;
@@ -447,13 +447,13 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                 //sumDeriv(0) += gradient(0)/normGrad;
                 //sumDeriv(1) += gradient(1)/normGrad;
 
-                normGrad = std::sqrt(p0->gradient()(0) * p0->gradient()(0) + p0->gradient()(1) * p0->gradient()(1));
+                normGrad = std::sqrt(p0->dX() * p0->dX() + p0->dY() * p0->dY());
 
                 //CCTAG_COUT_VAR(normGrad);
 
                 // Step 1
-                float gx0 = p0->gradient()(0) / normGrad;
-                float gy0 = p0->gradient()(1) / normGrad;
+                float gx0 = p0->dX() / normGrad;
+                float gy0 = p0->dY() / normGrad;
 
                 std::vector<cctag::EdgePoint*>::const_iterator it = ++filteredChildrens.begin();
 
@@ -461,10 +461,10 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                     EdgePoint* pCurrent = *it;
 
                     // TODO Revoir les structure de donnée pour les points 2D et définir un produit scalaire utilisé ici
-                    normGrad = std::sqrt(pCurrent->gradient()(0) * pCurrent->gradient()(0) + pCurrent->gradient()(1) * pCurrent->gradient()(1));
+                    normGrad = std::sqrt(pCurrent->dX() * pCurrent->dX() + pCurrent->dY() * pCurrent->dY());
 
-                    float gx = pCurrent->gradient()(0) / normGrad;
-                    float gy = pCurrent->gradient()(1) / normGrad;
+                    float gx = pCurrent->dX() / normGrad;
+                    float gy = pCurrent->dY() / normGrad;
 
                     float innerProd = gx0 * gx + gy0 * gy;
 
@@ -485,9 +485,9 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                     }
                 }
 
-                normGrad = std::sqrt(pAngle1->gradient()(0) * pAngle1->gradient()(0) + pAngle1->gradient()(1) * pAngle1->gradient()(1));
-                float gxmin = pAngle1->gradient()(0) / normGrad;
-                float gymin = pAngle1->gradient()(1) / normGrad;
+                normGrad = std::sqrt(pAngle1->dX() * pAngle1->dX() + pAngle1->dY() * pAngle1->dY());
+                float gxmin = pAngle1->dX() / normGrad;
+                float gymin = pAngle1->dY() / normGrad;
 
                 // Step 2, compute the minimum inner product
                 min = 1.f;
@@ -500,10 +500,10 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                 for (; it != filteredChildrens.end(); ++it) {
                     EdgePoint* pCurrent = *it;
                     // TODO Revoir les structure de donnée pour les point 2D et définir un produit scalaire utilisé ici
-                    normGrad = std::sqrt(pCurrent->gradient()(0) * pCurrent->gradient()(0) + pCurrent->gradient()(1) * pCurrent->gradient()(1));
+                    normGrad = std::sqrt(pCurrent->dX() * pCurrent->dX() + pCurrent->dY() * pCurrent->dY());
 
-                    float chgx = pCurrent->gradient()(0) / normGrad;
-                    float chgy = pCurrent->gradient()(1) / normGrad;
+                    float chgx = pCurrent->dX() / normGrad;
+                    float chgy = pCurrent->dY() / normGrad;
 
                     float innerProd = gxmin * chgx + gymin * chgy;
 

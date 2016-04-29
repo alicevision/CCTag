@@ -28,7 +28,7 @@ public:
         
 	Point2d(Scalar px, Scalar py)
 	{
-          (*this) << px, py;
+          (*this) << px, py, 1.f;
         }
 
 	Scalar  x() const { return (*this)( 0 ); }
@@ -66,9 +66,8 @@ class DirectedPoint2d : public Point2d<T>
 
 public:
 	DirectedPoint2d()
-		: Point2d<T>()
+		: Point2d<T>(), _grad(0,0)
 	{
-                  _grad.fill(0.f);
         }
                 
         DirectedPoint2d(const This& p) = default;

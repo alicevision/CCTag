@@ -43,8 +43,8 @@ void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<Ei
 void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e) {
     const int x = e.x();
     const int y = e.y();
-    const float gx = e.gradient()(0);
-    const float gy = e.gradient()(1);
+    const float gx = e.dX();
+    const float gy = e.dY();
 
     ar & BOOST_SERIALIZATION_NVP(x);
     ar & BOOST_SERIALIZATION_NVP(y);

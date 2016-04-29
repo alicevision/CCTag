@@ -500,8 +500,8 @@ float costSelectCutFun(
     BOOST_ASSERT( i < varCuts.size() );
     
     //CCTAG_COUT_VAR(outerPoints[i].gradient());
-    //CCTAG_COUT_VAR(sqrt(outerPoints[i].gradient()(0)*outerPoints[i].gradient()(0)
-    //                  + outerPoints[i].gradient()(1)*outerPoints[i].gradient()(1)));
+    //CCTAG_COUT_VAR(sqrt(outerPoints[i].dX()*outerPoints[i].dX()
+    //                  + outerPoints[i].dY()*outerPoints[i].dY()));
     
     sumDeriv += outerPoints[i].gradient(); // must be normalised. This normalisation is done during the CCTag construction.
     sumVar += varCuts[i];

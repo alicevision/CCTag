@@ -92,7 +92,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
 
   BOOST_FOREACH(EdgePoint * e, outerEllipsePoints)
   {
-    itp->push_back(DirectedPoint2d<Eigen::Vector3f>(e->x(), e->y(), e->gradient().x(), e->gradient().y()));
+    itp->push_back(DirectedPoint2d<Eigen::Vector3f>(e->x(), e->y(), e->dX(), e->dY()));
   }
   ++itp;
   for (; itp != cctagPoints.rend(); ++itp)
@@ -142,10 +142,10 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
         p->_processedAux = true;
         vProcessedEdgePoint.push_back(p);
 
-        float normGrad = sqrt(p->gradient()(0) * p->gradient()(0) + p->gradient()(1) * p->gradient()(1));
+        float normGrad = sqrt(p->dX() * p->dX() + p->dY() * p->dY());
 
-        gradE(0) = p->gradient()(0) / normGrad;
-        gradE(1) = p->gradient()(1) / normGrad;
+        gradE(0) = p->dX() / normGrad;
+        gradE(1) = p->dY() / normGrad;
 
         toto(0) = outerEllipse.center().x() - p->x();
         toto(1) = outerEllipse.center().y() - p->y();
@@ -154,7 +154,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
         toto(0) /= distancePointToCenter;
         toto(1) /= distancePointToCenter;
 
-        DirectedPoint2d<Eigen::Vector3f> pointToAdd(p->x(), p->y(), p->gradient().x(), p->gradient().y());
+        DirectedPoint2d<Eigen::Vector3f> pointToAdd(p->x(), p->y(), p->dX(), p->dY());
 
         if (isInEllipse(outerEllipse, pointToAdd) && isOnTheSameSide(outerPoint, pointToAdd, lineThroughCenter))
           // isInHull( innerBoundEllipse, outerEllipse, pMid ) && isInHull( innerBoundEllipse, outerEllipse, pointToAdd ) &&
@@ -297,9 +297,9 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
 
   if (std::abs(pMax->cast<float>().dot(l)) / normL < 1e-6)
   {
-    float normGrad = std::sqrt(pMax->gradient()(0) * pMax->gradient()(0) + pMax->gradient()(1) * pMax->gradient()(1));
-    float gx = pMax->gradient()(0) / normGrad;
-    float gy = pMax->gradient()(1) / normGrad;
+    float normGrad = std::sqrt(pMax->dX() * pMax->dX() + pMax->dY() * pMax->dY());
+    float gx = pMax->dX() / normGrad;
+    float gy = pMax->dY() / normGrad;
     equiPoint.x() = (pMax->x() + distanceToAdd * gx);
     equiPoint.y() = (pMax->y() + distanceToAdd * gy);
   }
@@ -371,8 +371,8 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
           !(e->_processed & threadMask))
       {
         Eigen::Vector2f gradE;
-        gradE(0) = e->gradient()(0);
-        gradE(1) = e->gradient()(1);
+        gradE(0) = e->dX();
+        gradE(1) = e->dY();
         
         Eigen::Vector2f eO;
         eO(0) = qIn.center().x() - e->x();

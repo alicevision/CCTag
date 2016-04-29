@@ -244,7 +244,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
         while ((i < maxLength) && (found) && (averageVote >= averageVoteMin) )
         {
 
-            float angle = std::fmod(float(std::atan2(p->gradient()(1), p->gradient()(0))) + 2.0f * boost::math::constants::pi<float>(), 2.0f * boost::math::constants::pi<float>());
+            float angle = std::fmod(float(std::atan2(p->dY(), p->dX())) + 2.0f * boost::math::constants::pi<float>(), 2.0f * boost::math::constants::pi<float>());
             phi.push_back(angle);
             //sumPhi += angle;
 
@@ -290,7 +290,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                             float s = dir * std::sin(phi.back() - phi.front());
                             float c = std::cos(phi.back() - phi.front());
                             // Check if convexity has been lost (concavity) while the windows is not completed -- do smthing like this for the previous test todo@Lilian
-                            if (((s < -0.707) && (c > 0)) || ((s < 0) && (c < 0)))// stop pour un angle > pi/4
+                            if (((s < -0.707f) && (c > 0.f)) || ((s < 0.f) && (c < 0.f)))// stop pour un angle > pi/4
                             {
                                 stop = CONVEXITY_LOST; // Convexity lost, stop !
                             }

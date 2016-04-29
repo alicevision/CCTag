@@ -2,6 +2,7 @@
 #define VISION_EDGEPOINT_HPP_
 
 #include <cctag/geometry/Point.hpp>
+#include <cctag/utils/Defines.hpp>
 
 #include <cstddef>
 #include <sys/types.h>
@@ -18,7 +19,8 @@ class EdgePoint : public cctag::Point2d<Eigen::Vector3i>
 public:
   EdgePoint()
     : Point2d(0, 0)
-    , _normGrad( -1.f )
+    , _grad(0.f,0.f)
+    , _normGrad( 0.f )
     , _before( NULL )
     , _after( NULL )
     , _processed( 0 )
@@ -57,9 +59,11 @@ public:
     , _nSegmentOut(-1)
     , _flowLength (0)
     , _processedAux(false)
+    , _grad(0.f,0.f)
+    , _normGrad(0.f)
   {
-    _normGrad = std::sqrt( vdx * vdx + vdy * vdy );
     _grad << vdx , vdy;
+    _normGrad = std::sqrt( vdx * vdx + vdy * vdy );
   }
 
   void init( const int vx, const int vy, const float vdx, const float vdy )
@@ -71,9 +75,19 @@ public:
     _normGrad = std::sqrt( vdx * vdx + vdy * vdy );
   }
 
-  cctag::Point2d<Eigen::Vector2f> gradient() const
+  Eigen::Vector2f gradient() const
   {
-    return _grad ;
+    return _grad;
+  }
+  
+  float dX() const
+  {
+    return _grad(0);
+  }
+  
+   float dY() const
+  {
+    return _grad(1);
   }
 
   float normGradient() const
