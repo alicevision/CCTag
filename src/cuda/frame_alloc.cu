@@ -153,11 +153,6 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
 __host__
 void Frame::initRequiredMem( )
 {
-    POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
-                           0,
-                           _d_smooth.step * _d_smooth.rows,
-                           _stream );
-
     POP_CUDA_MEMSET_ASYNC( _d_intermediate.data,
                            0,
                            _d_intermediate.step * _d_intermediate.rows,
