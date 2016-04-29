@@ -30,8 +30,6 @@ void dp_call_03_sort_uniq(
     cv::cuda::PtrStepSzb     intermediate ) // invalidated buffer
 {
     cudaError_t  err;
-    cudaStream_t childStream;
-    cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
 
     int listsize = meta.list_size_inner_points();
 
@@ -64,16 +62,14 @@ void dp_call_03_sort_uniq(
                                           listsize,
                                           0,             // begin_bit
                                           sizeof(int)*8, // end_bit
-                                          childStream,   // use stream 0
+                                          0,   // use stream 0
                                           DEBUG_CUB_FUNCTIONS );
     if( err != cudaSuccess ) {
         meta.list_size_interm_inner_points() = 0;
-        cudaStreamDestroy( childStream );
         return;
     }
     if( assist_buffer_sz > intermediate.step * intermediate.rows ) {
         meta.list_size_interm_inner_points() = 0;
-        cudaStreamDestroy( childStream );
         return;
     }
 #else // not CUB_INIT_CALLS
@@ -86,13 +82,12 @@ void dp_call_03_sort_uniq(
                                           listsize,
                                           0,             // begin_bit
                                           sizeof(int)*8, // end_bit
-                                          childStream,   // use stream 0
+                                          0,   // use stream 0
                                           DEBUG_CUB_FUNCTIONS );        // synchronous for debugging
 
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
     if( err != cudaSuccess ) {
-        cudaStreamDestroy( childStream );
         return;
     }
 
@@ -122,16 +117,14 @@ void dp_call_03_sort_uniq(
                                      interm_inner_points.ptr,   // output
                                      &meta.list_size_interm_inner_points(), // output
                                      meta.list_size_inner_points(), // input (unchanged in sort)
-                                     childStream,  // use stream 0
+                                     0,  // use stream 0
                                      DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
     if( err != cudaSuccess ) {
         meta.list_size_interm_inner_points() = 0;
-        cudaStreamDestroy( childStream );
         return;
     }
     if( assist_buffer_sz > intermediate.step * intermediate.rows ) {
         meta.list_size_interm_inner_points() = 0;
-        cudaStreamDestroy( childStream );
         return;
     }
 #else // not CUB_INIT_CALLS
@@ -148,10 +141,9 @@ void dp_call_03_sort_uniq(
                                      interm_inner_points.ptr,   // output
                                      &meta.list_size_interm_inner_points(), // output
                                      meta.list_size_inner_points(), // input (unchanged in sort)
-                                     childStream,  // use stream 0
+                                     0,  // use stream 0
                                      DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
 
-    cudaStreamDestroy( childStream );
 }
 
 } // namespace descent
