@@ -794,6 +794,7 @@ void cctagDetection(CCTag::List& markers,
 
         if( durations ) durations->log( "after CUDA stages" );
 
+        cudaDeviceSynchronize();
 #ifndef NDEBUG
         pipe1->debug( pix, params );
         if( durations ) durations->log( "after CUDA debug" );
