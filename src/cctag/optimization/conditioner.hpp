@@ -50,24 +50,24 @@ inline Eigen::Matrix3f conditionerFromEllipse( const cctag::numerical::geometry:
 {
 	Eigen::Matrix3f res;
 
-	static const float sqrt2 = std::sqrt( 2.0 );
-	static const float meanAB = (ellipse.a()+ellipse.b())/2.0;
+	static const float sqrt2 = std::sqrt( 2.f );
+	static const float meanAB = (ellipse.a()+ellipse.b())/2.f;
 
 	//[ 2^(1/2)/a,         0, -(2^(1/2)*x0)/a]
         //[         0, 2^(1/2)/a, -(2^(1/2)*y0)/a]
         //[         0,         0,               1]
 
 	res( 0, 0 ) = sqrt2 / meanAB;
-	res( 0, 1 ) = 0;
+	res( 0, 1 ) = 0.f;
 	res( 0, 2 ) = -sqrt2* ellipse.center().x() / meanAB;
 
-	res( 1, 0 ) = 0;
+	res( 1, 0 ) = 0.f;
 	res( 1, 1 ) = sqrt2 / meanAB;
 	res( 1, 2 ) = -sqrt2* ellipse.center().y() / meanAB;
 
-	res( 2, 0 ) = 0;
-	res( 2, 1 ) = 0;
-	res( 2, 2 ) = 1;
+	res( 2, 0 ) = 0.f;
+	res( 2, 1 ) = 0.f;
+	res( 2, 2 ) = 1.f;
 
 	return res;
 }
@@ -76,13 +76,13 @@ inline Eigen::Matrix3f conditionerFromEllipse( const cctag::numerical::geometry:
 inline void conditionerFromImage( const int c, const int r, const int f,  Eigen::Matrix3f & trans, Eigen::Matrix3f & invTrans)
 {
 	using namespace boost::numeric;
-	trans(0,0) = 1.f / f; trans(0,1) = 0       ; trans(0,2) = -c/(2.0 * f);
-	trans(1,0) = 0      ; trans(1,1) = 1.f / f ; trans(1,2) = -r/(2.0 * f);
-	trans(2,0) = 0      ; trans(2,1) = 0       ; trans(2,2) = 1.f;
+	trans(0,0) = 1.f / f  ; trans(0,1) = 0.f       ; trans(0,2) = -c/(2.0 * f);
+	trans(1,0) = 0.f      ; trans(1,1) = 1.f / f   ; trans(1,2) = -r/(2.0 * f);
+	trans(2,0) = 0.f      ; trans(2,1) = 0.f       ; trans(2,2) = 1.f;
 
-	invTrans(0,0) = f ; invTrans(0,1) = 0   ; invTrans(0,2) = c / 2.0;
-	invTrans(1,0) = 0 ; invTrans(1,1) = f   ; invTrans(1,2) = r / 2.0;
-	invTrans(2,0) = 0 ; invTrans(2,1) = 0   ; invTrans(2,2) = 1.f;
+	invTrans(0,0) = f   ; invTrans(0,1) = 0.f   ; invTrans(0,2) = c / 2.0;
+	invTrans(1,0) = 0.f ; invTrans(1,1) = f     ; invTrans(1,2) = r / 2.0;
+	invTrans(2,0) = 0.f ; invTrans(2,1) = 0.f   ; invTrans(2,2) = 1.f;
 }
 
 template <class T>

@@ -834,120 +834,6 @@ void getSignals(
 
 /**
  * @brief Compute an homography (up to a 2D rotation) based on its imaged origin [0,0,1]'
- * and its imaged unit circle (represented as an ellipse, assuming only quasi-affine transformation
- * PS: this version will be replaced by its closed-form formulation (todo)
- * 
- * @param[in] mEllipse ellipse matrix, projection of the unit circle
- * @param[in] center imaged center, projection of the origin
- * @param[out] mHomography computed homography
- */
-/* depreciated */
-#if 0
-void computeHomographyFromEllipseAndImagedCenter(
-        const Eigen::Matrix3f & mEllipse,
-        const cctag::Point2d<Eigen::Vector3f> & center,
-        Eigen::Matrix3f & mHomography)
- {
-    using namespace cctag::numerical;
-    using namespace boost::numeric::ublas;
-  
-  Eigen::Matrix3f mA;
-  invert( mEllipse, mA );
-  Eigen::Matrix3f mO = outer_prod( center, center );
-  diagonal_matrix<float> vpg;
-
-  Eigen::Matrix3f mVG;
-  // Compute eig(inv(A),center*center')
-  eig( mA, mO, mVG, vpg ); // Warning : compute GENERALIZED eigvalues, take 4 parameters !
-                           // eig(a,b,c) compute eigenvalues of a, call a different 
-                           // routine in lapack.
-
-  cctag::numerical::Matrixd u, v;
-  diagonal_matrix<float> s( 3, 3 );
-  float vmin = std::abs( vpg( 0, 0 ) );
-  std::size_t imin = 0;
-
-  // Find minimum of the generalized eigen values
-  for( std::size_t i = 1; i < vpg.size1(); ++i )
-  {
-    float v = std::abs( vpg( i, i ) );
-    if ( v < vmin )
-    {
-      vmin = v;
-      imin = i;
-    }
-  }
-
-  svd( mA - vpg( imin, imin ) * mO, u, v, s );
-
-  for( std::size_t i = 0; i < s.size1(); ++i )
-  {
-    BOOST_ASSERT( s( i, i ) >= 0.f );
-    s( i, i ) = std::sqrt( s( i, i ) );
-  }
-
-  Eigen::Matrix3f mU = prec_prod( u, s );
-
-  column( mHomography, 0 ) = column( mU, 0 );
-  column( mHomography, 1 ) = column( mU, 1 );
-  column( mHomography, 2 ) = cross( column( mU, 0 ), column( mU, 1 ) );
-  
-  // The circular points have been computed.
-  // The following ensures that the back projection is at the origin (through a translation)
-  // and the the back projected outer ellipse is of unit radius.
-  
-  // Translation part
-  Eigen::Matrix3f mInvHomography;
-  invert( mHomography, mInvHomography );
-  
-  // Back projection of the image center
-  Point2d<Eigen::Vector3f> backProjCenter = prec_prod< BoundedVector3d >( mInvHomography, center );
-  Eigen::Matrix3f mTranslation; // todo Initialize with eye(3).
-  mTranslation( 0, 0 ) = 1.f;
-  mTranslation( 0, 1 ) = 0.f;
-  mTranslation( 0, 2 ) = backProjCenter.x();
-  mTranslation( 1, 0 ) = 0.f;
-  mTranslation( 1, 1 ) = 1.f;
-  mTranslation( 1, 2 ) = backProjCenter.y();
-  mTranslation( 2, 0 ) = 0.f;
-  mTranslation( 2, 1 ) = 0.f;
-  mTranslation( 2, 2 ) = 1.f;
-
-  mHomography = prec_prod( mHomography, mTranslation );
-  
-  // Scaling part
-  cctag::numerical::geometry::Ellipse backProjectedOuterEllipse(mEllipse);
-  cctag::viewGeometry::projectiveTransform( mHomography, backProjectedOuterEllipse );
-  // todo require to rebuild an Ellipse object, pass ellipse instead of matEllipse as argument.
-  
-  const float scale = ( backProjectedOuterEllipse.a() + backProjectedOuterEllipse.b() ) / 2.0;
-  //CCTAG_COUT_VAR(backProjectedOuterEllipse);
-
-  Eigen::Matrix3f mScale;
-  mScale( 0, 0 ) = scale; // todo Initialize with eye(3).
-  mScale( 0, 1 ) = 0.f;
-  mScale( 0, 2 ) = 0.f;
-  mScale( 1, 0 ) = 0.f;
-  mScale( 1, 1 ) = scale;
-  mScale( 1, 2 ) = 0.f;
-  mScale( 2, 0 ) = 0.f;
-  mScale( 2, 1 ) = 0.f;
-  mScale( 2, 2 ) = 1.f;
-
-  mHomography = prec_prod( mHomography, mScale );
-  backProjectedOuterEllipse = cctag::numerical::geometry::Ellipse(mEllipse);
-  cctag::viewGeometry::projectiveTransform( mHomography, backProjectedOuterEllipse );
-  //CCTAG_COUT_VAR2(backProjectedOuterEllipse.a(), backProjectedOuterEllipse.b());
-  //CCTAG_COUT_VAR(backProjectedOuterEllipse);
-  
-  // Normalize
-  mHomography = mHomography/mHomography(2,2);
-}
-#endif
-
-
-/**
- * @brief Compute an homography (up to a 2D rotation) based on its imaged origin [0,0,1]'
  * and its imaged unit circle (represented as an ellipse, assuming only quasi-affine transformation.
  *
  * @param[in] mEllipse ellipse matrix, projection of the unit circle
@@ -1153,12 +1039,11 @@ bool imageCenterOptimizationGlob(
         const cctag::numerical::geometry::Ellipse& outerEllipse,
         const cctag::Parameters params )
 {
-    cctag::Point2d<Eigen::Vector3f>             optimalPoint;
+    cctag::Point2d<Eigen::Vector3f> optimalPoint;
     Eigen::Matrix3f optimalHomography;
-    bool                                hasASolution = false;
+    bool hasASolution = false;
 
     using namespace cctag::numerical;
-    using namespace boost::numeric::ublas;
 
     const size_t gridNSample   = params._imagedCenterNGridSample;
   
@@ -1261,9 +1146,9 @@ void getNearbyPoints(
   if ( neighborType == GRID )
   {
     const float gridWidth = neighbourSize;
-    const float halfWidth = gridWidth/2.0;
+    const float halfWidth = gridWidth/2.f;
     const float stepSize = gridWidth/(gridNSample-1);
-    
+ 
     nearbyPoints.reserve(gridNSample*gridNSample);
 
     for(int i=0 ; i < gridNSample ; ++i)
@@ -1781,56 +1666,6 @@ void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use
   }
 }
 #endif // NAIVE_SELECTCUT
-
-#if 0
-void centerScaleRotateHomography(
-        Eigen::Matrix3f & mHomography,
-	const cctag::Point2d<Eigen::Vector3f> & center,
-	const cctag::DirectedPoint2d<Eigen::Vector3f> & point)
-{
-  using namespace cctag::numerical;
-  using namespace boost::numeric::ublas;
-
-  Eigen::Matrix3f mInvHomography = mHomography.inverse();
-  
-  // Back projection of the image center
-  Point2d<Eigen::Vector3f> backProjCenter(mInvHomography*center);
-  {
-    Eigen::Matrix3f mTranslation;
-    mTranslation( 0, 0 ) = 1.f;
-    mTranslation( 0, 1 ) = 0.f;
-    mTranslation( 0, 2 ) = backProjCenter.x();
-    mTranslation( 1, 0 ) = 0.f;
-    mTranslation( 1, 1 ) = 1.f;
-    mTranslation( 1, 2 ) = backProjCenter.y();
-    mTranslation( 2, 0 ) = 0.f;
-    mTranslation( 2, 1 ) = 0.f;
-    mTranslation( 2, 2 ) = 1.f;
-
-    mHomography = mHomography*mTranslation;
-    mInvHomography = mHomography.inverse();
-  }
-
-  // New back projection
-  backProjCenter = Point2d<Eigen::Vector3f>(mInvHomography*Point2d<Eigen::Vector3f>(point.x(), point.y()));
-  const float scale = backProjCenter.head(2).norm();
-  Eigen::Vector3f rescaledBackProjCenter  = backProjCenter/scale;
-  {
-    Eigen::Matrix3f mScaleRotation;
-    mScaleRotation( 0, 0 ) = scale*rescaledBackProjCenter(0);
-    mScaleRotation( 0, 1 ) = -scale*rescaledBackProjCenter(1);
-    mScaleRotation( 0, 2 ) = 0.f;
-    mScaleRotation( 1, 0 ) = scale*rescaledBackProjCenter(1);
-    mScaleRotation( 1, 1 ) = scale*rescaledBackProjCenter(0);
-    mScaleRotation( 1, 2 ) = 0.f;
-    mScaleRotation( 2, 0 ) = 0.f;
-    mScaleRotation( 2, 1 ) = 0.f;
-    mScaleRotation( 2, 2 ) = 1.f;
-
-    mHomography = mHomography*mScaleRotation;
-  }
-}
-#endif
 
 /* depreciated */
 bool orazioDistance( IdSet& idSet, const RadiusRatioBank & rrBank,
