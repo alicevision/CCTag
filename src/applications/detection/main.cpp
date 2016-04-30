@@ -78,7 +78,7 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     CCTagVisualDebug::instance().clearSessions();
 
     CCTAG_COUT( markers.size() << " markers.");
-    CCTAG_COUT("Total time: " << t.elapsed());
+    std::cout << "Total time: " << t.elapsed() << std::endl;
     CCTAG_COUT_NOENDL("Id : ");
 
     int i = 0;
