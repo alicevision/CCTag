@@ -26,6 +26,7 @@
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include <array>
 #include <algorithm>
 #include <cmath>
 #include <ostream>
@@ -459,12 +460,12 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             }
 
             std::size_t counter = 0;
-            std::vector<int> perm(5);
+            std::array<int, 5> perm;
             while (counter < 70)
             {
                 // Random subset of 5 points from pts
                 //const std::vector<int> perm = cctag::numerical::randperm< std::vector<int> >(pts.size());
-                cctag::numerical::rand_n_k(perm, 5, pts.size());
+                cctag::numerical::rand_5_k(perm, pts.size());
                 Eigen::MatrixXf A(5,5);
                 A.fill(0.f);
                 Eigen::VectorXf b(5);
@@ -619,23 +620,23 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
         float S1m, S2m;
 
-        std::vector<int> permutations(5);
+        std::array<int, 5> permutations;
         std::vector<cctag::Point2d<Eigen::Vector3f> > points;
         points.reserve(5);
         while (cnt < 100)
         {
             points.clear(); // Capacity is kept, but the elements are all erased
             // Random subset of 5 points from pts
-            cctag::numerical::rand_n_k(permutations, 5, outerEllipsePoints.size());
+            cctag::numerical::rand_5_k(permutations, outerEllipsePoints.size());
             
-            std::vector<int>::const_iterator it = permutations.begin();
+            auto it = permutations.begin();
             for (size_t i = 0; i < 4; ++i) {
                 points.push_back(Point2d<Eigen::Vector3f>(float(pts[*it](0)), float(pts[*it](1))));
                 ++it;
             }
 
             //const std::vector<int> anotherPerm = cctag::numerical::randperm< std::vector<int> >(anotherOuterEllipsePoints.size());
-            cctag::numerical::rand_n_k(permutations, 5, anotherOuterEllipsePoints.size());
+            cctag::numerical::rand_5_k(permutations, anotherOuterEllipsePoints.size());
 
             it = permutations.begin();
             for (size_t i = 0; i < 4; ++i) {

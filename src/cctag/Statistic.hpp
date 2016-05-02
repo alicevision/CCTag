@@ -11,6 +11,7 @@
 #include <set>
 #include <algorithm>
 #include <cassert>
+#include <array>
 
 namespace cctag {
 namespace numerical {
@@ -44,6 +45,7 @@ V randperm( const std::size_t n )
 
 // Draw N unique values in the range of 0 .. (K-1)
 // and copy them in the container
+#if 0
 template <typename Container>
 void rand_n_k(Container &container, size_t N, size_t K)
 {
@@ -62,7 +64,9 @@ void rand_n_k(Container &container, size_t N, size_t K)
     // use random_shuffle
     copy(values.begin(), values.end(), container.begin());
 }
+#endif
 
+void rand_5_k(std::array<int, 5>& perm, size_t N);
 
 // median(X) is the median value of the elements in X.
 float median( std::vector<float>& v );
