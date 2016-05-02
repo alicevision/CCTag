@@ -1,6 +1,6 @@
 #ifndef _CCTAG_NUMERICAL_SVD_HPP_
 #define	_CCTAG_NUMERICAL_SVD_HPP_
-
+#if 0
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/banded.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
@@ -46,5 +46,5 @@ void svds( const MatA & a, MatU & u, MatV & v, MatS & s, const std::size_t k );
 }
 
 #include "Svd.tcc"
-
+#endif  // #if 0
 #endif

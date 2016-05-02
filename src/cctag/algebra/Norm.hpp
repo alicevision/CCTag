@@ -1,6 +1,6 @@
 #ifndef _CCTAG_NUMERICAL_NORM_HPP_
 #define	_CCTAG_NUMERICAL_NORM_HPP_
-
+#if 0
 #include <cctag/algebra/Svd.hpp>
 
 namespace cctag {
@@ -35,5 +35,5 @@ namespace numerical {
 }
 }
 
-
+#endif  //# if 0
 #endif

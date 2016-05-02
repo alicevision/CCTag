@@ -1,3 +1,4 @@
+#if 0
 #include "Statistic.hpp"
 
 #include <cstdlib>
@@ -7,3 +8,4 @@ namespace numerical {
 
 }
 }
+#endif

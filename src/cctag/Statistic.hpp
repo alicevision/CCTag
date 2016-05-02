@@ -1,9 +1,6 @@
 #ifndef _CCTAG_STATISTIC_HPP_
 #define _CCTAG_STATISTIC_HPP_
 
-#include <boost/numeric/ublas/fwd.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/units/cmath.hpp>
 #include <boost/swap.hpp>
 
@@ -17,8 +14,6 @@
 
 namespace cctag {
 namespace numerical {
-
-namespace ublas = boost::numeric::ublas;
 
 /**
  * Compute a random permutation of the integers from 1 to n
@@ -72,6 +67,7 @@ void rand_n_k(Container &container, size_t N, size_t K)
 // median(X) is the median value of the elements in X.
 float median( std::vector<float>& v );
 
+#if 0
 // Compute the mean of a vector of bounded_vector<float,3>* considered as Point2dN (i.e. of size 2)
 template<class V>
 ublas::bounded_vector<float, 3> mean( const V& v )
@@ -122,6 +118,7 @@ ublas::bounded_vector<float, 3> stdDev( const V& v, const ublas::bounded_vector<
 
 	return var;
 }
+#endif
 
 template<class V>
 inline float median( V v )

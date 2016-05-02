@@ -1,5 +1,3 @@
-#define BOOST_UBLAS_TYPE_CHECK 0
-
 #include <cctag/Bresenham.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/Types.hpp>
@@ -16,7 +14,6 @@
 #include <cctag/utils/VisualDebug.hpp>
 
 #include <boost/foreach.hpp>
-#include <boost/numeric/ublas/vector_expression.hpp>
 #include <boost/format/format_implementation.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -24,10 +21,6 @@
 #include <boost/mpl/bool.hpp>
 #include <boost/multi_array/multi_array_ref.hpp>
 #include <boost/multi_array/subarray.hpp>
-#include <boost/numeric/ublas/functional.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_expression.hpp>
-#include <boost/numeric/ublas/vector.hpp>
 #include <boost/container/flat_set.hpp>
 
 #include <boost/timer.hpp>
@@ -409,7 +402,6 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             std::size_t weightedType,
             const std::size_t maxSize)
     {
-      using namespace boost::numeric::ublas;
         // function [Qm, Sm, pts_in, param_in,flag,i_inliers] = outlierRemoval(pts,debug)
         // outLierRemoval compute from a set of points pts the best ellipse which fits
         // a subset of pts i.e. with Sm minimal
@@ -594,9 +586,6 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
             std::size_t numCircles,
             float thrMedianDistanceEllipse)
     {
-
-        using namespace boost::numeric::ublas;
-
         const std::vector<EdgePoint*> & anotherOuterEllipsePoints = anotherCandidate._outerEllipsePoints;
 
         numerical::geometry::Ellipse qm;

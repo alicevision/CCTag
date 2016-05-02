@@ -1,3 +1,4 @@
+#if 0
 #ifndef _CCTAG_CVMAT_HPP
 #define	_CCTAG_CVMAT_HPP
 #if 0
@@ -432,3 +433,4 @@ inline std::ostream& operator<<( std::ostream& os, const cctag::boostCv::CvMatCo
 
 #endif
 #endif
+#endif  // #if 0

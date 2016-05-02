@@ -1,9 +1,5 @@
 #include <cctag/Identification.hpp>
 #include <cctag/ImageCut.hpp>
-#include <cctag/algebra/Invert.hpp>
-#include <cctag/algebra/matrix/Matrix.hpp>
-#include <cctag/algebra/Svd.hpp>
-#include <cctag/algebra/matrix/Operation.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/geometry/2DTransform.hpp>
 
@@ -30,15 +26,6 @@
 #include <boost/accumulators/statistics/median.hpp>
 #include <boost/accumulators/statistics/variance.hpp>
 #include <boost/assert.hpp>
-#include <boost/numeric/ublas/banded.hpp>
-#include <boost/numeric/ublas/expression_types.hpp>
-#include <boost/numeric/ublas/functional.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_expression.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/storage.hpp>
-#include <boost/numeric/ublas/vector_expression.hpp>
-#include <boost/numeric/ublas/vector_proxy.hpp>
 
 #include <cmath>
 #include <vector>
@@ -92,7 +79,7 @@ bool orazioDistanceRobust(
 
       // imgSig contains the rectified 1D signal.
       //boost::numeric::ublas::vector<float> imgSig( cuts.front().imgSignal().size() );
-      const boost::numeric::ublas::vector<float> & imgSig = cut.imgSignal();
+      const std::vector<float> & imgSig = cut.imgSignal();
 
       // compute some statitics
       accumulator_set< float, features< /*tag::median,*/ tag::variance > > acc;
@@ -220,7 +207,7 @@ void createRectifiedCutImage(const std::vector<ImageCut> & vCuts, cv::Mat & outp
     const ImageCut & cut = vCuts[i];
     for(int j=0 ; j < cut.imgSignal().size() ; ++j)
     {
-      output.at<uchar>(i,j) = (uchar) cut.imgSignal()(j);
+      output.at<uchar>(i,j) = (uchar) cut.imgSignal()[j];
     }
   }
 }
@@ -241,7 +228,6 @@ void extractSignalUsingHomography(
         const Eigen::Matrix3f & mInvHomography)
 {
   using namespace boost;
-  using namespace boost::numeric::ublas;
   using namespace cctag::numerical;
   
   float xStart, xStop, yStart, yStop;
@@ -290,7 +276,7 @@ void extractSignalUsingHomography(
          yRes >= 1.f && yRes <= src.rows-1 )
     {
       // Bilinear interpolation
-      cut.imgSignal()(i) = getPixelBilinear( src, xRes, yRes);
+      cut.imgSignal()[i] = getPixelBilinear( src, xRes, yRes);
     }
     else
     {
@@ -313,7 +299,6 @@ void extractSignalUsingHomographyDeprec(
         const float end)
 {
   using namespace boost;
-  using namespace boost::numeric::ublas;
   using namespace cctag::numerical;
 
   BOOST_ASSERT( rectifiedCut.imgSignal().size() == 0 );
@@ -339,7 +324,7 @@ void extractSignalUsingHomographyDeprec(
          hp.y() >= 1.f && hp.y() <= src.rows-1 )
     {
       // Bilinear interpolation
-      rectifiedCut.imgSignal()(i) = getPixelBilinear( src, hp.x(), hp.y());
+      rectifiedCut.imgSignal()[i] = getPixelBilinear( src, hp.x(), hp.y());
     }
     else
     {
@@ -421,7 +406,7 @@ void cutInterpolated(
     {
       //CCTAG_COUT_VAR2(x,y);
       // put pixel value to rectified signal
-      cut.imgSignal()(i) = float(getPixelBilinear( src, x, y));
+      cut.imgSignal()[i] = float(getPixelBilinear( src, x, y));
     }
     else
     {
@@ -488,11 +473,10 @@ void collectCuts(
 float costSelectCutFun(
         const std::vector<float> & varCuts,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
-        const boost::numeric::ublas::vector<std::size_t> & randomIdx,
+        const std::vector<std::size_t> & randomIdx,
         const float alpha)
 {
   using namespace cctag::numerical;
-  namespace ublas = boost::numeric::ublas;
   
   Eigen::Vector2f sumDeriv = Eigen::Vector2f::Zero();
   float sumVar = 0;
@@ -668,7 +652,6 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
   using namespace boost::numeric;
   using namespace boost::accumulators;
   using namespace cctag::numerical;
-  namespace ublas = boost::numeric::ublas;
 
   selectSize = std::min( selectSize, collectedCuts.size() );
 
@@ -772,7 +755,6 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
   using namespace boost::numeric;
   using namespace boost::accumulators;
   using namespace cctag::numerical;
-  namespace ublas = boost::numeric::ublas;
 
   selectSize = std::min( selectSize, collectedCuts.size() );
 
@@ -848,7 +830,6 @@ void computeHomographyFromEllipseAndImagedCenter(
         Eigen::Matrix3f & mHomography)
  {
     using namespace cctag::numerical;
-    using namespace boost::numeric::ublas;
 
     Eigen::Matrix3f mCanonic(3,3);
     Eigen::Matrix3f mTCan(3,3);
@@ -929,7 +910,6 @@ bool refineConicFamilyGlob(
         popart::NearbyPoint* cctag_pointer_buffer )
 {
     using namespace cctag::numerical;
-    using namespace boost::numeric::ublas;
 
     // Visual debug
     CCTagVisualDebug::instance().newSession( "refineConicPts" );
@@ -1196,7 +1176,11 @@ float costFunctionGlob(
     {
       if ( !vCuts[i].outOfBounds() && !vCuts[j].outOfBounds() )
       {
-        res += std::pow( norm_2( vCuts[i].imgSignal() - vCuts[j].imgSignal() ), 2 );
+        const auto& is = vCuts[i].imgSignal(), js = vCuts[j].imgSignal();
+        assert(is.size() == js.size());
+        for (size_t ii = 0; ii < js.size(); ++ii)
+          res += std::pow(is[ii] - js[ii], 2);
+        //res += std::pow( norm_2( vCuts[i].imgSignal() - vCuts[j].imgSignal() ), 2 );
         // i.e.
         // += (signalCutI(0)-signalCutJ(0))*(signalCutI(0)-signalCutJ(0)) + ... + (signalCutI(end)-signalCutJ(end))*(signalCutI(end)-signalCutJ(end)) // GPU
         ++resSize;
@@ -1560,7 +1544,6 @@ int identify_step_2(
       // Push all the ellipses based on the obtained homography.
       try
       {
-        using namespace boost::numeric::ublas;
 
         Eigen::Matrix3f mInvH = cctag.homography().inverse();
         std::vector<cctag::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
@@ -1688,17 +1671,17 @@ bool orazioDistance( IdSet& idSet, const RadiusRatioBank & rrBank,
     return false;
   }
   // isig contains 1D signal on line.
-  boost::numeric::ublas::vector<float> isig( cuts.front().imgSignal().size() );
+  std::vector<float> isig( cuts.front().imgSignal().size() );
   BOOST_ASSERT( isig.size() - startOffset > 0 );
 
   // Sum all cuts to isig
   for( std::size_t i = 0; i < isig.size(); ++i )
   {
-    float& isigCurrent = isig(i);
+    float& isigCurrent = isig[i];
     isigCurrent = 0.f;
     BOOST_FOREACH( const cctag::ImageCut & cut, cuts )
     {
-      isigCurrent += cut.imgSignal()( i );
+      isigCurrent += cut.imgSignal()[i];
     }
   }
 
@@ -1712,7 +1695,8 @@ bool orazioDistance( IdSet& idSet, const RadiusRatioBank & rrBank,
   //CCTAG_TCOUT_VAR(boost::numeric::ublas::subrange(isig,startOffset, isig.size()));
 
   //const float mSig = boost::accumulators::median( acc );
-  const float mSig = computeMedian( boost::numeric::ublas::subrange(isig,startOffset, isig.size()) );
+  std::vector<float> subrange(isig.begin()+startOffset, isig.end()); // TODO@lilian: copying
+  const float mSig = computeMedian(subrange);
 
   //CCTAG_TCOUT("Median of the signal : " << mSig);
 

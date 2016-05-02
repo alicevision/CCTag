@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/algebra/matrix/Operation.hpp>
 #include <boost/foreach.hpp>
 #include <Eigen/Core>
 

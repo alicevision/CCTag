@@ -117,11 +117,11 @@ ENDIF(USE_CUDA)
 
 
 # FIND UBLAS
-find_package(UBlas REQUIRED)
-include_directories(${UBlas_INCLUDE_DIRS})
+#find_package(UBlas REQUIRED)
+#include_directories(${UBlas_INCLUDE_DIRS})
 # link_directories(${UBlas_LIB_DIR})
-add_definitions(${UBlas_DEFINITIONS})
-add_definitions(-DBOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR)
+#add_definitions(${UBlas_DEFINITIONS})
+#add_definitions(-DBOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR)
 
 # FIND OPENCV
 list(APPEND CMAKE_MODULE_PATH "${OpenCV_DIR}")
@@ -131,12 +131,12 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_definitions(${OpenCV_DEFINITIONS})
 
 # FIND OPTPP
-find_package(OPTPP)
-if(OPTPP_FOUND)
-  include_directories(${OPTPP_INCLUDE_DIRS})
+#find_package(OPTPP)
+#if(OPTPP_FOUND)
+#  include_directories(${OPTPP_INCLUDE_DIRS})
   # link_directories(${OPTPP_LIB_DIR})
-  add_definitions(-D${OPTPP_DEFINITIONS})
-endif()
+#  add_definitions(-D${OPTPP_DEFINITIONS})
+#endif()
 
 # FIND CERES
 find_package(Ceres REQUIRED)
@@ -151,7 +151,7 @@ include_directories(${Eigen_INCLUDE_DIR})
 add_definitions(${Eigen_DEFINITIONS})
 
 # FIND LAPACK
-find_package(LAPACK REQUIRED)
+#find_package(LAPACK REQUIRED)
 
 # FIND PNG
 find_package(PNG REQUIRED)

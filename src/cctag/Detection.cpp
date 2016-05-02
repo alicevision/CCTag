@@ -759,7 +759,6 @@ void cctagDetection(CCTag::List& markers,
 
 {
     using namespace cctag;
-    using namespace boost::numeric::ublas;
     
     const Parameters& params = Parameters::OverrideLoaded ?
       Parameters::Override : providedParams;

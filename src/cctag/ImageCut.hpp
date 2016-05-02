@@ -4,8 +4,6 @@
 #include <cctag/geometry/Point.hpp>
 #include <cctag/Params.hpp>
 
-#include <boost/numeric/ublas/vector.hpp>
-
 namespace cctag {
 
 class ImageCut
@@ -49,8 +47,8 @@ public:
   const DirectedPoint2d<Eigen::Vector3f> & stop() const { return _stop; }
   DirectedPoint2d<Eigen::Vector3f> & stop() { return _stop; }
   
-  const boost::numeric::ublas::vector<float> & imgSignal() const { return _imgSignal; }
-  boost::numeric::ublas::vector<float> & imgSignal() { return _imgSignal; }
+  const std::vector<float> & imgSignal() const { return _imgSignal; }
+  std::vector<float> & imgSignal() { return _imgSignal; }
   
   float beginSig() const { return _beginSig; }
   
@@ -75,7 +73,7 @@ private:
   /** 1D rectified image signal along the segment [_start,_stop]
    * @note For the GPU case, this information never exists on the CPU
    */
-  boost::numeric::ublas::vector<float> _imgSignal; //< image signal
+  std::vector<float> _imgSignal; //< image signal
   
   // False by default. This boolean reveals if any of the points lying on the segment
   // [_start, _stop] are outside of the image

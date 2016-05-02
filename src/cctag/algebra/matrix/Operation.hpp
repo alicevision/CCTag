@@ -1,17 +1,16 @@
 #ifndef _CCTAG_NUMERICAL_ALGEBRA_OPERATION_HPP_
 #define	_CCTAG_NUMERICAL_ALGEBRA_OPERATION_HPP_
 
-#include "Matrix.hpp"
-#include "../Determinant.hpp"
-#include "../../utils/Exceptions.hpp"
-
 #include <Eigen/Core>
-
 #include <cmath>
+#include "../../utils/Exceptions.hpp"
 
 namespace cctag {
 namespace numerical {
 
+Eigen::Matrix3f& normalizeDet1( Eigen::Matrix3f& m );
+
+#if 0
 template<class Matrix>
 typename Matrix::value_type trace(const Matrix& m)
 {
@@ -25,7 +24,6 @@ typename Matrix::value_type trace(const Matrix& m)
     return tr;
 }
 
-Eigen::Matrix3f& normalizeDet1( Eigen::Matrix3f& m );
 
 template<class M>
 M& matSqrt( M& S )
@@ -78,7 +76,7 @@ inline V normalize(const V & v)
 	ret( 2 ) = 1.f;
 	return ret;
 }
-
+#endif
 }
 }
 

@@ -32,16 +32,10 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <boost/numeric/bindings/lapack/syev.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_expression.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/Fitting.hpp>
 #include <cctag/utils/Defines.hpp>
-#include <cctag/algebra/Invert.hpp>
-#include <cctag/algebra/Norm.hpp>
-#include <cctag/algebra/matrix/Matrix.hpp>
-#include <cctag/algebra/matrix/Operation.hpp>
+#include <Eigen/SVD>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>
@@ -285,6 +279,7 @@ static void get_equations( float *pts, float *grad, int pts_size, float *vgg,
 /*----------------------------------------------------------------------------*/
 /** Solve linear system of equations.
  */
+#if 0
 static void fit_ellipse( float *eq, float *vgg, int pts_size, float *param )
 {
   int i,j,k;
@@ -359,7 +354,6 @@ static void fit_ellipse( float *eq, float *vgg, int pts_size, float *param )
   ellipse2param(C,param);
 }
 
-
 /*----------------------------------------------------------------------------*/
 /** Algebraic ellipse fitting using positional and tangential constraints.
     pts = [x_0, y_0, x_1, y_1, ...];
@@ -425,6 +419,7 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
 
 	ellipse = cctag::numerical::geometry::Ellipse(Point2d<Eigen::Vector3f>(param[0],param[1]), param[2], param[3], param[4]);
 }
+#endif
 
         float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, float thrCosDiffMax, Point2d<Eigen::Vector3i> & p1, Point2d<Eigen::Vector3i> & p2) {
             using namespace boost::numeric;
@@ -584,7 +579,7 @@ void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cct
             
             std::size_t nPoints = points.size();
 
-            ublas::matrix<float, ublas::column_major> A(nPoints, 4);
+            Eigen::MatrixXf A(nPoints, 4);
 
             // utiliser la même matrice à chaque fois et rajouter les données.
             // Initialiser la matrice a l'exterieur et remplir ici puis inverser, idem
@@ -596,14 +591,9 @@ void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cct
                 A(i, 2) = 1;
                 A(i, 3) = points[i]->x() * points[i]->x() + points[i]->y() * points[i]->y();
             }
-
-
-            ublas::matrix<float> U;
-            ublas::matrix<float> V;
-            ublas::diagonal_matrix<float> S;
-
-            cctag::numerical::svd(A, U, V, S);
-
+            
+            Eigen::JacobiSVD<Eigen::MatrixXf> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+            auto V = svd.matrixV();
 
             //CCTAG_COUT_VAR(A);
             //CCTAG_COUT_VAR(U);

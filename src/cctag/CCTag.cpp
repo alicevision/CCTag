@@ -19,12 +19,6 @@
 #include <boost/timer.hpp>
 #include <boost/array.hpp>
 #include <boost/mpl/bool.hpp>
-#include <boost/numeric/ublas/expression_types.hpp>
-#include <boost/numeric/ublas/functional.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_expression.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_expression.hpp>
 
 #include <cstddef>
 #include <cmath>
@@ -33,7 +27,6 @@
 namespace cctag
 {
 
-namespace ublas = boost::numeric::ublas;
 namespace optimization = cctag::numerical::optimization;
 
 // todo@Lilian : used in the initRadiusRatio called in the CCTag constructor. Need to be changed while reading the CCTagBank build from the textFile.

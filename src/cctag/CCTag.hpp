@@ -6,7 +6,6 @@
 #include <cctag/Candidate.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/Types.hpp>
@@ -18,7 +17,6 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/array.hpp>
 #include <boost/math/constants/constants.hpp>
-#include <boost/numeric/ublas/fwd.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/throw_exception.hpp>
@@ -37,8 +35,6 @@ namespace cctag
 {
 
 typedef std::vector< std::pair< MarkerID, float > > IdSet;
-
-namespace ublas = boost::numeric::ublas;
 
 class CCTag : public ICCTag
 {

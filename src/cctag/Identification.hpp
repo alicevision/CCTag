@@ -3,11 +3,8 @@
 #include <cctag/utils/VisualDebug.hpp>
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/ImageCut.hpp>
-#include <cctag/algebra/matrix/Operation.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Distance.hpp>
-#include <cctag/algebra/matrix/Matrix.hpp>
-#include <cctag/algebra/Invert.hpp>
 #include <cctag/Statistic.hpp>
 #include <cctag/boostCv/cvImage.hpp>
 
@@ -17,6 +14,7 @@
 #include <boost/foreach.hpp>
 #include <boost/gil/gil_all.hpp>
 #include <boost/gil/typedefs.hpp>
+#include <boost/accumulators/statistics/median.hpp>
 #include <boost/foreach.hpp>
 #include <boost/math/special_functions/pow.hpp>
 #include <boost/gil/extension/io/jpeg_io.hpp>
@@ -230,7 +228,7 @@ inline float getPixelBilinear(const cv::Mat & src, float x, float y)
 float costSelectCutFun(
         const std::vector<float> & varCuts,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
-        const boost::numeric::ublas::vector<std::size_t> & randomIdx,
+        const std::vector<std::size_t> & randomIdx,
         const float alpha = 10 );
 
 /**
@@ -392,6 +390,7 @@ float costFunctionGlob(
  * 
  * @param[vec] vec vector of scalar values
  * @return its associated median
+ * @todo PERFORMANCE! take a pair of iterators, will avoid copying at the call site.
  */
 template<typename VecT>
 typename VecT::value_type computeMedian( const VecT& vec )
@@ -457,7 +456,6 @@ inline cctag::Point2d<Eigen::Vector3f> getHPoint(
         const Eigen::Matrix3f& mH )
 {
   using namespace cctag::numerical;
-  using namespace boost::numeric::ublas;
   Eigen::Vector3f vh;
   vh( 0 ) = xi; vh( 1 ) = yi; vh( 2 ) = 1.f;
 

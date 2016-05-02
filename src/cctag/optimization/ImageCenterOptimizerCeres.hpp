@@ -17,7 +17,6 @@
 
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
-#include <boost/numeric/ublas/vector.hpp>
 
 #include "Identification.hpp"
 

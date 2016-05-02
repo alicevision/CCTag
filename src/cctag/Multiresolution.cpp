@@ -15,7 +15,6 @@
 #include <cctag/Detection.hpp>
 #include <cctag/utils/Talk.hpp> // for DO_TALK macro
 
-#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
 #include <boost/gil/image_view_factory.hpp>

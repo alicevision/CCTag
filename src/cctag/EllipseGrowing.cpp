@@ -16,8 +16,6 @@
 #include <opencv2/core/types_c.h>
 
 #include <boost/math/special_functions/pow.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/functional.hpp>
 #include <boost/foreach.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/mpl/bool.hpp>
@@ -82,8 +80,6 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
         std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
         std::size_t numCircles)
 {
-  using namespace boost::numeric::ublas;
-
   //cctag::numerical::geometry::Ellipse innerBoundEllipse(outerEllipse.center(), outerEllipse.a()/8.0, outerEllipse.b()/8.0, outerEllipse.angle());
   cctagPoints.resize(numCircles);
 
@@ -349,7 +345,6 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
         const EdgePointsImage& img, numerical::geometry::Ellipse& qIn,
         numerical::geometry::Ellipse& qOut, int x, int y)
 {
-  using namespace boost::numeric::ublas;
   BOOST_ASSERT(img[x][y]);
   const size_t threadMask = (size_t)1 << runId;
   img[x][y]->_processed |= threadMask;  // Set as processed

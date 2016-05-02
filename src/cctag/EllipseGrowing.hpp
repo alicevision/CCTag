@@ -6,11 +6,6 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Distance.hpp>
 
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_expression.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_expression.hpp>
-
 #include <cstddef>
 #include <vector>
 
@@ -23,7 +18,6 @@ inline bool isInEllipse(
         const cctag::numerical::geometry::Ellipse& ellipse,
         const Point2d<Eigen::Vector3f> & p)
 {
-  using namespace boost::numeric::ublas;
   // x'Q x > 0
   auto s1 = p.dot(ellipse.matrix() * p);
   auto s2 = p.dot(ellipse.matrix() * ellipse.center());

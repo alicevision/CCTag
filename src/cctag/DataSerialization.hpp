@@ -4,7 +4,6 @@
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/CCTag.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/algebra/matrix/Matrix.hpp>
 
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/serialization.hpp>

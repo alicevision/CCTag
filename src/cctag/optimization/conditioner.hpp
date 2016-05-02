@@ -2,7 +2,6 @@
 #define _CCTAG_CONDITIONER_HPP_
 
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/Statistic.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
@@ -15,7 +14,7 @@ namespace cctag {
 namespace numerical {
 namespace optimization {
 
-
+#if 0
 template<class C>
 inline Eigen::Matrix3f conditionerFromPoints( const std::vector<C>& v )
 {
@@ -45,6 +44,7 @@ inline Eigen::Matrix3f conditionerFromPoints( const std::vector<C>& v )
 
 	return T;
 }
+#endif
 
 inline Eigen::Matrix3f conditionerFromEllipse( const cctag::numerical::geometry::Ellipse & ellipse )
 {
