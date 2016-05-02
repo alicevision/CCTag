@@ -459,7 +459,7 @@ void cctagDetectionFromEdges(
   CCTagVisualDebug::instance().initBackgroundImage(src);
   CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
   
-#pragma omp parallel for schedule(dynamic, 8)
+#pragma omp parallel for schedule(dynamic)
   for (size_t iCandidate = 0; iCandidate < nFlowComponentToProcessLoopTwo; ++iCandidate)
   {
     size_t runId = iCandidate;
@@ -488,7 +488,7 @@ void cctagDetectionFromEdges(
 
   const size_t candidateLoopTwoCount = vCandidateLoopTwo.size();
   
-#pragma omp parallel for schedule(dynamic, 8)
+#pragma omp parallel for schedule(dynamic)
   for (size_t iCandidate = 0; iCandidate < candidateLoopTwoCount; ++iCandidate)
   {
     const Candidate& candidate = vCandidateLoopTwo[iCandidate];
