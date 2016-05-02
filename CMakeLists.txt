@@ -139,10 +139,10 @@ add_definitions(${OpenCV_DEFINITIONS})
 #endif()
 
 # FIND CERES
-find_package(Ceres REQUIRED)
-include_directories(${Ceres_INCLUDE_DIR})
+#find_package(Ceres REQUIRED)
+#include_directories(${Ceres_INCLUDE_DIR})
 # link_directories(${Ceres_LIB_DIR}) this variable is not created by Cmake file
-add_definitions(${Ceres_DEFINITIONS})
+#add_definitions(${Ceres_DEFINITIONS})
 
 # FIND Eigen
 find_package(Eigen REQUIRED)
