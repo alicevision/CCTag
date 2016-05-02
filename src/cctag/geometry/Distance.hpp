@@ -23,7 +23,8 @@ inline float distancePoints2D( const T& p1, const U& p2 ) // TODO modifier les a
 template <class T>
 inline float distancePointEllipse(const T & p, const Eigen::Matrix3f& Q, const float f )
 {
-	Eigen::VectorXf aux( 6 );
+        using Vector6f = Eigen::Matrix<float, 6, 1>;
+	Vector6f aux( 6 );
 
         float x = p.x();
         float y = p.y();
@@ -39,7 +40,7 @@ inline float distancePointEllipse(const T & p, const Eigen::Matrix3f& Q, const f
 	float tmp2  = p( 0 ) * Q( 0, 1 ) + p( 1 ) * Q( 1, 1 ) + p( 2 ) * Q( 1, 2 );
 	float denom = tmp1 * tmp1 + tmp2 * tmp2;
 
-	Eigen::VectorXf qL(6);
+	Vector6f qL(6);
 	qL( 0 ) = Q( 0, 0 ) ; qL( 1 ) = Q( 0, 1 ) ; qL( 2 ) = Q( 0, 2 ) ;
 	qL( 3 ) = Q( 1, 1 ) ; qL( 4 ) = Q( 1, 2 ) ;
 	qL( 5 ) = Q( 2, 2 );
