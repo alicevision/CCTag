@@ -20,7 +20,8 @@
 #include "cctag/geometry/Ellipse.hpp"
 #include "cctag/geometry/Point.hpp"
 #include "cctag/algebra/matrix/Matrix.hpp"
-#include "cctag/utils/LogTime.hpp"
+
+namespace cctag { namespace logtime { struct Mgmt; } };
 
 namespace popart
 {

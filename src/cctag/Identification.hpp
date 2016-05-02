@@ -17,9 +17,6 @@
 #include <boost/foreach.hpp>
 #include <boost/gil/gil_all.hpp>
 #include <boost/gil/typedefs.hpp>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/variance.hpp>
-#include <boost/accumulators/statistics/median.hpp>
 #include <boost/foreach.hpp>
 #include <boost/math/special_functions/pow.hpp>
 #include <boost/gil/extension/io/jpeg_io.hpp>

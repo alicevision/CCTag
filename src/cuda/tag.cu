@@ -13,7 +13,6 @@
 #include "cuda/geom_ellipse.h"
 #include "cctag/algebra/matrix/Matrix.hpp"
 
-#include "cctag/utils/LogTime.hpp"
 #include "cuda/onoff.h"
 #include "cuda/tag_threads.h"
 #include "cuda/tag_cut.h"
