@@ -135,147 +135,144 @@ void completeFlowComponent(
 {
   try
   {
-    try
+    std::list<EdgePoint*> childrens;
+
+    childrensOf(candidate._convexEdgeSegment, childrens);
+
+    if (childrens.size() < params._minPointsSegmentCandidate)
     {
-      std::list<EdgePoint*> childrens;
+      return;
+    }
 
-      childrensOf(candidate._convexEdgeSegment, childrens);
+    candidate._score = childrens.size();
 
-      if (childrens.size() < params._minPointsSegmentCandidate)
+    float SmFinal = 1e+10;
+
+    std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
+
+    outlierRemoval(
+            childrens, 
+            filteredChildrens,
+            SmFinal, 
+            params._threshRobustEstimationOfOuterEllipse,
+            kWeight,
+            60);
+
+    // todo@lilian see the case in outlierRemoval
+    // where filteredChildrens.size()==0
+    if (filteredChildrens.size() < 5)
+    {
+      DO_TALK( CCTAG_COUT_DEBUG(" filteredChildrens.size() < 5 "); )
+      return;
+    }
+
+    std::size_t nLabel = -1;
+
+    {
+      ssize_t nSegmentCommon = -1; // std::size_t nSegmentCommon = -1;
+
+      BOOST_FOREACH(EdgePoint * p, filteredChildrens)
       {
-        return;
-      }
-
-      candidate._score = childrens.size();
-
-      float SmFinal = 1e+10;
-
-      std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
-
-      outlierRemoval(
-              childrens, 
-              filteredChildrens,
-              SmFinal, 
-              params._threshRobustEstimationOfOuterEllipse,
-              kWeight,
-              60);
-
-      // todo@lilian see the case in outlierRemoval
-      // where filteredChildrens.size()==0
-      if (filteredChildrens.size() < 5)
-      {
-        DO_TALK( CCTAG_COUT_DEBUG(" filteredChildrens.size() < 5 "); )
-        return;
-      }
-
-      std::size_t nLabel = -1;
-
-      {
-        ssize_t nSegmentCommon = -1; // std::size_t nSegmentCommon = -1;
-
-        BOOST_FOREACH(EdgePoint * p, filteredChildrens)
+        if (p->_nSegmentOut != -1)
         {
-          if (p->_nSegmentOut != -1)
-          {
-            nSegmentCommon = p->_nSegmentOut;
-            break;
-          }
+          nSegmentCommon = p->_nSegmentOut;
+          break;
         }
+      }
 
-        if (nSegmentCommon == -1)
-        {
+      if (nSegmentCommon == -1)
+      {
 #pragma omp critical (G3633564c0b9c11e69a77448a5b9a696f)
-          {
-            nLabel = nSegmentOut;
-            ++nSegmentOut;
-          }
-        }
-        else
         {
-          nLabel = nSegmentCommon;
-        }
-
-        BOOST_FOREACH(EdgePoint * p, filteredChildrens)
-        {
-          p->_nSegmentOut = nLabel;
+          nLabel = nSegmentOut;
+          ++nSegmentOut;
         }
       }
-
-      std::vector<EdgePoint*> & outerEllipsePoints = candidate._outerEllipsePoints;
-      cctag::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
-
-      bool goodInit = false;
-
-      goodInit = ellipseGrowingInit(points, filteredChildrens, outerEllipse);
-
-      ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
-                      params._ellipseGrowingEllipticHullWidth, runId, goodInit);
-       
-      candidate._nLabel = nLabel;
-
-      std::vector<float> vDistFinal;
-      vDistFinal.clear();
-      vDistFinal.reserve(outerEllipsePoints.size());
-
-      // Clean point (egdePoints*) to ellipse distance with inheritance 
-      // -- the current solution is dirty --
-      float distMax = 0;
-
-      BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
+      else
       {
-        float distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.f);
-        vDistFinal.push_back(distFinal);
-
-        if (distFinal > distMax)
-        {
-          distMax = distFinal;
-        }
+        nLabel = nSegmentCommon;
       }
 
-      // todo@Lilian : sort => need to be replace by nInf
-      SmFinal = numerical::medianRef(vDistFinal);
-
-      if (SmFinal > params._thrMedianDistanceEllipse)
+      BOOST_FOREACH(EdgePoint * p, filteredChildrens)
       {
-        DO_TALK( CCTAG_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing"); )
-        return;
+        p->_nSegmentOut = nLabel;
       }
+    }
 
-      float quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
-      if (quality > 1.1)
-      {
-        DO_TALK( CCTAG_COUT_DEBUG("Quality too high!"); )
-        return;
-      }
+    std::vector<EdgePoint*> & outerEllipsePoints = candidate._outerEllipsePoints;
+    cctag::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
 
-      float ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
-      if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20))
+    bool goodInit = false;
+
+    goodInit = ellipseGrowingInit(points, filteredChildrens, outerEllipse);
+
+    ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
+                    params._ellipseGrowingEllipticHullWidth, runId, goodInit);
+
+    candidate._nLabel = nLabel;
+
+    std::vector<float> vDistFinal;
+    vDistFinal.clear();
+    vDistFinal.reserve(outerEllipsePoints.size());
+
+    // Clean point (egdePoints*) to ellipse distance with inheritance 
+    // -- the current solution is dirty --
+    float distMax = 0;
+
+    BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
+    {
+      float distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.f);
+      vDistFinal.push_back(distFinal);
+
+      if (distFinal > distMax)
       {
-        DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
-        return;
+        distMax = distFinal;
       }
+    }
+
+    // todo@Lilian : sort => need to be replace by nInf
+    SmFinal = numerical::medianRef(vDistFinal);
+
+    if (SmFinal > params._thrMedianDistanceEllipse)
+    {
+      DO_TALK( CCTAG_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing"); )
+      return;
+    }
+
+    float quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
+    if (quality > 1.1)
+    {
+      DO_TALK( CCTAG_COUT_DEBUG("Quality too high!"); )
+      return;
+    }
+
+    float ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
+    if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20))
+    {
+      DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
+      return;
+    }
 
 #pragma omp critical (G3633564c0b9c11e69a77448a5b9a696f)
-      vCandidateLoopTwo.push_back(candidate);
+    vCandidateLoopTwo.push_back(candidate);
 
 #ifdef CCTAG_SERIALIZE
-      // Add childrens to output the filtering results (from outlierRemoval)
-      vCandidateLoopTwo.back().setChildrens(childrens);
+    // Add childrens to output the filtering results (from outlierRemoval)
+    vCandidateLoopTwo.back().setChildrens(childrens);
 
-      // Write all selectedFlowComponent
-      CCTagFlowComponent flowComponent(outerEllipsePoints, childrens, filteredChildrens,
-                                       outerEllipse, candidate._convexEdgeSegment,
-                                      *(candidate._seed), params._nCircles);
-      CCTagFileDebug::instance().outputFlowComponentInfos(flowComponent);
+    // Write all selectedFlowComponent
+    CCTagFlowComponent flowComponent(outerEllipsePoints, childrens, filteredChildrens,
+                                     outerEllipse, candidate._convexEdgeSegment,
+                                    *(candidate._seed), params._nCircles);
+    CCTagFileDebug::instance().outputFlowComponentInfos(flowComponent);
 #endif
 
-    }
-    catch (cv::Exception& e)
-    {
-      DO_TALK( CCTAG_COUT_DEBUG( "OpenCV exception" ); )
+  }
+  catch (cv::Exception& e)
+  {
+    DO_TALK( CCTAG_COUT_DEBUG( "OpenCV exception" ); )
 
-      const char* err_msg = e.what();
-    }
+    const char* err_msg = e.what();
   }
   catch (...)
   {
