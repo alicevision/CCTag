@@ -72,7 +72,7 @@ SET(CCTAG_LINK_LIBRARIES
     ${JPEG_LIBRARIES}
     ${Eigen_LIBRARIES}
     ${GLOG_LIBRARIES}
-    ${GSL_LIBRARIES}
+    #${GSL_LIBRARIES}
     ${LAPACK_LIBRARIES}
     pthread
     dl
