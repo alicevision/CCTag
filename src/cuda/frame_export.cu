@@ -56,7 +56,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
     out_edgemap.resize( boost::extents[ _d_plane.cols ][ _d_plane.rows ] );
     std::fill( out_edgemap.origin(), out_edgemap.origin() + out_edgemap.size(), (cctag::EdgePoint*)NULL );
 
-    out_edgelist.resize( all_sz );
+    out_edgelist.reserve( all_sz );
     // cctag::EdgePoint* array = new cctag::EdgePoint[ all_sz ];
 
     for( int i=0; i<all_sz; i++ ) {
@@ -64,8 +64,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
         const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
         const int16_t dy = _h_dy.ptr(pt.y)[pt.x];
 
-        out_edgelist[i].init( pt.x, pt.y, dx, dy );
-
+        out_edgelist.push_back(cctag::EdgePoint(pt.x, pt.y, dx, dy));
         out_edgemap[pt.x][pt.y] = &out_edgelist[i];
     }
 
