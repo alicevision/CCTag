@@ -66,15 +66,6 @@ public:
     _normGrad = std::sqrt( vdx * vdx + vdy * vdy );
   }
 
-  void init( const int vx, const int vy, const float vdx, const float vdy )
-  {
-    x() = vx;
-    y() = vy;
-    w() = 1;
-    _grad << vdx , vdy;
-    _normGrad = std::sqrt( vdx * vdx + vdy * vdy );
-  }
-
   Eigen::Vector2f gradient() const
   {
     return _grad;
