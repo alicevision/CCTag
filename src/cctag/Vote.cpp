@@ -459,7 +459,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
               ++iEdgePoint;
             }
             
-            Eigen::Matrix<float, 5, 2> A;
+            Eigen::Matrix<float, 5, 5> A;
             Eigen::Matrix<float, 5, 1> b, temp;
 
             std::size_t counter = 0;
