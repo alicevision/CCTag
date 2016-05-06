@@ -101,10 +101,13 @@ void constructFlowComponentFromSeed(
 
     // All flow components WILL BE next sorted based on this characteristic (scalar); descending order
 #if 1
+#pragma omp critical (Gc4371780136711e6bd27305a3a7ae691)
+    {
     candidate->_averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
     auto it = std::lower_bound(vCandidateLoopOne.begin(), vCandidateLoopOne.end(), candidate,
       [](const CandidatePtr& c1, const CandidatePtr& c2) { return c1->_averageReceivedVote > c2->_averageReceivedVote; });
     vCandidateLoopOne.insert(it, std::move(candidate));
+    }
 #else
     if (vCandidateLoopOne.size() > 0)
     {
@@ -436,6 +439,7 @@ void cctagDetectionFromEdges(
   // on the inner ellipse of a CCTag.
   // The edge points lying on the inner ellipse and their voters (lying on the outer ellipse
   // will be collected and constitute the initial data of a flow component.
+#pragma omp parallel for schedule(dynamic)
   for (int iSeed = 0; iSeed < nSeedsToProcess; ++iSeed)
   {
     assert( seeds[iSeed] );
