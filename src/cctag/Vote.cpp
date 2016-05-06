@@ -458,6 +458,9 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
               }
               ++iEdgePoint;
             }
+            
+            Eigen::Matrix<float, 5, 2> A;
+            Eigen::Matrix<float, 5, 1> b, temp;
 
             std::size_t counter = 0;
             std::array<int, 5> perm;
@@ -466,9 +469,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 // Random subset of 5 points from pts
                 //const std::vector<int> perm = cctag::numerical::randperm< std::vector<int> >(pts.size());
                 cctag::numerical::rand_5_k(perm, pts.size());
-                Eigen::MatrixXf A(5,5);
                 A.fill(0.f);
-                Eigen::VectorXf b(5);
 
                 // todo: use a closed-form solution instead of a gaussian pivot in invert
                 // The entire function could then be efficiently implemented on GPU
@@ -484,8 +485,6 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
                 
                 // If A is invertible
                 if (A.determinant() != 0.f) {
-                  
-                    Eigen::VectorXf temp(5);
                     // With PartialPivLU, A MUST be square and invertible. Speed: ++
                     temp = A.lu().solve(b);
 
