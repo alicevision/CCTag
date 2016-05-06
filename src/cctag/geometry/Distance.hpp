@@ -31,10 +31,10 @@ inline float distancePointEllipse(const T & p, const Eigen::Matrix3f& Q, const f
         
 	aux( 0 ) = x*x;
 	aux( 1 ) = 2 * x * y;
-	aux( 2 ) = 2* f* x;
+	aux( 2 ) = 2* x;
 	aux( 3 ) = y * y;
-	aux( 4 ) = 2* f* y;
-	aux( 5 ) = f * f;
+	aux( 4 ) = 2* y;
+	aux( 5 ) = 1;
 
 	float tmp1  = p( 0 ) * Q( 0, 0 ) + p( 1 ) * Q( 0, 1 ) + p( 2 ) * Q( 0, 2 );
 	float tmp2  = p( 0 ) * Q( 0, 1 ) + p( 1 ) * Q( 1, 1 ) + p( 2 ) * Q( 1, 2 );
@@ -58,10 +58,11 @@ inline float distancePointEllipse( const T & p, const geometry::Ellipse& q, cons
 //template<class T>
 inline void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q, const float f )
 {
-	dist.clear();
-	dist.reserve( pts.size() );
-        for (const auto& p : pts)
-          dist.push_back( distancePointEllipse( p, q, f ) );
+        const size_t n = pts.size();
+	dist.resize( n );
+#pragma omp parallel for schedule(dynamic)
+        for (size_t i = 0; i < n; ++i)
+          dist[i] = distancePointEllipse( pts[i], q, f );
 }
 
 }
