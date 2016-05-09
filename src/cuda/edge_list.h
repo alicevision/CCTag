@@ -290,8 +290,12 @@ public:
     __host__
     void init( cudaStream_t stream )
     {
+        static bool hostInited = false;
         dev .init( alloc_num, stream );
-        host.init( alloc_num );
+        if (!hostInited) {
+          hostInited = true;
+          host.init( alloc_num );
+        }
     }
 
     __host__
