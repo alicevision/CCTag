@@ -48,6 +48,8 @@
 #include <cuda_runtime.h> // only for debugging
 #endif // WITH_CUDA
 
+#include <tbb/tbb.h>
+
 using namespace std;
 
 namespace cctag
@@ -438,12 +440,10 @@ void cctagDetectionFromEdges(
   // on the inner ellipse of a CCTag.
   // The edge points lying on the inner ellipse and their voters (lying on the outer ellipse
   // will be collected and constitute the initial data of a flow component.
-#pragma omp parallel for schedule(dynamic)
-  for (int iSeed = 0; iSeed < nSeedsToProcess; ++iSeed)
-  {
+  tbb::parallel_for(size_t(0), nSeedsToProcess, [&](int iSeed) {
     assert( seeds[iSeed] );
     constructFlowComponentFromSeed(seeds[iSeed], edgesMap, vCandidateLoopOne, params);
-  }
+  });
 
   const std::size_t nFlowComponentToProcessLoopTwo = 
           std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
@@ -459,13 +459,11 @@ void cctagDetectionFromEdges(
   CCTagVisualDebug::instance().initBackgroundImage(src);
   CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
   
-#pragma omp parallel for schedule(dynamic)
-  for (size_t iCandidate = 0; iCandidate < nFlowComponentToProcessLoopTwo; ++iCandidate)
-  {
+  tbb::parallel_for(size_t(0), nFlowComponentToProcessLoopTwo, [&](size_t iCandidate) {
     size_t runId = iCandidate;
     completeFlowComponent(*vCandidateLoopOne[iCandidate], points, edgesMap, vCandidateLoopTwo, nSegmentOut, runId, params);
-  }
-
+  });
+  
   DO_TALK(
     CCTAG_COUT_VAR_DEBUG(vCandidateLoopTwo.size());
     CCTAG_COUT_DEBUG("================= List of seeds =================");
