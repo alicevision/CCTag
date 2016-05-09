@@ -79,7 +79,7 @@ SET(CCTAG_LINK_LIBRARIES
     ${Gomp_LIBRARIES} )
 
 target_link_libraries( CCTag PUBLIC ${CCTAG_LINK_LIBRARIES} )
-target_include_directories( CCTag PUBLIC .)
+target_include_directories( CCTag PUBLIC . ${TBB_INCLUDE_DIR})
 
 #############################################################################
 
@@ -95,19 +95,19 @@ if(USE_CUDA)
     set_source_files_properties(${CCTagDetect_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
     add_executable( detection ${CCTagDetect_cpp} )
     target_link_libraries(detection
-      CCTag CCTagCuda ${CUDA_LIBRARIES} ${OPTPP_LIBRARIES} ${Ceres_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
+      PUBLIC  CCTag CCTagCuda ${CUDA_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY} ${TBB_tbb_LIBRARY_RELEASE})
 
     add_executable(regression ${CCTagRegression_cpp})
     target_link_libraries(regression
-      CCTag CCTagCuda ${CUDA_LIBRARIES} ${OPTPP_LIBRARIES} ${Ceres_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
+      PUBLIC CCTag CCTagCuda ${CUDA_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY} ${TBB_tbb_LIBRARY_RELEASE})
 
     install(TARGETS CCTag CCTagCuda LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 else(USE_CUDA)
     ADD_EXECUTABLE(detection ${CCTagDetect_cpp})
-    target_link_libraries(detection CCTag ${OPTPP_LIBRARIES} ${Ceres_LIBRARIES})
+    target_link_libraries(detection PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
     add_executable(regression ${CCTagRegression_cpp})
-    target_link_libraries(regression CCTag ${OPTPP_LIBRARIES} ${Ceres_LIBRARIES})
+    target_link_libraries(regression PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
     install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 endif(USE_CUDA)

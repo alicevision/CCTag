@@ -79,12 +79,6 @@ if(Boost_FOUND)
   # link_directories(${Boost_LIB_DIR})
   add_definitions(${Boost_DEFINITIONS})
   message( STATUS "Found BOOST: ${Boost_LIBRARIES}" )
-
-  # FIND BoostNumericBindings
-  find_package(BoostNumericBindings REQUIRED)
-  include_directories(${BoostNumericBindings_INCLUDE_DIRS})
-  # link_directories(${BoostNumericBindings_LIB_DIR})
-  add_definitions(${BoostNumericBindings_DEFINITIONS})
 else(Boost_FOUND)
   message( FATAL_ERROR "Boost not found" )
 endif(Boost_FOUND)
@@ -163,13 +157,15 @@ find_package(JPEG REQUIRED)
 # find_package(Glog REQUIRED)
 
 # FIND GOMP
-find_package(Gomp REQUIRED)
+# find_package(Gomp REQUIRED)
 # griff: We don't have to find libgomp. Just pass the right flags to gcc
-find_package(OpenMP REQUIRED)
+# find_package(OpenMP REQUIRED)
 
 # FIND GSL
-find_package(GSL REQUIRED)
-link_directories(${GSL_LINK_DIRECTORIES})
+#find_package(GSL REQUIRED)
+#link_directories(${GSL_LINK_DIRECTORIES})
+
+find_package(TBB 4 REQUIRED)
 
 add_subdirectory(src)
 
