@@ -391,6 +391,199 @@ void flowComponentAssembling(
   const float spendTime = d.total_milliseconds();
 }
 
+static void cctagDetectionFromEdgesLoopTwoIteration(
+  CCTag::List& markers,
+  const std::vector<Candidate>& vCandidateLoopTwo,
+  size_t iCandidate,
+  int pyramidLevel,
+  float scale,
+  const Parameters& params)
+{
+    const Candidate& candidate = vCandidateLoopTwo[iCandidate];
+
+#ifdef CCTAG_SERIALIZE
+    CCTagFileDebug::instance().resetFlowComponent();
+    std::vector<Candidate> componentCandidates;
+#ifdef DEBUG
+    CCTagFileDebug::instance().resetFlowComponent();
+#endif
+#endif
+
+    // TODO@stian: remove copying
+    std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
+    cctag::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
+
+    std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > cctagPoints;
+
+    try
+    {
+      float quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
+
+      if (params._searchForAnotherSegment)
+      {
+        if ((quality > 0.25) && (quality < 0.7))
+        {
+          // Search for another segment
+          flowComponentAssembling( quality, candidate, vCandidateLoopTwo,
+                  outerEllipse, outerEllipsePoints, cctagPoints, params
+#ifndef CCTAG_SERIALIZE
+                  );
+#else
+                  , componentCandidates);
+#endif
+        }
+      }
+
+      // Add the flowComponent from candidate to cctagPoints // Add intermediary points - required ? todo@Lilian
+      // cctagPoints may be not empty, i.e. when the assembling succeed.
+      if (! addCandidateFlowtoCCTag(candidate._filteredChildrens, 
+              candidate._outerEllipsePoints, outerEllipse,
+              cctagPoints, params._nCrowns * 2))
+      {
+        DO_TALK( CCTAG_COUT_DEBUG("Points outside the outer ellipse OR CCTag not valid : bad gradient orientations"); )
+        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTSOUTSIDE_OR_BADGRADORIENT);
+        CCTagFileDebug::instance().incrementFlowComponentIndex(0);
+        return;
+      }
+      else
+      {
+#ifdef CCTAG_SERIALIZE
+        componentCandidates.push_back(candidate);
+#endif
+        DO_TALK( CCTAG_COUT_DEBUG("Points inside the outer ellipse and good gradient orientations"); )
+      }
+      // Create ellipse with its real size from original image.
+      cctag::numerical::geometry::Ellipse rescaleEllipse(outerEllipse.center(), outerEllipse.a() * scale, outerEllipse.b() * scale, outerEllipse.angle());
+      
+      int realPixelPerimeter = rasterizeEllipsePerimeter(rescaleEllipse);
+
+      float realSizeOuterEllipsePoints = quality*realPixelPerimeter;
+
+      // Naive reject condition todo@Lilian
+      if ( ( ( quality <= 0.35 ) && ( realSizeOuterEllipsePoints >= 300.0 ) ) ||//0.35
+               ( ( quality <= 0.45f ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||
+               ( ( quality <= 0.5f ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||
+               ( ( quality <= 0.5f ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||
+               ( ( quality <= 0.96f ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||
+               ( realSizeOuterEllipsePoints < 50.0  ) )
+      {
+              DO_TALK( CCTAG_COUT_DEBUG( "Not enough outer ellipse points: realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality ); )
+              return;
+      }
+
+      cctag::Point2d<Eigen::Vector3f> markerCenter;
+      Eigen::Matrix3f markerHomography = Eigen::Matrix3f::Zero();
+
+      const float ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
+
+      if (ratioSemiAxes > 8.0 || ratioSemiAxes < 0.125)
+      {
+        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RATIO_SEMIAXIS);
+        CCTagFileDebug::instance().incrementFlowComponentIndex(0);
+        DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
+        return;
+      }
+
+      // TODO@stian: remove allocation from loop iteration
+      std::vector<float> vDistFinal;
+      vDistFinal.clear();
+      vDistFinal.reserve(outerEllipsePoints.size());
+
+      float resSquare = 0;
+      float distMax = 0;
+
+      // TODO@stian: TBB parallel reduction
+      BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
+      {
+        float distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.f);
+        resSquare += distFinal; //*distFinal;
+
+        if (distFinal > distMax)
+        {
+          distMax = distFinal;
+        }
+      }
+
+      resSquare = sqrt(resSquare);
+      resSquare /= outerEllipsePoints.size();
+
+
+      numerical::geometry::Ellipse qIn, qOut;
+      computeHull(outerEllipse, 3.6, qIn, qOut);
+
+      bool isValid = true;
+
+      BOOST_FOREACH(const EdgePoint * p, outerEllipsePoints)
+      {
+        if (!isInHull(qIn, qOut, p))
+        {
+          isValid = false;
+          break;
+        }
+      }
+      if (!isValid)
+      {
+        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTS_OUTSIDE_ELLHULL);
+        CCTagFileDebug::instance().incrementFlowComponentIndex(0);
+
+        DO_TALK( CCTAG_COUT_DEBUG("Distance max to high!"); )
+        return;
+      }
+
+      std::vector< Point2d<Eigen::Vector3i> > vPoint;
+
+      float quality2 = 0;
+
+      BOOST_FOREACH(const EdgePoint* p, outerEllipsePoints)
+      {
+        quality2 += p->normGradient(); // ***
+        
+        //float theta = atan2(p->y() - outerEllipse.center().y(), p->x() - outerEllipse.center().x()); // cf. supp.
+        //quality2 += std::abs(-sin(theta)*p->gradient().x() + cos(theta)*p->gradient().y()); // cf. supp.
+      }
+
+      //quality2 = outerEllipsePoints.size()/quality2;
+      //quality2 *= quality;
+      
+      quality2 *= scale; // ***
+      
+      // New quality
+
+      CCTag* tag = new CCTag( -1,
+                              outerEllipse.center(),
+                              cctagPoints,
+                              outerEllipse,
+                              markerHomography,
+                              pyramidLevel,
+                              scale,
+                              quality2 );
+#ifdef CCTAG_SERIALIZE
+      tag->setFlowComponents( componentCandidates ); // markers.back().setFlowComponents(componentCandidates);
+#endif
+      
+#pragma omp critical (G3d2d664c0c4911e68911305a3a7ae691)
+      {
+        markers.push_back( tag ); // markers takes responsibility for delete
+      }
+#ifdef CCTAG_SERIALIZE
+#ifdef DEBUG
+
+      CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PASS_ALLTESTS);
+      CCTagFileDebug::instance().incrementFlowComponentIndex(0);
+#endif
+#endif
+
+      DO_TALK( CCTAG_COUT_DEBUG("------------------------------Added marker------------------------------"); )
+    }
+    catch (...)
+    {
+      CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RAISED_EXCEPTION);
+      CCTagFileDebug::instance().incrementFlowComponentIndex(0);
+      // Ellipse fitting don't pass.
+      CCTAG_COUT_CURRENT_EXCEPTION;
+      DO_TALK( CCTAG_COUT_DEBUG( "Exception raised" ); )
+    }
+}
 
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
@@ -485,195 +678,12 @@ void cctagDetectionFromEdges(
 #endif
 
   const size_t candidateLoopTwoCount = vCandidateLoopTwo.size();
+  tbb::parallel_for(size_t(0), candidateLoopTwoCount, [&](size_t iCandidate) {
+    cctagDetectionFromEdgesLoopTwoIteration(markers, vCandidateLoopTwo, iCandidate,
+      pyramidLevel, scale, params);
+    
+  });
   
-#pragma omp parallel for schedule(dynamic)
-  for (size_t iCandidate = 0; iCandidate < candidateLoopTwoCount; ++iCandidate)
-  {
-    const Candidate& candidate = vCandidateLoopTwo[iCandidate];
-
-#ifdef CCTAG_SERIALIZE
-    CCTagFileDebug::instance().resetFlowComponent();
-    std::vector<Candidate> componentCandidates;
-#ifdef DEBUG
-    CCTagFileDebug::instance().resetFlowComponent();
-#endif
-#endif
-
-    // TODO: remove copying
-    std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
-    cctag::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
-
-    std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > cctagPoints;
-
-    try
-    {
-      float quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
-
-      if (params._searchForAnotherSegment)
-      {
-        if ((quality > 0.25) && (quality < 0.7))
-        {
-          // Search for another segment
-          flowComponentAssembling( quality, candidate, vCandidateLoopTwo,
-                  outerEllipse, outerEllipsePoints, cctagPoints, params
-#ifndef CCTAG_SERIALIZE
-                  );
-#else
-                  , componentCandidates);
-#endif
-        }
-      }
-
-      // Add the flowComponent from candidate to cctagPoints // Add intermediary points - required ? todo@Lilian
-      // cctagPoints may be not empty, i.e. when the assembling succeed.
-      if (! addCandidateFlowtoCCTag(candidate._filteredChildrens, 
-              candidate._outerEllipsePoints, outerEllipse,
-              cctagPoints, params._nCrowns * 2))
-      {
-        DO_TALK( CCTAG_COUT_DEBUG("Points outside the outer ellipse OR CCTag not valid : bad gradient orientations"); )
-        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTSOUTSIDE_OR_BADGRADORIENT);
-        CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-        continue;
-      }
-      else
-      {
-#ifdef CCTAG_SERIALIZE
-        componentCandidates.push_back(candidate);
-#endif
-        DO_TALK( CCTAG_COUT_DEBUG("Points inside the outer ellipse and good gradient orientations"); )
-      }
-      // Create ellipse with its real size from original image.
-      cctag::numerical::geometry::Ellipse rescaleEllipse(outerEllipse.center(), outerEllipse.a() * scale, outerEllipse.b() * scale, outerEllipse.angle());
-      
-      int realPixelPerimeter = rasterizeEllipsePerimeter(rescaleEllipse);
-
-      float realSizeOuterEllipsePoints = quality*realPixelPerimeter;
-
-      // Naive reject condition todo@Lilian
-      if ( ( ( quality <= 0.35 ) && ( realSizeOuterEllipsePoints >= 300.0 ) ) ||//0.35
-               ( ( quality <= 0.45f ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||
-               ( ( quality <= 0.5f ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||
-               ( ( quality <= 0.5f ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||
-               ( ( quality <= 0.96f ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||
-               ( realSizeOuterEllipsePoints < 50.0  ) )
-      {
-              DO_TALK( CCTAG_COUT_DEBUG( "Not enough outer ellipse points: realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality ); )
-              continue;
-      }
-
-      cctag::Point2d<Eigen::Vector3f> markerCenter;
-      Eigen::Matrix3f markerHomography = Eigen::Matrix3f::Zero();
-
-      const float ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
-
-      if (ratioSemiAxes > 8.0 || ratioSemiAxes < 0.125)
-      {
-        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RATIO_SEMIAXIS);
-        CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-        DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
-        continue;
-      }
-
-      std::vector<float> vDistFinal;
-      vDistFinal.clear();
-      vDistFinal.reserve(outerEllipsePoints.size());
-
-      float resSquare = 0;
-      float distMax = 0;
-
-      // TODO: omp parallel reduction
-      BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
-      {
-        float distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.f);
-        resSquare += distFinal; //*distFinal;
-
-        if (distFinal > distMax)
-        {
-          distMax = distFinal;
-        }
-      }
-
-      resSquare = sqrt(resSquare);
-      resSquare /= outerEllipsePoints.size();
-
-
-      numerical::geometry::Ellipse qIn, qOut;
-      computeHull(outerEllipse, 3.6, qIn, qOut);
-
-      bool isValid = true;
-
-      BOOST_FOREACH(const EdgePoint * p, outerEllipsePoints)
-      {
-        if (!isInHull(qIn, qOut, p))
-        {
-          isValid = false;
-          break;
-        }
-      }
-      if (!isValid)
-      {
-        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTS_OUTSIDE_ELLHULL);
-        CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-
-        DO_TALK( CCTAG_COUT_DEBUG("Distance max to high!"); )
-        continue;
-      }
-
-      std::vector< Point2d<Eigen::Vector3i> > vPoint;
-
-      float quality2 = 0;
-
-      BOOST_FOREACH(const EdgePoint* p, outerEllipsePoints)
-      {
-        quality2 += p->normGradient(); // ***
-        
-        //float theta = atan2(p->y() - outerEllipse.center().y(), p->x() - outerEllipse.center().x()); // cf. supp.
-        //quality2 += std::abs(-sin(theta)*p->gradient().x() + cos(theta)*p->gradient().y()); // cf. supp.
-      }
-
-      //quality2 = outerEllipsePoints.size()/quality2;
-      //quality2 *= quality;
-      
-      quality2 *= scale; // ***
-      
-      // New quality
-
-      CCTag* tag = new CCTag( -1,
-                              outerEllipse.center(),
-                              cctagPoints,
-                              outerEllipse,
-                              markerHomography,
-                              pyramidLevel,
-                              scale,
-                              quality2 );
-#ifdef CCTAG_SERIALIZE
-      tag->setFlowComponents( componentCandidates ); // markers.back().setFlowComponents(componentCandidates);
-#endif
-      
-#pragma omp critical (G3d2d664c0c4911e68911305a3a7ae691)
-      {
-        markers.push_back( tag ); // markers takes responsibility for delete
-      }
-#ifdef CCTAG_SERIALIZE
-#ifdef DEBUG
-
-      CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PASS_ALLTESTS);
-      CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-#endif
-#endif
-
-      DO_TALK( CCTAG_COUT_DEBUG("------------------------------Added marker------------------------------"); )
-    }
-    catch (...)
-    {
-      CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RAISED_EXCEPTION);
-      CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-      // Ellipse fitting don't pass.
-      CCTAG_COUT_CURRENT_EXCEPTION;
-      DO_TALK( CCTAG_COUT_DEBUG( "Exception raised" ); )
-    }
-  }
-
   boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d2 = tstop2 - tstop1;
   const float spendTime2 = d2.total_milliseconds();
