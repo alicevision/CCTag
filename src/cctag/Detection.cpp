@@ -44,7 +44,6 @@
 #include <list>
 #include <utility>
 #include <memory>
-#include <omp.h>
 #ifdef WITH_CUDA
 #include <cuda_runtime.h> // only for debugging
 #endif // WITH_CUDA

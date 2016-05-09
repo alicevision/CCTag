@@ -3,7 +3,6 @@
 #include <string>
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/program_options.hpp>
-#include <omp.h>
 #include "Regression.h"
 
 static std::string SourceDir;
@@ -112,13 +111,6 @@ int main(int argc, char **argv)
     
     if (UseCuda) std::clog << "CUDA override SET to: " << *UseCuda << std::endl;
     else std::clog << "CUDA override NOT SET; will use parameters" << std::endl;
-    
-    {
-      // Disable hyperthreading
-      int num_procs = omp_get_num_procs() / 2;
-      omp_set_num_threads(num_procs);
-      std::clog << "OMP #threads set to: " << num_procs << std::endl;
-    }
     
     if (mode == "gen-ref") {
       GenerateReference();

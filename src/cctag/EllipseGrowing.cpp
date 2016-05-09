@@ -29,7 +29,6 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
-#include <omp.h>
 
 namespace cctag
 {
