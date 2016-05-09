@@ -7,6 +7,7 @@
 #include <boost/foreach.hpp>
 #include <boost/math/special_functions/pow.hpp>
 #include <Eigen/Dense>
+#include <tbb/tbb.h>
 
 namespace cctag {
 namespace numerical {
@@ -60,9 +61,9 @@ inline void distancePointEllipse( std::vector<float>& dist, const std::vector<Ei
 {
         const size_t n = pts.size();
 	dist.resize( n );
-#pragma omp parallel for schedule(dynamic)
-        for (size_t i = 0; i < n; ++i)
+        tbb::parallel_for(size_t(0), n, [&dist,&pts,&q,f](size_t i) {
           dist[i] = distancePointEllipse( pts[i], q, f );
+        });
 }
 
 }
