@@ -71,6 +71,8 @@ void constructFlowComponentFromSeed(
         std::vector<CandidatePtr> & vCandidateLoopOne,
         const Parameters & params)
 {
+  static tbb::mutex G_SortMutex;
+
   assert( seed );
   // Check if the seed has already been processed, i.e. belongs to an already
   // reconstructed flow component.
@@ -101,12 +103,13 @@ void constructFlowComponentFromSeed(
     }
 
     // All flow components WILL BE next sorted based on this characteristic (scalar); descending order
-#pragma omp critical (Gc4371780136711e6bd27305a3a7ae691)
+    
     {
-    candidate->_averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
-    auto it = std::lower_bound(vCandidateLoopOne.begin(), vCandidateLoopOne.end(), candidate,
-      [](const CandidatePtr& c1, const CandidatePtr& c2) { return c1->_averageReceivedVote > c2->_averageReceivedVote; });
-    vCandidateLoopOne.insert(it, std::move(candidate));
+      tbb::mutex::scoped_lock lock(G_SortMutex);
+      candidate->_averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
+      auto it = std::lower_bound(vCandidateLoopOne.begin(), vCandidateLoopOne.end(), candidate,
+        [](const CandidatePtr& c1, const CandidatePtr& c2) { return c1->_averageReceivedVote > c2->_averageReceivedVote; });
+      vCandidateLoopOne.insert(it, std::move(candidate));
     }
   }
 }
@@ -120,6 +123,9 @@ void completeFlowComponent(
         std::size_t runId,
         const Parameters & params)
 {
+  static tbb::spin_mutex G_UpdateMutex;
+  static tbb::mutex G_InsertMutex;
+  
   try
   {
     std::list<EdgePoint*> childrens;
@@ -166,11 +172,12 @@ void completeFlowComponent(
           break;
         }
       }
+      
 
       if (nSegmentCommon == -1)
       {
-#pragma omp critical (G3633564c0b9c11e69a77448a5b9a696f)
         {
+          tbb::spin_mutex::scoped_lock lock(G_UpdateMutex);
           nLabel = nSegmentOut;
           ++nSegmentOut;
         }
@@ -240,8 +247,10 @@ void completeFlowComponent(
       return;
     }
 
-#pragma omp critical (G3633564c0b9c11e69a77448a5b9a696f)
-    vCandidateLoopTwo.push_back(candidate);
+    {
+      tbb::mutex::scoped_lock lock(G_InsertMutex);
+      vCandidateLoopTwo.push_back(candidate);
+    }
 
 #ifdef CCTAG_SERIALIZE
     // Add childrens to output the filtering results (from outlierRemoval)
@@ -382,6 +391,8 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
   float scale,
   const Parameters& params)
 {
+    static tbb::mutex G_InsertMutex;
+    
     const Candidate& candidate = vCandidateLoopTwo[iCandidate];
 
 #ifdef CCTAG_SERIALIZE
@@ -544,8 +555,8 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
       tag->setFlowComponents( componentCandidates ); // markers.back().setFlowComponents(componentCandidates);
 #endif
       
-#pragma omp critical (G3d2d664c0c4911e68911305a3a7ae691)
       {
+        tbb::mutex::scoped_lock lock(G_InsertMutex);
         markers.push_back( tag ); // markers takes responsibility for delete
       }
 #ifdef CCTAG_SERIALIZE
