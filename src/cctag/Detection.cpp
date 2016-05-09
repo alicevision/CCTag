@@ -101,7 +101,6 @@ void constructFlowComponentFromSeed(
     }
 
     // All flow components WILL BE next sorted based on this characteristic (scalar); descending order
-#if 1
 #pragma omp critical (Gc4371780136711e6bd27305a3a7ae691)
     {
     candidate->_averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
@@ -109,22 +108,6 @@ void constructFlowComponentFromSeed(
       [](const CandidatePtr& c1, const CandidatePtr& c2) { return c1->_averageReceivedVote > c2->_averageReceivedVote; });
     vCandidateLoopOne.insert(it, std::move(candidate));
     }
-#else
-    if (vCandidateLoopOne.size() > 0)
-    {
-      auto it = vCandidateLoopOne.begin();
-      while ( ((*it)._averageReceivedVote > candidate._averageReceivedVote) 
-              && ( it != vCandidateLoopOne.end() ) )
-      {
-        ++it;
-      }
-      vCandidateLoopOne.insert(it, candidate);
-    }
-    else
-    {
-      vCandidateLoopOne.push_back(candidate);
-    }
-#endif
   }
 }
 
