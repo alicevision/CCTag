@@ -21,6 +21,7 @@ namespace numerical {
  * @param n
  * @return
  */
+#if 0 // Currently unused, otherwise use std::random_shuffle
 template<class V>
 V randperm( const std::size_t n )
 {
@@ -42,6 +43,7 @@ V randperm( const std::size_t n )
 	}
 	return temp;
 }
+#endif
 
 // Draw N unique values in the range of 0 .. (K-1)
 // and copy them in the container
