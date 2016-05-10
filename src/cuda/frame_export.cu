@@ -54,7 +54,8 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
 #endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
     out_edgemap.resize( boost::extents[ _d_plane.cols ][ _d_plane.rows ] );
-    std::fill( out_edgemap.origin(), out_edgemap.origin() + out_edgemap.size(), (cctag::EdgePoint*)NULL );
+    //std::fill( out_edgemap.origin(), out_edgemap.origin() + out_edgemap.size(), (cctag::EdgePoint*)NULL );
+    memset(out_edgemap.origin(), 0, out_edgemap.size() * sizeof(cctag::EdgePoint*));
 
     out_edgelist.reserve( all_sz );
     // cctag::EdgePoint* array = new cctag::EdgePoint[ all_sz ];
