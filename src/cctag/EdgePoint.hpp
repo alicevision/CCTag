@@ -17,6 +17,9 @@ class Label;
 class EdgePoint : public cctag::Point2d<Eigen::Vector3i>
 {
 public:
+#ifdef WITH_CUDA
+  EdgePoint() = default;  // don't want to do any work in this in cuda part where it's constructed
+#else
   EdgePoint()
     : Point2d(0, 0)
     , _grad(0.f,0.f)
@@ -30,9 +33,9 @@ public:
     , _nSegmentOut(-1)
     , _flowLength (0)
     ,_processedAux(false)
-
   {}
-
+#endif
+  
   EdgePoint( const EdgePoint& p )
     : Point2d( p )
     , _grad( p._grad )
