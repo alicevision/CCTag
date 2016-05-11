@@ -14,7 +14,9 @@ namespace cctag
 
 class Label;
 
-class EdgePoint : public cctag::Point2d<Eigen::Vector3i>
+using Vector3s = Eigen::Matrix<short, 3, 1>;
+
+class EdgePoint : public cctag::Point2d<Vector3s>
 {
 public:
 #ifdef WITH_CUDA
@@ -90,16 +92,16 @@ public:
 
   friend std::ostream& operator<<( std::ostream& os, const EdgePoint& eP );
 
-  std::vector<EdgePoint*> _voters;
   EdgePoint* _before;
   EdgePoint* _after;
   size_t _processed;
-  bool _processedIn;
   ssize_t _isMax;
   ssize_t _edgeLinked;
   ssize_t _nSegmentOut; // std::size_t _nSegmentOut;
   float _flowLength;
   bool _processedAux;
+  bool _processedIn;
+  std::vector<EdgePoint*> _voters;
   
 private:
   Eigen::Vector2f _grad;

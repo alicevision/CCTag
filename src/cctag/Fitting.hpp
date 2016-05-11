@@ -16,7 +16,7 @@ namespace numerical {
 
 // Precondition : pts.size >=2
 // TODO déplacer innerProdMin
-float innerProdMin( const std::vector<cctag::EdgePoint*>& childrens, float thrCosDiffMax, Point2d<Eigen::Vector3i> & p1, Point2d<Eigen::Vector3i> & p2 );
+float innerProdMin( const std::vector<cctag::EdgePoint*>& childrens, float thrCosDiffMax, Point2d<Vector3s> & p1, Point2d<Vector3s> & p2 );
 
 void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points);
 

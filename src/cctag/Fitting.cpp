@@ -421,7 +421,7 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
 }
 #endif
 
-        float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, float thrCosDiffMax, Point2d<Eigen::Vector3i> & p1, Point2d<Eigen::Vector3i> & p2) {
+        float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, float thrCosDiffMax, Point2d<Vector3s> & p1, Point2d<Vector3s> & p2) {
             using namespace boost::numeric;
             //using namespace cctag::numerical;
 
@@ -510,7 +510,7 @@ void ellipseFittingWithGradientsToto( const std::vector<EdgePoint *> & vPoint, c
                         pAngle2 = pCurrent;
                     }
 
-                    float dist = cctag::numerical::distancePoints2D(p1, (Point2d<Eigen::Vector3i>)(*pCurrent));
+                    float dist = cctag::numerical::distancePoints2D(p1, (Point2d<Vector3s>)(*pCurrent));
                     if (dist > distMax) {
                         distMax = dist;
                         p2 = *pCurrent;

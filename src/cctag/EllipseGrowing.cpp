@@ -212,7 +212,7 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
  * @param[out] iMin1
  * @param[out] iMin2
  */
-bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2d<Eigen::Vector3i> & p1, Point2d<Eigen::Vector3i> & p2)
+bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2d<Vector3s> & p1, Point2d<Vector3s> & p2)
 {
   BOOST_ASSERT(filteredChildrens.size() >= 5);
 
@@ -267,16 +267,16 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
 
   const EdgePoint * pMax = filteredChildrens.front();
   float distMax = std::min(
-                    cctag::numerical::distancePoints2D((Point2d<Eigen::Vector3i>)(*pMax), p1),
-                    cctag::numerical::distancePoints2D((Point2d<Eigen::Vector3i>)(*pMax), p2));
+                    cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*pMax), p1),
+                    cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*pMax), p2));
 
   float dist;
 
   BOOST_FOREACH(const EdgePoint * const e, filteredChildrens)
   {
     dist = std::min(
-            cctag::numerical::distancePoints2D((Point2d<Eigen::Vector3i>)(*e), p1),
-            cctag::numerical::distancePoints2D((Point2d<Eigen::Vector3i>)(*e), p2));
+            cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*e), p1),
+            cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*e), p2));
 
     if (dist > distMax)
     {
@@ -315,8 +315,8 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
 bool ellipseGrowingInit(const std::vector<EdgePoint> & points, const std::vector<EdgePoint*>& filteredChildrens, numerical::geometry::Ellipse& ellipse)
 {
 
-  Point2d<Eigen::Vector3i> p1;
-  Point2d<Eigen::Vector3i> p2;
+  Point2d<Vector3s> p1;
+  Point2d<Vector3s> p2;
 
   bool goodInit = true;
 
