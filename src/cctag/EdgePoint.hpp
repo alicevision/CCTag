@@ -62,10 +62,9 @@ public:
     , _nSegmentOut(-1)
     , _flowLength (0)
     , _processedAux(false)
-    , _grad(0.f,0.f)
+    , _grad(vdx, vdy)
     , _normGrad(0.f)
   {
-    _grad << vdx , vdy;
     _normGrad = std::sqrt( vdx * vdx + vdy * vdy );
   }
 

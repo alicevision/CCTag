@@ -26,9 +26,8 @@ public:
           toNonHomogen();
         }
         
-	Point2d(Scalar px, Scalar py)
+	Point2d(Scalar px, Scalar py) : Container(px, py, 1)
 	{
-          (*this) << px, py, 1.f;
         }
 
 	Scalar  x() const { return (*this)( 0 ); }
