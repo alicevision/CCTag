@@ -31,7 +31,6 @@ public:
     , _processed( 0 )
     , _processedIn( false )
     , _isMax( -1 )
-    , _edgeLinked( -1 )
     , _nSegmentOut(-1)
     , _flowLength (0)
     ,_processedAux(false)
@@ -47,7 +46,6 @@ public:
     , _processed( 0 )
     , _processedIn( false )
     , _isMax( -1 )
-    , _edgeLinked( -1 )
     , _nSegmentOut(-1)
     , _flowLength (0)
     , _processedAux(false)
@@ -60,7 +58,6 @@ public:
     , _processed( 0 )
     , _processedIn( false )
     , _isMax( -1 )
-    , _edgeLinked( -1 )
     , _nSegmentOut(-1)
     , _flowLength (0)
     , _processedAux(false)
@@ -94,10 +91,9 @@ public:
 
   EdgePoint* _before;
   EdgePoint* _after;
-  size_t _processed;
-  ssize_t _isMax;
-  ssize_t _edgeLinked;
-  ssize_t _nSegmentOut; // std::size_t _nSegmentOut;
+  size_t _processed;    // bitfield; must be 64-bit
+  int _isMax;
+  int _nSegmentOut;     // std::size_t _nSegmentOut;
   float _flowLength;
   bool _processedAux;
   bool _processedIn;
