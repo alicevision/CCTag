@@ -59,16 +59,16 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
     //std::fill( out_edgemap.origin(), out_edgemap.origin() + out_edgemap.size(), (cctag::EdgePoint*)NULL );
     memset(out_edgemap.origin(), 0, out_edgemap.size() * sizeof(cctag::EdgePoint*));
 
-    out_edgelist = std::vector<cctag::EdgePoint>(all_sz); // move-assign
+    out_edgelist.reserve(all_sz+256);
     // cctag::EdgePoint* array = new cctag::EdgePoint[ all_sz ];
 
-    tbb::parallel_for(int(0), all_sz, [&](int i) {
+    for(int i = 0; i < all_sz; ++i) {
           const short2& pt = _all_edgecoords.host.ptr[i];
           const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
           const int16_t dy = _h_dy.ptr(pt.y)[pt.x];
-          out_edgelist[i] = cctag::EdgePoint(pt.x, pt.y, dx, dy);
-          out_edgemap[pt.x][pt.y] = &out_edgelist[i];
-    });
+          out_edgelist.emplace_back(cctag::EdgePoint(pt.x, pt.y, dx, dy));
+          out_edgemap[pt.x][pt.y] = &out_edgelist.back();
+    }
 
     /* Block 2
      * Copying the linkage info for all edge points that voted for an inner
