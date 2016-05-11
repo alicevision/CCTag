@@ -308,7 +308,7 @@ private:
 #endif
 
     // Stores coordinates of all edges. Valid after thinning.
-    EdgeList<int2>         _all_edgecoords;
+    EdgeList<short2>        _all_edgecoords;
 
     // Stores all points that are recognized as potential voters
     // in gradient descent.

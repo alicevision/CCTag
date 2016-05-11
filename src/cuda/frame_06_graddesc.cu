@@ -181,7 +181,7 @@ bool gradient_descent_inner( const int                    idx,
 
 __global__
 void gradient_descent( FrameMetaPtr                 meta,
-                       const DevEdgeList<int2>      all_edgecoords, // input
+                       const DevEdgeList<short2>    all_edgecoords, // input
                        const cv::cuda::PtrStepSzb   edge_image,
                        const cv::cuda::PtrStepSz16s d_dx,
                        const cv::cuda::PtrStepSz16s d_dy,
@@ -319,7 +319,7 @@ void gradient_descent( FrameMetaPtr                 meta,
 __global__
 void dp_call_01_gradient_descent(
     FrameMetaPtr                 meta,
-    const DevEdgeList<int2>      all_edgecoords, // input
+    const DevEdgeList<short2>    all_edgecoords, // input
     const cv::cuda::PtrStepSzb   edge_image, // input
     const cv::cuda::PtrStepSz16s dx, // input
     const cv::cuda::PtrStepSz16s dy, // input

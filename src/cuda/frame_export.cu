@@ -63,7 +63,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
     // cctag::EdgePoint* array = new cctag::EdgePoint[ all_sz ];
 
     tbb::parallel_for(int(0), all_sz, [&](int i) {
-          const int2&   pt = _all_edgecoords.host.ptr[i];
+          const short2& pt = _all_edgecoords.host.ptr[i];
           const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
           const int16_t dy = _h_dy.ptr(pt.y)[pt.x];
           out_edgelist[i] = cctag::EdgePoint(pt.x, pt.y, dx, dy);
