@@ -53,6 +53,7 @@
 namespace cctag {
 namespace numerical {
 
+#if 0
 /*----------------------------------------------------------------------------*/
 /** Error or exception handling: print error message and exit.
  */
@@ -279,7 +280,6 @@ static void get_equations( float *pts, float *grad, int pts_size, float *vgg,
 /*----------------------------------------------------------------------------*/
 /** Solve linear system of equations.
  */
-#if 0
 static void fit_ellipse( float *eq, float *vgg, int pts_size, float *param )
 {
   int i,j,k;
@@ -612,33 +612,7 @@ void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cct
             e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), radius, radius, 0);
         }
 
-void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cctag::EdgePoint*>& points )
-{
-            std::vector<cv::Point2f> cvPoints;
-            cvPoints.reserve(points.size());
-
-            BOOST_FOREACH(cctag::EdgePoint * p, points) {
-                cvPoints.push_back(cv::Point2f(p->x(), p->y()));
-            }
-
-            if( cvPoints.size() < 5 ) {
-                std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
-            }
-            cv::RotatedRect rR = cv::fitEllipse(cv::Mat(cvPoints));
-            float xC = rR.center.x;
-            float yC = rR.center.y;
-
-            float b = rR.size.height / 2.f;
-            float a = rR.size.width / 2.f;
-
-            float angle = rR.angle * boost::math::constants::pi<float>() / 180.0;
-
-            if ((a == 0) || (b == 0))
-                CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after cv::fitEllipse => line or point."));
-
-            e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), a, b, angle);
-        }
-
+#if 0
         bool matrixFromFile(const std::string& filename, std::list<cctag::EdgePoint>& edgepoints) {
             std::ifstream ifs(filename.c_str());
 
@@ -695,5 +669,6 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::list<cct
 
             return semiXPerm + semiYPerm;
         }
+#endif
 } // namespace numerical
 } // namespace cctag
