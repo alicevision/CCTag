@@ -626,95 +626,95 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, floa
 
 
 void ellipseFitting(cctag::numerical::geometry::Ellipse& e, const std::vector< Point2d<Eigen::Vector3f> >& points) {
-            std::vector<cv::Point2f> cvPoints;
-            cvPoints.reserve(points.size());
+  std::vector<cv::Point2f> cvPoints;
+  cvPoints.reserve(points.size());
 
-            BOOST_FOREACH(const Point2d<Eigen::Vector3f> & p, points) {
-                cvPoints.push_back(cv::Point2f(p.x(), p.y()));
-            }
+  BOOST_FOREACH(const Point2d<Eigen::Vector3f> & p, points) {
+      cvPoints.push_back(cv::Point2f(p.x(), p.y()));
+  }
 
-            if( cvPoints.size() < 5 ) {
-                std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
-            }
-            cv::RotatedRect rR = cv::fitEllipse(cv::Mat(cvPoints));
-            float xC = rR.center.x;
-            float yC = rR.center.y;
+  if( cvPoints.size() < 5 ) {
+      std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
+  }
+  cv::RotatedRect rR = cv::fitEllipse(cv::Mat(cvPoints));
+  float xC = rR.center.x;
+  float yC = rR.center.y;
 
-            float b = rR.size.height / 2.f;
-            float a = rR.size.width / 2.f;
+  float b = rR.size.height / 2.f;
+  float a = rR.size.width / 2.f;
 
-            float angle = rR.angle * boost::math::constants::pi<float>() / 180.0;
+  float angle = rR.angle * boost::math::constants::pi<float>() / 180.0;
 
-            if ((a == 0) || (b == 0))
-                CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after cv::fitEllipse => line or point."));
+  if ((a == 0) || (b == 0))
+      CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after cv::fitEllipse => line or point."));
 
-            e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), a, b, angle);
-        }
+  e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), a, b, angle);
+}
         
 void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points )
 {
-	std::vector<cv::Point2f> cvPoints;
-	cvPoints.reserve( points.size() );
-	BOOST_FOREACH( cctag::EdgePoint * p, points )
-	{
-		cvPoints.push_back( cv::Point2f( p->x(), p->y() ) );
-            }
+  std::vector<cv::Point2f> cvPoints;
+  cvPoints.reserve( points.size() );
+  BOOST_FOREACH( cctag::EdgePoint * p, points )
+  {
+          cvPoints.push_back( cv::Point2f( p->x(), p->y() ) );
+  }
 
     if( cvPoints.size() < 5 ) {
         std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
     }
-	cv::RotatedRect rR = cv::fitEllipse( cv::Mat( cvPoints ) );
-	float xC           = rR.center.x;
-	float yC           = rR.center.y;
+  cv::RotatedRect rR = cv::fitEllipse( cv::Mat( cvPoints ) );
+  float xC           = rR.center.x;
+  float yC           = rR.center.y;
 
-	float b = rR.size.height / 2.f;
-	float a = rR.size.width / 2.f;
+  float b = rR.size.height / 2.f;
+  float a = rR.size.width / 2.f;
 
-	float angle = rR.angle * boost::math::constants::pi<float>() / 180.0;
+  float angle = rR.angle * boost::math::constants::pi<float>() / 180.0;
 
-	if ( ( a == 0) || ( b == 0 ) )
-		CCTAG_THROW( exception::BadHandle() << exception::dev( "Degenerate ellipse after cv::fitEllipse => line or point." ) );
+  if ( ( a == 0) || ( b == 0 ) )
+          CCTAG_THROW( exception::BadHandle() << exception::dev( "Degenerate ellipse after cv::fitEllipse => line or point." ) );
 
-	e.setParameters( Point2d<Eigen::Vector3f>( xC, yC ), a, b, angle );
+  e.setParameters( Point2d<Eigen::Vector3f>( xC, yC ), a, b, angle );
 }
 
 void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points) {
-            using namespace boost::numeric;
-            
-            std::size_t nPoints = points.size();
+  using namespace boost::numeric;
 
-            Eigen::MatrixXf A(nPoints, 4);
+  std::size_t nPoints = points.size();
 
-            // utiliser la même matrice à chaque fois et rajouter les données.
-            // Initialiser la matrice a l'exterieur et remplir ici puis inverser, idem
-            // pour le fitellipse, todo@Lilian
+  Eigen::MatrixXf A(nPoints, 4);
 
-            for (int i = 0; i < nPoints; ++i) {
-                A(i, 0) = points[i]->x();
-                A(i, 1) = points[i]->y();
-                A(i, 2) = 1;
-                A(i, 3) = points[i]->x() * points[i]->x() + points[i]->y() * points[i]->y();
-            }
-            
-            Eigen::JacobiSVD<Eigen::MatrixXf> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
-            auto V = svd.matrixV();
+  // utiliser la même matrice à chaque fois et rajouter les données.
+  // Initialiser la matrice a l'exterieur et remplir ici puis inverser, idem
+  // pour le fitellipse, todo@Lilian
 
-            //CCTAG_COUT_VAR(A);
-            //CCTAG_COUT_VAR(U);
-            //CCTAG_COUT_VAR(V);
-            //CCTAG_COUT_VAR(S);
-            //CCTAG_COUT("V(:,end) = " << V(0, 3) << " " << V(1, 3) << " " << V(2, 3) << " " << V(3, 3) << " ");
+  for (int i = 0; i < nPoints; ++i) {
+      A(i, 0) = points[i]->x();
+      A(i, 1) = points[i]->y();
+      A(i, 2) = 1;
+      A(i, 3) = points[i]->x() * points[i]->x() + points[i]->y() * points[i]->y();
+  }
 
-            float xC = -0.5f * V(0, 3) / V(3, 3);
-            float yC = -0.5f * V(1, 3) / V(3, 3);
-            float radius = sqrt(xC*xC + yC*yC - V(2, 3) / V(3, 3));
+  Eigen::JacobiSVD<Eigen::MatrixXf> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  auto V = svd.matrixV();
 
-            if (radius <= 0) {
-                CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate circle in circleFitting."));
-            }
+  //CCTAG_COUT_VAR(A);
+  //CCTAG_COUT_VAR(U);
+  //CCTAG_COUT_VAR(V);
+  //CCTAG_COUT_VAR(S);
+  //CCTAG_COUT("V(:,end) = " << V(0, 3) << " " << V(1, 3) << " " << V(2, 3) << " " << V(3, 3) << " ");
 
-            e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), radius, radius, 0);
-        }
+  float xC = -0.5f * V(0, 3) / V(3, 3);
+  float yC = -0.5f * V(1, 3) / V(3, 3);
+  float radius = sqrt(xC*xC + yC*yC - V(2, 3) / V(3, 3));
+
+  if (radius <= 0) {
+      CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate circle in circleFitting."));
+  }
+
+  e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), radius, radius, 0);
+}
 
 #if 0
         bool matrixFromFile(const std::string& filename, std::list<cctag::EdgePoint>& edgepoints) {
