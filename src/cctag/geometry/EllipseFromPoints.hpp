@@ -52,7 +52,7 @@ bool fitEllipse(Eigen::Matrix<float, Eigen::Dynamic, 6>& D, const Eigen::Vector2
 
 // Converts the input to the design matrix required by the above overload and calls the overload.
 template<typename EV> // EV is derived from Eigen::Matrix<T, 3, 1>
-void fitEllipse(const EV* points, const size_t n, Ellipse& e)
+bool fitEllipse(const EV* points, const size_t n, Ellipse& e)
 {
   using Array6 = Eigen::Array<float, 6, 1>;
   using Vector6 = Eigen::Matrix<float, 6, 1>;
@@ -78,7 +78,7 @@ void fitEllipse(const EV* points, const size_t n, Ellipse& e)
     }
   }
 
-  fitEllipse(D, center, e);
+  return fitEllipse(D, center, e);
 }
 
 void ellipsePoint( const cctag::numerical::geometry::Ellipse& ellipse, float theta, Eigen::Vector3f& pt );

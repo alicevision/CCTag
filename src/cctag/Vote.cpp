@@ -650,6 +650,14 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 
             numerical::geometry::Ellipse eToto;
             cctag::numerical::geometry::fitEllipse(points, eToto);
+            {
+              static tbb::mutex G_OutMutex;
+              tbb::mutex::scoped_lock lock(G_OutMutex);
+              numerical::geometry::Ellipse eTmp;
+              bool ok = fitEllipse(points.data(), points.size(), eTmp);
+              std::cerr << "Original ell: " << eToto << "\n";
+              std::cerr << "New fitting : " << eTmp << " " << ok << "\n" << std::endl;
+            }
 
             try {
                 

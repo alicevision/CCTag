@@ -61,13 +61,16 @@ static const float SINGULARITY_EPSILON = 16 * FLT_EPSILON;
 
 bool fitEllipse(Eigen::Matrix<float, Eigen::Dynamic, 6>& D, const Eigen::Vector2f center, Ellipse& ellipse)
 {
+  using Complexf = std::complex<float>;
+  using CMatrix6 = Eigen::Matrix<Complexf, 6, 6>;
   using Matrix6 = Eigen::Matrix<float, 6, 6>;
+  using Vector6 = Eigen::Matrix<float, 6, 1>;
   
   // The constraint matrix is constant and its EV decomposition should be computed only once.
   static const struct Constraint
   {
     Matrix6 matrix;
-    Matrix6 whitening;
+    CMatrix6 whitening;
     
     Constraint()
     {
@@ -75,19 +78,39 @@ bool fitEllipse(Eigen::Matrix<float, Eigen::Dynamic, 6>& D, const Eigen::Vector2
       matrix(0,2) = 2; matrix(1,1) = -1; matrix(2, 0) = 2;
       
       Eigen::SelfAdjointEigenSolver<Matrix6> ev(matrix);
-
-      auto l = ev.eigenvalues();
-      for (int i = 0; i < 6; ++i)
-      if (l(i) > SINGULARITY_EPSILON) l(i) = 1 / sqrt(l(i));
-      else l(i) = 0;
+      Eigen::Matrix<Complexf, 6, 1> lam;
       
-      whitening = ev.eigenvectors() * l.asDiagonal();
+      {
+        const auto& l = ev.eigenvalues();
+        for (int i = 0; i < 6; ++i)
+          if (fabs(l(i)) > SINGULARITY_EPSILON) lam(i) = 1.f / sqrt(Complexf(l(i), 0.f));
+          else lam(i) = 0.f;
+      }
+
+      whitening = ev.eigenvectors() * lam.asDiagonal();
+      
+      std::cerr << "CONSTRAINT EVval:\n" << ev.eigenvalues()
+        << "\nCONSTRAINT EVvec:\n" << ev.eigenvectors()
+        << "\nWHITENING:\n" << whitening
+        << "\nWHITENING CHECK:\n" << whitening.transpose() * matrix * whitening
+        << std::endl;
     }
   } C;
   
   
   // S: The scatter matrix.
   Matrix6 S = D.transpose() * D;
+  
+  // Matrices A and B are simultaneously diagonalizable iff AB==BA
+  //http://www.pasadena.edu/files/syllabi/jtsocrates_41127.pdf
+  // See also http://www.bmva.org/bmvc/2004/papers/paper_083.pdf
+  {
+    auto v1 = S*C.matrix;
+    auto v2 = C.matrix*S;
+    std::cerr << "SIM DIAG v1:\n" << v1
+      << "\nSIM DIAG v2:\n" << v2
+      << std::endl;
+  }
   
   // Solves the generalized EV problem S*a = l*C*a
   // eigenvectors() method in Eigen::GeneralizedEigenSolver is commented-out, and
@@ -98,22 +121,39 @@ bool fitEllipse(Eigen::Matrix<float, Eigen::Dynamic, 6>& D, const Eigen::Vector2
   // EVs of a self-adjoint matrix are always real.
   
   // EV for A' (in the 1st link).
-  Eigen::SelfAdjointEigenSolver<Matrix6> esS(C.whitening.transpose() * S * C.whitening);
-  auto phi = C.whitening * esS.eigenvectors(); // soln vectors
-  auto lam = phi.transpose() * S * phi;        // soln vals on diagonal
+  CMatrix6 APrime = C.whitening.transpose() * S * C.whitening;
+  Eigen::ComplexEigenSolver<CMatrix6> esS(APrime);
+  auto phiA = esS.eigenvectors();
+  auto phi = C.whitening * phiA;
+  auto lam = phiA.transpose() * APrime * phiA;
+  
+  std::cerr << "S:\n" << S
+    << "\nAPrime:\n" << APrime
+    << "\nPHIA:\n" << phiA
+    << "\nLAMA:\n" << esS.eigenvalues()
+    << "\nLAMBDA:\n" << lam
+    << "\nPHI:\n" << phi
+    << "\nCHECK A:\n" << phi.transpose() * S * phi
+    << "\nCHECK B:\n" << phi.transpose() * C.matrix * phi
+    << std::endl;
   
   // Theorem 1: there's a single positive EV and the solution is the vector corresponding to it 
-  int iev = -1;
+  int iev = 5;  // XXX!
   for (int i = 0; i < 6; ++i)
-  if (lam(i, i) > SINGULARITY_EPSILON) {
+  if (fabs(lam(i, i).imag()) < SINGULARITY_EPSILON && abs(lam(i, i)) > SINGULARITY_EPSILON) {
     iev = i;
     break;
   }
+  
+  std::cerr << "iev: " << iev << std::endl;
+  
   if (iev < 0)
     return false;
   
   // Find mu, eq.(9) in Fitzgibbon's paper is directly unrolled when using C
-  auto U = phi.col(iev);
+  Vector6 U;
+  for (int i = 0; i < 6; ++i) U(i) = phi.col(iev)(i).real();
+  
   float mu = sqrt(4*U(0)*U(2) - U(1)*U(1));
   if (fabs(mu) < SINGULARITY_EPSILON)
     return false;
