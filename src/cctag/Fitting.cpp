@@ -49,9 +49,112 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
+#include <Eigen/Eigenvalues>
 
 namespace cctag {
 namespace numerical {
+
+namespace geometry
+{
+
+static const float SINGULARITY_EPSILON = 16 * FLT_EPSILON;
+
+bool fitEllipse(Eigen::Matrix<float, Eigen::Dynamic, 6>& D, const Eigen::Vector2f center, Ellipse& ellipse)
+{
+  using Matrix6 = Eigen::Matrix<float, 6, 6>;
+  
+  // The constraint matrix is constant and its EV decomposition should be computed only once.
+  static const struct Constraint
+  {
+    Matrix6 matrix;
+    Matrix6 whitening;
+    
+    Constraint()
+    {
+      matrix.fill(0.f);
+      matrix(0,2) = 2; matrix(1,1) = -1; matrix(2, 0) = 2;
+      
+      Eigen::SelfAdjointEigenSolver<Matrix6> ev(matrix);
+
+      auto l = ev.eigenvalues();
+      for (int i = 0; i < 6; ++i)
+      if (l(i) > SINGULARITY_EPSILON) l(i) = 1 / sqrt(l(i));
+      else l(i) = 0;
+      
+      whitening = ev.eigenvectors() * l.asDiagonal();
+    }
+  } C;
+  
+  
+  // S: The scatter matrix.
+  Matrix6 S = D.transpose() * D;
+  
+  // Solves the generalized EV problem S*a = l*C*a
+  // eigenvectors() method in Eigen::GeneralizedEigenSolver is commented-out, and
+  // both of the matrices are symmetric (also self-adjoint, since they're real),
+  // so we use the following method
+  // http://fourier.eng.hmc.edu/e161/lectures/algebra/node7.html
+  // http://www.geo.tuwien.ac.at/downloads/tm/svd.pdf (simultaneous diagonalization)
+  // EVs of a self-adjoint matrix are always real.
+  
+  // EV for A' (in the 1st link).
+  Eigen::SelfAdjointEigenSolver<Matrix6> esS(C.whitening.transpose() * S * C.whitening);
+  auto phi = C.whitening * esS.eigenvectors(); // soln vectors
+  auto lam = phi.transpose() * S * phi;        // soln vals on diagonal
+  
+  // Theorem 1: there's a single positive EV and the solution is the vector corresponding to it 
+  int iev = -1;
+  for (int i = 0; i < 6; ++i)
+  if (lam(i, i) > SINGULARITY_EPSILON) {
+    iev = i;
+    break;
+  }
+  if (iev < 0)
+    return false;
+  
+  // Find mu, eq.(9) in Fitzgibbon's paper is directly unrolled when using C
+  auto U = phi.col(iev);
+  float mu = sqrt(4*U(0)*U(2) - U(1)*U(1));
+  if (fabs(mu) < SINGULARITY_EPSILON)
+    return false;
+  
+  // This is the solution vector for parameters of the conic (ellipse)
+  // It contains _already scaled_ coefs of the ellipse eq, ellipse parameter
+  // extraction is copy-pasted from opencv
+  auto A = U / mu;
+  float aa = A(0), bb = A(1), cc = A(2), dd = A(3), ee = A(4), ff = A(5);
+  float x0 = (-dd*cc + ee*bb/2) * 2;
+  float y0 = (-aa*ee + dd*bb/2) * 2;
+
+  // offset ellipse to (x0, y0)
+  ff += aa*x0*x0 + bb*x0*y0 + cc*y0*y0 + dd*x0 + ee*y0;
+  if (fabs(ff) < SINGULARITY_EPSILON)
+    return false;
+  
+  // Normalize to f==1
+  aa /= -ff;
+  bb /= -ff;
+  cc /= -ff;
+  
+  // Extract axes of the ellipse.
+  float aradius, bradius, angle;
+  {
+    Eigen::Matrix2f M;
+    M(0,0) = aa;
+    M(0,1) = M(1,0) = bb/2;
+    M(1,1) = cc;
+    
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix2f> esM(M);
+    aradius = 1.f / sqrt(esM.eigenvalues()(0));
+    bradius = 1.f / sqrt(esM.eigenvalues()(1));
+    angle = (float)M_PI - atan2(esM.eigenvectors()(1,0), esM.eigenvectors()(1,1));
+  }
+  
+  ellipse.setParameters(Point2d<Eigen::Vector3f>(x0+center(0), y0+center(1)), aradius, bradius, angle);
+  return true;
+}
+
+} // geometry
 
 #if 0
 /*----------------------------------------------------------------------------*/
@@ -520,6 +623,7 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, floa
 
             return min;
         }
+
 
 void ellipseFitting(cctag::numerical::geometry::Ellipse& e, const std::vector< Point2d<Eigen::Vector3f> >& points) {
             std::vector<cv::Point2f> cvPoints;
