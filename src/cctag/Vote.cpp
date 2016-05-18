@@ -26,6 +26,7 @@
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include <deque>
 #include <array>
 #include <algorithm>
 #include <cmath>
@@ -224,7 +225,7 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
     void edgeLinkingDir(const EdgePointsImage& img, boost::container::flat_set<unsigned int>& processed, EdgePoint* p, const int dir,
             std::list<EdgePoint*>& convexEdgeSegment, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
         
-        std::list<float> phi;
+        std::deque<float> phi;
         std::size_t i = 0;
         bool found = true;
 
