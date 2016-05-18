@@ -22,16 +22,13 @@
 
 ------------------------------------------------------------------------------*/
 
-
-
-
-
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/iterator/indirect_iterator.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/Fitting.hpp>
 #include <cctag/utils/Defines.hpp>
@@ -45,10 +42,10 @@
 #include <float.h>
 #include <fstream>
 #include <math.h>
-#include <opencv/cv.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
+#include <utility>
 #include <Eigen/Eigenvalues>
 
 namespace cctag {
@@ -57,142 +54,160 @@ namespace numerical {
 namespace geometry
 {
 
-static const float SINGULARITY_EPSILON = 16 * FLT_EPSILON;
+using Vector6f = Eigen::Matrix<float, 6, 1>;
+using Conic = std::tuple<Vector6f, Eigen::Vector2f>; // 6 coefficients + center offset
 
-bool fitEllipse(Eigen::Matrix<float, Eigen::Dynamic, 6>& D, const Eigen::Vector2f center, Ellipse& ellipse)
+template<typename It>
+static Eigen::Vector2f get_offset(It begin, It end)
 {
-  using Complexf = std::complex<float>;
-  using CMatrix6 = Eigen::Matrix<Complexf, 6, 6>;
-  using Matrix6 = Eigen::Matrix<float, 6, 6>;
-  using Vector6 = Eigen::Matrix<float, 6, 1>;
-  
-  // The constraint matrix is constant and its EV decomposition should be computed only once.
-  static const struct Constraint
-  {
-    Matrix6 matrix;
-    CMatrix6 whitening;
-    
-    Constraint()
-    {
-      matrix.fill(0.f);
-      matrix(0,2) = 2; matrix(1,1) = -1; matrix(2, 0) = 2;
-      
-      Eigen::SelfAdjointEigenSolver<Matrix6> ev(matrix);
-      Eigen::Matrix<Complexf, 6, 1> lam;
-      
-      {
-        const auto& l = ev.eigenvalues();
-        for (int i = 0; i < 6; ++i)
-          if (fabs(l(i)) > SINGULARITY_EPSILON) lam(i) = 1.f / sqrt(Complexf(l(i), 0.f));
-          else lam(i) = 0.f;
-      }
-
-      whitening = ev.eigenvectors() * lam.asDiagonal();
-      
-      std::cerr << "CONSTRAINT EVval:\n" << ev.eigenvalues()
-        << "\nCONSTRAINT EVvec:\n" << ev.eigenvectors()
-        << "\nWHITENING:\n" << whitening
-        << "\nWHITENING CHECK:\n" << whitening.transpose() * matrix * whitening
-        << std::endl;
-    }
-  } C;
-  
-  
-  // S: The scatter matrix.
-  Matrix6 S = D.transpose() * D;
-  
-  // Matrices A and B are simultaneously diagonalizable iff AB==BA
-  //http://www.pasadena.edu/files/syllabi/jtsocrates_41127.pdf
-  // See also http://www.bmva.org/bmvc/2004/papers/paper_083.pdf
-  {
-    auto v1 = S*C.matrix;
-    auto v2 = C.matrix*S;
-    std::cerr << "SIM DIAG v1:\n" << v1
-      << "\nSIM DIAG v2:\n" << v2
-      << std::endl;
-  }
-  
-  // Solves the generalized EV problem S*a = l*C*a
-  // eigenvectors() method in Eigen::GeneralizedEigenSolver is commented-out, and
-  // both of the matrices are symmetric (also self-adjoint, since they're real),
-  // so we use the following method
-  // http://fourier.eng.hmc.edu/e161/lectures/algebra/node7.html
-  // http://www.geo.tuwien.ac.at/downloads/tm/svd.pdf (simultaneous diagonalization)
-  // EVs of a self-adjoint matrix are always real.
-  
-  // EV for A' (in the 1st link).
-  CMatrix6 APrime = C.whitening.transpose() * S * C.whitening;
-  Eigen::ComplexEigenSolver<CMatrix6> esS(APrime);
-  auto phiA = esS.eigenvectors();
-  auto phi = C.whitening * phiA;
-  auto lam = phiA.transpose() * APrime * phiA;
-  
-  std::cerr << "S:\n" << S
-    << "\nAPrime:\n" << APrime
-    << "\nPHIA:\n" << phiA
-    << "\nLAMA:\n" << esS.eigenvalues()
-    << "\nLAMBDA:\n" << lam
-    << "\nPHI:\n" << phi
-    << "\nCHECK A:\n" << phi.transpose() * S * phi
-    << "\nCHECK B:\n" << phi.transpose() * C.matrix * phi
-    << std::endl;
-  
-  // Theorem 1: there's a single positive EV and the solution is the vector corresponding to it 
-  int iev = 5;  // XXX!
-  for (int i = 0; i < 6; ++i)
-  if (fabs(lam(i, i).imag()) < SINGULARITY_EPSILON && abs(lam(i, i)) > SINGULARITY_EPSILON) {
-    iev = i;
-    break;
-  }
-  
-  std::cerr << "iev: " << iev << std::endl;
-  
-  if (iev < 0)
-    return false;
-  
-  // Find mu, eq.(9) in Fitzgibbon's paper is directly unrolled when using C
-  Vector6 U;
-  for (int i = 0; i < 6; ++i) U(i) = phi.col(iev)(i).real();
-  
-  float mu = sqrt(4*U(0)*U(2) - U(1)*U(1));
-  if (fabs(mu) < SINGULARITY_EPSILON)
-    return false;
-  
-  // This is the solution vector for parameters of the conic (ellipse)
-  // It contains _already scaled_ coefs of the ellipse eq, ellipse parameter
-  // extraction is copy-pasted from opencv
-  auto A = U / mu;
-  float aa = A(0), bb = A(1), cc = A(2), dd = A(3), ee = A(4), ff = A(5);
-  float x0 = (-dd*cc + ee*bb/2) * 2;
-  float y0 = (-aa*ee + dd*bb/2) * 2;
-
-  // offset ellipse to (x0, y0)
-  ff += aa*x0*x0 + bb*x0*y0 + cc*y0*y0 + dd*x0 + ee*y0;
-  if (fabs(ff) < SINGULARITY_EPSILON)
-    return false;
-  
-  // Normalize to f==1
-  aa /= -ff;
-  bb /= -ff;
-  cc /= -ff;
-  
-  // Extract axes of the ellipse.
-  float aradius, bradius, angle;
-  {
-    Eigen::Matrix2f M;
-    M(0,0) = aa;
-    M(0,1) = M(1,0) = bb/2;
-    M(1,1) = cc;
-    
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix2f> esM(M);
-    aradius = 1.f / sqrt(esM.eigenvalues()(0));
-    bradius = 1.f / sqrt(esM.eigenvalues()(1));
-    angle = (float)M_PI - atan2(esM.eigenvectors()(1,0), esM.eigenvectors()(1,1));
-  }
-  
-  ellipse.setParameters(Point2d<Eigen::Vector3f>(x0+center(0), y0+center(1)), aradius, bradius, angle);
-  return true;
+  Eigen::Vector2f center(0, 0);
+  const size_t n = end - begin;
+  for (; begin != end; ++begin)
+    center += Eigen::Vector2f((*begin)(0), (*begin)(1));
+  return center / n;
 }
+
+template<typename It>
+static std::tuple<Eigen::Matrix3f,Eigen::Matrix3f,Eigen::Matrix3f>
+get_scatter_matrix(It begin, It end, const Eigen::Vector2f& offset)
+{
+  using namespace Eigen;
+  
+  const auto qf = [&](It it) {
+    Vector2f p((*it)(0), (*it)(1));
+    auto pc = p - offset;
+    return Vector3f(pc(0)*pc(0), pc(0)*pc(1), pc(1)*pc(1));
+  };
+  const auto lf = [&](It it) {
+    Vector2f p((*it)(0), (*it)(1));
+    auto pc = p - offset;
+    return Vector3f(pc(0), pc(1), 1);
+  };
+  
+  const size_t n = end - begin;
+  MatrixX3f D1(n,3), D2(n,3);
+  
+  // Construct the quadratic and linear parts.  Doing it in two loops has better cache locality.
+  // TODO@stian: Make an nx6 matrix and define D1 and D2 as subblocks so that they're as one memory block
+  for (size_t i = 0; begin != end; ++begin, ++i) {
+    D1.row(i) = qf(begin);
+    D2.row(i) = lf(begin);
+  }
+  
+  // Construct the three parts of the symmetric scatter matrix.
+  Matrix3f S1 = D1.transpose() * D1;
+  Matrix3f S2 = D1.transpose() * D2;
+  Matrix3f S3 = D2.transpose() * D2;
+  return std::make_tuple(S1, S2, S3);
+}
+
+template<typename It>
+static Conic fit_solver(It begin, It end)
+{
+  using namespace Eigen;
+  using std::get;
+  
+  static const struct C1_Initializer {
+    Matrix3f matrix;
+    Matrix3f inverse;
+    C1_Initializer()
+    {
+      matrix <<
+          0,  0, 2,
+          0, -1, 0,
+          2,  0, 0;
+      inverse <<
+            0,  0, 0.5,
+            0, -1,   0,
+          0.5,  0,   0; 
+    };
+  } C1;
+  
+  const auto offset = get_offset(begin, end);
+  const auto St = get_scatter_matrix(begin, end, offset);
+  const auto& S1 = std::get<0>(St);
+  const auto& S2 = std::get<1>(St);
+  const auto& S3 = std::get<2>(St);
+  const auto T = -S3.inverse() * S2.transpose();
+  const auto M = C1.inverse * (S1 + S2*T);
+  
+  EigenSolver<Matrix3f> M_ev(M);
+  Vector3f cond;
+  {
+    const auto evr = M_ev.eigenvectors().real().array();
+    cond = 4*evr.row(0)*evr.row(2) - evr.row(1)*evr.row(1);
+  }
+
+  float min = FLT_MAX;
+  int imin = -1;
+  for (int i = 0; i < 3; ++i)
+  if (cond(i) > 0 && cond(i) < min) {
+    imin = i; min = cond(i);
+  }
+  
+  Vector6f ret = Matrix<float, 6, 1>::Zero();
+  if (imin >= 0) {
+    Vector3f a1 = M_ev.eigenvectors().real().col(imin);
+    Vector3f a2 = T*a1;
+    ret.block<3,1>(0,0) = a1;
+    ret.block<3,1>(3,0) = a2;
+  }
+  return std::make_tuple(ret, offset);
+}
+
+// Adapted from OpenCV old code; see
+// https://github.com/Itseez/opencv/commit/4eda1662aa01a184e0391a2bb2e557454de7eb86#diff-97c8133c3c171e64ea0df0db4abd033c
+void to_ellipse(const Conic& conic, Ellipse& ellipse)
+{
+  using namespace Eigen;
+  auto coef = std::get<0>(conic);
+
+  float idet = coef(0)*coef(2) - coef(1)*coef(1)/4; // ac-b^2/4
+  idet = idet > FLT_EPSILON ? 1.f/idet : 0;
+  
+  float scale = std::sqrt(idet/4);
+  if (scale < FLT_EPSILON)
+    throw std::domain_error("to_ellipse_2: singularity 1");
+  
+  coef *= scale;
+  float aa = coef(0), bb = coef(1), cc = coef(2), dd = coef(3), ee = coef(4), ff = coef(5);
+  
+  const Vector2f c = Vector2f(-dd*cc + ee*bb/2, -aa*ee + dd*bb/2) * 2;
+  
+  // offset ellipse to (x0,y0)
+  ff += aa*c(0)*c(0) + bb*c(0)*c(1) + cc*c(1)*c(1) + dd*c(0) + ee*c(1);
+  if (std::fabs(ff) < FLT_EPSILON)
+   throw std::domain_error("to_ellipse_2: singularity 2");
+  
+  Matrix2f S;
+  S << aa, bb/2, bb/2, cc;
+  S /= -ff;
+
+  // SVs are sorted from largest to smallest
+  JacobiSVD<Matrix2f> svd(S, ComputeFullU);
+  const auto& vals = svd.singularValues();
+  const auto& mat_u = svd.matrixU();
+
+  Vector2f center = c + std::get<1>(conic);
+  Vector2f radius = Vector2f(std::sqrt(1.f/vals(0)), std::sqrt(1.f/vals(1)));
+  float angle = M_PI - std::atan2(mat_u(0,1), mat_u(1,1));
+  
+  if (radius(0) <= 0 || radius(1) <= 0)
+    CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after fitEllipse => line or point."));
+  
+  ellipse.setParameters(Point2d<Eigen::Vector3f>(center(0), center(1)), radius(0), radius(1), angle);
+}
+
+template<typename It>
+void fitEllipse(It begin, It end, Ellipse& e)
+{
+  auto conic = fit_solver(begin, end);
+  geometry::to_ellipse(conic, e);
+}
+
+// explicit instantiations
+template void fitEllipse(std::vector<cctag::Point2d<Eigen::Vector3f>>::const_iterator begin,
+  std::vector<cctag::Point2d<Eigen::Vector3f>>::const_iterator end, Ellipse& e);
 
 } // geometry
 
@@ -665,57 +680,15 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, floa
         }
 
 
-void ellipseFitting(cctag::numerical::geometry::Ellipse& e, const std::vector< Point2d<Eigen::Vector3f> >& points) {
-  std::vector<cv::Point2f> cvPoints;
-  cvPoints.reserve(points.size());
-
-  BOOST_FOREACH(const Point2d<Eigen::Vector3f> & p, points) {
-      cvPoints.push_back(cv::Point2f(p.x(), p.y()));
-  }
-
-  if( cvPoints.size() < 5 ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
-  }
-  cv::RotatedRect rR = cv::fitEllipse(cv::Mat(cvPoints));
-  float xC = rR.center.x;
-  float yC = rR.center.y;
-
-  float b = rR.size.height / 2.f;
-  float a = rR.size.width / 2.f;
-
-  float angle = rR.angle * boost::math::constants::pi<float>() / 180.0;
-
-  if ((a == 0) || (b == 0))
-      CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after cv::fitEllipse => line or point."));
-
-  e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), a, b, angle);
+void ellipseFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<Point2d<Eigen::Vector3f>>& points)
+{
+  geometry::fitEllipse(points.begin(), points.end(), e);
 }
-        
+
 void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points )
 {
-  std::vector<cv::Point2f> cvPoints;
-  cvPoints.reserve( points.size() );
-  BOOST_FOREACH( cctag::EdgePoint * p, points )
-  {
-          cvPoints.push_back( cv::Point2f( p->x(), p->y() ) );
-  }
-
-    if( cvPoints.size() < 5 ) {
-        std::cerr << __FILE__ << ":" << __LINE__ << " not enough points for fitEllipse" << std::endl;
-    }
-  cv::RotatedRect rR = cv::fitEllipse( cv::Mat( cvPoints ) );
-  float xC           = rR.center.x;
-  float yC           = rR.center.y;
-
-  float b = rR.size.height / 2.f;
-  float a = rR.size.width / 2.f;
-
-  float angle = rR.angle * boost::math::constants::pi<float>() / 180.0;
-
-  if ( ( a == 0) || ( b == 0 ) )
-          CCTAG_THROW( exception::BadHandle() << exception::dev( "Degenerate ellipse after cv::fitEllipse => line or point." ) );
-
-  e.setParameters( Point2d<Eigen::Vector3f>( xC, yC ), a, b, angle );
+  using indirect_iterator = boost::indirect_iterator<std::vector<cctag::EdgePoint*>::const_iterator>;
+  geometry::fitEllipse(indirect_iterator(points.begin()), indirect_iterator(points.end()), e);
 }
 
 void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points) {
