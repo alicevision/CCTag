@@ -33,19 +33,79 @@ float distancePointEllipseScalar(const Eigen::Vector3f& p, const Eigen::Matrix3f
   return boost::math::pow<2>( aux.dot(qL) ) / denom;
 }
 
-// Q is symmetric matrix
-static __m256 unpack_q(const Eigen::Vector3f& Q)
+// Packed computation, 8 points at a time
+__m256 distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, __m256 x, __m256 y, __m256 w)
 {
-  static const __m256i index = _mm256_set_epi32(0, 0,  8,  5,  4,  2,  1,  0);
-  static const __m256i mask =  _mm256_set_epi32(0, 0, -1, -1, -1, -1, -1, -1);
-  return _mm256_mask_i32gather_ps(_mm256_setzero_ps(), Q.data(), _mm256_load_si256(&index),
-    _mm256_castsi256_ps(_mm256_load_si256(&mask)), 4);
+  __m256 denom, dot;
+  {
+    __m256 q01 = _mm256_broadcast_ss(&Q(0,1));
+  
+    __m256 tmp11 = _mm256_mul_ps(x, _mm256_broadcast_ss(&Q(0,0)));
+    __m256 tmp12 = _mm256_mul_ps(y, q01);
+    __m256 tmp13 = _mm256_mul_ps(w, _mm256_broadcast_ss(&Q(0,2)));
+    __m256 tmp1  = _mm256_add_ps(tmp11, _mm256_add_ps(tmp12, tmp13));
+
+    __m256 tmp21 = _mm256_mul_ps(x, q01);
+    __m256 tmp22 = _mm256_mul_ps(y, _mm256_broadcast_ss(&Q(1,1)));
+    __m256 tmp23 = _mm256_mul_ps(w, _mm256_broadcast_ss(&Q(1,2)));
+    __m256 tmp2  = _mm256_add_ps(tmp21, _mm256_add_ps(tmp22, tmp23));
+
+    tmp1 = _mm256_mul_ps(tmp1, tmp1);
+    tmp2 = _mm256_mul_ps(tmp2, tmp2);
+    denom = _mm256_add_ps(tmp1, tmp2);
+  }
+  
+  // Dot product of aux with qL
+  {
+    __m256 twox = _mm256_mul_ps(x, _mm256_set1_ps(2.f));
+    __m256 twoy = _mm256_mul_ps(x, _mm256_set1_ps(2.f));
+    
+    dot =  _mm256_mul_ps(                                   // dot = x*x * Q(0,0)
+      _mm256_broadcast_ss(&Q(0,0)), _mm256_mul_ps(x, x));
+    dot = _mm256_add_ps(dot, _mm256_mul_ps(                 // dot += 2*x*y * Q(0,1)
+      _mm256_broadcast_ss(&Q(0,1)), _mm256_mul_ps(twox, y)));
+    dot = _mm256_add_ps(dot, _mm256_mul_ps(                 // dot += 2*x * Q(0,2)
+      _mm256_broadcast_ss(&Q(0,2)), twox));
+    dot = _mm256_add_ps(dot, _mm256_mul_ps(                 // dot += y*y * Q(1,1)
+      _mm256_broadcast_ss(&Q(1,1)), _mm256_mul_ps(y, y)));
+    dot = _mm256_add_ps(dot, _mm256_mul_ps(                 // dot += 2*y * Q(1,2)
+      _mm256_broadcast_ss(&Q(1,2)), twoy));
+    dot = _mm256_add_ps(dot,                                // dot += 1 * Q(2,2)
+      _mm256_broadcast_ss(&Q(2,2)));
+  }
+  
+  return _mm256_div_ps(dot, denom);
 }
 
-// Q are coefficients of the ellipse matrix: [ 0 | 0 | Q22 | Q12 | Q11 | Q02 | Q01 | Q00 ]
-__m256 distancePointEllipseAVX2(__m256 px, __m256 py, __m256 pz, __m256 Q)
+// Returns mask of valid distances based on n (valid range 1..7)
+std::pair<__m256, __m256> distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, const Eigen::Vector3f* pts, const size_t n)
 {
+  static_assert(sizeof(pts[0]) == 12, "Invalid Vector3f size");
+  static const __m256i index = _mm256_set_epi32(21, 18, 15, 12,  9,  6,  3,  0);
+  static const __m256i masks[8] =
+  {
+    _mm256_set_epi32(-1, -1, -1, -1, -1, -1, -1, -1),
+    _mm256_set_epi32( 0, -1, -1, -1, -1, -1, -1, -1),
+    _mm256_set_epi32( 0,  0, -1, -1, -1, -1, -1, -1),
+    _mm256_set_epi32( 0,  0,  0, -1, -1, -1, -1, -1),
+    _mm256_set_epi32( 0,  0,  0,  0, -1, -1, -1, -1),
+    _mm256_set_epi32( 0,  0,  0,  0,  0, -1, -1, -1),
+    _mm256_set_epi32( 0,  0,  0,  0,  0,  0, -1, -1),
+    _mm256_set_epi32( 0,  0,  0,  0,  0,  0,  0, -1)
+  };
   
+  if (n<1 || n>8)
+    throw std::logic_error("distance_point_ellipse_avx2: invalid count");
+  
+  // We use 1 for masked-out values so we avoid division by zero
+  __m256 ones = _mm256_set1_ps(1.f);
+  
+  __m256 x = _mm256_mask_i32gather_ps(ones, &pts[0](0), _mm256_load_si256(&index),
+    _mm256_castsi256_ps(_mm256_load_si256(&masks[8-n])), 4);
+  __m256 y = _mm256_mask_i32gather_ps(ones, &pts[0](1), _mm256_load_si256(&index),
+    _mm256_castsi256_ps(_mm256_load_si256(&masks[8-n])), 4);
+  __m256 w = _mm256_mask_i32gather_ps(ones, &pts[0](2), _mm256_load_si256(&index),
+    _mm256_castsi256_ps(_mm256_load_si256(&masks[8-n])), 4);
 }
 
 }
