@@ -58,7 +58,7 @@ __m256 distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, __m256 x, __m256 y,
   // Dot product of aux with qL
   {
     __m256 twox = _mm256_mul_ps(x, _mm256_set1_ps(2.f));
-    __m256 twoy = _mm256_mul_ps(x, _mm256_set1_ps(2.f));
+    __m256 twoy = _mm256_mul_ps(y, _mm256_set1_ps(2.f));
     
     dot =  _mm256_mul_ps(                                   // dot = x*x * Q(0,0)
       _mm256_broadcast_ss(&Q(0,0)), _mm256_mul_ps(x, x));
@@ -74,6 +74,7 @@ __m256 distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, __m256 x, __m256 y,
       _mm256_broadcast_ss(&Q(2,2)));
   }
   
+  dot = _mm256_mul_ps(dot, dot);
   return _mm256_div_ps(dot, denom);
 }
 
@@ -104,15 +105,42 @@ std::pair<__m256, __m256> distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, 
   __m256 x = _mm256_mask_i32gather_ps(ones, &pts[0](0), index, mask, 4);
   __m256 y = _mm256_mask_i32gather_ps(ones, &pts[0](1), index, mask, 4);
   __m256 w = _mm256_mask_i32gather_ps(ones, &pts[0](2), index, mask, 4);
+  __m256 d = distance_point_ellipse_avx2(Q, x, y, w);
+  
+  return std::make_pair(d, mask);
 }
 
 void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q, const float f )
 {
-  const size_t n = pts.size();
-  dist.resize( n );
-  tbb::parallel_for(size_t(0), n, [&dist,&pts,&q,f](size_t i) {
-    dist[i] = distancePointEllipseScalar( pts[i], q.matrix(), f );
-  });
+  size_t n = pts.size();
+  
+  dist.resize(n);
+  
+  for (size_t i = 0; i < n; i += 8) {
+    auto distance = distance_point_ellipse_avx2(q.matrix(), &pts[i], std::min(size_t(8), n-i));
+    __m256 d = std::get<0>(distance);
+    __m256 m = std::get<1>(distance);
+    _mm256_maskstore_ps(&dist[i], _mm256_castps_si256(m), d);
+  }
+
+#if false   // NB: distance with avx may very in absolute value by several integral units
+  // check
+  for (size_t i = 0; i < pts.size(); ++i) {
+    float d = distancePointEllipseScalar(pts[i], q.matrix(), f);
+    if (std::fabs(d-dist[i]) > 1) {
+      tbb::mutex::scoped_lock lock(m);
+      std::clog << "distance failed: AVX2: " << dist[i] << "; scalar: " << d
+        << "\nMATRIX:\n" << q.matrix() 
+        << "\nPOINT:\n" << pts[i]
+        << std::endl;
+      std::abort();
+    }      
+  }
+#endif
+  
+  //tbb::parallel_for(size_t(0), n, [&dist,&pts,&q,f](size_t i) {
+  //  dist[i] = distancePointEllipseScalar( pts[i], q.matrix(), f );
+  //});
 }
 
 }
