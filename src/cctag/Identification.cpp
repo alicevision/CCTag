@@ -30,6 +30,8 @@
 #include <cmath>
 #include <vector>
 
+#include <tbb/tbb.h>
+
 #include "cuda/onoff.h"
 
 namespace cctag {
@@ -67,9 +69,12 @@ bool orazioDistanceRobust(
     return false;
   }
 #endif // GRIFF_DEBUG
+  
+  const size_t cut_count = cuts.size();
+  static tbb::mutex vscore_mutex;
 
-  for( const cctag::ImageCut & cut : cuts )
-  {
+  tbb::parallel_for(size_t(0), cut_count, [&](size_t i) {
+    const cctag::ImageCut& cut = cuts[i];
     if ( !cut.outOfBounds() )
     {
       MapT sortedId; // 6-nearest neighbours along with their affectation probability
@@ -193,9 +198,12 @@ bool orazioDistanceRobust(
       assert( vScore.size() > _debug_m );
   #endif // GRIFF_DEBUG
 
-      vScore[idSet.front().first].push_back(idSet.front().second);
+      {
+        tbb::mutex::scoped_lock lock(vscore_mutex);
+        vScore[idSet.front().first].push_back(idSet.front().second);
+      }
     }
-  }
+  });
   return true;
 }
 
