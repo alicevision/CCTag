@@ -106,6 +106,15 @@ std::pair<__m256, __m256> distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, 
   __m256 w = _mm256_mask_i32gather_ps(ones, &pts[0](2), index, mask, 4);
 }
 
+void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q, const float f )
+{
+  const size_t n = pts.size();
+  dist.resize( n );
+  tbb::parallel_for(size_t(0), n, [&dist,&pts,&q,f](size_t i) {
+    dist[i] = distancePointEllipseScalar( pts[i], q.matrix(), f );
+  });
+}
+
 }
 }
 

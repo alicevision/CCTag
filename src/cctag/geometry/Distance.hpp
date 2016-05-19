@@ -29,14 +29,7 @@ inline float distancePointEllipse( const T & p, const geometry::Ellipse& q, cons
 
 // Compute the distance between points and an ellipse
 //template<class T>
-inline void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q, const float f )
-{
-  const size_t n = pts.size();
-  dist.resize( n );
-  tbb::parallel_for(size_t(0), n, [&dist,&pts,&q,f](size_t i) {
-    dist[i] = distancePointEllipseScalar( pts[i], q.matrix(), f );
-  });
-}
+void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q, const float f );
 
 }
 }
