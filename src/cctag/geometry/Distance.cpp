@@ -99,13 +99,11 @@ std::pair<__m256, __m256> distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, 
   
   // We use 1 for masked-out values so we avoid division by zero
   __m256 ones = _mm256_set1_ps(1.f);
+  __m256 mask = _mm256_castsi256_ps(_mm256_load_si256(&masks[8-n]));
   
-  __m256 x = _mm256_mask_i32gather_ps(ones, &pts[0](0), _mm256_load_si256(&index),
-    _mm256_castsi256_ps(_mm256_load_si256(&masks[8-n])), 4);
-  __m256 y = _mm256_mask_i32gather_ps(ones, &pts[0](1), _mm256_load_si256(&index),
-    _mm256_castsi256_ps(_mm256_load_si256(&masks[8-n])), 4);
-  __m256 w = _mm256_mask_i32gather_ps(ones, &pts[0](2), _mm256_load_si256(&index),
-    _mm256_castsi256_ps(_mm256_load_si256(&masks[8-n])), 4);
+  __m256 x = _mm256_mask_i32gather_ps(ones, &pts[0](0), index, mask, 4);
+  __m256 y = _mm256_mask_i32gather_ps(ones, &pts[0](1), index, mask, 4);
+  __m256 w = _mm256_mask_i32gather_ps(ones, &pts[0](2), index, mask, 4);
 }
 
 }
