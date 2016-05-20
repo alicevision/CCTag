@@ -42,19 +42,33 @@ public:
       throw std::logic_error("EdgePointCollection: destructing while adding votes");
   }
   
-  // Single-argument: returns edge point by its index
+  std::vector<EdgePoint>& points() { return _edgeList; }
+  const std::vector<EdgePoint>& points() const { return _edgeList; }
+  
+  boost::multi_array<int,2>& map() { return _edgeMap; }
+  const boost::multi_array<int,2>& map() const { return _edgeMap; }
+  
+  int_vector& voters() { return _voterLists; }
+  
+  // Index->EdgePoint conversions; both 1D and 2D. May return NULL!
   EdgePoint* operator()(int i) { return i >= 0 ? &_edgeList.at(i) : nullptr; }
-  const EdgePoint* operator()(int i) const { return i >= 0 ? &_edgeList.at(i) : nullptr; }
+  EdgePoint* operator()(int i) const { return i >= 0 ? const_cast<EdgePoint*>(&_edgeList.at(i)) : nullptr; }
+  EdgePoint* operator()(int i, int j) const { return (*this)(_edgeMap[i][j]); } // XXX@stian: range-check?
 
-  // Two-argument: returns edge point index from the 2D map. MAY RETURN -1!
-  int operator()(int i, int j) const
+  // Return the shape of the 2D map.
+  auto shape() const -> decltype(_edgeMap.shape()) { return _edgeMap.shape(); }
+  
+  // EdgePoint->Index conversion.
+  int operator()(const EdgePoint* p) const
   {
-    // XXX: range-check!?
-    return _edgeMap[i][j];
+    if (p < _edgeList.data())
+      throw std::logic_error("EdgePointCollection::index: invalid pointer (1)");
+    int i = p - _edgeList.data();
+    if (i >= _edgeList.size())
+      throw std::logic_error("EdgePointCollection::index: invalid pointer (2)");
+    return i;
   }
   
-  // Return the shape of the 2D map
-  auto shape() const -> decltype(_edgeMap.shape()) { return _edgeMap.shape(); }
 
   // Used by CPU voting.
   voter_list voters(const EdgePoint& p) const

@@ -37,7 +37,7 @@ int gradientDirectionDescent(
   const cv::Mat & imgDy, 
   int thrGradient)
 {
-    int ret = -1;
+    EdgePoint* ret = nullptr;
     float e        = 0.0f;
     float dx       = dir * imgDx.at<short>(p.y(),p.x());
     float dy       = dir * imgDy.at<short>(p.y(),p.x());
@@ -85,8 +85,8 @@ int gradientDirectionDescent(
         if( x >= 0 && x < canny.shape()[0] &&
             y >= 0 && y < canny.shape()[1] )
         {
-            if ((ret = canny(x,y)) >= 0)
-              return ret;
+            if ((ret = canny(x,y)))
+              return canny(ret);
         }
         else
         {
@@ -103,9 +103,9 @@ int gradientDirectionDescent(
                 y >= 0 && y < canny.shape()[1] )
             {
                 ret = canny(x,y);
-                if( ret >= 0)
+                if( ret )
                 {
-                    return ret;
+                    return canny(ret);
                 }
                 else
                 {
@@ -113,9 +113,9 @@ int gradientDirectionDescent(
                         ( y - stpY ) >= 0 && ( y - stpY ) < canny.shape()[1] )
                     {
                         ret = canny(x, y - stpY);              //#
-                        if( ret >= 0)
+                        if( ret )
                         {
-                                return ret;
+                                return canny(ret);
                         }
                     }
                     else
@@ -153,9 +153,9 @@ int gradientDirectionDescent(
             y >= 0 && y < canny.shape()[1] )
         {
             ret = canny(x,y);
-            if( ret >= 0 )
+            if( ret )
             {
-                return ret;
+                return canny(ret);
             }
         }
         else
@@ -173,9 +173,9 @@ int gradientDirectionDescent(
                 y >= 0 && y < canny.shape()[1] )
             {
                 ret = canny(x,y);
-                if( ret >= 0)
+                if( ret )
                 {
-                    return ret;
+                    return canny(ret);
                 }
                 else
                 {
@@ -183,9 +183,9 @@ int gradientDirectionDescent(
                         y >= 0 && y < canny.shape()[1] )
                     {
                         ret = canny(x - stpX,y);
-                        if( ret >=0 )
+                        if( ret )
                         {
-                                return ret;
+                                return canny(ret);
                         }
                     }
                     else
