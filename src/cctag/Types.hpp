@@ -42,10 +42,20 @@ public:
       throw std::logic_error("EdgePointCollection: destructing while adding votes");
   }
   
-  // Cannot be const because fields are modified during edgelinking, etc.
-  EdgePoint& operator()(int i) { return _edgeList.at(i); }
-  EdgePoint& operator()(int i, int j) { return _edgeList.at(_edgeMap[i][j]); }
+  // Single-argument: returns edge point by its index
+  EdgePoint* operator()(int i) { return i >= 0 ? &_edgeList.at(i) : nullptr; }
+  const EdgePoint* operator()(int i) const { return i >= 0 ? &_edgeList.at(i) : nullptr; }
+
+  // Two-argument: returns edge point index from the 2D map. MAY RETURN -1!
+  int operator()(int i, int j) const
+  {
+    // XXX: range-check!?
+    return _edgeMap[i][j];
+  }
   
+  // Return the shape of the 2D map
+  auto shape() const -> decltype(_edgeMap.shape()) { return _edgeMap.shape(); }
+
   // Used by CPU voting.
   voter_list voters(const EdgePoint& p) const
   {
@@ -55,6 +65,8 @@ public:
       return std::make_pair(nullptr, nullptr);
     if (p._votersBegin >= (int)_voterLists.size() || p._votersEnd > (int)_voterLists.size())
       throw std::logic_error("EdgePointCollection: invalid voter list indices (2)");
+    if (p._votersBegin > p._votersEnd)
+      throw std::logic_error("EdgePointCollection: invalid voter list indices (3)");
     return std::make_pair(_voterLists.data() + p._votersBegin, _voterLists.data() + p._votersEnd);
   }
   
