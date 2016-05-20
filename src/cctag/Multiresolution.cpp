@@ -40,13 +40,14 @@ namespace cctag
  *
  */
 
-bool intersectLineToTwoEllipses(
+static bool intersectLineToTwoEllipses(
         std::ssize_t y,
         const numerical::geometry::Ellipse & qIn,
         const numerical::geometry::Ellipse & qOut,
-        const EdgePointsImage & edgesMap,
+        const EdgePointCollection & edgeCollection,
         std::list<EdgePoint*> & pointsInHull)
 {
+  const auto& edgesMap = edgeCollection.map();
   std::vector<float> intersectionsOut = numerical::geometry::intersectEllipseWithLine(qOut, y, true);
   std::vector<float> intersectionsIn = numerical::geometry::intersectEllipseWithLine(qIn, y, true);
   BOOST_ASSERT(intersectionsOut.size() <= 2);
@@ -62,7 +63,7 @@ bool intersectLineToTwoEllipses(
 
     for (int x = begin1; x <= end1; ++x)
     {
-      EdgePoint* edgePoint = edgesMap[x][y];
+      EdgePoint* edgePoint = edgeCollection(x,y);
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
@@ -78,7 +79,7 @@ bool intersectLineToTwoEllipses(
     }
     for (int x = begin2; x <= end2; ++x)
     {
-      EdgePoint* edgePoint = edgesMap[x][y];
+      EdgePoint* edgePoint = edgeCollection(x,y);
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
@@ -100,7 +101,7 @@ bool intersectLineToTwoEllipses(
 
     for (int x = begin; x <= end; ++x)
     {
-      EdgePoint* edgePoint = edgesMap[x][y];
+      EdgePoint* edgePoint = edgeCollection(x,y);
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
@@ -120,7 +121,7 @@ bool intersectLineToTwoEllipses(
   {
     if ((intersectionsOut[0] >= 0) && (intersectionsOut[0] < edgesMap.shape()[0]))
     {
-      EdgePoint* edgePoint = edgesMap[intersectionsOut[0]][y];
+      EdgePoint* edgePoint = edgeCollection(intersectionsOut[0],y);
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
@@ -142,8 +143,8 @@ bool intersectLineToTwoEllipses(
   return true;
 }
 
-void selectEdgePointInEllipticHull(
-        const EdgePointsImage & edgesMap,
+static void selectEdgePointInEllipticHull(
+        const EdgePointCollection & edgeCollection,
         const numerical::geometry::Ellipse & outerEllipse,
         float scale,
         std::list<EdgePoint*> & pointsInHull)
@@ -152,6 +153,7 @@ void selectEdgePointInEllipticHull(
   computeHull(outerEllipse, scale, qIn, qOut);
 
   const float yCenter = outerEllipse.center().y();
+  const auto& edgesMap = edgeCollection.map();
 
   int maxY = std::max(int(yCenter), 0);
   int minY = std::min(int(yCenter), int(edgesMap.shape()[1]) - 1);
@@ -159,13 +161,13 @@ void selectEdgePointInEllipticHull(
   // Visit the bottom part of the ellipse
   for (std::ssize_t y = maxY; y < int( edgesMap.shape()[1]); ++y)
   {
-    if (!intersectLineToTwoEllipses(y, qIn, qOut, edgesMap, pointsInHull))
+    if (!intersectLineToTwoEllipses(y, qIn, qOut, edgeCollection, pointsInHull))
       break;
   }
   // Visit the upper part of the ellipse
   for (std::ssize_t y = minY; y >= 0; --y)
   {
-    if (!intersectLineToTwoEllipses(y, qIn, qOut, edgesMap, pointsInHull))
+    if (!intersectLineToTwoEllipses(y, qIn, qOut, edgeCollection, pointsInHull))
       break;
   }
 }
@@ -196,14 +198,13 @@ void update(
   }
 }
 
-void cctagMultiresDetection_inner(
+static void cctagMultiresDetection_inner(
         size_t                  i,
         CCTag::List&            pyramidMarkers,
         const cv::Mat&          imgGraySrc,
         Level*                  level,
         const std::size_t       frame,
-        std::vector<EdgePoint>& vPoints,
-        EdgePointsImage&        vEdgeMap,
+        EdgePointCollection&    edgeCollection,
         popart::TagPipe*        cuda_pipe,
         const Parameters &      params,
         cctag::logtime::Mgmt*   durations )
@@ -218,20 +219,16 @@ void cctagMultiresDetection_inner(
 #if defined(WITH_CUDA)
     // there is no point in measuring time in compare mode
     if( cuda_pipe ) {
-    cuda_pipe->convertToHost( i, 
-                              vPoints,
-                              vEdgeMap,
-                              seeds);
-    if( durations ) {
-        cudaDeviceSynchronize();
-    }
-    level->setLevel( cuda_pipe, params );
+      cuda_pipe->convertToHost(i, edgeCollection, seeds);
+      if( durations ) {
+          cudaDeviceSynchronize();
+      }
+      level->setLevel( cuda_pipe, params );
 
-    CCTagVisualDebug::instance().setPyramidLevel(i);
-} else { // not cuda_pipe
+      CCTagVisualDebug::instance().setPyramidLevel(i);
+    } else { // not cuda_pipe
 #endif // defined(WITH_CUDA)
-    edgesPointsFromCanny( vPoints,
-                          vEdgeMap,
+    edgesPointsFromCanny( edgeCollection,
                           level->getEdges(),
                           level->getDx(),
                           level->getDy());
@@ -239,9 +236,8 @@ void cctagMultiresDetection_inner(
     CCTagVisualDebug::instance().setPyramidLevel(i);
 
     // Voting procedure applied on every edge points.
-    vote( vPoints,
+    vote( edgeCollection,
           seeds,        // output
-          vEdgeMap,
           level->getDx(),
           level->getDy(),
           params );
@@ -258,10 +254,9 @@ void cctagMultiresDetection_inner(
 
     cctagDetectionFromEdges(
         pyramidMarkers,
-        vPoints,
+        edgeCollection,
         level->getSrc(),
         seeds,
-        vEdgeMap,
         frame, i, std::pow(2.0, (int) i), params,
         durations );
 
@@ -289,30 +284,18 @@ void cctagMultiresDetection(
   //	** launch CCTag detection based on the canny edge detection output.
 
   std::map<std::size_t, CCTag::List> pyramidMarkers;
-  std::vector<EdgePointsImage> vEdgeMaps;
-  vEdgeMaps.reserve(imagePyramid.getNbLevels());
-  std::vector<std::vector<EdgePoint > > vPoints;
+  std::vector<EdgePointCollection> vEdgePointCollections(params._numberOfProcessedMultiresLayers);
 
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
   for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i ) {
     pyramidMarkers.insert( std::pair<std::size_t, CCTag::List>( i, CCTag::List() ) );
 
-    // Create EdgePoints for every detected edge points in edges.
-    // std::vector<EdgePoint> points;
-    // vPoints.push_back(points);
-    vPoints.push_back( std::vector<EdgePoint>() );
-    
-    // EdgePointsImage edgesMap;
-    // vEdgeMaps.push_back(edgesMap);
-    vEdgeMaps.push_back( EdgePointsImage() );
-    
     cctagMultiresDetection_inner( i,
                                   pyramidMarkers[i],
                                   imgGraySrc,
                                   imagePyramid.getLevel(i),
                                   frame,
-                                  vPoints.back(),
-                                  vEdgeMaps.back(),
+                                  vEdgePointCollections.back(),
                                   cuda_pipe,
                                   params,
                                   durations );
@@ -367,7 +350,7 @@ void cctagMultiresDetection(
       
       
       std::list<EdgePoint*> pointsInHull;
-      selectEdgePointInEllipticHull(vEdgeMaps[0], rescaledOuterEllipse, scale, pointsInHull);
+      selectEdgePointInEllipticHull(vEdgePointCollections[0], rescaledOuterEllipse, scale, pointsInHull);
 
       #ifdef CCTAG_OPTIM
         boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());

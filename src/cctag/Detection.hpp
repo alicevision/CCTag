@@ -33,10 +33,9 @@ void cctagDetection(
 
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
-        std::vector<EdgePoint>& points,
+        const EdgePointCollection& edgeCollection,
         const cv::Mat&          src,
         const std::vector<EdgePoint*>& seeds,
-        const EdgePointsImage&  edgesMap,
         const std::size_t       frame,
         int pyramidLevel,
         float scale,

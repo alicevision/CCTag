@@ -284,7 +284,8 @@ static void completeFlowComponent(
  outerEllipsePoints: edge points lying extracted on the outer ellipse
  cctagPoints: set of points constituting the final cctag 
  params: parameters of the system's algorithm */
-void flowComponentAssembling(
+static void flowComponentAssembling(
+        const EdgePointCollection& edgeCollection,
         float & quality,
         const Candidate & candidate,
         const std::vector<Candidate> & vCandidateLoopTwo,
@@ -363,7 +364,7 @@ void flowComponentAssembling(
     const Candidate & selectedCandidate = vCandidateLoopTwo[iMax];
     DO_TALK( CCTAG_COUT_VAR_DEBUG(selectedCandidate._outerEllipse); )
 
-    if( isAnotherSegment(outerEllipse, outerEllipsePoints, 
+    if( isAnotherSegment(edgeCollection, outerEllipse, outerEllipsePoints, 
             selectedCandidate._filteredChildrens, selectedCandidate,
             cctagPoints, params._nCrowns * 2,
             params._thrMedianDistanceEllipse) )
@@ -418,7 +419,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
         if ((quality > 0.25) && (quality < 0.7))
         {
           // Search for another segment
-          flowComponentAssembling( quality, candidate, vCandidateLoopTwo,
+          flowComponentAssembling( edgeCollection, quality, candidate, vCandidateLoopTwo,
                   outerEllipse, outerEllipsePoints, cctagPoints, params
 #ifndef CCTAG_SERIALIZE
                   );
