@@ -33,7 +33,7 @@
  */
 #define EDGE_LINKING_HOST_SIDE
 
-#define DEBUG_LINKED_USE_INT4_BUFFER
+//#define DEBUG_LINKED_USE_INT4_BUFFER
 
 /* Separable compilation allows one kernel to instantiate
  * others. That avoids complexity on the host side when,
