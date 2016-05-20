@@ -49,6 +49,7 @@ public:
   const boost::multi_array<int,2>& map() const { return _edgeMap; }
   
   int_vector& voters() { return _voterLists; }
+  const int_vector& voters() const { return _voterLists; }
   
   // Index->EdgePoint conversions; both 1D and 2D. May return NULL!
   EdgePoint* operator()(int i) { return i >= 0 ? &_edgeList.at(i) : nullptr; }
