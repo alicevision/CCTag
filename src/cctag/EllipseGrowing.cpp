@@ -73,7 +73,8 @@ bool initMarkerCenter(cctag::Point2d<Eigen::Vector3f> & markerCenter,
   return true;
 }
 
-bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens,
+bool addCandidateFlowtoCCTag(const EdgePointCollection& edgeCollection,
+        const std::vector< EdgePoint* > & filteredChildrens,
         const std::vector< EdgePoint* > & outerEllipsePoints,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
         std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
@@ -122,11 +123,11 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
     {
       if (dir == -1)
       {
-        p = p->_before;
+        p = edgeCollection(p->_before);
       }
       else
       {
-        p = p->_after;
+        p = edgeCollection(p->_after);
       }
 
 
@@ -312,7 +313,7 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
   return resCircle;
 }
 
-bool ellipseGrowingInit(const std::vector<EdgePoint> & points, const std::vector<EdgePoint*>& filteredChildrens, numerical::geometry::Ellipse& ellipse)
+bool ellipseGrowingInit(const std::vector<EdgePoint*>& filteredChildrens, numerical::geometry::Ellipse& ellipse)
 {
 
   Point2d<Vector3s> p1;
@@ -341,12 +342,12 @@ bool ellipseGrowingInit(const std::vector<EdgePoint> & points, const std::vector
 }
 
 void connectedPoint(std::vector<EdgePoint*>& pts, const int runId, 
-        const EdgePointsImage& img, numerical::geometry::Ellipse& qIn,
+        const EdgePointCollection& img, numerical::geometry::Ellipse& qIn,
         numerical::geometry::Ellipse& qOut, int x, int y)
 {
   BOOST_ASSERT(img[x][y]);
   const size_t threadMask = (size_t)1 << runId;
-  img[x][y]->_processed |= threadMask;  // Set as processed
+  img(x,y)->_processed |= threadMask;  // Set as processed
 
   static int xoff[] = {1, 1, 0, -1, -1, -1, 0, 1};
   static int yoff[] = {0, -1, -1, -1, 0, 1, 1, 1};
@@ -358,7 +359,7 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
     if (sx >= 0 && sx < int( img.shape()[0]) &&
         sy >= 0 && sy < int( img.shape()[1]))
     {
-      EdgePoint* e = img[sx][sy];
+      EdgePoint* e = img(sx,sy);
 
       if (e && // If unprocessed
           isInHull(qIn, qOut, e) &&
@@ -399,7 +400,7 @@ void computeHull(const numerical::geometry::Ellipse& ellipse, float delta,
           ellipse.angle());
 }
 
-void ellipseHull(const EdgePointsImage& img,
+void ellipseHull(const EdgePointCollection& img,
         std::vector<EdgePoint*>& pts,
         numerical::geometry::Ellipse& ellipse,
         float delta, const std::size_t runId)
@@ -417,7 +418,7 @@ void ellipseHull(const EdgePointsImage& img,
 }
 
 void ellipseGrowing2(
-        const EdgePointsImage& img,
+        const EdgePointCollection& img,
         const std::vector<EdgePoint*>& filteredChildrens, 
         std::vector<EdgePoint*>& outerEllipsePoints,
         numerical::geometry::Ellipse& ellipse,

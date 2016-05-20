@@ -384,6 +384,7 @@ void flowComponentAssembling(
 
 static void cctagDetectionFromEdgesLoopTwoIteration(
   CCTag::List& markers,
+  const EdgePointCollection& edgeCollection,
   const std::vector<Candidate>& vCandidateLoopTwo,
   size_t iCandidate,
   int pyramidLevel,
@@ -429,7 +430,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
 
       // Add the flowComponent from candidate to cctagPoints // Add intermediary points - required ? todo@Lilian
       // cctagPoints may be not empty, i.e. when the assembling succeed.
-      if (! addCandidateFlowtoCCTag(candidate._filteredChildrens, 
+      if (! addCandidateFlowtoCCTag(edgeCollection, candidate._filteredChildrens, 
               candidate._outerEllipsePoints, outerEllipse,
               cctagPoints, params._nCrowns * 2))
       {
@@ -671,7 +672,7 @@ void cctagDetectionFromEdges(
 
   const size_t candidateLoopTwoCount = vCandidateLoopTwo.size();
   tbb::parallel_for(size_t(0), candidateLoopTwoCount, [&](size_t iCandidate) {
-    cctagDetectionFromEdgesLoopTwoIteration(markers, vCandidateLoopTwo, iCandidate,
+    cctagDetectionFromEdgesLoopTwoIteration(markers, edgeCollection, vCandidateLoopTwo, iCandidate,
       pyramidLevel, scale, params);
     
   });
