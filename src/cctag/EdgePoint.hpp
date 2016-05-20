@@ -16,14 +16,11 @@ class Label;
 
 using Vector3s = Eigen::Matrix<short, 3, 1>;
 
-class EdgePoint : public cctag::Point2d<Vector3s>
+class EdgePoint : public Vector3s
 {
 public:
-#ifdef WITH_CUDA
-  EdgePoint() = default;  // don't want to do any work in this in cuda part where it's constructed
-#else
   EdgePoint()
-    : Point2d(0, 0)
+    : Vector3s(0, 0, 1)
     , _grad(0.f,0.f)
     , _normGrad( 0.f )
     , _before( NULL )
@@ -35,10 +32,9 @@ public:
     , _flowLength (0)
     ,_processedAux(false)
   {}
-#endif
   
   EdgePoint( const EdgePoint& p )
-    : Point2d( p )
+    : Vector3s(p)
     , _grad( p._grad )
     , _normGrad ( p._normGrad )
     , _before( p._before )
@@ -52,7 +48,7 @@ public:
   {}
 
   EdgePoint( const int vx, const int vy, const float vdx, const float vdy )
-    : Point2d( vx, vy )
+    : Vector3s( vx, vy, 1 )
     , _before( NULL )
     , _after( NULL )
     , _processed( 0 )
