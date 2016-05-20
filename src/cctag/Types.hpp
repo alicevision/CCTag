@@ -26,20 +26,12 @@ private:
   std::vector<EdgePoint> _edgeList;
   boost::multi_array<int,2> _edgeMap;
   int_vector _voterLists;
-  EdgePoint *_currentVoteAdd;
   
 public:
   EdgePointCollection()
   {
     _edgeList.reserve(2 << 20);
     _voterLists.reserve(6 << 20);
-    _currentVoteAdd = nullptr;
-  }
-  
-  ~EdgePointCollection()
-  {
-    if (_currentVoteAdd)
-      throw std::logic_error("EdgePointCollection: destructing while adding votes");
   }
   
   std::vector<EdgePoint>& points() { return _edgeList; }
@@ -70,8 +62,7 @@ public:
     return i;
   }
   
-
-  // Used by CPU voting.
+  // Return list of voters as a [begin,end) pair of pointers.
   voter_list voters(const EdgePoint& p) const
   {
     if ((p._votersBegin < 0) != (p._votersEnd < 0))
@@ -83,28 +74,6 @@ public:
     if (p._votersBegin > p._votersEnd)
       throw std::logic_error("EdgePointCollection: invalid voter list indices (3)");
     return std::make_pair(_voterLists.data() + p._votersBegin, _voterLists.data() + p._votersEnd);
-  }
-  
-  // For CPU implementation of voting
-  void begin_add_votes(EdgePoint& p)
-  {
-    if (_currentVoteAdd)
-      throw std::logic_error("EdgePointCollection::begin_add_votes: already in progress");
-    _currentVoteAdd = &p;
-    p._votersBegin = _voterLists.size();
-  }
-  void end_add_votes(EdgePoint& p)
-  {
-    if (&p != _currentVoteAdd)
-      throw std::logic_error("EdgePointCollection::end_add_votes: invalid point");
-    _currentVoteAdd = nullptr;
-    p._votersEnd = _voterLists.size();
-  }
-  void add_vote(EdgePoint& p, int i)
-  {
-    if (&p != _currentVoteAdd)
-      throw std::logic_error("EdgePointCollection::add_vote: invalid point");
-    _voterLists.push_back(i);
   }
 };
 
