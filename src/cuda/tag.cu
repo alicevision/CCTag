@@ -199,13 +199,12 @@ void TagPipe::handleframe( int i )
 
 __host__
 void TagPipe::convertToHost( size_t                          layer,
-                             std::vector<cctag::EdgePoint>&  vPoints,
-                             cctag::EdgePointsImage&         edgeImage,
+                             cctag::EdgePointCollection&     edgeCollection,
                              std::vector<cctag::EdgePoint*>& seeds)
 {
     assert( layer < _frame.size() );
 
-    _frame[layer]->applyExport( vPoints, edgeImage, seeds );
+    _frame[layer]->applyExport( edgeCollection, seeds );
 
 }
 

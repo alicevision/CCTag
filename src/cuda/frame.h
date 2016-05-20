@@ -197,9 +197,8 @@ public:
     void applyLink( const cctag::Parameters& param );
 
     // implemented in frame_export.cu
-    bool applyExport( std::vector<cctag::EdgePoint>&  vPoints,
-                      cctag::EdgePointsImage&         edgesMap,
-                      std::vector<cctag::EdgePoint*>& seeds);
+    bool applyExport( cctag::EdgePointCollection& out_edges,
+                      std::vector<cctag::EdgePoint*>& out_seedlist);
 
     cv::Mat* getPlane( ) const;
     cv::Mat* getDx( ) const;

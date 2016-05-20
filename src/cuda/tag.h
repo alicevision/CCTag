@@ -47,8 +47,7 @@ public:
     void handleframe( int layer );
 
     void convertToHost( size_t                          layer,
-                        std::vector<cctag::EdgePoint>&  vPoints,
-                        cctag::EdgePointsImage&         edgeImage,
+                        cctag::EdgePointCollection&     edgeCollection,
                         std::vector<cctag::EdgePoint*>& seeds);
 
     inline std::size_t getNumOctaves( ) const {

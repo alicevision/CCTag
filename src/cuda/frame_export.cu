@@ -13,8 +13,7 @@ namespace popart {
 
 using namespace std;
 
-bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
-                         cctag::EdgePointsImage&         out_edgemap,
+bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
                          std::vector<cctag::EdgePoint*>& out_seedlist)
 {
     // cerr << "Enter " << __FUNCTION__ << endl;
@@ -22,10 +21,9 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
     int vote_sz = _voters.host.size;
     int all_sz  = _all_edgecoords.host.size;
 
-    assert( out_edgelist.size() == 0 );
-    assert( out_edgemap.size() == 0 );
+    assert( out_edges.points().size() == 0 );
+    assert( out_edges.map().size() == 0 );
     assert( out_seedlist.size() == 0 );
-    assert( winners.size() == 0 );
     assert( vote_sz <= all_sz );
 
     if( vote_sz <= 0 ) {
@@ -55,10 +53,12 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
                v_comp );
 #endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
+    auto& out_edgemap = out_edges.map();
     out_edgemap.resize( boost::extents[ _d_plane.cols ][ _d_plane.rows ] );
     //std::fill( out_edgemap.origin(), out_edgemap.origin() + out_edgemap.size(), (cctag::EdgePoint*)NULL );
-    memset(out_edgemap.origin(), 0, out_edgemap.size() * sizeof(cctag::EdgePoint*));
+    memset(out_edgemap.origin(), -1, out_edgemap.size() * sizeof(int));
 
+    auto& out_edgelist = out_edges.points();
     out_edgelist.reserve(all_sz+256);
     // cctag::EdgePoint* array = new cctag::EdgePoint[ all_sz ];
 
@@ -67,7 +67,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
           const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
           const int16_t dy = _h_dy.ptr(pt.y)[pt.x];
           out_edgelist.emplace_back(cctag::EdgePoint(pt.x, pt.y, dx, dy));
-          out_edgemap[pt.x][pt.y] = &out_edgelist.back();
+          out_edgemap[pt.x][pt.y] = out_edges(&out_edgelist.back());
     }
 
     /* Block 2
@@ -90,7 +90,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
             }
             continue;
         }
-        cctag::EdgePoint* ep = out_edgemap[pt.coord.x][pt.coord.y];
+        cctag::EdgePoint* ep = out_edges(pt.coord.x,pt.coord.y);
         if( ep == 0 ) {
             cerr << __FILE__ << ":" << __LINE__ << ": "
                  << "Error: found a vote winner (" << pt.coord.x << "," << pt.coord.y << ")"
@@ -102,13 +102,13 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
         assert( ep->_grad.getY() == (double)pt.d.y );
 
         if( pt.descending.after.x != 0 || pt.descending.after.y != 0 ) {
-            cctag::EdgePoint* n = out_edgemap[pt.descending.after.x][pt.descending.after.y];
-            if( n != 0 )
+            int n = out_edgemap[pt.descending.after.x][pt.descending.after.y];
+            if( n >= 0 )
                 ep->_after = n;
         }
         if( pt.descending.befor.x != 0 || pt.descending.befor.y != 0 ) {
-            cctag::EdgePoint* n = out_edgemap[pt.descending.befor.x][pt.descending.befor.y];
-            if( n != 0 )
+            int n = out_edgemap[pt.descending.befor.x][pt.descending.befor.y];
+            if( n >= 0 )
                 ep->_before = n;
         }
 
@@ -138,8 +138,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
     for( int i=0; i<_inner_points.host.size; i++ ) {
         int seedidx = _inner_points.host.ptr[i];
         const TriplePoint& pt = _voters.host.ptr[seedidx];
-        cctag::EdgePoint* ep = out_edgemap[pt.coord.x][pt.coord.y];
-
+        cctag::EdgePoint* ep = out_edges(pt.coord.x, pt.coord.y);
         out_seedlist[i] = ep;
     }
 
@@ -148,16 +147,26 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
      * a candidate inner point, they are added into the list for
      * that inner point.
      */
+    std::vector<std::vector<int>> voter_lists(out_edgelist.size());
     for( int i=1; i<vote_sz; i++ ) {
         const TriplePoint& pt   = _voters.host.ptr[i];
         const int          vote = _v_chosen_idx.host.ptr[i];
 
         if( vote != 0 ) {
             const TriplePoint& point = _voters.host.ptr[ vote ];
-            cctag::EdgePoint* potential_seed = out_edgemap[point.coord.x][point.coord.y];
-            potential_seed->_voters.push_back(out_edgemap[pt.coord.x][pt.coord.y]);
+            int potential_seed = out_edgemap[point.coord.x][point.coord.y];
+            voter_lists[potential_seed].push_back(out_edgemap[pt.coord.x][pt.coord.y]);
         }
     }
+
+    // Construct voters lists.
+    for (size_t i = 0; i < out_edgelist.size(); ++i) {
+      cctag::EdgePoint* p = out_edges(i);
+      p->_votersBegin = out_edges.voters().size();
+      out_edges.voters().insert(out_edges.voters().end(), voter_lists[i].begin(), voter_lists[i].end());
+      p->_votersEnd = out_edges.voters().size();
+    }
+
     // cerr << "Leave " << __FUNCTION__ << " (ok)" << endl;
     return true;
 }
