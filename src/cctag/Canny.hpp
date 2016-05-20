@@ -16,8 +16,7 @@ namespace cctag {
 class EdgePoint;
 
 void edgesPointsFromCanny(
-        std::vector<EdgePoint>& points,
-        EdgePointsImage & edgePointsMap,
+        EdgePointCollection& edgeCollection,
         const cv::Mat & edges,
         const cv::Mat & dx,
         const cv::Mat & dy );

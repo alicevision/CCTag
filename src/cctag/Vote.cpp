@@ -590,6 +590,7 @@ void vote(EdgePointCollection& edgeCollection,
     }
 
     bool isAnotherSegment(
+            const EdgePointCollection& edgeCollection,
             numerical::geometry::Ellipse & outerEllipse,
             std::vector<EdgePoint*>& outerEllipsePoints,
             const std::vector<EdgePoint*>& filteredChildrens,
@@ -744,7 +745,7 @@ void vote(EdgePointCollection& edgeCollection,
                 //const float thrMedianDistanceEllipse = 3; // todo@Lilian -- utiliser le meme seuil que dans la main loop 1
 
                 if (SmFinal < thrMedianDistanceEllipse) {
-                    if (addCandidateFlowtoCCTag(anotherCandidate._filteredChildrens, anotherOuterEllipsePoints, outerEllipseTemp, cctagPoints, numCircles)) {
+                    if (addCandidateFlowtoCCTag(edgeCollection, anotherCandidate._filteredChildrens, anotherOuterEllipsePoints, outerEllipseTemp, cctagPoints, numCircles)) {
                         outerEllipsePoints = outerEllipsePointsTemp;
                         outerEllipse = outerEllipseTemp;
 

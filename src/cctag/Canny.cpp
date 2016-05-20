@@ -15,17 +15,20 @@ namespace cctag
 {
 
 void edgesPointsFromCanny(
-        std::vector<EdgePoint>& points,
-        EdgePointsImage & edgePointsMap,
+        EdgePointCollection& edgeCollection,
         const cv::Mat & edges,
         const cv::Mat & dx,
         const cv::Mat & dy )
 {
   std::size_t width = edges.cols;
   std::size_t height = edges.rows;
+  
+  auto& edgePointsMap = edgeCollection.map();
+  auto& points = edgeCollection.points();
 
+  
   edgePointsMap.resize( boost::extents[width][height] );
-  std::fill( edgePointsMap.origin(), edgePointsMap.origin() + edgePointsMap.size(), (EdgePoint*)NULL );
+  std::fill( edgePointsMap.origin(), edgePointsMap.origin() + edgePointsMap.size(), -1 );
   
   points.reserve( width * height / 2 );
 
@@ -35,10 +38,8 @@ void edgesPointsFromCanny(
     {
       if ( edges.at<uchar>(y,x) == 255 )
       {
-        points.push_back( EdgePoint( x, y, (float) dx.at<short>(y,x), (float) dy.at<short>(y,x) ) );
-        
-        EdgePoint* p = &points.back();
-        edgePointsMap[x][y] = p;
+        edgePointsMap[x][y] = (int)points.size();
+        points.emplace_back( EdgePoint( x, y, (float) dx.at<short>(y,x), (float) dy.at<short>(y,x) ) );
       }
     }
   }
