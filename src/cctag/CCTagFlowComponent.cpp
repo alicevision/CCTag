@@ -4,11 +4,8 @@
 namespace cctag
 {
 
-CCTagFlowComponent::CCTagFlowComponent()
-{
-}
-
 CCTagFlowComponent::CCTagFlowComponent(
+  const EdgePointCollection& edgeCollection,
   const std::vector<EdgePoint*> & outerEllipsePoints,
   const std::list<EdgePoint*> & childrens,
   const std::vector<EdgePoint*> & filteredChildrens,
@@ -16,7 +13,8 @@ CCTagFlowComponent::CCTagFlowComponent(
   const std::list<EdgePoint*> & convexEdgeSegment,
   const EdgePoint & seed,
   std::size_t nCircles)
-  : _outerEllipse(outerEllipse)
+  : _edgeCollection(&edgeCollection)
+  , _outerEllipse(outerEllipse)
   , _seed(seed)
   , _nCircles(nCircles)
 {
@@ -37,10 +35,6 @@ CCTagFlowComponent::CCTagFlowComponent(
   setFieldLines(childrens);
   setFilteredFieldLines(filteredChildrens);
 
-}
-
-CCTagFlowComponent::~CCTagFlowComponent()
-{
 }
 
 // todo@Lilian : templater les 2 methodes suivantes sur le container
@@ -66,11 +60,11 @@ void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & f
     {
       if (dir == -1)
       {
-        p = p->_before;
+        p = (*_edgeCollection)(p->_before);
       }
       else
       {
-        p = p->_after;
+        p = (*_edgeCollection)(p->_after);
       }
 
       vE.push_back(EdgePoint(*p));
@@ -103,11 +97,11 @@ void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens)
     {
       if (dir == -1)
       {
-        p = p->_before;
+        p = (*_edgeCollection)(p->_before);
       }
       else
       {
-        p = p->_after;
+        p = (*_edgeCollection)(p->_after);
       }
 
       assert( p );
