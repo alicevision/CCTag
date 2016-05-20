@@ -28,16 +28,16 @@ static void updateXY(const float & dx, const float & dy, int & x, int & y,  floa
 	return;
 }
 
-EdgePoint* gradientDirectionDescent(
-        const boost::multi_array<EdgePoint*, 2> & canny, 
-        const EdgePoint& p,
-        int dir,
-        const std::size_t nmax, 
-        const cv::Mat & imgDx, 
-        const cv::Mat & imgDy, 
-        int thrGradient)
+int gradientDirectionDescent(
+  const EdgePointCollection& canny,
+  const EdgePoint& p,
+  int dir,
+  const std::size_t nmax, 
+  const cv::Mat & imgDx, 
+  const cv::Mat & imgDy, 
+  int thrGradient)
 {
-    EdgePoint* ret = NULL;
+    int ret = -1;
     float e        = 0.0f;
     float dx       = dir * imgDx.at<short>(p.y(),p.x());
     float dy       = dir * imgDy.at<short>(p.y(),p.x());
@@ -85,15 +85,12 @@ EdgePoint* gradientDirectionDescent(
         if( x >= 0 && x < canny.shape()[0] &&
             y >= 0 && y < canny.shape()[1] )
         {
-            ret = canny[x][y];
-            if( ret )
-            {
-                    return ret;
-            }
+            if ((ret = canny(x,y)) >= 0)
+              return ret;
         }
         else
         {
-                return NULL;
+                return -1;
         }
 
         while( n <= nmax)
@@ -105,8 +102,8 @@ EdgePoint* gradientDirectionDescent(
             if( x >= 0 && x < canny.shape()[0] &&
                 y >= 0 && y < canny.shape()[1] )
             {
-                ret = canny[x][y];
-                if( ret )
+                ret = canny(x,y);
+                if( ret >= 0)
                 {
                     return ret;
                 }
@@ -115,21 +112,21 @@ EdgePoint* gradientDirectionDescent(
                     if( x >= 0 && x < canny.shape()[0] &&
                         ( y - stpY ) >= 0 && ( y - stpY ) < canny.shape()[1] )
                     {
-                        ret = canny[x][y - stpY];              //#
-                        if( ret )
+                        ret = canny(x, y - stpY);              //#
+                        if( ret >= 0)
                         {
                                 return ret;
                         }
                     }
                     else
                     {
-                            return NULL;
+                            return -1;
                     }
                 }
             }
             else
             {
-                    return NULL;
+                    return -1;
             }
         }
     }
@@ -155,15 +152,15 @@ EdgePoint* gradientDirectionDescent(
         if( x >= 0 && x < canny.shape()[0] &&
             y >= 0 && y < canny.shape()[1] )
         {
-            ret = canny[x][y];
-            if( ret )
+            ret = canny(x,y);
+            if( ret >= 0 )
             {
                 return ret;
             }
         }
         else
         {
-            return NULL;
+            return -1;
         }
 
         while( n <= nmax)
@@ -175,8 +172,8 @@ EdgePoint* gradientDirectionDescent(
             if( x >= 0 && x < canny.shape()[0] &&
                 y >= 0 && y < canny.shape()[1] )
             {
-                ret = canny[x][y];
-                if( ret )
+                ret = canny(x,y);
+                if( ret >= 0)
                 {
                     return ret;
                 }
@@ -185,25 +182,25 @@ EdgePoint* gradientDirectionDescent(
                     if( ( x - stpX ) >= 0 && ( x - stpX ) < canny.shape()[0] &&
                         y >= 0 && y < canny.shape()[1] )
                     {
-                        ret = canny[x - stpX][y];
-                        if( ret )
+                        ret = canny(x - stpX,y);
+                        if( ret >=0 )
                         {
                                 return ret;
                         }
                     }
                     else
                     {
-                        return NULL;
+                        return -1;
                     }
                 }
             }
             else
             {
-                return NULL;
+                return -1;
             }
         }
     }
-    return NULL;
+    return -1;
 }
 
 } // namespace cctag

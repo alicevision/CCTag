@@ -9,6 +9,8 @@
 #include <boost/gil/typedefs.hpp>
 #include <boost/multi_array.hpp>
 
+#include "Types.hpp"
+
 namespace cctag {
 
 class EdgePoint;
@@ -17,14 +19,14 @@ class EdgePoint;
  *
  */
 
-EdgePoint* gradientDirectionDescent(
-        const boost::multi_array<EdgePoint*, 2> & canny,
-        const EdgePoint& p,
-        const int dir,
-        const std::size_t nmax,
-        const cv::Mat & dx, 
-        const cv::Mat & dy,
-        int thrGradient);
+int gradientDirectionDescent(
+  const EdgePointCollection& canny,
+  const EdgePoint& p,
+  const int dir,
+  const std::size_t nmax,
+  const cv::Mat & dx, 
+  const cv::Mat & dy,
+  int thrGradient);
 
 } // namespace cctag
 
