@@ -65,14 +65,14 @@ namespace { using CandidatePtr = std::unique_ptr<Candidate>; }
  */
 std::vector<popart::TagPipe*> cudaPipelines;
 
-void constructFlowComponentFromSeed(
+static void constructFlowComponentFromSeed(
         EdgePoint * seed,
-        const EdgePointsImage& edgesMap,
+        const EdgePointCollection& edgeCollection,
         std::vector<CandidatePtr> & vCandidateLoopOne,
         const Parameters & params)
 {
   static tbb::mutex G_SortMutex;
-
+  
   assert( seed );
   // Check if the seed has already been processed, i.e. belongs to an already
   // reconstructed flow component.
@@ -86,20 +86,20 @@ void constructFlowComponentFromSeed(
 
     // Convex edge linking from the seed in both directions. The linking
     // is performed until the convexity is lost.
-    edgeLinking(edgesMap, convexEdgeSegment, seed,
+    edgeLinking(edgeCollection, convexEdgeSegment, seed,
             params._windowSizeOnInnerEllipticSegment, params._averageVoteMin);
 
     // Compute the average number of received points.
     int nReceivedVote = 0;
     int nVotedPoints = 0;
 
-    BOOST_FOREACH(EdgePoint * p, convexEdgeSegment)
+    for (EdgePoint* p : convexEdgeSegment)
     {
-      nReceivedVote += p->_voters.size();
-      if (p->_voters.size() > 0)
-      {
+      auto voters = edgeCollection.voters(*p);
+      auto votersSize = voters.second - voters.first; 
+      nReceivedVote += votersSize;
+      if (votersSize > 0)
         ++nVotedPoints;
-      }
     }
 
     // All flow components WILL BE next sorted based on this characteristic (scalar); descending order
@@ -114,14 +114,13 @@ void constructFlowComponentFromSeed(
   }
 }
 
-void completeFlowComponent(
-        Candidate & candidate,
-        const std::vector<EdgePoint> & points,
-        const EdgePointsImage& edgesMap,
-        std::vector<Candidate> & vCandidateLoopTwo,
-        std::size_t& nSegmentOut,
-        std::size_t runId,
-        const Parameters & params)
+static void completeFlowComponent(
+  Candidate & candidate,
+  const EdgePointCollection& edgeCollection,
+  std::vector<Candidate> & vCandidateLoopTwo,
+  std::size_t& nSegmentOut,
+  std::size_t runId,
+  const Parameters & params)
 {
   static tbb::spin_mutex G_UpdateMutex;
   static tbb::mutex G_InsertMutex;
@@ -130,7 +129,7 @@ void completeFlowComponent(
   {
     std::list<EdgePoint*> childrens;
 
-    childrensOf(candidate._convexEdgeSegment, childrens);
+    childrensOf(edgeCollection, candidate._convexEdgeSegment, childrens);
 
     if (childrens.size() < params._minPointsSegmentCandidate)
     {
@@ -198,9 +197,9 @@ void completeFlowComponent(
 
     bool goodInit = false;
 
-    goodInit = ellipseGrowingInit(points, filteredChildrens, outerEllipse);
+    goodInit = ellipseGrowingInit(filteredChildrens, outerEllipse);
 
-    ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
+    ellipseGrowing2(edgeCollection, filteredChildrens, outerEllipsePoints, outerEllipse,
                     params._ellipseGrowingEllipticHullWidth, runId, goodInit);
 
     candidate._nLabel = nLabel;
@@ -581,10 +580,9 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
 
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
-        std::vector<EdgePoint>& points,
+        const EdgePointCollection& edgeCollection,
         const cv::Mat&          src,
         const std::vector<EdgePoint*>& seeds,
-        const EdgePointsImage& edgesMap,
         const std::size_t frame,
         int pyramidLevel,
         float scale,
@@ -629,7 +627,7 @@ void cctagDetectionFromEdges(
   // will be collected and constitute the initial data of a flow component.
   tbb::parallel_for(size_t(0), nSeedsToProcess, [&](int iSeed) {
     assert( seeds[iSeed] );
-    constructFlowComponentFromSeed(seeds[iSeed], edgesMap, vCandidateLoopOne, params);
+    constructFlowComponentFromSeed(seeds[iSeed], edgeCollection, vCandidateLoopOne, params);
   });
 
   const std::size_t nFlowComponentToProcessLoopTwo = 
@@ -648,7 +646,7 @@ void cctagDetectionFromEdges(
   
   tbb::parallel_for(size_t(0), nFlowComponentToProcessLoopTwo, [&](size_t iCandidate) {
     size_t runId = iCandidate;
-    completeFlowComponent(*vCandidateLoopOne[iCandidate], points, edgesMap, vCandidateLoopTwo, nSegmentOut, runId, params);
+    completeFlowComponent(*vCandidateLoopOne[iCandidate], edgeCollection, vCandidateLoopTwo, nSegmentOut, runId, params);
   });
   
   DO_TALK(
