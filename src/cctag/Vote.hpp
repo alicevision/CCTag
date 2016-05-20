@@ -29,8 +29,7 @@ namespace cctag {
  * cannyGradX: X derivative of the gray image
  * cannyGradY: Y derivative of the gray image
  */
-void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
-        const EdgePointsImage & edgesMap,
+void vote(EdgePointCollection& edgeCollection, std::vector<EdgePoint*> & seeds,
         const cv::Mat & dx,
         const cv::Mat & dy,
         const Parameters & params);
@@ -38,21 +37,21 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 /** @brief Retrieve all connected edges.
  * @param[out] convexEdgeSegment
  */
-void edgeLinking( const EdgePointsImage& img, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax, 
+void edgeLinking(const EdgePointCollection& edgeCollection, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax, 
 	std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
 /** @brief Edge linking in a given direction
  * @param edges resulting edges sorted points
  */
-void edgeLinkingDir( const EdgePointsImage& img, boost::container::flat_set<unsigned int>& processed,
-	EdgePoint* p, const int dir, std::list<EdgePoint*>& convexEdgeSegment,
+void edgeLinkingDir(const EdgePointCollection& edgeCollection, boost::container::flat_set<unsigned int>& processed,
+	const EdgePoint* p, const int dir, std::list<EdgePoint*>& convexEdgeSegment,
 	std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
 /** @brief Concaten all childrens of each points
  * @param edges list of edges
  * @param childrens resulting childrens
  */
-void childrensOf(const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& childrens );
+void childrensOf(const EdgePointCollection& edgeCollection, const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& childrens );
 
 /** @brief Concaten all childrens of each points
  * @param [in/out] edges list of childrens points (from a winner)
