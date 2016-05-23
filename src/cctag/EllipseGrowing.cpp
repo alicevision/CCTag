@@ -345,7 +345,7 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
         const EdgePointCollection& img, numerical::geometry::Ellipse& qIn,
         numerical::geometry::Ellipse& qOut, int x, int y)
 {
-  BOOST_ASSERT(img[x][y]);
+  BOOST_ASSERT(img(x,y));
   const size_t threadMask = (size_t)1 << runId;
   img(x,y)->_processed |= threadMask;  // Set as processed
 

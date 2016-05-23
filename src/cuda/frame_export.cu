@@ -98,8 +98,8 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
             // cerr << "Leave " << __FUNCTION__ << " (2)" << endl;
             return false;
         }
-        assert( ep->_grad.getX() == (double)pt.d.x );
-        assert( ep->_grad.getY() == (double)pt.d.y );
+        assert( ep->gradient()(0) == (double)pt.d.x );
+        assert( ep->gradient()(1) == (double)pt.d.y );
 
         if( pt.descending.after.x != 0 || pt.descending.after.y != 0 ) {
             int n = out_edgemap[pt.descending.after.x][pt.descending.after.y];
