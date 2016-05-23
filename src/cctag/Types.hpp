@@ -54,6 +54,8 @@ public:
   // EdgePoint->Index conversion.
   int operator()(const EdgePoint* p) const
   {
+    if (!p)
+      return -1;
     if (p < _edgeList.data())
       throw std::logic_error("EdgePointCollection::index: invalid pointer (1)");
     int i = p - _edgeList.data();

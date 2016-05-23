@@ -28,16 +28,16 @@ static void updateXY(const float & dx, const float & dy, int & x, int & y,  floa
 	return;
 }
 
-int gradientDirectionDescent(
-  const EdgePointCollection& canny,
-  const EdgePoint& p,
-  int dir,
-  const std::size_t nmax, 
-  const cv::Mat & imgDx, 
-  const cv::Mat & imgDy, 
-  int thrGradient)
+EdgePoint* gradientDirectionDescent(
+        const EdgePointCollection& canny,
+        const EdgePoint& p,
+        int dir,
+        const std::size_t nmax, 
+        const cv::Mat & imgDx, 
+        const cv::Mat & imgDy, 
+        int thrGradient)
 {
-    EdgePoint* ret = nullptr;
+    EdgePoint* ret = NULL;
     float e        = 0.0f;
     float dx       = dir * imgDx.at<short>(p.y(),p.x());
     float dy       = dir * imgDy.at<short>(p.y(),p.x());
@@ -85,12 +85,15 @@ int gradientDirectionDescent(
         if( x >= 0 && x < canny.shape()[0] &&
             y >= 0 && y < canny.shape()[1] )
         {
-            if ((ret = canny(x,y)))
-              return canny(ret);
+            ret = canny(x,y);
+            if( ret )
+            {
+                    return ret;
+            }
         }
         else
         {
-                return -1;
+                return NULL;
         }
 
         while( n <= nmax)
@@ -105,28 +108,28 @@ int gradientDirectionDescent(
                 ret = canny(x,y);
                 if( ret )
                 {
-                    return canny(ret);
+                    return ret;
                 }
                 else
                 {
                     if( x >= 0 && x < canny.shape()[0] &&
                         ( y - stpY ) >= 0 && ( y - stpY ) < canny.shape()[1] )
                     {
-                        ret = canny(x, y - stpY);              //#
+                        ret = canny(x,y - stpY);              //#
                         if( ret )
                         {
-                                return canny(ret);
+                                return ret;
                         }
                     }
                     else
                     {
-                            return -1;
+                            return NULL;
                     }
                 }
             }
             else
             {
-                    return -1;
+                    return NULL;
             }
         }
     }
@@ -155,12 +158,12 @@ int gradientDirectionDescent(
             ret = canny(x,y);
             if( ret )
             {
-                return canny(ret);
+                return ret;
             }
         }
         else
         {
-            return -1;
+            return NULL;
         }
 
         while( n <= nmax)
@@ -175,7 +178,7 @@ int gradientDirectionDescent(
                 ret = canny(x,y);
                 if( ret )
                 {
-                    return canny(ret);
+                    return ret;
                 }
                 else
                 {
@@ -185,22 +188,22 @@ int gradientDirectionDescent(
                         ret = canny(x - stpX,y);
                         if( ret )
                         {
-                                return canny(ret);
+                                return ret;
                         }
                     }
                     else
                     {
-                        return -1;
+                        return NULL;
                     }
                 }
             }
             else
             {
-                return -1;
+                return NULL;
             }
         }
     }
-    return -1;
+    return NULL;
 }
 
 } // namespace cctag

@@ -19,7 +19,7 @@ class EdgePoint;
  *
  */
 
-int gradientDirectionDescent(
+EdgePoint* gradientDirectionDescent(
   const EdgePointCollection& canny,
   const EdgePoint& p,
   const int dir,

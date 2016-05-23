@@ -66,9 +66,19 @@ void vote(EdgePointCollection& edgeCollection,
   voters.resize(edgeCollection.points().size());
 
     for (EdgePoint & p : edgeCollection.points()) {
-        p._before = gradientDirectionDescent(edgeCollection, p, -1, params._distSearch, dx, dy, params._thrGradientMagInVote);
+        EdgePoint* link;
+        int ilink;
+        
+        link = gradientDirectionDescent(edgeCollection, p, -1, params._distSearch, dx, dy, params._thrGradientMagInVote);
+        ilink = edgeCollection(link);
+        p._before = ilink;
+        
         CCTagFileDebug::instance().endVote();
-        p._after  = gradientDirectionDescent(edgeCollection, p, 1, params._distSearch, dx, dy, params._thrGradientMagInVote);
+        
+        link = gradientDirectionDescent(edgeCollection, p, 1, params._distSearch, dx, dy, params._thrGradientMagInVote);
+        ilink = edgeCollection(link);
+        p._after  = ilink;
+        
         CCTagFileDebug::instance().endVote();
     }
     // Vote
