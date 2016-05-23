@@ -90,25 +90,25 @@ public:
   EdgePoint* before(EdgePoint* p) const
   {
     int i = (*this)(p);
-    return (*this)(std::get<0>(_linkList[i]));
+    return (*this)(std::get<0>(_linkList.at(i)));
   }
 
   void set_before(EdgePoint* p, int link)
   {
     int i = (*this)(p);
-    std::get<0>(_linkList[i]) = link;
+    std::get<0>(_linkList.at(i)) = link;
   }
   
   EdgePoint* after(EdgePoint* p) const
   {
     int i = (*this)(p);
-    return (*this)(std::get<1>(_linkList[i]));
+    return (*this)(std::get<1>(_linkList.at(i)));
   }
 
   void set_after(EdgePoint* p, int link)
   {
     int i = (*this)(p);
-    std::get<1>(_linkList[i]) = link;
+    std::get<1>(_linkList.at(i)) = link;
   }
 };
 
