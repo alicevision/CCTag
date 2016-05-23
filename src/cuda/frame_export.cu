@@ -55,7 +55,6 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
 
     auto& out_edgemap = out_edges.map();
     out_edgemap.resize( boost::extents[ _d_plane.cols ][ _d_plane.rows ] );
-    //std::fill( out_edgemap.origin(), out_edgemap.origin() + out_edgemap.size(), (cctag::EdgePoint*)NULL );
     memset(out_edgemap.origin(), -1, _d_plane.cols * _d_plane.rows * sizeof(int));
 
     auto& out_edgelist = out_edges.list();
@@ -79,6 +78,10 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
      * Consequently, we have allocated memory for all of those above, and
      * we are copying linkage information for them in this block.
      */
+
+    auto& out_links = out_edges.links();
+    out_links.resize(all_sz, std::make_tuple(-1, -1));
+
     for( int i=1; i<vote_sz; i++ ) {
         const TriplePoint& pt = _voters.host.ptr[i];
         if( pt.coord.x == 0 && pt.coord.y == 0 ) {
@@ -104,12 +107,12 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
         if( pt.descending.after.x != 0 || pt.descending.after.y != 0 ) {
             int n = out_edgemap[pt.descending.after.x][pt.descending.after.y];
             if( n >= 0 )
-                ep->_after = n;
+                out_edges.set_after(ep, n);
         }
         if( pt.descending.befor.x != 0 || pt.descending.befor.y != 0 ) {
             int n = out_edgemap[pt.descending.befor.x][pt.descending.befor.y];
             if( n >= 0 )
-                ep->_before = n;
+                out_edges.set_before(ep, n);
         }
 
         ep->_flowLength = pt._flowLength;
@@ -158,14 +161,8 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
             voter_lists[potential_seed].push_back(out_edgemap[pt.coord.x][pt.coord.y]);
         }
     }
+    out_edges.create_voter_lists(voter_lists);
 
-    // Construct voters lists.
-    for (size_t i = 0; i < out_edgelist.size(); ++i) {
-      cctag::EdgePoint* p = out_edges(i);
-      p->_votersBegin = out_edges.voters().size();
-      out_edges.voters().insert(out_edges.voters().end(), voter_lists[i].begin(), voter_lists[i].end());
-      p->_votersEnd = out_edges.voters().size();
-    }
 
     // cerr << "Leave " << __FUNCTION__ << " (ok)" << endl;
     return true;

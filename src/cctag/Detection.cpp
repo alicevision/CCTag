@@ -95,8 +95,7 @@ static void constructFlowComponentFromSeed(
 
     for (EdgePoint* p : convexEdgeSegment)
     {
-      auto voters = edgeCollection.voters(*p);
-      auto votersSize = voters.second - voters.first; 
+      auto votersSize = edgeCollection.voters_size(p);
       nReceivedVote += votersSize;
       if (votersSize > 0)
         ++nVotedPoints;

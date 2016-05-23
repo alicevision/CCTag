@@ -123,11 +123,11 @@ bool addCandidateFlowtoCCTag(const EdgePointCollection& edgeCollection,
     {
       if (dir == -1)
       {
-        p = edgeCollection(p->_before);
+        p = edgeCollection.before(p);
       }
       else
       {
-        p = edgeCollection(p->_after);
+        p = edgeCollection.after(p);
       }
 
 

@@ -60,11 +60,11 @@ void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & f
     {
       if (dir == -1)
       {
-        p = (*_edgeCollection)(p->_before);
+        p = _edgeCollection->before(p);
       }
       else
       {
-        p = (*_edgeCollection)(p->_after);
+        p = _edgeCollection->after(p);
       }
 
       vE.push_back(EdgePoint(*p));
@@ -97,11 +97,11 @@ void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens)
     {
       if (dir == -1)
       {
-        p = (*_edgeCollection)(p->_before);
+        p = _edgeCollection->before(p);
       }
       else
       {
-        p = (*_edgeCollection)(p->_after);
+        p = _edgeCollection->after(p);
       }
 
       assert( p );

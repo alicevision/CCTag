@@ -71,13 +71,13 @@ void vote(EdgePointCollection& edgeCollection,
         
         link = gradientDirectionDescent(edgeCollection, p, -1, params._distSearch, dx, dy, params._thrGradientMagInVote);
         ilink = edgeCollection(link);
-        p._before = ilink;
+        edgeCollection.set_before(&p, ilink);
         
         CCTagFileDebug::instance().endVote();
         
         link = gradientDirectionDescent(edgeCollection, p, 1, params._distSearch, dx, dy, params._thrGradientMagInVote);
         ilink = edgeCollection(link);
-        p._after  = ilink;
+        edgeCollection.set_after(&p, ilink);
         
         CCTagFileDebug::instance().endVote();
     }
@@ -97,7 +97,7 @@ void vote(EdgePointCollection& edgeCollection,
         
         // Alternate from the edge point found in the direction opposed to the gradient
         // direction.
-        EdgePoint* current = edgeCollection(p._before);
+        EdgePoint* current = edgeCollection.before(&p);
         // Here current contains the edge point lying on the 2nd ellipse (from outer to inner)
         EdgePoint* choosen = NULL;
 
@@ -124,7 +124,7 @@ void vote(EdgePointCollection& edgeCollection,
                     choosen = NULL;
                     
                     // First in the gradient direction
-                    EdgePoint* target = edgeCollection(current->_after);
+                    EdgePoint* target = edgeCollection.after(current);
                     // No edge point was found in that direction
                     if (!target) {
                         break;
@@ -151,7 +151,7 @@ void vote(EdgePointCollection& edgeCollection,
                             lastDist = dist;
                             current = target;
                             // Second in the opposite gradient direction
-                            target = edgeCollection(current->_before);
+                            target = edgeCollection.before(current);
                             if (!target) {
                                 break;
                             }
@@ -208,14 +208,7 @@ void vote(EdgePointCollection& edgeCollection,
             }
         }
     }
-    
-    // Construct voters lists.
-    for (size_t i = 0; i < voters.size(); ++i) {
-      EdgePoint* p = edgeCollection(i);
-      p->_votersBegin = edgeCollection.voters().size();
-      edgeCollection.voters().insert(edgeCollection.voters().end(), voters[i].begin(), voters[i].end());
-      p->_votersEnd = edgeCollection.voters().size();
-    }
+    edgeCollection.create_voter_lists(voters);
     
     CCTAG_COUT_LILIAN("Elapsed time for vote: " << t.elapsed());
 }
@@ -255,7 +248,7 @@ void vote(EdgePointCollection& edgeCollection,
         int stop = 0;
         std::size_t maxLength = 100;
 
-        float averageVote = p->_votersEnd - p->_votersBegin;
+        float averageVote = edgeCollection.voters_size(p);
 
         while ((i < maxLength) && (found) && (averageVote >= averageVoteMin) )
         {
@@ -361,7 +354,7 @@ void vote(EdgePointCollection& edgeCollection,
                             } else {
                                 convexEdgeSegment.push_front(const_cast<EdgePoint*>(p));
                             }
-                            averageVote = (averageVote*convexEdgeSegment.size() + (p->_votersEnd - p->_votersBegin) )/ ( convexEdgeSegment.size()+1.f );
+                            averageVote = (averageVote*convexEdgeSegment.size() + edgeCollection.voters_size(p)) / ( convexEdgeSegment.size()+1.f );
                             stop = 1; // Found
 
                         }
@@ -401,12 +394,12 @@ void vote(EdgePointCollection& edgeCollection,
         // OPTI@Lilian : the maximum vote can be computed in the edge linking step with low cost.
 
         for (const EdgePoint* e : edges) {
-          voteMax = std::max((int)voteMax, e->_votersEnd - e->_votersBegin);
+          voteMax = std::max((int)voteMax, edgeCollection.voters_size(e));
         }
 
         for (const EdgePoint* e: edges) {
             //const auto& edgePoints = e->_voters; 
-            auto voters = edgeCollection.voters(*e);
+            auto voters = edgeCollection.voters(e);
             if (voters.second > voters.first) {
                 //childrens.splice( childrens.end(), winnerMap[e] );
 

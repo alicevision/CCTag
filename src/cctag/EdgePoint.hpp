@@ -23,10 +23,6 @@ public:
     : Vector3s(0, 0, 1)
     , _grad(0.f,0.f)
     , _normGrad( 0.f )
-    , _before( -1 )
-    , _after( -1 )
-    , _votersBegin(-1)
-    , _votersEnd(-1)
     , _processed( 0 )
     , _isMax( -1 )
     , _nSegmentOut(-1)
@@ -39,10 +35,6 @@ public:
     : Vector3s(p)
     , _grad( p._grad )
     , _normGrad ( p._normGrad )
-    , _before( p._before )
-    , _after( p._after )
-    , _votersBegin(p._votersBegin)
-    , _votersEnd(p._votersEnd)
     , _processed( 0 )
     , _isMax( -1 )
     , _nSegmentOut(-1)
@@ -55,10 +47,6 @@ public:
     : Vector3s( vx, vy, 1 )
     , _grad(vdx, vdy)
     , _normGrad(std::sqrt( vdx * vdx + vdy * vdy ))
-    , _before( -1 )
-    , _after( -1 )
-    , _votersBegin(-1)
-    , _votersEnd(-1)
     , _processed( 0 )
     , _isMax( -1 )
     , _nSegmentOut(-1)
@@ -95,10 +83,6 @@ private:
   Eigen::Vector2f _grad;
   float _normGrad;
 public:
-  int _before;
-  int _after;
-  int _votersBegin;
-  int _votersEnd;
   uint64_t _processed;   // bitfield; must be 64-bit
   int _isMax;
   int _nSegmentOut;     // std::size_t _nSegmentOut;

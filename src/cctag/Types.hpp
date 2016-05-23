@@ -18,43 +18,47 @@ typedef boost::multi_array<EdgePoint*, 2> EdgePointsImage;
 
 class EdgePointCollection
 {
-  using int_pair = std::tuple<int, int>;
-  static_assert(sizeof(int_pair)==8, "int_pair not packed");
+  using link_pair = std::tuple<int, int>; // 0: before, 1: after
+  static_assert(sizeof(link_pair)==8, "int_pair not packed");
   
 public:
   using int_vector = std::vector<int>;
   using voter_list = std::pair<const int*, const int*>;
   
 private:
+  boost::multi_array<int,2> _edgeMap; // XXX: replace with something less magical!
   std::vector<EdgePoint> _edgeList;
-  boost::multi_array<int,2> _edgeMap;
-  int_vector _voterLists;
+  std::vector<link_pair> _linkList;
+  int_vector _votersIndex;
+  int_vector _votersList;
   
 public:
   EdgePointCollection()
   {
     _edgeList.reserve(2 << 20);
-    _voterLists.reserve(6 << 20);
+    _linkList.reserve(2 << 20);
+    _votersIndex.reserve(2 << 20);
+    _votersList.reserve(6 << 20);
   }
   
+  // General accessors.
   std::vector<EdgePoint>& list() { return _edgeList; }
   const std::vector<EdgePoint>& list() const { return _edgeList; }
-  
+
   boost::multi_array<int,2>& map() { return _edgeMap; }
   const boost::multi_array<int,2>& map() const { return _edgeMap; }
   
-  int_vector& voters() { return _voterLists; }
-  const int_vector& voters() const { return _voterLists; }
-  
-  // Index->EdgePoint conversions; both 1D and 2D. May return NULL!
-  EdgePoint* operator()(int i) { return i >= 0 ? &_edgeList.at(i) : nullptr; }
-  EdgePoint* operator()(int i) const { return i >= 0 ? const_cast<EdgePoint*>(&_edgeList.at(i)) : nullptr; }
-  EdgePoint* operator()(int i, int j) const { return (*this)(_edgeMap[i][j]); } // XXX@stian: range-check?
+  std::vector<link_pair>& links() { return _linkList; }
+  const std::vector<link_pair>& links() const { return _linkList; }
 
-  // Return the shape of the 2D map.
   auto shape() const -> decltype(_edgeMap.shape()) { return _edgeMap.shape(); }
   
-  // EdgePoint->Index conversion.
+  EdgePoint* operator()(int i) { return i >= 0 ? &_edgeList.at(i) : nullptr; }
+
+  EdgePoint* operator()(int i) const { return i >= 0 ? const_cast<EdgePoint*>(&_edgeList.at(i)) : nullptr; }
+
+  EdgePoint* operator()(int i, int j) const { return (*this)(_edgeMap[i][j]); } // XXX@stian: range-check?
+
   int operator()(const EdgePoint* p) const
   {
     if (!p)
@@ -66,19 +70,45 @@ public:
       throw std::logic_error("EdgePointCollection::index: invalid pointer (2)");
     return i;
   }
-  
-  // Return list of voters as a [begin,end) pair of pointers.
-  voter_list voters(const EdgePoint& p) const
+
+  void create_voter_lists(const std::vector<std::vector<int>>& voter_lists);
+
+  voter_list voters(const EdgePoint* p) const
   {
-    if ((p._votersBegin < 0) != (p._votersEnd < 0))
-      throw std::logic_error("EdgePointCollection: invalid voter list indices (1)");
-    if (p._votersBegin < 0)
-      return std::make_pair(nullptr, nullptr);
-    if (p._votersBegin > (int)_voterLists.size() || p._votersEnd > (int)_voterLists.size())
-      throw std::logic_error("EdgePointCollection: invalid voter list indices (2)");
-    if (p._votersBegin > p._votersEnd)
-      throw std::logic_error("EdgePointCollection: invalid voter list indices (3)");
-    return std::make_pair(_voterLists.data() + p._votersBegin, _voterLists.data() + p._votersEnd);
+    int i = (*this)(p);
+    int b = _votersIndex[i], e = _votersIndex[i+1];
+    return std::make_pair(_votersList.data()+b, _votersList.data()+e);
+  }
+  
+  int voters_size(const EdgePoint* p) const
+  {
+    int i = (*this)(p);
+    int b = _votersIndex[i], e = _votersIndex[i+1];
+    return e - b;
+  }
+  
+  EdgePoint* before(EdgePoint* p) const
+  {
+    int i = (*this)(p);
+    return (*this)(std::get<0>(_linkList[i]));
+  }
+
+  void set_before(EdgePoint* p, int link)
+  {
+    int i = (*this)(p);
+    std::get<0>(_linkList[i]) = link;
+  }
+  
+  EdgePoint* after(EdgePoint* p) const
+  {
+    int i = (*this)(p);
+    return (*this)(std::get<1>(_linkList[i]));
+  }
+
+  void set_after(EdgePoint* p, int link)
+  {
+    int i = (*this)(p);
+    std::get<1>(_linkList[i]) = link;
   }
 };
 
