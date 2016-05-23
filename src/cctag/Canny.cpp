@@ -28,7 +28,7 @@ void edgesPointsFromCanny(
 
   
   edgePointsMap.resize( boost::extents[width][height] );
-  std::fill( edgePointsMap.origin(), edgePointsMap.origin() + edgePointsMap.size(), -1 );
+  memset(edgePointsMap.origin(), -1, width*height*sizeof(int));
   
   points.reserve( width * height / 2 );
 
