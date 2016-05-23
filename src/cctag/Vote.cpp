@@ -285,7 +285,7 @@ void vote(EdgePointCollection& edgeCollection,
 
                     if (sx >= 0 && sx < int( edgeCollection.shape()[0]) &&
                             sy >= 0 && sy < int( edgeCollection.shape()[1]) &&
-                            edgeCollection(sx,sy) >= 0 && processed.find(packxy(sx, sy)) == processed.end()) {
+                            edgeCollection(sx,sy) && processed.find(packxy(sx, sy)) == processed.end()) {
                         if (phi.size() == windowSizeOnInnerEllipticSegment) // (ok, resolu avec la multiresolution) TODO , 4 est un paramètre de l'algorithme, + les motifs à détecter sont importants, + la taille de la fenêtre doit être grande
                         {
                             // Check if convexity has been lost (concavity)

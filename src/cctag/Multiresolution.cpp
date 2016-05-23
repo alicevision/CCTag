@@ -295,7 +295,7 @@ void cctagMultiresDetection(
                                   imgGraySrc,
                                   imagePyramid.getLevel(i),
                                   frame,
-                                  vEdgePointCollections.back(),
+                                  vEdgePointCollections[i],
                                   cuda_pipe,
                                   params,
                                   durations );
