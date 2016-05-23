@@ -24,7 +24,7 @@ void edgesPointsFromCanny(
   std::size_t height = edges.rows;
   
   auto& edgePointsMap = edgeCollection.map();
-  auto& points = edgeCollection.points();
+  auto& points = edgeCollection.list();
 
   
   edgePointsMap.resize( boost::extents[width][height] );

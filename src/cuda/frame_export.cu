@@ -58,7 +58,7 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
     //std::fill( out_edgemap.origin(), out_edgemap.origin() + out_edgemap.size(), (cctag::EdgePoint*)NULL );
     memset(out_edgemap.origin(), -1, _d_plane.cols * _d_plane.rows * sizeof(int));
 
-    auto& out_edgelist = out_edges.points();
+    auto& out_edgelist = out_edges.list();
     out_edgelist.reserve(all_sz+256);
     // cctag::EdgePoint* array = new cctag::EdgePoint[ all_sz ];
 

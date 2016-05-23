@@ -18,6 +18,9 @@ typedef boost::multi_array<EdgePoint*, 2> EdgePointsImage;
 
 class EdgePointCollection
 {
+  using int_pair = std::tuple<int, int>;
+  static_assert(sizeof(int_pair)==8, "int_pair not packed");
+  
 public:
   using int_vector = std::vector<int>;
   using voter_list = std::pair<const int*, const int*>;
@@ -34,8 +37,8 @@ public:
     _voterLists.reserve(6 << 20);
   }
   
-  std::vector<EdgePoint>& points() { return _edgeList; }
-  const std::vector<EdgePoint>& points() const { return _edgeList; }
+  std::vector<EdgePoint>& list() { return _edgeList; }
+  const std::vector<EdgePoint>& list() const { return _edgeList; }
   
   boost::multi_array<int,2>& map() { return _edgeMap; }
   const boost::multi_array<int,2>& map() const { return _edgeMap; }

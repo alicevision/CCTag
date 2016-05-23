@@ -63,9 +63,9 @@ void vote(EdgePointCollection& edgeCollection,
 #endif
   
   std::vector<std::vector<int>> voters;
-  voters.resize(edgeCollection.points().size());
+  voters.resize(edgeCollection.list().size());
 
-    for (EdgePoint & p : edgeCollection.points()) {
+    for (EdgePoint & p : edgeCollection.list()) {
         EdgePoint* link;
         int ilink;
         
@@ -82,7 +82,7 @@ void vote(EdgePointCollection& edgeCollection,
         CCTagFileDebug::instance().endVote();
     }
     // Vote
-    seeds.reserve(edgeCollection.points().size() / 2);
+    seeds.reserve(edgeCollection.list().size() / 2);
 
     // todo@Lilian: remove thrVotingAngle from the parameter file
     if (params._angleVoting != 0) {
@@ -90,7 +90,7 @@ void vote(EdgePointCollection& edgeCollection,
                 "thrVotingAngle must be equal to 0 or edge points gradients have to be normalized");
     }
 
-    for (EdgePoint & p : edgeCollection.points()) {
+    for (EdgePoint & p : edgeCollection.list()) {
         float lastDist, dist, totalDistance; // scalar to compute the distance ratio
         float cosDiffTheta; // difference in subsequent gradients orientation
         std::size_t i = 1;
