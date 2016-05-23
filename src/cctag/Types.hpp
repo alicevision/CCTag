@@ -69,7 +69,7 @@ public:
       throw std::logic_error("EdgePointCollection: invalid voter list indices (1)");
     if (p._votersBegin < 0)
       return std::make_pair(nullptr, nullptr);
-    if (p._votersBegin >= (int)_voterLists.size() || p._votersEnd > (int)_voterLists.size())
+    if (p._votersBegin > (int)_voterLists.size() || p._votersEnd > (int)_voterLists.size())
       throw std::logic_error("EdgePointCollection: invalid voter list indices (2)");
     if (p._votersBegin > p._votersEnd)
       throw std::logic_error("EdgePointCollection: invalid voter list indices (3)");
