@@ -43,6 +43,9 @@ void edgesPointsFromCanny(
       }
     }
   }
+  
+  // Make place for the links.
+  edgeCollection.links().resize(points.size(), std::make_tuple(-1, -1));
 
 }
 
