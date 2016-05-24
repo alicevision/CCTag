@@ -1,13 +1,11 @@
 #ifndef _CCTAG_BRENSENHAM_HPP_
 #define _CCTAG_BRENSENHAM_HPP_
 
-#include <cctag/Labelizer.hpp>
 #include <cctag/geometry/Point.hpp>
 
 #include <cstddef>
 
-#include <boost/gil/typedefs.hpp>
-#include <boost/multi_array.hpp>
+#include <opencv/cv.h>
 
 #include "Types.hpp"
 

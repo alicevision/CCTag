@@ -3,7 +3,7 @@
 
 #include <boost/gil/locator.hpp>
 
-
+#if 0
 namespace cctag {
 
 Labelizer::Labelizer()
@@ -33,3 +33,4 @@ void Labelizer::followContour( Label* label, const int x, const int y, const boo
 }
 
 } // namespace cctag
+#endif
