@@ -47,7 +47,6 @@ static bool intersectLineToTwoEllipses(
         const EdgePointCollection & edgeCollection,
         std::list<EdgePoint*> & pointsInHull)
 {
-  const auto& edgesMap = edgeCollection.map();
   std::vector<float> intersectionsOut = numerical::geometry::intersectEllipseWithLine(qOut, y, true);
   std::vector<float> intersectionsIn = numerical::geometry::intersectEllipseWithLine(qIn, y, true);
   BOOST_ASSERT(intersectionsOut.size() <= 2);
@@ -56,10 +55,10 @@ static bool intersectLineToTwoEllipses(
   {
     //@todo@Lilian, in/out the edgeMap
     std::ssize_t begin1 = std::max(0, (int) intersectionsOut[0]);
-    std::ssize_t end1 = std::min((int) edgesMap.shape()[0] - 1, (int) intersectionsIn[0]);
+    std::ssize_t end1 = std::min((int) edgeCollection.shape()[0] - 1, (int) intersectionsIn[0]);
 
     std::ssize_t begin2 = std::max(0, (int) intersectionsIn[1]);
-    std::ssize_t end2 = std::min((int) edgesMap.shape()[0] - 1, (int) intersectionsOut[1]);
+    std::ssize_t end2 = std::min((int) edgeCollection.shape()[0] - 1, (int) intersectionsOut[1]);
 
     for (int x = begin1; x <= end1; ++x)
     {
@@ -97,7 +96,7 @@ static bool intersectLineToTwoEllipses(
   else if ((intersectionsOut.size() == 2) && (intersectionsIn.size() <= 1))
   {
     std::ssize_t begin = std::max(0, (int) intersectionsOut[0]);
-    std::ssize_t end = std::min((int) edgesMap.shape()[0] - 1, (int) intersectionsOut[1]);
+    std::ssize_t end = std::min((int) edgeCollection.shape()[0] - 1, (int) intersectionsOut[1]);
 
     for (int x = begin; x <= end; ++x)
     {
@@ -119,7 +118,7 @@ static bool intersectLineToTwoEllipses(
   }
   else if ((intersectionsOut.size() == 1) && (intersectionsIn.size() == 0))
   {
-    if ((intersectionsOut[0] >= 0) && (intersectionsOut[0] < edgesMap.shape()[0]))
+    if ((intersectionsOut[0] >= 0) && (intersectionsOut[0] < edgeCollection.shape()[0]))
     {
       EdgePoint* edgePoint = edgeCollection(intersectionsOut[0],y);
       if (edgePoint)
@@ -153,13 +152,12 @@ static void selectEdgePointInEllipticHull(
   computeHull(outerEllipse, scale, qIn, qOut);
 
   const float yCenter = outerEllipse.center().y();
-  const auto& edgesMap = edgeCollection.map();
 
   int maxY = std::max(int(yCenter), 0);
-  int minY = std::min(int(yCenter), int(edgesMap.shape()[1]) - 1);
+  int minY = std::min(int(yCenter), int(edgeCollection.shape()[1]) - 1);
 
   // Visit the bottom part of the ellipse
-  for (std::ssize_t y = maxY; y < int( edgesMap.shape()[1]); ++y)
+  for (std::ssize_t y = maxY; y < int( edgeCollection.shape()[1]); ++y)
   {
     if (!intersectLineToTwoEllipses(y, qIn, qOut, edgeCollection, pointsInHull))
       break;

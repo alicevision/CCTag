@@ -8,23 +8,21 @@ namespace cctag
 // CUDA version will directly create the required representation.
 void EdgePointCollection::create_voter_lists(const std::vector<std::vector<int>>& voter_lists)
 {
-  if (voter_lists.size() != _edgeList.size())
-    throw std::logic_error("EdgePointCollection::create_voters_lists: inconsistent sizes");
+  if (voter_lists.size() != point_count())
+    throw std::length_error("EdgePointCollection::create_voters_lists: inconsistent sizes");
   
-  // Create index so that list for point i begins at index(i) and ends at index(i+1)
-  const size_t n = _edgeList.size();
-  _votersIndex.resize(n+1);
+  _votersIndex[0+CUDA_OFFSET] = 0;
+  for (size_t i = 0; i < point_count(); ++i)
+    _votersIndex[i+1+CUDA_OFFSET] = (int)(_votersIndex[i+CUDA_OFFSET] + voter_lists[i].size());
   
-  _votersIndex[0] = 0;
-  for (size_t i = 0; i < n; ++i)
-    _votersIndex[i+1] = (int)(_votersIndex[i] + voter_lists[i].size());
+  if (_votersIndex[point_count()+CUDA_OFFSET] > MAX_VOTERLIST_SIZE)
+    throw std::length_error("EdgePointCollection::create_voters_lists: too many voters");
   
-  _votersList.resize(_votersIndex.back());
-  int *p = _votersList.data();
+  int *p = &_votersList[0];
   for (const auto& vlist: voter_lists)
     p = std::copy(vlist.begin(), vlist.end(), p);
 
-  if (p != _votersList.data() + _votersList.size())
+  if (p != &_votersList[0] + _votersIndex[point_count()+CUDA_OFFSET])
     throw std::logic_error("EdgePointCollection::create_voters_lists: invalid count copied");
 }
 

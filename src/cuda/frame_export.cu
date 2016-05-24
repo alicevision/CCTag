@@ -53,20 +53,13 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
                v_comp );
 #endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
-    auto& out_edgemap = out_edges.map();
-    out_edgemap.resize( boost::extents[ _d_plane.cols ][ _d_plane.rows ] );
-    memset(out_edgemap.origin(), -1, _d_plane.cols * _d_plane.rows * sizeof(int));
-
-    auto& out_edgelist = out_edges.list();
-    out_edgelist.reserve(all_sz+256);
-    // cctag::EdgePoint* array = new cctag::EdgePoint[ all_sz ];
+    out_edges.set_shape(_d_plane.cols, _d_plane.rows );
 
     for(int i = 0; i < all_sz; ++i) {
           const short2& pt = _all_edgecoords.host.ptr[i];
           const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
           const int16_t dy = _h_dy.ptr(pt.y)[pt.x];
-          out_edgelist.emplace_back(cctag::EdgePoint(pt.x, pt.y, dx, dy));
-          out_edgemap[pt.x][pt.y] = out_edges(&out_edgelist.back());
+          out_edges.add_point(pt.x, pt.y, dx, dy);
     }
 
     /* Block 2
@@ -78,9 +71,6 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
      * Consequently, we have allocated memory for all of those above, and
      * we are copying linkage information for them in this block.
      */
-
-    auto& out_links = out_edges.links();
-    out_links.resize(all_sz, std::make_tuple(-1, -1));
 
     for( int i=1; i<vote_sz; i++ ) {
         const TriplePoint& pt = _voters.host.ptr[i];
@@ -105,14 +95,14 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
         assert( ep->gradient()(1) == (double)pt.d.y );
 
         if( pt.descending.after.x != 0 || pt.descending.after.y != 0 ) {
-            int n = out_edgemap[pt.descending.after.x][pt.descending.after.y];
+            cctag::EdgePoint* n = out_edges(pt.descending.after.x, pt.descending.after.y);
             if( n >= 0 )
-                out_edges.set_after(ep, n);
+                out_edges.set_after(ep, out_edges(n));
         }
         if( pt.descending.befor.x != 0 || pt.descending.befor.y != 0 ) {
-            int n = out_edgemap[pt.descending.befor.x][pt.descending.befor.y];
+            cctag::EdgePoint* n = out_edges(pt.descending.befor.x, pt.descending.befor.y);
             if( n >= 0 )
-                out_edges.set_before(ep, n);
+                out_edges.set_before(ep, out_edges(n));
         }
 
         ep->_flowLength = pt._flowLength;
@@ -150,15 +140,15 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
      * a candidate inner point, they are added into the list for
      * that inner point.
      */
-    std::vector<std::vector<int>> voter_lists(out_edgelist.size());
+    std::vector<std::vector<int>> voter_lists(out_edges.get_point_count());
     for( int i=1; i<vote_sz; i++ ) {
         const TriplePoint& pt   = _voters.host.ptr[i];
         const int          vote = _v_chosen_idx.host.ptr[i];
 
         if( vote != 0 ) {
             const TriplePoint& point = _voters.host.ptr[ vote ];
-            int potential_seed = out_edgemap[point.coord.x][point.coord.y];
-            voter_lists[potential_seed].push_back(out_edgemap[pt.coord.x][pt.coord.y]);
+            int potential_seed = out_edges(out_edges(point.coord.x, point.coord.y));
+            voter_lists[potential_seed].push_back(out_edges(out_edges(pt.coord.x,pt.coord.y)));
         }
     }
     out_edges.create_voter_lists(voter_lists);

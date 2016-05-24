@@ -19,6 +19,7 @@ using Vector3s = Eigen::Matrix<short, 3, 1>;
 class EdgePoint : public Vector3s
 {
 public:
+#if 0
   EdgePoint()
     : Vector3s(0, 0, 1)
     , _grad(0.f,0.f)
@@ -30,7 +31,10 @@ public:
     , _processedAux(false)
     , _processedIn( false )
   {}
-  
+#else
+  EdgePoint() = default;
+#endif
+    
   EdgePoint( const EdgePoint& p )
     : Vector3s(p)
     , _grad( p._grad )

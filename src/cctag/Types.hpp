@@ -1,72 +1,99 @@
 #ifndef _CCTAG_MARKERS_TYPES_HPP_
 #define _CCTAG_MARKERS_TYPES_HPP_
 
+#include <memory>
+#include <new>
 #include <stdexcept>
 #include <cctag/EdgePoint.hpp>
-#include <boost/multi_array.hpp>
-#include <boost/unordered/unordered_map.hpp>
 
 
 namespace cctag {
-
-/**
- * @brief An image (2D array) of pointers to EdgePoints. For each pixel we associate an EdgePoint.
- */
-typedef boost::multi_array<EdgePoint*, 2> EdgePointsImage;
-
-// typedef boost::unordered_map< EdgePoint*, std::vector< EdgePoint* > > WinnerMap;  ///< associate a winner with its voters
 
 class EdgePointCollection
 {
   using link_pair = std::tuple<int, int>; // 0: before, 1: after
   static_assert(sizeof(link_pair)==8, "int_pair not packed");
   
+  static constexpr size_t MAX_POINTS = size_t(1) << 20;
+  static constexpr size_t MAX_RESOLUTION = 2048;
+  static constexpr size_t CUDA_OFFSET = 1024; // 4 kB, one page
+  static constexpr size_t MAX_VOTERLIST_SIZE = 16*MAX_POINTS;
+  
 public:
   using int_vector = std::vector<int>;
   using voter_list = std::pair<const int*, const int*>;
   
 private:
-  boost::multi_array<int,2> _edgeMap; // XXX: replace with something less magical!
-  std::vector<EdgePoint> _edgeList;
-  std::vector<link_pair> _linkList;
-  int_vector _votersIndex;
-  int_vector _votersList;
+  std::unique_ptr<int[]> _edgeMap;
+  std::unique_ptr<EdgePoint[]> _edgeList;
+  std::unique_ptr<link_pair[]> _linkList;
+  std::unique_ptr<int[]> _votersIndex;  // with CUDA_OFFSET; [0] is point count
+  std::unique_ptr<int[]> _votersList;
+  size_t _edgeMapShape[2];
+  
+  int& point_count() { return _votersIndex[0]; }
+  int point_count() const { return _votersIndex[0]; }
+  size_t map_index(int x, int y) const { return x + y * _edgeMapShape[0]; }
   
 public:
-  EdgePointCollection()
+  EdgePointCollection() :
+    _edgeMap(new int[MAX_RESOLUTION*MAX_RESOLUTION]),
+    _edgeList(new EdgePoint[MAX_POINTS]),
+    _linkList(new link_pair[MAX_POINTS]),
+    _votersIndex(new int[MAX_POINTS+CUDA_OFFSET]),
+    _votersList(new int[MAX_VOTERLIST_SIZE])
   {
-    _edgeList.reserve(2 << 20);
-    _linkList.reserve(2 << 20);
-    _votersIndex.reserve(2 << 20);
-    _votersList.reserve(6 << 20);
+    point_count() = 0;
+    _edgeMapShape[0] = _edgeMapShape[1] = 0;
+  }
+    
+  void add_point(int vx, int vy, float vdx, float vdy)
+  {
+    if (vx < 0 || vx >= _edgeMapShape[0] || vy < 0 || vy >= _edgeMapShape[1])
+      throw std::out_of_range("EdgePointCollection::add_point: coordinate out of range");
+    
+    size_t imap = map_index(vx, vy);
+    if (_edgeMap[imap] != -1)
+      throw std::logic_error("EdgePointCollection::add_point: point already exists");
+    
+    // XXX@stian: new() below is technically UB, but the class has no defined dtors
+    // so it's safe to re-new it in place w/o calling the dtor firs.
+    size_t ipoint = point_count()++;
+    _edgeMap[imap] = ipoint;
+    new (&_edgeList[ipoint]) EdgePoint(vx, vy, vdx, vdy);
+    _linkList[ipoint] = std::make_tuple(-1, -1);
+    // voter lists must be constructed afterwards
   }
   
-  // General accessors.
-  std::vector<EdgePoint>& list() { return _edgeList; }
-  const std::vector<EdgePoint>& list() const { return _edgeList; }
-
-  boost::multi_array<int,2>& map() { return _edgeMap; }
-  const boost::multi_array<int,2>& map() const { return _edgeMap; }
+  int get_point_count()
+  {
+    return point_count();
+  }
+    
+  const size_t* shape() const { return _edgeMapShape; }
   
-  std::vector<link_pair>& links() { return _linkList; }
-  const std::vector<link_pair>& links() const { return _linkList; }
-
-  auto shape() const -> decltype(_edgeMap.shape()) { return _edgeMap.shape(); }
+  void set_shape(size_t w, size_t h)
+  {
+    if (w > MAX_RESOLUTION || h > MAX_RESOLUTION)
+      throw std::length_error("EdgePointCollection::set_frame_size: dimension too large");
+    _edgeMapShape[0] = w; _edgeMapShape[1] = h;
+    memset(&_edgeMap[0], -1, w*h*sizeof(int));
+  }
   
-  EdgePoint* operator()(int i) { return i >= 0 ? &_edgeList.at(i) : nullptr; }
+  EdgePoint* operator()(int i) { return i >= 0 ? &_edgeList[i] : nullptr; }
 
-  EdgePoint* operator()(int i) const { return i >= 0 ? const_cast<EdgePoint*>(&_edgeList.at(i)) : nullptr; }
+  EdgePoint* operator()(int i) const { return i >= 0 ? const_cast<EdgePoint*>(&_edgeList[i]) : nullptr; }
 
-  EdgePoint* operator()(int i, int j) const { return (*this)(_edgeMap[i][j]); } // XXX@stian: range-check?
+  EdgePoint* operator()(int x, int y) const { return (*this)(_edgeMap[map_index(x,y)]); }
 
   int operator()(const EdgePoint* p) const
   {
     if (!p)
       return -1;
-    if (p < _edgeList.data())
+    if (p < _edgeList.get())
       throw std::logic_error("EdgePointCollection::index: invalid pointer (1)");
-    int i = p - _edgeList.data();
-    if (i >= _edgeList.size())
+    int i = p - _edgeList.get();
+    if (i >= point_count())
       throw std::logic_error("EdgePointCollection::index: invalid pointer (2)");
     return i;
   }
@@ -76,39 +103,39 @@ public:
   voter_list voters(const EdgePoint* p) const
   {
     int i = (*this)(p);
-    int b = _votersIndex[i], e = _votersIndex[i+1];
-    return std::make_pair(_votersList.data()+b, _votersList.data()+e);
+    int b = _votersIndex[i+CUDA_OFFSET], e = _votersIndex[i+1+CUDA_OFFSET];
+    return std::make_pair(&_votersList[0]+b, &_votersList[0]+e);
   }
   
   int voters_size(const EdgePoint* p) const
   {
     int i = (*this)(p);
-    int b = _votersIndex[i], e = _votersIndex[i+1];
+    int b = _votersIndex[i+CUDA_OFFSET], e = _votersIndex[i+1+CUDA_OFFSET];
     return e - b;
   }
   
   EdgePoint* before(EdgePoint* p) const
   {
     int i = (*this)(p);
-    return (*this)(std::get<0>(_linkList.at(i)));
+    return (*this)(std::get<0>(_linkList[i]));
   }
 
   void set_before(EdgePoint* p, int link)
   {
     int i = (*this)(p);
-    std::get<0>(_linkList.at(i)) = link;
+    std::get<0>(_linkList[i]) = link;
   }
   
   EdgePoint* after(EdgePoint* p) const
   {
     int i = (*this)(p);
-    return (*this)(std::get<1>(_linkList.at(i)));
+    return (*this)(std::get<1>(_linkList[i]));
   }
 
   void set_after(EdgePoint* p, int link)
   {
     int i = (*this)(p);
-    std::get<1>(_linkList.at(i)) = link;
+    std::get<1>(_linkList[i]) = link;
   }
 };
 

@@ -429,6 +429,7 @@ void TagPipe::debug_cpu_dxdy_out( TagPipe*                     pipe,
     local_debug_cpu_dxdy_out( "dy", level, cpu_dy, gpu_dy, params );
 }
 
+#if 0
 void TagPipe::debug_cmp_edge_table( int                           layer,
                                     const cctag::EdgePointsImage& cpu,
                                     const cctag::EdgePointsImage& gpu,
@@ -472,6 +473,7 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
 
     delete [] plane.data;
 }
+#endif
 
 __host__
 void TagPipe::imageCenterOptLoop(
