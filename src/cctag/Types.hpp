@@ -50,7 +50,7 @@ private:
   static bool test_bit(unsigned* v, size_t i)
   {
     if (i >= MAX_POINTS)
-      throw std::out_of_range("EdgePointCollection::set_bit");
+      throw std::out_of_range("EdgePointCollection::test_bit");
     return v[i/4] & (1U << (i & 31));
   }
   
@@ -61,43 +61,9 @@ public:
   
   EdgePointCollection& operator=(const EdgePointCollection&) = delete;
   
-  EdgePointCollection(size_t w, size_t h) :
-    _edgeMap(new int[MAX_RESOLUTION*MAX_RESOLUTION]),
-    _edgeList(new EdgePoint[MAX_POINTS]),
-    _linkList(new int[2*MAX_POINTS]),
-    _votersIndex(new int[MAX_POINTS+CUDA_OFFSET]),
-    _votersList(new int[MAX_VOTERLIST_SIZE]),
-    _processedIn(new unsigned[MAX_POINTS/4]),
-    _processedAux(new unsigned[MAX_POINTS/4])
-  {
-    if (w > MAX_RESOLUTION || h > MAX_RESOLUTION)
-      throw std::length_error("EdgePointCollection::set_frame_size: dimension too large");
-
-    point_count() = 0;
-    _edgeMapShape[0] = w; _edgeMapShape[1] = h;
-    memset(&_edgeMap[0], -1, w*h*sizeof(int));  // XXX@stian: unnecessary for CUDA
-    memset(&_processedIn[0], 0, w*h/8+4);       // one bit per pixel + roundoff error
-    memset(&_processedAux[0], 0, w*h/8+4);      // ditto.
-  }
+  EdgePointCollection(size_t w, size_t h);
     
-  void add_point(int vx, int vy, float vdx, float vdy)
-  {
-    if (vx < 0 || vx >= _edgeMapShape[0] || vy < 0 || vy >= _edgeMapShape[1])
-      throw std::out_of_range("EdgePointCollection::add_point: coordinate out of range");
-    
-    size_t imap = map_index(vx, vy);
-    if (_edgeMap[imap] != -1)
-      throw std::logic_error("EdgePointCollection::add_point: point already exists");
-    
-    // XXX@stian: new() below is technically UB, but the class has no defined dtors
-    // so it's safe to re-new it in place w/o calling the dtor firs.
-    size_t ipoint = point_count()++;
-    _edgeMap[imap] = ipoint;
-    new (&_edgeList[ipoint]) EdgePoint(vx, vy, vdx, vdy);
-    _linkList[2*ipoint+0] = -1;
-    _linkList[2*ipoint+1] = -1;
-    // voter lists must be constructed afterwards
-  }
+  void add_point(int vx, int vy, float vdx, float vdy);
   
   int get_point_count()
   {
@@ -116,12 +82,9 @@ public:
   {
     if (!p)
       return -1;
-    if (p < _edgeList.get())
-      throw std::logic_error("EdgePointCollection::index: invalid pointer (1)");
-    int i = p - _edgeList.get();
-    if (i >= point_count())
-      throw std::logic_error("EdgePointCollection::index: invalid pointer (2)");
-    return i;
+    if (p < &_edgeList[0] || p >= &_edgeList[point_count()])
+      throw std::logic_error("EdgePointCollection::index: invalid pointer");
+    return p - &_edgeList[0];
   }
 
   void create_voter_lists(const std::vector<std::vector<int>>& voter_lists);
