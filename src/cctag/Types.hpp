@@ -36,15 +36,25 @@ private:
   size_t map_index(int x, int y) const { return x + y * _edgeMapShape[0]; }
   
 public:
-  EdgePointCollection() :
+  EdgePointCollection() = default;
+  
+  EdgePointCollection(const EdgePointCollection&) = delete;
+  
+  EdgePointCollection& operator=(const EdgePointCollection&) = delete;
+  
+  EdgePointCollection(size_t w, size_t h) :
     _edgeMap(new int[MAX_RESOLUTION*MAX_RESOLUTION]),
     _edgeList(new EdgePoint[MAX_POINTS]),
     _linkList(new link_pair[MAX_POINTS]),
     _votersIndex(new int[MAX_POINTS+CUDA_OFFSET]),
     _votersList(new int[MAX_VOTERLIST_SIZE])
   {
+    if (w > MAX_RESOLUTION || h > MAX_RESOLUTION)
+      throw std::length_error("EdgePointCollection::set_frame_size: dimension too large");
+
     point_count() = 0;
-    _edgeMapShape[0] = _edgeMapShape[1] = 0;
+    _edgeMapShape[0] = w; _edgeMapShape[1] = h;
+    memset(&_edgeMap[0], -1, w*h*sizeof(int));
   }
     
   void add_point(int vx, int vy, float vdx, float vdy)
@@ -71,14 +81,6 @@ public:
   }
     
   const size_t* shape() const { return _edgeMapShape; }
-  
-  void set_shape(size_t w, size_t h)
-  {
-    if (w > MAX_RESOLUTION || h > MAX_RESOLUTION)
-      throw std::length_error("EdgePointCollection::set_frame_size: dimension too large");
-    _edgeMapShape[0] = w; _edgeMapShape[1] = h;
-    memset(&_edgeMap[0], -1, w*h*sizeof(int));
-  }
   
   EdgePoint* operator()(int i) { return i >= 0 ? &_edgeList[i] : nullptr; }
 

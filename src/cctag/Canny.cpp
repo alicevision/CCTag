@@ -21,8 +21,6 @@ void edgesPointsFromCanny(
   std::size_t width = edges.cols;
   std::size_t height = edges.rows;
   
-  edgeCollection.set_shape(width, height);
-  
   for( int y = 0 ; y < height ; ++y )
   {
     for( int x = 0 ; x < width ; ++x )

@@ -282,18 +282,19 @@ void cctagMultiresDetection(
   //	** launch CCTag detection based on the canny edge detection output.
 
   std::map<std::size_t, CCTag::List> pyramidMarkers;
-  std::vector<EdgePointCollection> vEdgePointCollections(params._numberOfProcessedMultiresLayers);
+  std::list<EdgePointCollection> vEdgePointCollections;
 
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
   for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i ) {
     pyramidMarkers.insert( std::pair<std::size_t, CCTag::List>( i, CCTag::List() ) );
-
+    vEdgePointCollections.emplace_back(imgGraySrc.cols, imgGraySrc.rows);
+    
     cctagMultiresDetection_inner( i,
                                   pyramidMarkers[i],
                                   imgGraySrc,
                                   imagePyramid.getLevel(i),
                                   frame,
-                                  vEdgePointCollections[i],
+                                  vEdgePointCollections.back(),
                                   cuda_pipe,
                                   params,
                                   durations );
@@ -348,7 +349,7 @@ void cctagMultiresDetection(
       
       
       std::list<EdgePoint*> pointsInHull;
-      selectEdgePointInEllipticHull(vEdgePointCollections[0], rescaledOuterEllipse, scale, pointsInHull);
+      selectEdgePointInEllipticHull(vEdgePointCollections.front(), rescaledOuterEllipse, scale, pointsInHull);
 
       #ifdef CCTAG_OPTIM
         boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());

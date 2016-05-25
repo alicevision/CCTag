@@ -53,8 +53,6 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
                v_comp );
 #endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
-    out_edges.set_shape(_d_plane.cols, _d_plane.rows );
-
     for(int i = 0; i < all_sz; ++i) {
           const short2& pt = _all_edgecoords.host.ptr[i];
           const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
