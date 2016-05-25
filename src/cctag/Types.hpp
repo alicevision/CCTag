@@ -11,9 +11,6 @@ namespace cctag {
 
 class EdgePointCollection
 {
-  using link_pair = std::tuple<int, int>; // 0: before, 1: after
-  static_assert(sizeof(link_pair)==8, "int_pair not packed");
-  
   static constexpr size_t MAX_POINTS = size_t(1) << 20;
   static constexpr size_t MAX_RESOLUTION = 2048;
   static constexpr size_t CUDA_OFFSET = 1024; // 4 kB, one page
@@ -26,7 +23,7 @@ public:
 private:
   std::unique_ptr<int[]> _edgeMap;
   std::unique_ptr<EdgePoint[]> _edgeList;
-  std::unique_ptr<link_pair[]> _linkList;
+  std::unique_ptr<int[]> _linkList;     // even idx: before, odd: after
   std::unique_ptr<int[]> _votersIndex;  // with CUDA_OFFSET; [0] is point count
   std::unique_ptr<int[]> _votersList;
   size_t _edgeMapShape[2];
@@ -45,7 +42,7 @@ public:
   EdgePointCollection(size_t w, size_t h) :
     _edgeMap(new int[MAX_RESOLUTION*MAX_RESOLUTION]),
     _edgeList(new EdgePoint[MAX_POINTS]),
-    _linkList(new link_pair[MAX_POINTS]),
+    _linkList(new int[2*MAX_POINTS]),
     _votersIndex(new int[MAX_POINTS+CUDA_OFFSET]),
     _votersList(new int[MAX_VOTERLIST_SIZE])
   {
@@ -54,7 +51,7 @@ public:
 
     point_count() = 0;
     _edgeMapShape[0] = w; _edgeMapShape[1] = h;
-    memset(&_edgeMap[0], -1, w*h*sizeof(int));
+    memset(&_edgeMap[0], -1, w*h*sizeof(int));  // XXX@stian: unnecessary for CUDA
   }
     
   void add_point(int vx, int vy, float vdx, float vdy)
@@ -71,7 +68,8 @@ public:
     size_t ipoint = point_count()++;
     _edgeMap[imap] = ipoint;
     new (&_edgeList[ipoint]) EdgePoint(vx, vy, vdx, vdy);
-    _linkList[ipoint] = std::make_tuple(-1, -1);
+    _linkList[2*ipoint+0] = -1;
+    _linkList[2*ipoint+1] = -1;
     // voter lists must be constructed afterwards
   }
   
@@ -119,25 +117,25 @@ public:
   EdgePoint* before(EdgePoint* p) const
   {
     int i = (*this)(p);
-    return (*this)(std::get<0>(_linkList[i]));
+    return (*this)(_linkList[2*i+0]);
   }
 
   void set_before(EdgePoint* p, int link)
   {
     int i = (*this)(p);
-    std::get<0>(_linkList[i]) = link;
+    _linkList[2*i+0] = link;
   }
   
   EdgePoint* after(EdgePoint* p) const
   {
     int i = (*this)(p);
-    return (*this)(std::get<1>(_linkList[i]));
+    return (*this)(_linkList[2*i+1]);
   }
 
   void set_after(EdgePoint* p, int link)
   {
     int i = (*this)(p);
-    std::get<1>(_linkList[i]) = link;
+    _linkList[2*i+1] = link;
   }
 };
 
