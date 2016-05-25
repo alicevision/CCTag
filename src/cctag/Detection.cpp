@@ -67,7 +67,7 @@ std::vector<popart::TagPipe*> cudaPipelines;
 
 static void constructFlowComponentFromSeed(
         EdgePoint * seed,
-        const EdgePointCollection& edgeCollection,
+        EdgePointCollection& edgeCollection,
         std::vector<CandidatePtr> & vCandidateLoopOne,
         const Parameters & params)
 {
@@ -76,7 +76,7 @@ static void constructFlowComponentFromSeed(
   assert( seed );
   // Check if the seed has already been processed, i.e. belongs to an already
   // reconstructed flow component.
-  if (!seed->_processedIn)
+  if (!edgeCollection.test_processed_in(seed))
   {
 
     CandidatePtr candidate(new Candidate);
@@ -284,7 +284,7 @@ static void completeFlowComponent(
  cctagPoints: set of points constituting the final cctag 
  params: parameters of the system's algorithm */
 static void flowComponentAssembling(
-        const EdgePointCollection& edgeCollection,
+        EdgePointCollection& edgeCollection,
         float & quality,
         const Candidate & candidate,
         const std::vector<Candidate> & vCandidateLoopTwo,
@@ -384,7 +384,7 @@ static void flowComponentAssembling(
 
 static void cctagDetectionFromEdgesLoopTwoIteration(
   CCTag::List& markers,
-  const EdgePointCollection& edgeCollection,
+  EdgePointCollection& edgeCollection,
   const std::vector<Candidate>& vCandidateLoopTwo,
   size_t iCandidate,
   int pyramidLevel,
@@ -581,7 +581,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
 
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
-        const EdgePointCollection& edgeCollection,
+        EdgePointCollection& edgeCollection,
         const cv::Mat&          src,
         const std::vector<EdgePoint*>& seeds,
         const std::size_t frame,

@@ -37,13 +37,13 @@ void vote(EdgePointCollection& edgeCollection, std::vector<EdgePoint*> & seeds,
 /** @brief Retrieve all connected edges.
  * @param[out] convexEdgeSegment
  */
-void edgeLinking(const EdgePointCollection& edgeCollection, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax, 
+void edgeLinking(EdgePointCollection& edgeCollection, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax, 
 	std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
 /** @brief Edge linking in a given direction
  * @param edges resulting edges sorted points
  */
-void edgeLinkingDir(const EdgePointCollection& edgeCollection, boost::container::flat_set<unsigned int>& processed,
+void edgeLinkingDir(EdgePointCollection& edgeCollection, boost::container::flat_set<unsigned int>& processed,
 	const EdgePoint* p, const int dir, std::list<EdgePoint*>& convexEdgeSegment,
 	std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
@@ -71,7 +71,7 @@ void outlierRemoval(
  * @param points from the candidate segment
  */
 bool isAnotherSegment(
-        const EdgePointCollection& edgeCollection,
+        EdgePointCollection& edgeCollection,
         numerical::geometry::Ellipse & outerEllipse,
         std::vector<EdgePoint*>&  outerEllipsePoints,
         const std::vector<EdgePoint*>& filteredChildrens,

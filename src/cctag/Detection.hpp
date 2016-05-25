@@ -33,7 +33,7 @@ void cctagDetection(
 
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
-        const EdgePointCollection& edgeCollection,
+        EdgePointCollection& edgeCollection,
         const cv::Mat&          src,
         const std::vector<EdgePoint*>& seeds,
         const std::size_t       frame,

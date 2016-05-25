@@ -73,7 +73,7 @@ bool initMarkerCenter(cctag::Point2d<Eigen::Vector3f> & markerCenter,
   return true;
 }
 
-bool addCandidateFlowtoCCTag(const EdgePointCollection& edgeCollection,
+bool addCandidateFlowtoCCTag(EdgePointCollection& edgeCollection,
         const std::vector< EdgePoint* > & filteredChildrens,
         const std::vector< EdgePoint* > & outerEllipsePoints,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
@@ -131,11 +131,11 @@ bool addCandidateFlowtoCCTag(const EdgePointCollection& edgeCollection,
       }
 
 
-      if (!p->_processedAux)
+      if (!edgeCollection.test_processed_aux(p))
       {
         //CCTAG_COUT(*p);
 
-        p->_processedAux = true;
+        edgeCollection.set_processed_aux(p, true);
         vProcessedEdgePoint.push_back(p);
 
         float normGrad = sqrt(p->dX() * p->dX() + p->dY() * p->dY());
@@ -171,10 +171,9 @@ bool addCandidateFlowtoCCTag(const EdgePointCollection& edgeCollection,
           CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTS_OUT_WHILE_ASSEMBLING);
           cctagPoints.clear();
 
-          BOOST_FOREACH(EdgePoint* point, vProcessedEdgePoint)
-          {
-            point->_processedAux = false;
-          }
+          for (EdgePoint* point : vProcessedEdgePoint)
+            edgeCollection.set_processed_aux(point, false);
+
           return false;
         }
       }
@@ -182,10 +181,8 @@ bool addCandidateFlowtoCCTag(const EdgePointCollection& edgeCollection,
     }
   }
 
-  BOOST_FOREACH(EdgePoint* point, vProcessedEdgePoint)
-  {
-    point->_processedAux = false;
-  }
+  for (EdgePoint* point : vProcessedEdgePoint)
+    edgeCollection.set_processed_aux(point, false);
 
   //std::cin.ignore().get();
 

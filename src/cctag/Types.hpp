@@ -21,16 +21,38 @@ public:
   using voter_list = std::pair<const int*, const int*>;
   
 private:
+  // These must be exported also by CUDA.
   std::unique_ptr<int[]> _edgeMap;
   std::unique_ptr<EdgePoint[]> _edgeList;
   std::unique_ptr<int[]> _linkList;     // even idx: before, odd: after
   std::unique_ptr<int[]> _votersIndex;  // with CUDA_OFFSET; [0] is point count
   std::unique_ptr<int[]> _votersList;
+  
+  // These are used only on the CPU.
+  std::unique_ptr<unsigned[]> _processedIn;
+  std::unique_ptr<unsigned[]> _processedAux;
   size_t _edgeMapShape[2];
+  
+  static_assert(sizeof(unsigned) == 4, "unsigned has wrong size");
   
   int& point_count() { return _votersIndex[0]; }
   int point_count() const { return _votersIndex[0]; }
   size_t map_index(int x, int y) const { return x + y * _edgeMapShape[0]; }
+  
+  static void set_bit(unsigned* v, size_t i, bool f)
+  {
+    if (i >= MAX_POINTS)
+      throw std::out_of_range("EdgePointCollection::set_bit");
+    if (f) v[i/4] |=   1U << (i & 31);
+    else   v[i/4] &= ~(1U << (i & 31));
+  }
+  
+  static bool test_bit(unsigned* v, size_t i)
+  {
+    if (i >= MAX_POINTS)
+      throw std::out_of_range("EdgePointCollection::set_bit");
+    return v[i/4] & (1U << (i & 31));
+  }
   
 public:
   EdgePointCollection() = default;
@@ -44,7 +66,9 @@ public:
     _edgeList(new EdgePoint[MAX_POINTS]),
     _linkList(new int[2*MAX_POINTS]),
     _votersIndex(new int[MAX_POINTS+CUDA_OFFSET]),
-    _votersList(new int[MAX_VOTERLIST_SIZE])
+    _votersList(new int[MAX_VOTERLIST_SIZE]),
+    _processedIn(new unsigned[MAX_POINTS/4]),
+    _processedAux(new unsigned[MAX_POINTS/4])
   {
     if (w > MAX_RESOLUTION || h > MAX_RESOLUTION)
       throw std::length_error("EdgePointCollection::set_frame_size: dimension too large");
@@ -52,6 +76,8 @@ public:
     point_count() = 0;
     _edgeMapShape[0] = w; _edgeMapShape[1] = h;
     memset(&_edgeMap[0], -1, w*h*sizeof(int));  // XXX@stian: unnecessary for CUDA
+    memset(&_processedIn[0], 0, w*h/8+4);       // one bit per pixel + roundoff error
+    memset(&_processedAux[0], 0, w*h/8+4);      // ditto.
   }
     
   void add_point(int vx, int vy, float vdx, float vdy)
@@ -136,6 +162,26 @@ public:
   {
     int i = (*this)(p);
     _linkList[2*i+1] = link;
+  }
+  
+  void set_processed_in(EdgePoint* p, bool f)
+  {
+    set_bit(&_processedIn[0], (*this)(p), f);
+  }
+  
+  bool test_processed_in(EdgePoint* p)
+  {
+    return test_bit(&_processedIn[0], (*this)(p));
+  }
+  
+  void set_processed_aux(EdgePoint* p, bool f)
+  {
+    set_bit(&_processedAux[0], (*this)(p), f);
+  }
+  
+  bool test_processed_aux(EdgePoint* p)
+  {
+    return test_bit(&_processedAux[0], (*this)(p));
   }
 };
 

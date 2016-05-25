@@ -223,14 +223,14 @@ void vote(EdgePointCollection& edgeCollection,
       return (ux << 16) | (uy & 0xFFFF);
     }
 
-    void edgeLinking(const EdgePointCollection& edgeCollection, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax,
+    void edgeLinking(EdgePointCollection& edgeCollection, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax,
             std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
         
         boost::container::flat_set<unsigned int> processed; // (x,y) packed in 32 bits
         if (pmax) {
             // Add current max point
             convexEdgeSegment.push_back(pmax);
-            pmax->_processedIn = true;
+            edgeCollection.set_processed_in(pmax, true);
 
             processed.insert(packxy(pmax->x(), pmax->y()));
             // Link left
@@ -240,7 +240,7 @@ void vote(EdgePointCollection& edgeCollection,
         }
     }
     
-    void edgeLinkingDir(const EdgePointCollection& edgeCollection, boost::container::flat_set<unsigned int>& processed, const EdgePoint* p, const int dir,
+    void edgeLinkingDir(EdgePointCollection& edgeCollection, boost::container::flat_set<unsigned int>& processed, const EdgePoint* p, const int dir,
             std::list<EdgePoint*>& convexEdgeSegment, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
         
         std::deque<float> phi;
@@ -378,16 +378,14 @@ void vote(EdgePointCollection& edgeCollection,
                     if (n == convexEdgeSegment.size() - windowSizeOnInnerEllipticSegment) {
                         break;
                     } else {
-                        collectedP->_processedIn = true;
+                        edgeCollection.set_processed_in(collectedP, true);
                         ++n;
                     }
                 }
             }
         } else if (stop == EDGE_NOT_FOUND) {
-
-            BOOST_FOREACH(EdgePoint* collectedP, convexEdgeSegment) {
-                collectedP->_processedIn = true;
-            }
+            for (EdgePoint* collectedP : convexEdgeSegment)
+              edgeCollection.set_processed_in(collectedP, true);
         }
         return;
     }
@@ -597,7 +595,7 @@ void vote(EdgePointCollection& edgeCollection,
     }
 
     bool isAnotherSegment(
-            const EdgePointCollection& edgeCollection,
+            EdgePointCollection& edgeCollection,
             numerical::geometry::Ellipse & outerEllipse,
             std::vector<EdgePoint*>& outerEllipsePoints,
             const std::vector<EdgePoint*>& filteredChildrens,

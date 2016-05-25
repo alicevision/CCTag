@@ -47,7 +47,7 @@ bool initMarkerCenter(
         int realPixelPerimeter);
 
 bool addCandidateFlowtoCCTag(
-        const EdgePointCollection& edgeCollection,
+        EdgePointCollection& edgeCollection,
         const std::vector< EdgePoint* > & filteredChildrens,
         const std::vector< EdgePoint* > & outerEllipsePoints,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
