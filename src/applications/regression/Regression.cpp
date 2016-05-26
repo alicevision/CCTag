@@ -186,11 +186,18 @@ static std::vector<boost::filesystem::path> CollectFiles(const boost::filesystem
   return filePaths;
 }
 
-// Returns true if there are no duplicate tags.
+// Removes all tags with status != 1, then sorts them by id. Returns true if there are no duplicate tags.
 static bool SortTags(FrameLog& log)
 {
+  {
+    auto it = std::remove_if(log.tags.begin(), log.tags.end(),
+      [](const DetectedTag& t) { return t.status < 1; });
+    log.tags.erase(it, log.tags.end());
+  }
+  
   std::sort(log.tags.begin(), log.tags.end(),
     [](const DetectedTag& t1, const DetectedTag& t2) { return t1.id < t2.id; });
+  
   return std::adjacent_find(log.tags.begin(), log.tags.end(),
     [](const DetectedTag& t1, const DetectedTag& t2) { return t1.id == t2.id; }) == log.tags.end();
 }
