@@ -13,8 +13,7 @@ CCTagFlowComponent::CCTagFlowComponent(
   const std::list<EdgePoint*> & convexEdgeSegment,
   const EdgePoint & seed,
   std::size_t nCircles)
-  : _edgeCollection(&edgeCollection)
-  , _outerEllipse(outerEllipse)
+  : _outerEllipse(outerEllipse)
   , _seed(seed)
   , _nCircles(nCircles)
 {
@@ -31,17 +30,15 @@ CCTagFlowComponent::CCTagFlowComponent(
     _convexEdgeSegment.push_back(EdgePoint(*e));
   }
 
-
-  setFieldLines(childrens);
-  setFilteredFieldLines(filteredChildrens);
+  setFieldLines(childrens, edgeCollection);
+  setFilteredFieldLines(filteredChildrens, edgeCollection);
 
 }
 
 // todo@Lilian : templater les 2 methodes suivantes sur le container
 
-void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens)
+void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens, const EdgePointCollection& edgeCollection)
 {
-
   _filteredFieldLines.resize(filteredChildrens.size());
 
   std::size_t i = 0;
@@ -60,11 +57,11 @@ void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & f
     {
       if (dir == -1)
       {
-        p = _edgeCollection->before(p);
+        p = edgeCollection.before(p);
       }
       else
       {
-        p = _edgeCollection->after(p);
+        p = edgeCollection.after(p);
       }
 
       vE.push_back(EdgePoint(*p));
@@ -75,9 +72,8 @@ void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & f
   }
 }
 
-void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens)
+void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens, const EdgePointCollection& edgeCollection)
 {
-
   _fieldLines.resize(childrens.size());
 
   std::size_t i = 0;
@@ -97,11 +93,11 @@ void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens)
     {
       if (dir == -1)
       {
-        p = _edgeCollection->before(p);
+        p = edgeCollection.before(p);
       }
       else
       {
-        p = _edgeCollection->after(p);
+        p = edgeCollection.after(p);
       }
 
       assert( p );

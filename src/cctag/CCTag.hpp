@@ -298,10 +298,11 @@ public:
 
 #ifdef CCTAG_SERIALIZE
 
-  void addFlowComponent(const Candidate & candidate)
+  void addFlowComponent(const Candidate & candidate, const EdgePointCollection& edgeCollection)
   {
     _flowComponents.push_back(
       CCTagFlowComponent(
+        edgeCollection,
         candidate._outerEllipsePoints,
         candidate._childrens,
         candidate._filteredChildrens,
@@ -316,12 +317,11 @@ public:
     _flowComponents = flowComponents;
   }
 
-  void setFlowComponents(const std::vector<Candidate> & candidates)
+  void setFlowComponents(const std::vector<Candidate> & candidates, const EdgePointCollection& edgeCollection)
   {
-
     BOOST_FOREACH(const Candidate & candidate, candidates)
     {
-      addFlowComponent(candidate);
+      addFlowComponent(candidate, edgeCollection);
     }
   }
 
