@@ -17,12 +17,8 @@ static const struct option longopts[] =
     {"nbrings",    required_argument, 0, 'n'},    
     {"bank",       required_argument, 0, 'b'},
     {"parameters", required_argument, 0, 'p'},
-<<<<<<< HEAD
-    {"output",     optional_argument, 0, 'o'}, 
-=======
     {"output",     optional_argument, 0, 'o'},   
 #ifdef WITH_CUDA
->>>>>>> bf8b90fdd66a024901a682e379724254d6ec2fd5
     {"sync",       no_argument,       0, 0xd0 },
     {"debug-dir",  required_argument, 0, 0xd1 },
     {"use-cuda",   no_argument,       0, 0xd2 },
