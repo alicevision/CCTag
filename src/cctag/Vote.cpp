@@ -537,7 +537,7 @@ void vote(EdgePointCollection& edgeCollection,
 
                             //% distance between pts and Q : (xa'Qxa)²/||PkQxa||² with Pk = diag(1,1,0)
                             std::vector<float> dist;
-                            numerical::distancePointEllipse(dist, pts, q, f);
+                            numerical::distancePointEllipse(dist, pts, q);
 
                             if (weightedType != NO_WEIGHT) // todo
                             {
@@ -577,11 +577,11 @@ void vote(EdgePointCollection& edgeCollection,
                 float distFinal = 1e300;
 
                 if (weightedType == NO_WEIGHT) {
-                  distFinal = numerical::distancePointEllipse(*e, qm, f);
+                  distFinal = numerical::distancePointEllipse(*e, qm);
                 } else if (weightedType == INV_GRAD_WEIGHT) {
-                  distFinal = numerical::distancePointEllipse(*e, qm, f)*255 / (e->normGradient());
+                  distFinal = numerical::distancePointEllipse(*e, qm)*255 / (e->normGradient());
                 } else if (weightedType == INV_SQUARE_GRAD_WEIGHT) {
-                  distFinal = numerical::distancePointEllipse(*e, qm, f)*255 / ((e->normGradient())*(e->normGradient()));
+                  distFinal = numerical::distancePointEllipse(*e, qm)*255 / ((e->normGradient())*(e->normGradient()));
                 }
  
                 if (distFinal < threshold * Sm) {
@@ -629,7 +629,7 @@ void vote(EdgePointCollection& edgeCollection,
 
         // distance between pts and Q : (xa'Qxa)²/||PkQxa||² with Pk = diag(1,1,0)
         std::vector<float> distRef;
-        numerical::distancePointEllipse(distRef, pts, outerEllipse, f);
+        numerical::distancePointEllipse(distRef, pts, outerEllipse);
 
         const float SRef = numerical::medianRef(distRef);
 
@@ -686,7 +686,7 @@ void vote(EdgePointCollection& edgeCollection,
 
                 //% distance between pts and Q : (xa'Qxa)²/||PkQxa||² with Pk = diag(1,1,0)
                 std::vector<float> dist;
-                numerical::distancePointEllipse(dist, pts, q, f);
+                numerical::distancePointEllipse(dist, pts, q);
 
                 //for(int iDist=0 ; iDist < dist.size() ; ++iDist)
                 //{
@@ -697,7 +697,7 @@ void vote(EdgePointCollection& edgeCollection,
 
                 std::vector<float> anotherDist;
 
-                numerical::distancePointEllipse(anotherDist, anotherPts, q, f);
+                numerical::distancePointEllipse(anotherDist, anotherPts, q);
 
                 const float S2 = numerical::medianRef(anotherDist);
 
@@ -743,7 +743,7 @@ void vote(EdgePointCollection& edgeCollection,
                 vDistFinal.reserve(outerEllipsePointsTemp.size());
 
                 BOOST_FOREACH(EdgePoint * p, outerEllipsePointsTemp) {
-                    float distFinal = numerical::distancePointEllipse(*p, outerEllipseTemp, 1.f);
+                    float distFinal = numerical::distancePointEllipse(*p, outerEllipseTemp);
                     vDistFinal.push_back(distFinal);
                 }
                 const float SmFinal = numerical::medianRef(vDistFinal);

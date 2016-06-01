@@ -19,17 +19,16 @@ inline float distancePoints2D( const T& p1, const U& p2 ) // TODO modifier les a
 	                  boost::math::pow<2>( p2.y() - p1.y() ) );
 }
 
-float distancePointEllipseScalar(const Eigen::Vector3f& p, const Eigen::Matrix3f& Q, const float f);
+float distancePointEllipseScalar(const Eigen::Vector3f& p, const Eigen::Matrix3f& Q);
 
 template <class T>
-inline float distancePointEllipse( const T & p, const geometry::Ellipse& q, const float f )
+inline float distancePointEllipse( const T & p, const geometry::Ellipse& q)
 {
-  return distancePointEllipseScalar(p.template cast<float>(), q.matrix(), f);
+  return distancePointEllipseScalar(p.template cast<float>(), q.matrix());
 }
 
 // Compute the distance between points and an ellipse
-//template<class T>
-void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q, const float f );
+void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q);
 
 }
 }

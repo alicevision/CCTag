@@ -213,7 +213,7 @@ static void completeFlowComponent(
 
     BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
     {
-      float distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.f);
+      float distFinal = numerical::distancePointEllipse(*p, outerEllipse);
       vDistFinal.push_back(distFinal);
 
       if (distFinal > distMax)
@@ -489,7 +489,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
       // TODO@stian: TBB parallel reduction
       BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
       {
-        float distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.f);
+        float distFinal = numerical::distancePointEllipse(*p, outerEllipse);
         resSquare += distFinal; //*distFinal;
 
         if (distFinal > distMax)

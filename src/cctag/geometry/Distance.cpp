@@ -7,7 +7,7 @@ namespace numerical {
 // Compute (point-polar) distance between a point and an ellipse represented by its 3x3 matrix.
 // TODO@lilian: f is always equal to 1, remove it
 // NOTE: Q IS SYMMTERIC!; Eigen stores matrices column-wise by default.
-float distancePointEllipseScalar(const Eigen::Vector3f& p, const Eigen::Matrix3f& Q, const float f )
+float distancePointEllipseScalar(const Eigen::Vector3f& p, const Eigen::Matrix3f& Q)
 {
   using Vector6f = Eigen::Matrix<float, 6, 1>;
   Vector6f aux( 6 );
@@ -32,6 +32,8 @@ float distancePointEllipseScalar(const Eigen::Vector3f& p, const Eigen::Matrix3f
   qL( 5 ) = Q( 2, 2 );
   return boost::math::pow<2>( aux.dot(qL) ) / denom;
 }
+
+#ifdef USE_AVX2
 
 // Packed computation, 8 points at a time
 __m256 distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, __m256 x, __m256 y, __m256 w)
@@ -109,39 +111,27 @@ std::pair<__m256, __m256> distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, 
   
   return std::make_pair(d, mask);
 }
+#endif //USE_AVX2
 
-void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q, const float f )
+void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q)
 {
   size_t n = pts.size();
-  
+#ifdef USE_AVX2
   dist.resize(n);
-  
   for (size_t i = 0; i < n; i += 8) {
     auto distance = distance_point_ellipse_avx2(q.matrix(), &pts[i], std::min(size_t(8), n-i));
     __m256 d = std::get<0>(distance);
     __m256 m = std::get<1>(distance);
     _mm256_maskstore_ps(&dist[i], _mm256_castps_si256(m), d);
   }
-
-#if false   // NB: distance with avx may very in absolute value by several integral units
-  // check
-  for (size_t i = 0; i < pts.size(); ++i) {
-    float d = distancePointEllipseScalar(pts[i], q.matrix(), f);
-    if (std::fabs(d-dist[i]) > 1) {
-      tbb::mutex::scoped_lock lock(m);
-      std::clog << "distance failed: AVX2: " << dist[i] << "; scalar: " << d
-        << "\nMATRIX:\n" << q.matrix() 
-        << "\nPOINT:\n" << pts[i]
-        << std::endl;
-      std::abort();
-    }      
+#else
+  dist.reserve(n);
+  for (const auto & pt : pts ) {
+    dist.push_back(distancePointEllipseScalar(pt, q.matrix()));
   }
-#endif
-  
-  //tbb::parallel_for(size_t(0), n, [&dist,&pts,&q,f](size_t i) {
-  //  dist[i] = distancePointEllipseScalar( pts[i], q.matrix(), f );
-  //});
+#endif //USE_AVX2
 }
+
 
 }
 }
