@@ -596,15 +596,14 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     BOOST_ASSERT( cut.stop().x() >= 0 && cut.stop().x() < src.cols );
     BOOST_ASSERT( cut.stop().y() >= 0 && cut.stop().y() < src.rows );
 
-#if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM)
     const float halfWidth = cutLengthOuterPointRefine / 2.0;
-    cctag::numerical::BoundedVector2d gradDirection = cctag::numerical::unit( cut.stop().gradient() );
-    BOOST_ASSERT( norm_2( gradDirection ) != 0 );
-
+    Eigen::Vector2f gradDirection = cut.stop().gradient()/cut.stop().gradient().norm();
     DirectedPoint2d<Eigen::Vector3f> cstop = cut.stop();
-    cctag::numerical::BoundedVector2d hwgd = halfWidth * gradDirection;
+    
+    Eigen::Vector2f hwgd = halfWidth * gradDirection;
+    
     Point2d<Eigen::Vector3f> pStart( cstop(0)-hwgd(0), cstop(1)-hwgd(1) );
-    // const Point2d<Eigen::Vector3f> pStart( Point2d<Eigen::Vector3f>(cut.stop()) - halfWidth * gradDirection);
+
     const DirectedPoint2d<Eigen::Vector3f> pStop(
                                           Point2d<Eigen::Vector3f>(
                                                   cut.stop().x() + halfWidth*gradDirection(0),
@@ -617,6 +616,9 @@ void selectCut( std::vector< cctag::ImageCut > & vSelectedCuts,
     
     if ( !cutOnOuterPoint.outOfBounds() )
     {
+      
+    }
+#if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM)
       SubPixEdgeOptimizer optimizer( cutOnOuterPoint );
       cctag::Point2d<Eigen::Vector3f> refinedPoint = 
         optimizer(
