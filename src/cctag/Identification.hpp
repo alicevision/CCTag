@@ -162,6 +162,8 @@ void cutInterpolated(
         cctag::ImageCut & cut,
         const cv::Mat & src);
 
+std::pair<float,float> convImageCut(const std::vector<float> & kernel, ImageCut & cut);
+
 /**
  * @brief Collect signals (image cuts) from center to outer ellipse points
  * 

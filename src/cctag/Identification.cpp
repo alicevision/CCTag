@@ -768,7 +768,9 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
         std::size_t selectSize,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         std::vector<cctag::ImageCut> & collectedCuts,
-        const cv::Mat & src)
+        const cv::Mat & src,
+        const float scale,
+        const size_t numSamplesOuterEdgePointsRefinement)
 {
   using namespace boost::numeric;
   using namespace boost::accumulators;
@@ -810,6 +812,120 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
     }
     ++iStart;
   }
+  
+  // Subpixellic refinement of the outer edge points ///////////////////////////
+  const float cutLengthOuterPointRefine = 9.f * sqrt(scale); // size of canny/dX/dY kernel * scale (with scale=2^i, i=0..nLevel)
+  const float halfWidth = cutLengthOuterPointRefine / 2.f;
+  for(auto & cut : vSelectedCuts)
+  {
+    Eigen::Vector2f gradDirection = cut.stop().gradient()/cut.stop().gradient().norm();
+    DirectedPoint2d<Eigen::Vector3f> cstop = cut.stop();
+    
+    Eigen::Vector2f hwgd = halfWidth * gradDirection;
+    
+    Point2d<Eigen::Vector3f> pStart( cstop(0)-hwgd(0), cstop(1)-hwgd(1) );
+
+    const DirectedPoint2d<Eigen::Vector3f> pStop(
+                                            cut.stop().x() + halfWidth*gradDirection(0),
+                                            cut.stop().y() + halfWidth*gradDirection(1),
+                                            cut.stop().dX(),
+                                            cut.stop().dY());
+    
+    cctag::ImageCut cutOnOuterPoint(pStart, pStop, numSamplesOuterEdgePointsRefinement);
+    cutInterpolated( cutOnOuterPoint, src);
+    
+    
+    std::vector<float> kernelA = { -0.0000, -0.0003, -0.1065, -0.7863, 0, 0.7863, 0.1065, 0.0003, 0.0000 }; // size = 9, sigma = 0.5
+    std::vector<float> kernelB = { -0.0044, -0.0540, -0.2376, -0.3450, 0, 0.3450, 0.2376, 0.0540, 0.0044 }; // size = 9, sigma = 1
+    std::vector<float> kernelC = { -0.0366, -0.1113, -0.1801, -0.1594, 0, 0.1594, 0.1801, 0.1113, 0.0366 }; // size = 9, sigma = 1.5
+
+    std::vector<std::vector<float>> vKernels;
+    vKernels.push_back(kernelA);
+    vKernels.push_back(kernelB);
+    vKernels.push_back(kernelC);
+    
+    std::map<float,float> res;
+    
+    for(size_t i=0; i<3 ; ++i)
+    {
+      res.insert(convImageCut(vKernels[i], cutOnOuterPoint));
+    }
+    // Get the location of the highest peak (last element)
+    float maxLocation = res.rbegin()->second;
+    
+    float step = cutLengthOuterPointRefine/((float)numSamplesOuterEdgePointsRefinement-1.f);
+    
+    //std::cout << "init = [" <<  cut.stop().x() << "," << cut.stop().y() << "]" << std::endl;
+    
+    // Set the cut.stop() to its refined location.
+    cut.stop() = DirectedPoint2d<Eigen::Vector3f>(
+                    pStart.x() + step*maxLocation*gradDirection(0),
+                    pStart.y() + step*maxLocation*gradDirection(1),
+                    cut.stop().dX(),
+                    cut.stop().dY());
+    
+    //std::cout << "lineX = [" <<  pStart.x() << "," << pStop.x() << "]" << std::endl;
+    //std::cout << "lineY = [" <<  pStart.y() << "," << pStop.y() << "]" << std::endl;
+    
+    //std::cout << "refined = [" <<  cut.stop().x() << "," << cut.stop().y() << "]" << std::endl;
+    // TODO: Out of bounds
+  }
+  
+}
+
+//derivA = { 0.0000, 0.0003, 0.1065, 0.7863, 0, -0.7863, -0.1065, -0.0003, -0.0000 };
+//derivB = { 0.0044, 0.0540, 0.2376, 0.3450, 0, -0.3450, -0.2376, -0.0540, -0.0044 };
+//derivC = { 0.0366, 0.1113, 0.1801, 0.1594, 0, -0.1594, -0.1801, -0.1113, -0.0366 };
+
+std::pair<float,float> convImageCut(const std::vector<float> & kernel, ImageCut & cut)
+{
+  //double guassOneD[] = { 0.0044, 0.0540, 0.2420, 0.3991, 0.2420, 0.0540, 0.0044 };
+  
+  std::vector<float> output;
+  std::size_t sizeCut = cut.imgSignal().size();
+  std::size_t sizeKernel = kernel.size();
+  output.resize(sizeCut);
+  
+  std::size_t halfSize = (sizeKernel-1)/2;
+  
+  //std::cout << "before = [" << std::endl;
+  //for ( std::size_t i=0 ; i<sizeCut; ++i)
+  //{
+  //  std::cout << cut.imgSignal()[i] << " , " ;
+  //}
+  //std::cout << "]; " << std::endl;
+  
+  for ( std::ssize_t i=0 ; i<sizeCut; ++i)
+  {
+    float tmp = 0;
+    for ( std::size_t j=0 ; j<sizeKernel; ++j)
+    {
+      if ( ssize_t(i-halfSize+j) < 0 )
+        tmp += cut.imgSignal()[0]*kernel[j];
+      else if( (i-halfSize+j) >=  sizeCut)
+        tmp += cut.imgSignal()[sizeCut-1]*kernel[j];
+      else
+        tmp += cut.imgSignal()[i-halfSize+j]*kernel[j];
+    }
+    output[i] = tmp;
+  }
+  
+  //std::cout << "convolved = [" << std::endl;
+  //for ( std::size_t i=0 ; i<sizeCut; ++i)
+  //{
+  //  std::cout << output[i] << " , " ;
+  //}
+  //std::cout << "]; " << std::endl;
+  
+  //cut.imgSignal() = output;
+  
+  // Locate the maximum value.
+  std::vector<float>::iterator maxValueIt = std::max_element(output.begin(), output.end());
+  float itsLocation = (float) std::distance(output.begin(), maxValueIt);
+  
+  //CCTAG_COUT_VAR2(*maxValueIt, itsLocation);
+  
+  return std::pair<float,float>(*maxValueIt,itsLocation);// max value, its location
 }
 
 /**
@@ -1334,7 +1450,9 @@ int identify_step_1(
             params._numCutsInIdentStep,
             ellipse,
             cuts,
-            src);
+            src,
+            cctag.scale(),
+            params._numSamplesOuterEdgePointsRefinement);
     
     DO_TALK( CCTAG_COUT_OPTIM("Initial cut selection"); )
     
