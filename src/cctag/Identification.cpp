@@ -751,14 +751,22 @@ void selectCutCheap( std::vector< cctag::ImageCut > & vSelectedCuts,
   }
 }
 
+/**
+ * @brief Select a subset of image cuts appropriate for the image center optimisation.
+ * This selection aims at "maximizing" the variance of the image signal over all the 
+ * selected cuts while ensuring a "good" distribution of the selected outer points
+ * around the imaged center.
+ *
+ * @param[out] vSelectedCuts selected image cuts
+ * @param[in] selectSize number of desired cuts to select
+ * @param[in] collectedCuts all the collected cuts
+ * @param[in] src source gray scale image (uchar)
+ */
 void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
         std::size_t selectSize,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         std::vector<cctag::ImageCut> & collectedCuts,
-        const cv::Mat & src,
-        const float cutLengthOuterPointRefine,
-        const std::size_t numSamplesOuterEdgePointsRefinement,
-        const std::size_t cutsSelectionTrials )
+        const cv::Mat & src)
 {
   using namespace boost::numeric;
   using namespace boost::accumulators;
@@ -1275,7 +1283,7 @@ int identify_step_1(
   }
   else if (params._nCrowns == 4)
   {
-    startSig = 0.26; // todo: write the analytical formulation based on the latest 4 rings version
+    startSig = 0.26; // todo@Lilian
   }
   else
   {
@@ -1294,14 +1302,9 @@ int identify_step_1(
     
     collectCuts( cuts, src, ellipse.center(), outerPoints, params._sampleCutLength, startSig);
     
-    //cv::Mat output; // todo: write a proper function in the visual debug mode
-    //createRectifiedCutImage(cuts, output);
-    //cv::imwrite("/home/lilian/data/temp/collectCuts.png", output);
-    
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;
     const float spendTime = d.total_milliseconds();
-    //CCTAG_TCOUT( "CollectCuts, duration: " << spendTime );
   }
   
 #ifdef CCTAG_OPTIM
@@ -1321,52 +1324,17 @@ int identify_step_1(
   }
   
   // C. Select a sub sample of image cuts //////////////////////////////////////
-  // Cheap in near future (CPU only)
-
   {
     boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-
-#ifdef NAIVE_SELECTCUT // undefined, deprec
-    'deprecated: dx and dy are not accessible anymore -> use DirectedPoint instead'
-    selectCutNaive( vSelectedCuts, prSelection, params._numCutsInIdentStep, cuts, src, 
-          dx, dy ); 
-    DO_TALK( CCTAG_COUT_OPTIM("Naive cut selection"); )
-#else
-//    selectCut(
-//            vSelectedCuts,
-//            params._numCutsInIdentStep,
-//            cuts,
-//            src,
-//            cutLengthOuterPointRefine,
-//            params._numSamplesOuterEdgePointsRefinement,
-//            params._cutsSelectionTrials
-//            );
-         
-            
-//    selectCutCheap(
-//            vSelectedCuts,
-//            params._numCutsInIdentStep,
-//            ellipse,
-//            cuts,
-//            src,
-//            cutLengthOuterPointRefine,
-//            params._numSamplesOuterEdgePointsRefinement,
-//            params._cutsSelectionTrials
-//            );
 
     selectCutCheapUniform(
             vSelectedCuts,
             params._numCutsInIdentStep,
             ellipse,
             cuts,
-            src,
-            cutLengthOuterPointRefine,
-            params._numSamplesOuterEdgePointsRefinement,
-            params._cutsSelectionTrials
-            );
+            src);
     
     DO_TALK( CCTAG_COUT_OPTIM("Initial cut selection"); )
-#endif
     
     boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
     boost::posix_time::time_duration d = tend - tstart;

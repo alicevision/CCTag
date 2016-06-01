@@ -216,64 +216,6 @@ inline float getPixelBilinear(const cv::Mat & src, float x, float y)
 }
 
 /**
- * @brief Compute a cost (score) for the cut selection based on the variance and the gradient orientation
- * of the outer point (cut.stop()) over all outer points.
- * 
- * @param[in] varCuts variance of the signal over all image cuts
- * @param[in] outerPoints cut.stop(), i.e. outer ellipse point, stop points of the considered image cuts
- * @param[in] randomIdx random index subsample in [0 , outerPoints.size()[
- * @param[in] alpha magic hyper parameter
- * @return score
- */
-float costSelectCutFun(
-        const std::vector<float> & varCuts,
-        const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
-        const std::vector<std::size_t> & randomIdx,
-        const float alpha = 10 );
-
-/**
- * @brief Select a subset of image cuts appropriate for the image center optimisation.
- * This selection aims at maximizing the variance of the image signal over all the 
- * selected cuts while minimizing the norm of the sum of the normalized gradient over
- * all outer points, i.e. all cut.stop().
- *
- * @param[out] vSelectedCuts selected image cuts
- * @param[in] selectSize number of desired cuts to select
- * @param[in] collectedCuts all the collected cuts
- * @param[in] src source gray scale image (uchar)
- * @param[in] refinedSegSize deprec (do not remove)
- * @param[in] cutsSelectionTrials number of random draw
- */
-void selectCut(
-        std::vector< cctag::ImageCut > & vSelectedCuts,
-        std::size_t selectSize,
-        std::vector<cctag::ImageCut> & collectedCuts,
-        const cv::Mat & src,
-        const float refinedSegSize,
-        const std::size_t numSamplesOuterEdgePointsRefinement,
-        const std::size_t cutsSelectionTrials );
-
-void selectCutCheap(
-        std::vector< cctag::ImageCut > & vSelectedCuts,
-        std::size_t selectSize,
-        const cctag::numerical::geometry::Ellipse & outerEllipse,
-        std::vector<cctag::ImageCut> & collectedCuts,
-        const cv::Mat & src,
-        const float refinedSegSize,
-        const std::size_t numSamplesOuterEdgePointsRefinement,
-        const std::size_t cutsSelectionTrials );
-
-#ifdef NAIVE_SELECTCUT
-void selectCutNaive( // depreciated: dx and dy are not accessible anymore -> use DirectedPoint instead
-        std::vector< cctag::ImageCut > & vSelectedCuts,
-        std::vector< cctag::Point2d<Eigen::Vector3f> > & prSelection,
-        std::size_t selectSize, const std::vector<cctag::ImageCut> & collectedCuts,
-        const cv::Mat & src,
-        const cv::Mat & dx,
-        const cv::Mat & dy );
-#endif // NAIVE_SELECTCUT
-
-/**
  * @brief Collect rectified 1D signals along image cuts.
  * 
  * @param[out] vCuts set of the image cuts whose the rectified signal is to be to computed
