@@ -311,48 +311,51 @@ static void flowComponentAssembling(
          Point2d<Eigen::Vector3f>( candidate._seed->x(), candidate._seed->y() ),
          candidate._seed->_flowLength * ratioExpension);
 
-  // Search for another segment
-  BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
+  if (1)
   {
-    if (&candidate != &anotherCandidate)
+    // Search for another segment
+    BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
     {
-      if (candidate._nLabel != anotherCandidate._nLabel)
+      if (&candidate != &anotherCandidate)
       {
-        if ((anotherCandidate._seed->_flowLength / candidate._seed->_flowLength > 0.666)
-                && (anotherCandidate._seed->_flowLength / candidate._seed->_flowLength < 1.5))
+        if (candidate._nLabel != anotherCandidate._nLabel)
         {
-          if (isInEllipse(circularResearchArea, 
-                  cctag::Point2d<Eigen::Vector3f>(float(anotherCandidate._seed->x()), float(anotherCandidate._seed->y()))))
+          if ((anotherCandidate._seed->_flowLength / candidate._seed->_flowLength > 0.666)
+                  && (anotherCandidate._seed->_flowLength / candidate._seed->_flowLength < 1.5))
           {
-            if (anotherCandidate._score > score)
+            if (isInEllipse(circularResearchArea, 
+                    cctag::Point2d<Eigen::Vector3f>(float(anotherCandidate._seed->x()), float(anotherCandidate._seed->y()))))
             {
-              score = anotherCandidate._score;
-              iMax = i;
+              if (anotherCandidate._score > score)
+              {
+                score = anotherCandidate._score;
+                iMax = i;
+              }
+            }
+            else
+            {
+              CCTagFileDebug::instance().setResearchArea(circularResearchArea);
+              CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(NOT_IN_RESEARCH_AREA);
             }
           }
           else
           {
-            CCTagFileDebug::instance().setResearchArea(circularResearchArea);
-            CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(NOT_IN_RESEARCH_AREA);
+            CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(FLOW_LENGTH);
           }
         }
         else
         {
-          CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(FLOW_LENGTH);
+          CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(SAME_LABEL);
         }
       }
-      else
+      ++i;
+  #if defined CCTAG_SERIALIZE && defined DEBUG
+      if (i < vCandidateLoopTwo.size())
       {
-        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(SAME_LABEL);
+        CCTagFileDebug::instance().incrementFlowComponentIndex(1);
       }
+  #endif
     }
-    ++i;
-#if defined CCTAG_SERIALIZE && defined DEBUG
-    if (i < vCandidateLoopTwo.size())
-    {
-      CCTagFileDebug::instance().incrementFlowComponentIndex(1);
-    }
-#endif
   }
 
   DO_TALK( CCTAG_COUT_VAR_DEBUG(iMax); )
