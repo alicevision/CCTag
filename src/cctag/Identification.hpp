@@ -164,6 +164,8 @@ void cutInterpolated(
 
 std::pair<float,float> convImageCut(const std::vector<float> & kernel, ImageCut & cut);
 
+void blurImageCut(const float sigma, cctag::ImageCut & cut);
+
 /**
  * @brief Collect signals (image cuts) from center to outer ellipse points
  * 

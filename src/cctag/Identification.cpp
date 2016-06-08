@@ -295,6 +295,52 @@ void extractSignalUsingHomography(
     x += stepX;
     y += stepY;
   }
+  //const float sigma = 1.f;
+  //blurImageCut(sigma, cut);
+}
+
+void blurImageCut(const float sigma, cctag::ImageCut & cut)
+{
+  //const std::vector<float> kernel = { 0.0044, 0.0540, 0.2420, 0.3991, 0.2420, 0.0540, 0.0044 };
+  const std::vector<float> kernel = { 0.0276, 0.0663, 0.1238, 0.1802, 0.2042, 0.1802, 0.1238, 0.0663, 0.0276 };
+  
+  std::vector<float> output;
+  std::size_t sizeCut = cut.imgSignal().size();
+  std::size_t sizeKernel = kernel.size();
+  output.resize(sizeCut);
+  
+  std::size_t halfSize = (sizeKernel-1)/2;
+  
+  /*std::cout << "before = [" << std::endl;
+  for ( std::size_t i=0 ; i<sizeCut; ++i)
+  {
+    std::cout << cut.imgSignal()[i] << " , " ;
+  }
+  std::cout << "]; " << std::endl;*/
+  
+  for ( std::ssize_t i=0 ; i<sizeCut; ++i)
+  {
+    float tmp = 0;
+    for ( std::size_t j=0 ; j<sizeKernel; ++j)
+    {
+      if ( ssize_t(i-halfSize+j) < 0 )
+        tmp += cut.imgSignal()[0]*kernel[j];
+      else if( (i-halfSize+j) >=  sizeCut)
+        tmp += cut.imgSignal()[sizeCut-1]*kernel[j];
+      else
+        tmp += cut.imgSignal()[i-halfSize+j]*kernel[j];
+    }
+    output[i] = tmp;
+  }
+  
+  /*std::cout << "convolved = [" << std::endl;
+  for ( std::size_t i=0 ; i<sizeCut; ++i)
+  {
+    std::cout << output[i] << " , " ;
+  }
+  std::cout << "]; " << std::endl;*/
+  
+  cut.imgSignal() = output;
 }
 
 /* depreciated */
