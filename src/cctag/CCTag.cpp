@@ -44,18 +44,18 @@ bool CCTag::isEqual(const CCTag& marker) const
   using namespace cctag::numerical::geometry;
   
   Ellipse centerEllipseA = _rescaledOuterEllipse;
-  centerEllipseA.setA( centerEllipseA.b()*0.2 );
-  centerEllipseA.setB( centerEllipseA.b()*0.2 );
+  centerEllipseA.setA( centerEllipseA.b()*0.5 );
+  centerEllipseA.setB( centerEllipseA.b()*0.5 );
   
   Ellipse centerEllipseB = marker.rescaledOuterEllipse();
-  centerEllipseB.setA( centerEllipseB.b()*0.2 );
-  centerEllipseB.setB( centerEllipseB.b()*0.2 );
+  centerEllipseB.setA( centerEllipseB.b()*0.5 );
+  centerEllipseB.setB( centerEllipseB.b()*0.5 );
   
   bool sameSemiAxis =
             ( std::abs( _rescaledOuterEllipse.a()/marker.rescaledOuterEllipse().a() - 1 ) < 0.3 ) &&
             ( std::abs( _rescaledOuterEllipse.b()/marker.rescaledOuterEllipse().b() - 1 ) < 0.3 );
   
-  return isOverlappingEllipses(centerEllipseA, centerEllipseB) && sameSemiAxis;
+  return isOverlappingEllipses(centerEllipseA, centerEllipseB) ;//&& sameSemiAxis;
 }
 
 void CCTag::condition(const Eigen::Matrix3f & mT, const Eigen::Matrix3f & mInvT)
