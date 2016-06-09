@@ -317,16 +317,8 @@ void cctagMultiresDetection(
     }
   }
   
-  // TODO: Why going through many times -> to debug
-  CCTag::List markersPrelimB;
   // todo: in which case is this float check required ?
   for(const CCTag & marker : markersPrelim)
-  {
-    update(markersPrelimB, marker);
-  }
-  
-  // todo: in which case is this float check required ?
-  for(const CCTag & marker : markersPrelimB)
   {
     update(markers, marker);
   }
