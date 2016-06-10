@@ -96,10 +96,13 @@ void first_round( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 }
 
 __global__
-void second_round( cv::cuda::PtrStepSzb src,          // input
-                   cv::cuda::PtrStepSzb dst,          // output
-                   DevEdgeList<short2>  all_edgecoords,   // output
-                   FrameMetaPtr         meta )
+void second_round( cv::cuda::PtrStepSzb   src,        // input
+                   cv::cuda::PtrStepSz16s d_dx,       // input
+                   cv::cuda::PtrStepSz16s d_dy,       // input
+                   cv::cuda::PtrStepSzb   dst,                         // output
+                   DevEdgeList<CudaEdgePoint> all_edgecoords,   // output
+                   cv::cuda::PtrStepSz32s     d_edgepoint_index_table, // output
+                   FrameMetaPtr           meta )
 {
     const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
@@ -123,10 +126,16 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
-    if( keep ) {
-        if( write_index < EDGE_POINT_MAX ) {
-            all_edgecoords.ptr[write_index] = make_short2( idx, idy );
-        }
+    d_edgepoint_index_table.ptr(idy)[idx] = -1;
+
+    if( keep && ( write_index < EDGE_POINT_MAX ) ) {
+        short dx = d_dx.ptr(idy)[idx];
+        short dy = d_dy.ptr(idy)[idx];
+        all_edgecoords.ptr[write_index].init( idx, idy, dx, dy );
+        // all_edgecoords.ptr[write_index] = make_short2( idx, idy );
+        d_edgepoint_index_table.ptr(idy)[idx] = write_index;
+    } else {
+        d_edgepoint_index_table.ptr(idy)[idx] = -1;
     }
 }
 
@@ -171,8 +180,11 @@ void Frame::applyThinning( )
     thinning::second_round
         <<<grid,block,0,_stream>>>
         ( cv::cuda::PtrStepSzb(_d_intermediate), // input
-          _d_edges,                              // output
-          _all_edgecoords.dev,             // output
+          _d_dx,                    // input
+          _d_dy,                    // input
+          _d_edges,                 // output
+          _all_edgecoords.dev,      // output
+          _d_edgepoint_index_table, // output
           _meta );
 
     int val;
@@ -190,8 +202,11 @@ void Frame::applyThinning( )
     thinning::second_round
         <<<grid,block,0,_stream>>>
         ( cv::cuda::PtrStepSzb(_d_intermediate), // input
-          _d_edges,                              // output
-          _all_edgecoords.dev,             // output
+          _d_dx,                    // input
+          _d_dy,                    // input
+          _d_edges,                 // output
+          _all_edgecoords.dev,      // output
+          _d_edgepoint_index_table, // output
           _meta );
 #endif // NDEBUG
 

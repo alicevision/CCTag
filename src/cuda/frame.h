@@ -16,6 +16,7 @@
 #include "cuda/geom_ellipse.h"
 #include "cuda/framemeta.h"
 #include "cuda/ptrstep.h"
+#include "cuda/cuda_edge_point.h"
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
@@ -307,11 +308,14 @@ private:
 #endif
 
     // Stores coordinates of all edges. Valid after thinning.
-    EdgeList<short2>        _all_edgecoords;
+    // EdgeList<short2>        _all_edgecoords;
+    // Stores all edge points. Valid after thinning.
+    EdgeList<CudaEdgePoint> _all_edgecoords;
+    cv::cuda::PtrStepSz32s  _d_edgepoint_index_table; // 2D pos -> index in _all_edgecoords
 
     // Stores all points that are recognized as potential voters
     // in gradient descent.
-    EdgeList<TriplePoint>  _voters;
+    EdgeList<int>          _voters; // voter index -> index in _all_edgecoords
     float*                 _v_chosen_flow_length;
     EdgeList<int>          _v_chosen_idx;
 

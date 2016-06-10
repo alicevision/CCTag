@@ -27,7 +27,7 @@ namespace popart {
 
 struct Voting
 {
-    cv::cuda::PtrStepSz32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
+    // cv::cuda::PtrStepSz32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
 
     void debug_download( const cctag::Parameters& params );
 };

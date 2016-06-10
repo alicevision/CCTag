@@ -19,70 +19,43 @@ namespace popart {
 namespace vote {
 
 __device__ inline
-TriplePoint* find_neigh( FrameMetaPtr&            meta,
-                         const int2&              neigh,
-                         cv::cuda::PtrStepSz32s   edgepoint_index_table,
-                         DevEdgeList<TriplePoint> voters )
+CudaEdgePoint* find_neigh( const int                  neigh,
+                           DevEdgeList<CudaEdgePoint> all_edgecoords )
 {
-    if( neigh.x != 0 || neigh.y != 0 ) {
-        int idx = edgepoint_index_table.ptr(neigh.y)[neigh.x];
-        if( idx != 0 ) {
-            assert( idx > 0 );
-            assert( idx < meta.list_size_voters() );
-            TriplePoint* neighbour = &voters.ptr[idx];
-#ifndef NDEBUG
-            debug_inner_test_consistency( meta, "B", idx, neighbour, edgepoint_index_table, voters );
-
-            if( neigh.x != neighbour->coord.x || neigh.y != neighbour->coord.y ) {
-                printf("Intended coordinate is (%d,%d) at index %d, looked up coord is (%d,%d)\n",
-                       neigh.x, neigh.y,
-                       idx,
-                       neighbour->coord.x, neighbour->coord.y );
-            }
-#endif // NDEBUG
-            return neighbour;
-        }
+    if( neigh >= 0 {
+        CudaEdgePoint* neighbour = &all_edgecoords[neigh];
+        return neighbour;
     }
     return 0;
 }
 
 __device__ inline
-TriplePoint* find_befor( FrameMetaPtr&            meta,
-                         const TriplePoint*       p,
-                         cv::cuda::PtrStepSz32s   edgepoint_index_table,
-                         DevEdgeList<TriplePoint> voters )
+CudaEdgePoint* find_befor( const CudaEdgePoint*       p,
+                           DevEdgeList<CudaEdgePoint> all_edgecoords )
 {
     assert( p );
-    return find_neigh( meta,
-                       p->descending.befor,
-                       edgepoint_index_table,
-                       voters );
+    return find_neigh( p->_dev_befor, all_edgecoords );
 }
 
 
 __device__ inline
-TriplePoint* find_after( FrameMetaPtr&            meta,
-                         const TriplePoint*       p,
-                         cv::cuda::PtrStepSz32s   edgepoint_index_table,
-                         DevEdgeList<TriplePoint> voters )
+CudaEdgePoint* find_after( const CudaEdgePoint*       p,
+                           DevEdgeList<CudaEdgePoint> all_edgecoords )
 {
     assert( p );
-    return find_neigh( meta,
-                       p->descending.after,
-                       edgepoint_index_table,
-                       voters );
+    return find_neigh( p->_dev_after, all_edgecoords );
 }
 
 __device__
-float inner_prod( const TriplePoint* l,
-                  const TriplePoint* r )
+float inner_prod( const CudaEdgePoint* l,
+                  const CudaEdgePoint* r )
 {
     assert( l );
     assert( r );
-    const int16_t l_dx = l->d.x;
-    const int16_t l_dy = l->d.y;
-    const int16_t r_dx = r->d.x;
-    const int16_t r_dy = r->d.y;
+    const int16_t l_dx = l->_grad.x;
+    const int16_t l_dy = l->_grad.y;
+    const int16_t r_dx = r->_grad.x;
+    const int16_t r_dy = r->_grad.y;
     assert( l_dx != 0 || l_dy != 0 );
     assert( r_dx != 0 || r_dy != 0 );
     const float ret  = (float)l_dx * (float)r_dx
@@ -95,9 +68,9 @@ float inner_prod( const TriplePoint* l,
 }
 
 __device__
-inline float cl_distance( const TriplePoint* l, const TriplePoint* r )
+inline float cl_distance( const CudaEdgePoint* l, const CudaEdgePoint* r )
 {
-    return hypotf( l->coord.x - r->coord.x, l->coord.y - r->coord.y );
+    return hypotf( l->_coord.x - r->_coord.x, l->_coord.y - r->_coord.y );
 }
 
 /* Brief: Voting procedure. For every edge point, construct the 1st order approximation 
@@ -114,35 +87,40 @@ inline float cl_distance( const TriplePoint* l, const TriplePoint* r )
  * cannyGradY: Y derivative of the gray image
  */
 __device__
-const TriplePoint* cl_inner(
-    FrameMetaPtr&                  meta,
-    DevEdgeList<TriplePoint>       voters,
-    float*                         chosen_flow_length,
-    DevEdgeList<int>               chosen_idx,
-    const cv::cuda::PtrStepSz32s   edgepoint_index_table )
+const CudaEdgePoint* cl_inner(
+    FrameMetaPtr&              meta,
+    // DevEdgeList<TriplePoint>       voters,
+    float*                     chosen_flow_length,
+    // DevEdgeList<int>           chosen_idx,
+    // const cv::cuda::PtrStepSz32s   edgepoint_index_table )
+    DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
+    DevEdgeList<int>           voters ) // input
 {
-    const int offset = threadIdx.x + blockIdx.x * 32;
-    if( offset >= meta.list_size_voters() ) {
-        return 0;
-    }
-    if( offset == 0 ) {
-        /* special case: offset 0 is intentionally empty */
+    const int voter_offset = threadIdx.x + blockIdx.x * 32;
+
+    if( voter_offset >= meta.list_size_voters() ) {
         return 0;
     }
 
-    TriplePoint* const p = &voters.ptr[offset];
+    const int offset = voters.ptr[voter_offset];
+
+    if( offset < 0 ) {
+        return 0;
+    }
+
+    CudaEdgePoint* const p = &all_edgecoords.ptr[offset];
 
     if( p == 0 ) return 0;
 
 #ifndef NDEBUG
     p->debug_init( );
-    debug_inner_test_consistency( meta, "A", offset, p, edgepoint_index_table, voters );
+    debug_inner_test_consistency( meta, "A", offset, p, all_edgecoords, voters );
     p->debug_add( p->coord );
 #endif // NDEBUG
 
     float dist; // scalar to compute the distance ratio
 
-    TriplePoint* current = vote::find_befor( meta, p, edgepoint_index_table, voters );
+    CudaEdgePoint* current = vote::find_befor( p, all_edgecoords );
     // Here current contains the edge point lying on the 2nd ellipse (from outer to inner)
     if( not current ) {
         return 0;
@@ -176,17 +154,14 @@ const TriplePoint* cl_inner(
     // Add the sub-segment length to the total distance.
     totalDistance += lastDist;
 
-    TriplePoint* chosen = 0;
+    CudaEdgePoint* chosen = 0;
 
     // Iterate over all crowns
     for( int i=1; i < tagParam.nCrowns; ++i ) {
         chosen = 0;
 
         // First in the gradient direction
-        TriplePoint* target = vote::find_after( meta,
-                                                current,
-                                                edgepoint_index_table,
-                                                voters );
+        CudaEdgePoint* target = vote::find_after( current, all_edgecoords );
         // No edge point was found in that direction
         if( not target ) {
             return 0;
@@ -223,10 +198,7 @@ const TriplePoint* cl_inner(
         current = target;
         // Second in the opposite gradient direction
         // target = vote::find_befor( current, d_next_edge_befor, voters );
-        target = vote::find_befor( meta,
-                                   current,
-                                   edgepoint_index_table,
-                                   voters );
+        target = vote::find_befor( current, all_edgecoords );
         if( not target ) {
             return 0;
         }
@@ -274,9 +246,9 @@ const TriplePoint* cl_inner(
      */
     // p->my_vote            = edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
     // p->chosen_flow_length = totalDistance;
-    const int index_of_chosen = edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
+    // const int index_of_chosen = all_edgecoords.ptr(chosen->coord.y)[chosen->coord.x];
 
-    chosen_idx.ptr[offset]     = index_of_chosen;
+    // chosen_idx.ptr[offset]     = index_of_chosen;
     chosen_flow_length[offset] = totalDistance;
 
     return chosen;
@@ -285,19 +257,30 @@ const TriplePoint* cl_inner(
 __global__
 void construct_line( FrameMetaPtr                 meta,
                      DevEdgeList<int>             inner_points, // output
-                     DevEdgeList<TriplePoint>     voters, // input/output
+                     // DevEdgeList<TriplePoint>     voters, // input/output
                      float*                       chosen_flow_length, // output
                      DevEdgeList<int>             chosen_idx,         // output
-                     const cv::cuda::PtrStepSz32s edgepoint_index_table ) // input
+                     // const cv::cuda::PtrStepSz32s edgepoint_index_table ) // input
+                     DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
+                     DevEdgeList<int>                 voters ) // input
 {
     const TriplePoint* chosen =
         cl_inner( meta,
                   voters,      // input-modified
                   chosen_flow_length, // output
-                  chosen_idx, // output
-                  edgepoint_index_table ); // input
+                  // chosen_idx, // output
+                  all_edgecoords ); // input-output
 
-    if( chosen && chosen->coord.x == 0 && chosen->coord.y == 0 ) chosen = 0;
+    if( chosen ) {
+        if( chosen && chosen->coord.x == 0 && chosen->coord.y == 0 ) {
+            chosen = 0;
+        } else {
+            const int voter_offset   = threadIdx.x + blockIdx.x * 32;
+            const int chooser_offset = voters.ptr[voter_offset];
+            const int chosen_offset  = d_edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
+            chosen_idx[chooser_offset] = chosen_offset;
+        }
+    }
 
     int idx = 0;
     uint32_t mask   = __ballot( chosen != 0 );
@@ -324,12 +307,14 @@ void construct_line( FrameMetaPtr                 meta,
 #ifdef USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
 __global__
 void dp_call_construct_line(
-    FrameMetaPtr             meta,
-    DevEdgeList<int>         inner_points,          // output
-    DevEdgeList<TriplePoint> voters,               // ?
-    float*                   chosen_flow_length,   // output
-    DevEdgeList<int>         chosen_idx,           // output
-    cv::cuda::PtrStepSz32s   edgepointIndexTable ) // ?
+    FrameMetaPtr               meta,
+    DevEdgeList<int>           inner_points,          // output
+    // DevEdgeList<TriplePoint> voters,               // ?
+    float*                     chosen_flow_length,   // output
+    DevEdgeList<int>           chosen_idx,           // output
+    // cv::cuda::PtrStepSz32s   edgepointIndexTable ) // ?
+    DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
+    DevEdgeList<int>           voters ) // input
 {
     meta.list_size_inner_points() = 0;
 
@@ -344,10 +329,12 @@ void dp_call_construct_line(
         <<<grid,block>>>
         ( meta,
           inner_points,           // output
-          voters,                // ?
+          // voters,                // ?
           chosen_flow_length,
           chosen_idx,
-          edgepointIndexTable ); // ?
+          // edgepointIndexTable ); // ?
+          all_edgecoords,
+          voters );
 }
 
 __host__
@@ -359,10 +346,12 @@ bool Frame::applyVoteConstructLine( )
         <<<1,1,0,_stream>>>
         ( _meta,
           _inner_points.dev,          // output
-          _voters.dev,                      // input-modified
+          // _voters.dev,                      // input-modified
           _v_chosen_flow_length, // output
           _v_chosen_idx.dev,      // output
-          _vote._d_edgepoint_index_table ); // ?
+          // _d_edgepoint_index_table ); // ?
+          _d_edgepoint_index_table, // input 2D->edge index mapping
+          _voters.dev );            // input
     POP_CHK_CALL_IFSYNC;
     return true;
 }
@@ -387,10 +376,14 @@ bool Frame::applyVoteConstructLine( )
         <<<grid,block,0,_stream>>>
         ( _meta,
           _inner_points.dev,          // output
-          _voters.dev,                      // input-modified
+          // _voters.dev,                      // input-modified
           _v_chosen_flow_length, // output
           _v_chosen_idx.dev,     // output
-          _vote._d_edgepoint_index_table ); // input
+          // _d_edgepoint_index_table ); // input
+          _d_edgepoint_index_table, // input 2D->edge index mapping
+          _voters.dev, // input
+          EdgeList<CudaEdgePoint> _all_edgecoords );            // input
+
     POP_CHK_CALL_IFSYNC;
 
     return true;
