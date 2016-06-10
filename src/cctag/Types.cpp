@@ -4,6 +4,13 @@
 namespace cctag
 {
 
+#ifndef WITH_CUDA
+  const size_t EdgePointCollection::MAX_POINTS = size_t(1) << 20;
+  const size_t EdgePointCollection::MAX_RESOLUTION = 2048;
+  const size_t EdgePointCollection::CUDA_OFFSET = 1024; // 4 kB, one page
+  const size_t EdgePointCollection::MAX_VOTERLIST_SIZE = 16*MAX_POINTS;
+#endif
+
 EdgePointCollection::EdgePointCollection(size_t w, size_t h) :
   _edgeMap(new int[MAX_RESOLUTION*MAX_RESOLUTION]),
   _edgeList(new EdgePoint[MAX_POINTS]),

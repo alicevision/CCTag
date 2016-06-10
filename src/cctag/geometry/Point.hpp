@@ -17,10 +17,16 @@ template<typename Container>
 class Point2d : public Container
 {
 public:
-        using Scalar = typename Container::Scalar;
+        // using Scalar = typename Container::Scalar;
+        typedef typename Container::Scalar Scalar;
 
+#ifndef WITH_CUDA
         Point2d() = default;
         Point2d(const Point2d&) = default;
+#else
+        Point2d() { }
+        Point2d(const Point2d& p) : Container(p) { }
+#endif
         Point2d(const Container& c) : Container(c)
         {
           toNonHomogen();
@@ -57,7 +63,8 @@ public:
 template<class T>
 class DirectedPoint2d : public Point2d<T>
 {
-        using Scalar = typename Point2d<T>::Scalar;
+        // using Scalar = typename Point2d<T>::Scalar;
+    typedef typename Point2d<T>::Scalar Scalar;
 	typedef Point2d<T> Parent;
 	typedef DirectedPoint2d<T> This;
         

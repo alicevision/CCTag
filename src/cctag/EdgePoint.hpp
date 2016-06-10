@@ -3,6 +3,7 @@
 
 #include <cctag/geometry/Point.hpp>
 #include <cctag/utils/Defines.hpp>
+#include <Eigen/Core>
 
 #include <cstddef>
 #include <sys/types.h>
@@ -14,12 +15,20 @@ namespace cctag
 
 class Label;
 
+#ifndef WITH_CUDA
 using Vector3s = Eigen::Matrix<short, 3, 1>;
+#else
+typedef Eigen::Matrix<short, 3, 1> Vector3s;
+#endif
 
 class EdgePoint : public Vector3s
 {
 public:
+#ifndef WITH_CUDA
   EdgePoint() = default;
+#else
+  EdgePoint() { }
+#endif
 
   // XXX: should delete copy ctor; a lot of state is in EdgePointCollection
   // That class checks incoming pointers though.
@@ -78,7 +87,9 @@ public:
 
 // Calculation: sizeof(Vector3s)==8 (3*2=6 + 2 bytes of padding to 8 bytes)
 // 4*sizeof(float) == 16; plus uint64_t + 2 ints
+#ifndef WITH_CUDA
 static_assert(sizeof(EdgePoint) == 8+16+16, "EdgePoint not packed");
+#endif
 
 inline bool receivedMoreVoteThan(const EdgePoint * const p1,  const EdgePoint * const p2)
 {

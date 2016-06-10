@@ -138,7 +138,11 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
      * a candidate inner point, they are added into the list for
      * that inner point.
      */
+#ifndef WITH_CUDA
     std::vector<std::vector<int>> voter_lists(out_edges.get_point_count());
+#else
+    std::vector<std::vector<int> > voter_lists(out_edges.get_point_count());
+#endif
     for( int i=1; i<vote_sz; i++ ) {
         const TriplePoint& pt   = _voters.host.ptr[i];
         const int          vote = _v_chosen_idx.host.ptr[i];
