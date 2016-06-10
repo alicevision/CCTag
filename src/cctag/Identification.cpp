@@ -848,7 +848,7 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
       break; 
     
     iCut = iStart;
-    while( ( iCut < collectedCuts.size() ) && ( vSelectedCuts.size() < selectSize ) )
+    while( ( iCut < collectedCuts.size() ) ) //&& ( vSelectedCuts.size() < selectSize ) )
     {
       if ( varCuts[iCut]/varMax > 0.5f )
       {
@@ -858,6 +858,9 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
       iCut += step;
     }
     ++iStart;
+    
+    if ( vSelectedCuts.size() >= selectSize )
+      break;
   }
   
 //  // Subpixellic refinement of the outer edge points ///////////////////////////
