@@ -835,33 +835,53 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
   
   const float varMax = *std::max_element(varCuts.begin(),varCuts.end());
   
-  std::size_t iCut = 0;
-  std::size_t step = 5;
-  std::size_t iStart = 0;
-  
   vSelectedCuts.clear();
   vSelectedCuts.reserve(selectSize);
   
-  while ( vSelectedCuts.size() < selectSize )
+  std::size_t sharpSize = 0;
+  
+  // Initialize vector of indices of sharp cuts
+  std::vector<std::size_t> indToAdd;
+  indToAdd.reserve(varCuts.size());
+  
+  for(std::size_t iCut = 0 ; iCut < varCuts.size() ; ++iCut)
   {
-    if (iStart >= step)
-      break; 
-    
-    iCut = iStart;
-    while( ( iCut < collectedCuts.size() ) ) //&& ( vSelectedCuts.size() < selectSize ) )
-    {
-      if ( varCuts[iCut]/varMax > 0.5f )
-      {
-        if (outerEdgeRefinement(collectedCuts[iCut], src, scale, numSamplesOuterEdgePointsRefinement))
-          vSelectedCuts.push_back( collectedCuts[iCut] );
-      }
-      iCut += step;
-    }
-    ++iStart;
-    
-    if ( vSelectedCuts.size() >= selectSize )
-      break;
+    if ( varCuts[iCut]/varMax > 0.5f )
+      indToAdd.push_back(iCut);
   }
+  
+  const float step = std::max(1.f, (float) indToAdd.size() / (float) ( selectSize ));
+  
+  for(std::size_t k=0 ; ; ++k)
+  {
+    if ( std::size_t(k*step) < indToAdd.size() )
+    {
+      vSelectedCuts.push_back( collectedCuts[indToAdd[std::size_t(k*step)]] );
+    }else{
+      break;
+    }
+  }
+  
+//  while ( vSelectedCuts.size() < selectSize )
+//  {
+//    if (iStart >= step)
+//      break; 
+//    
+//    iCut = iStart;
+//    while( ( iCut < collectedCuts.size() ) ) //&& ( vSelectedCuts.size() < selectSize ) )
+//    {
+//      if ( varCuts[iCut]/varMax > 0.5f )
+//      {
+//        if (outerEdgeRefinement(collectedCuts[iCut], src, scale, numSamplesOuterEdgePointsRefinement))
+//          vSelectedCuts.push_back( collectedCuts[iCut] );
+//      }
+//      iCut += step;
+//    }
+//    ++iStart;
+//    
+//    if ( vSelectedCuts.size() >= selectSize )
+//      break;
+//  }
   
 //  // Subpixellic refinement of the outer edge points ///////////////////////////
 //  const float cutLengthOuterPointRefine = 9.f * sqrt(scale); // size of canny/dX/dY kernel * scale (with scale=2^i, i=0..nLevel)
