@@ -291,16 +291,23 @@ void getSortedOuterPoints(
   
   // Get the final expected size of resPoints
   const std::size_t nOuterPoints = std::min( requestedSize, points.size() );
-  std::size_t step = std::size_t( points.size() / ( nOuterPoints - 1 ) );
+  const float step = std::max(1.f,(float) points.size() / (float) ( nOuterPoints - 1 ));
   
   resPoints.clear();
   resPoints.reserve(nOuterPoints);
   
   // Get the final expected size of resPoints
   
-  for(std::size_t iPoint = 0 ; iPoint < points.size() ; iPoint += step)
+  for(std::size_t k = 0 ; ; ++k)
   {
-    resPoints.push_back(points[vAngles[iPoint].second]);
+    const std::size_t iToAdd = std::size_t(k*step);
+    if ( iToAdd < vAngles.size() )
+    {
+      resPoints.push_back(points[vAngles[iToAdd].second]);
+    }else
+    {
+      break;
+    }
   }
 }
 
