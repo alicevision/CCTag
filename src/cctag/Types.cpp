@@ -19,8 +19,15 @@ EdgePointCollection::EdgePointCollection(size_t w, size_t h) :
   point_count() = 0;
   _edgeMapShape[0] = w; _edgeMapShape[1] = h;
   memset(&_edgeMap[0], -1, w*h*sizeof(int));  // XXX@stian: unnecessary for CUDA
-  memset(&_processedIn[0], 0, w*h/8+4);       // one bit per pixel + roundoff error
-  memset(&_processedAux[0], 0, w*h/8+4);      // ditto.
+  
+  if (w*h/8+4 < MAX_POINTS) {
+    memset(&_processedIn[0], 0, w*h/8+4);     // one bit per pixel + roundoff error
+    memset(&_processedAux[0], 0, w*h/8+4);    // ditto.
+  }
+  else {
+    memset(&_processedIn[0], 0, MAX_POINTS);
+    memset(&_processedAux[0], 0, MAX_POINTS);
+  }
 }
 
 void EdgePointCollection::add_point(int vx, int vy, float vdx, float vdy)
@@ -34,6 +41,10 @@ void EdgePointCollection::add_point(int vx, int vy, float vdx, float vdy)
 
   // XXX@stian: new() below is technically UB, but the class has no defined dtors
   // so it's safe to re-new it in place w/o calling the dtor firs.
+  
+  if (point_count() >= MAX_POINTS)
+    throw std::logic_error("EdgePointCollection::add_point: too many edge points");
+  
   size_t ipoint = point_count()++;
   _edgeMap[imap] = ipoint;
   new (&_edgeList[ipoint]) EdgePoint(vx, vy, vdx, vdy);
