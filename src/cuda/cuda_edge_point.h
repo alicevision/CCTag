@@ -14,8 +14,8 @@ struct CudaEdgePoint
     float   _flowLength;
 
     int     _dev_winnerSize;
-    int     _dev_befor;
-    int     _dev_after;
+    int     _dev_befor;      // index into _edgepoints
+    int     _dev_after;      // index into _edgepoints
 
     __device__ inline void init( );
     __device__ inline void init( short x, short y );

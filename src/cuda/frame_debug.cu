@@ -162,7 +162,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
          * Confirmed that this works
          */
         vector<int2> out;
-        _vote._all_edgecoords.debug_out( EDGE_POINT_MAX, out );
+        _vote._edgepoints.debug_out( EDGE_POINT_MAX, out );
 
         PtrStepSzbNull edgelistplane( edges.cols, edges.rows );
         DebugImage::plotPoints( out, edgelistplane.e, false, DebugImage::BLUE );

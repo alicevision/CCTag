@@ -38,7 +38,7 @@ public:
 __global__
 void dp_call_vote_if(
     FrameMetaPtr               meta,
-    DevEdgeList<CudaEdgePoint> all_edgecoords,        // input
+    DevEdgeList<CudaEdgePoint> d_edgepoints,        // input
     DevEdgeList<int>           voters,        // input
     DevEdgeList<int>           inner_points,   // output
     DevEdgeList<int>           interm_inner_points,  // input
@@ -55,7 +55,7 @@ void dp_call_vote_if(
         return;
     }
 
-    NumVotersIsGreaterEqual select_op( all_edgecoords );
+    NumVotersIsGreaterEqual select_op( d_edgepoints );
 
 #ifdef CUB_INIT_CALLS
     size_t assist_buffer_sz = 0;

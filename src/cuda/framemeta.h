@@ -18,9 +18,6 @@ enum FrameMetaEnum
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     Num_nearby_points,                // int
 #endif
-#ifndef NDEBUG
-    Num_edges_thinned,
-#endif // NDEBUG
     List_size_edgepoints,
     List_size_voters,
     List_size_chosen_idx,
@@ -77,9 +74,6 @@ struct FrameMetaPtr
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     OFFSET_GETTER_HEADER( int, num_nearby_points )
 #endif
-#ifndef NDEBUG
-    OFFSET_GETTER_HEADER( int, num_edges_thinned )
-#endif // NDEBUG
     OFFSET_GETTER_HEADER( int, list_size_edgepoints )
     OFFSET_GETTER_HEADER( int, list_size_voters )
     OFFSET_GETTER_HEADER( int, list_size_chosen_idx )

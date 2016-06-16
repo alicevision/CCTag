@@ -300,26 +300,24 @@ public: // HACK FOR DEBUGGING
     cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
 
 private:
-    // Stores coordinates of all edges. Valid after thinning.
-    // EdgeList<short2>        _all_edgecoords;
     // Stores all edge points. Valid after thinning.
     EdgeList<CudaEdgePoint> _edgepoints;
 
     /* The following contain integer values that
-     * represent an index into _all_edgecoords:
+     * represent an index into _edgepoints:
      *   _d_edgepoint_index_table
      *   _voters
      *   _v_chosen_idx
      *   _inner_points
      *   _interm_inner_points
      * There is no longer any indirection like
-     * _inner_points->_voters->_all_edgecoords
+     * _inner_points->_voters->_edgepoints
      */
-    cv::cuda::PtrStepSz32s  _d_edgepoint_index_table; // 2D pos -> index in _all_edgecoords
+    cv::cuda::PtrStepSz32s  _d_edgepoint_map; // 2D pos -> index in _edgepoints
 
     // Stores all points that are recognized as potential voters
     // in gradient descent.
-    EdgeList<int>          _voters; // voter index -> index in _all_edgecoords
+    EdgeList<int>          _voters; // voter index -> index in _edgepoints
     float*                 _v_chosen_flow_length;
     EdgeList<int>          _v_chosen_idx;
 

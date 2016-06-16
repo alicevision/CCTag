@@ -19,7 +19,7 @@ namespace vote {
 
 __device__ inline
 void count_winners( FrameMetaPtr&              meta,
-                    DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
+                    DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
                     const int                  offset,
                     const int                  maxpoints,
                     const int*                 inner_points,
@@ -111,7 +111,7 @@ void count_winners( FrameMetaPtr&              meta,
 
         if( threadIdx.x == 0 ) {
             const int edge_index = *( inner_point[point] );
-            CudaEdgePoint& ep = all_edgecoords.ptr[ edge_index ];
+            CudaEdgePoint& ep = d_edgepoints.ptr[ edge_index ];
             ep._dev_winnerSize = winner_size[point];
             ep._flowLength = flow_length[point] / winner_size[point];
         }
@@ -128,7 +128,7 @@ void count_winners( FrameMetaPtr&              meta,
  */
 __global__
 void eval_chosen( FrameMetaPtr     meta,
-                  DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
+                  DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
                   DevEdgeList<int> voters,       // input-output
                   const float*     chosen_flow_length, // input
                   DevEdgeList<int> chosen_idx, // input
@@ -142,7 +142,7 @@ void eval_chosen( FrameMetaPtr     meta,
     }
 
     vote::count_winners( meta,
-                         all_edgecoords,
+                         d_edgepoints,
                          offset,
                          maxpoints,
                          inner_points.ptr,
@@ -160,7 +160,7 @@ namespace vote
 
 __global__
 void dp_call_eval_chosen( FrameMetaPtr               meta,
-                          DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
+                          DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
                           DevEdgeList<int>           voters, // input
                           const float*               chosen_flow_length, // input
                           DevEdgeList<int>           chosen_idx,
@@ -174,7 +174,7 @@ void dp_call_eval_chosen( FrameMetaPtr               meta,
     vote::eval_chosen
         <<<grid,block>>>
         ( meta,
-          all_edgecoords,
+          d_edgepoints,
           voters,
           chosen_flow_length,
           chosen_idx,

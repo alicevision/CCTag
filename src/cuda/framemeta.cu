@@ -26,9 +26,6 @@ struct FrameMeta
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     int   num_nearby_points;
 #endif
-#ifndef NDEBUG
-    int   num_edges_thinned;
-#endif // NDEBUG
     int   list_size_edgepoints;
     int   list_size_voters;
     int   list_size_chosen_idx;
@@ -96,9 +93,6 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
 #endif
-#ifndef NDEBUG
-    HOST_DEVICE_TRANSFER_CASE( Num_edges_thinned, num_edges_thinned )
-#endif // NDEBUG
 
     case Identification_result:
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
@@ -134,9 +128,6 @@ void FrameMetaPtr::toDevice_D2S( FrameMetaEnum e, int* val, cudaStream_t stream 
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
 #endif
-#ifndef NDEBUG
-    HOST_DEVICE_TRANSFER_CASE( Num_edges_thinned, num_edges_thinned )
-#endif // NDEBUG
 
     case Identification_result:
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
@@ -222,9 +213,6 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
     HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
 #endif
-#ifndef NDEBUG
-    HOST_DEVICE_TRANSFER_CASE( Num_edges_thinned, num_edges_thinned )
-#endif // NDEBUG
     case Identification_result:
     	std::cerr << __FILE__ << ":" << __LINE__ << std::endl
 		  << __FUNCTION__ << std::endl
@@ -296,9 +284,6 @@ OFFSET_GETTER_BODY( int,   identification_resct )
 #ifdef CPU_GPU_COST_FUNCTION_COMPARE
 OFFSET_GETTER_BODY( int,   num_nearby_points )
 #endif
-#ifndef NDEBUG
-OFFSET_GETTER_BODY( int,   num_edges_thinned )
-#endif // NDEBUG
 OFFSET_GETTER_BODY( int,   list_size_edgepoints )
 OFFSET_GETTER_BODY( int,   list_size_voters )
 OFFSET_GETTER_BODY( int,   list_size_chosen_idx )

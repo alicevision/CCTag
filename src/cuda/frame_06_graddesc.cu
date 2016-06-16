@@ -64,9 +64,9 @@ bool gradient_descent_inner( const CudaEdgePoint&         point,
 {
     // const int offset = blockIdx.x * 32 + threadIdx.x;
     // int direction    = threadIdx.y == 0 ? -1 : 1;
-    // if( offset >= all_edgecoords.Size() ) return false;
-    // const int idx = all_edgecoords.ptr[offset].x;
-    // const int idy = all_edgecoords.ptr[offset].y;
+    // if( offset >= d_edgepoints.Size() ) return false;
+    // const int idx = d_edgepoints.ptr[offset].x;
+    // const int idy = d_edgepoints.ptr[offset].y;
 #if 0
     /* This was necessary to allow the "after" threads (threadIdx.y==1)
      * to return sensible results even if "before" was 0.
@@ -176,9 +176,9 @@ bool gradient_descent_inner( const CudaEdgePoint&         point,
 
 __global__
 void gradient_descent( FrameMetaPtr                     meta,
-                       const DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
+                       const DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
                        const cv::cuda::PtrStepSzb       edge_image,
-                       cv::cuda::PtrStepSz32s           d_edgepoint_index_table, // input
+                       cv::cuda::PtrStepSz32s           d_edgepoint_map, // input
                        DevEdgeList<int>                 voters ) // output
 {
     assert( blockDim.x * gridDim.x < meta.list_size_edgepoints() + 32 );
@@ -193,7 +193,7 @@ void gradient_descent( FrameMetaPtr                     meta,
     const bool in_bounds = ( offset < meta.list_size_edgepoints() );
     // cannot return if not in_bounds; __syncthreads would deadlock
 
-    CudaEdgePoint& point = all_edgecoords.ptr[offset];
+    CudaEdgePoint& point = d_edgepoints.ptr[offset];
 
     if( in_bounds ) {
         const int direction = threadIdx.y == 0 ? -1 : 1;
@@ -209,7 +209,7 @@ void gradient_descent( FrameMetaPtr                     meta,
     assert( not keep || not outOfBounds( out_edge_info.z, out_edge_info.w, edge_image ) );
 
     __shared__ int merge_directions[2][32];
-    int edgepoint_index = d_edgepoint_index_table.ptr(out_edge_info.y)[out_edge_info.x];
+    int edgepoint_index = d_edgepoint_map.ptr(out_edge_info.y)[out_edge_info.x];
     merge_directions[threadIdx.y][threadIdx.x] = keep ? edgepoint_index : -1;
 
     __syncthreads(); // be on the safe side: __ballot syncs only one warp, we have 2
@@ -254,7 +254,6 @@ void gradient_descent( FrameMetaPtr                     meta,
             assert( meta.list_size_voters() <= 2*meta.list_size_edgepoints() );
         }
     }
-    // assert( *chained_edgecoord_list_sz >= 2*all_edgecoord_list_sz );
 
     write_index = __shfl( write_index, 0 ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
@@ -262,24 +261,15 @@ void gradient_descent( FrameMetaPtr                     meta,
     if( keep && write_index < EDGE_POINT_MAX ) {
         voters.ptr[write_index] = offset;
     }
-
-#ifndef NDEBUG
-    if( keep ) {
-        debug_inner_test_consistency( meta, "D", write_index, &out_edge, edgepoint_index_table, voters );
-
-        TriplePoint* p = &voters.ptr[write_index];
-        debug_inner_test_consistency( meta, "C", write_index, p, edgepoint_index_table, voters );
-    }
-#endif
 }
 
 #ifdef USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 __global__
 void dp_call_01_gradient_descent(
     FrameMetaPtr                     meta,
-    const DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
+    const DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
     const cv::cuda::PtrStepSzb       edge_image, // input
-    cv::cuda::PtrStepSz32s           d_edgepoint_index_table, // input
+    cv::cuda::PtrStepSz32s           d_edgepoint_map, // input
     DevEdgeList<int>                 voters ) // output
 {
     initChainedEdgeCoords_2( meta );
@@ -298,9 +288,9 @@ void dp_call_01_gradient_descent(
     gradient_descent
         <<<grid,block>>>
         ( meta,
-          all_edgecoords,         // input-output
+          d_edgepoints,         // input-output
           edge_image,
-          d_edgepoint_index_table, // input 2D->edge index mapping
+          d_edgepoint_map, // input 2D->edge index mapping
           voters ); // output
 }
 #endif // USE_SEPARABLE_COMPILATION_FOR_GRADDESC
@@ -316,7 +306,7 @@ bool Frame::applyDesc( )
         ( _meta,                    // input-output
           _edgepoints.dev,      // input-output
           _d_edges,                 // input
-          _d_edgepoint_index_table, // input 2D->edge index mapping
+          _d_edgepoint_map, // input 2D->edge index mapping
           _voters.dev );            // output
     POP_CHK_CALL_IFSYNC;
     return true;
@@ -348,7 +338,7 @@ bool Frame::applyDesc( )
         ( _meta,
           _edgepoints.dev,
           _d_edges,                 // input
-          _d_edgepoint_index_table, // input 2D->edge index mapping
+          _d_edgepoint_map, // input 2D->edge index mapping
           _voters.dev );            // output - TriplePoints with before/after info
     POP_CHK_CALL_IFSYNC;
 

@@ -99,8 +99,8 @@ void second_round( cv::cuda::PtrStepSzb   src,        // input
                    cv::cuda::PtrStepSz16s d_dx,       // input
                    cv::cuda::PtrStepSz16s d_dy,       // input
                    cv::cuda::PtrStepSzb   dst,                         // output
-                   DevEdgeList<CudaEdgePoint> all_edgecoords,   // output
-                   cv::cuda::PtrStepSz32s     d_edgepoint_index_table, // output
+                   DevEdgeList<CudaEdgePoint> d_edgepoints,   // output
+                   cv::cuda::PtrStepSz32s     d_edgepoint_map, // output
                    FrameMetaPtr           meta )
 {
     const int block_x = blockIdx.x * 32;
@@ -109,11 +109,6 @@ void second_round( cv::cuda::PtrStepSzb   src,        // input
 
     bool keep = update_pixel( idx, idy, src, dst, false );
 
-#ifndef NDEBUG
-    if( keep ) {
-        atomicAdd( &meta.num_edges_thinned(), 1 );
-    }
-#endif
     uint32_t mask = __ballot( keep );  // bitfield of warps with results
     uint32_t ct   = __popc( mask );    // horizontal reduce
     uint32_t leader = __ffs(mask) - 1; // the highest thread id with indicator==true
@@ -125,16 +120,16 @@ void second_round( cv::cuda::PtrStepSzb   src,        // input
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
-    d_edgepoint_index_table.ptr(idy)[idx] = -1;
+    d_edgepoint_map.ptr(idy)[idx] = -1;
 
     if( keep && ( write_index < EDGE_POINT_MAX ) ) {
         short dx = d_dx.ptr(idy)[idx];
         short dy = d_dy.ptr(idy)[idx];
-        all_edgecoords.ptr[write_index].init( idx, idy, dx, dy );
-        // all_edgecoords.ptr[write_index] = make_short2( idx, idy );
-        d_edgepoint_index_table.ptr(idy)[idx] = write_index;
+        d_edgepoints.ptr[write_index].init( idx, idy, dx, dy );
+        // d_edgepoints.ptr[write_index] = make_short2( idx, idy );
+        d_edgepoint_map.ptr(idy)[idx] = write_index;
     } else {
-        d_edgepoint_index_table.ptr(idy)[idx] = -1;
+        d_edgepoint_map.ptr(idy)[idx] = -1;
     }
 }
 
@@ -172,30 +167,6 @@ void Frame::applyThinning( )
         ( _d_hyst_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
     POP_CHK_CALL_IFSYNC;
 
-#ifndef NDEBUG
-    _meta.toDevice( List_size_edgepoints, 0, _stream );
-    _meta.toDevice( Num_edges_thinned, 0, _stream );
-
-    thinning::second_round
-        <<<grid,block,0,_stream>>>
-        ( cv::cuda::PtrStepSzb(_d_intermediate), // input
-          _d_dx,                    // input
-          _d_dy,                    // input
-          _d_edges,                 // output
-          _edgepoints.dev,      // output
-          _d_edgepoint_index_table, // output
-          _meta );
-
-    int val;
-    _meta.fromDevice( Num_edges_thinned, val, _stream );
-    _edgepoints.copySizeFromDevice( _stream, EdgeListWait );
-    std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-              << "num of edge points after thinning: " << val << std::endl
-              << "num of edge points added to list:  " << _edgepoints.host.size << std::endl
-              << "edgemax: " << EDGE_POINT_MAX << std::endl;
-    _edgepoints.copyDataFromDeviceSync( );
-
-#else // NDEBUG
     _meta.toDevice( List_size_edgepoints, 0, _stream );
 
     thinning::second_round
@@ -205,9 +176,8 @@ void Frame::applyThinning( )
           _d_dy,                    // input
           _d_edges,                 // output
           _edgepoints.dev,      // output
-          _d_edgepoint_index_table, // output
+          _d_edgepoint_map, // output
           _meta );
-#endif // NDEBUG
 
     thinning::set_edgemax
         <<<1,1,0,_stream>>>

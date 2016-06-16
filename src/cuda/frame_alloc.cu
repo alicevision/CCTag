@@ -125,11 +125,11 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _v_chosen_flow_length = (float*)ptr;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
-    assert( p % _d_edgepoint_index_table.elemSize() == 0 );
-    _d_edgepoint_index_table.data = (int32_t*)ptr;
-    _d_edgepoint_index_table.step = p;
-    _d_edgepoint_index_table.cols = w;
-    _d_edgepoint_index_table.rows = h;
+    assert( p % _d_edgepoint_map.elemSize() == 0 );
+    _d_edgepoint_map.data = (int32_t*)ptr;
+    _d_edgepoint_map.step = p;
+    _d_edgepoint_map.cols = w;
+    _d_edgepoint_map.rows = h;
 
     POP_CUDA_MALLOC_HOST( &_d_interm_int, sizeof(int) );
 }
@@ -183,9 +183,9 @@ void Frame::initRequiredMem( )
                            EDGE_POINT_MAX * sizeof(float),
                            _stream );
 
-    POP_CUDA_MEMSET_ASYNC( _d_edgepoint_index_table.data,
+    POP_CUDA_MEMSET_ASYNC( _d_edgepoint_map.data,
                            0,
-                           _d_edgepoint_index_table.step * _d_edgepoint_index_table.rows,
+                           _d_edgepoint_map.step * _d_edgepoint_map.rows,
                            _stream );
 }
 
@@ -220,7 +220,7 @@ void Frame::releaseRequiredMem( )
     _inner_points  .release();
     _interm_inner_points.release();
     POP_CUDA_FREE( _v_chosen_flow_length );
-    POP_CUDA_FREE( _d_edgepoint_index_table.data );
+    POP_CUDA_FREE( _d_edgepoint_map.data );
     POP_CUDA_FREE( _d_interm_int );
 }
 
