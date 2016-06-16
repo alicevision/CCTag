@@ -84,7 +84,7 @@
  * When changing this, remember that a change or bugfix may be missing
  * n the new codepath!
  */
-#undef SHOW_DETAILED_TIMING
+#define SHOW_DETAILED_TIMING
 
 /* Affects tag.cu.
 .* A Frame used two CUDA streams, one for upload and kernels, another
