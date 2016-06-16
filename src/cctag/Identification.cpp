@@ -854,7 +854,7 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
   
   for(std::size_t k=0 ; ; ++k)
   {
-    if ( std::size_t(k*step) < indToAdd.size() )
+    if ( ( std::size_t(k*step) < indToAdd.size() ) && ( vSelectedCuts.size() < selectSize) )
     {
       vSelectedCuts.push_back( collectedCuts[indToAdd[std::size_t(k*step)]] );
     }else{
