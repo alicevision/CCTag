@@ -95,13 +95,13 @@ void first_round( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 }
 
 __global__
-void second_round( cv::cuda::PtrStepSzb   src,        // input
-                   cv::cuda::PtrStepSz16s d_dx,       // input
-                   cv::cuda::PtrStepSz16s d_dy,       // input
-                   cv::cuda::PtrStepSzb   dst,                         // output
-                   DevEdgeList<CudaEdgePoint> d_edgepoints,   // output
-                   cv::cuda::PtrStepSz32s     d_edgepoint_map, // output
-                   FrameMetaPtr           meta )
+void second_round( FrameMetaPtr               meta,
+                   cv::cuda::PtrStepSzb       src,              // input
+                   cv::cuda::PtrStepSz16s     d_dx,             // input
+                   cv::cuda::PtrStepSz16s     d_dy,             // input
+                   cv::cuda::PtrStepSzb       dst,              // output
+                   DevEdgeList<CudaEdgePoint> d_edgepoints,     // output
+                   cv::cuda::PtrStepSz32s     d_edgepoint_map ) // output
 {
     const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
@@ -112,7 +112,7 @@ void second_round( cv::cuda::PtrStepSzb   src,        // input
     uint32_t mask = __ballot( keep );  // bitfield of warps with results
     uint32_t ct   = __popc( mask );    // horizontal reduce
     uint32_t leader = __ffs(mask) - 1; // the highest thread id with indicator==true
-    uint32_t write_index;
+    int      write_index;
     if( threadIdx.x == leader ) {
         // leader gets warp's offset from global value and increases it
         write_index = atomicAdd( &meta.list_size_edgepoints(), int(ct) );
@@ -120,16 +120,14 @@ void second_round( cv::cuda::PtrStepSzb   src,        // input
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
-    d_edgepoint_map.ptr(idy)[idx] = -1;
+    bool predicate = ( keep && ( write_index < EDGE_POINT_MAX ) );
 
-    if( keep && ( write_index < EDGE_POINT_MAX ) ) {
-        short dx = d_dx.ptr(idy)[idx];
-        short dy = d_dy.ptr(idy)[idx];
+    d_edgepoint_map.ptr(idy)[idx] = predicate ? write_index : -1;
+
+    if( predicate ) {
+        const short dx = d_dx.ptr(idy)[idx];
+        const short dy = d_dy.ptr(idy)[idx];
         d_edgepoints.ptr[write_index].init( idx, idy, dx, dy );
-        // d_edgepoints.ptr[write_index] = make_short2( idx, idy );
-        d_edgepoint_map.ptr(idy)[idx] = write_index;
-    } else {
-        d_edgepoint_map.ptr(idy)[idx] = -1;
     }
 }
 
@@ -171,13 +169,13 @@ void Frame::applyThinning( )
 
     thinning::second_round
         <<<grid,block,0,_stream>>>
-        ( cv::cuda::PtrStepSzb(_d_intermediate), // input
-          _d_dx,                    // input
-          _d_dy,                    // input
-          _d_edges,                 // output
-          _edgepoints.dev,      // output
-          _d_edgepoint_map, // output
-          _meta );
+        ( _meta,
+          cv::cuda::PtrStepSzb(_d_intermediate), // input
+          _d_dx,                                 // input
+          _d_dy,                                 // input
+          _d_edges,                              // output
+          _edgepoints.dev,                       // output
+          _d_edgepoint_map );                    // output
 
     thinning::set_edgemax
         <<<1,1,0,_stream>>>
