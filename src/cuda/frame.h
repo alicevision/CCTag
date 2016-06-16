@@ -194,9 +194,6 @@ public:
     // implemented in frame_07_vote.cu
     void applyVote( );
 
-    // implemented in frame_link.cu
-    void applyLink( const cctag::Parameters& param );
-
     // implemented in frame_export.cu
     bool applyExport( cctag::EdgePointCollection& out_edges,
                       std::vector<cctag::EdgePoint*>& out_seedlist);
@@ -288,7 +285,6 @@ private:
     cv::cuda::PtrStepSzb    _d_map;
     cv::cuda::PtrStepSzb    _d_hyst_edges;
     cv::cuda::PtrStepSzb    _d_edges;
-    cv::cuda::PtrStepSzInt2 _d_ring_output;
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_map;
@@ -302,11 +298,8 @@ public: // HACK FOR DEBUGGING
     cv::cuda::PtrStepSzb    _h_edges;
 
     cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
-private:
-#ifndef EDGE_LINKING_HOST_SIDE
-    cv::cuda::PtrStepSzInt2 _h_ring_output;
-#endif
 
+private:
     // Stores coordinates of all edges. Valid after thinning.
     // EdgeList<short2>        _all_edgecoords;
     // Stores all edge points. Valid after thinning.

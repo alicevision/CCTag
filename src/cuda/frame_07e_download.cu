@@ -25,7 +25,6 @@ namespace popart
 __host__
 void Frame::applyVoteDownload( )
 {
-#ifdef EDGE_LINKING_HOST_SIDE
     /* After vote_eval_chosen, _voters is no longer changed
      * we can copy it to the host for edge linking
      */
@@ -33,7 +32,6 @@ void Frame::applyVoteDownload( )
     _voters.copyDataFromDeviceAsync( _download_stream );
     _v_chosen_idx.copyDataFromDeviceAsync( _voters.host.size, _download_stream );
     _inner_points.copyDataFromDeviceAsync( _download_stream );
-#endif // EDGE_LINKING_HOST_SIDE
 }
 
 } // namespace popart

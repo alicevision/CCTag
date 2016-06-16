@@ -74,13 +74,6 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _d_edges.cols = w;
     _d_edges.rows = h;
 
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t), EDGE_LINKING_MAX_ARCS );
-    assert( p % _d_ring_output.elemSize() == 0 );
-    _d_ring_output.data = (cv::cuda::PtrStepInt2_base_t*)ptr;
-    _d_ring_output.step = p;
-    _d_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
-    _d_ring_output.rows = EDGE_LINKING_MAX_ARCS;
-
     POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(uint8_t) );
     _h_plane.data = (uint8_t*)ptr;
     _h_plane.step = w * sizeof(uint8_t);
@@ -116,15 +109,6 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_intermediate.step = _d_intermediate.step;
     _h_intermediate.cols = _d_intermediate.cols;
     _h_intermediate.rows = _d_intermediate.rows;
-
-#ifndef EDGE_LINKING_HOST_SIDE
-    _h_ring_output.data = new cv::cuda::PtrStepInt2_base_t[EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH];
-    // POP_CUDA_MALLOC_HOST( &ptr, EDGE_LINKING_MAX_ARCS*EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t) );
-    // _h_ring_output.data = (cv::cuda::PtrStepInt2_base_t*)ptr;
-    _h_ring_output.step = EDGE_LINKING_MAX_EDGE_LENGTH*sizeof(cv::cuda::PtrStepInt2_base_t);
-    _h_ring_output.cols = EDGE_LINKING_MAX_EDGE_LENGTH;
-    _h_ring_output.rows = EDGE_LINKING_MAX_ARCS;
-#endif // EDGE_LINKING_HOST_SIDE
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(unsigned char) );
@@ -218,7 +202,6 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE( _d_map.data );
     POP_CUDA_FREE( _d_hyst_edges.data );
     POP_CUDA_FREE( _d_edges.data );
-    POP_CUDA_FREE( _d_ring_output.data );
 
     POP_CUDA_FREE_HOST( _h_plane.data );
     POP_CUDA_FREE_HOST( _h_dx.data );
@@ -226,9 +209,6 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE_HOST( _h_mag.data );
     POP_CUDA_FREE_HOST( _h_edges.data );
     POP_CUDA_FREE_HOST( _h_intermediate.data );
-#ifndef EDGE_LINKING_HOST_SIDE
-    delete [] _h_ring_output.data;
-#endif
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     POP_CUDA_FREE_HOST( _h_debug_map );
