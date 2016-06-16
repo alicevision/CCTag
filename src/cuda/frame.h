@@ -11,12 +11,11 @@
 #include "cctag/Params.hpp"
 #include "cctag/Types.hpp"
 #include "cctag/ImageCut.hpp"
-#include "frame_07_vote.h"
-#include "triple_point.h"
 #include "cuda/geom_ellipse.h"
 #include "cuda/framemeta.h"
 #include "cuda/ptrstep.h"
 #include "cuda/cuda_edge_point.h"
+#include "cuda/edge_list.h"
 
 #define RESERVE_MEM_MAX_CROWNS  5
 
@@ -329,8 +328,6 @@ private:
      * but necessary.
      */
     int*                   _d_interm_int;
-
-    Voting _vote;
 
     FrameTexture*        _texture;
     cudaEvent_t          _wait_for_upload;

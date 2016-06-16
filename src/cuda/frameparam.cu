@@ -1,8 +1,12 @@
+#include <iostream>
+
 #include "frameparam.h"
 #include "frame.h"
 #include "debug_macros.hpp"
 
 namespace popart {
+
+using namespace std;
 
 __constant__ FrameParam tagParam;
 

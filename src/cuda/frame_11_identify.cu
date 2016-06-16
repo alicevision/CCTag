@@ -7,6 +7,7 @@
 #include "geom_projtrans.h"
 #include "nearby_point.h"
 #include "tag_cut.h"
+#include "assist.h"
 
 #undef NO_ATOMIC
 
