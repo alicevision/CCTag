@@ -1,6 +1,5 @@
 #include <cuda_runtime.h>
 #include "debug_macros.hpp"
-#include "debug_is_on_edge.h"
 
 #include "frame.h"
 #include "assist.h"
@@ -215,9 +214,6 @@ void Frame::applyThinning( )
         ( _meta );
 
     _edgepoints.copySizeFromDevice( _stream, EdgeListCont );
-#if 0
-    debugPointIsOnEdge( _d_edges, _edgepoints, _stream );
-#endif // NDEBUG
 
     /* After thinning_and_store, _edgepoints is no longer changed.
      * Make a non-blocking copy the number of items in the list to the host.
