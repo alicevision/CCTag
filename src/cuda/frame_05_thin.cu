@@ -121,7 +121,7 @@ void second_round( cv::cuda::PtrStepSzb   src,        // input
     uint32_t write_index;
     if( threadIdx.x == leader ) {
         // leader gets warp's offset from global value and increases it
-        write_index = atomicAdd( &meta.list_size_all_edgecoords(), int(ct) );
+        write_index = atomicAdd( &meta.list_size_edgepoints(), int(ct) );
     }
     write_index = __shfl( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
@@ -142,8 +142,8 @@ void second_round( cv::cuda::PtrStepSzb   src,        // input
 __global__
 void set_edgemax( FrameMetaPtr meta )
 {
-    if( meta.list_size_all_edgecoords() > EDGE_POINT_MAX ) {
-        meta.list_size_all_edgecoords() = EDGE_POINT_MAX;
+    if( meta.list_size_edgepoints() > EDGE_POINT_MAX ) {
+        meta.list_size_edgepoints() = EDGE_POINT_MAX;
     }
 }
 
@@ -174,7 +174,7 @@ void Frame::applyThinning( )
     POP_CHK_CALL_IFSYNC;
 
 #ifndef NDEBUG
-    _meta.toDevice( List_size_all_edgecoords, 0, _stream );
+    _meta.toDevice( List_size_edgepoints, 0, _stream );
     _meta.toDevice( Num_edges_thinned, 0, _stream );
 
     thinning::second_round
@@ -183,21 +183,21 @@ void Frame::applyThinning( )
           _d_dx,                    // input
           _d_dy,                    // input
           _d_edges,                 // output
-          _all_edgecoords.dev,      // output
+          _edgepoints.dev,      // output
           _d_edgepoint_index_table, // output
           _meta );
 
     int val;
     _meta.fromDevice( Num_edges_thinned, val, _stream );
-    _all_edgecoords.copySizeFromDevice( _stream, EdgeListWait );
+    _edgepoints.copySizeFromDevice( _stream, EdgeListWait );
     std::cerr << __FILE__ << ":" << __LINE__ << std::endl
               << "num of edge points after thinning: " << val << std::endl
-              << "num of edge points added to list:  " << _all_edgecoords.host.size << std::endl
+              << "num of edge points added to list:  " << _edgepoints.host.size << std::endl
               << "edgemax: " << EDGE_POINT_MAX << std::endl;
-    _all_edgecoords.copyDataFromDeviceSync( );
+    _edgepoints.copyDataFromDeviceSync( );
 
 #else // NDEBUG
-    _meta.toDevice( List_size_all_edgecoords, 0, _stream );
+    _meta.toDevice( List_size_edgepoints, 0, _stream );
 
     thinning::second_round
         <<<grid,block,0,_stream>>>
@@ -205,7 +205,7 @@ void Frame::applyThinning( )
           _d_dx,                    // input
           _d_dy,                    // input
           _d_edges,                 // output
-          _all_edgecoords.dev,      // output
+          _edgepoints.dev,      // output
           _d_edgepoint_index_table, // output
           _meta );
 #endif // NDEBUG
@@ -214,13 +214,13 @@ void Frame::applyThinning( )
         <<<1,1,0,_stream>>>
         ( _meta );
 
-    _all_edgecoords.copySizeFromDevice( _stream, EdgeListCont );
+    _edgepoints.copySizeFromDevice( _stream, EdgeListCont );
 #if 0
-    debugPointIsOnEdge( _d_edges, _all_edgecoords, _stream );
+    debugPointIsOnEdge( _d_edges, _edgepoints, _stream );
 #endif // NDEBUG
 
 #ifdef EDGE_LINKING_HOST_SIDE
-    /* After thinning_and_store, _all_edgecoords is no longer changed.
+    /* After thinning_and_store, _edgepoints is no longer changed.
      * Make a non-blocking copy the number of items in the list to the host.
      */
     cudaEventRecord( _download_ready_event.edgecoords1, _stream );
@@ -231,22 +231,22 @@ __host__
 void Frame::applyThinDownload( )
 {
 #ifdef EDGE_LINKING_HOST_SIDE
-    /* After thinning_and_store, _all_edgecoords is no longer changed
+    /* After thinning_and_store, _edgepoints is no longer changed
      * we can copy it to the host for edge linking
      */
     // cudaStreamWaitEvent( _download_stream, _download_ready_event.edgecoords1, 0 );
 
-    /* CPU must wait for counter _all_edgecoords.host.size */
+    /* CPU must wait for counter _edgepoints.host.size */
     cudaEventSynchronize( _download_ready_event.edgecoords1 );
     POP_CHK_CALL_IFSYNC;
 
     // cudaEventSynchronize( _download_ready_event.edgecoords2 );
-    _all_edgecoords.copyDataFromDeviceAsync( _download_stream );
+    _edgepoints.copyDataFromDeviceAsync( _download_stream );
     POP_CHK_CALL_IFSYNC;
 #ifndef NDEBUG
-    if( _all_edgecoords.host.size <= 0 ) {
+    if( _edgepoints.host.size <= 0 ) {
         // initialize the hostside array to 0 for debugging
-        _all_edgecoords.initHost( );
+        _edgepoints.initHost( );
     }
 #endif // NDEBUG
 #endif // EDGE_LINKING_HOST_SIDE

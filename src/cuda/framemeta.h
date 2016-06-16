@@ -21,7 +21,7 @@ enum FrameMetaEnum
 #ifndef NDEBUG
     Num_edges_thinned,
 #endif // NDEBUG
-    List_size_all_edgecoords,
+    List_size_edgepoints,
     List_size_voters,
     List_size_chosen_idx,
     List_size_inner_points,
@@ -80,7 +80,7 @@ struct FrameMetaPtr
 #ifndef NDEBUG
     OFFSET_GETTER_HEADER( int, num_edges_thinned )
 #endif // NDEBUG
-    OFFSET_GETTER_HEADER( int, list_size_all_edgecoords )
+    OFFSET_GETTER_HEADER( int, list_size_edgepoints )
     OFFSET_GETTER_HEADER( int, list_size_voters )
     OFFSET_GETTER_HEADER( int, list_size_chosen_idx )
     OFFSET_GETTER_HEADER( int, list_size_inner_points )

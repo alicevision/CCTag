@@ -16,21 +16,21 @@ using namespace std;
 
 namespace popart {
 
-struct NumVotersIsGreaterEqual
+class NumVotersIsGreaterEqual
 {
-    DevEdgeList<TriplePoint> _array;
-    int                      _compare;
+    DevEdgeList<CudaEdgePoint> _edgepoints;
 
+public:
     __host__ __device__
     __forceinline__
-    NumVotersIsGreaterEqual( DevEdgeList<TriplePoint> _d_array )
-        : _array( _d_array )
+    NumVotersIsGreaterEqual( DevEdgeList<CudaEdgePoint> a )
+        : _edgepoints( a )
     {}
 
     __device__
     __forceinline__
     bool operator()(const int &a) const {
-        return (_array.ptr[a]._winnerSize >= tagParam.minVotesToSelectCandidate );
+        return (_edgepoints.ptr[a]._dev_winnerSize >= tagParam.minVotesToSelectCandidate );
     }
 };
 
@@ -38,11 +38,12 @@ struct NumVotersIsGreaterEqual
 
 __global__
 void dp_call_vote_if(
-    FrameMetaPtr             meta,
-    DevEdgeList<TriplePoint> voters,        // input
-    DevEdgeList<int>         inner_points,   // output
-    DevEdgeList<int>         interm_inner_points,  // input
-    cv::cuda::PtrStepSzb     intermediate ) // buffer
+    FrameMetaPtr               meta,
+    DevEdgeList<CudaEdgePoint> all_edgecoords,        // input
+    DevEdgeList<int>           voters,        // input
+    DevEdgeList<int>           inner_points,   // output
+    DevEdgeList<int>           interm_inner_points,  // input
+    cv::cuda::PtrStepSzb       intermediate ) // buffer
 {
     /* Filter all chosen inner points that have fewer
      * voters than required by Parameters.
@@ -55,7 +56,7 @@ void dp_call_vote_if(
         return;
     }
 
-    NumVotersIsGreaterEqual select_op( voters );
+    NumVotersIsGreaterEqual select_op( all_edgecoords );
 
 #ifdef CUB_INIT_CALLS
     size_t assist_buffer_sz = 0;
@@ -97,6 +98,7 @@ bool Frame::applyVoteIf( )
     dp_call_vote_if
         <<<1,1,0,_stream>>>
         ( _meta,
+          _edgepoints.dev, // input
           _voters.dev,  // input
           _inner_points.dev,        // output
           _interm_inner_points.dev,      // input
@@ -120,7 +122,7 @@ bool Frame::applyVoteIf( )
     void*  assist_buffer = (void*)_d_intermediate.data;
     size_t assist_buffer_sz;
 
-    NumVotersIsGreaterEqual select_op( _voters.dev );
+    NumVotersIsGreaterEqual select_op( _edgepoints.dev );
 #ifdef CUB_INIT_CALLS
     assist_buffer_sz  = 0;
     err = cub::DeviceSelect::If( 0,

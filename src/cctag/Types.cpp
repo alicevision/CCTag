@@ -5,6 +5,9 @@ namespace cctag
 {
 
 #ifndef WITH_CUDA
+  // if C++x11 works, everything can be done in the header file
+  // doesn't work with CUDA 7.0 nvcc
+#else
   const size_t EdgePointCollection::MAX_POINTS = size_t(1) << 20;
   const size_t EdgePointCollection::MAX_RESOLUTION = 2048;
   const size_t EdgePointCollection::CUDA_OFFSET = 1024; // 4 kB, one page

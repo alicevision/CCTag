@@ -41,7 +41,7 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
 
 /* functions cannot be __global__ __device__ */
 __device__
-inline void initChainedEdgeCoords_2( FrameMetaPtr& meta, DevEdgeList<TriplePoint>& voters )
+inline void initChainedEdgeCoords_2( FrameMetaPtr& meta )
 {
     /* Note: the initial _voters.dev.size is set to 1 because it is used
      * as an index for writing points into an array. Starting the counter
@@ -52,9 +52,9 @@ inline void initChainedEdgeCoords_2( FrameMetaPtr& meta, DevEdgeList<TriplePoint
 }
 
 __global__
-void initChainedEdgeCoords( FrameMetaPtr meta, DevEdgeList<TriplePoint> voters )
+void initChainedEdgeCoords( FrameMetaPtr meta )
 {
-    initChainedEdgeCoords_2( meta, voters );
+    initChainedEdgeCoords_2( meta );
 }
 
 __device__
@@ -75,8 +75,8 @@ bool gradient_descent_inner( const CudaEdgePoint&         point,
     out_edge_info.x = idx;
     out_edge_info.y = idy;
 #endif
-    const int2   id  = point._coord.x;
-    const short2 grad = point._grad;
+    const short2 id   = point._coord;
+    const float2 grad = point._grad;
 
     assert( not outOfBounds( id.x, id.y, edge_image ) );
     if( outOfBounds( id.x, id.y, edge_image ) ) {
@@ -180,10 +180,10 @@ void gradient_descent( FrameMetaPtr                     meta,
                        const DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
                        const cv::cuda::PtrStepSzb       edge_image,
                        cv::cuda::PtrStepSz32s           d_edgepoint_index_table, // input
-                       DevEdgeList<int>                 voters );    // output
+                       DevEdgeList<int>                 voters ) // output
 {
-    assert( blockDim.x * gridDim.x < meta.list_size_all_edgecoords() + 32 );
-    assert( meta.list_size_voters() <= 2*meta.list_size_all_edgecoords() );
+    assert( blockDim.x * gridDim.x < meta.list_size_edgepoints() + 32 );
+    assert( meta.list_size_voters() <= 2*meta.list_size_edgepoints() );
 
     int2   out_edge_info;
     bool   keep = false;
@@ -191,7 +191,7 @@ void gradient_descent( FrameMetaPtr                     meta,
     // after   1  if threadIdx.y == 1
 
     const int  offset    = blockIdx.x * 32 + threadIdx.x;
-    const bool in_bounds = ( offset < meta.list_size_all_edgecoords() );
+    const bool in_bounds = ( offset < meta.list_size_edgepoints() );
     // cannot return if not in_bounds; __syncthreads would deadlock
 
     CudaEdgePoint& point = all_edgecoords.ptr[offset];
@@ -250,9 +250,9 @@ void gradient_descent( FrameMetaPtr                     meta,
                     "edges found: %d (total %d)\n",
                     gridDim.x, blockDim.x, blockDim.x * gridDim.x,
                     blockIdx.x, threadIdx.x, threadIdx.x + blockIdx.x*32,
-                    meta.list_size_all_edgecoords(),
+                    meta.list_size_edgepoints(),
                     ct, meta.list_size_voters() );
-            assert( meta.list_size_voters() <= 2*meta.list_size_all_edgecoords() );
+            assert( meta.list_size_voters() <= 2*meta.list_size_edgepoints() );
         }
     }
     // assert( *chained_edgecoord_list_sz >= 2*all_edgecoord_list_sz );
@@ -278,17 +278,17 @@ void gradient_descent( FrameMetaPtr                     meta,
 __global__
 void dp_call_01_gradient_descent(
     FrameMetaPtr                     meta,
-    const DevEdgeList<CudaEdgePoint> all_edgecoords, // input
+    const DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
     const cv::cuda::PtrStepSzb       edge_image, // input
-    cv::cuda::PtrStepSz32s           d_edgepoint_index_table,, // input
-    DevEdgeList<TriplePoint>         chainedEdgeCoords ) // output
+    cv::cuda::PtrStepSz32s           d_edgepoint_index_table, // input
+    DevEdgeList<int>                 voters ) // output
 {
-    initChainedEdgeCoords_2( meta, chainedEdgeCoords );
+    initChainedEdgeCoords_2( meta );
 
     /* No need to start more child kernels than the number of points found by
      * the Thinning stage.
      */
-    int listsize = meta.list_size_all_edgecoords();
+    int listsize = meta.list_size_edgepoints();
 
     /* The list of edge candidates is empty. Do nothing. */
     if( listsize == 0 ) return;
@@ -299,10 +299,10 @@ void dp_call_01_gradient_descent(
     gradient_descent
         <<<grid,block>>>
         ( meta,
-          all_edgecoords,         // input
+          all_edgecoords,         // input-output
           edge_image,
           d_edgepoint_index_table, // input 2D->edge index mapping
-          chainedEdgeCoords );  // output - TriplePoints with before/after info
+          voters ); // output
 }
 #endif // USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 
@@ -314,8 +314,8 @@ bool Frame::applyDesc( )
 {
     descent::dp_call_01_gradient_descent
         <<<1,1,0,_stream>>>
-        ( _meta,                    // input modified
-          _all_edgecoords.dev,      // input
+        ( _meta,                    // input-output
+          _edgepoints.dev,      // input-output
           _d_edges,                 // input
           _d_edgepoint_index_table, // input 2D->edge index mapping
           _voters.dev );            // output
@@ -328,12 +328,12 @@ bool Frame::applyDesc( )
 {
     descent::initChainedEdgeCoords
         <<<1,1,0,_stream>>>
-        ( _meta, _voters.dev );
+        ( _meta );
 
     int listsize;
 
     // Note: right here, Dynamic Parallelism would avoid blocking.
-    _meta.fromDevice( List_size_all_edgecoords, listsize, _stream );
+    _meta.fromDevice( List_size_edgepoints, listsize, _stream );
     POP_CUDA_SYNC( _stream );
 
     if( listsize == 0 ) {
@@ -345,13 +345,13 @@ bool Frame::applyDesc( )
     dim3 grid( grid_divide( listsize, 32 ), 1, 1 );
 
 #ifndef NDEBUG
-    debugPointIsOnEdge( _d_edges, _all_edgecoords, _stream );
+    debugPointIsOnEdge( _d_edges, _edgepoints, _stream );
 #endif
 
     descent::gradient_descent
         <<<grid,block,0,_stream>>>
         ( _meta,
-          _all_edgecoords.dev,
+          _edgepoints.dev,
           _d_edges,                 // input
           _d_edgepoint_index_table, // input 2D->edge index mapping
           _voters.dev );            // output - TriplePoints with before/after info

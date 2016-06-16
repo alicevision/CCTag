@@ -17,13 +17,13 @@ struct CudaEdgePoint
     int     _dev_befor;
     int     _dev_after;
 
-    __device__ void init( );
-    __device__ void init( short x, short y );
-    __device__ void init( short x, short y, short dx, short dy );
+    __device__ inline void init( );
+    __device__ inline void init( short x, short y );
+    __device__ inline void init( short x, short y, short dx, short dy );
 };
 
 __device__
-void CudaEdgePoint::init( )
+inline void CudaEdgePoint::init( )
 {
     _coord          = make_short2( 0, 0 );
     _grad           = make_float2( 0.0f, 0.0f );
@@ -35,7 +35,7 @@ void CudaEdgePoint::init( )
 }
 
 __device__
-void CudaEdgePoint::init( short x, short y )
+inline void CudaEdgePoint::init( short x, short y )
 {
     _coord          = make_short2( x, y );
     _grad           = make_float2( 0.0f, 0.0f );
@@ -47,7 +47,7 @@ void CudaEdgePoint::init( short x, short y )
 }
 
 __device__
-void CudaEdgePoint::init( short x, short y, short dx, short dy )
+inline void CudaEdgePoint::init( short x, short y, short dx, short dy )
 {
     _coord          = make_short2( x, y );
     _grad           = make_float2( dx, dy );
@@ -57,8 +57,6 @@ void CudaEdgePoint::init( short x, short y, short dx, short dy )
     _dev_befor      = 0;
     _dev_after      = 0;
 }
-
-#endif
 
 }; // namespace popart
 

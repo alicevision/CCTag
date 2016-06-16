@@ -1,4 +1,4 @@
-# Locate the openMVG libraries.
+# Locate the CCTag libraries.
 #
 # Defines the following variables:
 #
@@ -49,10 +49,10 @@ SET(CCTAG_LIBRARIES_NAMES
 
 FIND_LIBRARY(CCTAG_LIBRARY NAMES ${CCTAG_LIBRARIES_NAMES}
   HINTS
-  $ENV{CCTAG_DIR}/lib
-  ${CCTAG_DIR}/lib
+    $ENV{CCTAG_DIR}/lib
+    ${CCTAG_DIR}/lib
   PATH_SUFFIXES
-  CCTag
+    CCTag
   #third_party libraries
   ${OpenCV_LIB_DIR}
   ${OPTPP_LIBRARY_DIRS}

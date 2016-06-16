@@ -19,7 +19,7 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
     // cerr << "Enter " << __FUNCTION__ << endl;
 
     int vote_sz = _voters.host.size;
-    int all_sz  = _all_edgecoords.host.size;
+    int all_sz  = _edgepoints.host.size;
 
     assert( out_edges.points().size() == 0 );
     assert( out_edges.map().size() == 0 );
@@ -43,18 +43,18 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
 
 #ifdef SORT_ALL_EDGECOORDS_IN_EXPORT
     /* remove a bit of randomness by sorting the list of edge point
-     * that is stored in the 1D array of int2 _all_edgecoords
+     * that is stored in the 1D array of int2 _edgepoints
      *
      * NOTE: move sorting to the GPU !!!
      */
     int2cmp v_comp;
-    std::sort( _all_edgecoords.host.ptr,
-               _all_edgecoords.host.ptr+all_sz,
+    std::sort( _edgepoints.host.ptr,
+               _edgepoints.host.ptr+all_sz,
                v_comp );
 #endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
     for(int i = 0; i < all_sz; ++i) {
-          const short2& pt = _all_edgecoords.host.ptr[i];
+          const short2& pt = _edgepoints.host.ptr[i]._coord;
           const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
           const int16_t dy = _h_dy.ptr(pt.y)[pt.x];
           out_edges.add_point(pt.x, pt.y, dx, dy);
@@ -71,40 +71,36 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
      */
 
     for( int i=1; i<vote_sz; i++ ) {
-        const TriplePoint& pt = _voters.host.ptr[i];
-        if( pt.coord.x == 0 && pt.coord.y == 0 ) {
-            static bool reported_error_once = false;
-            if( not reported_error_once ) {
-                cerr << __FILE__ << ":" << __LINE__ << ": "
-                     << "Error: vote winners contain (0,0), which is forbidden (skip)." << endl;
-                reported_error_once = true;
-            }
-            continue;
-        }
-        cctag::EdgePoint* ep = out_edges(pt.coord.x,pt.coord.y);
+        int voter_index = _voters.host.ptr[i];
+        const CudaEdgePoint& pt = _edgepoints.host.ptr[voter_index];
+        cctag::EdgePoint* ep = out_edges(pt._coord.x,pt._coord.y);
         if( ep == 0 ) {
             cerr << __FILE__ << ":" << __LINE__ << ": "
-                 << "Error: found a vote winner (" << pt.coord.x << "," << pt.coord.y << ")"
+                 << "Error: found a vote winner (" << pt._coord.x << "," << pt._coord.y << ")"
                  << " that is not an edge point." << endl;
             // cerr << "Leave " << __FUNCTION__ << " (2)" << endl;
             return false;
         }
-        assert( ep->gradient()(0) == (double)pt.d.x );
-        assert( ep->gradient()(1) == (double)pt.d.y );
+        assert( ep->gradient()(0) == (double)pt._grad.x );
+        assert( ep->gradient()(1) == (double)pt._grad.y );
 
-        if( pt.descending.after.x != 0 || pt.descending.after.y != 0 ) {
-            cctag::EdgePoint* n = out_edges(pt.descending.after.x, pt.descending.after.y);
+        if( pt._dev_after != 0 ) {
+            int after_index = _voters.host.ptr[pt._dev_after];
+            const CudaEdgePoint& p = _edgepoints.host.ptr[after_index];
+            cctag::EdgePoint* n = out_edges(p._coord.x, p._coord.y);
             if( n >= 0 )
                 out_edges.set_after(ep, out_edges(n));
         }
-        if( pt.descending.befor.x != 0 || pt.descending.befor.y != 0 ) {
-            cctag::EdgePoint* n = out_edges(pt.descending.befor.x, pt.descending.befor.y);
+        if( pt._dev_befor != 0 ) {
+            int befor_index = _voters.host.ptr[pt._dev_befor];
+            const CudaEdgePoint& p = _edgepoints.host.ptr[befor_index];
+            cctag::EdgePoint* n = out_edges(p._coord.x, p._coord.y);
             if( n >= 0 )
                 out_edges.set_before(ep, out_edges(n));
         }
 
         ep->_flowLength = pt._flowLength;
-        ep->_isMax      = pt._winnerSize;
+        ep->_isMax      = pt._dev_winnerSize;
     }
 
     /* Block 3
@@ -116,10 +112,12 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
      *
      * NOTE: move sorting to the GPU !!!
      */
+#if 0
     vote_index_sort sort_by_votes_and_coords( _voters.host );
     std::sort( _inner_points.host.ptr,
                _inner_points.host.ptr + _inner_points.host.size,
                sort_by_votes_and_coords );
+#endif
 
     // NVCC handles the std::list<...>() construct. GCC does not. Keeping alternative code.
 
@@ -128,8 +126,12 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
 
     for( int i=0; i<_inner_points.host.size; i++ ) {
         int seedidx = _inner_points.host.ptr[i];
-        const TriplePoint& pt = _voters.host.ptr[seedidx];
-        cctag::EdgePoint* ep = out_edges(pt.coord.x, pt.coord.y);
+
+        /* NOTE: this is probably incorrect */
+        int voter_index = _voters.host.ptr[seedidx];
+        const CudaEdgePoint& pt = _edgepoints.host.ptr[voter_index];
+
+        cctag::EdgePoint* ep = out_edges(pt._coord.x, pt._coord.y);
         out_seedlist[i] = ep;
     }
 
@@ -144,13 +146,16 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
     std::vector<std::vector<int> > voter_lists(out_edges.get_point_count());
 #endif
     for( int i=1; i<vote_sz; i++ ) {
-        const TriplePoint& pt   = _voters.host.ptr[i];
-        const int          vote = _v_chosen_idx.host.ptr[i];
+        int voter_index = _voters.host.ptr[i];
+        const CudaEdgePoint& pt = _edgepoints.host.ptr[voter_index];
+
+        const int vote = _v_chosen_idx.host.ptr[i];
 
         if( vote != 0 ) {
-            const TriplePoint& point = _voters.host.ptr[ vote ];
-            int potential_seed = out_edges(out_edges(point.coord.x, point.coord.y));
-            voter_lists[potential_seed].push_back(out_edges(out_edges(pt.coord.x,pt.coord.y)));
+            int voter_index = _voters.host.ptr[ vote ];
+            const CudaEdgePoint& point = _edgepoints.host.ptr[voter_index];
+            int potential_seed = out_edges(out_edges(point._coord.x, point._coord.y));
+            voter_lists[potential_seed].push_back(out_edges(out_edges(pt._coord.x,pt._coord.y)));
         }
     }
     out_edges.create_voter_lists(voter_lists);

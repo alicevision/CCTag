@@ -22,8 +22,8 @@ __device__ inline
 CudaEdgePoint* find_neigh( const int                  neigh,
                            DevEdgeList<CudaEdgePoint> all_edgecoords )
 {
-    if( neigh >= 0 {
-        CudaEdgePoint* neighbour = &all_edgecoords[neigh];
+    if( neigh >= 0 ) {
+        CudaEdgePoint* neighbour = &all_edgecoords.ptr[neigh];
         return neighbour;
     }
     return 0;
@@ -255,30 +255,28 @@ const CudaEdgePoint* cl_inner(
 }
 
 __global__
-void construct_line( FrameMetaPtr                 meta,
-                     DevEdgeList<int>             inner_points, // output
-                     // DevEdgeList<TriplePoint>     voters, // input/output
-                     float*                       chosen_flow_length, // output
-                     DevEdgeList<int>             chosen_idx,         // output
-                     // const cv::cuda::PtrStepSz32s edgepoint_index_table ) // input
+void construct_line( FrameMetaPtr               meta,
                      DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
-                     DevEdgeList<int>                 voters ) // input
+                     DevEdgeList<int>           voters, // input
+                     DevEdgeList<int>           inner_points, // output
+                     float*                     chosen_flow_length, // output
+                     DevEdgeList<int>           chosen_idx,          // output
+                     cv::cuda::PtrStepSz32s     d_edgepoint_index_table ) // input
 {
-    const TriplePoint* chosen =
+    const CudaEdgePoint* chosen =
         cl_inner( meta,
-                  voters,      // input-modified
                   chosen_flow_length, // output
-                  // chosen_idx, // output
-                  all_edgecoords ); // input-output
+                  all_edgecoords, // input-modified
+                  voters ); // input
 
     if( chosen ) {
-        if( chosen && chosen->coord.x == 0 && chosen->coord.y == 0 ) {
+        if( chosen && chosen->_coord.x == 0 && chosen->_coord.y == 0 ) {
             chosen = 0;
         } else {
             const int voter_offset   = threadIdx.x + blockIdx.x * 32;
             const int chooser_offset = voters.ptr[voter_offset];
-            const int chosen_offset  = d_edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
-            chosen_idx[chooser_offset] = chosen_offset;
+            const int chosen_offset  = d_edgepoint_index_table.ptr(chosen->_coord.y)[chosen->_coord.x];
+            chosen_idx.ptr[chooser_offset] = chosen_offset;
         }
     }
 
@@ -296,7 +294,7 @@ void construct_line( FrameMetaPtr                 meta,
 
     if( chosen ) {
         if( meta.list_size_inner_points() < EDGE_POINT_MAX ) {
-            idx = edgepoint_index_table.ptr(chosen->coord.y)[chosen->coord.x];
+            idx = d_edgepoint_index_table.ptr(chosen->_coord.y)[chosen->_coord.x];
             inner_points.ptr[write_index] = idx;
         }
     }
@@ -308,13 +306,13 @@ void construct_line( FrameMetaPtr                 meta,
 __global__
 void dp_call_construct_line(
     FrameMetaPtr               meta,
+    DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
+    DevEdgeList<int>           voters,  // input
     DevEdgeList<int>           inner_points,          // output
     // DevEdgeList<TriplePoint> voters,               // ?
     float*                     chosen_flow_length,   // output
-    DevEdgeList<int>           chosen_idx,           // output
-    // cv::cuda::PtrStepSz32s   edgepointIndexTable ) // ?
-    DevEdgeList<CudaEdgePoint> all_edgecoords, // input-output
-    DevEdgeList<int>           voters ) // input
+    DevEdgeList<int>           chosen_idx,         // output
+    cv::cuda::PtrStepSz32s     d_edgepoint_index_table ) // ?
 {
     meta.list_size_inner_points() = 0;
 
@@ -328,13 +326,12 @@ void dp_call_construct_line(
     vote::construct_line
         <<<grid,block>>>
         ( meta,
+          all_edgecoords,
+          voters,
           inner_points,           // output
-          // voters,                // ?
           chosen_flow_length,
           chosen_idx,
-          // edgepointIndexTable ); // ?
-          all_edgecoords,
-          voters );
+          d_edgepoint_index_table );
 }
 
 __host__
@@ -345,13 +342,14 @@ bool Frame::applyVoteConstructLine( )
     dp_call_construct_line
         <<<1,1,0,_stream>>>
         ( _meta,
+          _edgepoints.dev,
+          _voters.dev,
           _inner_points.dev,          // output
           // _voters.dev,                      // input-modified
           _v_chosen_flow_length, // output
           _v_chosen_idx.dev,      // output
           // _d_edgepoint_index_table ); // ?
-          _d_edgepoint_index_table, // input 2D->edge index mapping
-          _voters.dev );            // input
+          _d_edgepoint_index_table  ); // input 2D->edge index mapping
     POP_CHK_CALL_IFSYNC;
     return true;
 }
@@ -375,14 +373,14 @@ bool Frame::applyVoteConstructLine( )
     vote::construct_line
         <<<grid,block,0,_stream>>>
         ( _meta,
+          _edgepoints.dev, // input-output
+          _voters.dev, //  input
           _inner_points.dev,          // output
           // _voters.dev,                      // input-modified
           _v_chosen_flow_length, // output
           _v_chosen_idx.dev,     // output
           // _d_edgepoint_index_table ); // input
-          _d_edgepoint_index_table, // input 2D->edge index mapping
-          _voters.dev, // input
-          EdgeList<CudaEdgePoint> _all_edgecoords );            // input
+          _d_edgepoint_index_table ); // input 2D->edge index mapping
 
     POP_CHK_CALL_IFSYNC;
 

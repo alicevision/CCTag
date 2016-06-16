@@ -310,7 +310,18 @@ private:
     // Stores coordinates of all edges. Valid after thinning.
     // EdgeList<short2>        _all_edgecoords;
     // Stores all edge points. Valid after thinning.
-    EdgeList<CudaEdgePoint> _all_edgecoords;
+    EdgeList<CudaEdgePoint> _edgepoints;
+
+    /* The following contain integer values that
+     * represent an index into _all_edgecoords:
+     *   _d_edgepoint_index_table
+     *   _voters
+     *   _v_chosen_idx
+     *   _inner_points
+     *   _interm_inner_points
+     * There is no longer any indirection like
+     * _inner_points->_voters->_all_edgecoords
+     */
     cv::cuda::PtrStepSz32s  _d_edgepoint_index_table; // 2D pos -> index in _all_edgecoords
 
     // Stores all points that are recognized as potential voters

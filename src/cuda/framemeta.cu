@@ -29,7 +29,7 @@ struct FrameMeta
 #ifndef NDEBUG
     int   num_edges_thinned;
 #endif // NDEBUG
-    int   list_size_all_edgecoords;
+    int   list_size_edgepoints;
     int   list_size_voters;
     int   list_size_chosen_idx;
     int   list_size_inner_points;
@@ -78,7 +78,7 @@ FrameMetaPtr::FrameMetaPtr( int pipeId, int frameId )
     HOST_DEVICE_TRANSFER_CASE( Ring_counter, ring_counter ) \
     HOST_DEVICE_TRANSFER_CASE( Ring_counter_max, ring_counter_max ) \
     HOST_DEVICE_TRANSFER_CASE( Identification_resct, identification_resct ) \
-    HOST_DEVICE_TRANSFER_CASE( List_size_all_edgecoords, list_size_all_edgecoords ) \
+    HOST_DEVICE_TRANSFER_CASE( List_size_edgepoints, list_size_edgepoints ) \
     HOST_DEVICE_TRANSFER_CASE( List_size_voters, list_size_voters ) \
     HOST_DEVICE_TRANSFER_CASE( List_size_chosen_idx, list_size_chosen_idx ) \
     HOST_DEVICE_TRANSFER_CASE( List_size_inner_points, list_size_inner_points ) \
@@ -299,7 +299,7 @@ OFFSET_GETTER_BODY( int,   num_nearby_points )
 #ifndef NDEBUG
 OFFSET_GETTER_BODY( int,   num_edges_thinned )
 #endif // NDEBUG
-OFFSET_GETTER_BODY( int,   list_size_all_edgecoords )
+OFFSET_GETTER_BODY( int,   list_size_edgepoints )
 OFFSET_GETTER_BODY( int,   list_size_voters )
 OFFSET_GETTER_BODY( int,   list_size_chosen_idx )
 OFFSET_GETTER_BODY( int,   list_size_inner_points )
