@@ -260,31 +260,14 @@ void edge_second( cv::cuda::PtrStepSzb img, FrameMetaPtr meta )
 
 }; // namespace hysteresis
 
-#ifndef NDEBUG
-__global__
-void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w, int h )
-{
-    assert( img.cols == w );
-    assert( img.rows == h );
-    assert( ver.cols == w );
-    assert( ver.rows == h );
-
-    const int idx  = blockIdx.x * HYST_W + threadIdx.x;
-    const int idy  = blockIdx.y * HYST_H + threadIdx.y;
-    uint32_t x = clamp( idx, img.cols );
-    uint32_t y = clamp( idy, img.rows );
-    uint8_t  val = img.ptr(y)[x];
-    if( val > 2 ) {
-        printf("idx=%d -> x=%d, idy=%d -> y=%d, img.cols=%d img.rows=%d val=%d\n",
-            idx, x, idy, y, img.cols, img.rows, val );
-        assert( val <= 2 );
-    }
-}
-#endif // NDEBUG
-
 #ifdef USE_SEPARABLE_COMPILATION_FOR_HYST
 __global__
-void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src, int depth )
+void hyst_outer_loop_recurse( int                  width,
+                              int                  height,
+                              FrameMetaPtr         meta,
+                              cv::cuda::PtrStepSzb img,
+                              cv::cuda::PtrStepSzb src,
+                              int                  depth )
 {
     if( meta.hysteresis_block_counter() == 0 ) return;
 
@@ -306,7 +289,11 @@ void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, cv::cuda
 }
 
 __global__
-void hyst_outer_loop( int width, int height, FrameMetaPtr meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src )
+void hyst_outer_loop( int                  width,
+                      int                  height,
+                      FrameMetaPtr         meta,
+                      cv::cuda::PtrStepSzb img,
+                      cv::cuda::PtrStepSzb src )
 {
     dim3 block;
     dim3 grid;
@@ -341,12 +328,6 @@ void Frame::applyHyst( )
     block.y = HYST_H;
     grid.x  = grid_divide( getWidth(),   HYST_W );
     grid.y  = grid_divide( getHeight(),  HYST_H );
-
-#ifndef NDEBUG
-    verify_map_valid
-        <<<grid,block,0,_stream>>>
-        ( _d_map, _d_hyst_edges, getWidth(), getHeight() );
-#endif
 
 #ifdef USE_SEPARABLE_COMPILATION_FOR_HYST
     hyst_outer_loop
