@@ -203,40 +203,33 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // NDEBUG
 
 #ifndef NDEBUG
+#if 0
+// needs to be re-written for CudaEdgePoint
 #ifdef DEBUG_WRITE_CHOSEN_AS_PPM
     {
         /* _voters.dev.size has been loaded into .host.size
          * _inner_points has been created into this step.
-         * _inner_points.dev.size, has been loaded into .host.soze
+         * _inner_points.dev.size, has been loaded into .host.size
          * before returning.
          * The edge indices are all points that have received votes. No
          * filtering has taken place yet.
          * ... have the paths leading to these votes been stored?
          */
         if( _voters.host.size > 0 && _inner_points.host.size > 0) {
-            vector<TriplePoint> out;
-            PtrStepSzbClone edgeclone( edges );
-            _voters.debug_out( EDGE_POINT_MAX, out, EdgeListFilterCommittedOnly );
-            DebugImage::plotPoints( out, edgeclone.e, true, DebugImage::GREEN );
 #ifdef DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
-            DebugImage::writeASCII( filename + "-07-chosen-voter-chains.txt", out );
 #endif // DEBUG_WRITE_CHOSEN_VOTERS_AS_ASCII
-
-            out.clear();
-            _voters.debug_out( _inner_points, EDGE_POINT_MAX, out );
             DebugImage::plotPoints( out, edgeclone.e, false, DebugImage::BLUE );
 #ifdef DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
             DebugImage::writeASCII( filename + "-07-chosen-dots.txt", out );
 #endif // DEBUG_WRITE_CHOSEN_ELECTED_AS_ASCII
-
             DebugImage::writePPM( filename + "-07-chosen-dots.ppm", edgeclone.e );
-
             PtrStepSzbNull edgelistplane( edges.cols, edges.rows );
             DebugImage::plotPoints( out, edgelistplane.e, false, DebugImage::BLUE );
             DebugImage::writePGMscaled( filename + "-07-chosen-dots.pgm", edgelistplane.e );
         }
     }
 #endif // DEBUG_WRITE_CHOSEN_AS_PPM
+#endif // 0
 #endif // NDEBUG
 }
 
