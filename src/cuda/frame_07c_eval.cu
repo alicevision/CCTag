@@ -25,7 +25,7 @@ void count_winners( FrameMetaPtr&              meta,
                     const int*                 inner_points,
                     const DevEdgeList<int>&    voters,
                     const float*               chosen_flow_length,
-                    const DevEdgeList<int>     chosen_idx )
+                    const DevEdgeList<int>     voting_for )
 {
     int   inner_point_index[CONC_POINTS];
     int*  inner_point[CONC_POINTS];
@@ -48,7 +48,9 @@ void count_winners( FrameMetaPtr&              meta,
     const int start_offset = 32 * threadIdx.y + threadIdx.x;
     const int inc_offset   = 32*32;
     for( int i=start_offset; i<voter_list_size; i+=inc_offset ) {
-        const int my_vote = chosen_idx.ptr[i];
+        const int my_vote = voting_for.ptr[i];
+        if( my_vote == -1 ) continue;
+
         for( int point=0; point<CONC_POINTS; point++ ) {
             if( inner_point[point] == 0 ) continue;
 
@@ -131,7 +133,7 @@ void eval_chosen( FrameMetaPtr     meta,
                   DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
                   DevEdgeList<int> voters,       // input-output
                   const float*     chosen_flow_length, // input
-                  DevEdgeList<int> chosen_idx, // input
+                  DevEdgeList<int> voting_for, // input
                   DevEdgeList<int> inner_points // input
                 )
 {
@@ -148,7 +150,7 @@ void eval_chosen( FrameMetaPtr     meta,
                          inner_points.ptr,
                          voters,
                          chosen_flow_length,
-                         chosen_idx );
+                         voting_for );
 }
 
 } // namespace vote
@@ -163,8 +165,8 @@ void dp_call_eval_chosen( FrameMetaPtr               meta,
                           DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
                           DevEdgeList<int>           voters, // input
                           const float*               chosen_flow_length, // input
-                          DevEdgeList<int>           chosen_idx,
-                          DevEdgeList<int>           inner_points ) // input
+                          DevEdgeList<int>           voting_for,         // input
+                          DevEdgeList<int>           inner_points )      // input
 {
     int listsize = meta.list_size_interm_inner_points();
 
@@ -177,7 +179,7 @@ void dp_call_eval_chosen( FrameMetaPtr               meta,
           d_edgepoints,
           voters,
           chosen_flow_length,
-          chosen_idx,
+          voting_for,
           inner_points );
 }
 
@@ -202,7 +204,7 @@ bool Frame::applyVoteEval( )
           _edgepoints.dev,
           _voters.dev,
           _v_chosen_flow_length,
-          _v_chosen_idx.dev,
+          _voting_for.dev,
           _interm_inner_points.dev );
     POP_CHK_CALL_IFSYNC;
     return true;

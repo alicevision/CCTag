@@ -115,9 +115,9 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_debug_map = (unsigned char*)ptr;
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-    _edgepoints     .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _edgepoints         .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _voters             .alloc( EDGE_POINT_MAX, EdgeListBoth );
-    _v_chosen_idx       .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _voting_for         .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _inner_points       .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _interm_inner_points.alloc( EDGE_POINT_MAX, EdgeListDevOnly );
 
@@ -174,7 +174,7 @@ void Frame::initRequiredMem( )
 
     _edgepoints.init( _stream );
     _voters        .init( _stream );
-    _v_chosen_idx  .init( _stream );
+    _voting_for    .init( _stream );
     _inner_points  .init( _stream );
     _interm_inner_points.init( _stream );
 
@@ -216,7 +216,7 @@ void Frame::releaseRequiredMem( )
 
     _edgepoints.release();
     _voters        .release();
-    _v_chosen_idx  .release();
+    _voting_for    .release();
     _inner_points  .release();
     _interm_inner_points.release();
     POP_CUDA_FREE( _v_chosen_flow_length );

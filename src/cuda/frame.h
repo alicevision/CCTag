@@ -304,8 +304,8 @@ private:
 
     /* The following contain integer values that
      * represent an index into _edgepoints:
-     *   _d_edgepoint_index_table
-     *   _voters
+     *   _d_edgepoint_index_table - confirmed
+     *   _voters - confirmed
      *   _v_chosen_idx
      *   _inner_points
      *   _interm_inner_points
@@ -318,7 +318,11 @@ private:
     // in gradient descent.
     EdgeList<int>          _voters; // voter index -> index in _edgepoints
     float*                 _v_chosen_flow_length;
-    EdgeList<int>          _v_chosen_idx;
+
+    /** for every index in _voters, _voting_for contains not the voter's own index
+     *  but the index of the CudaEdgePoint for which it voted, or -1 if it didn't vote
+     */
+    EdgeList<int>          _voting_for;
 
     EdgeList<int>          _inner_points;
     EdgeList<int>          _interm_inner_points;

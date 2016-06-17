@@ -88,34 +88,24 @@ inline float cl_distance( const CudaEdgePoint* l, const CudaEdgePoint* r )
 __device__
 const CudaEdgePoint* cl_inner(
     FrameMetaPtr&              meta,
-    // DevEdgeList<TriplePoint>       voters,
-    float*                     chosen_flow_length,
-    // DevEdgeList<int>           chosen_idx,
-    // const cv::cuda::PtrStepSz32s   edgepoint_index_table )
-    DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
-    DevEdgeList<int>           voters ) // input
+    DevEdgeList<CudaEdgePoint> d_edgepoints, // input
+    DevEdgeList<int>           voters,       // input
+    const int                  voter_offset, // input
+    float&                     flow_length )
 {
-    const int voter_offset = threadIdx.x + blockIdx.x * 32;
-
     if( voter_offset >= meta.list_size_voters() ) {
         return 0;
     }
 
-    const int offset = voters.ptr[voter_offset];
+    const int chooser_offset = voters.ptr[voter_offset];
 
-    if( offset < 0 ) {
+    if( chooser_offset < 0 ) {
         return 0;
     }
 
-    CudaEdgePoint* const p = &d_edgepoints.ptr[offset];
+    CudaEdgePoint* const p = &d_edgepoints.ptr[chooser_offset];
 
     if( p == 0 ) return 0;
-
-#ifndef NDEBUG
-    p->debug_init( );
-    debug_inner_test_consistency( meta, "A", offset, p, d_edgepoints, voters );
-    p->debug_add( p->coord );
-#endif // NDEBUG
 
     float dist; // scalar to compute the distance ratio
 
@@ -124,9 +114,6 @@ const CudaEdgePoint* cl_inner(
     if( not current ) {
         return 0;
     }
-#ifndef NDEBUG
-    p->debug_add( current->coord );
-#endif
 
     // To save all sub-segments length
     int       vDistSize = 0;
@@ -146,7 +133,7 @@ const CudaEdgePoint* cl_inner(
         return 0;
     }
 
-    float lastDist = vote::cl_distance( p, current ); // hypotf is CUDA float intrinsic for sqrt(pow2+pow2)
+    float lastDist = vote::cl_distance( p, current );
     vDist[vDistSize++] = lastDist;
     assert( vDistSize <= vDistMax );
         
@@ -165,9 +152,6 @@ const CudaEdgePoint* cl_inner(
         if( not target ) {
             return 0;
         }
-#ifndef NDEBUG
-        p->debug_add( target->coord );
-#endif
 
         // Check the difference of two consecutive angles
         cosDiffTheta = -vote::inner_prod( target, current );
@@ -229,13 +213,7 @@ const CudaEdgePoint* cl_inner(
         if( !current ) {
             return 0;
         }
-#ifndef NDEBUG
-        p->debug_add( current->coord );
-#endif
     }
-#ifndef NDEBUG
-    p->debug_commit( );
-#endif
 
     /* The overhead of competing updates in the chosen points
      * would be huge.
@@ -247,37 +225,36 @@ const CudaEdgePoint* cl_inner(
     // p->chosen_flow_length = totalDistance;
     // const int index_of_chosen = d_edgepoints.ptr(chosen->coord.y)[chosen->coord.x];
 
-    // chosen_idx.ptr[offset]     = index_of_chosen;
-    chosen_flow_length[offset] = totalDistance;
+    // voting_for.ptr[offset]     = index_of_chosen;
+    flow_length = totalDistance;
 
     return chosen;
 }
 
 __global__
 void construct_line( FrameMetaPtr               meta,
-                     DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
-                     DevEdgeList<int>           voters, // input
-                     DevEdgeList<int>           inner_points, // output
+                     DevEdgeList<CudaEdgePoint> d_edgepoints,       // input-output
+                     cv::cuda::PtrStepSz32s     d_edgepoint_map,    // input
+                     DevEdgeList<int>           voters,             // input
+                     DevEdgeList<int>           inner_points,       // output
                      float*                     chosen_flow_length, // output
-                     DevEdgeList<int>           chosen_idx,          // output
-                     cv::cuda::PtrStepSz32s     d_edgepoint_map ) // input
+                     DevEdgeList<int>           voting_for )        // output
 {
+    const int voter_offset   = threadIdx.x + blockIdx.x * 32;
+
+    float flow_length = -1.0f;
+
     const CudaEdgePoint* chosen =
         cl_inner( meta,
-                  chosen_flow_length, // output
-                  d_edgepoints, // input-modified
-                  voters ); // input
+                  d_edgepoints,         // input
+                  voters,               // input
+                  voter_offset,         // input
+                  flow_length ); // output
 
-    if( chosen ) {
-        if( chosen && chosen->_coord.x == 0 && chosen->_coord.y == 0 ) {
-            chosen = 0;
-        } else {
-            const int voter_offset   = threadIdx.x + blockIdx.x * 32;
-            const int chooser_offset = voters.ptr[voter_offset];
-            const int chosen_offset  = d_edgepoint_map.ptr(chosen->_coord.y)[chosen->_coord.x];
-            chosen_idx.ptr[chooser_offset] = chosen_offset;
-        }
-    }
+    const int chosen_offset  = chosen ? d_edgepoint_map.ptr(chosen->_coord.y)[chosen->_coord.x]
+                                      : -1;
+    voting_for.ptr[voter_offset]     = chosen_offset;
+    chosen_flow_length[voter_offset] = flow_length;
 
     int idx = 0;
     uint32_t mask   = __ballot( chosen != 0 );
@@ -305,13 +282,12 @@ void construct_line( FrameMetaPtr               meta,
 __global__
 void dp_call_construct_line(
     FrameMetaPtr               meta,
-    DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
-    DevEdgeList<int>           voters,  // input
-    DevEdgeList<int>           inner_points,          // output
-    // DevEdgeList<TriplePoint> voters,               // ?
+    DevEdgeList<CudaEdgePoint> d_edgepoints,         // input-output
+    cv::cuda::PtrStepSz32s     d_edgepoint_map,      // input
+    DevEdgeList<int>           voters,               // input
+    DevEdgeList<int>           inner_points,         // output
     float*                     chosen_flow_length,   // output
-    DevEdgeList<int>           chosen_idx,         // output
-    cv::cuda::PtrStepSz32s     d_edgepoint_map ) // ?
+    DevEdgeList<int>           voting_for )          // output
 {
     meta.list_size_inner_points() = 0;
 
@@ -326,11 +302,11 @@ void dp_call_construct_line(
         <<<grid,block>>>
         ( meta,
           d_edgepoints,
+          d_edgepoint_map,
           voters,
           inner_points,           // output
           chosen_flow_length,
-          chosen_idx,
-          d_edgepoint_map );
+          voting_for );
 }
 
 __host__
@@ -342,11 +318,11 @@ bool Frame::applyVoteConstructLine( )
         <<<1,1,0,_stream>>>
         ( _meta,
           _edgepoints.dev,
+          _d_edgepoint_map, // input 2D->edge index mapping
           _voters.dev,
           _inner_points.dev,          // output
           _v_chosen_flow_length, // output
-          _v_chosen_idx.dev,      // output
-          _d_edgepoint_map  ); // input 2D->edge index mapping
+          _voting_for.dev );      // output
     POP_CHK_CALL_IFSYNC;
     return true;
 }
@@ -371,11 +347,11 @@ bool Frame::applyVoteConstructLine( )
         <<<grid,block,0,_stream>>>
         ( _meta,
           _edgepoints.dev, // input-output
+          _d_edgepoint_map, // input 2D->edge index mapping
           _voters.dev, //  input
           _inner_points.dev,          // output
           _v_chosen_flow_length, // output
-          _v_chosen_idx.dev,     // output
-          _d_edgepoint_map ); // input 2D->edge index mapping
+          _voting_for.dev );     // output
 
     POP_CHK_CALL_IFSYNC;
 

@@ -149,7 +149,7 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
         int voter_index = _voters.host.ptr[i];
         const CudaEdgePoint& pt = _edgepoints.host.ptr[voter_index];
 
-        const int vote = _v_chosen_idx.host.ptr[i];
+        const int vote = _voting_for.host.ptr[i];
 
         if( vote != 0 ) {
             int voter_index = _voters.host.ptr[ vote ];
