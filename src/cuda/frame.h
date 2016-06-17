@@ -317,12 +317,16 @@ private:
     // Stores all points that are recognized as potential voters
     // in gradient descent.
     EdgeList<int>          _voters; // voter index -> index in _edgepoints
-    float*                 _v_chosen_flow_length;
 
     /** for every index in _voters, _voting_for contains not the voter's own index
      *  but the index of the CudaEdgePoint for which it voted, or -1 if it didn't vote
      */
     EdgeList<int>          _voting_for;
+    /** similar to _voting_for, but this contains the flow length for the path
+     *  that has been found between a point idx and the corresponding point _voting_for[idx]
+     */
+    EdgeList<float>        _vote_weight;
+    // float*              _vote_weight;
 
     EdgeList<int>          _inner_points;
     EdgeList<int>          _interm_inner_points;

@@ -24,8 +24,8 @@ void count_winners( FrameMetaPtr&              meta,
                     const int                  maxpoints,
                     const int*                 inner_points,
                     const DevEdgeList<int>&    voters,
-                    const float*               chosen_flow_length,
-                    const DevEdgeList<int>     voting_for )
+                    const DevEdgeList<float>&  vote_weight,
+                    const DevEdgeList<int>&    voting_for )
 {
     int   inner_point_index[CONC_POINTS];
     int*  inner_point[CONC_POINTS];
@@ -56,7 +56,7 @@ void count_winners( FrameMetaPtr&              meta,
 
             if( my_vote == inner_point_index[point] ) {
                 winner_size[point] += 1;
-                flow_length[point] += chosen_flow_length[i];
+                flow_length[point] += vote_weight.ptr[i];
             }
         }
     }
@@ -129,12 +129,12 @@ void count_winners( FrameMetaPtr&              meta,
  * unique indices of chosen inner points.
  */
 __global__
-void eval_chosen( FrameMetaPtr     meta,
+void eval_chosen( FrameMetaPtr       meta,
                   DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
-                  DevEdgeList<int> voters,       // input-output
-                  const float*     chosen_flow_length, // input
-                  DevEdgeList<int> voting_for, // input
-                  DevEdgeList<int> inner_points // input
+                  DevEdgeList<int>   voters,       // input-output
+                  DevEdgeList<float> vote_weight, // input
+                  DevEdgeList<int>   voting_for, // input
+                  DevEdgeList<int>   inner_points // input
                 )
 {
     uint32_t offset = blockIdx.x * CONC_POINTS;
@@ -149,7 +149,7 @@ void eval_chosen( FrameMetaPtr     meta,
                          maxpoints,
                          inner_points.ptr,
                          voters,
-                         chosen_flow_length,
+                         vote_weight,
                          voting_for );
 }
 
@@ -164,7 +164,7 @@ __global__
 void dp_call_eval_chosen( FrameMetaPtr               meta,
                           DevEdgeList<CudaEdgePoint> d_edgepoints, // input-output
                           DevEdgeList<int>           voters, // input
-                          const float*               chosen_flow_length, // input
+                          DevEdgeList<float>         vote_weight, // input
                           DevEdgeList<int>           voting_for,         // input
                           DevEdgeList<int>           inner_points )      // input
 {
@@ -178,7 +178,7 @@ void dp_call_eval_chosen( FrameMetaPtr               meta,
         ( meta,
           d_edgepoints,
           voters,
-          chosen_flow_length,
+          vote_weight,
           voting_for,
           inner_points );
 }
@@ -203,7 +203,7 @@ bool Frame::applyVoteEval( )
         ( _meta,
           _edgepoints.dev,
           _voters.dev,
-          _v_chosen_flow_length,
+          _vote_weight.dev,
           _voting_for.dev,
           _interm_inner_points.dev );
     POP_CHK_CALL_IFSYNC;
@@ -242,8 +242,8 @@ bool Frame::applyVoteEval( )
         ( _meta,
           _edgepoints.dev,
           _voters.dev,
-          _v_chosen_flow_length,
-          _v_chosen_idx.dev,
+          _vote_weight.dev,
+          _voting_for.dev,
           _interm_inner_points.dev );
     POP_CHK_CALL_IFSYNC;
 

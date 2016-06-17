@@ -28,6 +28,7 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     , _edgepoints( _meta, List_size_edgepoints )
     , _voters( _meta, List_size_voters )
     , _voting_for( _meta, List_size_chosen_idx )
+    , _vote_weight( _meta, List_size_chosen_idx ) // Note: never touch this meta size through _vote_weight
     , _inner_points( _meta, List_size_inner_points )
     , _interm_inner_points( _meta, List_size_interm_inner_points )
     , _image_to_upload( 0 )

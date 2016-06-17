@@ -118,11 +118,9 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _edgepoints         .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _voters             .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _voting_for         .alloc( EDGE_POINT_MAX, EdgeListBoth );
+    _vote_weight        .alloc( EDGE_POINT_MAX, EdgeListDevOnly );
     _inner_points       .alloc( EDGE_POINT_MAX, EdgeListBoth );
     _interm_inner_points.alloc( EDGE_POINT_MAX, EdgeListDevOnly );
-
-    POP_CUDA_MALLOC( &ptr, EDGE_POINT_MAX * sizeof(float) );
-    _v_chosen_flow_length = (float*)ptr;
 
     POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int32_t), h );
     assert( p % _d_edgepoint_map.elemSize() == 0 );
@@ -172,16 +170,12 @@ void Frame::initRequiredMem( )
                            _d_edges.step * _d_edges.rows,
                            _stream );
 
-    _edgepoints.init( _stream );
-    _voters        .init( _stream );
-    _voting_for    .init( _stream );
-    _inner_points  .init( _stream );
+    _edgepoints         .init( _stream );
+    _voters             .init( _stream );
+    _voting_for         .init( _stream );
+    _vote_weight        .init( _stream );
+    _inner_points       .init( _stream );
     _interm_inner_points.init( _stream );
-
-    POP_CUDA_MEMSET_ASYNC( _v_chosen_flow_length,
-                           0,
-                           EDGE_POINT_MAX * sizeof(float),
-                           _stream );
 
     POP_CUDA_MEMSET_ASYNC( _d_edgepoint_map.data,
                            0,
@@ -214,12 +208,12 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE_HOST( _h_debug_map );
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-    _edgepoints.release();
-    _voters        .release();
-    _voting_for    .release();
-    _inner_points  .release();
+    _edgepoints         .release();
+    _voters             .release();
+    _voting_for         .release();
+    _vote_weight        .release();
+    _inner_points       .release();
     _interm_inner_points.release();
-    POP_CUDA_FREE( _v_chosen_flow_length );
     POP_CUDA_FREE( _d_edgepoint_map.data );
     POP_CUDA_FREE( _d_interm_int );
 }
