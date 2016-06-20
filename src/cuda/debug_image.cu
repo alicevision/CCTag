@@ -190,16 +190,28 @@ void DebugImage::writeASCII( const string&            filename,
         of << it->x << " " << it->y << endl;
     }
 }
+__host__
+void DebugImage::writeASCII( const string&              filename,
+                             const std::vector<short2>& list )
+{
+    ofstream of( filename.c_str() );
+
+    vector<short2>::const_iterator it  = list.begin();
+    vector<short2>::const_iterator end = list.end();
+    for( ; it!=end; it++ ) {
+        of << it->x << " " << it->y << endl;
+    }
+}
 
 #ifndef NDEBUG
 __host__
 void DebugImage::writeASCII( const string&                   filename,
-                             const std::vector<TriplePoint>& list )
+                             const std::vector<CudaEdgePoint>& list )
 {
     ofstream of( filename.c_str() );
 
-    vector<TriplePoint>::const_iterator it  = list.begin();
-    vector<TriplePoint>::const_iterator end = list.end();
+    vector<CudaEdgePoint>::const_iterator it  = list.begin();
+    vector<CudaEdgePoint>::const_iterator end = list.end();
     for( ; it!=end; it++ ) {
         it->debug_out( of );
         of << endl;
@@ -236,18 +248,18 @@ int DebugImage::getColor( BaseColor b )
     return ( LAST + random() % ( 255 - LAST ) );
 }
 
-void DebugImage::plotPoints( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb img, bool normalize, BaseColor b )
+void DebugImage::plotPoints( const vector<CudaEdgePoint>& v, cv::cuda::PtrStepSzb img, bool normalize, BaseColor b )
 {
     normalizeImage( img, normalize );
 
-    vector<TriplePoint>::const_iterator cit, cend;
+    vector<CudaEdgePoint>::const_iterator cit, cend;
     cend = v.end();
     cout << "Plotting in image of size " << img.cols << " x " << img.rows << endl;
     for( cit=v.begin(); cit!=cend; cit++ ) {
-        if( outOfBounds( cit->coord.x, cit->coord.y, img ) ) {
-            cout << "Coord of point (" << cit->coord.x << "," << cit->coord.y << ") is out of bounds (line " << __LINE__ << ")" << endl;
+        if( outOfBounds( cit->_coord.x, cit->_coord.y, img ) ) {
+            cout << "Coord of point (" << cit->_coord.x << "," << cit->_coord.y << ") is out of bounds (line " << __LINE__ << ")" << endl;
         } else {
-            img.ptr(cit->coord.y)[cit->coord.x] = getColor( b );
+            img.ptr(cit->_coord.y)[cit->_coord.x] = getColor( b );
         }
     }
 }
@@ -259,6 +271,22 @@ void DebugImage::plotPoints( const vector<int2>& v, cv::cuda::PtrStepSzb img, bo
     vector<int2>::const_iterator cit, cend;
     cend = v.end();
     cout << "Plotting " << v.size() << " int2 coordinates into image of size " << img.cols << " x " << img.rows << endl;
+    for( cit=v.begin(); cit!=cend; cit++ ) {
+        if( outOfBounds( cit->x, cit->y, img ) ) {
+            cout << "Coord of point (" << cit->x << "," << cit->y << ") is out of bounds (line " << __LINE__ << ")" << endl;
+        } else {
+            img.ptr(cit->y)[cit->x] = getColor( b );
+        }
+    }
+}
+
+void DebugImage::plotPoints( const vector<short2>& v, cv::cuda::PtrStepSzb img, bool normalize, BaseColor b )
+{
+    normalizeImage( img, normalize );
+
+    vector<short2>::const_iterator cit, cend;
+    cend = v.end();
+    cout << "Plotting " << v.size() << " short2 coordinates into image of size " << img.cols << " x " << img.rows << endl;
     for( cit=v.begin(); cit!=cend; cit++ ) {
         if( outOfBounds( cit->x, cit->y, img ) ) {
             cout << "Coord of point (" << cit->x << "," << cit->y << ") is out of bounds (line " << __LINE__ << ")" << endl;

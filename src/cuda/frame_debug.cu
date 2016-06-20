@@ -82,6 +82,8 @@ void Frame::hostDebugCompare( unsigned char* pix )
 
 void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& params )
 {
+    cerr << "Enter " << __func__ << endl;
+
     filename = params._debugDir + filename;
 
     string s;
@@ -161,16 +163,23 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
          *
          * Confirmed that this works
          */
-        vector<int2> out;
-        _vote._edgepoints.debug_out( EDGE_POINT_MAX, out );
+        vector<CudaEdgePoint> out;
+        _edgepoints.debug_out( EDGE_POINT_MAX, out );
 
         PtrStepSzbNull edgelistplane( edges.cols, edges.rows );
         DebugImage::plotPoints( out, edgelistplane.e, false, DebugImage::BLUE );
         DebugImage::writePGMscaled( filename + "-05-edgelist.pgm", edgelistplane.e );
 #ifdef DEBUG_WRITE_EDGELIST_AS_ASCII
+        vector<short2> out2;
+        vector<CudaEdgePoint>::const_iterator out_it  = out.begin();
+        vector<CudaEdgePoint>::const_iterator out_end = out.end();
+        for( ; out_it != out_end; out_it++ ) {
+            short2 s = out_it->_coord;
+            out2.push_back( s );
+        }
         int2cmp c;
-        std::sort( out.begin(), out.end(), c );
-        DebugImage::writeASCII( filename + "-05-edgelist.txt", out );
+        std::sort( out2.begin(), out2.end(), c );
+        DebugImage::writeASCII( filename + "-05-edgelist.txt", out2 );
 #endif // DEBUG_WRITE_EDGELIST_AS_ASCII
     }
 #endif // DEBUG_WRITE_EDGELIST_AS_PPM
@@ -183,20 +192,25 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
          * These points have no before or after information yet.
          * The size of this list has not been copied to the host yet.
          */
-        POP_CUDA_MEMCPY_TO_HOST_SYNC( &_voters.host.size,
-                                      _voters.dev.getSizePtr(),
-                                      sizeof(int) );
+        _voters.copySizeFromDevice();
 
-        vector<TriplePoint> out;
+        vector<int> out;
         _voters.debug_out(  EDGE_POINT_MAX, out );
+        vector<short2> out2;
+        vector<int>::const_iterator out_it  = out.begin();
+        vector<int>::const_iterator out_end = out.end();
+        for( ; out_it != out_end; out_it++ ) {
+            int o = *out_it;
+            out2.push_back( _edgepoints.host.ptr[o]._coord );
+        }
 
         PtrStepSzbNull edgelistplane( edges.cols, edges.rows );
-        DebugImage::plotPoints( out, edgelistplane.e, false, DebugImage::BLUE );
+        DebugImage::plotPoints( out2, edgelistplane.e, false, DebugImage::BLUE );
         DebugImage::writePGMscaled( filename + "-06-voter-dots.pgm", edgelistplane.e );
 #ifdef DEBUG_WRITE_VOTERS_AS_ASCII
-        tp_cmp c;
-        std::sort( out.begin(), out.end(), c );
-        DebugImage::writeASCII( filename + "-06-voters.txt", out );
+        int2cmp c;
+        std::sort( out2.begin(), out2.end(), c );
+        DebugImage::writeASCII( filename + "-06-voters.txt", out2 );
 #endif // DEBUG_WRITE_VOTERS_AS_ASCII
     }
 #endif // DEBUG_WRITE_VOTERS_AS_PPM
@@ -231,6 +245,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // DEBUG_WRITE_CHOSEN_AS_PPM
 #endif // 0
 #endif // NDEBUG
+    cerr << "Leave " << __func__ << endl;
 }
 
 }; // namespace popart

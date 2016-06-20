@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 namespace popart {
 
@@ -20,6 +21,8 @@ struct CudaEdgePoint
     __device__ inline void init( );
     __device__ inline void init( short x, short y );
     __device__ inline void init( short x, short y, short dx, short dy );
+
+    __host__ void debug_out( std::ostream& ostr ) const;
 };
 
 __device__

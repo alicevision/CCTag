@@ -82,14 +82,14 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
         assert( ep->gradient()(0) == (double)pt._grad.x );
         assert( ep->gradient()(1) == (double)pt._grad.y );
 
-        if( pt._dev_after != 0 ) {
+        if( pt._dev_after >= 0 ) {
             int after_index = _voters.host.ptr[pt._dev_after];
             const CudaEdgePoint& p = _edgepoints.host.ptr[after_index];
             cctag::EdgePoint* n = out_edges(p._coord.x, p._coord.y);
             if( n >= 0 )
                 out_edges.set_after(ep, out_edges(n));
         }
-        if( pt._dev_befor != 0 ) {
+        if( pt._dev_befor >= 0 ) {
             int befor_index = _voters.host.ptr[pt._dev_befor];
             const CudaEdgePoint& p = _edgepoints.host.ptr[befor_index];
             cctag::EdgePoint* n = out_edges(p._coord.x, p._coord.y);
@@ -149,7 +149,7 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
 
         const int vote = _voting_for.host.ptr[i];
 
-        if( vote != 0 ) {
+        if( vote >= 0 ) {
             int voter_index = _voters.host.ptr[ vote ];
             const CudaEdgePoint& point = _edgepoints.host.ptr[voter_index];
             int potential_seed = out_edges(out_edges(point._coord.x, point._coord.y));

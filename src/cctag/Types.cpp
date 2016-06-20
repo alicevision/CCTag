@@ -1,5 +1,7 @@
+#include <iostream>
+#include <sstream>
 
-#include <cctag/Types.hpp>
+#include "cctag/Types.hpp"
 
 namespace cctag
 {
@@ -9,7 +11,7 @@ namespace cctag
   // doesn't work with CUDA 7.0 nvcc
 #else
   const size_t EdgePointCollection::MAX_POINTS = size_t(1) << 20;
-  const size_t EdgePointCollection::MAX_RESOLUTION = 2048;
+  const size_t EdgePointCollection::MAX_RESOLUTION = 4096; // 2048;
   const size_t EdgePointCollection::CUDA_OFFSET = 1024; // 4 kB, one page
   const size_t EdgePointCollection::MAX_VOTERLIST_SIZE = 16*MAX_POINTS;
 #endif
@@ -23,8 +25,14 @@ EdgePointCollection::EdgePointCollection(size_t w, size_t h) :
   _processedIn(new unsigned[MAX_POINTS/4]),
   _processedAux(new unsigned[MAX_POINTS/4])
 {
-  if (w > MAX_RESOLUTION || h > MAX_RESOLUTION)
-    throw std::length_error("EdgePointCollection::set_frame_size: dimension too large");
+  if (w > MAX_RESOLUTION || h > MAX_RESOLUTION) {
+    std::ostringstream ostr;
+    ostr << "EdgePointCollection::set_frame_size: dimension too large" << std::endl
+         << "    image resolution is " << w << "x" << h << std::endl
+         << "    supported resolution " << MAX_RESOLUTION << "x" << MAX_RESOLUTION << std::endl;
+    // throw std::length_error("EdgePointCollection::set_frame_size: dimension too large");
+    throw std::length_error( ostr.str() );
+  }
 
   point_count() = 0;
   _edgeMapShape[0] = w; _edgeMapShape[1] = h;

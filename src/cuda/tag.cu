@@ -198,16 +198,16 @@ cv::Mat* TagPipe::getEdges( size_t layer ) const
 __host__
 void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
 {
-    DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
+    cerr << "Enter " << __func__ << endl;
 
     if( true ) {
         if( params._debugDir == "" ) {
-            DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
-                << ": debugDir not set, not writing debug output" << endl; )
+            cerr << __FUNCTION__ << ":" << __LINE__
+                << ": debugDir not set, not writing debug output" << endl;
             return;
         } else {
-            DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-                 << params._debugDir << "] using that directory" << endl; )
+            cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
+                 << params._debugDir << "] using that directory" << endl;
         }
 
         // This is a debug block
@@ -229,8 +229,7 @@ void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
         POP_SYNC_CHK;
     }
 
-    DO_TALK( cerr << "terminating in tagframe" << endl; )
-    DO_TALK( cerr << "Leave " << __FUNCTION__ << endl; )
+    cerr << "Leave " << __func__ << endl;
     // exit( 0 );
 }
 

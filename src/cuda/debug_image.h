@@ -10,7 +10,7 @@
 #include "frame.h"
 // #include "../cctag/Params.hpp"
 // #include "frame_vote.h"
-#include "triple_point.h"
+#include "cuda_edge_point.h"
 
 namespace popart {
 
@@ -119,9 +119,11 @@ public:
                             const std::vector<int>& list );
     static void writeASCII( const std::string&       filename,
                             const std::vector<int2>& list );
+    static void writeASCII( const std::string&         filename,
+                            const std::vector<short2>& list );
 #ifndef NDEBUG
     static void writeASCII( const std::string&              filename,
-                            const std::vector<TriplePoint>& list );
+                            const std::vector<CudaEdgePoint>& list );
     static void writeASCII( const std::string& filename,
                             const std::string& info );
 #endif // NDEBUG
@@ -137,7 +139,7 @@ public:
                            BaseColor              b = WHITE,
                            int                    skip = 0 );
 #endif // NDEBUG
-    static void plotPoints( const std::vector<TriplePoint>& v,
+    static void plotPoints( const std::vector<CudaEdgePoint>& v,
                             cv::cuda::PtrStepSzb            img,
                             bool                            normalize = true,
                             enum BaseColor                  b = WHITE );
@@ -145,6 +147,10 @@ public:
                             cv::cuda::PtrStepSzb     img,
                             bool                     normalize = true,
                             enum BaseColor           b = WHITE );
+    static void plotPoints( const std::vector<short2>& v,
+                            cv::cuda::PtrStepSzb       img,
+                            bool                       normalize = true,
+                            enum BaseColor             b = WHITE );
 
 public:
     /* static global variable

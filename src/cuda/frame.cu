@@ -33,7 +33,7 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     , _interm_inner_points( _meta, List_size_interm_inner_points )
     , _image_to_upload( 0 )
 {
-    DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
+    cerr << "Allocating frame: " << width << "x" << height << endl;
 
     if( download_stream != 0 ) {
         _private_download_stream = false;
@@ -99,12 +99,11 @@ Frame::~Frame( )
 
 void Frame::upload( const unsigned char* image )
 {
-    DO_TALK(
-      cerr << "source w=" << _d_plane.cols
-           << " source pitch=" << _d_plane.cols
-           << " dest pitch=" << _d_plane.step
-           << " height=" << _d_plane.rows
-           << endl;)
+    cerr << "source w=" << _d_plane.cols
+         << " source pitch=" << _d_plane.cols
+         << " dest pitch=" << _d_plane.step
+         << " height=" << _d_plane.rows
+         << endl;
 
     // pin the image to memory
     _image_to_upload = image;
@@ -151,11 +150,10 @@ void cu_fill_from_frame( unsigned char* dst, uint32_t pitch, uint32_t width, uin
 
 void Frame::fillFromFrame( Frame& src )
 {
-    DO_TALK(
-      cerr << "Entering " << __FUNCTION__ << endl;
-      cerr << "    copying from src frame with " << src.getWidth() << "x" << src.getHeight() << endl;
-      cerr << "    to dst plane           with " << getWidth() << "x" << getHeight() << endl;
-    )
+    cerr << "Entering " << __FUNCTION__ << endl;
+    cerr << "    copying from src frame with " << src.getWidth() << "x" << src.getHeight() << endl;
+    cerr << "    to dst plane           with " << getWidth() << "x" << getHeight() << endl;
+
     assert( _d_plane );
     dim3 grid;
     dim3 block;
