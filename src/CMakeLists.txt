@@ -85,11 +85,11 @@ target_include_directories( CCTag PUBLIC . ${TBB_INCLUDE_DIR})
 
 set(CCTagDetect_cpp ./applications/detection/main.cpp ./applications/detection/CmdLine.cpp)
 
-set(CCTagRegression_cpp
-  ./applications/regression/main.cpp
-  ./applications/regression/TestLog.cpp
-  ./applications/regression/Regression.cpp)
-set_source_files_properties(${CCTagRegression_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
+# set(CCTagRegression_cpp
+#   ./applications/regression/main.cpp
+#   ./applications/regression/TestLog.cpp
+#   ./applications/regression/Regression.cpp)
+# set_source_files_properties(${CCTagRegression_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
 
 if(USE_CUDA)
     set_source_files_properties(${CCTagDetect_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
@@ -97,17 +97,17 @@ if(USE_CUDA)
     target_link_libraries(detection
       PUBLIC  CCTag CCTagCuda ${CUDA_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY} ${TBB_tbb_LIBRARY_RELEASE})
 
-    add_executable(regression ${CCTagRegression_cpp})
-    target_link_libraries(regression
-      PUBLIC CCTag CCTagCuda ${CUDA_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY} ${TBB_tbb_LIBRARY_RELEASE})
+#     add_executable(regression ${CCTagRegression_cpp})
+#     target_link_libraries(regression
+#       PUBLIC CCTag CCTagCuda ${CUDA_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY} ${TBB_tbb_LIBRARY_RELEASE})
 
     install(TARGETS CCTag CCTagCuda LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 else(USE_CUDA)
     ADD_EXECUTABLE(detection ${CCTagDetect_cpp})
     target_link_libraries(detection PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
-    add_executable(regression ${CCTagRegression_cpp})
-    target_link_libraries(regression PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
+#     add_executable(regression ${CCTagRegression_cpp})
+#     target_link_libraries(regression PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
     install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 endif(USE_CUDA)
