@@ -32,7 +32,9 @@ class TagPipe
 {
     std::vector<Frame*>         _frame;
     const cctag::Parameters&    _params;
+#ifdef USE_TAG_THREADS
     TagThreads                  _threads;
+#endif
     std::vector<cudaStream_t>   _tag_streams;
 
 public:

@@ -1,23 +1,12 @@
 #pragma once
 
-// #include <string>
-// #include <vector>
-// #include <stdlib.h>
-// #include <inttypes.h>
-// #include <opencv2/core.hpp>
+#include "cuda/onoff.h"
+
+#ifdef USE_TAG_THREADS
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
-
-// #include "cuda/onoff.h"
-// #include "cctag/Params.hpp"
-// #include "cctag/Types.hpp"
-// #include "cctag/ImageCut.hpp"
-// #include "cctag/geometry/Ellipse.hpp"
-// #include "cctag/geometry/Point.hpp"
-// #include "cctag/algebra/matrix/Matrix.hpp"
-// #include "cctag/utils/LogTime.hpp"
 
 namespace popart
 {
@@ -84,4 +73,6 @@ public:
 };
 
 }; // namespace popart
+
+#endif // USE_TAG_THREADS
 

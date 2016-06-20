@@ -102,3 +102,9 @@
  */
 //#define SORT_ALL_EDGECOORDS_IN_EXPORT
 
+/** Switch off threading.
+ *  After an install bug that was only detectable by removing
+ *  threading, I keep this define to switch threading on or off.
+ */
+#define USE_TAG_THREADS
+

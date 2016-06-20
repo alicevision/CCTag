@@ -70,7 +70,9 @@ void TagPipe::initialize( const uint32_t pix_w,
         _frame[i]->allocRequiredMem( _params ); // sync
     }
 
+#ifdef USE_TAG_THREADS
     _threads.init( this, num_layers );
+#endif
 }
 
 __host__
@@ -107,7 +109,14 @@ void TagPipe::load( unsigned char* pix )
 __host__
 void TagPipe::tagframe( )
 {
+#ifdef USE_TAG_THREADS
     _threads.oneRound( );
+#else
+    int num_layers = _params._numberOfMultiresLayers;
+    for( int i=0; i<num_layers; i++ ) {
+        handleframe( i );
+    }
+#endif
 }
 
 __host__

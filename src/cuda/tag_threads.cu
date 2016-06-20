@@ -1,3 +1,7 @@
+#include "cuda/onoff.h"
+
+#ifdef USE_TAG_THREADS
+
 #include <iostream>
 
 #include "cuda/tag_threads.h"
@@ -61,4 +65,6 @@ void TagThreads::frameDoneWait( )  { _frameDone.wait( _layers );  }
 void TagThreads::frameDonePost( )  { _frameDone.post( 1 ); }
 
 }; // namespace popart
+
+#endif // USE_TAG_THREADS
 
