@@ -174,12 +174,12 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
         vector<CudaEdgePoint>::const_iterator out_it  = out.begin();
         vector<CudaEdgePoint>::const_iterator out_end = out.end();
         for( ; out_it != out_end; out_it++ ) {
-            short2 s = out_it->_coord;
-            out2.push_back( s );
+            out2.push_back( out_it->_coord );
         }
         int2cmp c;
         std::sort( out2.begin(), out2.end(), c );
         DebugImage::writeASCII( filename + "-05-edgelist.txt", out2 );
+        DebugImage::writeASCII( filename + "-05-edgepoints.txt", out );
 #endif // DEBUG_WRITE_EDGELIST_AS_ASCII
     }
 #endif // DEBUG_WRITE_EDGELIST_AS_PPM
@@ -187,10 +187,8 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #ifdef DEBUG_WRITE_VOTERS_AS_PPM
     {
         /* Debugging immediately after gradientDescent.
-         * The list of TriplePoints has been created in
+         * A list of indeces into _edgepoints has been collected in 
          * _voters
-         * These points have no before or after information yet.
-         * The size of this list has not been copied to the host yet.
          */
         _voters.copySizeFromDevice();
 
