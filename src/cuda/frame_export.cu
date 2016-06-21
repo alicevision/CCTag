@@ -97,8 +97,8 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
                 out_edges.set_before(ep, out_edges(n));
         }
 
-        ep->_flowLength = pt._flowLength;
-        ep->_isMax      = pt._dev_winnerSize;
+        ep->_flowLength = pt._avgFlowLength; // pt._flowLength;
+        ep->_isMax      = pt._numVotes; // pt._dev_winnerSize;
     }
 
     /* Block 3

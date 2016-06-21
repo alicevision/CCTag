@@ -72,7 +72,8 @@ inline float cl_distance( const CudaEdgePoint* l, const CudaEdgePoint* r )
     return hypotf( l->_coord.x - r->_coord.x, l->_coord.y - r->_coord.y );
 }
 
-/* Brief: Voting procedure. For every edge point, construct the 1st order approximation 
+/* Brief: Voting procedure.
+ * For every edge point that votes, construct the 1st order approximation 
  * of the field line passing through it, which consists in a polygonal line whose
  * extremities are two edge points.
  * Input:
@@ -89,21 +90,10 @@ __device__
 const CudaEdgePoint* cl_inner(
     FrameMetaPtr&              meta,
     DevEdgeList<CudaEdgePoint> d_edgepoints, // input
-    DevEdgeList<int>           voters,       // input
-    const int                  voter_offset, // input
-    float&                     flow_length )
+    const int edgepoint_offset,              // input
+    float&                     flow_length ) // output
 {
-    if( voter_offset >= meta.list_size_voters() ) {
-        return 0;
-    }
-
-    const int chooser_offset = voters.ptr[voter_offset];
-
-    if( chooser_offset < 0 ) {
-        return 0;
-    }
-
-    CudaEdgePoint* const p = &d_edgepoints.ptr[chooser_offset];
+    const CudaEdgePoint* const p = &d_edgepoints.ptr[edgepoint_offset];
 
     if( p == 0 ) return 0;
 
@@ -237,26 +227,44 @@ void construct_line( FrameMetaPtr               meta,
                      cv::cuda::PtrStepSz32s     d_edgepoint_map,    // input
                      DevEdgeList<int>           voters,             // input
                      DevEdgeList<int>           inner_points,       // output
-                     DevEdgeList<float>         vote_weight, // output
+                     DevEdgeList<float>         vote_weight,        // output
                      DevEdgeList<int>           voting_for )        // output
 {
-    const int voter_offset   = threadIdx.x + blockIdx.x * 32;
+    // offset into the voter array for this thread
+    const int  voter_offset     = threadIdx.x + blockIdx.x * 32;
 
-    float flow_length = -1.0f;
+    // is this offset valid ?
+    const bool vote_predicate   = ( voter_offset < meta.list_size_voters() );
 
-    const CudaEdgePoint* chosen =
-        cl_inner( meta,
-                  d_edgepoints,         // input
-                  voters,               // input
-                  voter_offset,         // input
-                  flow_length ); // output
+    // read edge's offset in the list d_edgepoints from the voters array
+    const int  edgepoint_offset = vote_predicate ? voters.ptr[voter_offset] : -1;
 
-    const int chosen_offset  = chosen ? d_edgepoint_map.ptr(chosen->_coord.y)[chosen->_coord.x]
-                                      : -1;
-    voting_for .ptr[voter_offset] = chosen_offset;
-    vote_weight.ptr[voter_offset] = flow_length;
+    // create predicate to ignore edge is voter was invalid
+    const bool predicate        = ( edgepoint_offset >= 0 );
 
-    int idx = 0;
+    float flow_length = 0.0f;
+
+    const CudaEdgePoint* chosen = predicate
+                                ? cl_inner( meta,
+                                            d_edgepoints,     // input
+                                            edgepoint_offset, // input
+                                            // voters,       // input
+                                            // voter_offset, // input
+                                            flow_length ) // output
+                                : 0;
+
+    const int chosen_offset = chosen
+                            ? d_edgepoint_map.ptr(chosen->_coord.y)[chosen->_coord.x]
+                            : -1;
+    if( vote_predicate ) {
+        // Always write into the voting_for and vote_weight tables, even
+        // if the edgepoint reached by this vote has not reached any inner
+        // point.
+        voting_for .ptr[voter_offset] = chosen_offset;
+        vote_weight.ptr[voter_offset] = flow_length;
+    }
+
+    // int idx = 0;
     uint32_t mask   = __ballot( chosen != 0 );
     uint32_t ct     = __popc( mask );
     if( ct == 0 ) return;
@@ -270,8 +278,15 @@ void construct_line( FrameMetaPtr               meta,
 
     if( chosen ) {
         if( meta.list_size_inner_points() < EDGE_POINT_MAX ) {
-            idx = d_edgepoint_map.ptr(chosen->_coord.y)[chosen->_coord.x];
-            inner_points.ptr[write_index] = idx;
+            // idx = d_edgepoint_map.ptr(chosen->_coord.y)[chosen->_coord.x];
+            // inner_points.ptr[write_index] = idx;
+
+            // Store the offset into the d_edgepoints list that has been
+            // reached by traversing concentric rings starting at the edge point
+            // that is located at edgepoint_offset in the d_edgepoints list.
+            // Before sort() and unique() in step 07b, this list is highly
+            // redundant.
+            inner_points.ptr[write_index] = chosen_offset;
         }
     }
 }

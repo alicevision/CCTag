@@ -57,8 +57,8 @@ void dp_call_vote_if(
 
     NumVotersIsGreaterEqual select_op( d_edgepoints );
 
-#ifdef CUB_INIT_CALLS
     size_t assist_buffer_sz = 0;
+    // first call: initialize assist_buffer_sz
     err = cub::DeviceSelect::If( 0,
                                  assist_buffer_sz,
                                  interm_inner_points.ptr,
@@ -75,9 +75,7 @@ void dp_call_vote_if(
         meta.list_size_inner_points() = 0;
         return;
     }
-#else // not CUB_INIT_CALLS
-    size_t assist_buffer_sz = intermediate.step * intermediate.rows;
-#endif // not CUB_INIT_CALLS
+
     void*  assist_buffer = (void*)intermediate.data;
 
     cub::DeviceSelect::If( assist_buffer,
