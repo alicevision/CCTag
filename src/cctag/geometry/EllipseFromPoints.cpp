@@ -19,7 +19,6 @@ namespace geometry {
 Point2d<Eigen::Vector3f> extractEllipsePointAtAngle( const Ellipse & ellipse, float theta )
 {
     Point2d<Eigen::Vector3f> p;
-	theta = fmod( theta, 2 * boost::math::constants::pi<float>() );
     float x = ellipse.a() * cos( theta );
     float y = ellipse.b() * sin( theta );
     p.x() = ( x * cos( ellipse.angle() ) - y * sin( ellipse.angle() ) + ellipse.center().x() );
