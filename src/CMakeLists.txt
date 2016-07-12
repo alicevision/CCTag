@@ -91,6 +91,8 @@ set(CCTagRegression_cpp
   ./applications/regression/Regression.cpp)
 set_source_files_properties(${CCTagRegression_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
 
+set(CCTagSimulation_cpp ./applications/simulation/main.cpp)
+
 if(USE_CUDA)
     set_source_files_properties(${CCTagDetect_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
     add_executable( detection ${CCTagDetect_cpp} )
@@ -111,6 +113,9 @@ else(USE_CUDA)
 
     install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 endif(USE_CUDA)
+
+add_executable(simulation ${CCTagSimulation_cpp})
+target_link_libraries(simulation PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
 #############################################################################
 
