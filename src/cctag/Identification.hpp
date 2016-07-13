@@ -166,8 +166,6 @@ std::pair<float,float> convImageCut(const std::vector<float> & kernel, ImageCut 
 
 void blurImageCut(const float sigma, cctag::ImageCut & cut);
 
-bool outerEdgeRefinement(ImageCut & cut, const cctag::numerical::geometry::Ellipse & outerEllipse);
-
 bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, const float scale, const size_t numSamplesOuterEdgePointsRefinement);
 
 /**

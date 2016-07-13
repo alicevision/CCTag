@@ -26,6 +26,28 @@ Point2d<Eigen::Vector3f> extractEllipsePointAtAngle( const Ellipse & ellipse, fl
     return p;
 }
 
+Point2d<Eigen::Vector3f> pointOnEllipse( const Ellipse & ellipse, const Point2d<Eigen::Vector3f> & p )
+{
+  Point2d<Eigen::Vector3f> tmp, res;  
+  
+  // Place into its canonical representation
+  float x = p.x() - ellipse.center().x();
+  float y = p.y() - ellipse.center().y();
+
+  tmp.x() =    x * cos( ellipse.angle() ) + y * sin( ellipse.angle() );
+  tmp.y() =  - x * sin( ellipse.angle() ) + y * cos( ellipse.angle() );
+  
+  float cs = sqrt( tmp.x()*tmp.x()/(ellipse.a()*ellipse.a()) + tmp.y()*tmp.y()/(ellipse.b()*ellipse.b()) );
+  tmp.x() /= cs;
+  tmp.y() /= cs;
+  
+  // Transform back into the original coordinate system
+  res.x() = ( tmp.x() * cos( ellipse.angle() ) - tmp.y() * sin( ellipse.angle() ) + ellipse.center().x() );
+  res.y() = ( tmp.x() * sin( ellipse.angle() ) + tmp.y() * cos( ellipse.angle() ) + ellipse.center().y() );
+
+  return res;
+}
+
 void points( const Ellipse & ellipse, const std::size_t nb, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts )
 {
 	const float step = 2.0 * boost::math::constants::pi<float>() / nb;

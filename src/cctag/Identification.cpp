@@ -857,8 +857,9 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
     if ( ( std::size_t(k*step) < indToAdd.size() ) && ( vSelectedCuts.size() < selectSize) )
     {
       ImageCut & cut = collectedCuts[indToAdd[std::size_t(k*step)]];
-      outerEdgeRefinement(cut, outerEllipse);
-      vSelectedCuts.push_back( collectedCuts[indToAdd[std::size_t(k*step)]] );
+      // Refine outer edge point.
+      cut.stop() = DirectedPoint2d<Eigen::Vector3f>(pointOnEllipse( outerEllipse, cut.stop() ), cut.stop().dX(), cut.stop().dY() );
+      vSelectedCuts.push_back( cut );
     }else{
       break;
     }
@@ -945,12 +946,6 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
   
 }
 
-bool outerEdgeRefinement(ImageCut & cut, const cctag::numerical::geometry::Ellipse & outerEllipse)
-{
-  Point2d<Eigen::Vector3f> stop = extractEllipsePointAtAngle( outerEllipse, std::atan2( cut.stop().y() - outerEllipse.center().y(),  cut.stop().x() - outerEllipse.center().x()) - outerEllipse.angle() );
-  DirectedPoint2d<Eigen::Vector3f> refinedPoint(stop, cut.stop().dX(), cut.stop().dY() );
-  cut.stop() = refinedPoint;
-}
 
 bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, const float scale, const size_t numSamplesOuterEdgePointsRefinement)
 {

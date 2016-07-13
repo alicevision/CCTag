@@ -281,9 +281,7 @@ void getSortedOuterPoints(
   vAngles.reserve(points.size());
   for(std::size_t iPoint = 0 ; iPoint < points.size() ; ++iPoint)
   {
-    float angle = atan2( ellipse.center().y() - points[iPoint].y() , ellipse.center().x() - points[iPoint].x() );
-    //mapAngle.emplace(angle, iPoint);
-    
+    float angle = std::atan2( points[iPoint].y()- ellipse.center().y() , points[iPoint].x() - ellipse.center().x() );
     vAngles.emplace_back(angle, iPoint);
   }
   
