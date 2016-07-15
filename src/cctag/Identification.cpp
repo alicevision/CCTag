@@ -846,8 +846,11 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
   
   for(std::size_t iCut = 0 ; iCut < varCuts.size() ; ++iCut)
   {
-    if ( varCuts[iCut]/varMax > 0.5f )
-      indToAdd.push_back(iCut);
+    ImageCut & cut = collectedCuts[iCut];
+    cut.stop() = DirectedPoint2d<Eigen::Vector3f>(pointOnEllipse( outerEllipse, cut.stop() ), cut.stop().dX(), cut.stop().dY() );
+    if ( outerEdgeRefinement(cut, src, scale, numSamplesOuterEdgePointsRefinement) )
+      if ( varCuts[iCut]/varMax > 0.5f )
+        indToAdd.push_back(iCut);
   }
   
   const float step = std::max(1.f, (float) indToAdd.size() / (float) ( selectSize ));
@@ -857,9 +860,6 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
     if ( ( std::size_t(k*step) < indToAdd.size() ) && ( vSelectedCuts.size() < selectSize) )
     {
       ImageCut & cut = collectedCuts[indToAdd[std::size_t(k*step)]];
-      // Refine outer edge point.
-      cut.stop() = DirectedPoint2d<Eigen::Vector3f>(pointOnEllipse( outerEllipse, cut.stop() ), cut.stop().dX(), cut.stop().dY() );
-      outerEdgeRefinement(cut, src, scale, numSamplesOuterEdgePointsRefinement);
       vSelectedCuts.push_back( cut );
     }else{
       break;
