@@ -112,21 +112,26 @@ inline void applyHomography(
 }
 
 /**
- * @brief Read and identify a 1D rectified image signal.
+ * @brief Read and identify an image cut against cctag 1D profiles.
  * 
- * @param[out] vScore ordered set of the probability of the k nearest IDs
+ * @param[out] idSet nearest neighbors marker profile along with their probabilities
  * @param[in] rrBank Set of vector of radius ratio describing the 1D profile of the cctag library
  * @param[in] cuts image cuts holding the rectified 1D signal
- * @param[in] minIdentProba minimal probability to considered a cctag as correctly identified
- * @return true if the cctag has been correctly identified, false otherwise
  */
-// todo: change the data structure here: map for id+scores, thresholding with minIdentProba
-// outside of this function
-bool orazioDistanceRobust(
-        std::vector<std::list<float> > & vScore,
+void orazioDistanceRobust(
+        IdSet & idSet,
         const RadiusRatioBank & rrBank,
-        const std::vector<cctag::ImageCut> & cuts,
-        const float minIdentProba);
+        const std::vector<cctag::ImageCut> & cuts);
+
+/**
+ * @brief Compute distances between a CCTag profiles and a rectified image signal.
+ * 
+ * @param[in] rrBank Set of vector of radius ratio describing the 1D profile of the cctag library
+ * @param[in] cut image cut holding the rectified 1D signal
+ * @param[in] nNN number of requested nearest neighbors 
+ * @param[out] idSet nearest IDs along with their probabilities
+ */
+void distanceCCTagBank(const ImageCut & cut, const RadiusRatioBank & rrBank, IdSet & idSet, const std::size_t nNN);
 
 /**
  * @brief Extract a rectified 1D signal along an image cut based on an homography.

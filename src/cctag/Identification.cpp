@@ -38,173 +38,173 @@ namespace cctag {
 namespace identification {
 
 /**
- * @brief Read and identify a 1D rectified image signal.
+ * @brief Read and identify an image cut against cctag 1D profiles.
  * 
- * @param[out] vScore ordered set of the probability of the k nearest IDs
+ * @param[out] idSet nearest neighbors marker profile along with their probabilities
  * @param[in] rrBank Set of vector of radius ratio describing the 1D profile of the cctag library
  * @param[in] cuts image cuts holding the rectified 1D signal
- * @param[in] minIdentProba minimal probability to considered a cctag as correctly identified
- * @return true if the cctag has been correctly identified, false otherwise
  */
-bool orazioDistanceRobust(
-        std::vector<std::list<float> > & vScore,
+void orazioDistanceRobust(
+        IdSet & idSet,
         const RadiusRatioBank & rrBank,
-        const std::vector<cctag::ImageCut> & cuts,
-        const float minIdentProba)
+        const std::vector<cctag::ImageCut> & cuts)
 {
   BOOST_ASSERT( cuts.size() > 0 );
+  
+  std::vector<std::size_t> correctCutIndices;
+  correctCutIndices.reserve(cuts.size());
+  
+  for(std::size_t iCut=0 ; iCut < cuts.size() ; ++iCut) {
+    if ( !cuts[iCut].outOfBounds() )
+      correctCutIndices.push_back(iCut);
+  }
+  
+  // In barCode will be written the most frequent signal for every samples along
+  // the cut.
+  std::vector<float> barCode;
+  const std::size_t signalSize = cuts[0].imgSignal().size();
+  barCode.resize(signalSize);
+  
+  std::vector<float> signalAlongX;
+  signalAlongX.resize(correctCutIndices.size());
+  
+  for(std::size_t iSignal = 0 ; iSignal < signalSize ; ++iSignal)
+  {
+    for(const auto iCut : correctCutIndices){
+      signalAlongX[iCut] = cuts[iCut].imgSignal()[iSignal];
+    }
+    barCode[iSignal] = computeMedian( signalAlongX );
+  }
+      
+  // vector of 1 or -1 values
+  std::vector<float> digit( barCode.size() );
+      
+  #ifdef GRIFF_DEBUG
+    assert( rrBank.size() > 0 );
+  #endif // GRIFF_DEBUG
 
+  // Any "correct" cut from cuts is fine, only beginSig, endSig and imgSignal are used later on.
+  cctag::ImageCut cutRes(cuts[correctCutIndices[0]]);
+  cutRes.imgSignal() = barCode;
+
+  distanceCCTagBank(cutRes, rrBank, idSet, 6); // 6-nearest neighbors
+
+  std::cout << " medA = [ " << std::endl;
+  for(auto sig : barCode)
+    std::cout << sig << " , " ;
+            
+  std::cout << " ]" << std::endl;
+  
+}
+
+/**
+ * @brief Compute distances between a CCTag profiles and a rectified image signal.
+ * 
+ * @param[in] rrBank Set of vector of radius ratio describing the 1D profile of the cctag library
+ * @param[in] cut image cut holding the rectified 1D signal
+ * @param[in] nNN number of requested nearest neighbors 
+ * @param[out] idSet nearest IDs along with their probabilities
+ */
+void distanceCCTagBank(const ImageCut & cut, const RadiusRatioBank & rrBank, IdSet & idSet, const std::size_t nNN)
+{
   using namespace cctag::numerical;
   using namespace boost::accumulators;
-
-  typedef std::map<float, MarkerID> MapT;
-
-  if ( cuts.size() == 0 )
-  {
-    return false;
-  }
-#ifdef GRIFF_DEBUG
-  if( rrBank.size() == 0 )
-  {
-    return false;
-  }
-#endif // GRIFF_DEBUG
   
-  const size_t cut_count = cuts.size();
-  static tbb::mutex vscore_mutex;
+  idSet.reserve(nNN);
+  
+  const std::vector<float> & barCode = cut.imgSignal();
+  
+  std::cout << " medB = [ " << std::endl;
+  
+  for(auto sig : barCode)
+    std::cout << sig << " , " ;
+            
+  std::cout << " ]" << std::endl;
+  
+  std::vector<float> digit( barCode.size() );
+  std::map<float, MarkerID> sortedId;
+  
+  // compute some statitics
+  accumulator_set< float, features< /*tag::median,*/ tag::variance > > acc;
+  // Put the image signal into the accumulator
+  acc = std::for_each( barCode.begin()+30, barCode.end(), acc ); // todo: find a more accurate solution
+                                                               // to replace the +30:
+                                                               // Ideally, the mean should be 
+                                                               // computed from where the barcode
+                                                               // start until the end.
+  // Mean
+  const float medianSig = boost::accumulators::mean( acc );
 
-  tbb::parallel_for(size_t(0), cut_count, [&](size_t i) {
-    const cctag::ImageCut& cut = cuts[i];
-    if ( !cut.outOfBounds() )
+  // or median
+  //const float medianSig = computeMedian( barCode );
+
+  const float varSig = boost::accumulators::variance( acc );
+
+  accumulator_set< float, features< tag::mean > > accInf;
+  accumulator_set< float, features< tag::mean > > accSup;
+      
+  bool doAccumulate = false;
+  for( std::size_t i = 0 ; i < barCode.size(); ++i )
+  {
+    if ( (!doAccumulate) && ( barCode[i] < medianSig ) )
+      doAccumulate = true;
+
+    if (doAccumulate)
     {
-      MapT sortedId; // 6-nearest neighbours along with their affectation probability
-      const std::size_t sizeIds = 6;
-      IdSet idSet;
-      idSet.reserve(sizeIds);
-
-      // imgSig contains the rectified 1D signal.
-      //boost::numeric::ublas::vector<float> imgSig( cuts.front().imgSignal().size() );
-      const std::vector<float> & imgSig = cut.imgSignal();
-
-      // compute some statitics
-      accumulator_set< float, features< /*tag::median,*/ tag::variance > > acc;
-      // Put the image signal into the accumulator
-      acc = std::for_each( imgSig.begin()+30, imgSig.end(), acc ); // todo: find a more accurate solution
-                                                                   // to replace the +30:
-                                                                   // Ideally, the mean should be 
-                                                                   // computed from where the barcode
-                                                                   // start until the end.
-
-      // Mean
-      const float medianSig = boost::accumulators::mean( acc );
-      
-      // or median
-      //const float medianSig = computeMedian( imgSig );
-
-      const float varSig = boost::accumulators::variance( acc );
-
-      accumulator_set< float, features< tag::mean > > accInf;
-      accumulator_set< float, features< tag::mean > > accSup;
-      
-//      std::cout << "sig = [ " ; // todo: clean
-//      for( std::size_t i = 0 ; i < imgSig.size(); ++i )
-//      {
-//            std::cout <<  imgSig[i] << " , "; 
-//      }
-//      std::cout << " ]; " << std::endl;
-      
-//      CCTAG_COUT_VAR(medianSig);
-      
-      bool doAccumulate = false;
-      for( std::size_t i = 0 ; i < imgSig.size(); ++i )
-      {
-        if ( (!doAccumulate) && ( imgSig[i] < medianSig ) )
-          doAccumulate = true;
-          
-        if (doAccumulate)
-        {
-          if ( imgSig[i] < medianSig )
-            accInf( imgSig[i] );
-          else
-            accSup( imgSig[i] );
-        }
-      }
-      const float muw = boost::accumulators::mean( accSup );
-      const float mub = boost::accumulators::mean( accInf );
-      
-//      CCTAG_COUT_VAR(muw); // todo: clean
-//      CCTAG_COUT_VAR(mub);
-
-      // Find the nearest ID in rrBank
-      const float stepX = (cut.endSig() - cut.beginSig()) / ( imgSig.size() - 1.f );
-      ///@todo vector<char>
-      // vector of 1 or -1 values
-      std::vector<float> digit( imgSig.size() );
-
-  #ifdef GRIFF_DEBUG
-      assert( rrBank.size() > 0 );
-  #endif // GRIFF_DEBUG
-      // Loop over imgSig values, compute and sum the difference between 
-      // imgSig and digit (i.e. generated profile)
-      for( std::size_t idc = 0; idc < rrBank.size(); ++idc )
-      {
-        // Compute the idc-th profile from the radius ratio
-        // todo to be pre-computed
-        float x = cut.beginSig();
-        for( std::size_t i = 0; i < digit.size(); ++i )
-        {
-          std::ssize_t ldum = 0;
-          for( std::size_t j = 0; j < rrBank[idc].size(); ++j )
-          {
-            if( 1.f / rrBank[idc][j] <= x )
-            {
-              ++ldum;
-            }
-          }
-          // set odd value to -1 and even value to 1
-          digit[i] = - ( ldum % 2 ) * 2 + 1;
-          
-          x += stepX;
-        }
-
-        // compute distance to profile
-        float distance = 0;
-        for( std::size_t i = 0 ; i < imgSig.size() ; ++i )
-        {
-          distance += dis( imgSig[i], digit[i], mub, muw, varSig );
-        }
-        const float v = std::exp( -distance ); // todo: remove the exp and back transform the associated threshold
-        sortedId[v] = idc;
-      }
-
-  #ifdef GRIFF_DEBUG
-      assert( sortedId.size() > 0 );
-  #endif // GRIFF_DEBUG
-      int k = 0;
-      BOOST_REVERSE_FOREACH( const MapT::const_iterator::value_type & v, sortedId )
-      {
-        if( k >= sizeIds ) break;
-        std::pair< MarkerID, float > markerId;
-        markerId.first = v.second;
-        markerId.second = v.first;
-        idSet.push_back(markerId);
-        ++k;
-      }
-
-  #ifdef GRIFF_DEBUG
-      assert( idSet.size() > 0 );
-      MarkerID _debug_m = idSet.front().first;
-      assert( _debug_m > 0 );
-      assert( vScore.size() > _debug_m );
-  #endif // GRIFF_DEBUG
-
-      {
-        tbb::mutex::scoped_lock lock(vscore_mutex);
-        vScore[idSet.front().first].push_back(idSet.front().second);
-      }
+      if ( barCode[i] < medianSig )
+        accInf( barCode[i] );
+      else
+        accSup( barCode[i] );
     }
-  });
-  return true;
+  }
+  const float muw = boost::accumulators::mean( accSup );
+  const float mub = boost::accumulators::mean( accInf );
+  
+  // Find the nearest ID in rrBank
+  const float stepX = (cut.endSig() - cut.beginSig()) / ( barCode.size() - 1.f );
+  
+  for( std::size_t idc = 0; idc < rrBank.size(); ++idc )
+  {
+    float x = cut.beginSig();
+    for( std::size_t i = 0; i < digit.size(); ++i )
+    {
+      std::ssize_t ldum = 0;
+      for( std::size_t j = 0; j < rrBank[idc].size(); ++j )
+      {
+        if( 1.f / rrBank[idc][j] <= x )
+        {
+          ++ldum;
+        }
+      }
+      // set odd value to -1 and even value to 1
+      digit[i] = - ( ldum % 2 ) * 2 + 1;
+
+      x += stepX;
+    }
+
+    // compute distance to profile
+    float distance = 0;
+    for( std::size_t i = 0 ; i < barCode.size() ; ++i )
+    {
+      distance += dis( barCode[i], digit[i], mub, muw, varSig );
+    }
+    const float v = std::exp( -distance ); // todo: remove the exp and back transform the associated threshold
+    sortedId[v] = idc;
+  }
+  
+  typedef std::map<float, MarkerID> MapT;
+  
+  int k = 0;
+  BOOST_REVERSE_FOREACH( const MapT::const_iterator::value_type & v, sortedId )
+  {
+    if( k >= nNN ) break;
+    std::pair< MarkerID, float > markerId;
+    markerId.first = v.second;
+    markerId.second = v.first;
+    idSet.push_back(markerId);
+    ++k;
+  }
+  
 }
 
 void createRectifiedCutImage(const std::vector<ImageCut> & vCuts, cv::Mat & output)
@@ -1638,18 +1638,6 @@ int identify_step_2(
 {
   // Get the outer ellipse in its original scale, i.e. in src.
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
-
-  // std::vector< cctag::ImageCut > vCuts;
-  
-  {
-  //    bool hasConverged = refineConicFamily( cctag, vCuts, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
-  //    if( !hasConverged )
-  //    {
-  //      DO_TALK( CCTAG_COUT_DEBUG(ellipse); )
-  //      CCTAG_COUT_VAR_DEBUG(cctag.centerImg());
-  //      DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
-  //      return status::opti_has_diverged;
-  //    }
     
   // C. Imaged center optimization /////////////////////////////////////////////
   // Expensive (GPU) Time bottleneck, the only function (including its sub functions) to be implemented on GPU
@@ -1688,137 +1676,65 @@ int identify_step_2(
     DO_TALK( CCTAG_COUT_DEBUG( "Optimization on imaged center failed to converge." ); )
     return status::opti_has_diverged;
   }
-  
-  }
-  
-  MarkerID id = -1;
 
-  std::size_t sizeIds = 6;
-  IdSet idSet;
-  idSet.reserve(sizeIds);
-
-  bool identSuccessful = false;
-  {
-    boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
-
-    std::vector<std::list<float> > vScore;
-    vScore.resize(radiusRatios.size());
-
+  boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
+    
   // D. Read the rectified 1D signals and retrieve the nearest ID(s) ///////////
   // Cheap (CPU only)
-#ifdef INITIAL_1D_READING // deprec, unused
-                          // v0.0 for the identification: use a single cut, average of the rectified cut, to read the id.
-    identSuccessful = orazioDistance( idSet, radiusRatios, vSelectedCuts, startOffset, params._minIdentProba, sizeIds);
-    // If success
-    if ( identSuccessful )
-    {
-      // Set CCTag id
-      id = idSet.front().first;
-      cctag.setId( id );
-      cctag.setIdSet( idSet );
-      cctag.setRadiusRatios( radiusRatios[id] );
-    }
-    else
-    {
-      DO_TALK( CCTAG_COUT_DEBUG("Not enough quality in IDENTIFICATION"); )
-    }
-#else // INITIAL_1D_READING
-    // used
-    // v0.1 for the identification: use the most redundant id over all the rectified cut.
-    identSuccessful = orazioDistanceRobust( vScore, radiusRatios, vSelectedCuts, params._minIdentProba);
+  
+  IdSet idSet;
+  orazioDistanceRobust( idSet, radiusRatios, vSelectedCuts);
     
 #ifdef VISUAL_DEBUG // todo: write a proper function in visual debug
-    cv::Mat output;
-    createRectifiedCutImage(vSelectedCuts, output);
-    CCTagVisualDebug::instance().initBackgroundImage(output);
-    CCTagVisualDebug::instance().newSession( "rectifiedSignal" + 
-      std::to_string(CCTagVisualDebug::instance().getMarkerIndex()) );
-    CCTagVisualDebug::instance().incrementMarkerIndex();
-    // Back to session refineConicPts
-    CCTagVisualDebug::instance().newSession( "refineConicPts" );
+  cv::Mat output;
+  createRectifiedCutImage(vSelectedCuts, output);
+  CCTagVisualDebug::instance().initBackgroundImage(output);
+  CCTagVisualDebug::instance().newSession( "rectifiedSignal" + 
+    std::to_string(CCTagVisualDebug::instance().getMarkerIndex()) );
+  CCTagVisualDebug::instance().incrementMarkerIndex();
+  // Back to session refineConicPts
+  CCTagVisualDebug::instance().newSession( "refineConicPts" );
 #endif // OPTIM_CENTER_VISUAL_DEBUG
     
-#ifdef GRIFF_DEBUG
-#error here
-    // todo: clean and mode this block into a dedicated function.
-    if( identSuccessful )
+  // Most likely marker ID
+  const std::size_t iClosestProfile = idSet.front().first;
+  cctag.setId( iClosestProfile );
+  cctag.setIdSet( idSet );
+  cctag.setRadiusRatios( radiusRatios[iClosestProfile] );
+
+  // Push all the ellipses based on the obtained homography.
+  try
+  {
+    Eigen::Matrix3f mInvH = cctag.homography().inverse();
+    std::vector<cctag::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
+
+    for(const float radiusRatio : cctag.radiusRatios())
     {
-#endif // GRIFF_DEBUG
-
-      int maxSize = 0;
-      int i = 0;
-      int iMax = 0;
-
-      BOOST_FOREACH(const std::list<float> & lResult, vScore)
-      {
-        if (lResult.size() > maxSize)
-        {
-          iMax = i;
-          maxSize = lResult.size();
-        }
-        ++i;
-      }
-
-      float score = 0;
-#ifdef GRIFF_DEBUG
-      assert( vScore.size() > 0 );
-      assert( vScore.size() > iMax );
-#endif // GRIFF_DEBUG
-      BOOST_FOREACH(const float & proba, vScore[iMax])
-      {
-        score += proba;
-      }
-      score /= vScore[iMax].size();
-
-      // Set CCTag id
-      cctag.setId( iMax );
-      cctag.setIdSet( idSet );
-      cctag.setRadiusRatios( radiusRatios[iMax] );
-
-      // Push all the ellipses based on the obtained homography.
-      try
-      {
-
-        Eigen::Matrix3f mInvH = cctag.homography().inverse();
-        std::vector<cctag::numerical::geometry::Ellipse> & ellipses = cctag.ellipses();
-
-        for(const float radiusRatio : cctag.radiusRatios())
-        {
-          cctag::numerical::geometry::Circle circle(1.f / radiusRatio);
-          ellipses.push_back(cctag::numerical::geometry::Ellipse(mInvH.transpose()*circle.matrix()*mInvH));
-        }
-
-        // Push the outer ellipse
-        ellipses.push_back(cctag.rescaledOuterEllipse());
-
-        DO_TALK( CCTAG_COUT_VAR_DEBUG(cctag.id()); )
-      }
-      catch (...) // An exception can be thrown when a degenerate ellipse is computed.
-      {
-        return status::degenerate;
-      }
-
-      identSuccessful = (score > params._minIdentProba);
-#ifdef GRIFF_DEBUG
+      cctag::numerical::geometry::Circle circle(1.f / radiusRatio);
+      ellipses.push_back(cctag::numerical::geometry::Ellipse(mInvH.transpose()*circle.matrix()*mInvH));
     }
-#endif // GRIFF_DEBUG
-      
-#endif // INITIAL_1D_READING
 
-    boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
-    boost::posix_time::time_duration d = tend - tstart;
-    const float spendTime = d.total_milliseconds();
+    // Push the outer ellipse
+    ellipses.push_back(cctag.rescaledOuterEllipse());
+
+    DO_TALK( CCTAG_COUT_VAR_DEBUG(cctag.id()); )
   }
+  catch (...) // An exception can be thrown when a degenerate ellipse is computed.
+  {
+    return status::degenerate;
+  }
+
+  bool identSuccessful = (idSet.front().second > params._minIdentProba);
+
+  boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
+  boost::posix_time::time_duration d = tend - tstart;
+  const float spendTime = d.total_milliseconds();
 
   // Tell if the identification is reliable or not.
   if (identSuccessful)
-  {
     return status::id_reliable;
-  }
   else
-  {
     return status::id_not_reliable;
-  }
 }
 
 #ifdef NAIVE_SELECTCUT
