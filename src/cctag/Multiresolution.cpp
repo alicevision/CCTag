@@ -180,7 +180,7 @@ void update(
   {
     // If markerToAdd is overlapping with a marker contained in markers then
     //if (currentMarker.isOverlapping(markerToAdd)) // todo: clean
-    if (currentMarker.isEqual(markerToAdd))       
+    if ( ( currentMarker.getStatus() > 0 ) && ( markerToAdd.getStatus() > 0 ) && currentMarker.isEqual(markerToAdd) )
     {
       if (markerToAdd.quality() > currentMarker.quality())
       {
@@ -301,26 +301,13 @@ void cctagMultiresDetection(
   }
   if( durations ) durations->log( "after cctagMultiresDetection_inner" );
   
-  // Delete overlapping markers while keeping the best ones.
-  
-  CCTag::List markersPrelim;
-  
+  // Gather the detected markers in the entire image pyramid
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
   for (std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers ; ++i)
-  // set the _numberOfProcessedMultiresLayers <= _numberOfMultiresLayers todo@Lilian
   {
     CCTag::List & markersList = pyramidMarkers[i];
-
-    BOOST_FOREACH(const CCTag & marker, markersList)
-    {
-        update(markersPrelim, marker);
-    }
-  }
-  
-  // todo: in which case is this float check required ?
-  for(const CCTag & marker : markersPrelim)
-  {
-    update(markers, marker);
+    for(const CCTag & marker : markersList)
+      markers.push_back(new CCTag(marker));
   }
   
   if( durations ) durations->log( "after update markers" );

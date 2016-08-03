@@ -955,6 +955,19 @@ void cctagDetection(CCTag::List& markers,
      */
     CCTag::releaseNearbyPointMemory();
 #endif
+    
+    // Delete overlapping markers while keeping the best ones.
+    CCTag::List markersPrelim, markersFinal;
+    for(const CCTag & marker : markers)
+    {
+        update(markersPrelim, marker);
+    }
+
+    for(const CCTag & marker : markersPrelim)
+    {
+      update(markersFinal, marker);
+    }
+    markers = markersFinal;
   
     markers.sort();
 
