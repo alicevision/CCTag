@@ -1243,15 +1243,11 @@ bool refineConicFamilyGlob(
     }
   }
   
-  //CCTAG_COUT(sqrt(residual/vCuts.size()));
-  //if ( sqrt(residual/vCuts.size()) > 70 )
-  //  return false;
-
-        // Measure the time spent in the optimization
-        boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
-        boost::posix_time::time_duration d = tend - tstart;
-        const float spendTime = d.total_milliseconds();
-        DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
+  // Measure the time spent in the optimization
+  boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
+  boost::posix_time::time_duration d = tend - tstart;
+  const float spendTime = d.total_milliseconds();
+  DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
 
 #ifdef WITH_CUDA
     } // not CUDA
@@ -1266,7 +1262,43 @@ bool refineConicFamilyGlob(
         boost::posix_time::time_duration d = tend - tstart;
         const float spendTime = d.total_milliseconds();
     }
-    return true;
+    
+    // Residual normalization
+    std::vector<std::size_t> correctCutIndices;
+    correctCutIndices.reserve(vCuts.size());
+
+    for(std::size_t iCut=0 ; iCut < vCuts.size() ; ++iCut) {
+    if ( !vCuts[iCut].outOfBounds() )
+        correctCutIndices.push_back(iCut);
+    }
+
+    // In barCode will be written the most frequent signal for every samples along
+    // the cut.
+    std::vector<float> barCode;
+    const std::size_t signalSize = vCuts[0].imgSignal().size();
+    barCode.resize(signalSize);
+
+    std::vector<float> signalAlongX;
+    signalAlongX.resize(correctCutIndices.size());
+
+    for(std::size_t iSignal = 0 ; iSignal < signalSize ; ++iSignal)
+    {
+      for(std::size_t k=0 ; k <  correctCutIndices.size() ; ++k){
+        signalAlongX[k] = vCuts[correctCutIndices[k]].imgSignal()[iSignal];
+      }
+      barCode[iSignal] = computeMedian( signalAlongX );
+    }
+    
+    const float vMin = *std::min_element(barCode.begin(), barCode.end());
+    const float vMax = *std::max_element(barCode.begin(), barCode.end());
+    const float magnitude = vMax - vMin;
+
+    //CCTAG_COUT_VAR(sqrt(residual)/magnitude);
+
+    if ( sqrt(residual)/magnitude > 2.7f )
+      return false;
+    else
+      return true;
 }
 
 /**
