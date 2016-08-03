@@ -1179,7 +1179,8 @@ bool refineConicFamilyGlob(
         popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params,
-        popart::NearbyPoint* cctag_pointer_buffer )
+        popart::NearbyPoint* cctag_pointer_buffer,
+        float & residual)
 {
     using namespace cctag::numerical;
 
@@ -1213,7 +1214,6 @@ bool refineConicFamilyGlob(
 
         // The neighbourhood size is 0.20*max(ellipse.a(),ellipse.b()), i.e. the max ellipse semi-axis
         float neighbourSize = params._imagedCenterNeighbourSize;
-        float residual;
 
         std::size_t gridNSample = params._imagedCenterNGridSample; // todo: check must be odd 
 
@@ -1293,9 +1293,33 @@ bool refineConicFamilyGlob(
     const float vMax = *std::max_element(barCode.begin(), barCode.end());
     const float magnitude = vMax - vMin;
 
-    //CCTAG_COUT_VAR(sqrt(residual)/magnitude);
-
-    if ( sqrt(residual)/magnitude > 2.7f )
+//    // Retains only the most reliable image cuts
+//    std::map<float, std::size_t> mostReliableCuts;
+//    for(std::size_t k=0 ; k <  correctCutIndices.size() ; ++k){
+//      float squareDist = 0.f;
+//      for(std::size_t iSignal = 0 ; iSignal < signalSize ; ++iSignal)
+//        squareDist += std::pow(vCuts[correctCutIndices[k]].imgSignal()[iSignal]-barCode[iSignal],2);
+//      mostReliableCuts.emplace( squareDist, correctCutIndices[k] );
+//    }
+//    
+//    std::vector<cctag::ImageCut> outputs;
+//    outputs.reserve(vCuts.size());
+//    const std::size_t stop = correctCutIndices.size()/2 + 1;
+//    std::size_t k=0;
+//    for(const auto & iCut : mostReliableCuts)
+//    {
+//      outputs.push_back(vCuts[iCut.second]);
+//      ++k;
+//      if ( k > stop)
+//        break;
+//    }
+//    vCuts = outputs;
+    
+    // Final normalized residual
+    
+    CCTAG_COUT_VAR(sqrt(residual)/magnitude);
+    residual = sqrt(residual)/magnitude;
+    if ( residual > 2.7f )
       return false;
     else
       return true;
@@ -1672,8 +1696,7 @@ int identify_step_2(
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
 
   // std::vector< cctag::ImageCut > vCuts;
-  
-  {
+  float residual = std::numeric_limits<float>::max();
   //    bool hasConverged = refineConicFamily( cctag, vCuts, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
   //    if( !hasConverged )
   //    {
@@ -1701,11 +1724,15 @@ int identify_step_2(
                         ellipse,
                         params,
 #ifdef WITH_CUDA
-                        cctag.getNearbyPointBuffer()
+                        cctag.getNearbyPointBuffer(),
 #else
-                        0
+                        0,
 #endif
+                        residual
                         );
+  
+  cctag.setQuality(1.f/residual);
+  
   // End GPU ////////
   // Note Outputs (GPU->CPU):
   //        The main amount of data to transfert is only that way and is 'vSelectedCuts', 
@@ -1721,7 +1748,6 @@ int identify_step_2(
     return status::opti_has_diverged;
   }
   
-  }
   
   MarkerID id = -1;
 
