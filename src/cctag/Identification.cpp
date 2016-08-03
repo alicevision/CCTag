@@ -951,7 +951,7 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
 bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, const float scale, const size_t numSamplesOuterEdgePointsRefinement)
 {
     // Subpixellic refinement of the outer edge points ///////////////////////////
-    const float cutLengthOuterPointRefine = 9.f * sqrt(scale); // size of canny/dX/dY kernel * scale (with scale=2^i, i=0..nLevel)
+    const float cutLengthOuterPointRefine = 3.f * sqrt(2.f) * scale; // with scale=2^i, i=0..nLevel
     const float halfWidth = cutLengthOuterPointRefine / 2.f;
 
     Eigen::Vector2f gradDirection = cut.stop().gradient()/cut.stop().gradient().norm();
