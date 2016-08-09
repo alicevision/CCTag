@@ -42,12 +42,8 @@ using boost::timer;
 using namespace boost::gil;
 namespace bfs = boost::filesystem;
 
-// static const std::string kUsageString = "Usage: detection image_file.png\n";
-
 void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ostream & output, std::string debugFileName = "")
 {
-  
-  //cv::medianBlur(src, src, 5);
   
     if (debugFileName == "") {
       debugFileName = "00000";
@@ -62,13 +58,8 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
 
     static cctag::logtime::Mgmt* durations = 0;
-#if 0
-    if( not durations ) {
-        durations = new cctag::logtime::Mgmt( 25 );
-    } else {
-        durations->resetStartTime();
-    }
-#endif
+        
+    //Call the main CCTag detection function
     cctagDetection( markers, frameId , src, params, bank, true, durations );
 
     if( durations ) {
@@ -176,9 +167,6 @@ int main(int argc, char** argv)
   }
 
   popart::device_prop_t deviceInfo( false );
-#if 0
-  deviceInfo.print( );
-#endif
 #endif // WITH_CUDA
 
   bfs::path myPath( cmdline._filename );
@@ -210,15 +198,6 @@ int main(int argc, char** argv)
     cv::Mat graySrc;
     cv::cvtColor( src, graySrc, CV_BGR2GRAY );
 
-    // Upscale original image
-    /*{
-            rgb8_image_t simage;
-            simage.recreate( 2 * image.width(), 2 * image.height() );
-            rgb8_view_t osvw( view( simage ) );
-            terry::resize_view( svw, osvw, terry::sampler::bicubic_sampler() );
-    }*/
-
-    // Call the CCTag detection
 #ifdef PRINT_TO_CERR
     detection(0, graySrc, params, bank, std::cerr, myPath.stem().string());
 #else
@@ -259,37 +238,7 @@ int main(int argc, char** argv)
 
     boost::timer t;
     std::size_t         frameId = 0;
-#if 0
-    boost::mutex        frame_mutex;
-    boost::thread_group frame_processor;
-    for( int proc=0; proc<1 ; proc++ ) {
-      frame_processor.create_thread(
-        [&frames, &frameId, &frame_mutex, &t, params, bank, &outputFile](){
-            bool   empty;
-            do {
-                cv::Mat* imgGray;
-                frame_mutex.lock();
-                empty = frames.empty();
-                if( not empty ) {
-                    imgGray = frames.front();
-                    frames.pop_front();
-                    ++frameId; 
-                }
-                frame_mutex.unlock();
 
-                std::stringstream outFileName;
-                outFileName << std::setfill('0') << std::setw(5) << frameId;
-
-                detection(frameId, *imgGray, params, bank, outputFile, outFileName.str());
-                if( frameId % 100 == 0 ) {
-                    std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0/frameId << ") ";
-                }
-                delete imgGray;
-            } while( not empty );
-        } );
-    }
-    frame_processor.join_all();
-#else
     for( cv::Mat* imgGray : frames ) {
         // Set the output folder
         std::stringstream outFileName;
@@ -310,7 +259,6 @@ int main(int argc, char** argv)
             std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0/frameId << ") ";
         }
     }
-#endif
     std::cerr << std::endl;
   } else if (bfs::is_directory(myPath)) {
     CCTAG_COUT("*** Image sequence mode ***");
