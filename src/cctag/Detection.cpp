@@ -577,7 +577,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
       CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RAISED_EXCEPTION);
       CCTagFileDebug::instance().incrementFlowComponentIndex(0);
       // Ellipse fitting don't pass.
-      CCTAG_COUT_CURRENT_EXCEPTION;
+      //CCTAG_COUT_CURRENT_EXCEPTION;
       DO_TALK( CCTAG_COUT_DEBUG( "Exception raised" ); )
     }
 }

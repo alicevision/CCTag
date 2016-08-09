@@ -1317,7 +1317,6 @@ bool refineConicFamilyGlob(
     
     // Final normalized residual
     
-    CCTAG_COUT_VAR(sqrt(residual)/magnitude);
     residual = sqrt(residual)/magnitude;
     if ( residual > 2.7f )
       return false;

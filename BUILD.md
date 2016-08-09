@@ -38,7 +38,7 @@ OpenCV need to be compiled separately.
 You now just need to be in the CCTag folder and run cmake:
 ```bash
 $ mkdir build && cd build
-$ cmake ..
+$ cmake .. -DCCTAG_BUILD_MODE=RELEASE
 $ make -j `nproc`
 ``` 
 
