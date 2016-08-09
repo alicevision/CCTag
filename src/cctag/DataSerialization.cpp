@@ -31,7 +31,6 @@ void serializePoint(boost::archive::text_oarchive & ar, const Point2d<Eigen::Vec
     ar & BOOST_SERIALIZATION_NVP(y);
 }
 
-// todo templater function above and bellow.
 void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<Eigen::Vector3f> & point) {
     const float x = point.x();
     const float y = point.y();

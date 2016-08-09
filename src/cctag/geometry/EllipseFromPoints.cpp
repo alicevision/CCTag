@@ -11,11 +11,6 @@ namespace cctag {
 namespace numerical {
 namespace geometry {
 
-/**
- * @brief Extract one point from the ellipse at angle around the center (2D certer or image center ??).
- * @param[theta] angle of the computed point in radian
- * @todo lilian check this documentation !!
- */
 Point2d<Eigen::Vector3f> extractEllipsePointAtAngle( const Ellipse & ellipse, float theta )
 {
     Point2d<Eigen::Vector3f> p;
@@ -148,7 +143,7 @@ void rasterizeEllipticalArc(const Ellipse & ellipse, const Point2d<Eigen::Vector
 	}
 }
 
-/* Brief: Compute the intersection of an horizontal or vertical line with an ellipse
+/* Brief: Compute the intersection of an horizontal or a vertical line with an ellipse
  * Input:
  * ellipse
  * y: value/equation of the line

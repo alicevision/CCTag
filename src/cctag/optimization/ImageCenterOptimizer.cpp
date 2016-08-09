@@ -37,19 +37,10 @@ void ImageCenterOptimizer::initOpt( int ndim, NEWMAT::ColumnVector& x )
           BOOST_THROW_EXCEPTION( exception::Bug() << exception::dev() + "Unable to init minimizer!" );
   }
 
-  x(1) = _pToRefine.x();// todo@Lilian: why not (0) and (1) instead ?!
+  x(1) = _pToRefine.x();
   x(2) = _pToRefine.y();
 }
 
-/**
- * Fonction de coût (fct à minimiser)
- * 
- * @param[int] n nombre de paramètres à minimiser
- * @param[in] x les paramètres à estimer
- * @param[out] fx un scalaire, le résultat
- * @param[out] result, un truc de optpp, je sais pas pour l'instant à quoi ça sert
- * @param[in] objPtr
- */
 void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& x, float& fx, int& result, void *objPtr )
 {
 	using namespace OPTPP;
@@ -65,9 +56,6 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 
 	cctag::numerical::optimization::condition(centerExtEllipse, this_ptr->_mInvT);
 
-	//CCTAG_TCOUT_VAR( centerExtEllipse );
-
-	//CCTagVisualDebug::instance().drawText( centerExtEllipse, boost::lexical_cast<std::string>(this_ptr->_numIter), cctag::color_white );
 	CCTagVisualDebug::instance().drawPoint( centerExtEllipse, cctag::color_blue );
 
 	Eigen::Matrix3f mH;
@@ -83,11 +71,9 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
         std::size_t resSize = 0;
 	for( std::size_t i = 0; i < vecSig.size() - 1; ++i )
 	{
-		//CCTAG_TCOUT_VAR(vecSig[i]._imgSignal);
 		for( std::size_t j = i+1; j < vecSig.size(); ++j )
 		{
 			res += std::pow( norm_2( vecSig[i]._imgSignal - vecSig[j]._imgSignal ), 4 );
-                        //res += norm_2( vecSig[i]._imgSignal - vecSig[j]._imgSignal );
                         ++resSize;
 		}
 	}
@@ -110,7 +96,6 @@ Point2d<Eigen::Vector3f> ImageCenterOptimizer::operator()( const cctag::Point2d<
 
 	Point2d<Eigen::Vector3f> res;
 
-	//  Create a Nonlinear problem object
 	_pToRefine = pToRefine;
 	cctag::numerical::optimization::condition(_pToRefine, mT);
 	
@@ -118,17 +103,15 @@ Point2d<Eigen::Vector3f> ImageCenterOptimizer::operator()( const cctag::Point2d<
 	_src = src;
 	_ellipse = outerEllipse;
 	_numIter = 0;
-	// 2D conditioning matrix
 	_mT = mT;
 	
 	cctag::numerical::invert_3x3(mT,_mInvT);
 
 	OptQNewton objfcn( this );
 
-	objfcn.setSearchStrategy( TrustRegion );//LineSearch ); //TrustRegion );
+	objfcn.setSearchStrategy( TrustRegion );
 	objfcn.setMaxFeval( 200 );
 	objfcn.setFcnTol( 1.0e-4 );
-    //objfcn.setMaxStep(0.2);
 #if defined(DEBUG)
 	if ( !objfcn.setOutputFile("example1.out", 0) )
 	{
@@ -138,7 +121,6 @@ Point2d<Eigen::Vector3f> ImageCenterOptimizer::operator()( const cctag::Point2d<
 
 	objfcn.optimize();
 
-	//objfcn.printStatus( "Solution from quasi-newton" );
 	objfcn.cleanup();
 
 	//#ifdef REG_TEST

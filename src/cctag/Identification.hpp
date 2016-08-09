@@ -120,8 +120,6 @@ inline void applyHomography(
  * @param[in] minIdentProba minimal probability to considered a cctag as correctly identified
  * @return true if the cctag has been correctly identified, false otherwise
  */
-// todo: change the data structure here: map for id+scores, thresholding with minIdentProba
-// outside of this function
 bool orazioDistanceRobust(
         std::vector<std::list<float> > & vScore,
         const RadiusRatioBank & rrBank,
@@ -218,7 +216,7 @@ inline float getPixelBilinear(const cv::Mat & src, float x, float y)
   float w4 = fx  * fy;
 
   // Calculate the weighted sum of pixels (for each color channel)
-  return (p1 * w1 + p2 * w2 + p3 * w3 + p4 * w4)/2; // todo: was initially /4. Justification: make sense for a storage back in uchar to avoid overflow ??
+  return (p1 * w1 + p2 * w2 + p3 * w3 + p4 * w4)/2;
 }
 
 /**
@@ -243,7 +241,7 @@ void getSignals(
  * @param[out] vCuts cuts holding the rectified 1D signals at the end of the optimization
  * @param[out] residual from the optimization (normalized w.r.t. binary pattern)
  * @param[in] src source image
- * @param[in] ellipse outer ellipse (todo: is that already in the cctag object?)
+ * @param[in] outerEllipse outer ellipse
  * @param[in] params parameters of the cctag algorithm
  * @return true if the optimization has found a solution, false otherwise.
  */
@@ -306,7 +304,6 @@ void getNearbyPoints(
 /**
  * @brief Compute an homography (up to a 2D rotation) based on its imaged origin [0,0,1]'
  * and its imaged unit circle (represented as an ellipse, assuming only quasi-affine transformation
- * PS: this version will be replaced by its closed-form formulation (todo)
  * 
  * @param[in] ellipse ellipse image of the unit circle
  * @param[in] center imaged center, projection of the origin

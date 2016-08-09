@@ -13,7 +13,7 @@ namespace cctag {
 namespace numerical {
 
 template<class T, class U>
-inline float distancePoints2D( const T& p1, const U& p2 ) // TODO modifier les accès, considérer p1, p2 comme des bounded_vector
+inline float distancePoints2D( const T& p1, const U& p2 )
 {
 	return std::sqrt( (float)boost::math::pow<2>( p2.x() - p1.x() ) +
 	                  boost::math::pow<2>( p2.y() - p1.y() ) );

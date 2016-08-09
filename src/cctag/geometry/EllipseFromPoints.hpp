@@ -53,10 +53,10 @@ void rasterizeEllipse( const Ellipse & ellipse, std::vector< Point2d<Eigen::Vect
 std::size_t rasterizeEllipsePerimeter( const Ellipse & ellipse );
 
 /**
- * @brief Compute intersections if there, between a line of equation Y = y and an ellipse.
+ * @brief Compute intersections if any, between a line of equation Y = y and an ellipse.
  *
  * @param[in] ellipse
- * @param[in] y ordonate for which we compute x values of intersections
+ * @param[in] y ordonate for which we compute intersection abscissa
  * @return intersected points sorted in ascend order (returns x coordinates: 0, 1, or 2 points).
  */
 std::vector<float> intersectEllipseWithLine( const numerical::geometry::Ellipse& ellipse, const float y, bool horizontal);

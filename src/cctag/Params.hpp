@@ -90,7 +90,7 @@ static const std::string kParamDoIdentification( "kParamDoIdentification" );
 static const std::string kParamMaxEdges( "kParamMaxEdges" );
 static const std::string kUseCuda( "kUseCuda" );
 
-static const std::size_t kWeight = INV_GRAD_WEIGHT; // todo@L
+static const std::size_t kWeight = INV_GRAD_WEIGHT;
 
 struct Parameters
 {

@@ -106,7 +106,7 @@ void CCTagVisualDebug::setImageFileName(const std::string& imageFileName) {
 void CCTagVisualDebug::initBackgroundImage(const cv::Mat & back)
 {
 #ifdef CCTAG_SERIALIZE
-  cv::Mat temp; // todo@Lilian: why do I need to use temp ?
+  cv::Mat temp;
   cvtColor(back, temp, cv::COLOR_GRAY2RGB);
   _backImage = temp.clone();
 #endif
@@ -179,7 +179,7 @@ void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2d<Eigen::Vector
 #endif
 }
 
-// todo templater la function ci-dessus avec celle ci-dessous
+// todo@Lilian: template that function
 void CCTagVisualDebug::drawPoints(const std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > & points, const cctag::Color & color)
 {
 #ifdef CCTAG_SERIALIZE

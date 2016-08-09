@@ -17,7 +17,7 @@ namespace cctag {
   void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet);
 
   void serializePoint(boost::archive::text_oarchive & ar, const Point2d<Eigen::Vector3f> & point);
-// todo templater function above and bellow.
+
   void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<Eigen::Vector3f> & point);
 
   void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e);

@@ -29,7 +29,6 @@ namespace cctag
 
 namespace optimization = cctag::numerical::optimization;
 
-// todo@Lilian : used in the initRadiusRatio called in the CCTag constructor. Need to be changed while reading the CCTagBank build from the textFile.
 const boost::array<float, 5> CCTag::_radiusRatiosInit =
 {
   (29.0 / 9.0),

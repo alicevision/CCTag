@@ -81,25 +81,6 @@ void ImagePyramid::build( const cv::Mat & src, const float thrLowCanny, const fl
 #endif
 }
 
-void ImagePyramid::output()
-{
-  for(int i = 0; i < _levels.size() ; ++i)
-  {
-// todo@Lilian
-    std::string basename("/home/lilian/data/");
-    std::stringstream sSrc, sDx, sDy, sEdges;
-    sSrc << basename << "src_" << i << ".png";
-    CCTAG_COUT(sSrc.str());
-    imwrite(sSrc.str(), _levels[i]->getSrc());
-    sDx << basename << "dx_" << i << ".png";
-    imwrite(sDx.str(), _levels[i]->getDx());
-    sDy << basename << "dy_" << i << ".png";
-    imwrite(sDy.str(), _levels[i]->getDy());
-    sEdges << basename << "edges_" << i << ".png";
-    imwrite(sEdges.str(), _levels[i]->getEdges());
-  }
-}
-
 ImagePyramid::~ImagePyramid()
 {
   for(int i = 0; i < _levels.size() ; ++i)

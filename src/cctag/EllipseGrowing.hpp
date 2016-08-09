@@ -82,7 +82,6 @@ inline bool isInHull( const cctag::numerical::geometry::Ellipse& qIn, const ccta
   //return ( ublas::inner_prod( p, ublas::prec_prod( qIn.matrix(), p ) ) * ublas::inner_prod( p, ublas::prec_prod( qOut.matrix(), p ) ) < 0 ) ;
 }
 
-// todo@Lilian to be templated
 inline bool isOnTheSameSide(const Point2d<Eigen::Vector3f> & p1, const Point2d<Eigen::Vector3f> &  p2, const Eigen::Vector3f& line)
 {
   auto s1 = p1.dot(line);

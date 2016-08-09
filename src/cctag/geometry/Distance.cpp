@@ -5,7 +5,6 @@ namespace cctag {
 namespace numerical {
 
 // Compute (point-polar) distance between a point and an ellipse represented by its 3x3 matrix.
-// TODO@lilian: f is always equal to 1, remove it
 // NOTE: Q IS SYMMTERIC!; Eigen stores matrices column-wise by default.
 float distancePointEllipseScalar(const Eigen::Vector3f& p, const Eigen::Matrix3f& Q)
 {

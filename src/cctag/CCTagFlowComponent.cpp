@@ -35,8 +35,6 @@ CCTagFlowComponent::CCTagFlowComponent(
 
 }
 
-// todo@Lilian : templater les 2 methodes suivantes sur le container
-
 void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens, const EdgePointCollection& edgeCollection)
 {
   _filteredFieldLines.resize(filteredChildrens.size());

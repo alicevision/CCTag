@@ -53,7 +53,6 @@ static bool intersectLineToTwoEllipses(
   BOOST_ASSERT(intersectionsIn.size() <= 2);
   if ((intersectionsOut.size() == 2) && (intersectionsIn.size() == 2))
   {
-    //@todo@Lilian, in/out the edgeMap
     std::ssize_t begin1 = std::max(0, (int) intersectionsOut[0]);
     std::ssize_t end1 = std::min((int) edgeCollection.shape()[0] - 1, (int) intersectionsIn[0]);
 
@@ -178,8 +177,6 @@ void update(
 
   BOOST_FOREACH(CCTag & currentMarker, markers)
   {
-    // If markerToAdd is overlapping with a marker contained in markers then
-    //if (currentMarker.isOverlapping(markerToAdd)) // todo: clean
     if ( ( currentMarker.getStatus() > 0 ) && ( markerToAdd.getStatus() > 0 ) && currentMarker.isEqual(markerToAdd) )
     {
       if (markerToAdd.quality() > currentMarker.quality())
@@ -189,7 +186,6 @@ void update(
       flag = true;
     }
   }
-  // else push back in markers.
   if (!flag)
   {
     markers.push_back(new CCTag(markerToAdd));
@@ -366,7 +362,7 @@ void cctagMultiresDetection(
       {
         numerical::ellipseFitting(rescaledOuterEllipse, rescaledOuterEllipsePoints);
 
-        std::vector< DirectedPoint2d<Eigen::Vector3f> > rescaledOuterEllipsePointsDouble;// todo@Lilian : add a reserve
+        std::vector< DirectedPoint2d<Eigen::Vector3f> > rescaledOuterEllipsePointsDouble;
         std::size_t numCircles = params._nCrowns * 2;
 
         BOOST_FOREACH(EdgePoint * e, rescaledOuterEllipsePoints)
@@ -379,8 +375,7 @@ void cctagMultiresDetection(
           
           CCTagVisualDebug::instance().drawPoint(Point2d<Eigen::Vector3f>(e->x(), e->y()), cctag::color_red);
         }
-        //marker.setCenterImg(rescaledOuterEllipse.center());                                                                // todo
-        marker.setCenterImg(cctag::Point2d<Eigen::Vector3f>(marker.centerImg().x() * scale, marker.centerImg().y() * scale));  // decide between these two lines
+        marker.setCenterImg(cctag::Point2d<Eigen::Vector3f>(marker.centerImg().x() * scale, marker.centerImg().y() * scale));
         marker.setRescaledOuterEllipse(rescaledOuterEllipse);
         marker.setRescaledOuterEllipsePoints(rescaledOuterEllipsePointsDouble);
       }

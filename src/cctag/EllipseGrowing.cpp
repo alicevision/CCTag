@@ -214,8 +214,7 @@ bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2d<Ve
 {
   BOOST_ASSERT(filteredChildrens.size() >= 5);
 
-  // TODO constante à associer à la classe de l'algorithme... et choisir la meilleure valeur
-  static const float thrCosDiffMax = 0.25; //std::cos( boost::math::constants::pi<float>() / 2.0 );
+  static const float thrCosDiffMax = 0.25;
 
   const float min = numerical::innerProdMin(filteredChildrens, thrCosDiffMax, p1, p2);
 
@@ -247,12 +246,6 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
 
   Eigen::Matrix2f mLInv = mL.inverse();
 
-  //Droite l=[a b c] passant par P1 et P2
-  //l = inv([x1 y1; x2 y2])*[-1;-1];
-  //l = [l;1];
-
-  // TODO inversion d'une matrice 2x2
-  //cctag::toolbox::matrixInvert(mL, mLInv);
   auto aux = mLInv * minones;
   Eigen::Vector3f l;
   l(0) = aux(0);
@@ -260,8 +253,6 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
   l(2) = 1;
 
   const float normL = std::sqrt(boost::math::pow<2>(l(0)) + boost::math::pow<2>(l(1)));
-
-  //float distMax = std::abs( inner_prod( *( filteredChildrens[0] ), l ) ) / normL;
 
   const EdgePoint * pMax = filteredChildrens.front();
   float distMax = std::min(
@@ -283,10 +274,8 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
     }
   }
 
-  //CCTAG_COUT_VAR_DEBUG(std::abs( inner_prod( *( filteredChildrens[iMax] ), l ) ) / normL);
-
   Point2d<Eigen::Vector3f> equiPoint;
-  float distanceToAdd = cctag::numerical::distancePoints2D(p1, p2) / 50; // match to the max/min of semi-axis ratio for an outer ellipse of a flow candidate
+  float distanceToAdd = cctag::numerical::distancePoints2D(p1, p2) / 50;
 
   if (std::abs(pMax->cast<float>().dot(l)) / normL < 1e-6)
   {
@@ -301,9 +290,6 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
     equiPoint.x() = (pMax->x());
     equiPoint.y() = (pMax->y());
   }
-
-  //CCTAG_COUT("Create a circle \n" << Point2d<Eigen::Vector3f>(p1->x(), p1->y()) << " \n " << Point2d<Eigen::Vector3f>(p2->x(), p2->y())
-  //	<< " \n" << equiPoint );
 
   numerical::geometry::Circle resCircle(Point2d<Eigen::Vector3f>(p1.x(), p1.y()), Point2d<Eigen::Vector3f>(p2.x(), p2.y()), equiPoint);
   
@@ -321,15 +307,12 @@ bool ellipseGrowingInit(const std::vector<EdgePoint*>& filteredChildrens, numeri
   if (isGoodEGPoints(filteredChildrens, p1, p2))
   {
     // Ellipse fitting based on the filtered childrens
-    // todo@Lilian create the construction Ellipse(pts) which calls the following.
+    // todo@Lilian: create the construction Ellipse(pts) which calls the following.
     numerical::ellipseFitting(ellipse, filteredChildrens);
   }
   else
   {
-    // Initialize ellipse to a circle if the ellipse is not covered enough. 
-    // Previous call (heuristic based))
-    // ellipse = computeCircleFromOuterEllipsePoints(filteredChildrens, p1, p2);
-    // Ellipse fitting on the filtered childrens.
+    // Initialize ellipse to a circle if the arc coverage is not covered enough. 
     numerical::circleFitting(ellipse, filteredChildrens);
 
     goodInit = false;

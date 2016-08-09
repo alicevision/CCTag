@@ -70,7 +70,7 @@ public:
     , _scale(scale)
   {
     setInitRadius();
-    _outerEllipse.setCenter( Point2d<Eigen::Vector3f>(_outerEllipse.center().x()+0.5f, _outerEllipse.center().y()+0.5f ) ); // todo: why + 0.5f is required ?
+    _outerEllipse.setCenter( Point2d<Eigen::Vector3f>(_outerEllipse.center().x()+0.5f, _outerEllipse.center().y()+0.5f ) ); // todo@Lilian: + 0.5f
     cctag::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
     
     _status = 0;
@@ -356,7 +356,6 @@ protected:
 
   void setInitRadius()
   {
-    // todo@Lilian : to be replaced by calling the CCTag bank built from the textfile
     _radiusRatios.resize(_radiusRatiosInit.size());
     std::copy(_radiusRatiosInit.begin(), _radiusRatiosInit.end(), _radiusRatios.begin());
     _nCircles = _radiusRatiosInit.size() + 1;

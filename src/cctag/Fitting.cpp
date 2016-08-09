@@ -596,13 +596,7 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, floa
 
             if (filteredChildrens.size()) {
 
-                //float normGrad = ublas::norm_2(gradient);
-                //sumDeriv(0) += gradient(0)/normGrad;
-                //sumDeriv(1) += gradient(1)/normGrad;
-
                 normGrad = std::sqrt(p0->dX() * p0->dX() + p0->dY() * p0->dY());
-
-                //CCTAG_COUT_VAR(normGrad);
 
                 // Step 1
                 float gx0 = p0->dX() / normGrad;
@@ -613,7 +607,6 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, floa
                 for (; it != filteredChildrens.end(); ++it) {
                     EdgePoint* pCurrent = *it;
 
-                    // TODO Revoir les structure de donnée pour les points 2D et définir un produit scalaire utilisé ici
                     normGrad = std::sqrt(pCurrent->dX() * pCurrent->dX() + pCurrent->dY() * pCurrent->dY());
 
                     float gx = pCurrent->dX() / normGrad;
@@ -623,8 +616,6 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, floa
 
                     if (innerProd <= thrCosDiffMax)
                         return innerProd;
-
-                    //std::cout << "innerProd : " << innerProd << std::endl;
 
                     if (innerProd < min) {
                         min = innerProd;
@@ -652,7 +643,7 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, floa
 
                 for (; it != filteredChildrens.end(); ++it) {
                     EdgePoint* pCurrent = *it;
-                    // TODO Revoir les structure de donnée pour les point 2D et définir un produit scalaire utilisé ici
+
                     normGrad = std::sqrt(pCurrent->dX() * pCurrent->dX() + pCurrent->dY() * pCurrent->dY());
 
                     float chgx = pCurrent->dX() / normGrad;
@@ -698,10 +689,6 @@ void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cct
 
   Eigen::MatrixXf A(nPoints, 4);
 
-  // utiliser la même matrice à chaque fois et rajouter les données.
-  // Initialiser la matrice a l'exterieur et remplir ici puis inverser, idem
-  // pour le fitellipse, todo@Lilian
-
   for (int i = 0; i < nPoints; ++i) {
       A(i, 0) = points[i]->x();
       A(i, 1) = points[i]->y();
@@ -711,12 +698,6 @@ void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cct
 
   Eigen::JacobiSVD<Eigen::MatrixXf> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
   auto V = svd.matrixV();
-
-  //CCTAG_COUT_VAR(A);
-  //CCTAG_COUT_VAR(U);
-  //CCTAG_COUT_VAR(V);
-  //CCTAG_COUT_VAR(S);
-  //CCTAG_COUT("V(:,end) = " << V(0, 3) << " " << V(1, 3) << " " << V(2, 3) << " " << V(3, 3) << " ");
 
   float xC = -0.5f * V(0, 3) / V(3, 3);
   float yC = -0.5f * V(1, 3) / V(3, 3);
@@ -729,63 +710,5 @@ void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cct
   e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), radius, radius, 0);
 }
 
-#if 0
-        bool matrixFromFile(const std::string& filename, std::list<cctag::EdgePoint>& edgepoints) {
-            std::ifstream ifs(filename.c_str());
-
-            if (!ifs) {
-                throw ( "Cannot open file");
-            }
-
-            std::stringstream oss;
-            oss << ifs.rdbuf();
-
-            if (!ifs && !ifs.eof()) {
-                throw ( "Error reading file");
-            }
-            std::string str = oss.str();
-
-            std::vector<std::string> lines;
-            boost::split(lines, str, boost::is_any_of("\n"));
-            for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); ++it) {
-                std::vector<std::string> xy;
-                boost::split(xy, *it, boost::is_any_of(", "));
-                if (xy.size() == 2) {
-                    edgepoints.push_back(cctag::EdgePoint(boost::lexical_cast<int>(xy[0]), boost::lexical_cast<int>(xy[1]), 0, 0));
-                }
-            }
-
-            return true;
-        }
-
-        int discreteEllipsePerimeter(const cctag::numerical::geometry::Ellipse& ellipse) {
-            using namespace std;
-
-            float a = ellipse.a();
-            float b = ellipse.b();
-            float angle = ellipse.angle();
-
-            float A = -b * sin(angle) - b * cos(angle);
-            float B = -a * cos(angle) + a * sin(angle);
-
-            float t11 = atan2(-A, B);
-            float t12 = t11 + M_PI;
-
-            //A = -b*sin(teta)+b*cos(teta);
-            //B = -a*cos(teta)-a*sin(teta);
-
-            //float t21 = atan2(-A,B);
-            //float t22 = t21+M_PI;
-
-            Eigen::Vector3f pt1, pt2;
-            ellipsePoint(ellipse, t11, pt1);
-            ellipsePoint(ellipse, t12, pt2);
-
-            float semiXPerm = (fabs(boost::math::round(pt1(0)) - boost::math::round(pt2(0))) - 1) * 2;
-            float semiYPerm = (fabs(boost::math::round(pt1(1)) - boost::math::round(pt2(1))) - 1) * 2;
-
-            return semiXPerm + semiYPerm;
-        }
-#endif
 } // namespace numerical
 } // namespace cctag

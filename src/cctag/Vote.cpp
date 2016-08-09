@@ -261,7 +261,7 @@ void vote(EdgePointCollection& edgeCollection,
             phi.push_back(angle);
             //sumPhi += angle;
 
-            if (phi.size() > windowSizeOnInnerEllipticSegment) // TODO , 4 est un paramètre de l'algorithme, + les motifs à détecter sont importants, + la taille de la fenêtre doit être grande
+            if (phi.size() > windowSizeOnInnerEllipticSegment)
             {
                 phi.pop_front();
 
@@ -283,17 +283,17 @@ void vote(EdgePointCollection& edgeCollection,
                 }                                // else if unprocessed point exist
                 else {
                     if (dir == 1) {
-                        sx = (int) p->x() + xoff[(8 - shifting + j) % 8]; //int sx = p->x() + xoff[(j + shifting) % 8];
-                        sy = (int) p->y() + yoff[(8 - shifting + j) % 8]; //int sy = p->y() + yoff[(j + shifting) % 8];
+                        sx = (int) p->x() + xoff[(8 - shifting + j) % 8];
+                        sy = (int) p->y() + yoff[(8 - shifting + j) % 8];
                     } else {
-                        sx = (int) p->x() + xoff[(shifting + j) % 8]; //int sx = p->x() + xoff[(j + shifting) % 8];
+                        sx = (int) p->x() + xoff[(shifting + j) % 8];
                         sy = (int) p->y() + yoff[(shifting + j) % 8];
                     }
 
                     if (sx >= 0 && sx < int( edgeCollection.shape()[0]) &&
                             sy >= 0 && sy < int( edgeCollection.shape()[1]) &&
                             edgeCollection(sx,sy) && processed.find(packxy(sx, sy)) == processed.end()) {
-                        if (phi.size() == windowSizeOnInnerEllipticSegment) // (ok, resolu avec la multiresolution) TODO , 4 est un paramètre de l'algorithme, + les motifs à détecter sont importants, + la taille de la fenêtre doit être grande
+                        if (phi.size() == windowSizeOnInnerEllipticSegment)
                         {
                             // Check if convexity has been lost (concavity)
                             if (dir * std::sin(phi.back() - phi.front()) < 0.0f) {
@@ -302,56 +302,15 @@ void vote(EdgePointCollection& edgeCollection,
                         } else {
                             float s = dir * std::sin(phi.back() - phi.front());
                             float c = std::cos(phi.back() - phi.front());
-                            // Check if convexity has been lost (concavity) while the windows is not completed -- do smthing like this for the previous test todo@Lilian
-                            if (((s < -0.707f) && (c > 0.f)) || ((s < 0.f) && (c < 0.f)))// stop pour un angle > pi/4
+                            // Check if convexity has been lost while the windows is not completed
+                            if (((s < -0.707f) && (c > 0.f)) || ((s < 0.f) && (c < 0.f)))
                             {
                                 stop = CONVEXITY_LOST; // Convexity lost, stop !
                             }
                         }
                         if (stop == 0) {
                             processed.insert(packxy(p->x(), p->y()));
-                            /* if no thinning, uncomment this part */
-                            ///////////////Bloc lié à la différence de réponse du détecteur de contour//////////////////////
-                            /*{
-                                int ind;
-                                if (j<=2)
-                                {
-                                    if (dir==1)
-                                    {
-                                        ind = (8 - shifting + j + 1) % 8;
-                                        if ((ind==0)||(ind==2)||(ind==4)||(ind==6))
-                                        {
-                                            int sx2 = (int)p->x() + xoff[ind];
-                                            int sy2 = (int)p->y() + yoff[ind];
 
-                                            if ( sx2 >= 0 && sx2 < img.shape()[0] &&
-                                                     sy2 >= 0 && sy2 < img.shape()[1] &&
-                                                     img[sx2][sy2] && processed.find(std::pair<int, int>(sx2, sy2)) == processed.end() )
-                                            {
-                                                processed[std::pair<int, int>(sx2, sy2)] = true;
-                                                convexEdgeSegment.push_back(img[sx2][sy2]);
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        ind = (shifting + j + 1) % 8;
-                                        if ((ind==0)||(ind==2)||(ind==4)||(ind==6))
-                                        {
-                                            int sx2 = (int)p->x() + xoff[ind];
-                                            int sy2 = (int)p->y() + yoff[ind];
-                                            if ( sx2 >= 0 && sx2 < img.shape()[0] &&
-                                                     sy2 >= 0 && sy2 < img.shape()[1] &&
-                                                     img[sx2][sy2] && processed.find(std::pair<int, int>(sx2, sy2)) == processed.end() )
-                                            {
-                                                processed[std::pair<int, int>(sx2, sy2)] = true;
-                                                convexEdgeSegment.push_front(img[sx2][sy2]);
-                                            }
-                                        }
-                                    }
-                                }
-                               }*/
-                            //////////////////////////////////fin bloc////////////////////////////////
                             p = edgeCollection(sx,sy);
                             if (dir > 0) {
                                 convexEdgeSegment.push_back(const_cast<EdgePoint*>(p));
@@ -393,19 +352,15 @@ void vote(EdgePointCollection& edgeCollection,
     void childrensOf(const EdgePointCollection& edgeCollection, const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& childrens) {
         std::size_t voteMax = 1;
 
-        // OPTI@Lilian : the maximum vote can be computed in the edge linking step with low cost.
-
         for (const EdgePoint* e : edges) {
           voteMax = std::max((int)voteMax, edgeCollection.voters_size(e));
         }
 
         for (const EdgePoint* e: edges) {
-            //const auto& edgePoints = e->_voters; 
             auto voters = edgeCollection.voters(e);
             if (voters.second > voters.first) {
-                //childrens.splice( childrens.end(), winnerMap[e] );
 
-                if (voters.second - voters.first >= voteMax / 14) // keep outer ellipse point associated with small curvature ! ( near to the osculting circle).  delete this line @Lilian ?
+                if (voters.second - voters.first >= voteMax / 14)
                 for (; voters.first != voters.second; ++voters.first)
                   childrens.push_back(edgeCollection(*voters.first));
             }
@@ -420,11 +375,6 @@ void vote(EdgePointCollection& edgeCollection,
             std::size_t weightedType,
             const std::size_t maxSize)
     {
-        // function [Qm, Sm, pts_in, param_in,flag,i_inliers] = outlierRemoval(pts,debug)
-        // outLierRemoval compute from a set of points pts the best ellipse which fits
-        // a subset of pts i.e. with Sm minimal
-
-        //std::srand(1);
       
       filteredChildrens.reserve(childrens.size());
       
@@ -436,11 +386,6 @@ void vote(EdgePointCollection& edgeCollection,
             numerical::geometry::Ellipse qm;
             float Sm = 10000000.0;
             const float f = 1.f;
-
-            // TODO, le passage en coordonnées homogène pas nécessaire, il faut alors modifier
-            // la résolution du système linéaire ci-dessous
-
-            // Create matrix containing homogeneous coordinates of childrens
 
             std::vector<Eigen::Vector3f> pts;
             pts.reserve(childrens.size());
@@ -488,8 +433,6 @@ void vote(EdgePointCollection& edgeCollection,
                 cctag::numerical::rand_5_k(perm, pts.size());
                 A.fill(0.f);
 
-                // todo: use a closed-form solution instead of a gaussian pivot in invert
-                // The entire function could then be efficiently implemented on GPU
                 for (std::size_t i = 0; i < 5; ++i) {
                     A(i, 0) = pts[perm[i]](0) * pts[perm[i]](0);
                     A(i, 1) = 2.0 * pts[perm[i]](0) * pts[perm[i]](1);
@@ -505,10 +448,7 @@ void vote(EdgePointCollection& edgeCollection,
                     // With PartialPivLU, A MUST be square and invertible. Speed: ++
                     temp = A.lu().solve(b);
 
-                    //Ellipse(const bounded_matrix<float, 3, 3> & matrix)
-                    //param = (inv(A)*(-f*f*ones(5,1)))';
-
-                    // The conic encoded in temp is an ellipse ?
+                    // Is the conic encoded in temp an ellipse ?
                     if (temp(0) * temp(2) - temp(1) * temp(1) > 0) {
                         Eigen::Matrix3f Q = Eigen::Matrix3f::Zero();
                         Q(0, 0) = temp(0);
@@ -522,20 +462,15 @@ void vote(EdgePointCollection& edgeCollection,
 
                             numerical::geometry::Ellipse q(Q);
 
-                            // Provisoire, cas dégénéré :
-                            // l'ellipse est 2 droite, cas ou 3 ou 4 points sont alignés sur les 5
+                            // Degenerate case ?
                             float ratioSemiAxes = q.a() / q.b();
 
-
-                            // if "search for another convex segment" is disabled, uncomment this bloc -- todo@Lilian
                             if ((ratioSemiAxes < 0.04) || (ratioSemiAxes > 25)) {
                                 ++counter;
                                 continue;
                             }
 
-                            // We compute the median from the set of points pts
-
-                            //% distance between pts and Q : (xa'Qxa)²/||PkQxa||² with Pk = diag(1,1,0)
+                            // Compute the median from the set of points pts
                             std::vector<float> dist;
                             numerical::distancePointEllipse(dist, pts, q);
 
@@ -556,7 +491,6 @@ void vote(EdgePointCollection& edgeCollection,
                                 ++counter;
                             }
                             }catch( ... ){
-                            // Conique != ellipse, on passe à la une nouvelle permutation aléatoire.
                         }
                     } else {
                         ++counter;
@@ -569,8 +503,6 @@ void vote(EdgePointCollection& edgeCollection,
             std::vector<float> vDistFinal;
             vDistFinal.clear();
             vDistFinal.reserve(childrens.size());
-
-            //CCTAG_COUT_VAR(qm);
 
             BOOST_FOREACH(EdgePoint * e, childrens) {
 
@@ -610,12 +542,10 @@ void vote(EdgePointCollection& edgeCollection,
         float Sm = std::numeric_limits<float>::max();
         const float f = 1.f;
 
-
         // Copy/Align content of outerEllipsePoints
         std::vector<Eigen::Vector3f> pts;
         pts.reserve(outerEllipsePoints.size());
         for (std::vector<EdgePoint*>::iterator it = outerEllipsePoints.begin(); it != outerEllipsePoints.end(); ++it) {
-            // on fait des recopies !! todo@Lilian, idem dans outlierRemoval -- degeulasse --
             pts.push_back((*it)->cast<float>());
         }
 
@@ -627,7 +557,6 @@ void vote(EdgePointCollection& edgeCollection,
             anotherPts.push_back((*it)->cast<float>());
         }
 
-        // distance between pts and Q : (xa'Qxa)²/||PkQxa||² with Pk = diag(1,1,0)
         std::vector<float> distRef;
         numerical::distancePointEllipse(distRef, pts, outerEllipse);
 
@@ -652,7 +581,6 @@ void vote(EdgePointCollection& edgeCollection,
                 ++it;
             }
 
-            //const std::vector<int> anotherPerm = cctag::numerical::randperm< std::vector<int> >(anotherOuterEllipsePoints.size());
             cctag::numerical::rand_5_k(permutations, anotherOuterEllipsePoints.size());
 
             it = permutations.begin();
@@ -673,8 +601,6 @@ void vote(EdgePointCollection& edgeCollection,
                 
                 numerical::geometry::Ellipse q(eToto.matrix());
 
-                // Cas dégénéré:
-                // l'ellipse est 2 droite, cas ou 3 ou 4 points sont alignés sur les 5
                 float ratioSemiAxes = q.a() / q.b();
 
                 if ((ratioSemiAxes < 0.12) || (ratioSemiAxes > 8)) {
@@ -682,16 +608,8 @@ void vote(EdgePointCollection& edgeCollection,
                     continue;
                 }
 
-                // We compute the median from the set of points pts
-
-                //% distance between pts and Q : (xa'Qxa)²/||PkQxa||² with Pk = diag(1,1,0)
                 std::vector<float> dist;
                 numerical::distancePointEllipse(dist, pts, q);
-
-                //for(int iDist=0 ; iDist < dist.size() ; ++iDist)
-                //{
-                //	dist[iDist] = dist[iDist]*weights[iDist];
-                //}
 
                 const float S1 = numerical::medianRef(dist);
 
@@ -738,7 +656,7 @@ void vote(EdgePointCollection& edgeCollection,
 
             float quality = (float) outerEllipsePointsTemp.size() / (float) rasterizeEllipsePerimeter(outerEllipseTemp);
 
-            if (quality < 1.1) { // replace by 1 and perform an outlier removal after the ellipse growing. todo@Lilian
+            if (quality < 1.1) {
                 std::vector<float> vDistFinal;
                 vDistFinal.reserve(outerEllipsePointsTemp.size());
 
@@ -747,7 +665,6 @@ void vote(EdgePointCollection& edgeCollection,
                     vDistFinal.push_back(distFinal);
                 }
                 const float SmFinal = numerical::medianRef(vDistFinal);
-                //const float thrMedianDistanceEllipse = 3; // todo@Lilian -- utiliser le meme seuil que dans la main loop 1
 
                 if (SmFinal < thrMedianDistanceEllipse) {
                     if (addCandidateFlowtoCCTag(edgeCollection, anotherCandidate._filteredChildrens, anotherOuterEllipsePoints, outerEllipseTemp, cctagPoints, numCircles)) {

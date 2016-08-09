@@ -85,25 +85,13 @@ void Labelizer::labelize( SView& svw, CView & cvw, DXView & dx, DYView & dy )
 
 	_labelsList.push_back( Label( 1 ) );
 	Label* label = &_labelsList.back();
-	label->reserve( cvw.width() * cvw.height() / 2 ); //TODO évaluer la borne max du nombre de point contour
-
-	/*{*/
-	//IplImage* smoothImg = cvCreateImage(cvGetSize(simg), IPL_DEPTH_8U/*img->depth*/, /*img->nChannels*/ 1 );
-	//cvSmooth(simg, smoothImg, CV_GAUSSIAN, 9, 0, 1, 0);
-
-	//cvNamedWindow("Smooth", 0);
-	//cvShowImage("Smooth", smoothImg);
-	//cvWaitKey(0);
-	/*}*/
+	label->reserve( cvw.width() * cvw.height() / 2 );
 
 	t.restart();
 
 	/**************************************************************************
 	*  Get contours                                                          *
 	**************************************************************************/
-	{
-		//png_write_view("data/pictures/canny.png", cvw);
-	}
 
 	t.restart();
 
