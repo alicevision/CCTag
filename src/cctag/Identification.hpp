@@ -241,6 +241,7 @@ void getSignals(
  * @param[out] mHomography image->cctag homography to optimize
  * @param[out] optimalPoint imaged center to optimize
  * @param[out] vCuts cuts holding the rectified 1D signals at the end of the optimization
+ * @param[out] residual from the optimization (normalized w.r.t. binary pattern)
  * @param[in] src source image
  * @param[in] ellipse outer ellipse (todo: is that already in the cctag object?)
  * @param[in] params parameters of the cctag algorithm
@@ -255,7 +256,8 @@ bool refineConicFamilyGlob(
         popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params,
-        popart::NearbyPoint* cctag_pointer_buffer );
+        popart::NearbyPoint* cctag_pointer_buffer,
+        float & residual);
 
 /**
  * @brief Convex optimization of the imaged center within a point's neighbourhood.

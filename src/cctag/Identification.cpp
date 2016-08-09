@@ -299,13 +299,13 @@ void extractSignalUsingHomography(
   //blurImageCut(sigma, cut);
 }
 
-void blurImageCut(const float sigma, cctag::ImageCut & cut)
+void blurImageCut(const float sigma, std::vector<float> & signal)
 {
   //const std::vector<float> kernel = { 0.0044, 0.0540, 0.2420, 0.3991, 0.2420, 0.0540, 0.0044 };
   const std::vector<float> kernel = { 0.0276, 0.0663, 0.1238, 0.1802, 0.2042, 0.1802, 0.1238, 0.0663, 0.0276 };
   
   std::vector<float> output;
-  std::size_t sizeCut = cut.imgSignal().size();
+  std::size_t sizeCut = signal.size();
   std::size_t sizeKernel = kernel.size();
   output.resize(sizeCut);
   
@@ -314,7 +314,7 @@ void blurImageCut(const float sigma, cctag::ImageCut & cut)
   /*std::cout << "before = [" << std::endl;
   for ( std::size_t i=0 ; i<sizeCut; ++i)
   {
-    std::cout << cut.imgSignal()[i] << " , " ;
+    std::cout << signal[i] << " , " ;
   }
   std::cout << "]; " << std::endl;*/
   
@@ -324,23 +324,23 @@ void blurImageCut(const float sigma, cctag::ImageCut & cut)
     for ( std::size_t j=0 ; j<sizeKernel; ++j)
     {
       if ( ssize_t(i-halfSize+j) < 0 )
-        tmp += cut.imgSignal()[0]*kernel[j];
+        tmp += signal[0]*kernel[j];
       else if( (i-halfSize+j) >=  sizeCut)
-        tmp += cut.imgSignal()[sizeCut-1]*kernel[j];
+        tmp += signal[sizeCut-1]*kernel[j];
       else
-        tmp += cut.imgSignal()[i-halfSize+j]*kernel[j];
+        tmp += signal[i-halfSize+j]*kernel[j];
     }
     output[i] = tmp;
   }
   
-  /*std::cout << "convolved = [" << std::endl;
-  for ( std::size_t i=0 ; i<sizeCut; ++i)
-  {
-    std::cout << output[i] << " , " ;
-  }
-  std::cout << "]; " << std::endl;*/
+//  std::cout << "convolved = [" << std::endl;
+//  for ( std::size_t i=0 ; i<sizeCut; ++i)
+//  {
+//    std::cout << output[i] << " , " ;
+//  }
+//  std::cout << "]; " << std::endl;
   
-  cut.imgSignal() = output;
+  signal = output;
 }
 
 /* depreciated */
@@ -951,7 +951,7 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
 bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, const float scale, const size_t numSamplesOuterEdgePointsRefinement)
 {
     // Subpixellic refinement of the outer edge points ///////////////////////////
-    const float cutLengthOuterPointRefine = 9.f * sqrt(scale); // size of canny/dX/dY kernel * scale (with scale=2^i, i=0..nLevel)
+    const float cutLengthOuterPointRefine = 3.f * sqrt(2.f) * scale; // with scale=2^i, i=0..nLevel
     const float halfWidth = cutLengthOuterPointRefine / 2.f;
 
     Eigen::Vector2f gradDirection = cut.stop().gradient()/cut.stop().gradient().norm();
@@ -1179,7 +1179,8 @@ bool refineConicFamilyGlob(
         popart::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params,
-        popart::NearbyPoint* cctag_pointer_buffer )
+        popart::NearbyPoint* cctag_pointer_buffer,
+        float & residual)
 {
     using namespace cctag::numerical;
 
@@ -1213,7 +1214,6 @@ bool refineConicFamilyGlob(
 
         // The neighbourhood size is 0.20*max(ellipse.a(),ellipse.b()), i.e. the max ellipse semi-axis
         float neighbourSize = params._imagedCenterNeighbourSize;
-        float residual;
 
         std::size_t gridNSample = params._imagedCenterNGridSample; // todo: check must be odd 
 
@@ -1243,15 +1243,11 @@ bool refineConicFamilyGlob(
     }
   }
   
-  //CCTAG_COUT(sqrt(residual/vCuts.size()));
-  //if ( sqrt(residual/vCuts.size()) > 70 )
-  //  return false;
-
-        // Measure the time spent in the optimization
-        boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
-        boost::posix_time::time_duration d = tend - tstart;
-        const float spendTime = d.total_milliseconds();
-        DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
+  // Measure the time spent in the optimization
+  boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
+  boost::posix_time::time_duration d = tend - tstart;
+  const float spendTime = d.total_milliseconds();
+  DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
 
 #ifdef WITH_CUDA
     } // not CUDA
@@ -1266,7 +1262,67 @@ bool refineConicFamilyGlob(
         boost::posix_time::time_duration d = tend - tstart;
         const float spendTime = d.total_milliseconds();
     }
-    return true;
+    
+    // Residual normalization
+    std::vector<std::size_t> correctCutIndices;
+    correctCutIndices.reserve(vCuts.size());
+
+    for(std::size_t iCut=0 ; iCut < vCuts.size() ; ++iCut) {
+    if ( !vCuts[iCut].outOfBounds() )
+        correctCutIndices.push_back(iCut);
+    }
+
+    // In barCode will be written the most frequent signal for every samples along
+    // the cut.
+    std::vector<float> barCode;
+    const std::size_t signalSize = vCuts[0].imgSignal().size();
+    barCode.resize(signalSize);
+
+    std::vector<float> signalAlongX;
+    signalAlongX.resize(correctCutIndices.size());
+
+    for(std::size_t iSignal = 0 ; iSignal < signalSize ; ++iSignal)
+    {
+      for(std::size_t k=0 ; k <  correctCutIndices.size() ; ++k){
+        signalAlongX[k] = vCuts[correctCutIndices[k]].imgSignal()[iSignal];
+      }
+      barCode[iSignal] = computeMedian( signalAlongX );
+    }
+    
+    const float vMin = *std::min_element(barCode.begin(), barCode.end());
+    const float vMax = *std::max_element(barCode.begin(), barCode.end());
+    const float magnitude = vMax - vMin;
+
+//    // Retains only the most reliable image cuts
+//    std::map<float, std::size_t> mostReliableCuts;
+//    for(std::size_t k=0 ; k <  correctCutIndices.size() ; ++k){
+//      float squareDist = 0.f;
+//      for(std::size_t iSignal = 0 ; iSignal < signalSize ; ++iSignal)
+//        squareDist += std::pow(vCuts[correctCutIndices[k]].imgSignal()[iSignal]-barCode[iSignal],2);
+//      mostReliableCuts.emplace( squareDist, correctCutIndices[k] );
+//    }
+//    
+//    std::vector<cctag::ImageCut> outputs;
+//    outputs.reserve(vCuts.size());
+//    const std::size_t stop = correctCutIndices.size()/2 + 1;
+//    std::size_t k=0;
+//    for(const auto & iCut : mostReliableCuts)
+//    {
+//      outputs.push_back(vCuts[iCut.second]);
+//      ++k;
+//      if ( k > stop)
+//        break;
+//    }
+//    vCuts = outputs;
+    
+    // Final normalized residual
+    
+    CCTAG_COUT_VAR(sqrt(residual)/magnitude);
+    residual = sqrt(residual)/magnitude;
+    if ( residual > 2.7f )
+      return false;
+    else
+      return true;
 }
 
 /**
@@ -1640,8 +1696,7 @@ int identify_step_2(
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
 
   // std::vector< cctag::ImageCut > vCuts;
-  
-  {
+  float residual = std::numeric_limits<float>::max();
   //    bool hasConverged = refineConicFamily( cctag, vCuts, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
   //    if( !hasConverged )
   //    {
@@ -1669,11 +1724,15 @@ int identify_step_2(
                         ellipse,
                         params,
 #ifdef WITH_CUDA
-                        cctag.getNearbyPointBuffer()
+                        cctag.getNearbyPointBuffer(),
 #else
-                        0
+                        0,
 #endif
+                        residual
                         );
+  
+  cctag.setQuality(1.f/residual);
+  
   // End GPU ////////
   // Note Outputs (GPU->CPU):
   //        The main amount of data to transfert is only that way and is 'vSelectedCuts', 
@@ -1689,7 +1748,6 @@ int identify_step_2(
     return status::opti_has_diverged;
   }
   
-  }
   
   MarkerID id = -1;
 

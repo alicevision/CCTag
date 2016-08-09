@@ -51,9 +51,9 @@ bool CCTag::isEqual(const CCTag& marker) const
   centerEllipseB.setA( centerEllipseB.b()*0.5 );
   centerEllipseB.setB( centerEllipseB.b()*0.5 );
   
-  bool sameSemiAxis =
-            ( std::abs( _rescaledOuterEllipse.a()/marker.rescaledOuterEllipse().a() - 1 ) < 0.3 ) &&
-            ( std::abs( _rescaledOuterEllipse.b()/marker.rescaledOuterEllipse().b() - 1 ) < 0.3 );
+  //bool sameSemiAxis =
+  //          ( std::abs( _rescaledOuterEllipse.a()/marker.rescaledOuterEllipse().a() - 1 ) < 0.3 ) &&
+  //          ( std::abs( _rescaledOuterEllipse.b()/marker.rescaledOuterEllipse().b() - 1 ) < 0.3 );
   
   return isOverlappingEllipses(centerEllipseA, centerEllipseB);// && sameSemiAxis;
 }
