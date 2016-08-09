@@ -17,7 +17,6 @@
 #include <cctag/CCTag.hpp>
 #include <cctag/Identification.hpp>
 #include <cctag/Fitting.hpp>
-//#include <cctag/filter/gilTools.hpp>
 #include <cctag/Types.hpp>
 #include <cctag/Canny.hpp>
 #include <cctag/utils/Defines.hpp>
@@ -100,8 +99,6 @@ static void constructFlowComponentFromSeed(
       if (votersSize > 0)
         ++nVotedPoints;
     }
-
-    // All flow components WILL BE next sorted based on this characteristic (scalar); descending order
     
     {
       tbb::mutex::scoped_lock lock(G_SortMutex);
@@ -149,8 +146,6 @@ static void completeFlowComponent(
             kWeight,
             60);
 
-    // todo@lilian see the case in outlierRemoval
-    // where filteredChildrens.size()==0
     if (filteredChildrens.size() < 5)
     {
       DO_TALK( CCTAG_COUT_DEBUG(" filteredChildrens.size() < 5 "); )
@@ -160,7 +155,7 @@ static void completeFlowComponent(
     std::size_t nLabel = -1;
 
     {
-      ssize_t nSegmentCommon = -1; // std::size_t nSegmentCommon = -1;
+      ssize_t nSegmentCommon = -1;
 
       BOOST_FOREACH(EdgePoint * p, filteredChildrens)
       {
@@ -207,8 +202,6 @@ static void completeFlowComponent(
     vDistFinal.clear();
     vDistFinal.reserve(outerEllipsePoints.size());
 
-    // Clean point (egdePoints*) to ellipse distance with inheritance 
-    // -- the current solution is dirty --
     float distMax = 0;
 
     BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
@@ -222,7 +215,6 @@ static void completeFlowComponent(
       }
     }
 
-    // todo@Lilian : sort => need to be replace by nInf
     SmFinal = numerical::medianRef(vDistFinal);
 
     if (SmFinal > params._thrMedianDistanceEllipse)
@@ -241,7 +233,7 @@ static void completeFlowComponent(
     float ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
     if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20))
     {
-      DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
+      DO_TALK( CCTAG_COUT_DEBUG("Too high semi-axis ratio!"); )
       return;
     }
 
@@ -311,7 +303,6 @@ static void flowComponentAssembling(
          Point2d<Eigen::Vector3f>( candidate._seed->x(), candidate._seed->y() ),
          candidate._seed->_flowLength * ratioExpension);
 
-  if (1)
   {
     // Search for another segment
     BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
@@ -431,8 +422,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
         }
       }
 
-      // Add the flowComponent from candidate to cctagPoints // Add intermediary points - required ? todo@Lilian
-      // cctagPoints may be not empty, i.e. when the assembling succeed.
+      // Add the flowComponent from candidate to cctagPoints
       if (! addCandidateFlowtoCCTag(edgeCollection, candidate._filteredChildrens, 
               candidate._outerEllipsePoints, outerEllipse,
               cctagPoints, params._nCrowns * 2))
@@ -456,8 +446,8 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
 
       float realSizeOuterEllipsePoints = quality*realPixelPerimeter;
 
-      // Naive reject condition todo@Lilian
-      if ( ( ( quality <= 0.35 ) && ( realSizeOuterEllipsePoints >= 300.0 ) ) ||//0.35
+      // todo@Lilian: remove this heuristic
+      if ( ( ( quality <= 0.35 ) && ( realSizeOuterEllipsePoints >= 300.0 ) ) ||
                ( ( quality <= 0.45f ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||
                ( ( quality <= 0.5f ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||
                ( ( quality <= 0.5f ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||
@@ -504,7 +494,6 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
       resSquare = sqrt(resSquare);
       resSquare /= outerEllipsePoints.size();
 
-
       numerical::geometry::Ellipse qIn, qOut;
       computeHull(outerEllipse, 3.6, qIn, qOut);
 
@@ -531,20 +520,13 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
 
       float quality2 = 0;
 
+      // todo@Lilian: no longer used ?
       BOOST_FOREACH(const EdgePoint* p, outerEllipsePoints)
       {
-        quality2 += p->normGradient(); // ***
-        
-        //float theta = atan2(p->y() - outerEllipse.center().y(), p->x() - outerEllipse.center().x()); // cf. supp.
-        //quality2 += std::abs(-sin(theta)*p->gradient().x() + cos(theta)*p->gradient().y()); // cf. supp.
+        quality2 += p->normGradient();
       }
-
-      //quality2 = outerEllipsePoints.size()/quality2;
-      //quality2 *= quality;
       
-      quality2 *= scale; // ***
-      
-      // New quality
+      quality2 *= scale;
 
       CCTag* tag = new CCTag( -1,
                               outerEllipse.center(),
@@ -555,7 +537,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
                               scale,
                               quality2 );
 #ifdef CCTAG_SERIALIZE
-      tag->setFlowComponents( componentCandidates, edgeCollection); // markers.back().setFlowComponents(componentCandidates);
+      tag->setFlowComponents( componentCandidates, edgeCollection);
 #endif
       
       {
@@ -593,12 +575,11 @@ void cctagDetectionFromEdges(
         const Parameters & providedParams,
         cctag::logtime::Mgmt* durations )
 {
-  // using namespace boost::gil;
   const Parameters& params = Parameters::OverrideLoaded ?
     Parameters::Override : providedParams;
 
   // Call for debug only. Write the vote result as an image.
-  createImageForVoteResultDebug(src, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
+  createImageForVoteResultDebug(src, pyramidLevel);
 
   // Set some timers
   boost::timer t3;
@@ -624,10 +605,10 @@ void cctagDetectionFromEdges(
 
   std::vector<CandidatePtr> vCandidateLoopOne;
 
-  // Process all the nSeedsToProcess-first seeds.
+  // Process all the first-nSeedsToProcess seeds.
   // In the following loop, a seed will lead to a flow component if it lies
   // on the inner ellipse of a CCTag.
-  // The edge points lying on the inner ellipse and their voters (lying on the outer ellipse
+  // The edge points lying on the inner ellipse and their voters (lying on the outer ellipse)
   // will be collected and constitute the initial data of a flow component.
   
 #ifndef CCTAG_SERIALIZE
@@ -715,7 +696,7 @@ void createImageForVoteResultDebug(
         const cv::Mat & src,
         std::size_t nLevel)
 {
-#if defined(CCTAG_SERIALIZE) && 0 // lilian fixme!
+#if defined(CCTAG_SERIALIZE) && 0 // todo@lilian: fixme
   {
     std::size_t mx = 0;
     
@@ -737,10 +718,6 @@ void createImageForVoteResultDebug(
       const std::vector<EdgePoint*>& v = itr->second;
       imgVote.at<uchar>(winner->y(),winner->x()) = (unsigned char) ((v.size() * 10.0));
     }
-
-    //std::stringstream outFilenameVote;
-    //outFilenameVote << "/home/lilian/data/vote_" << nLevel << ".png";
-    //imwrite(outFilenameVote.str(), imgVote);
     
     std::stringstream outFilenameVote;
     outFilenameVote << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
@@ -830,7 +807,7 @@ void cctagDetection(CCTag::List& markers,
             durations->log( "after CUDA load" );
         }
 
-        pipe1->tagframe( ); // pix, w, h, params );
+        pipe1->tagframe( );
 
         if( durations ) durations->log( "after CUDA stages" );
 
