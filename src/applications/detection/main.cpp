@@ -46,6 +46,9 @@ namespace bfs = boost::filesystem;
 
 void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ostream & output, std::string debugFileName = "")
 {
+  
+  //cv::medianBlur(src, src, 5);
+  
     if (debugFileName == "") {
       debugFileName = "00000";
     }
@@ -197,6 +200,9 @@ int main(int argc, char** argv)
   outputFile.open( outputFileName );
   
   if ( (ext == ".png") || (ext == ".jpg") || (ext == ".PNG") || (ext == ".JPG")) {
+    
+    std::cout << "******************* Image mode **********************" << std::endl;
+    
     POP_INFO("looking at image " << myPath.string());
     
     // Gray scale convertion
@@ -241,7 +247,11 @@ int main(int argc, char** argv)
       cv::Mat frame;
       video >> frame;
       cv::Mat* imgGray = new cv::Mat;
-      cv::cvtColor( frame, *imgGray, CV_BGR2GRAY );
+      
+      if( frame.channels() == 3 || frame.channels() == 4 )
+        cv::cvtColor(frame, *imgGray, cv::COLOR_BGR2GRAY);
+      else
+        frame.copyTo(*imgGray);
 
       frames.push_back( imgGray );
     }

@@ -8,15 +8,19 @@
 
 #include <vector>
 
+#include "Types.hpp"
+
 namespace cctag
 {
 
 class CCTagFlowComponent
 {
 public:
-  CCTagFlowComponent();
+  CCTagFlowComponent()
+  {}
 
-  CCTagFlowComponent(const std::vector<EdgePoint*> & outerEllipsePoints,
+  CCTagFlowComponent(const EdgePointCollection& edgeCollection,
+                     const std::vector<EdgePoint*> & outerEllipsePoints,
                      const std::list<EdgePoint*> & childrens,
                      const std::vector<EdgePoint*> & filteredChildrens,
                      const cctag::numerical::geometry::Ellipse & outerEllipse,
@@ -24,10 +28,8 @@ public:
                      const EdgePoint & seed,
                      std::size_t nCircles);
 
-  virtual ~CCTagFlowComponent();
-
-  void setFieldLines(const std::list<EdgePoint*> & childrens);
-  void setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens);
+  void setFieldLines(const std::list<EdgePoint*> & childrens, const EdgePointCollection& edgeCollection);
+  void setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens, const EdgePointCollection& edgeCollection);
 
   std::vector<EdgePoint> _outerEllipsePoints;
   cctag::numerical::geometry::Ellipse _outerEllipse;

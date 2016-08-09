@@ -33,20 +33,17 @@ void cctagDetection(
 
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
-        std::vector<EdgePoint>& points,
+        EdgePointCollection& edgeCollection,
         const cv::Mat&          src,
-        WinnerMap&              winners,
         const std::vector<EdgePoint*>& seeds,
-        const EdgePointsImage&  edgesMap,
         const std::size_t       frame,
         int pyramidLevel,
-        double scale,
+        float scale,
         const Parameters & params,
         logtime::Mgmt* durations );
 
 void createImageForVoteResultDebug(
         const cv::Mat & src,
-        const WinnerMap & winners,
         std::size_t nLevel);
 
 } // namespace cctag

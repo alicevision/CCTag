@@ -3,12 +3,9 @@
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/utils/Exceptions.hpp>
 #include <cctag/utils/Defines.hpp>
-
 #include <boost/math/special_functions/sign.hpp>
-#include <boost/numeric/ublas/banded.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix_expression.hpp>
+#include <Eigen/Core>
+#include <Eigen/LU>
 
 #include <algorithm>
 #include <cmath>
@@ -17,22 +14,20 @@ namespace cctag {
 namespace numerical {
 namespace geometry {
 
-using namespace boost::numeric::ublas;
-
-Ellipse::Ellipse( const bounded_matrix<double, 3, 3>& matrix )
+Ellipse::Ellipse( const Eigen::Matrix3f& matrix )
 {
 	_matrix = matrix;
 	computeParameters();
 }
 
-Ellipse::Ellipse( const Point2dN<double>& center, const double a, const double b, const double angle )
+Ellipse::Ellipse( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle )
 {
 	init( center, a, b, angle );
 }
 
-void Ellipse::init( const Point2dN<double>& center, const double a, const double b, const double angle )
+void Ellipse::init( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle )
 {
-	if( a < 0.0 || b < 0.0 )
+	if( a < 0.f || b < 0.f )
 	{
 		CCTAG_THROW( exception::Bug()
 			<< exception::dev( "Semi axes must be real positive!" ) );
@@ -46,15 +41,15 @@ void Ellipse::init( const Point2dN<double>& center, const double a, const double
 	computeMatrix();
 }
 
-void Ellipse::setMatrix( const bounded_matrix<double, 3, 3>& matrix )
+void Ellipse::setMatrix( const Eigen::Matrix3f& matrix )
 {
 	_matrix = matrix;
 	computeParameters();
 }
 
-void Ellipse::setParameters( const Point2dN<double>& center, const double a, const double b, const double angle )
+void Ellipse::setParameters( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle )
 {
-	if( a < 0.0 || b < 0.0 )
+	if( a < 0.f || b < 0.f )
 	{
 		CCTAG_THROW( exception::Bug()
 			<< exception::dev( "Semi axes must be real positive!" ) );
@@ -66,15 +61,15 @@ void Ellipse::setParameters( const Point2dN<double>& center, const double a, con
 	computeMatrix();
 }
 
-void Ellipse::setCenter( const Point2dN<double>& center )
+void Ellipse::setCenter( const Point2d<Eigen::Vector3f>& center )
 {
 	_center = center;
 	computeMatrix();
 }
 
-void Ellipse::setA( const double a )
+void Ellipse::setA( const float a )
 {
-	if( a < 0.0 )
+	if( a < 0.f )
 	{
 		CCTAG_THROW( exception::Bug()
 			<< exception::dev( "Semi axes must be real positive!" ) );
@@ -83,9 +78,9 @@ void Ellipse::setA( const double a )
 	computeMatrix();
 }
 
-void Ellipse::setB( const double b )
+void Ellipse::setB( const float b )
 {
-	if( b < 0.0 )
+	if( b < 0.f )
 	{
 		CCTAG_THROW( exception::Bug()
 			<< exception::dev( "Semi axes must be real positive!" ) );
@@ -94,7 +89,7 @@ void Ellipse::setB( const double b )
 	computeMatrix();
 }
 
-void Ellipse::setAngle( const double angle )
+void Ellipse::setAngle( const float angle )
 {
 	_angle = angle;
 	computeMatrix();
@@ -102,15 +97,16 @@ void Ellipse::setAngle( const double angle )
 
 Ellipse Ellipse::transform(const Matrix& mT) const
 {
-	using namespace boost::numeric::ublas;
-	const Matrix a = prec_prod( boost::numeric::ublas::trans(mT), _matrix );
-	const Matrix mET = prec_prod( a, mT );
-	return Ellipse( mET );
+  auto a = mT.transpose() * _matrix;
+  auto mET = a * mT;
+  //const Matrix a = prec_prod( boost::numeric::ublas::trans(mT), _matrix );
+  //const Matrix mET = prec_prod( a, mT );
+  return Ellipse( mET );
 }
 
 void Ellipse::computeParameters()
 {
-	bounded_vector<double, 6> par;
+        Eigen::VectorXf par(6);
 	par( 0 ) = _matrix( 0, 0 );
 	par( 1 ) = 2.0 * _matrix( 0, 1 );
 	par( 2 ) = _matrix( 1, 1 );
@@ -118,41 +114,41 @@ void Ellipse::computeParameters()
 	par( 4 ) = 2 * _matrix( 1, 2 );
 	par( 5 ) = _matrix( 2, 2 );
 
-	const double thetarad    = 0.5 * std::atan2( par( 1 ), par( 0 ) - par( 2 ) );
-	const double cost        = std::cos( thetarad );
-	const double sint        = std::sin( thetarad );
-	const double sin_squared = sint * sint;
-	const double cos_squared = cost * cost;
-	const double cos_sin     = sint * cost;
+	const float thetarad    = 0.5f * std::atan2( par( 1 ), par( 0 ) - par( 2 ) );
+	const float cost        = std::cos( thetarad );
+	const float sint        = std::sin( thetarad );
+	const float sin_squared = sint * sint;
+	const float cos_squared = cost * cost;
+	const float cos_sin     = sint * cost;
 
-	const double Ao  = par( 5 );
-	const double Au  = par( 3 ) * cost + par( 4 ) * sint;
-	const double Av  = -par( 3 ) * sint + par( 4 ) * cost;
-	const double Auu = par( 0 ) * cos_squared + par( 2 ) * sin_squared + par( 1 ) * cos_sin;
-	const double Avv = par( 0 ) * sin_squared + par( 2 ) * cos_squared - par( 1 ) * cos_sin;
+	const float Ao  = par( 5 );
+	const float Au  = par( 3 ) * cost + par( 4 ) * sint;
+	const float Av  = -par( 3 ) * sint + par( 4 ) * cost;
+	const float Auu = par( 0 ) * cos_squared + par( 2 ) * sin_squared + par( 1 ) * cos_sin;
+	const float Avv = par( 0 ) * sin_squared + par( 2 ) * cos_squared - par( 1 ) * cos_sin;
 
 	if( Auu == 0 || Avv == 0 )
 	{
-		_center = Point2dN<double>( 0.0, 0.0 );
-		_a      = 0.0;
-		_b      = 0.0;
-		_angle  = 0.0;
+		_center = Point2d<Eigen::Vector3f>( 0.f, 0.f );
+		_a      = 0.f;
+		_b      = 0.f;
+		_angle  = 0.f;
 	}
 	else
 	{
-		const double tuCentre = -Au / ( 2.0 * Auu );
-		const double tvCentre = -Av / ( 2.0 * Avv );
-		const double wCentre  = Ao - Auu * tuCentre * tuCentre - Avv * tvCentre * tvCentre;
+		const float tuCentre = -Au / ( 2.0 * Auu );
+		const float tvCentre = -Av / ( 2.0 * Avv );
+		const float wCentre  = Ao - Auu * tuCentre * tuCentre - Avv * tvCentre * tvCentre;
 
-		_center = Point2dN<double>( tuCentre * cost - tvCentre * sint, tuCentre * sint + tvCentre * cost );
+		_center = Point2d<Eigen::Vector3f>( tuCentre * cost - tvCentre * sint, tuCentre * sint + tvCentre * cost );
 
-		const double Ru = -wCentre / Auu;
-		const double Rv = -wCentre / Avv;
+		const float Ru = -wCentre / Auu;
+		const float Rv = -wCentre / Avv;
 
-		const double aAux = std::sqrt( std::abs( Ru ) ) * boost::math::sign( Ru );
-		const double bAux = std::sqrt( std::abs( Rv ) ) * boost::math::sign( Rv );
+		const float aAux = std::sqrt( std::abs( Ru ) ) * boost::math::sign( Ru );
+		const float bAux = std::sqrt( std::abs( Rv ) ) * boost::math::sign( Rv );
 
-		if( aAux < 0.0 || bAux < 0.0 )
+		if( aAux < 0.f || bAux < 0.f )
 		{
 			CCTAG_THROW( exception::Bug()
 				<< exception::dev( "Semi axes must be real positive!" ) );
@@ -170,45 +166,45 @@ void Ellipse::computeParameters()
 void Ellipse::getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual) const 
 {
 
-  double q1 = _matrix(0,0);
-  double q2 = _matrix(0,1);
-  double q3 = _matrix(0,2);
-  double q4 = _matrix(1,1);
-  double q5 = _matrix(1,2);
-  double q6 = _matrix(2,2);
+  float q1 = _matrix(0,0);
+  float q2 = _matrix(0,1);
+  float q3 = _matrix(0,2);
+  float q4 = _matrix(1,1);
+  float q5 = _matrix(1,2);
+  float q6 = _matrix(2,2);
   
-  double par1 = q1;
-  double par2 = 2*q2;
-  double par3 = q4;
-  double par4 = 2*q3;
-  double par5 = 2*q5;
-  double par6 = q6;
+  float par1 = q1;
+  float par2 = 2*q2;
+  float par3 = q4;
+  float par4 = 2*q3;
+  float par5 = 2*q5;
+  float par6 = q6;
   
-  double thetarad    = 0.5*atan2(par2,par1 - par3);
-  double cost        = cos(thetarad);
-  double sint        = sin(thetarad);
-  double sin_squared = sint * sint;
-  double cos_squared = cost * cost;
-  double cos_sin     = sint * cost;
+  float thetarad    = 0.5f*atan2(par2,par1 - par3);
+  float cost        = cos(thetarad);
+  float sint        = sin(thetarad);
+  float sin_squared = sint * sint;
+  float cos_squared = cost * cost;
+  float cos_sin     = sint * cost;
 
-  double Ao          = par6;
-  double Au          = par4 * cost + par5 * sint;
-  double Av          = -par4 * sint + par5 * cost;
-  double Auu         = par1 * cos_squared + par3 * sin_squared + par2 * cos_sin;
-  double Avv         = par1 * sin_squared + par3 * cos_squared - par2 * cos_sin;
+  float Ao          = par6;
+  float Au          = par4 * cost + par5 * sint;
+  float Av          = -par4 * sint + par5 * cost;
+  float Auu         = par1 * cos_squared + par3 * sin_squared + par2 * cos_sin;
+  float Avv         = par1 * sin_squared + par3 * cos_squared - par2 * cos_sin;
 
-  double tuCentre    = - Au/(2*Auu);
-  double tvCentre    = - Av/(2*Avv);
+  float tuCentre    = - Au/(2*Auu);
+  float tvCentre    = - Av/(2*Avv);
 
-  double uCentre     = tuCentre * cost - tvCentre * sint;
-  double vCentre     = tuCentre * sint + tvCentre * cost;
+  float uCentre     = tuCentre * cost - tvCentre * sint;
+  float vCentre     = tuCentre * sint + tvCentre * cost;
   
-  double qt1 = cost*(cost*q1 + q2*sint) + sint*(cost*q2 + q4*sint);
-  double qt2 = cost*(cost*q2 + q4*sint) - sint*(cost*q1 + q2*sint);
-  double qt3 = cost*q3 + q5*sint + uCentre*(cost*q1 + q2*sint) + vCentre*(cost*q2 + q4*sint);
-  double qt4 = cost*(cost*q4 - q2*sint) - sint*(cost*q2 - q1*sint);
-  double qt5 = cost*q5 - q3*sint + uCentre*(cost*q2 - q1*sint) + vCentre*(cost*q4 - q2*sint);
-  double qt6 =  q6 + uCentre*(q3 + q1*uCentre + q2*vCentre) + vCentre*(q5 + q2*uCentre + q4*vCentre) + q3*uCentre + q5*vCentre;
+  float qt1 = cost*(cost*q1 + q2*sint) + sint*(cost*q2 + q4*sint);
+  float qt2 = cost*(cost*q2 + q4*sint) - sint*(cost*q1 + q2*sint);
+  float qt3 = cost*q3 + q5*sint + uCentre*(cost*q1 + q2*sint) + vCentre*(cost*q2 + q4*sint);
+  float qt4 = cost*(cost*q4 - q2*sint) - sint*(cost*q2 - q1*sint);
+  float qt5 = cost*q5 - q3*sint + uCentre*(cost*q2 - q1*sint) + vCentre*(cost*q4 - q2*sint);
+  float qt6 =  q6 + uCentre*(q3 + q1*uCentre + q2*vCentre) + vCentre*(q5 + q2*uCentre + q4*vCentre) + q3*uCentre + q5*vCentre;
   
   mCanonic(0,0) = qt1;    mCanonic(0,1) = qt2;   mCanonic(0,2) = qt3;
   mCanonic(1,0) = qt2;    mCanonic(1,1) = qt4;   mCanonic(1,2) = qt5;
@@ -220,27 +216,30 @@ void Ellipse::getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual)
   
   mTdual(0,0) = cost;     mTdual(0,1) = -sint;   mTdual(0,2) = uCentre;
   mTdual(1,0) = sint;     mTdual(1,1) = cost;    mTdual(1,2) = vCentre;
-  mTdual(2,0) = 0;        mTdual(2,1) = 0;       mTdual(2,2) = 1.0;
+  mTdual(2,0) = 0;        mTdual(2,1) = 0;       mTdual(2,2) = 1.f;
   
 }
 
 void Ellipse::computeMatrix()
 {
-  bounded_matrix<double, 3, 3> tmp;
+  Eigen::Matrix3f tmp;
   tmp( 0, 0 ) = std::cos( _angle ); tmp( 0, 1 ) = -std::sin( _angle ); tmp( 0, 2 ) = _center.x();
   tmp( 1, 0 ) = std::sin( _angle ); tmp( 1, 1 ) =  std::cos( _angle ); tmp( 1, 2 ) = _center.y();
-  tmp( 2, 0 ) =             0.0; tmp( 2, 1 ) =              0.0; tmp( 2, 2 ) =        1.0;
+  tmp( 2, 0 ) =             0.f; tmp( 2, 1 ) =              0.f; tmp( 2, 2 ) =        1.f;
 
-  bounded_matrix<double, 3, 3> tmpInv;
-  diagonal_matrix<double> diag( 3, 3 );
-  diag( 0, 0 ) =  1.0 / ( _a * _a );
-  diag( 1, 1 ) =  1.0 / ( _b * _b );
-  diag( 2, 2 ) = -1.0;
+  Eigen::Matrix3f tmpInv;
+  Eigen::Matrix3f diag; diag.setIdentity();
+  diag( 0, 0 ) =  1.f / ( _a * _a );
+  diag( 1, 1 ) =  1.f / ( _b * _b );
+  diag( 2, 2 ) = -1.f;
+  
+  bool invertible;
+  tmp.computeInverseWithCheck(tmpInv, invertible);
 
-  if( invert( tmp, tmpInv ) )
+  if( invertible )
   {
-          _matrix = prec_prod( diag, tmpInv );
-          _matrix = prec_prod( trans( tmpInv ), _matrix );
+          _matrix = diag * tmpInv;
+          _matrix = tmpInv.transpose() * _matrix;
   }
   else
   {
@@ -249,9 +248,9 @@ void Ellipse::computeMatrix()
   }
 }
 
-void scale(const Ellipse & ellipse, Ellipse & rescaleEllipse, double scale)
+void scale(const Ellipse & ellipse, Ellipse & rescaleEllipse, float scale)
 {
-  rescaleEllipse.setCenter(Point2dN<double>( ellipse.center().x() * scale, ellipse.center().y() * scale ));
+  rescaleEllipse.setCenter(Point2d<Eigen::Vector3f>( ellipse.center().x() * scale, ellipse.center().y() * scale ));
   rescaleEllipse.setA(ellipse.a() * scale);
   rescaleEllipse.setB(ellipse.b() * scale);
   rescaleEllipse.setAngle(ellipse.angle());
@@ -271,20 +270,18 @@ std::ostream& operator<<(std::ostream& os, const Ellipse& e)
  */
 void getSortedOuterPoints(
         const Ellipse & ellipse,
-        const std::vector< cctag::DirectedPoint2d<double> > & points,
-        std::vector< cctag::DirectedPoint2d<double> > & resPoints,
+        const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & points,
+        std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & resPoints,
         const std::size_t requestedSize)
 {
   // map with the key = angle and the point index
   // Sort points in points by angle
-  //std::map<double, std::size_t> mapAngle;
-  std::vector< std::pair<double, std::size_t> > vAngles;
+  //std::map<float, std::size_t> mapAngle;
+  std::vector< std::pair<float, std::size_t> > vAngles;
   vAngles.reserve(points.size());
   for(std::size_t iPoint = 0 ; iPoint < points.size() ; ++iPoint)
   {
-    double angle = atan2( ellipse.center().y() - points[iPoint].y() , ellipse.center().x() - points[iPoint].x() );
-    //mapAngle.emplace(angle, iPoint);
-    
+    float angle = std::atan2( points[iPoint].y()- ellipse.center().y() , points[iPoint].x() - ellipse.center().x() );
     vAngles.emplace_back(angle, iPoint);
   }
   
@@ -292,16 +289,23 @@ void getSortedOuterPoints(
   
   // Get the final expected size of resPoints
   const std::size_t nOuterPoints = std::min( requestedSize, points.size() );
-  std::size_t step = std::size_t( points.size() / ( nOuterPoints - 1 ) );
+  const float step = std::max(1.f,(float) points.size() / (float) ( nOuterPoints - 1 ));
   
   resPoints.clear();
   resPoints.reserve(nOuterPoints);
   
   // Get the final expected size of resPoints
   
-  for(std::size_t iPoint = 0 ; iPoint < points.size() ; iPoint += step)
+  for(std::size_t k = 0 ; ; ++k)
   {
-    resPoints.push_back(points[vAngles[iPoint].second]);
+    const std::size_t iToAdd = std::size_t(k*step);
+    if ( iToAdd < vAngles.size() )
+    {
+      resPoints.push_back(points[vAngles[iToAdd].second]);
+    }else
+    {
+      break;
+    }
   }
 }
 

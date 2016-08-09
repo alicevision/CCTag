@@ -13,223 +13,14 @@
 
 namespace cctag {
 
-EdgePoint* bresenham( const boost::multi_array<EdgePoint*, 2> & canny, const EdgePoint& p, const int dir, const std::size_t nmax )
-{
-	EdgePoint* ret = NULL;
-	float e        = 0.0f;
-	float dx       = dir * p._grad.x();
-	float dy       = dir * p._grad.y();
-
-	float adx = std::abs( dx );
-	float ady = std::abs( dy );
-
-	std::size_t n = 0;
-
-	if( ady > adx )
-	{
-		float a   = adx / ady;                          //#
-		int stp_x = boost::math::sign( dx );
-		int stp_y = boost::math::sign( dy );
-
-		int x = p.x();
-		int y = p.y();
-
-		n = n + 1;
-		e = e + a;
-		y = y + stp_y;                                  //#
-
-		if( e >= 0.5f )
-		{
-			x = x + stp_x;                              //#
-			e = e - 1.0f;
-		}
-
-		// Partie commenté dû à la différence de réponse du détecteur de contour
-		/*if ( x >= 0 && x < canny.shape()[0] &&
-		     y >= 0 && y < canny.shape()[1] )
-		   {
-		    ret = canny[x][y];
-		    if ( ret )
-		    {
-		        return ret;
-		    }
-		   }
-		   else
-		   {
-		    return NULL;
-		   }*/
-		n = n + 1;
-		e = e + a;
-		y = y + stp_y;                                  //#
-		if( e >= 0.5f )
-		{
-			x = x + stp_x;                              //#
-			e = e - 1.0f;
-		}
-		if( x >= 0 && x < canny.shape()[0] &&
-		    y >= 0 && y < canny.shape()[1] )
-		{
-			ret = canny[x][y];
-			if( ret )
-			{
-				return ret;
-			}
-		}
-		else
-		{
-			return NULL;
-		}
-
-		while( n <= nmax )
-		{
-			n = n + 1;
-			e = e + a;
-			y = y + stp_y;                              //#
-			if( e >= 0.5f )
-			{
-				x = x + stp_x;                          //#
-				e = e - 1.0f;
-			}
-
-			if( x >= 0 && x < canny.shape()[0] &&
-			    y >= 0 && y < canny.shape()[1] )
-			{
-				ret = canny[x][y];
-				if( ret )
-				{
-					return ret;
-				}
-				else
-				{
-					if( x >= 0 && x < canny.shape()[0] &&
-					    ( y - stp_y ) >= 0 && ( y - stp_y ) < canny.shape()[1] )
-					{
-						ret = canny[x][y - stp_y];              //#
-						if( ret )
-						{
-							return ret;
-						}
-					}
-					else
-					{
-						return NULL;
-					}
-				}
-			}
-			else
-			{
-				return NULL;
-			}
-		}
-	}
-	else
-	{
-		float a   = ady / adx;
-		int stp_x = boost::math::sign( dx );
-		int stp_y = boost::math::sign( dy );
-
-		int x = p.x();
-		int y = p.y();
-
-		n = n + 1;
-		e = e + a;
-		x = x + stp_x;
-
-		if( e >= 0.5f )
-		{
-			y = y + stp_y;
-			e = e - 1.0f;
-		}
-
-		// Partie commenté dû à la différence de réponse du détecteur de contour
-		/*if ( x >= 0 && x < canny.shape()[0] &&
-		     y >= 0 && y < canny.shape()[1] )
-		   {
-		    ret = canny[x][y];
-		    if ( ret )
-		    {
-		        return ret;
-		    }
-		   }
-		   else
-		   {
-		    return NULL;
-		   }*/
-		n = n + 1;
-		e = e + a;
-		x = x + stp_x;
-		if( e >= 0.5f )
-		{
-			y = y + stp_y;
-			e = e - 1;
-		}
-		if( x >= 0 && x < canny.shape()[0] &&
-		    y >= 0 && y < canny.shape()[1] )
-		{
-			ret = canny[x][y];
-			if( ret )
-			{
-				return ret;
-			}
-		}
-		else
-		{
-			return NULL;
-		}
-
-		while( n <= nmax )
-		{
-			n = n + 1;
-			e = e + a;
-			x = x + stp_x;
-			if( e >= 0.5f )
-			{
-				y = y + stp_y;
-				e = e - 1.0f;
-			}
-
-			if( x >= 0 && x < canny.shape()[0] &&
-			    y >= 0 && y < canny.shape()[1] )
-			{
-				ret = canny[x][y];
-				if( ret )
-				{
-					return ret;
-				}
-				else
-				{
-					if( ( x - stp_x ) >= 0 && ( x - stp_x ) < canny.shape()[0] &&
-					    y >= 0 && y < canny.shape()[1] )
-					{
-						ret = canny[x - stp_x][y];
-						if( ret )
-						{
-							return ret;
-						}
-					}
-					else
-					{
-						return NULL;
-					}
-				}
-			}
-			else
-			{
-				return NULL;
-			}
-		}
-	}
-	return NULL;
-}
-
-void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, int & stpX, int & stpY)
+static void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, int & stpX, int & stpY)
 {
 	float a = std::abs(dy/dx);
 	stpX = boost::math::sign<int>(dx);
 	stpY = boost::math::sign<int>(dy);
 	e += a;
 	x += stpX;
-	if (e>=0.5)
+	if (e>=0.5f)
 	{
 		y += stpY;
 		e -= 1;
@@ -238,7 +29,7 @@ void updateXY(const float & dx, const float & dy, int & x, int & y,  float & e, 
 }
 
 EdgePoint* gradientDirectionDescent(
-        const boost::multi_array<EdgePoint*, 2> & canny, 
+        const EdgePointCollection& canny,
         const EdgePoint& p,
         int dir,
         const std::size_t nmax, 
@@ -294,7 +85,7 @@ EdgePoint* gradientDirectionDescent(
         if( x >= 0 && x < canny.shape()[0] &&
             y >= 0 && y < canny.shape()[1] )
         {
-            ret = canny[x][y];
+            ret = canny(x,y);
             if( ret )
             {
                     return ret;
@@ -314,7 +105,7 @@ EdgePoint* gradientDirectionDescent(
             if( x >= 0 && x < canny.shape()[0] &&
                 y >= 0 && y < canny.shape()[1] )
             {
-                ret = canny[x][y];
+                ret = canny(x,y);
                 if( ret )
                 {
                     return ret;
@@ -324,7 +115,7 @@ EdgePoint* gradientDirectionDescent(
                     if( x >= 0 && x < canny.shape()[0] &&
                         ( y - stpY ) >= 0 && ( y - stpY ) < canny.shape()[1] )
                     {
-                        ret = canny[x][y - stpY];              //#
+                        ret = canny(x,y - stpY);              //#
                         if( ret )
                         {
                                 return ret;
@@ -364,7 +155,7 @@ EdgePoint* gradientDirectionDescent(
         if( x >= 0 && x < canny.shape()[0] &&
             y >= 0 && y < canny.shape()[1] )
         {
-            ret = canny[x][y];
+            ret = canny(x,y);
             if( ret )
             {
                 return ret;
@@ -384,7 +175,7 @@ EdgePoint* gradientDirectionDescent(
             if( x >= 0 && x < canny.shape()[0] &&
                 y >= 0 && y < canny.shape()[1] )
             {
-                ret = canny[x][y];
+                ret = canny(x,y);
                 if( ret )
                 {
                     return ret;
@@ -394,7 +185,7 @@ EdgePoint* gradientDirectionDescent(
                     if( ( x - stpX ) >= 0 && ( x - stpX ) < canny.shape()[0] &&
                         y >= 0 && y < canny.shape()[1] )
                     {
-                        ret = canny[x - stpX][y];
+                        ret = canny(x - stpX,y);
                         if( ret )
                         {
                                 return ret;

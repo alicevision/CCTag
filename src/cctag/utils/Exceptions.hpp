@@ -188,7 +188,7 @@ typedef ::boost::error_info<struct tag_algorithm, ::std::string> algorithm;
  * @brief Time.
  * @remark Dev or user information.
  */
-typedef ::boost::error_info<struct tag_time, double> time;
+typedef ::boost::error_info<struct tag_time, float> time;
 /**
  * @brief Frame number.
  * @remark Dev or user information.

@@ -98,7 +98,7 @@ void first_round( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 __global__
 void second_round( cv::cuda::PtrStepSzb src,          // input
                    cv::cuda::PtrStepSzb dst,          // output
-                   DevEdgeList<int2>    all_edgecoords,   // output
+                   DevEdgeList<short2>  all_edgecoords,   // output
                    FrameMetaPtr         meta )
 {
     const int block_x = blockIdx.x * 32;
@@ -125,7 +125,7 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
 
     if( keep ) {
         if( write_index < EDGE_POINT_MAX ) {
-            all_edgecoords.ptr[write_index] = make_int2( idx, idy );
+            all_edgecoords.ptr[write_index] = make_short2( idx, idy );
         }
     }
 }

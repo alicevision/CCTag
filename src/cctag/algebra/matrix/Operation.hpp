@@ -1,15 +1,16 @@
 #ifndef _CCTAG_NUMERICAL_ALGEBRA_OPERATION_HPP_
 #define	_CCTAG_NUMERICAL_ALGEBRA_OPERATION_HPP_
 
-#include "Matrix.hpp"
-#include "../Determinant.hpp"
-#include "../../utils/Exceptions.hpp"
-
+#include <Eigen/Core>
 #include <cmath>
+#include "../../utils/Exceptions.hpp"
 
 namespace cctag {
 namespace numerical {
 
+Eigen::Matrix3f& normalizeDet1( Eigen::Matrix3f& m );
+
+#if 0
 template<class Matrix>
 typename Matrix::value_type trace(const Matrix& m)
 {
@@ -23,24 +24,6 @@ typename Matrix::value_type trace(const Matrix& m)
     return tr;
 }
 
-template<class Matrix>
-Matrix& normalizeDet1( Matrix& m )
-{
-	typedef typename Matrix::value_type T;
-
-	if( m.size1() != m.size2())
-	{
-		CCTAG_THROW( exception::Bug()
-			<< exception::dev("Matrix must be square!" ) );
-	}
-	const T d = det( m );
-	if( d == 0 )
-		return m;
-
-	const T s = ( ( d >= 0 ) ? 1 : -1 ) / T( std::pow( std::abs( d ), 1.0 / m.size1() ) );
-	m = s * m;
-	return m;
-}
 
 template<class M>
 M& matSqrt( M& S )
@@ -90,10 +73,10 @@ inline V normalize(const V & v)
 	V ret = v;
 	ret( 0 ) /= ret( 2 );
 	ret( 1 ) /= ret( 2 );
-	ret( 2 ) = 1.0;
+	ret( 2 ) = 1.f;
 	return ret;
 }
-
+#endif
 }
 }
 

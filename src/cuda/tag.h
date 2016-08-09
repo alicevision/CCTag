@@ -19,8 +19,8 @@
 #include "cctag/ImageCut.hpp"
 #include "cctag/geometry/Ellipse.hpp"
 #include "cctag/geometry/Point.hpp"
-#include "cctag/algebra/matrix/Matrix.hpp"
-#include "cctag/utils/LogTime.hpp"
+
+namespace cctag { namespace logtime { struct Mgmt; } };
 
 namespace popart
 {
@@ -47,10 +47,8 @@ public:
     void handleframe( int layer );
 
     void convertToHost( size_t                          layer,
-                        std::vector<cctag::EdgePoint>&  vPoints,
-                        cctag::EdgePointsImage&         edgeImage,
-                        std::vector<cctag::EdgePoint*>& seeds,
-                        cctag::WinnerMap&               winners );
+                        cctag::EdgePointCollection&     edgeCollection,
+                        std::vector<cctag::EdgePoint*>& seeds);
 
     inline std::size_t getNumOctaves( ) const {
         return _frame.size();
@@ -71,15 +69,15 @@ public:
     void imageCenterOptLoop(
         const int                                  tagIndex,
         const cctag::numerical::geometry::Ellipse& ellipse,
-        const cctag::Point2dN<double>&             center,
+        const cctag::Point2d<Eigen::Vector3f>&             center,
         const int                                  vCutSize,
         const cctag::Parameters&                   params,
         NearbyPoint*                               cctag_pointer_buffer );
 
     bool imageCenterRetrieve(
         const int                                  tagIndex,
-        cctag::Point2dN<double>&                   center,
-        cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+        cctag::Point2d<Eigen::Vector3f>&                   center,
+        Eigen::Matrix3f&       bestHomographyOut,
         const cctag::Parameters&                   params,
         NearbyPoint*                               cctag_pointer_buffer );
 
@@ -108,10 +106,12 @@ public:
                                     const cv::Mat&           cpu_dy,
                                     const cctag::Parameters& params );
 
+#if 0
     static void debug_cmp_edge_table( int                           layer,
                                       const cctag::EdgePointsImage& cpu,
                                       const cctag::EdgePointsImage& gpu,
                                       const cctag::Parameters&      params );
+#endif
 };
 
 }; // namespace popart

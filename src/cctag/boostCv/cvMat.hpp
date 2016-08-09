@@ -1,6 +1,7 @@
+#if 0
 #ifndef _CCTAG_CVMAT_HPP
 #define	_CCTAG_CVMAT_HPP
-
+#if 0
 #ifndef BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #endif
@@ -22,7 +23,7 @@ namespace boostCv {
 	 * @brief Retrieve OpenCV defines from template parameters
 	 */
 	template<class T> struct CvMatGetBaseType { /*CvMatGetType(){ BOOST_STATIC_ASSERT(false); }*/ };
-	template<> struct CvMatGetBaseType<double> { static const int value = CV_64F; };
+	template<> struct CvMatGetBaseType<float> { static const int value = CV_64F; };
 	template<> struct CvMatGetBaseType<float> { static const int value = CV_32F; };
 	template<> struct CvMatGetBaseType<unsigned char> { static const int value = CV_8U; };
 	template<> struct CvMatGetBaseType<char> { static const int value = CV_8S; };
@@ -365,7 +366,7 @@ namespace boostCv {
 //------------------------------------------------------------------------------
 
 	/**
-	 * @todo specialization for std::vector< Point2dN<double> >
+	 * @todo specialization for std::vector< Point2d<Eigen::Vector3f> >
 	 */
 	template<typename T>
 	inline CvMatView createCvMatView( std::vector<T> & m )
@@ -430,5 +431,6 @@ inline std::ostream& operator<<( std::ostream& os, const cctag::boostCv::CvMatCo
 	return os;
 }
 
-
 #endif
+#endif
+#endif  // #if 0

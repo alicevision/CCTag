@@ -6,7 +6,6 @@
 #include <cctag/Candidate.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/matrix/Matrix.hpp>
 #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/Types.hpp>
@@ -18,7 +17,6 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/array.hpp>
 #include <boost/math/constants/constants.hpp>
-#include <boost/numeric/ublas/fwd.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/throw_exception.hpp>
@@ -36,9 +34,7 @@
 namespace cctag
 {
 
-typedef std::vector< std::pair< MarkerID, double > > IdSet;
-
-namespace ublas = boost::numeric::ublas;
+typedef std::vector< std::pair< MarkerID, float > > IdSet;
 
 class CCTag : public ICCTag
 {
@@ -54,17 +50,16 @@ public:
     , _status(0)
   {
     setInitRadius();
-    _mHomography.clear();
   }
 
   CCTag(const MarkerID id,
-        const cctag::Point2dN<double> & centerImg,
-        const std::vector< std::vector< DirectedPoint2d<double> > > & points,
+        const cctag::Point2d<Eigen::Vector3f> & centerImg,
+        const std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > & points,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::numerical::BoundedMatrix3x3d & homography,
+        const Eigen::Matrix3f & homography,
         int pyramidLevel,
-        double scale,
-        const double quality = 1.0)
+        float scale,
+        const float quality = 1.f)
     : _centerImg(centerImg)
     , _id(id)
     , _outerEllipse(outerEllipse)
@@ -75,7 +70,7 @@ public:
     , _scale(scale)
   {
     setInitRadius();
-    _outerEllipse.setCenter( Point2dN<double>(_outerEllipse.center().x()+0.5, _outerEllipse.center().y()+0.5 ) ); // todo: why + 0.5 is required ?
+    _outerEllipse.setCenter( Point2d<Eigen::Vector3f>(_outerEllipse.center().x()+0.5f, _outerEllipse.center().y()+0.5f ) ); // todo: why + 0.5f is required ?
     cctag::numerical::geometry::scale(_outerEllipse, _rescaledOuterEllipse, scale);
     
     _status = 0;
@@ -109,14 +104,14 @@ public:
   void printTag( std::ostream& ostr ) const;
 #endif
 
-  void scale(const double s);
+  void scale(const float s);
 
-  double x() const {
-    return _centerImg.getX();
+  float x() const {
+    return _centerImg.x();
   }
   
-  double y() const {
-    return _centerImg.getY();
+  float y() const {
+    return _centerImg.y();
   }
   
   std::size_t nCircles()
@@ -124,27 +119,27 @@ public:
     return _nCircles;
   }
 
-  const cctag::numerical::BoundedMatrix3x3d & homography() const
+  const Eigen::Matrix3f & homography() const
   {
     return _mHomography;
   }
   
-  Point2dN<double> & centerImg()
+  Point2d<Eigen::Vector3f> & centerImg()
   {
     return _centerImg;
   }
   
-  void setCenterImg( const cctag::Point2dN<double>& center )
+  void setCenterImg( const cctag::Point2d<Eigen::Vector3f>& center )
   {
     _centerImg = center;
   }
 
-  cctag::numerical::BoundedMatrix3x3d & homography()
+  Eigen::Matrix3f & homography()
   {
     return _mHomography;
   }
 
-  void setHomography(const cctag::numerical::BoundedMatrix3x3d & homography)
+  void setHomography(const Eigen::Matrix3f & homography)
   {
     _mHomography = homography;
   }
@@ -154,52 +149,52 @@ public:
     return _outerEllipse;
   }
 
-  const std::vector< DirectedPoint2d<double> > & rescaledOuterEllipsePoints() const
+  const std::vector< DirectedPoint2d<Eigen::Vector3f> > & rescaledOuterEllipsePoints() const
   {
     return _rescaledOuterEllipsePoints;
   }
 
-  const std::vector< std::vector< DirectedPoint2d<double> > >& points() const
+  const std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& points() const
   {
     return _points;
   }
 
-  static const boost::array<double, 5> & radiusRatiosInit()
+  static const boost::array<float, 5> & radiusRatiosInit()
   {
     return _radiusRatiosInit;
   }
 
-  const std::vector<double>& radiusRatios() const
+  const std::vector<float>& radiusRatios() const
   {
     return _radiusRatios;
   }
 
-  std::vector<double> & radiusRatios()
+  std::vector<float> & radiusRatios()
   {
     return _radiusRatios;
   }
 
-  void setRadiusRatios(const std::vector<double> radiusRatios)
+  void setRadiusRatios(const std::vector<float> radiusRatios)
   {
     _radiusRatios = radiusRatios;
   }
 
-  double quality() const
+  float quality() const
   {
     return _quality;
   }
 
-  void setQuality(const double quality)
+  void setQuality(const float quality)
   {
     _quality = quality;
   }
 
-  double scale() const
+  float scale() const
   {
     return _scale;
   }
 
-  void setScale(const double scale)
+  void setScale(const float scale)
   {
     _scale = scale;
   }
@@ -234,7 +229,7 @@ public:
     _rescaledOuterEllipse = rescaledOuterEllipse;
   }
 
-  void setRescaledOuterEllipsePoints(const std::vector< DirectedPoint2d<double> > & outerEllipsePoints)
+  void setRescaledOuterEllipsePoints(const std::vector< DirectedPoint2d<Eigen::Vector3f> > & outerEllipsePoints)
   {
     _rescaledOuterEllipsePoints = outerEllipsePoints;
   }
@@ -292,7 +287,7 @@ public:
     return new CCTag(*this);
   }
 
-  void condition(const cctag::numerical::BoundedMatrix3x3d & mT, const cctag::numerical::BoundedMatrix3x3d & mInvT);
+  void condition(const Eigen::Matrix3f & mT, const Eigen::Matrix3f & mInvT);
 
   bool isOverlapping(const CCTag& marker) const
   {
@@ -303,10 +298,11 @@ public:
 
 #ifdef CCTAG_SERIALIZE
 
-  void addFlowComponent(const Candidate & candidate)
+  void addFlowComponent(const Candidate & candidate, const EdgePointCollection& edgeCollection)
   {
     _flowComponents.push_back(
       CCTagFlowComponent(
+        edgeCollection,
         candidate._outerEllipsePoints,
         candidate._childrens,
         candidate._filteredChildrens,
@@ -321,12 +317,11 @@ public:
     _flowComponents = flowComponents;
   }
 
-  void setFlowComponents(const std::vector<Candidate> & candidates)
+  void setFlowComponents(const std::vector<Candidate> & candidates, const EdgePointCollection& edgeCollection)
   {
-
     BOOST_FOREACH(const Candidate & candidate, candidates)
     {
-      addFlowComponent(candidate);
+      addFlowComponent(candidate, edgeCollection);
     }
   }
 
@@ -368,22 +363,22 @@ protected:
   }
 
 protected:
-  static const boost::array<double, 5> _radiusRatiosInit;
-  std::vector<double> _radiusRatios;
+  static const boost::array<float, 5> _radiusRatiosInit;
+  std::vector<float> _radiusRatios;
 
   std::size_t _nCircles;
   MarkerID _id;
   IdSet _idSet;
-  cctag::Point2dN<double> _centerImg;
+  cctag::Point2d<Eigen::Vector3f> _centerImg;
   cctag::numerical::geometry::Ellipse _outerEllipse;
   cctag::numerical::geometry::Ellipse _rescaledOuterEllipse;
-  std::vector< DirectedPoint2d<double> > _rescaledOuterEllipsePoints;
+  std::vector< DirectedPoint2d<Eigen::Vector3f> > _rescaledOuterEllipsePoints;
   std::vector<cctag::numerical::geometry::Ellipse> _ellipses;
-  std::vector< std::vector< DirectedPoint2d<double> > > _points;
-  cctag::numerical::BoundedMatrix3x3d _mHomography;
-  double _quality;
+  std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > _points;
+  Eigen::Matrix3f _mHomography;
+  float _quality;
   int    _pyramidLevel;
-  double _scale;
+  float _scale;
   int    _status;
 #ifdef WITH_CUDA
   /** Pointer into pinned memory page.

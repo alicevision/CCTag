@@ -2,6 +2,7 @@
 
 #ifndef _CCTAG_NUMERICAL_INVERT_MATRIX_HPP_
 #define _CCTAG_NUMERICAL_INVERT_MATRIX_HPP_
+#if 0
 //
 // The following code inverts the matrix input using LU-decomposition
 // with backsubstitution of unit vectors.
@@ -27,7 +28,7 @@ namespace numerical {
 template<class Matrix>
 bool invert_2x2( const Matrix& A, Matrix& result )
 {
-	double detM = cctag::numerical::det(A);//A( 0, 0 ) * A( 1, 1 ) - A( 0, 1 ) * A( 1, 0 );
+	float detM = cctag::numerical::det(A);//A( 0, 0 ) * A( 1, 1 ) - A( 0, 1 ) * A( 1, 0 );
 
 	if( detM == 0 )
 	{
@@ -38,7 +39,7 @@ bool invert_2x2( const Matrix& A, Matrix& result )
 	result( 0, 1 ) = -A( 0, 1 );
 	result( 1, 0 ) = -A( 1, 0 );
 	result( 1, 1 ) = A( 0, 0 );
-	result         = ( 1.0 / detM ) * result;
+	result         = ( 1.f / detM ) * result;
 	return true;
 }
 
@@ -135,12 +136,12 @@ Matrix invert( const Matrix& m, bool& is_singular )
 
 // http://archives.free.net.ph/message/20080909.064313.59c122c4.fr.html
 template<class Matrix>
-double determinant( boost::numeric::ublas::matrix_expression<Matrix> const& mat_r )
+float determinant( boost::numeric::ublas::matrix_expression<Matrix> const& mat_r )
 {
 	using namespace boost::numeric;
 	using namespace boost::numeric::ublas;
 
-	double det = 1.0;
+	float det = 1.f;
 	Matrix mLu( mat_r() );
 	permutation_matrix<std::size_t> pivots( mat_r().size1() );
 	bool is_singular = lu_factorize( mLu, pivots );
@@ -150,19 +151,19 @@ double determinant( boost::numeric::ublas::matrix_expression<Matrix> const& mat_
 		{
 			if( pivots( i ) != i )
 			{
-				det *= -1.0;
+				det *= -1.f;
 			}
 			det *= mLu( i, i );
 		}
 	}
 	else
 	{
-		det = 0.0;
+		det = 0.f;
 	}
 	return det;
 }
 
 }
 }
-
+#endif
 #endif

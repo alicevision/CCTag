@@ -4,8 +4,6 @@
 #include <cctag/geometry/Point.hpp>
 #include <cctag/Params.hpp>
 
-#include <boost/numeric/ublas/vector.hpp>
-
 namespace cctag {
 
 class ImageCut
@@ -17,44 +15,44 @@ public:
     _outOfBounds = false;
   }
  
-  ImageCut( Point2dN<double> pStart, DirectedPoint2d<double> pStop )
-  : _start(pStart), _stop(pStop), _outOfBounds(false), _beginSig(0.0), _endSig(1.0)
+  ImageCut( Point2d<Eigen::Vector3f> pStart, DirectedPoint2d<Eigen::Vector3f> pStop )
+  : _start(pStart), _stop(pStop), _outOfBounds(false), _beginSig(0.f), _endSig(1.f)
   {
     _imgSignal.resize(cctag::kDefaultSampleCutLength);
   }
   
-  ImageCut( Point2dN<double> pStart, DirectedPoint2d<double> pStop, const double start, const double stop)
+  ImageCut( Point2d<Eigen::Vector3f> pStart, DirectedPoint2d<Eigen::Vector3f> pStop, const float start, const float stop)
   : _start(pStart), _stop(pStop), _outOfBounds(false), _beginSig(start), _endSig(stop)
   {
     _imgSignal.resize(cctag::kDefaultSampleCutLength);
     _outOfBounds = false;
   }
   
-  ImageCut( Point2dN<double> pStart, DirectedPoint2d<double> pStop, const std::size_t nSamples)
-  : _start(pStart), _stop(pStop), _beginSig(0.0), _endSig(1.0), _outOfBounds(false)
+  ImageCut( Point2d<Eigen::Vector3f> pStart, DirectedPoint2d<Eigen::Vector3f> pStop, const std::size_t nSamples)
+  : _start(pStart), _stop(pStop), _beginSig(0.f), _endSig(1.f), _outOfBounds(false)
   {
     _imgSignal.resize(nSamples);
   }
     
-  ImageCut( Point2dN<double> pStart, DirectedPoint2d<double> pStop, const double start, const double stop, const std::size_t nSamples)
+  ImageCut( Point2d<Eigen::Vector3f> pStart, DirectedPoint2d<Eigen::Vector3f> pStop, const float start, const float stop, const std::size_t nSamples)
   : _start(pStart), _stop(pStop), _outOfBounds(false), _beginSig(start), _endSig(stop)
   {
     _imgSignal.resize(nSamples);
     _outOfBounds = false;
   }
   
-  const Point2dN<double> & start() const { return _start; }
-  Point2dN<double> & start() { return _start; }
+  const Point2d<Eigen::Vector3f> & start() const { return _start; }
+  Point2d<Eigen::Vector3f> & start() { return _start; }
   
-  const DirectedPoint2d<double> & stop() const { return _stop; }
-  DirectedPoint2d<double> & stop() { return _stop; }
+  const DirectedPoint2d<Eigen::Vector3f> & stop() const { return _stop; }
+  DirectedPoint2d<Eigen::Vector3f> & stop() { return _stop; }
   
-  const boost::numeric::ublas::vector<double> & imgSignal() const { return _imgSignal; }
-  boost::numeric::ublas::vector<double> & imgSignal() { return _imgSignal; }
+  const std::vector<float> & imgSignal() const { return _imgSignal; }
+  std::vector<float> & imgSignal() { return _imgSignal; }
   
-  double beginSig() const { return _beginSig; }
+  float beginSig() const { return _beginSig; }
   
-  double endSig() const { return _endSig; }
+  float endSig() const { return _endSig; }
   
   bool outOfBounds() const { return _outOfBounds; }
   
@@ -67,15 +65,15 @@ private:
   /** Start point of the image cut
    * @todo This value is invalid after the optimization (neither CPU or GPU)
    */
-  Point2dN<double> _start;
+  Point2d<Eigen::Vector3f> _start;
   
   // Stop point of the image cut
-  DirectedPoint2d<double> _stop;
+  DirectedPoint2d<Eigen::Vector3f> _stop;
   
   /** 1D rectified image signal along the segment [_start,_stop]
    * @note For the GPU case, this information never exists on the CPU
    */
-  boost::numeric::ublas::vector<double> _imgSignal; //< image signal
+  std::vector<float> _imgSignal; //< image signal
   
   // False by default. This boolean reveals if any of the points lying on the segment
   // [_start, _stop] are outside of the image
@@ -84,12 +82,12 @@ private:
   // Scalar value in [0,1] representing from where, along the segment [_start,_stop] 
   // whose extremities corresponds to 0 and 1 resp., the image signal in stored in 
   // _imgSignal 
-  double _beginSig;
+  float _beginSig;
   
   // Scalar value in [_beginSig,1] representing to where, along the segment [_start,_stop] 
   // whose extremities corresponds to 0 and 1 resp., the image signal in stored in 
   // _imgSignal
-  double _endSig;
+  float _endSig;
   
 };
 

@@ -261,7 +261,7 @@ typedef signed int     Ipp32s;
 typedef float   Ipp32f;
 typedef __INT64 Ipp64s;
 typedef __UINT64 Ipp64u;
-typedef double  Ipp64f;
+typedef float  Ipp64f;
 
 typedef struct {
     Ipp8s  re;
@@ -338,7 +338,7 @@ typedef enum {
 typedef enum {
     ippiNormNone        = 0x00000000, /* default */
     ippiNorm            = 0x00000100, /* normalized form */
-    ippiNormCoefficient = 0x00000200, /* correlation coefficient in the range [-1.0 ... 1.0] */
+    ippiNormCoefficient = 0x00000200, /* correlation coefficient in the range [-1.f ... 1.f] */
     ippiNormMask        = 0x0000FF00
 } IppiNormOp;
 

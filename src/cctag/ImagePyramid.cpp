@@ -25,7 +25,7 @@ ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::si
   }
 }
 
-void ImagePyramid::build( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params )
+void ImagePyramid::build( const cv::Mat & src, const float thrLowCanny, const float thrHighCanny, const cctag::Parameters* params )
 {
 #ifdef WITH_CUDA
     if( params->_useCuda ) {
@@ -132,7 +132,7 @@ void toUchar(const cv::Mat & src, cv::Mat & dst)
   CCTAG_COUT_VAR(min);
   CCTAG_COUT_VAR(max);
   
-  double scale = 255/(max-min);
+  float scale = 255/(max-min);
   
   for ( int i=0 ; i < width ; ++i)
   {

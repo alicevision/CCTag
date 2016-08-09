@@ -3,7 +3,6 @@
 #include <string>
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/program_options.hpp>
-
 #include "Regression.h"
 
 static std::string SourceDir;
@@ -29,7 +28,7 @@ static std::string ParseOptions(int argc, char **argv)
   options_description data_desc("Data specification options");
   data_desc.add_options()
     ("src-dir", value<std::string>(&SourceDir), "Source directory")
-    ("dst-dir", value<std::string>(&DestinationDir), "Destination directory")
+    ("dst-dir", value<std::string>(&DestinationDir), "Destination directory [WARNING: current contents will be lost]")
     ("parameters", value<std::string>(&ParametersFile), "Detection parameters file")
     ("epsilon", value<float>(&Epsilon)->default_value(0.5f), "Position tolerance for x/y coordinates");
   

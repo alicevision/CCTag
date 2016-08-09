@@ -7,16 +7,16 @@
 
 namespace cctag {
 
-struct Color : public boost::array<double, 4>
+struct Color : public boost::array<float, 4>
 {
 	Color()
 	{
-		(*this)[0] = 0.0;
-		(*this)[1] = 0.0;
-		(*this)[2] = 0.0;
-		(*this)[3] = 0.0;
+		(*this)[0] = 0.f;
+		(*this)[1] = 0.f;
+		(*this)[2] = 0.f;
+		(*this)[3] = 0.f;
 	}
-	Color( const double r, const double g, const double b, const double alpha )
+	Color( const float r, const float g, const float b, const float alpha )
 	{
 		(*this)[0] = r;
 		(*this)[1] = g;
@@ -32,28 +32,28 @@ struct Color : public boost::array<double, 4>
 		(*this)[3] = color[3];
 		return (*this);
 	}
-	inline double  r() const { return (*this)[ 0 ]; }
-	inline double& r()       { return (*this)[ 0 ]; }
+	inline float  r() const { return (*this)[ 0 ]; }
+	inline float& r()       { return (*this)[ 0 ]; }
 
-	inline double  g() const { return (*this)[ 1 ]; }
-	inline double& g()       { return (*this)[ 1 ]; }
+	inline float  g() const { return (*this)[ 1 ]; }
+	inline float& g()       { return (*this)[ 1 ]; }
 
-	inline double  b() const { return (*this)[ 2 ]; }
-	inline double& b()       { return (*this)[ 2 ]; }
+	inline float  b() const { return (*this)[ 2 ]; }
+	inline float& b()       { return (*this)[ 2 ]; }
 
-	inline double  alpha() const { return (*this)[ 3 ]; }
-	inline double& alpha()       { return (*this)[ 3 ]; }
+	inline float  alpha() const { return (*this)[ 3 ]; }
+	inline float& alpha()       { return (*this)[ 3 ]; }
 
-	inline void setR( const double r ) { this->r() = r; }
-	inline void setG( const double g ) { this->g() = g; }
-	inline void setB( const double b ) { this->b() = b; }
-	inline void setAlpha( const double a ) { this->alpha() = a; }
+	inline void setR( const float r ) { this->r() = r; }
+	inline void setG( const float g ) { this->g() = g; }
+	inline void setB( const float b ) { this->b() = b; }
+	inline void setAlpha( const float a ) { this->alpha() = a; }
 };
 
-static const Color color_white( 1.0, 1.0, 1.0, 1.0 );
-static const Color color_red( 1.0, 0.0, 0.0, 1.0 );
-static const Color color_green( 0.0, 1.0, 0.0, 1.0 );
-static const Color color_blue( 0.0, 0.0, 1.0, 1.0 );
+static const Color color_white( 1.f, 1.f, 1.f, 1.f );
+static const Color color_red( 1.f, 0.f, 0.f, 1.f );
+static const Color color_green( 0.f, 1.f, 0.f, 1.f );
+static const Color color_blue( 0.f, 0.f, 1.f, 1.f );
 
 }
 

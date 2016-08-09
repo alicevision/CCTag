@@ -50,7 +50,7 @@ void ImageCenterOptimizer::initOpt( int ndim, NEWMAT::ColumnVector& x )
  * @param[out] result, un truc de optpp, je sais pas pour l'instant à quoi ça sert
  * @param[in] objPtr
  */
-void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& x, double& fx, int& result, void *objPtr )
+void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& x, float& fx, int& result, void *objPtr )
 {
 	using namespace OPTPP;
 
@@ -61,7 +61,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 
 	This *this_ptr = static_cast<This*>( objPtr );
 
-	cctag::Point2dN<double> centerExtEllipse( x(1), x(2) );
+	cctag::Point2d<Eigen::Vector3f> centerExtEllipse( x(1), x(2) );
 
 	cctag::numerical::optimization::condition(centerExtEllipse, this_ptr->_mInvT);
 
@@ -70,7 +70,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 	//CCTagVisualDebug::instance().drawText( centerExtEllipse, boost::lexical_cast<std::string>(this_ptr->_numIter), cctag::color_white );
 	CCTagVisualDebug::instance().drawPoint( centerExtEllipse, cctag::color_blue );
 
-	cctag::numerical::BoundedMatrix3x3d mH;
+	Eigen::Matrix3f mH;
 	VecSignals vecSig;
 	if ( !getSignals( mH, vecSig, this_ptr->_lengthSig, centerExtEllipse, this_ptr->_vecExtPoints, this_ptr->_src, this_ptr->_ellipse.matrix() ) )
 	{
@@ -79,7 +79,7 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 		return;
 	}
 
-	double res = 0;
+	float res = 0;
         std::size_t resSize = 0;
 	for( std::size_t i = 0; i < vecSig.size() - 1; ++i )
 	{
@@ -95,23 +95,20 @@ void ImageCenterOptimizer::optimizePointFun( int n, const NEWMAT::ColumnVector& 
 
 	++this_ptr->_numIter;
 
-	//double penalty = 0;
-	//double distanceToCentre = cctag::numerical::distancePoints2D( centerExtEllipse, this_ptr->_ellipse.center() );
-	//if ( distanceToCentre > 0.2*std::min(this_ptr->_ellipse.a(), this_ptr->_ellipse.b()) )
-	//{
-	//	penalty += 1000000*distanceToCentre/std::min(this_ptr->_ellipse.a(), this_ptr->_ellipse.b());
-	//}
-
-	fx = res;//+penalty;
+	fx = res;
 	result = NLPFunction;
 }
 
-Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double> & pToRefine, const std::size_t lengthSig, const cv::Mat & src, const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT)
+Point2d<Eigen::Vector3f> ImageCenterOptimizer::operator()( const cctag::Point2d<Eigen::Vector3f> & pToRefine, 
+                const std::size_t lengthSig,
+                const cv::Mat & src,
+                const cctag::numerical::geometry::Ellipse & outerEllipse,
+                const Eigen::Matrix3f & mT)
 {
 	using namespace OPTPP;
 	using namespace NEWMAT;
 
-	Point2dN<double> res;
+	Point2d<Eigen::Vector3f> res;
 
 	//  Create a Nonlinear problem object
 	_pToRefine = pToRefine;
@@ -147,8 +144,8 @@ Point2dN<double> ImageCenterOptimizer::operator()( const cctag::Point2dN<double>
 	//#ifdef REG_TEST
 	ColumnVector x_sol = getXc();
 	// Point raffiné à retourner :
-	res.setX( x_sol( 1 ) );
-	res.setY( x_sol( 2 ) );
+	res.x() = x_sol( 1 );
+	res.y() = x_sol( 2 );
 
 	cctag::numerical::optimization::condition(res, _mInvT);
 

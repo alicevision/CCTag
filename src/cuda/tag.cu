@@ -11,9 +11,7 @@
 #include "debug_image.h"
 #include "cctag/utils/Talk.hpp"
 #include "cuda/geom_ellipse.h"
-#include "cctag/algebra/matrix/Matrix.hpp"
 
-#include "cctag/utils/LogTime.hpp"
 #include "cuda/onoff.h"
 #include "cuda/tag_threads.h"
 #include "cuda/tag_cut.h"
@@ -201,14 +199,12 @@ void TagPipe::handleframe( int i )
 
 __host__
 void TagPipe::convertToHost( size_t                          layer,
-                             std::vector<cctag::EdgePoint>&  vPoints,
-                             cctag::EdgePointsImage&         edgeImage,
-                             std::vector<cctag::EdgePoint*>& seeds,
-                             cctag::WinnerMap&               winners )
+                             cctag::EdgePointCollection&     edgeCollection,
+                             std::vector<cctag::EdgePoint*>& seeds)
 {
     assert( layer < _frame.size() );
 
-    _frame[layer]->applyExport( vPoints, edgeImage, seeds, winners );
+    _frame[layer]->applyExport( edgeCollection, seeds );
 
 }
 
@@ -433,6 +429,7 @@ void TagPipe::debug_cpu_dxdy_out( TagPipe*                     pipe,
     local_debug_cpu_dxdy_out( "dy", level, cpu_dy, gpu_dy, params );
 }
 
+#if 0
 void TagPipe::debug_cmp_edge_table( int                           layer,
                                     const cctag::EdgePointsImage& cpu,
                                     const cctag::EdgePointsImage& gpu,
@@ -476,12 +473,13 @@ void TagPipe::debug_cmp_edge_table( int                           layer,
 
     delete [] plane.data;
 }
+#endif
 
 __host__
 void TagPipe::imageCenterOptLoop(
     const int                                  tagIndex,
     const cctag::numerical::geometry::Ellipse& ellipse,
-    const cctag::Point2dN<double>&             center,
+    const cctag::Point2d<Eigen::Vector3f>&     center,
     const int                                  vCutSize,
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
@@ -516,8 +514,8 @@ void TagPipe::imageCenterOptLoop(
 __host__
 bool TagPipe::imageCenterRetrieve(
     const int                                  tagIndex,
-    cctag::Point2dN<double>&                   center,
-    cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+    cctag::Point2d<Eigen::Vector3f>&           center,
+    Eigen::Matrix3f&                           bestHomographyOut,
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
@@ -612,10 +610,10 @@ void TagPipe::uploadCuts( int                                 numTags,
         std::vector<cctag::ImageCut>::const_iterator vend = vCuts[tagIndex].end();
 
         for( ; vit!=vend; vit++ ) {
-            csptr->start.x     = vit->start().getX();
-            csptr->start.y     = vit->start().getY();
-            csptr->stop.x      = vit->stop().getX();
-            csptr->stop.y      = vit->stop().getY();
+            csptr->start.x     = vit->start().x();
+            csptr->start.y     = vit->start().y();
+            csptr->stop.x      = vit->stop().x();
+            csptr->stop.y      = vit->stop().y();
             csptr->beginSig    = vit->beginSig();
             csptr->endSig      = vit->endSig();
             csptr->sigSize     = vit->imgSignal().size();

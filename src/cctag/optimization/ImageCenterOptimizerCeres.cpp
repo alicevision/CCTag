@@ -22,21 +22,21 @@ namespace cctag {
 namespace identification {
 
 
-void optimizeCenterCeres(cctag::Point2dN<double> initCenter, const TotoFunctor::VecExtPoints & vecExtPoints, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView,
+void optimizeCenterCeres(cctag::Point2d<Eigen::Vector3f> initCenter, const TotoFunctor::VecExtPoints & vecExtPoints, const std::size_t lengthSig, const boost::gil::gray8_view_t & sView,
   const cctag::numerical::geometry::Ellipse & outerEllipse){
 // The variable to solve for with its initial value. It will be
   // mutated in place by the solver.
 
-//cctag::Point2dN<double> initCenter(400,400);
+//cctag::Point2d<Eigen::Vector3f> initCenter(400,400);
 
-	std::vector<double> x;
+	std::vector<float> x;
 	//x.reserve(2);
 
 	x[0] = initCenter.x();
 	x[1] = initCenter.y();
 
-  //double x = 0.5;
-  //const double initial_x = x;
+  //float x = 0.5f;
+  //const float initial_x = x;
 
   // Build the problem.
   ceres::Problem problem;
@@ -57,7 +57,7 @@ void optimizeCenterCeres(cctag::Point2dN<double> initCenter, const TotoFunctor::
 
   std::cout << summary.BriefReport() << "\n";
   std::cout << "x : " << initCenter
-            << " -> " << (new Point2dN<double>(x[0],x[1])) << "\n";
+            << " -> " << (new Point2d<Eigen::Vector3f>(x[0],x[1])) << "\n";
 */
   return;
 }

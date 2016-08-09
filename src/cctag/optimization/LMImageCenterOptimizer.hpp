@@ -16,7 +16,7 @@ namespace cctag {
 class LMImageCenterOptimizer
 {
 public:
-	typedef std::vector< cctag::Point2dN<double> > VecExtPoints;
+	typedef std::vector< cctag::Point2d<Eigen::Vector3f> > VecExtPoints;
 public:
 	LMImageCenterOptimizer();
 	virtual ~LMImageCenterOptimizer();
@@ -26,11 +26,11 @@ public:
 	 * @param[in] cctagToRefine initial cctag to refine
 	 * @return residual error
 	 */
-	double operator()( CCTag & cctagToRefine );
-	static int homology( void* p, int m, int n, const double* x, double* fvec, int iflag );
+	float operator()( CCTag & cctagToRefine );
+	static int homology( void* p, int m, int n, const float* x, float* fvec, int iflag );
 
 private:
-	cctag::Point2dN<double> _pToRefine;
+	cctag::Point2d<Eigen::Vector3f> _pToRefine;
 };
 
 } // namespace cctag

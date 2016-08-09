@@ -197,10 +197,8 @@ public:
     void applyLink( const cctag::Parameters& param );
 
     // implemented in frame_export.cu
-    bool applyExport( std::vector<cctag::EdgePoint>&  vPoints,
-                      cctag::EdgePointsImage&         edgesMap,
-                      std::vector<cctag::EdgePoint*>& seeds,
-                      cctag::WinnerMap&               winners );
+    bool applyExport( cctag::EdgePointCollection& out_edges,
+                      std::vector<cctag::EdgePoint*>& out_seedlist);
 
     cv::Mat* getPlane( ) const;
     cv::Mat* getDx( ) const;
@@ -309,7 +307,7 @@ private:
 #endif
 
     // Stores coordinates of all edges. Valid after thinning.
-    EdgeList<int2>         _all_edgecoords;
+    EdgeList<short2>        _all_edgecoords;
 
     // Stores all points that are recognized as potential voters
     // in gradient descent.

@@ -1,6 +1,6 @@
 #ifndef _CCTAG_NUMERICAL_DETERMINANT_HPP_
 #define	_CCTAG_NUMERICAL_DETERMINANT_HPP_
-
+#if 0
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/lu.hpp>
@@ -69,6 +69,6 @@ typename MatA::value_type determinant( const MatA & a )
 
 }
 }
-
+#endif
 #endif
 

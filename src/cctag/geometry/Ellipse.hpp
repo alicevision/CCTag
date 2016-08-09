@@ -2,57 +2,49 @@
 #define _CCTAG_NUMERICAL_ELLIPSE_HPP_
 
 #include <cctag/geometry/Point.hpp>
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/functional.hpp>
-
+#include <Eigen/Core>
 #include <iostream>
 
 namespace cctag {
 namespace numerical {
 namespace geometry {
 
-using boost::numeric::ublas::bounded_matrix;
-using boost::numeric::ublas::bounded_vector;
-
 class Ellipse
 {
 public:
-	typedef boost::numeric::ublas::bounded_matrix<double, 3, 3> Matrix;
+	typedef Eigen::Matrix3f Matrix;
+        
 	Ellipse()
-		: _a( 0.0 )
-		, _b( 0.0 )
-		, _angle( 0.0 )
+                : _matrix(Eigen::Matrix3f::Zero())
+                , _center(0, 0)
+		, _a( 0.f )
+		, _b( 0.f )
+		, _angle( 0.f )
 	{
-		_center.clear();
-		_matrix.clear();
 	}
 
 	Ellipse( const Matrix& matrix );
-	Ellipse( const Point2dN<double>& center, const double a, const double b, const double angle );
-
-	virtual ~Ellipse() {}
+	Ellipse( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle );
 
 	inline const Matrix& matrix() const { return _matrix; }
 	inline Matrix& matrix() { return _matrix; }
-	inline const Point2dN<double>& center() const { return _center; }
-	inline Point2dN<double>& center() { return _center; }
-	inline double a() const      { return _a; }
-	inline double b() const      { return _b; }
-	inline double angle() const  { return _angle; }
+	inline const Point2d<Eigen::Vector3f>& center() const { return _center; }
+	inline Point2d<Eigen::Vector3f>& center() { return _center; }
+	inline float a() const      { return _a; }
+	inline float b() const      { return _b; }
+	inline float angle() const  { return _angle; }
 
 	void setMatrix( const Matrix& matrix );
 
-	void setParameters( const Point2dN<double>& center, const double a, const double b, const double angle );
+	void setParameters( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle );
 
-	void setCenter( const Point2dN<double>& center );
+	void setCenter( const Point2d<Eigen::Vector3f>& center );
 
-	void setA( const double a );
+	void setA( const float a );
 
-	void setB( const double b );
+	void setB( const float b );
 
-	void setAngle( const double angle );
+	void setAngle( const float angle );
 
 	Ellipse transform(const Matrix& mT) const;
 
@@ -62,41 +54,25 @@ public:
         
         void getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual) const;
 
-	void init( const Point2dN<double>& center, const double a, const double b, const double angle );
-
-	/// @todo: is it the correct name ??
-	inline bounded_vector<double, 6> colon() const;
+	void init( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle );
 
 	friend  std::ostream& operator<<(std::ostream& os, const Ellipse& e);
 
 protected:
-	Matrix _matrix;
-	Point2dN<double> _center;
-	double _a;
-	double _b;
-	double _angle;
+	Eigen::Matrix3f _matrix;
+	Point2d<Eigen::Vector3f> _center;
+	float _a;
+	float _b;
+	float _angle;
 };
 
 void getSortedOuterPoints(
         const Ellipse & ellipse,
-        const std::vector< cctag::DirectedPoint2d<double> > & points,
-        std::vector< cctag::DirectedPoint2d<double> > & resPoints,
+        const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & points,
+        std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & resPoints,
         const std::size_t requestedSize);
 
-inline bounded_vector<double, 6> Ellipse::colon() const
-{
-	bounded_vector<double, 6> qColon;
-	qColon( 0 ) = _matrix( 0, 0 );
-	qColon( 1 ) = _matrix( 0, 1 );
-	qColon( 2 ) = _matrix( 0, 2 );
-	qColon( 3 ) = _matrix( 1, 1 );
-	qColon( 4 ) = _matrix( 1, 2 );
-	qColon( 5 ) = _matrix( 2, 2 );
-	return qColon;
-}
-
-
-void scale(const Ellipse & ellipse, Ellipse & rescaleEllipse, double scale);
+void scale(const Ellipse & ellipse, Ellipse & rescaleEllipse, float scale);
 
 }
 }

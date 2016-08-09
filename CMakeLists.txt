@@ -15,7 +15,7 @@ else()
   message(WARNING "Compiling without ${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake" )
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -pg")
+set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   ")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 IF(USE_CUDA)
@@ -29,7 +29,7 @@ ENDIF(USE_CUDA)
 IF(DEFINED CCTAG_BUILD_MODE)
   add_definitions("-D${CCTAG_BUILD_MODE}")
   IF(CCTAG_BUILD_MODE STREQUAL "DEBUG")
-    add_definitions("-DCCTAG_SERIALIZE")
+    #add_definitions("-DCCTAG_SERIALIZE")
     message( STATUS "Compiling with CCTAG build mode ${CCTAG_BUILD_MODE}" )
   ELSEIF(CCTAG_BUILD_MODE STREQUAL "RELEASE")
     message( STATUS "Compiling with CCTAG build mode ${CCTAG_BUILD_MODE}" )
@@ -79,12 +79,6 @@ if(Boost_FOUND)
   # link_directories(${Boost_LIB_DIR})
   add_definitions(${Boost_DEFINITIONS})
   message( STATUS "Found BOOST: ${Boost_LIBRARIES}" )
-
-  # FIND BoostNumericBindings
-  find_package(BoostNumericBindings REQUIRED)
-  include_directories(${BoostNumericBindings_INCLUDE_DIRS})
-  # link_directories(${BoostNumericBindings_LIB_DIR})
-  add_definitions(${BoostNumericBindings_DEFINITIONS})
 else(Boost_FOUND)
   message( FATAL_ERROR "Boost not found" )
 endif(Boost_FOUND)
@@ -99,7 +93,7 @@ IF(USE_CUDA)
     include_directories(${CUDA_INCLUDE_DIRS})
     add_definitions("-DWITH_CUDA")
     set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-DTHIS_IS_NVCC_DEBUG_MODE;-G;-g")
-    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-DTHIS_IS_NVCC_RELEASE_MODE;-O3")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-DTHIS_IS_NVCC_RELEASE_MODE;-O3;-DNDEBUG")
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread")
     # MORE NOISE:
     # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;-v")
@@ -117,11 +111,11 @@ ENDIF(USE_CUDA)
 
 
 # FIND UBLAS
-find_package(UBlas REQUIRED)
-include_directories(${UBlas_INCLUDE_DIRS})
+#find_package(UBlas REQUIRED)
+#include_directories(${UBlas_INCLUDE_DIRS})
 # link_directories(${UBlas_LIB_DIR})
-add_definitions(${UBlas_DEFINITIONS})
-add_definitions(-DBOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR)
+#add_definitions(${UBlas_DEFINITIONS})
+#add_definitions(-DBOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR)
 
 # FIND OPENCV
 list(APPEND CMAKE_MODULE_PATH "${OpenCV_DIR}")
@@ -131,18 +125,18 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_definitions(${OpenCV_DEFINITIONS})
 
 # FIND OPTPP
-find_package(OPTPP)
-if(OPTPP_FOUND)
-  include_directories(${OPTPP_INCLUDE_DIRS})
+#find_package(OPTPP)
+#if(OPTPP_FOUND)
+#  include_directories(${OPTPP_INCLUDE_DIRS})
   # link_directories(${OPTPP_LIB_DIR})
-  add_definitions(-D${OPTPP_DEFINITIONS})
-endif()
+#  add_definitions(-D${OPTPP_DEFINITIONS})
+#endif()
 
 # FIND CERES
-find_package(Ceres REQUIRED)
-include_directories(${Ceres_INCLUDE_DIR})
+#find_package(Ceres REQUIRED)
+#include_directories(${Ceres_INCLUDE_DIR})
 # link_directories(${Ceres_LIB_DIR}) this variable is not created by Cmake file
-add_definitions(${Ceres_DEFINITIONS})
+#add_definitions(${Ceres_DEFINITIONS})
 
 # FIND Eigen
 find_package(Eigen REQUIRED)
@@ -151,7 +145,7 @@ include_directories(${Eigen_INCLUDE_DIR})
 add_definitions(${Eigen_DEFINITIONS})
 
 # FIND LAPACK
-find_package(LAPACK REQUIRED)
+#find_package(LAPACK REQUIRED)
 
 # FIND PNG
 find_package(PNG REQUIRED)
@@ -163,13 +157,15 @@ find_package(JPEG REQUIRED)
 # find_package(Glog REQUIRED)
 
 # FIND GOMP
-find_package(Gomp REQUIRED)
+# find_package(Gomp REQUIRED)
 # griff: We don't have to find libgomp. Just pass the right flags to gcc
-find_package(OpenMP REQUIRED)
+# find_package(OpenMP REQUIRED)
 
 # FIND GSL
-find_package(GSL REQUIRED)
-link_directories(${GSL_LINK_DIRECTORIES})
+#find_package(GSL REQUIRED)
+#link_directories(${GSL_LINK_DIRECTORIES})
+
+find_package(TBB 4 REQUIRED)
 
 add_subdirectory(src)
 

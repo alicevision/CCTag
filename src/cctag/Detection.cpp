@@ -43,14 +43,19 @@
 #include <sstream>
 #include <list>
 #include <utility>
+#include <memory>
 #ifdef WITH_CUDA
 #include <cuda_runtime.h> // only for debugging
 #endif // WITH_CUDA
+
+#include <tbb/tbb.h>
 
 using namespace std;
 
 namespace cctag
 {
+
+namespace { using CandidatePtr = std::unique_ptr<Candidate>; }
 
 /* These are the CUDA pipelines that we instantiate for parallel processing.
  * We need at least one.
@@ -60,212 +65,208 @@ namespace cctag
  */
 std::vector<popart::TagPipe*> cudaPipelines;
 
-void constructFlowComponentFromSeed(
+static void constructFlowComponentFromSeed(
         EdgePoint * seed,
-        const EdgePointsImage& edgesMap,
-        WinnerMap & winners, 
-        std::list<Candidate> & vCandidateLoopOne,
+        EdgePointCollection& edgeCollection,
+        std::vector<CandidatePtr> & vCandidateLoopOne,
         const Parameters & params)
 {
+  static tbb::mutex G_SortMutex;
+  
   assert( seed );
   // Check if the seed has already been processed, i.e. belongs to an already
   // reconstructed flow component.
-  if (!seed->_processedIn)
+  if (!edgeCollection.test_processed_in(seed))
   {
 
-    Candidate candidate;
+    CandidatePtr candidate(new Candidate);
 
-    candidate._seed = seed;
-    std::list<EdgePoint*> & convexEdgeSegment = candidate._convexEdgeSegment;
+    candidate->_seed = seed;
+    std::list<EdgePoint*> & convexEdgeSegment = candidate->_convexEdgeSegment;
 
     // Convex edge linking from the seed in both directions. The linking
     // is performed until the convexity is lost.
-    edgeLinking(edgesMap, convexEdgeSegment, seed, winners, 
+    edgeLinking(edgeCollection, convexEdgeSegment, seed,
             params._windowSizeOnInnerEllipticSegment, params._averageVoteMin);
 
     // Compute the average number of received points.
     int nReceivedVote = 0;
     int nVotedPoints = 0;
 
-    BOOST_FOREACH(EdgePoint * p, convexEdgeSegment)
+    for (EdgePoint* p : convexEdgeSegment)
     {
-      nReceivedVote += winners[p].size();
-      if (winners[p].size() > 0)
-      {
+      auto votersSize = edgeCollection.voters_size(p);
+      nReceivedVote += votersSize;
+      if (votersSize > 0)
         ++nVotedPoints;
-      }
     }
 
-    // All flow components WILL BE next sorted based on this characteristic (scalar)
-    candidate._averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
-
-    if (vCandidateLoopOne.size() > 0)
+    // All flow components WILL BE next sorted based on this characteristic (scalar); descending order
+    
     {
-      std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
-      while ( ((*it)._averageReceivedVote > candidate._averageReceivedVote) 
-              && ( it != vCandidateLoopOne.end() ) )
-      {
-        ++it;
-      }
-      vCandidateLoopOne.insert(it, candidate);
-    }
-    else
-    {
-      vCandidateLoopOne.push_back(candidate);
+      tbb::mutex::scoped_lock lock(G_SortMutex);
+      candidate->_averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
+      auto it = std::lower_bound(vCandidateLoopOne.begin(), vCandidateLoopOne.end(), candidate,
+        [](const CandidatePtr& c1, const CandidatePtr& c2) { return c1->_averageReceivedVote > c2->_averageReceivedVote; });
+      vCandidateLoopOne.insert(it, std::move(candidate));
     }
   }
 }
 
-void completeFlowComponent(
-        Candidate & candidate,
-        WinnerMap & winners,
-        std::vector<EdgePoint> & points,
-        const EdgePointsImage& edgesMap,
-        std::vector<Candidate> & vCandidateLoopTwo,
-        std::size_t & nSegmentOut,
-        std::size_t & runId,
-        const Parameters & params)
+static void completeFlowComponent(
+  Candidate & candidate,
+  const EdgePointCollection& edgeCollection,
+  std::vector<Candidate> & vCandidateLoopTwo,
+  std::size_t& nSegmentOut,
+  std::size_t runId,
+  const Parameters & params)
 {
+  static tbb::spin_mutex G_UpdateMutex;
+  static tbb::mutex G_InsertMutex;
+  
   try
   {
-    try
+    std::list<EdgePoint*> childrens;
+
+    childrensOf(edgeCollection, candidate._convexEdgeSegment, childrens);
+
+    if (childrens.size() < params._minPointsSegmentCandidate)
     {
-      std::list<EdgePoint*> childrens;
+      return;
+    }
 
-      childrensOf(candidate._convexEdgeSegment, winners, childrens);
+    candidate._score = childrens.size();
 
-      if (childrens.size() < params._minPointsSegmentCandidate)
+    float SmFinal = 1e+10;
+
+    std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
+
+    outlierRemoval(
+            childrens, 
+            filteredChildrens,
+            SmFinal, 
+            params._threshRobustEstimationOfOuterEllipse,
+            kWeight,
+            60);
+
+    // todo@lilian see the case in outlierRemoval
+    // where filteredChildrens.size()==0
+    if (filteredChildrens.size() < 5)
+    {
+      DO_TALK( CCTAG_COUT_DEBUG(" filteredChildrens.size() < 5 "); )
+      return;
+    }
+
+    std::size_t nLabel = -1;
+
+    {
+      ssize_t nSegmentCommon = -1; // std::size_t nSegmentCommon = -1;
+
+      BOOST_FOREACH(EdgePoint * p, filteredChildrens)
       {
-        return;
-      }
-
-      candidate._score = childrens.size();
-
-      double SmFinal = 1e+10;
-
-      std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
-
-      outlierRemoval(
-              childrens, 
-              filteredChildrens,
-              SmFinal, 
-              params._threshRobustEstimationOfOuterEllipse,
-              kWeight,
-              60);
-
-      // todo@lilian see the case in outlierRemoval
-      // where filteredChildrens.size()==0
-      if (filteredChildrens.size() < 5)
-      {
-        DO_TALK( CCTAG_COUT_DEBUG(" filteredChildrens.size() < 5 "); )
-        return;
-      }
-
-      std::size_t nLabel = -1;
-
-      {
-        ssize_t nSegmentCommon = -1; // std::size_t nSegmentCommon = -1;
-
-        BOOST_FOREACH(EdgePoint * p, filteredChildrens)
+        if (p->_nSegmentOut != -1)
         {
-          if (p->_nSegmentOut != -1)
-          {
-            nSegmentCommon = p->_nSegmentOut;
-            break;
-          }
+          nSegmentCommon = p->_nSegmentOut;
+          break;
         }
+      }
+      
 
-        if (nSegmentCommon == -1)
+      if (nSegmentCommon == -1)
+      {
         {
+          tbb::spin_mutex::scoped_lock lock(G_UpdateMutex);
           nLabel = nSegmentOut;
           ++nSegmentOut;
         }
-        else
-        {
-          nLabel = nSegmentCommon;
-        }
-
-        BOOST_FOREACH(EdgePoint * p, filteredChildrens)
-        {
-          p->_nSegmentOut = nLabel;
-        }
       }
-
-      std::vector<EdgePoint*> & outerEllipsePoints = candidate._outerEllipsePoints;
-      cctag::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
-
-      bool goodInit = false;
-
-      goodInit = ellipseGrowingInit(points, filteredChildrens, outerEllipse);
-
-      ellipseGrowing2(edgesMap, filteredChildrens, outerEllipsePoints, outerEllipse,
-                      params._ellipseGrowingEllipticHullWidth, nSegmentOut, 
-                      runId, goodInit);
-       
-      candidate._nLabel = nLabel;
-
-      std::vector<double> vDistFinal;
-      vDistFinal.clear();
-      vDistFinal.reserve(outerEllipsePoints.size());
-
-      // Clean point (egdePoints*) to ellipse distance with inheritance 
-      // -- the current solution is dirty --
-      double distMax = 0;
-
-      BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
+      else
       {
-        double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
-        vDistFinal.push_back(distFinal);
-
-        if (distFinal > distMax)
-        {
-          distMax = distFinal;
-        }
+        nLabel = nSegmentCommon;
       }
 
-      // todo@Lilian : sort => need to be replace by nInf
-      SmFinal = numerical::medianRef(vDistFinal);
-
-      if (SmFinal > params._thrMedianDistanceEllipse)
+      BOOST_FOREACH(EdgePoint * p, filteredChildrens)
       {
-        DO_TALK( CCTAG_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing"); )
-        return;
+        p->_nSegmentOut = nLabel;
       }
+    }
 
-      double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
-      if (quality > 1.1)
+    std::vector<EdgePoint*> & outerEllipsePoints = candidate._outerEllipsePoints;
+    cctag::numerical::geometry::Ellipse & outerEllipse = candidate._outerEllipse;
+
+    bool goodInit = false;
+
+    goodInit = ellipseGrowingInit(filteredChildrens, outerEllipse);
+
+    ellipseGrowing2(edgeCollection, filteredChildrens, outerEllipsePoints, outerEllipse,
+                    params._ellipseGrowingEllipticHullWidth, runId, goodInit);
+
+    candidate._nLabel = nLabel;
+
+    std::vector<float> vDistFinal;
+    vDistFinal.clear();
+    vDistFinal.reserve(outerEllipsePoints.size());
+
+    // Clean point (egdePoints*) to ellipse distance with inheritance 
+    // -- the current solution is dirty --
+    float distMax = 0;
+
+    BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
+    {
+      float distFinal = numerical::distancePointEllipse(*p, outerEllipse);
+      vDistFinal.push_back(distFinal);
+
+      if (distFinal > distMax)
       {
-        DO_TALK( CCTAG_COUT_DEBUG("Quality too high!"); )
-        return;
+        distMax = distFinal;
       }
+    }
 
-      double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
-      if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20))
-      {
-        DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
-        return;
-      }
+    // todo@Lilian : sort => need to be replace by nInf
+    SmFinal = numerical::medianRef(vDistFinal);
 
+    if (SmFinal > params._thrMedianDistanceEllipse)
+    {
+      DO_TALK( CCTAG_COUT_DEBUG("SmFinal < params._thrMedianDistanceEllipse -- after ellipseGrowing"); )
+      return;
+    }
+
+    float quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
+    if (quality > 1.1)
+    {
+      DO_TALK( CCTAG_COUT_DEBUG("Quality too high!"); )
+      return;
+    }
+
+    float ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
+    if ((ratioSemiAxes < 0.05) || (ratioSemiAxes > 20))
+    {
+      DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
+      return;
+    }
+
+    {
+      tbb::mutex::scoped_lock lock(G_InsertMutex);
       vCandidateLoopTwo.push_back(candidate);
+    }
 
 #ifdef CCTAG_SERIALIZE
-      // Add childrens to output the filtering results (from outlierRemoval)
-      vCandidateLoopTwo.back().setChildrens(childrens);
+    // Add childrens to output the filtering results (from outlierRemoval)
+    vCandidateLoopTwo.back().setChildrens(childrens);
 
-      // Write all selectedFlowComponent
-      CCTagFlowComponent flowComponent(outerEllipsePoints, childrens, filteredChildrens,
-                                       outerEllipse, candidate._convexEdgeSegment,
-                                      *(candidate._seed), params._nCircles);
-      CCTagFileDebug::instance().outputFlowComponentInfos(flowComponent);
+    // Write all selectedFlowComponent
+    CCTagFlowComponent flowComponent(edgeCollection, outerEllipsePoints, childrens, filteredChildrens,
+                                     outerEllipse, candidate._convexEdgeSegment,
+                                    *(candidate._seed), params._nCircles);
+    CCTagFileDebug::instance().outputFlowComponentInfos(flowComponent);
 #endif
 
-    }
-    catch (cv::Exception& e)
-    {
-      DO_TALK( CCTAG_COUT_DEBUG( "OpenCV exception" ); )
+  }
+  catch (cv::Exception& e)
+  {
+    DO_TALK( CCTAG_COUT_DEBUG( "OpenCV exception" ); )
 
-      const char* err_msg = e.what();
-    }
+    const char* err_msg = e.what();
   }
   catch (...)
   {
@@ -282,13 +283,14 @@ void completeFlowComponent(
  outerEllipsePoints: edge points lying extracted on the outer ellipse
  cctagPoints: set of points constituting the final cctag 
  params: parameters of the system's algorithm */
-void flowComponentAssembling(
-        double & quality,
+static void flowComponentAssembling(
+        EdgePointCollection& edgeCollection,
+        float & quality,
         const Candidate & candidate,
         const std::vector<Candidate> & vCandidateLoopTwo,
         numerical::geometry::Ellipse & outerEllipse,
         std::vector<EdgePoint*>& outerEllipsePoints,
-        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
+        std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
         const Parameters & params
 #ifndef CCTAG_SERIALIZE
         )
@@ -304,53 +306,56 @@ void flowComponentAssembling(
   int iMax = 0;
   int i = 0;
 
-  double ratioExpension = 2.5;
+  float ratioExpension = 2.5;
   numerical::geometry::Circle circularResearchArea(
-         Point2dN<double>( candidate._seed->x(), candidate._seed->y() ),
+         Point2d<Eigen::Vector3f>( candidate._seed->x(), candidate._seed->y() ),
          candidate._seed->_flowLength * ratioExpension);
 
-  // Search for another segment
-  BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
+  if (1)
   {
-    if (&candidate != &anotherCandidate)
+    // Search for another segment
+    BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
     {
-      if (candidate._nLabel != anotherCandidate._nLabel)
+      if (&candidate != &anotherCandidate)
       {
-        if ((anotherCandidate._seed->_flowLength / candidate._seed->_flowLength > 0.666)
-                && (anotherCandidate._seed->_flowLength / candidate._seed->_flowLength < 1.5))
+        if (candidate._nLabel != anotherCandidate._nLabel)
         {
-          if (isInEllipse(circularResearchArea, 
-                  cctag::Point2dN<double>(double(anotherCandidate._seed->x()), double(anotherCandidate._seed->y()))))
+          if ((anotherCandidate._seed->_flowLength / candidate._seed->_flowLength > 0.666)
+                  && (anotherCandidate._seed->_flowLength / candidate._seed->_flowLength < 1.5))
           {
-            if (anotherCandidate._score > score)
+            if (isInEllipse(circularResearchArea, 
+                    cctag::Point2d<Eigen::Vector3f>(float(anotherCandidate._seed->x()), float(anotherCandidate._seed->y()))))
             {
-              score = anotherCandidate._score;
-              iMax = i;
+              if (anotherCandidate._score > score)
+              {
+                score = anotherCandidate._score;
+                iMax = i;
+              }
+            }
+            else
+            {
+              CCTagFileDebug::instance().setResearchArea(circularResearchArea);
+              CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(NOT_IN_RESEARCH_AREA);
             }
           }
           else
           {
-            CCTagFileDebug::instance().setResearchArea(circularResearchArea);
-            CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(NOT_IN_RESEARCH_AREA);
+            CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(FLOW_LENGTH);
           }
         }
         else
         {
-          CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(FLOW_LENGTH);
+          CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(SAME_LABEL);
         }
       }
-      else
+      ++i;
+  #if defined CCTAG_SERIALIZE && defined DEBUG
+      if (i < vCandidateLoopTwo.size())
       {
-        CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(SAME_LABEL);
+        CCTagFileDebug::instance().incrementFlowComponentIndex(1);
       }
+  #endif
     }
-    ++i;
-#if defined CCTAG_SERIALIZE && defined DEBUG
-    if (i < vCandidateLoopTwo.size())
-    {
-      CCTagFileDebug::instance().incrementFlowComponentIndex(1);
-    }
-#endif
   }
 
   DO_TALK( CCTAG_COUT_VAR_DEBUG(iMax); )
@@ -361,12 +366,12 @@ void flowComponentAssembling(
     const Candidate & selectedCandidate = vCandidateLoopTwo[iMax];
     DO_TALK( CCTAG_COUT_VAR_DEBUG(selectedCandidate._outerEllipse); )
 
-    if( isAnotherSegment(outerEllipse, outerEllipsePoints, 
+    if( isAnotherSegment(edgeCollection, outerEllipse, outerEllipsePoints, 
             selectedCandidate._filteredChildrens, selectedCandidate,
             cctagPoints, params._nCrowns * 2,
             params._thrMedianDistanceEllipse) )
     {
-      quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
+      quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
 
 #ifdef CCTAG_SERIALIZE
       componentCandidates.push_back(selectedCandidate);
@@ -377,110 +382,22 @@ void flowComponentAssembling(
 
   boost::posix_time::ptime tstop(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d = tstop - tstart;
-  const double spendTime = d.total_milliseconds();
+  const float spendTime = d.total_milliseconds();
 }
 
-
-void cctagDetectionFromEdges(
-        CCTag::List&            markers,
-        std::vector<EdgePoint>& points,
-        const cv::Mat&          src,
-        WinnerMap&              winners,
-        const std::vector<EdgePoint*>& seeds,
-        const EdgePointsImage& edgesMap,
-        const std::size_t frame,
-        int pyramidLevel,
-        double scale,
-        const Parameters & providedParams,
-        cctag::logtime::Mgmt* durations )
+static void cctagDetectionFromEdgesLoopTwoIteration(
+  CCTag::List& markers,
+  EdgePointCollection& edgeCollection,
+  const std::vector<Candidate>& vCandidateLoopTwo,
+  size_t iCandidate,
+  int pyramidLevel,
+  float scale,
+  const Parameters& params)
 {
-  // using namespace boost::gil;
-  const Parameters& params = Parameters::OverrideLoaded ?
-    Parameters::Override : providedParams;
+    static tbb::mutex G_InsertMutex;
+    
+    const Candidate& candidate = vCandidateLoopTwo[iCandidate];
 
-  // Call for debug only. Write the vote result as an image.
-  createImageForVoteResultDebug(src, winners, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
-
-  // Set some timers
-  boost::timer t3;
-  boost::posix_time::ptime tstart0(boost::posix_time::microsec_clock::local_time());
-
-  std::size_t nSegmentOut = 0;
-
-#ifdef CCTAG_SERIALIZE
-  std::stringstream outFlowComponents;
-  outFlowComponents << "flowComponentsLevel" << pyramidLevel << ".txt";
-  CCTagFileDebug::instance().newSession(outFlowComponents.str());
-#endif
-
-  if( seeds.size() <= 0 )
-  {
-    // No seeds to process
-    return;
-  }
-
-  const std::size_t nMaximumNbSeeds = std::max(src.rows/2, (int) params._maximumNbSeeds);
-  
-  const std::size_t nSeedsToProcess = std::min(seeds.size(), nMaximumNbSeeds);
-
-  std::list<Candidate> vCandidateLoopOne;
-
-  // Process all the nSeedsToProcess-first seeds.
-  // In the following loop, a seed will lead to a flow component if it lies
-  // on the inner ellipse of a CCTag.
-  // The edge points lying on the inner ellipse and their voters (lying on the outer ellipse
-  // will be collected and constitute the initial data of a flow component.
-  for (int iSeed = 0; iSeed < nSeedsToProcess; ++iSeed)
-  {
-    assert( seeds[iSeed] );
-    constructFlowComponentFromSeed(seeds[iSeed], edgesMap, winners, vCandidateLoopOne, params);
-  }
-
-  const std::size_t nFlowComponentToProcessLoopTwo = 
-          std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
-
-  std::vector<Candidate> vCandidateLoopTwo;
-  vCandidateLoopTwo.reserve(nFlowComponentToProcessLoopTwo);
-
-  std::list<Candidate>::iterator it = vCandidateLoopOne.begin();
-  std::size_t iCandidate = 0;
-
-  // Second main loop:
-  // From the flow components selected in the first loop, the outer ellipse will
-  // be here entirely recovered.
-  // The GPU implementation should stop at this point => layers ->  EdgePoint* creation.
-
-  CCTagVisualDebug::instance().initBackgroundImage(src);
-  CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
-  while (iCandidate < nFlowComponentToProcessLoopTwo)
-  {
-    completeFlowComponent(*it, winners, points, edgesMap, vCandidateLoopTwo, nSegmentOut, iCandidate, params);
-    ++it;
-    ++iCandidate;
-  }
-
-  DO_TALK(
-    CCTAG_COUT_VAR_DEBUG(vCandidateLoopTwo.size());
-    CCTAG_COUT_DEBUG("================= List of seeds =================");
-    BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
-    {
-      CCTAG_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
-    }
-  )
-
-  boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
-  boost::posix_time::time_duration d1 = tstop1 - tstart0;
-  const double spendTime1 = d1.total_milliseconds();
-
-#if defined CCTAG_SERIALIZE && defined DEBUG
-  std::stringstream outFlowComponentsAssembling;
-  outFlowComponentsAssembling << "flowComponentsAssemblingLevel" << pyramidLevel << ".txt";
-  CCTagFileDebug::instance().newSession(outFlowComponentsAssembling.str());
-  CCTagFileDebug::instance().initFlowComponentsIndex(2);
-#endif
-
-  BOOST_FOREACH(const Candidate & candidate, vCandidateLoopTwo)
-  {
 #ifdef CCTAG_SERIALIZE
     CCTagFileDebug::instance().resetFlowComponent();
     std::vector<Candidate> componentCandidates;
@@ -489,23 +406,22 @@ void cctagDetectionFromEdges(
 #endif
 #endif
 
-    // todo@Lilian: remove copies -- find another solution
+    // TODO@stian: remove copying
     std::vector<EdgePoint*> outerEllipsePoints = candidate._outerEllipsePoints;
     cctag::numerical::geometry::Ellipse outerEllipse = candidate._outerEllipse;
-    std::vector<EdgePoint*> filteredChildrens = candidate._filteredChildrens;
 
-    std::vector< std::vector< DirectedPoint2d<double> > > cctagPoints;
+    std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > cctagPoints;
 
     try
     {
-      double quality = (double) outerEllipsePoints.size() / (double) rasterizeEllipsePerimeter(outerEllipse);
+      float quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
 
       if (params._searchForAnotherSegment)
       {
         if ((quality > 0.25) && (quality < 0.7))
         {
           // Search for another segment
-          flowComponentAssembling( quality, candidate, vCandidateLoopTwo,
+          flowComponentAssembling( edgeCollection, quality, candidate, vCandidateLoopTwo,
                   outerEllipse, outerEllipsePoints, cctagPoints, params
 #ifndef CCTAG_SERIALIZE
                   );
@@ -517,14 +433,14 @@ void cctagDetectionFromEdges(
 
       // Add the flowComponent from candidate to cctagPoints // Add intermediary points - required ? todo@Lilian
       // cctagPoints may be not empty, i.e. when the assembling succeed.
-      if (! addCandidateFlowtoCCTag(candidate._filteredChildrens, 
+      if (! addCandidateFlowtoCCTag(edgeCollection, candidate._filteredChildrens, 
               candidate._outerEllipsePoints, outerEllipse,
               cctagPoints, params._nCrowns * 2))
       {
         DO_TALK( CCTAG_COUT_DEBUG("Points outside the outer ellipse OR CCTag not valid : bad gradient orientations"); )
         CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTSOUTSIDE_OR_BADGRADORIENT);
         CCTagFileDebug::instance().incrementFlowComponentIndex(0);
-        continue;
+        return;
       }
       else
       {
@@ -538,44 +454,45 @@ void cctagDetectionFromEdges(
       
       int realPixelPerimeter = rasterizeEllipsePerimeter(rescaleEllipse);
 
-      double realSizeOuterEllipsePoints = quality*realPixelPerimeter;
+      float realSizeOuterEllipsePoints = quality*realPixelPerimeter;
 
       // Naive reject condition todo@Lilian
       if ( ( ( quality <= 0.35 ) && ( realSizeOuterEllipsePoints >= 300.0 ) ) ||//0.35
-               ( ( quality <= 0.45 ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||//0.45
-               ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||//0.50
-               ( ( quality <= 0.50 ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||//0.5
-               ( ( quality <= 0.96 ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||//0.96
+               ( ( quality <= 0.45f ) && ( realSizeOuterEllipsePoints >= 200.0 ) && ( realSizeOuterEllipsePoints < 300.0 ) ) ||
+               ( ( quality <= 0.5f ) && ( realSizeOuterEllipsePoints >= 100.0 ) && ( realSizeOuterEllipsePoints < 200.0 ) ) ||
+               ( ( quality <= 0.5f ) && ( realSizeOuterEllipsePoints >= 70.0  ) && ( realSizeOuterEllipsePoints < 100.0 ) ) ||
+               ( ( quality <= 0.96f ) && ( realSizeOuterEllipsePoints >= 50.0  ) && ( realSizeOuterEllipsePoints < 70.0 ) ) ||
                ( realSizeOuterEllipsePoints < 50.0  ) )
       {
               DO_TALK( CCTAG_COUT_DEBUG( "Not enough outer ellipse points: realSizeOuterEllipsePoints : " << realSizeOuterEllipsePoints << ", rasterizeEllipsePerimeter : " << rasterizeEllipsePerimeter( outerEllipse )*scale << ", quality : " << quality ); )
-              continue;
+              return;
       }
 
-      cctag::Point2dN<double> markerCenter;
-      cctag::numerical::BoundedMatrix3x3d markerHomography;
-      markerHomography.clear();
+      cctag::Point2d<Eigen::Vector3f> markerCenter;
+      Eigen::Matrix3f markerHomography = Eigen::Matrix3f::Zero();
 
-      const double ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
+      const float ratioSemiAxes = outerEllipse.a() / outerEllipse.b();
 
       if (ratioSemiAxes > 8.0 || ratioSemiAxes < 0.125)
       {
         CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(RATIO_SEMIAXIS);
         CCTagFileDebug::instance().incrementFlowComponentIndex(0);
         DO_TALK( CCTAG_COUT_DEBUG("Too high ratio between semi-axes!"); )
-        continue;
+        return;
       }
 
-      std::vector<double> vDistFinal;
+      // TODO@stian: remove allocation from loop iteration
+      std::vector<float> vDistFinal;
       vDistFinal.clear();
       vDistFinal.reserve(outerEllipsePoints.size());
 
-      double resSquare = 0;
-      double distMax = 0;
+      float resSquare = 0;
+      float distMax = 0;
 
+      // TODO@stian: TBB parallel reduction
       BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
       {
-        double distFinal = numerical::distancePointEllipse(*p, outerEllipse, 1.0);
+        float distFinal = numerical::distancePointEllipse(*p, outerEllipse);
         resSquare += distFinal; //*distFinal;
 
         if (distFinal > distMax)
@@ -607,18 +524,18 @@ void cctagDetectionFromEdges(
         CCTagFileDebug::instance().incrementFlowComponentIndex(0);
 
         DO_TALK( CCTAG_COUT_DEBUG("Distance max to high!"); )
-        continue;
+        return;
       }
 
-      std::vector< Point2dN<int> > vPoint;
+      std::vector< Point2d<Eigen::Vector3i> > vPoint;
 
-      double quality2 = 0;
+      float quality2 = 0;
 
       BOOST_FOREACH(const EdgePoint* p, outerEllipsePoints)
       {
-        quality2 += p->_normGrad; // ***
+        quality2 += p->normGradient(); // ***
         
-        //double theta = atan2(p->y() - outerEllipse.center().y(), p->x() - outerEllipse.center().x()); // cf. supp.
+        //float theta = atan2(p->y() - outerEllipse.center().y(), p->x() - outerEllipse.center().x()); // cf. supp.
         //quality2 += std::abs(-sin(theta)*p->gradient().x() + cos(theta)*p->gradient().y()); // cf. supp.
       }
 
@@ -638,9 +555,13 @@ void cctagDetectionFromEdges(
                               scale,
                               quality2 );
 #ifdef CCTAG_SERIALIZE
-      tag->setFlowComponents( componentCandidates ); // markers.back().setFlowComponents(componentCandidates);
+      tag->setFlowComponents( componentCandidates, edgeCollection); // markers.back().setFlowComponents(componentCandidates);
 #endif
-      markers.push_back( tag ); // markers takes responsibility for delete
+      
+      {
+        tbb::mutex::scoped_lock lock(G_InsertMutex);
+        markers.push_back( tag ); // markers takes responsibility for delete
+      }
 #ifdef CCTAG_SERIALIZE
 #ifdef DEBUG
 
@@ -659,20 +580,142 @@ void cctagDetectionFromEdges(
       CCTAG_COUT_CURRENT_EXCEPTION;
       DO_TALK( CCTAG_COUT_DEBUG( "Exception raised" ); )
     }
+}
+
+void cctagDetectionFromEdges(
+        CCTag::List&            markers,
+        EdgePointCollection& edgeCollection,
+        const cv::Mat&          src,
+        const std::vector<EdgePoint*>& seeds,
+        const std::size_t frame,
+        int pyramidLevel,
+        float scale,
+        const Parameters & providedParams,
+        cctag::logtime::Mgmt* durations )
+{
+  // using namespace boost::gil;
+  const Parameters& params = Parameters::OverrideLoaded ?
+    Parameters::Override : providedParams;
+
+  // Call for debug only. Write the vote result as an image.
+  createImageForVoteResultDebug(src, pyramidLevel); //todo@Lilian: change this function to put a cv::Mat as input.
+
+  // Set some timers
+  boost::timer t3;
+  boost::posix_time::ptime tstart0(boost::posix_time::microsec_clock::local_time());
+
+  std::size_t nSegmentOut = 0;
+
+#ifdef CCTAG_SERIALIZE
+  std::stringstream outFlowComponents;
+  outFlowComponents << "flowComponentsLevel" << pyramidLevel << ".txt";
+  CCTagFileDebug::instance().newSession(outFlowComponents.str());
+#endif
+
+  if( seeds.size() <= 0 )
+  {
+    // No seeds to process
+    return;
   }
 
+  const std::size_t nMaximumNbSeeds = std::max(src.rows/2, (int) params._maximumNbSeeds);
+  
+  const std::size_t nSeedsToProcess = std::min(seeds.size(), nMaximumNbSeeds);
+
+  std::vector<CandidatePtr> vCandidateLoopOne;
+
+  // Process all the nSeedsToProcess-first seeds.
+  // In the following loop, a seed will lead to a flow component if it lies
+  // on the inner ellipse of a CCTag.
+  // The edge points lying on the inner ellipse and their voters (lying on the outer ellipse
+  // will be collected and constitute the initial data of a flow component.
+  
+#ifndef CCTAG_SERIALIZE
+  tbb::parallel_for(size_t(0), nSeedsToProcess, [&](int iSeed) {
+#else 
+  for(size_t iSeed=0 ; iSeed < nSeedsToProcess; ++iSeed)
+  {
+#endif
+    assert( seeds[iSeed] );
+    constructFlowComponentFromSeed(seeds[iSeed], edgeCollection, vCandidateLoopOne, params);
+#ifndef CCTAG_SERIALIZE
+  });
+#else
+  }
+#endif
+
+  const std::size_t nFlowComponentToProcessLoopTwo = 
+          std::min(vCandidateLoopOne.size(), params._maximumNbCandidatesLoopTwo);
+
+  std::vector<Candidate> vCandidateLoopTwo;
+  vCandidateLoopTwo.reserve(nFlowComponentToProcessLoopTwo);
+
+  // Second main loop:
+  // From the flow components selected in the first loop, the outer ellipse will
+  // be here entirely recovered.
+  // The GPU implementation should stop at this point => layers ->  EdgePoint* creation.
+
+  CCTagVisualDebug::instance().initBackgroundImage(src);
+  CCTagVisualDebug::instance().newSession( "completeFlowComponent" );
+  
+#ifndef CCTAG_SERIALIZE
+  tbb::parallel_for(size_t(0), nFlowComponentToProcessLoopTwo, [&](size_t iCandidate) {
+#else
+    for(size_t iCandidate=0 ; iCandidate < nFlowComponentToProcessLoopTwo; ++iCandidate)
+    {
+#endif
+      size_t runId = iCandidate;
+      completeFlowComponent(*vCandidateLoopOne[iCandidate], edgeCollection, vCandidateLoopTwo, nSegmentOut, runId, params);
+#ifndef CCTAG_SERIALIZE  
+    });
+#else
+  }
+#endif
+  
+  DO_TALK(
+    CCTAG_COUT_VAR_DEBUG(vCandidateLoopTwo.size());
+    CCTAG_COUT_DEBUG("================= List of seeds =================");
+    BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
+    {
+      CCTAG_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
+    }
+  )
+
+  boost::posix_time::ptime tstop1(boost::posix_time::microsec_clock::local_time());
+  boost::posix_time::time_duration d1 = tstop1 - tstart0;
+  const float spendTime1 = d1.total_milliseconds();
+
+#if defined CCTAG_SERIALIZE && defined DEBUG
+  std::stringstream outFlowComponentsAssembling;
+  outFlowComponentsAssembling << "flowComponentsAssemblingLevel" << pyramidLevel << ".txt";
+  CCTagFileDebug::instance().newSession(outFlowComponentsAssembling.str());
+  CCTagFileDebug::instance().initFlowComponentsIndex(2);
+#endif
+
+  const size_t candidateLoopTwoCount = vCandidateLoopTwo.size();
+
+#ifndef CCTAG_SERIALIZE
+  tbb::parallel_for(size_t(0), candidateLoopTwoCount, [&](size_t iCandidate) {
+#else
+  for(size_t iCandidate=0 ; iCandidate < vCandidateLoopTwo.size(); ++iCandidate)
+#endif
+    cctagDetectionFromEdgesLoopTwoIteration(markers, edgeCollection, vCandidateLoopTwo, iCandidate,
+      pyramidLevel, scale, params);
+#ifndef CCTAG_SERIALIZE
+  });
+#endif
+  
   boost::posix_time::ptime tstop2(boost::posix_time::microsec_clock::local_time());
   boost::posix_time::time_duration d2 = tstop2 - tstop1;
-  const double spendTime2 = d2.total_milliseconds();
+  const float spendTime2 = d2.total_milliseconds();
 }
 
 
 void createImageForVoteResultDebug(
         const cv::Mat & src,
-        const WinnerMap & winners,
         std::size_t nLevel)
 {
-#ifdef CCTAG_SERIALIZE 
+#if defined(CCTAG_SERIALIZE) && 0 // lilian fixme!
   {
     std::size_t mx = 0;
     
@@ -681,7 +724,7 @@ void createImageForVoteResultDebug(
     for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
     {
       EdgePoint* winner = itr->first;
-      std::list<EdgePoint*> v = itr->second;
+      const std::vector<EdgePoint*>& v = itr->second;
       if (mx < v.size())
       {
         mx = v.size();
@@ -691,7 +734,7 @@ void createImageForVoteResultDebug(
     for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
     {
       EdgePoint* winner = itr->first;
-      std::list<EdgePoint*> v = itr->second;
+      const std::vector<EdgePoint*>& v = itr->second;
       imgVote.at<uchar>(winner->y(),winner->x()) = (unsigned char) ((v.size() * 10.0));
     }
 
@@ -745,7 +788,6 @@ void cctagDetection(CCTag::List& markers,
 
 {
     using namespace cctag;
-    using namespace boost::numeric::ublas;
     
     const Parameters& params = Parameters::OverrideLoaded ?
       Parameters::Override : providedParams;

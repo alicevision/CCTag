@@ -3,8 +3,6 @@
 
 #include "Exceptions.hpp"
 
-#include <boost/numeric/ublas/vector.hpp>
-
 #include <cstdlib>
 #include <cstddef>
 #include <iostream>

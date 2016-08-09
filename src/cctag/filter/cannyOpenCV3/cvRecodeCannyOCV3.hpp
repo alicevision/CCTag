@@ -5,6 +5,8 @@
  * Created on June 11, 2015, 4:49 PM
  */
 
+#if 0
+
 #ifndef CVRECODECANNYOCV3_HPP
 #define	CVRECODECANNYOCV3_HPP
 
@@ -19,4 +21,6 @@ void RecodedCanny( InputArray _src, OutputArray _dst,
 }
 
 #endif	/* CVRECODECANNYOCV3_HPP */
+
+#endif
 

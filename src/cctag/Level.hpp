@@ -20,8 +20,8 @@ public:
   ~Level( );
 
   void setLevel( const cv::Mat & src,
-                 const double thrLowCanny,
-                 const double thrHighCanny,
+                 const float thrLowCanny,
+                 const float thrHighCanny,
                  const cctag::Parameters* params );
 #ifdef WITH_CUDA
   void setLevel( popart::TagPipe* cuda_pipe,

@@ -17,7 +17,6 @@
 
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
-#include <boost/numeric/ublas/vector.hpp>
 
 #include "Identification.hpp"
 
@@ -29,28 +28,28 @@ namespace identification {
 
 struct TotoFunctor {
 
-	typedef std::vector< cctag::Point2dN<double> > VecExtPoints;
+	typedef std::vector< cctag::Point2d<Eigen::Vector3f> > VecExtPoints;
 	typedef std::vector< cctag::ImageCut > VecSignals;
 
 
   TotoFunctor( const VecExtPoints & vecExtPoints, const std::size_t lengthSig, const cv::Mat & src,
-  const cctag::numerical::geometry::Ellipse & outerEllipse, const cctag::numerical::BoundedMatrix3x3d & mT)
+  const cctag::numerical::geometry::Ellipse & outerEllipse, const Eigen::Matrix3f & mT)
       : _vecExtPoints(vecExtPoints), _lengthSig(lengthSig), _src(src), _ellipse(outerEllipse), _mT(mT) {
 
 	  cctag::numerical::invert_3x3(mT,_mInvT);
   }
 
 
-    bool operator()(const double* const x, double* residual) const {
+    bool operator()(const float* const x, float* residual) const {
 	
-    cctag::Point2dN<double> centerExtEllipse( x[0], x[1] );
+    cctag::Point2d<Eigen::Vector3f> centerExtEllipse( x[0], x[1] );
 
 	cctag::numerical::optimization::condition(centerExtEllipse, _mInvT);
 	//CCTAG_TCOUT_VAR( centerExtEllipse );
 	//CCTagVisualDebug::instance().drawText( centerExtEllipse, boost::lexical_cast<std::string>(this_ptr->_numIter), cctag::color_white );
 	CCTagVisualDebug::instance().drawPoint( centerExtEllipse, cctag::color_blue );
 
-	cctag::numerical::BoundedMatrix3x3d mH;
+	Eigen::Matrix3f mH;
 	VecSignals vecSig;
 	if ( !getSignals( mH, vecSig, _lengthSig, centerExtEllipse, _vecExtPoints, _src, _ellipse.matrix() ) )
 	{
@@ -78,8 +77,8 @@ private:
 	std::size_t _lengthSig;
 	cv::Mat _src;
 	cctag::numerical::geometry::Ellipse _ellipse;
-	cctag::numerical::BoundedMatrix3x3d _mT;
-	cctag::numerical::BoundedMatrix3x3d _mInvT;
+	Eigen::Matrix3f _mT;
+	Eigen::Matrix3f _mInvT;
 
 };
 

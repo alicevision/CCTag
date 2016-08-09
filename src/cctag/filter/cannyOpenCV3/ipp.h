@@ -268,7 +268,7 @@ IPPAPI(IppStatus, ippsPolarToCart_64f,(const Ipp64f* pSrcMagn,
 //     flag       Flag to choose the results normalization factors
 //     hint       Option to select the algorithmic implementation of the transform
 //                function
-//     pDFTSpec   Double pointer to the DFT context structure
+//     pDFTSpec   float pointer to the DFT context structure
 //     pMemInit   Pointer to initialization buffer
 //  Return:
 //     ippStsNoErr            No errors
@@ -2776,7 +2776,7 @@ IPPAPI (IppStatus, ippiDCTInvGetBufSize_32f,
 //     roiSize    Size of the ROI
 //     hint       Option to select the algorithmic implementation of the transform
 //                function
-//     pDCTSpec   Double pointer to the DCT context structure
+//     pDCTSpec   float pointer to the DCT context structure
 //  Returns:
 //     ippStsNoErr            No errors
 //     ippStsNullPtrErr       pDCTSpec == NULL
@@ -2904,7 +2904,7 @@ IPPAPI (IppStatus, ippiDFTGetSize_R_32f,
 //     flag       Flag to choose the results normalization factors
 //     hint       Option to select the algorithmic implementation of the transform
 //                function
-//     pDFTSpec   Double pointer to the DFT context structure
+//     pDFTSpec   float pointer to the DFT context structure
 //     pMemInit   Pointer to initialization buffer
 //  Returns:
 //     ippStsNoErr            No errors
@@ -6437,7 +6437,7 @@ IPPAPI(IppStatus, ippiBGRToBGR565_8u16u_C3R,(const Ipp8u*  pSrc, int srcStep, Ip
 //    b = (a + 128.)* 255
 //    where:
 //      normalizing multipliers
-//    Yn = 1.0      * 255
+//    Yn = 1.f      * 255
 //    Xn = 0.950455 * 255
 //    Zn = 1.088753 * 255
 //
