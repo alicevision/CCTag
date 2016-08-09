@@ -743,7 +743,7 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
   }
 }
 
-
+/* Ugly -> perform an iterative optimization*/
 bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, const float scale, const size_t numSamplesOuterEdgePointsRefinement)
 {
     // Subpixellic refinement of the outer edge points ///////////////////////////

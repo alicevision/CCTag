@@ -41,7 +41,17 @@ protected:
         int _status;
 };
 
-// implemeted in cctag/ICCTag.cpp
+/**
+ * @brief Perform the CCTag detection on a gray scale image
+ * 
+ * @param[out] markers Detected markers. WARNING: only markers with status == 1 are valid ones. (status available via getStatus()) 
+ * @param[in] frame A frame number. Can be anything (e.g. 0).
+ * @param[in] graySrc Gray scale input image.
+ * @param[in] nRings Number of CCTag rings.
+ * @param[in] parameterFile Path to a parameter file. If not provided default parameters will be used.
+ * @param[in] cctagBankFilename Path to the cctag bank. If not provided, radii will be the ones associated to the CCTags contained in the
+ * markersToPrint folder.
+ */
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
@@ -51,7 +61,6 @@ void cctagDetection(
       const std::string & parameterFile = "",
       const std::string & cctagBankFilename = "");
 
-// implemeted in cctag/ICCTag.cpp
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,

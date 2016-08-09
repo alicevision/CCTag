@@ -403,6 +403,9 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
 
     std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > cctagPoints;
 
+    // todo@Lilian: The following block along with its called function are ugly:
+    // flowComponentAssembling should be performed from the connected edges in
+    // downsample images.
     try
     {
       float quality = (float) outerEllipsePoints.size() / (float) rasterizeEllipsePerimeter(outerEllipse);
@@ -755,6 +758,16 @@ popart::TagPipe* initCuda( int      pipeId,
 }
 #endif // WITH_CUDA
 
+/**
+ * @brief Perform the CCTag detection on a gray scale image
+ * 
+ * @param[out] markers Detected markers. WARNING: only markers with status == 1 are valid ones. (status available via getStatus()) 
+ * @param[in] frame A frame number. Can be anything (e.g. 0).
+ * @param[in] imgGraySrc Gray scale input image.
+ * @param[in] providedParams Contains all the parameters.
+ * @param[in] bank CCTag bank.
+ * @param[in] No longer used.
+ */
 void cctagDetection(CCTag::List& markers,
         const std::size_t frame, 
         const cv::Mat & imgGraySrc,
