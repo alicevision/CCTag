@@ -28,13 +28,13 @@ void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       const std::size_t frame,
       const cv::Mat & graySrc,
-      const std::size_t nCrowns,
+      const std::size_t nRings,
       logtime::Mgmt* durations,
       const std::string & parameterFilename,
       const std::string & cctagBankFilename)
 {
   // Load parameters
-  cctag::Parameters params = cctag::Parameters(nCrowns);
+  cctag::Parameters params = cctag::Parameters(nRings);
     
   if ( !parameterFilename.empty() )
   {
@@ -46,7 +46,7 @@ void cctagDetection(
       std::ifstream ifs( parameterFilename.c_str() );
       boost::archive::xml_iarchive ia(ifs);
       ia >> boost::serialization::make_nvp("CCTagsParams", params);
-      assert(  nCrowns == params._nCrowns  );
+      assert(  nRings == params._nCrowns  );
     }
   }
   

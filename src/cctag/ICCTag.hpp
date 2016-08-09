@@ -57,7 +57,7 @@ void cctagDetection(
       const std::size_t frame,
       const cv::Mat & graySrc,
       logtime::Mgmt* durations = 0,
-      const std::size_t nCrowns = 3,
+      const std::size_t nRings = 3,
       const std::string & parameterFile = "",
       const std::string & cctagBankFilename = "");
 
