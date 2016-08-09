@@ -857,7 +857,6 @@ std::pair<float,float> convImageCut(const std::vector<float> & kernel, ImageCut 
  * @param[in] mHomography transformation image->cctag used to rectified the 1D signal
  * @param[in] src source gray scale image (uchar)
  */
-// Expensive (GPU) @Carsten
 void getSignals(
         std::vector< cctag::ImageCut > & vCuts,
         const Eigen::Matrix3f & mHomography,
@@ -866,7 +865,6 @@ void getSignals(
   Eigen::Matrix3f mInvHomography = mHomography.inverse();
   for( cctag::ImageCut & cut : vCuts )
   {
-    // Expensive (GPU) @Carsten
     extractSignalUsingHomography( cut, src, mHomography, mInvHomography);
   }
 }
@@ -1266,7 +1264,6 @@ void getNearbyPoints(
  * @param[out] flag: true if at least one image cut has been readable (within the image bounds), false otherwise.
  * @return residual
  */
-// Expensive (GPU) @Carsten
 float costFunctionGlob(
         const Eigen::Matrix3f & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
@@ -1276,7 +1273,6 @@ float costFunctionGlob(
   flag = true;
   
   // Get the rectified signals along the image cuts
-  // Expensive (GPU) @Carsten
   getSignals( vCuts, mHomography, src);
 
   float res = 0;
@@ -1291,9 +1287,6 @@ float costFunctionGlob(
         assert(is.size() == js.size());
         for (size_t ii = 0; ii < js.size(); ++ii)
           res += std::pow(is[ii] - js[ii], 2);
-        //res += std::pow( norm_2( vCuts[i].imgSignal() - vCuts[j].imgSignal() ), 2 );
-        // i.e.
-        // += (signalCutI(0)-signalCutJ(0))*(signalCutI(0)-signalCutJ(0)) + ... + (signalCutI(end)-signalCutJ(end))*(signalCutI(end)-signalCutJ(end)) // GPU
         ++resSize;
       }
     }
