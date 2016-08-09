@@ -33,17 +33,10 @@ See [LICENSE](LICENSE.md) text file
 Authors
 -------
 
-
-**Code**<br />
 Lilian Calvet (CPU)<br />
 Carsten Griwodz (GPU)<br />
-Stian Vrba (CPU)
-
-**Paper**<br />
-Lilian Calvet<br />
-Pierre Gurdjos<br />
-Carsten Griwodz<br />
-Simone Gasparini
+Stian Vrba (CPU)<br />
+Cyril Pichard (all)
 
 
 ---------
