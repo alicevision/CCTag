@@ -38,13 +38,15 @@ protected:
 	float _x;
 	float _y;
 	MarkerID _id;
-        int _status;
+        int _status; // WARNING: only markers with status == 1 are the valid ones. (status available via getStatus()) 
+                     // A marker correctly detected and identified has a status 1.
+                     // Otherwise, it can be detected but not correctly identified.
 };
 
 /**
  * @brief Perform the CCTag detection on a gray scale image
  * 
- * @param[out] markers Detected markers. WARNING: only markers with status == 1 are valid ones. (status available via getStatus()) 
+ * @param[out] markers Detected markers. WARNING: only markers with status == 1 are the valid ones. (status available via getStatus()) 
  * @param[in] frame A frame number. Can be anything (e.g. 0).
  * @param[in] graySrc Gray scale input image.
  * @param[in] nRings Number of CCTag rings.
