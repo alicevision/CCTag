@@ -33,10 +33,10 @@ See [LICENSE](LICENSE.md) text file
 Authors
 -------
 
-Lilian Calvet (CPU)<br />
-Carsten Griwodz (GPU)<br />
-Stian Vrba (CPU)<br />
-Cyril Pichard (all)
+Lilian Calvet (CPU, lilian.calvet@gmail.com)<br />
+Carsten Griwodz (GPU, griff@simula.no)<br />
+Stian Vrba (CPU, vrba@mixedrealities.no)<br />
+Cyril Pichard (pih@mikrosimage.eu)
 
 
 ---------
