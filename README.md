@@ -26,14 +26,14 @@ Authors
 
 
 **Code**
-Lilian Calvet (CPU)
-Carsten Griwodz (GPU)
+Lilian Calvet (CPU)<br />
+Carsten Griwodz (GPU)<br />
 Stian Vrba (CPU)
 
 **Paper**
-Lilian Calvet
-Pierre Gurdjos
-Carsten Griwodz
+Lilian Calvet<br />
+Pierre Gurdjos<br />
+Carsten Griwodz<br />
 Simone Gasparini
 
 
