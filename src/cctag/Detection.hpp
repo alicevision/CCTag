@@ -30,7 +30,7 @@ class EdgePointImage;
  * @param[in] imgGraySrc Gray scale input image.
  * @param[in] providedParams Contains all the parameters.
  * @param[in] bank CCTag bank.
- * @param[in] No longer used.
+ * @param[in] bDisplayEllipses No longer used.
  */
 void cctagDetection(
         CCTag::List& markers,
