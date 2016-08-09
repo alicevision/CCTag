@@ -6,11 +6,10 @@ Detection of CCTag markers made up of concentric circles. Implementations in bot
 
 See paper: "Detection and Accurate Localization of Circular Fiducials under Highly Challenging Conditions." Lilian Calvet, Pierre Gurdjos, Carsten Griwodz and Simone Gasparini. CVPR 2016.
 
-----------
 
-
+---------
 Marker library
------------
+---------
 Markers to print are located [here](markersToPrint). 
 
 **WARNING**
@@ -18,10 +17,20 @@ Please respect the provided margins. The reported detection rate and localizatio
 
 The four rings CCTags will be available soon.
 
+--------
 Building
------------
+--------
 
 See [BUILD](BUILD.md) text file.
+
+-------
+Running
+-------
+Once compiled, you might want to run the CCTag detection on a sample image:
+```bash
+$ build/src/detection -n 3 -i sample/01.png
+``` 
+For the library interface, see [ICCTag.hpp](src/cctag/ICCTag.hpp)
 
 -------
 License
