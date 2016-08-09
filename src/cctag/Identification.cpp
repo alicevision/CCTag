@@ -50,7 +50,8 @@ bool orazioDistanceRobust(
         std::vector<std::list<float> > & vScore,
         const RadiusRatioBank & rrBank,
         const std::vector<cctag::ImageCut> & cuts,
-        const float minIdentProba)
+        const float minIdentProba,
+        const float meanSignal)
 {
   BOOST_ASSERT( cuts.size() > 0 );
 
@@ -96,7 +97,8 @@ bool orazioDistanceRobust(
                                                                    // start until the end.
 
       // Mean
-      const float medianSig = boost::accumulators::mean( acc );
+      //const float medianSig = boost::accumulators::mean( acc );
+      const float medianSig = meanSignal;
       
       // or median
       //const float medianSig = computeMedian( imgSig );
@@ -1180,7 +1182,8 @@ bool refineConicFamilyGlob(
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params,
         popart::NearbyPoint* cctag_pointer_buffer,
-        float & residual)
+        float & residual,
+        float & meanSignal)
 {
     using namespace cctag::numerical;
 
@@ -1292,6 +1295,8 @@ bool refineConicFamilyGlob(
     const float vMin = *std::min_element(barCode.begin(), barCode.end());
     const float vMax = *std::max_element(barCode.begin(), barCode.end());
     const float magnitude = vMax - vMin;
+    
+    meanSignal = ( vMax + vMin )/2.f;
 
 //    // Retains only the most reliable image cuts
 //    std::map<float, std::size_t> mostReliableCuts;
@@ -1697,6 +1702,7 @@ int identify_step_2(
 
   // std::vector< cctag::ImageCut > vCuts;
   float residual = std::numeric_limits<float>::max();
+  float meanSignal = 0.f;
   //    bool hasConverged = refineConicFamily( cctag, vCuts, params._sampleCutLength, src, ellipse, prSelection, params._useLMDif );
   //    if( !hasConverged )
   //    {
@@ -1728,7 +1734,8 @@ int identify_step_2(
 #else
                         0,
 #endif
-                        residual
+                        residual,
+                        meanSignal
                         );
   
   cctag.setQuality(1.f/residual);
@@ -1783,7 +1790,7 @@ int identify_step_2(
 #else // INITIAL_1D_READING
     // used
     // v0.1 for the identification: use the most redundant id over all the rectified cut.
-    identSuccessful = orazioDistanceRobust( vScore, radiusRatios, vSelectedCuts, params._minIdentProba);
+    identSuccessful = orazioDistanceRobust( vScore, radiusRatios, vSelectedCuts, params._minIdentProba, meanSignal);
     
 #ifdef VISUAL_DEBUG // todo: write a proper function in visual debug
     cv::Mat output;
