@@ -71,11 +71,11 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     CCTagVisualDebug::instance().outPutAllSessions();
     CCTagVisualDebug::instance().clearSessions();
 
-    CCTAG_COUT( markers.size() << " markers.");
     std::cout << "Total time: " << t.elapsed() << std::endl;
     CCTAG_COUT_NOENDL("Id : ");
 
     int i = 0;
+    int nMarkers = 0;
     output << "#frame " << frameId << '\n';
     output << markers.size() << '\n';
     BOOST_FOREACH(const cctag::CCTag & marker, markers) {
@@ -86,8 +86,11 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
           CCTAG_COUT_NOENDL(", " << marker.id() + 1);
       }
       ++i;
+      if ( marker.getStatus() == 1 )
+        ++nMarkers;
     }
-    CCTAG_COUT("");
+    
+    std::cout << std::endl << nMarkers << " markers detected and identified" << std::endl;
 }
 
 /*************************************************************/
