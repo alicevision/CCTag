@@ -96,7 +96,6 @@ ELSE(USE_CUDA)
   message( STATUS "Avoid using CUDA" )
 ENDIF(USE_CUDA)
 
-
 # FIND OPENCV
 list(APPEND CMAKE_MODULE_PATH "${OpenCV_DIR}")
 
@@ -107,11 +106,7 @@ add_definitions(${OpenCV_DEFINITIONS})
 # FIND Eigen
 find_package(Eigen REQUIRED)
 include_directories(${Eigen_INCLUDE_DIR})
-# link_directories(${Eigen_LIB_DIR})
 add_definitions(${Eigen_DEFINITIONS})
-
-# FIND LAPACK
-#find_package(LAPACK REQUIRED)
 
 # FIND PNG
 find_package(PNG REQUIRED)
@@ -123,16 +118,3 @@ find_package(JPEG REQUIRED)
 find_package(TBB 4 REQUIRED)
 
 add_subdirectory(src)
-
-# FIND CMINPACK
-#find_package(CMINPACK REQUIRED)
-#include_directories(${CMINPACK_INCLUDE_DIRS})
-#link_directories(${CMINPACK_LIB_DIR})
-#add_definitions(${CMINPACK_DEFINITIONS})
-#MESSAGE( "${CMINPACK_DEFINITIONS}" )
-
-#if(NOT CMINPACK_FOUND)
-#    message(ERROR " CMINPACK not found!")
-#else()
-#    message( "-- Found CMINPACK version: ${CMINPACK_VERSION}" )
-#endif(NOT CMINPACK_FOUND)
