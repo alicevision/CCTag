@@ -401,6 +401,7 @@ namespace status
 {
 // List of possible status
 static const int id_reliable = 1;
+static const int too_few_outer_points = -1;
 static const int no_collected_cuts = -1;
 static const int no_selected_cuts = -2;
 static const int opti_has_diverged = -3;
