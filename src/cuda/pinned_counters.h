@@ -36,7 +36,7 @@ public:
      *  CCTag in cctag before identification.
      */
     static NearbyPoint& getPoint( );
-    static NearbyPoint* getPointPtr( );
+    static NearbyPoint* getPointPtr( const char* file, int line );
 
     /** Called after all identification of all CCTags is complete.
      *  Invalidates all NearbyPoint references in all CCTag.
@@ -57,7 +57,7 @@ private:
     void         obj_init( );
     int&         obj_getCounter( );
     NearbyPoint& obj_getPoint( );
-    NearbyPoint* obj_getPointPtr( );
+    NearbyPoint* obj_getPointPtr( const char* file, int line );
 };
 
 } // namespace popart

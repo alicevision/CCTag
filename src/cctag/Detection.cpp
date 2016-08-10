@@ -857,6 +857,11 @@ void cctagDetection(CCTag::List& markers,
         /* identification in CUDA requires a host-side nearby point struct
          * in pinned memory for safe, non-blocking memcpy.
          */
+        if( markers.size() > 60 ) {
+            std::cerr << __FILE__ << ":" << __LINE__ << std::endl
+              << "   Found more than 60 (" << markers.size() << ") markers" << endl;
+        }
+
         for( CCTag& tag : markers ) {
             tag.acquireNearbyPointMemory( );
         }
@@ -961,6 +966,7 @@ void cctagDetection(CCTag::List& markers,
     {
       update(markersFinal, marker);
     }
+
     markers = markersFinal;
   
     markers.sort();

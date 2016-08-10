@@ -105,7 +105,7 @@ void CCTag::scale(const float s)
 #ifdef WITH_CUDA
 void CCTag::acquireNearbyPointMemory( )
 {
-    _cuda_result = popart::PinnedCounters::getPointPtr();
+    _cuda_result = popart::PinnedCounters::getPointPtr( __FILE__, __LINE__ );
 }
 
 void CCTag::releaseNearbyPointMemory( )

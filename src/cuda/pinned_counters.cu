@@ -9,7 +9,7 @@ namespace popart {
 using namespace std;
 
 const int PinnedCounters::_max_counters = 100;
-const int PinnedCounters::_max_points   = 30;
+const int PinnedCounters::_max_points   = 60;
 
 /* This is system-wide unique allocation
  */
@@ -45,9 +45,9 @@ NearbyPoint& PinnedCounters::getPoint( )
     return pinned_counters.obj_getPoint( );
 }
 
-NearbyPoint* PinnedCounters::getPointPtr( )
+NearbyPoint* PinnedCounters::getPointPtr( const char* file, int line )
 {
-    return pinned_counters.obj_getPointPtr( );
+    return pinned_counters.obj_getPointPtr( file, line );
 }
 
 void PinnedCounters::obj_init( )
@@ -94,7 +94,7 @@ NearbyPoint& PinnedCounters::obj_getPoint( )
     }
 }
 
-NearbyPoint* PinnedCounters::obj_getPointPtr( )
+NearbyPoint* PinnedCounters::obj_getPointPtr( const char* file, int line )
 {
     _lock.lock();
     if( _nearby_point_counter < _max_points ) {
@@ -104,6 +104,7 @@ NearbyPoint* PinnedCounters::obj_getPointPtr( )
     } else {
         _lock.unlock();
         cerr << __FILE__ << ":" << __LINE__
+             << "    called from " << file << ":" << line
              << "    Hard-coded number of Nearyby Points in pinned memory is too small." << endl
              << "    Increase and recompile." << endl;
         exit( -1 );
