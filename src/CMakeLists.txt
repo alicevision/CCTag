@@ -74,6 +74,7 @@ SET(CCTAG_LINK_LIBRARIES
     ${GLOG_LIBRARIES}
     #${GSL_LIBRARIES}
     ${LAPACK_LIBRARIES}
+    ${TBB_LIBRARIES}
     pthread
     dl
     ${Gomp_LIBRARIES} )
