@@ -240,6 +240,7 @@ public:
         const int                           tagIndex,          // in
         cudaStream_t                        tagStream,         // in
         float2&                             bestPointOut,      // out
+        float&                              bestResidual,      // out
         popart::geometry::matrix3x3&        bestHomographyOut, // out
         const cctag::Parameters&            params,            // in
         NearbyPoint*                        cctag_pointer_buffer );

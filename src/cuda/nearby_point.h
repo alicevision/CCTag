@@ -12,6 +12,7 @@ struct NearbyPoint
     float  result;
     int    resSize;
     bool   readable;
+    float  residual;
 
     /* These homographies are computed once for each NearbyPoint,
      * and used for all of its Cuts. The best one must be returned.

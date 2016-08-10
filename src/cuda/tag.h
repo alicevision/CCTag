@@ -75,11 +75,12 @@ public:
         NearbyPoint*                               cctag_pointer_buffer );
 
     bool imageCenterRetrieve(
-        const int                                  tagIndex,
-        cctag::Point2d<Eigen::Vector3f>&                   center,
-        Eigen::Matrix3f&       bestHomographyOut,
-        const cctag::Parameters&                   params,
-        NearbyPoint*                               cctag_pointer_buffer );
+        const int                        tagIndex,
+        cctag::Point2d<Eigen::Vector3f>& center,
+        float&                           bestResidual,
+        Eigen::Matrix3f&                 bestHomographyOut,
+        const cctag::Parameters&         params,
+        NearbyPoint*                     cctag_pointer_buffer );
 
     // size_t getSignalBufferByteSize( int level ) const;
 
