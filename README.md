@@ -13,7 +13,7 @@ Marker library
 Markers to print are located [here](markersToPrint). 
 
 **WARNING**
-Please respect the provided margins. The reported detection rate and localization accuracy are valid with completly planar support: be careful not to use bent support (e.g. corrugated sheet of paper).
+Please respect the provided margins. The reported detection rate and localization accuracy are valid with completely planar support: be careful not to use bent support (e.g. corrugated sheet of paper).
 
 The four rings CCTags will be available soon.
 

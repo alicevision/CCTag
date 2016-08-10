@@ -10,7 +10,7 @@ Required tools:
 * git
 * C/C++ compiler (gcc >= 4.6 or visual studio or clang)
 For CUDA
-TODO@griff
+* CUDA 7.0 (CUDA 7.5 is currently not recommended (see Note 1))
 
 ### Getting the sources:
 ```shell
@@ -41,4 +41,11 @@ $ mkdir build && cd build
 $ cmake .. -DCCTAG_BUILD_MODE=RELEASE
 $ make -j `nproc`
 ``` 
+
+----------
+
+Note 1: CCTag uses NVidia CUB (CCTag includes a copy of CUB from CUDA 7.0).
+Several CUB functions are known to fail with a few NVidia cards including our reference card,
+the GTX 980 Ti.
+The CUB that is included with CUDA 7.5 does not solve this problem.
 
