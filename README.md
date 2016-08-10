@@ -23,6 +23,9 @@ Building
 
 See [BUILD](BUILD.md) text file.
 
+Continuous integration [![Build Status](https://travis-ci.org/poparteu/CCTag.svg?branch=develop)](https://travis-ci.org/poparteu/CCTag)
+ - develop branch on linux 64 bits with g++-4.8 (CPU version only)
+
 -------
 Running
 -------
