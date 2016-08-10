@@ -15,9 +15,6 @@ enum FrameMetaEnum
     Ring_counter_max,                 // int
     Identification_result,            // float
     Identification_resct,             // int
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    Num_nearby_points,                // int
-#endif
 #ifndef NDEBUG
     Num_edges_thinned,
 #endif // NDEBUG
@@ -74,9 +71,6 @@ struct FrameMetaPtr
     OFFSET_GETTER_HEADER( int, ring_counter_max )
     OFFSET_GETTER_HEADER( float, identification_result )
     OFFSET_GETTER_HEADER( int, identification_resct )
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    OFFSET_GETTER_HEADER( int, num_nearby_points )
-#endif
 #ifndef NDEBUG
     OFFSET_GETTER_HEADER( int, num_edges_thinned )
 #endif // NDEBUG

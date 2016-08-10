@@ -106,13 +106,6 @@ public:
                                     const cv::Mat&           cpu_dx,
                                     const cv::Mat&           cpu_dy,
                                     const cctag::Parameters& params );
-
-#if 0
-    static void debug_cmp_edge_table( int                           layer,
-                                      const cctag::EdgePointsImage& cpu,
-                                      const cctag::EdgePointsImage& gpu,
-                                      const cctag::Parameters&      params );
-#endif
 };
 
 }; // namespace popart

@@ -429,52 +429,6 @@ void TagPipe::debug_cpu_dxdy_out( TagPipe*                     pipe,
     local_debug_cpu_dxdy_out( "dy", level, cpu_dy, gpu_dy, params );
 }
 
-#if 0
-void TagPipe::debug_cmp_edge_table( int                           layer,
-                                    const cctag::EdgePointsImage& cpu,
-                                    const cctag::EdgePointsImage& gpu,
-                                    const cctag::Parameters&      params )
-{
-    if( params._debugDir == "" ) {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl; )
-        return;
-    } else {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl; )
-    }
-
-    ostringstream filename;
-    filename << params._debugDir
-             << "diffcpugpu-" << layer << "-edge.ppm";
-
-    cv::cuda::PtrStepSzb plane;
-    plane.data = new uint8_t[ cpu.shape()[0] * cpu.shape()[1] ];
-    plane.step = cpu.shape()[0];
-    plane.cols = cpu.shape()[0];
-    plane.rows = cpu.shape()[1];
-
-    if( gpu.size() != 0 && gpu.size() != 0 ) {
-        for( int y=0; y<cpu.shape()[1]; y++ ) {
-            for( int x=0; x<cpu.shape()[0]; x++ ) {
-                if( cpu[x][y] != 0 && gpu[x][y] == 0 )
-                    plane.ptr(y)[x] = DebugImage::BLUE;
-                else if( cpu[x][y] == 0 && gpu[x][y] != 0 )
-                    plane.ptr(y)[x] = DebugImage::GREEN;
-                else if( cpu[x][y] != 0 && gpu[x][y] != 0 )
-                    plane.ptr(y)[x] = DebugImage::GREY1;
-                else
-                    plane.ptr(y)[x] = DebugImage::BLACK;
-            }
-        }
-
-        DebugImage::writePPM( filename.str(), plane );
-    }
-
-    delete [] plane.data;
-}
-#endif
-
 __host__
 void TagPipe::imageCenterOptLoop(
     const int                                  tagIndex,
@@ -599,14 +553,11 @@ void TagPipe::uploadCuts( int                                 numTags,
         
         csptr = &csptr_base[tagIndex * max_cuts_per_Tag];
 
-#if 1
-// #ifndef NDEBUG
         if( vCuts[tagIndex].size() > max_cuts_per_Tag ) {
             cerr << __FILE__ << "," << __LINE__ << ":" << endl
                  << "    Programming error: assumption that number of cuts for a single tag is < params._numCutsInIdentStep is wrong" << endl;
             exit( -1 );
         }
-#endif // NDEBUG
 
         std::vector<cctag::ImageCut>::const_iterator vit  = vCuts[tagIndex].begin();
         std::vector<cctag::ImageCut>::const_iterator vend = vCuts[tagIndex].end();

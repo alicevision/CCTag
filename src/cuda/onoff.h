@@ -55,14 +55,6 @@
  */
 #undef DEBUG_FRAME_UPLOAD_CUTS
 
-/* Define if you want to compute identity both on GPU and CPU.
- * The GPU version takes precedence.
- * Otherwise, GPU is used if cudaPipe exists (the alternative,
- * param.useCuda == false is broken in the optim_identify_gpu
- * branch).
- */
-#undef CPU_GPU_COST_FUNCTION_COMPARE
-
 /* CUB functions always take a last parameters true or false.
  * If it is true, they run synchronously and print some debug
  * info.
