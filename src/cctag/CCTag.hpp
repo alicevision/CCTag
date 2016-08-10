@@ -48,6 +48,9 @@ public:
     : _id(0)
     , _quality(0)
     , _status(0)
+#ifdef WITH_CUDA
+    , _cuda_result( 0 )
+#endif
   {
     setInitRadius();
   }
@@ -68,6 +71,9 @@ public:
     , _quality(quality)
     , _pyramidLevel(pyramidLevel)
     , _scale(scale)
+#ifdef WITH_CUDA
+    , _cuda_result( 0 )
+#endif
   {
     setInitRadius();
     _outerEllipse.setCenter( Point2d<Eigen::Vector3f>(_outerEllipse.center().x()+0.5f, _outerEllipse.center().y()+0.5f ) ); // todo@Lilian: + 0.5f
@@ -90,6 +96,9 @@ public:
     , _scale(cctag._scale)
     , _rescaledOuterEllipse(cctag._rescaledOuterEllipse)
     , _status(cctag._status)
+#ifdef WITH_CUDA
+    , _cuda_result( 0 )
+#endif
 #ifdef CCTAG_SERIALIZE
     , _flowComponents(cctag._flowComponents)
 #endif
