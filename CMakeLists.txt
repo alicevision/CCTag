@@ -55,8 +55,11 @@ endif(CCTAG_NO_COUT)
 # set the path where we can find the findXXX.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
-if(APPLE)
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-extensions")
+endif()
+
+if(APPLE)
 
   # avoid the cmake policy warning about @rpath in MacOSX
   cmake_policy(SET CMP0042 NEW)
