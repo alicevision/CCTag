@@ -26,20 +26,6 @@ ELSE(USE_CUDA)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF(USE_CUDA)
 
-# CCTAG_BUILD_MODE set to RELEASE by default (DEBUG,RELEASE)
-# IF(DEFINED CCTAG_BUILD_MODE)
-#   IF(CCTAG_BUILD_MODE STREQUAL "DEBUG")
-#     #add_definitions("-DCCTAG_SERIALIZE")
-#     message( STATUS "Compiling with CCTAG build mode ${CCTAG_BUILD_MODE}" )
-#   ELSEIF(CCTAG_BUILD_MODE STREQUAL "RELEASE")
-#     message( STATUS "Compiling with CCTAG build mode ${CCTAG_BUILD_MODE}" )
-#   ELSE()
-#     message( FATAL_ERROR "Variable CCTAG_BUILD_MODE must be defined" )
-#   ENDIF()
-# ELSE(DEFINED CCTAG_BUILD_MODE)
-#   message( FATAL_ERROR "Variable CCTAG_BUILD_MODE must be defined" )
-# ENDIF(DEFINED CCTAG_BUILD_MODE)
-
 add_definitions("-DCUB_CDP")
 
 # Store all the output
@@ -111,33 +97,12 @@ ELSE(USE_CUDA)
 ENDIF(USE_CUDA)
 
 
-# FIND UBLAS
-#find_package(UBlas REQUIRED)
-#include_directories(${UBlas_INCLUDE_DIRS})
-# link_directories(${UBlas_LIB_DIR})
-#add_definitions(${UBlas_DEFINITIONS})
-#add_definitions(-DBOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR)
-
 # FIND OPENCV
 list(APPEND CMAKE_MODULE_PATH "${OpenCV_DIR}")
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 add_definitions(${OpenCV_DEFINITIONS})
-
-# FIND OPTPP
-#find_package(OPTPP)
-#if(OPTPP_FOUND)
-#  include_directories(${OPTPP_INCLUDE_DIRS})
-  # link_directories(${OPTPP_LIB_DIR})
-#  add_definitions(-D${OPTPP_DEFINITIONS})
-#endif()
-
-# FIND CERES
-#find_package(Ceres REQUIRED)
-#include_directories(${Ceres_INCLUDE_DIR})
-# link_directories(${Ceres_LIB_DIR}) this variable is not created by Cmake file
-#add_definitions(${Ceres_DEFINITIONS})
 
 # FIND Eigen
 find_package(Eigen REQUIRED)
@@ -154,18 +119,7 @@ find_package(PNG REQUIRED)
 # FIND JPEG
 find_package(JPEG REQUIRED)
 
-# FIND Glog
-# find_package(Glog REQUIRED)
-
-# FIND GOMP
-# find_package(Gomp REQUIRED)
-# griff: We don't have to find libgomp. Just pass the right flags to gcc
-# find_package(OpenMP REQUIRED)
-
-# FIND GSL
-#find_package(GSL REQUIRED)
-#link_directories(${GSL_LINK_DIRECTORIES})
-
+# FIND Intel TBB
 find_package(TBB 4 REQUIRED)
 
 add_subdirectory(src)
