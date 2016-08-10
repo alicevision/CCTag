@@ -29,7 +29,7 @@ IF(USE_CUDA)
     # include_directories("/usr/local/cuda/include/thrust/system/cuda/detail")
 
     set_source_files_properties( ${CUDA_cpp} ${CUDA_cu}
-                                 PROPERTIES COMPILE_FLAGS "-g -Wall"
+                                 PROPERTIES COMPILE_FLAGS "-g -Wall --std=c++11"
     )
     set_source_files_properties( ${CCTag_cpp}
                                  PROPERTIES COMPILE_FLAGS "-std=c++11"
@@ -92,6 +92,7 @@ set(CCTagRegression_cpp
 set_source_files_properties(${CCTagRegression_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
 
 set(CCTagSimulation_cpp ./applications/simulation/main.cpp)
+set_source_files_properties(${CCTagSimulation_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
 
 if(USE_CUDA)
     set_source_files_properties(${CCTagDetect_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")

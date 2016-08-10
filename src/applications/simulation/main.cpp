@@ -12,6 +12,7 @@
 #include <fstream>
 #include <exception>
 #include <iomanip>
+#include <random>
 
 void generateCompressedFrame(const cv::Mat & src, cv::Mat & dst, std::default_random_engine & generator )
 {
