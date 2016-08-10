@@ -77,7 +77,7 @@ before_install:
     else
       mkdir --parent $BOOST_SOURCE
       mkdir --parent $BOOST_INSTALL
-      wget https://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz;
+      travis_retry wget https://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz;
       tar -xf boost_1_55_0.tar.gz;
       cp -r boost_1_55_0/* $BOOST_SOURCE;
     fi 
