@@ -21,8 +21,8 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
     int vote_sz = _voters.host.size;
     int all_sz  = _all_edgecoords.host.size;
 
-    assert( out_edges.points().size() == 0 );
-    assert( out_edges.map().size() == 0 );
+    // assert( out_edges.points().size() == 0 );
+    // assert( out_edges.map().size() == 0 );
     assert( out_seedlist.size() == 0 );
     assert( vote_sz <= all_sz );
 
