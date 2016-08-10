@@ -516,6 +516,11 @@ void TagPipe::uploadCuts( int                                 numTags,
         std::vector<cctag::ImageCut>::const_iterator vend = vCuts[tagIndex].end();
 
         for( ; vit!=vend; vit++ ) {
+            if( vit->imgSignal().size() != 100 ) {
+                cerr << __FILE__ << ":" << __LINE__ << ":" << endl
+                     << "    Signal size in an image cut should currently be 100." << endl;
+                exit( -1 );
+            }
             csptr->start.x     = vit->start().x();
             csptr->start.y     = vit->start().y();
             csptr->stop.x      = vit->stop().x();

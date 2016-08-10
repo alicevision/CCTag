@@ -1,5 +1,6 @@
 #include "pinned_counters.h"
 #include "debug_macros.hpp"
+#include "onoff.h"
 
 #include <cuda_runtime.h>
 #include <iostream>
@@ -9,7 +10,7 @@ namespace popart {
 using namespace std;
 
 const int PinnedCounters::_max_counters = 100;
-const int PinnedCounters::_max_points   = 60;
+const int PinnedCounters::_max_points   = MAX_MARKER_FOR_IDENT;
 
 /* This is system-wide unique allocation
  */
@@ -40,9 +41,9 @@ int& PinnedCounters::getCounter( )
     return pinned_counters.obj_getCounter( );
 }
 
-NearbyPoint& PinnedCounters::getPoint( )
+NearbyPoint& PinnedCounters::getPoint( const char* file, int line )
 {
-    return pinned_counters.obj_getPoint( );
+    return pinned_counters.obj_getPoint( file, line );
 }
 
 NearbyPoint* PinnedCounters::getPointPtr( const char* file, int line )
@@ -78,7 +79,7 @@ int& PinnedCounters::obj_getCounter( )
     }
 }
 
-NearbyPoint& PinnedCounters::obj_getPoint( )
+NearbyPoint& PinnedCounters::obj_getPoint( const char* file, int line )
 {
     _lock.lock();
     if( _nearby_point_counter < _max_points ) {
@@ -88,6 +89,7 @@ NearbyPoint& PinnedCounters::obj_getPoint( )
     } else {
         _lock.unlock();
         cerr << __FILE__ << ":" << __LINE__
+             << "    called from " << file << ":" << line
              << "    Hard-coded number of Nearyby Points in pinned memory is too small." << endl
              << "    Increase and recompile." << endl;
         exit( -1 );
@@ -107,7 +109,7 @@ NearbyPoint* PinnedCounters::obj_getPointPtr( const char* file, int line )
              << "    called from " << file << ":" << line
              << "    Hard-coded number of Nearyby Points in pinned memory is too small." << endl
              << "    Increase and recompile." << endl;
-        exit( -1 );
+        return 0;
     }
 }
 

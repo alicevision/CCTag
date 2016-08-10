@@ -92,3 +92,9 @@
  */
 //#define SORT_ALL_EDGECOORDS_IN_EXPORT
 
+/* Space for nearby points must be allocated in pinned memory.
+ * The number of such objects must be limited, and this is the
+ * limits.
+ */
+#define MAX_MARKER_FOR_IDENT 60
+

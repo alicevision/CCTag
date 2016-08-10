@@ -35,7 +35,7 @@ public:
      *  This function is only used by the constructors of the class
      *  CCTag in cctag before identification.
      */
-    static NearbyPoint& getPoint( );
+    static NearbyPoint& getPoint( const char* file, int line );
     static NearbyPoint* getPointPtr( const char* file, int line );
 
     /** Called after all identification of all CCTags is complete.
@@ -56,7 +56,7 @@ private:
 
     void         obj_init( );
     int&         obj_getCounter( );
-    NearbyPoint& obj_getPoint( );
+    NearbyPoint& obj_getPoint( const char* file, int line );
     NearbyPoint* obj_getPointPtr( const char* file, int line );
 };
 
