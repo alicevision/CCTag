@@ -1,0 +1,148 @@
+
+language: cpp
+
+compiler:
+  - gcc
+
+sudo: false
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      # - cmake
+      - lcov
+      - libpng-dev
+      - libjpeg8-dev
+      - libtiff4-dev
+      - libxxf86vm1
+      - libxxf86vm-dev
+      - libtbb-dev
+      - x11proto-xf86vidmode-dev
+      - libxrandr-dev
+      - g++-4.8
+      - libatlas-base-dev
+
+env:
+  global:
+    - NUM_CPU="`grep processor /proc/cpuinfo | wc -l`"; echo $NUM_CPU
+    - BUILD_TYPE="RELEASE"
+    - BUILD_SYSTEM="`uname -s`"
+    - BUILD_PROCESSOR="`uname -p`"
+    - CCTAG_SOURCE=${TRAVIS_BUILD_DIR}
+    - CCTAG_BUILD=${TRAVIS_BUILD_DIR}/build
+    # OPENCV
+    - OPENCV_ROOT=${TRAVIS_BUILD_DIR}/opencv3
+    - OPENCV_SOURCE=${OPENCV_ROOT}/source
+    - OPENCV_CONTRIB=${OPENCV_ROOT}/contrib
+    - OPENCV_BUILD=${OPENCV_ROOT}/build
+    - OPENCV_INSTALL=${OPENCV_ROOT}/install
+    # EIGEN
+    - EIGEN_INSTALL=${TRAVIS_BUILD_DIR}/eigen
+    # BOOST
+    - BOOST_ROOT=${TRAVIS_BUILD_DIR}/boost
+    - BOOST_SOURCE=${BOOST_ROOT}/source
+    - BOOST_INSTALL=${BOOST_ROOT}/install
+    # CMAKE
+    - CMAKE_URL="https://cmake.org/files/v3.6/cmake-3.6.1-Linux-x86_64.tar.gz"
+    - CMAKE_ROOT=${TRAVIS_BUILD_DIR}/cmake
+    - CMAKE_SOURCE=${CMAKE_ROOT}/source
+    - CMAKE_INSTALL=${CMAKE_ROOT}/install
+
+before_install:
+ - gem install coveralls-lcov
+ # OPENCV
+ - >
+    if [ "$(ls -A $OPENCV_INSTALL)" ]; then
+      echo "OpenCV found in cache.";
+    else
+      mkdir --parent $OPENCV_SOURCE
+      mkdir --parent $OPENCV_BUILD
+      mkdir --parent $OPENCV_INSTALL
+      git clone --recursive --branch 3.0.0 --depth 1 https://github.com/Itseez/opencv.git $OPENCV_SOURCE;
+    fi
+ # EIGEN
+ - >
+    if [ "$(ls -A $EIGEN_INSTALL)" ]; then
+      echo "Eigen found in cache.";
+    else
+      mkdir --parent $EIGEN_INSTALL
+      hg clone -r 3.2.8 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL;
+    fi 
+ # BOOST
+ - >
+    if [ "$(ls -A $BOOST_INSTALL)" ]; then
+      echo "Boost found in cache.";
+    else
+      mkdir --parent $BOOST_SOURCE
+      mkdir --parent $BOOST_INSTALL
+      wget https://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz;
+      tar -xf boost_1_55_0.tar.gz;
+      cp -r boost_1_55_0/* $BOOST_SOURCE;
+    fi 
+ # CMAKE most recent version
+ - >
+    if [ "$(ls -A ${CMAKE_INSTALL})" ]; then
+      echo "CMake found in cache.";
+      ls -A ${CMAKE_INSTALL}
+      export PATH=${CMAKE_INSTALL}/bin:${PATH};
+      cmake --version
+    else
+      mkdir --parent ${CMAKE_SOURCE}
+      mkdir --parent ${CMAKE_INSTALL}
+      ls -A ${CMAKE_INSTALL}
+      travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${CMAKE_INSTALL}
+      export PATH=${CMAKE_INSTALL}/bin:${PATH};
+      cmake --version
+    fi
+
+install:
+  # OPENCV
+  - >
+     if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then
+       cd $OPENCV_BUILD
+       cmake \
+         -DCMAKE_BUILD_TYPE=Release \
+         -DCMAKE_INSTALL_PREFIX=$OPENCV_INSTALL \
+         $OPENCV_SOURCE;
+     make -j 2 > null;
+     make install;
+     fi
+  # BOOST
+  - >
+     if [ ! "$(ls -A $BOOST_INSTALL)" ]; then
+       cd $BOOST_SOURCE
+       ./bootstrap.sh --with-libraries=date_time,chrono,thread,serialization,system,filesystem,atomic,program_options,timer --prefix=$BOOST_INSTALL;
+       ./b2 link=shared install > null;
+     fi
+
+before_script:
+  - export CXX="g++-4.8"
+  # Create build folder
+  - mkdir $CCTAG_BUILD
+  - cd $CCTAG_BUILD
+  # Classic release build
+  - >
+     cmake \
+       -DCCTAG_BUILD_MODE=$BUILD_TYPE \
+       -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
+       -DEigen_INCLUDE_DIR_HINTS=$EIGEN_INSTALL \
+       -DBOOST_ROOT=$BOOST_INSTALL \
+       . $CCTAG_SOURCE
+
+script:
+# limit GCC builds to a reduced number of thread for the virtual machine
+  - make -j 2 VERBOSE=1
+# Perform unit tests only on GCC builds
+  - if [ "$CC" = "gcc" ]; then make test; fi
+
+after_success:
+  - du -hs $OPENCV_INSTALL
+
+cache:
+  directories:
+    - $OPENCV_INSTALL
+    - $BOOST_INSTALL
+    - $EIGEN_INSTALL
+    - $CMAKE_INSTALL
