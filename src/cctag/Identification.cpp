@@ -975,8 +975,6 @@ bool refineConicFamilyGlob(
     CCTagVisualDebug::instance().newSession( "centerOpt" );
     CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_green );
 
-    float residual;
-
 #ifdef WITH_CUDA
     if( cudaPipe ) {
         bool success = cudaPipe->imageCenterRetrieve(
