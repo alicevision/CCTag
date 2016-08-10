@@ -32,7 +32,7 @@ float distancePointEllipseScalar(const Eigen::Vector3f& p, const Eigen::Matrix3f
   return boost::math::pow<2>( aux.dot(qL) ) / denom;
 }
 
-#ifdef USE_AVX2
+#ifdef __AVX2__
 
 // Packed computation, 8 points at a time
 __m256 distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, __m256 x, __m256 y, __m256 w)
@@ -110,12 +110,12 @@ std::pair<__m256, __m256> distance_point_ellipse_avx2(const Eigen::Matrix3f& Q, 
   
   return std::make_pair(d, mask);
 }
-#endif //USE_AVX2
+#endif // __AVX2__
 
 void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Vector3f>& pts, const geometry::Ellipse& q)
 {
   size_t n = pts.size();
-#ifdef USE_AVX2
+#ifdef __AVX2__
   dist.resize(n);
   for (size_t i = 0; i < n; i += 8) {
     auto distance = distance_point_ellipse_avx2(q.matrix(), &pts[i], std::min(size_t(8), n-i));
@@ -128,7 +128,7 @@ void distancePointEllipse( std::vector<float>& dist, const std::vector<Eigen::Ve
   for (const auto & pt : pts ) {
     dist.push_back(distancePointEllipseScalar(pt, q.matrix()));
   }
-#endif //USE_AVX2
+#endif // __AVX2__ 
 }
 
 
