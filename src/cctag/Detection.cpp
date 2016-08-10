@@ -853,11 +853,13 @@ void cctagDetection(CCTag::List& markers,
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
 #ifdef WITH_CUDA
-    /* identification in CUDA requires a host-side nearby point struct
-     * in pinned memory for safe, non-blocking memcpy.
-     */
-    for( CCTag& tag : markers ) {
-        tag.acquireNearbyPointMemory( );
+    if( pipe1 ) {
+        /* identification in CUDA requires a host-side nearby point struct
+         * in pinned memory for safe, non-blocking memcpy.
+         */
+        for( CCTag& tag : markers ) {
+            tag.acquireNearbyPointMemory( );
+        }
     }
 #endif // WITH_CUDA
   
@@ -941,9 +943,11 @@ void cctagDetection(CCTag::List& markers,
     }
 
 #ifdef WITH_CUDA
-    /* Releasing all points in all threads in the process.
-     */
-    CCTag::releaseNearbyPointMemory();
+    if( pipe1 ) {
+        /* Releasing all points in all threads in the process.
+         */
+        CCTag::releaseNearbyPointMemory();
+    }
 #endif
     
     // Delete overlapping markers while keeping the best ones.
