@@ -1,8 +1,45 @@
 
 language: cpp
 
-compiler:
-  - gcc
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.8
+            - lcov
+            - libpng-dev
+            - libjpeg8-dev
+            - libtiff4-dev
+            - libxxf86vm1
+            - libxxf86vm-dev
+            - libtbb-dev
+            - x11proto-xf86vidmode-dev
+            - libxrandr-dev
+            - libatlas-base-dev
+      env: COMPILER=g++-4.8 TOOLSET=gcc
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+            - lcov
+            - libpng-dev
+            - libjpeg8-dev
+            - libtiff4-dev
+            - libxxf86vm1
+            - libxxf86vm-dev
+            - libtbb-dev
+            - x11proto-xf86vidmode-dev
+            - libxrandr-dev
+            - libatlas-base-dev
+      env: COMPILER=clang++-3.7 TOOLSET=clang
 
 sudo: false
 
@@ -21,7 +58,7 @@ addons:
       - libtbb-dev
       - x11proto-xf86vidmode-dev
       - libxrandr-dev
-      - g++-4.8
+      # - g++-4.8
       - libatlas-base-dev
 
 env:
@@ -77,9 +114,9 @@ before_install:
     else
       mkdir --parent $BOOST_SOURCE
       mkdir --parent $BOOST_INSTALL
-      travis_retry wget https://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz;
-      tar -xf boost_1_55_0.tar.gz;
-      cp -r boost_1_55_0/* $BOOST_SOURCE;
+      travis_retry wget https://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz;
+      tar -xf boost_1_58_0.tar.gz;
+      cp -r boost_1_58_0/* $BOOST_SOURCE;
     fi 
  # CMAKE most recent version
  - >
@@ -103,8 +140,10 @@ install:
      if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then
        cd $OPENCV_BUILD
        cmake \
+         -DCMAKE_CXX_COMPILER=$COMPILER \
          -DCMAKE_BUILD_TYPE=Release \
          -DCMAKE_INSTALL_PREFIX=$OPENCV_INSTALL \
+         -DBUILD_opencv_ts=0 \
          $OPENCV_SOURCE;
      make -j 2 > null;
      make install;
@@ -113,7 +152,7 @@ install:
   - >
      if [ ! "$(ls -A $BOOST_INSTALL)" ]; then
        cd $BOOST_SOURCE
-       ./bootstrap.sh --with-libraries=date_time,chrono,thread,serialization,system,filesystem,atomic,program_options,timer --prefix=$BOOST_INSTALL;
+       ./bootstrap.sh --with-toolset=${TOOLSET} --with-libraries=date_time,chrono,thread,serialization,system,filesystem,atomic,program_options,timer --prefix=$BOOST_INSTALL;
        ./b2 link=shared install > null;
      fi
 
@@ -125,6 +164,7 @@ before_script:
   # Classic release build
   - >
      cmake \
+       -DCMAKE_CXX_COMPILER=$COMPILER \
        -DCCTAG_BUILD_MODE=$BUILD_TYPE \
        -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
        -DEigen_INCLUDE_DIR_HINTS=$EIGEN_INSTALL \
