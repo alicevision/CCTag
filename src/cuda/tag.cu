@@ -114,21 +114,6 @@ void TagPipe::tagframe( )
 __host__
 void TagPipe::handleframe( int i )
 {
-#ifdef SHOW_DETAILED_TIMING
-    KeepTime* time_gauss;
-    KeepTime* time_mag;
-    KeepTime* time_hyst;
-    KeepTime* time_thin;
-    KeepTime* time_desc;
-    KeepTime* time_vote;
-    time_gauss = new KeepTime( _frame[i]->_stream );
-    time_mag   = new KeepTime( _frame[i]->_stream );
-    time_hyst  = new KeepTime( _frame[i]->_stream );
-    time_thin  = new KeepTime( _frame[i]->_stream );
-    time_desc  = new KeepTime( _frame[i]->_stream );
-    time_vote  = new KeepTime( _frame[i]->_stream );
-#endif
-
     _frame[i]->initRequiredMem( ); // async
 
     cudaEvent_t ev = _frame[0]->getUploadEvent( ); // async
@@ -138,22 +123,6 @@ void TagPipe::handleframe( int i )
         _frame[i]->uploadComplete( ); // unpin image
         _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
     }
-
-#ifdef SHOW_DETAILED_TIMING
-#error SHOW_DETAILED_TIMING needs to be rewritten
-    time_gauss->start();
-    time_gauss->stop();
-    time_mag->start();
-    time_mag->stop();
-    time_hyst->start();
-    time_hyst->stop();
-    time_thin->start();
-    time_thin->stop();
-    time_desc->start();
-    time_desc->stop();
-    time_vote->start();
-    time_vote->stop();
-#endif // not SHOW_DETAILED_TIMING
 
     // note: without visual debug, only level 0 performs download
     _frame[i]->applyPlaneDownload(); // async
@@ -179,22 +148,6 @@ void TagPipe::handleframe( int i )
 
     cudaStreamSynchronize( _frame[i]->_stream );
     cudaStreamSynchronize( _frame[i]->_download_stream );
-
-
-#ifdef SHOW_DETAILED_TIMING
-    time_gauss->report( "time for Gauss " );
-    time_mag  ->report( "time for Mag   " );
-    time_hyst ->report( "time for Hyst  " );
-    time_thin ->report( "time for Thin  " );
-    time_desc ->report( "time for Desc  " );
-    time_vote ->report( "time for Vote  " );
-    delete time_gauss;
-    delete time_mag;
-    delete time_hyst;
-    delete time_thin;
-    delete time_desc;
-    delete time_vote;
-#endif // not NDEBUG
 }
 
 __host__

@@ -76,13 +76,6 @@
  */
 #define CUB_INIT_CALLS
 
-/* Chooses between two codepaths in tag.cu, one that adds synchronous
- * calling and timing for debug output, and another that does not.
- * When changing this, remember that a change or bugfix may be missing
- * n the new codepath!
- */
-#undef SHOW_DETAILED_TIMING
-
 /* Affects tag.cu.
 .* A Frame used two CUDA streams, one for upload and kernels, another
  * one for downloads.
