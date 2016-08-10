@@ -515,6 +515,7 @@ __host__
 bool TagPipe::imageCenterRetrieve(
     const int                                  tagIndex,
     cctag::Point2d<Eigen::Vector3f>&           center,
+    float&                                     bestResidual,
     Eigen::Matrix3f&                           bestHomographyOut,
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
@@ -525,6 +526,7 @@ bool TagPipe::imageCenterRetrieve(
     bool success = _frame[0]->imageCenterRetrieve( tagIndex,
                                                    _tag_streams[tagIndex],
                                                    bestPoint,
+                                                   bestResidual,
                                                    bestHomography,
                                                    params,
                                                    cctag_pointer_buffer );

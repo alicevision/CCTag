@@ -336,6 +336,7 @@ void idBestNearbyPoint32plus( NearbyPoint* point_buffer, const size_t gridSquare
             NearbyPoint*       dst_point = &point_buffer[0];
             const NearbyPoint* src_point = &point_buffer[bestIdx];
             memcpy( dst_point, src_point, sizeof( NearbyPoint ) );
+            dst_point->residual = bestRes;
         }
     }
 }
@@ -374,6 +375,7 @@ void idBestNearbyPoint31max( NearbyPoint* point_buffer, const size_t gridSquare 
             NearbyPoint*       dst_point = &point_buffer[0];
             const NearbyPoint* src_point = &point_buffer[bestIdx];
             memcpy( dst_point, src_point, sizeof( NearbyPoint ) );
+            dst_point->residual = bestRes;
         }
     }
 }
@@ -562,6 +564,7 @@ bool Frame::imageCenterRetrieve(
     const int                           tagIndex,     // in - determines index in cut structure
     cudaStream_t                        tagStream,
     float2&                             bestPointOut, // out
+    float&                              bestResidual, // out
     popart::geometry::matrix3x3&        bestHomographyOut, // out
     const cctag::Parameters&            params,
     NearbyPoint*                        cctag_pointer_buffer )
@@ -572,6 +575,7 @@ bool Frame::imageCenterRetrieve(
 
     bestPointOut      = cctag_pointer_buffer->point;
     bestHomographyOut = cctag_pointer_buffer->mHomography;
+    bestResidual      = cctag_pointer_buffer->residual;
     return true;
 }
 
