@@ -134,8 +134,8 @@ before_script:
 script:
 # limit GCC builds to a reduced number of thread for the virtual machine
   - make -j 2 VERBOSE=1
-# Perform unit tests only on GCC builds
-  - if [ "$CC" = "gcc" ]; then make test; fi
+# Perform unit tests
+  # - make test
 
 after_success:
   - du -hs $OPENCV_INSTALL
