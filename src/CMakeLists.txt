@@ -116,11 +116,6 @@ target_link_libraries(simulation PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
 #############################################################################
 
-ADD_EXECUTABLE( pgmdiff playground/pgmdiff.cc )
-TARGET_LINK_LIBRARIES( pgmdiff PUBLIC ${Boost_LIBRARIES} )
-
-#############################################################################
-
 set( FILES_TO_DEPLOY
       ./cctag/ICCTag.hpp
       ./cctag/Params.hpp

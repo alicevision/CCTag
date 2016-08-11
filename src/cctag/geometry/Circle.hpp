@@ -1,9 +1,16 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef _CCTAG_NUMERICAL_CIRCLE_HPP_
 #define _CCTAG_NUMERICAL_CIRCLE_HPP_
 
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/Invert.hpp>
+// #include <cctag/algebra/Invert.hpp>
 #include <cctag/utils/Defines.hpp>
 #include <Eigen/Dense>
 #include <cmath>
