@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef _CCTAG_CONDITIONER_HPP_
 #define _CCTAG_CONDITIONER_HPP_
 
@@ -13,38 +20,6 @@
 namespace cctag {
 namespace numerical {
 namespace optimization {
-
-#if 0
-template<class C>
-inline Eigen::Matrix3f conditionerFromPoints( const std::vector<C>& v )
-{
-	using namespace boost::numeric;
-	Eigen::Matrix3f T;
-
-	cctag::numerical::BoundedVector3d m = cctag::numerical::mean( v );
-	cctag::numerical::BoundedVector3d s = cctag::numerical::stdDev( v, m );
-
-	if( s( 0 ) == 0 )
-		s( 0 )++;
-	if( s( 1 ) == 0 )
-		s( 1 )++;
-
-	static const float sqrt2 = std::sqrt( 2.0 );
-	T( 0, 0 ) = sqrt2 / s( 0 );
-	T( 0, 1 ) = 0;
-	T( 0, 2 ) = -sqrt2* m( 0 ) / s( 0 );
-
-	T( 1, 0 ) = 0;
-	T( 1, 1 ) = sqrt2 / s( 1 );
-	T( 1, 2 ) = -sqrt2* m( 1 ) / s( 1 );
-
-	T( 2, 0 ) = 0;
-	T( 2, 1 ) = 0;
-	T( 2, 2 ) = 1;
-
-	return T;
-}
-#endif
 
 inline Eigen::Matrix3f conditionerFromEllipse( const cctag::numerical::geometry::Ellipse & ellipse )
 {

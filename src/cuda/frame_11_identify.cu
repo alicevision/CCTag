@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cuda_runtime.h>
 
 #include "frame.h"
@@ -453,8 +460,8 @@ void Frame::idCostFunction(
               center,
               neighSize,
               point_buffer );
+POP_SYNC_CHK;
         POP_CHK_CALL_IFSYNC;
-
         dim3 get_block( 32, vCutSize, 1 ); // we use this to sum up signals
         dim3 get_grid( 1, gridNSample, gridNSample );
 
@@ -465,6 +472,7 @@ void Frame::idCostFunction(
               point_buffer,
               cut_buffer,
               sig_buffer );
+POP_SYNC_CHK;
         POP_CHK_CALL_IFSYNC;
 
         dim3 id_block( 32, // we use this to sum up signals
@@ -484,6 +492,7 @@ void Frame::idCostFunction(
         popart::identification::idComputeResult
             <<<id_grid,id_block,0,tagStream>>>
             ( point_buffer, cut_buffer, sig_buffer, vCutSize );
+POP_SYNC_CHK;
         POP_CHK_CALL_IFSYNC;
 
         /* We search for the minimum of gridNSample x gridNSample
@@ -497,11 +506,13 @@ void Frame::idCostFunction(
             popart::identification::idBestNearbyPoint31max
                 <<<1,32,0,tagStream>>>
                   ( point_buffer, gridSquare );
+POP_SYNC_CHK;
             POP_CHK_CALL_IFSYNC;
         } else {
             popart::identification::idBestNearbyPoint32plus
                 <<<1,32,0,tagStream>>>
                   ( point_buffer, gridSquare );
+POP_SYNC_CHK;
             POP_CHK_CALL_IFSYNC;
         }
 
