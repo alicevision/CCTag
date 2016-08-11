@@ -11,9 +11,6 @@
 #include "framemeta.h"
 #include "debug_macros.hpp"
 
-// #include <cuda_runtime.h>
-// #include <assert.h>
-
 namespace popart {
 
 /*************************************************************

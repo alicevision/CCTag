@@ -16,8 +16,6 @@
 #include <map>
 #include "debug_macros.hpp"
 
-// #include "../cctag/cmdline.hpp"
-
 #include "frame.h"
 #include "debug_image.h"
 #include "edge_list.h"

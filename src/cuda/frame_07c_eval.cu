@@ -10,7 +10,6 @@
 #include <cuda_runtime.h>
 
 #include "frame.h"
-// #include "assist.h"
 
 using namespace std;
 

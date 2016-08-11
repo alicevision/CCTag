@@ -7,18 +7,9 @@
  */
 #include "onoff.h"
 
-// #include <iostream>
-// #include <algorithm>
-// #include <limits>
 #include <cuda_runtime.h>
-// #include <cub/cub.cuh>
-// #include <thrust/system/cuda/detail/cub/cub.cuh>
-// #include <stdio.h>
-// #include "debug_macros.hpp"
-// #include "debug_is_on_edge.h"
 
 #include "frame.h"
-// #include "assist.h"
 
 using namespace std;
 

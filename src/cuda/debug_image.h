@@ -7,16 +7,7 @@
  */
 #pragma once
 
-// #include <cuda_runtime.h>
-// #include <assert.h>
-// #include <string>
-// #include <vector>
-
-// #include <opencv2/core/cuda_types.hpp>
-
 #include "frame.h"
-// #include "../cctag/Params.hpp"
-// #include "frame_vote.h"
 #include "triple_point.h"
 
 namespace popart {
