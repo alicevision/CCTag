@@ -106,7 +106,7 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
  * vCutMaxVecLen is a safety variable, could actually be 100.
  * The function is called from
  *     idNearbyPointDispatcher
- * once for every 
+ * once for every
  */
 __global__
 void idGetSignals( cv::cuda::PtrStepSzb src,
@@ -188,6 +188,111 @@ void initAllNearbyPoints(
     nPoint->readable = true;
     ellipse.computeHomographyFromImagedCenter( nPoint->point, nPoint->mHomography );
     nPoint->mHomography.invert( nPoint->mInvHomography );
+}
+
+__global__
+void verify_idComputeResult( NearbyPoint*      point_buffer,
+                             const CutStruct*  cut_buffer,
+                             const CutSignals* sig_buffer,
+                             const int         vCutSize,
+                             const int         numPairs )
+{
+    const size_t gridNSample = tagParam.gridNSample; // this is a global constant !
+    // const int grid_i   = blockIdx.y; - an X mesh point 0..gridNSample-1
+    // const int grid_j   = blockIdx.z; - a  Y mesh point 0..gridNSample-1
+    for( int grid_i=0; grid_i<gridNSample; grid_i++ ) {
+        for( int grid_j=0; grid_j<gridNSample; grid_j++ ) {
+            const int grid_idx = grid_j * gridNSample + grid_i;
+            const CutSignals* allcut_signals = &sig_buffer[grid_idx * vCutSize];
+            // NearbyPoint* const nPoint  = &point_buffer[grid_idx];
+
+            const int blockIdx_x_limit = grid_divide( numPairs, 32 );
+            // for( int blockIdx_x=0; blockIdx_x<blockIdx_x_limit; blockIdx_x++ ) {
+            int blockIdx_x=blockIdx_x_limit-1; {
+                const int threadIdx_y_limit = 32;
+                const int threadIdx_x_limit = 32;
+                for( int threadIdx_y=0; threadIdx_y<threadIdx_y_limit; threadIdx_y++ ) {
+                  for( int threadIdx_x=0; threadIdx_x<threadIdx_x_limit; threadIdx_x++ ) {
+                    int myPair = blockIdx_x * 32 + threadIdx_y;
+                    int j      = __float2int_rd( 1.0f + __fsqrt_rd(1.0f+8.0f*myPair) ) / 2;
+                    int i      = myPair - j*(j-1)/2;
+
+                    int   ct   = 0;
+                    float val  = 0.0f;
+                    bool  comp = true;
+
+                    comp = ( j < vCutSize && i < j );
+
+                    if( comp ) {
+                        const CutSignals* l_signals = &allcut_signals[i];
+                        const CutSignals* r_signals = &allcut_signals[j];
+                        // default sample cut length is 100
+                        comp  = ( threadIdx_x < tagParam.sampleCutLength ) &&
+                                not l_signals->outOfBounds &&
+                                not r_signals->outOfBounds;
+                        if( comp ) {
+                            // sigSize is always 100
+                            // anything else is an indication of major trouble
+                            if( cut_buffer[i].sigSize != 100 ) {
+                                printf("We read a sigSize that is not 100\n");
+                                printf("grid_i: %d grid_j: %d gridNSample: %d\n", grid_i, grid_j, gridNSample);
+                                printf("blockIdx_x: %d threadIdx_x: %d threadIdx_y: %d\n", blockIdx_x, threadIdx_x, threadIdx_y );
+                                printf("vCutSize: %d numPairs: %d\n", vCutSize, numPairs );
+                                printf("myPair: %d i: %d j: %d\n", myPair, i, j );
+                                return;
+                            }
+                            const int limit = cut_buffer[i].sigSize;
+                            for( int offset = threadIdx_x; offset < limit; offset += 32 ) {
+                                float square = l_signals->sig[offset] - r_signals->sig[offset];
+                                val += ( square * square );
+                            }
+                            ct = 1;
+                        }
+                    }
+                  }
+                }
+            }
+        }
+    }
+
+
+#if 0
+    val += __shfl_down( val, 16 );
+    val += __shfl_down( val,  8 );
+    val += __shfl_down( val,  4 );
+    val += __shfl_down( val,  2 );
+    val += __shfl_down( val,  1 );
+
+    __shared__ float signal_sum[32];
+    __shared__ int   count_sum[32];
+
+    if( threadIdx.x == 0 ) {
+        signal_sum[threadIdx.y] = val;
+        count_sum [threadIdx.y] = ct;
+    }
+
+    __syncthreads();
+
+    if( threadIdx.y == 0 ) {
+        val = signal_sum[threadIdx.x];
+        val += __shfl_down( val, 16 );
+        val += __shfl_down( val,  8 );
+        val += __shfl_down( val,  4 );
+        val += __shfl_down( val,  2 );
+        val += __shfl_down( val,  1 );
+        ct  = count_sum[threadIdx.x];
+        ct  += __shfl_down( ct, 16 );
+        ct  += __shfl_down( ct,  8 );
+        ct  += __shfl_down( ct,  4 );
+        ct  += __shfl_down( ct,  2 );
+        ct  += __shfl_down( ct,  1 );
+
+        if( threadIdx.x == 0 ) {
+            atomicAdd( &nPoint->result,  val );
+            atomicAdd( &nPoint->resSize, ct );
+        }
+    }
+#endif
 }
 
 /* All the signals have been computed for the homographies rolled
@@ -474,10 +579,20 @@ POP_SYNC_CHK;
 POP_SYNC_CHK;
         POP_CHK_CALL_IFSYNC;
 
+        {
+            const int numPairs = vCutSize*(vCutSize-1)/2;
+
+            popart::identification::verify_idComputeResult
+                <<<1,1,0,tagStream>>>
+                ( point_buffer, cut_buffer, sig_buffer, vCutSize, numPairs );
+POP_SYNC_CHK;
+        }
+
         dim3 id_block( 32, // we use this to sum up signals
                        32, // we can use some shared memory/warp magic for summing
                        1 );
 #ifdef NO_ATOMIC
+#error no atomic
         dim3 id_grid( 1,
                       gridNSample,
                       gridNSample );
