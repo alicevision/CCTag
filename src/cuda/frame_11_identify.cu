@@ -11,7 +11,6 @@
 #include "frameparam.h"
 #include "clamp.h"
 #include "geom_matrix.h"
-#include "geom_projtrans.h"
 #include "nearby_point.h"
 #include "tag_cut.h"
 
