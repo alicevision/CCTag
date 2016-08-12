@@ -905,14 +905,24 @@ void cctagDetection(CCTag::List& markers,
             tagIndex++;
         }
 
+        if( markers.size() != numTags ) {
+            cerr << __FILE__ << ":" << __LINE__ << " Number of markers has changed in identify_step_1" << endl;
+        }
+
 #ifdef WITH_CUDA
         if( pipe1 && numTags > 0 ) {
             pipe1->uploadCuts( numTags, vSelectedCuts, params );
+
+            cerr << __FILE__ << ":"<< __LINE__ << " WARNING: uncontrolled creation of CUDA streams!!!!" << endl;
             pipe1->makeCudaStreams( numTags );
 
             tagIndex = 0;
+            int debug_num_calls = 0;
             for( CCTag& cctag : markers ) {
                 if( detected[tagIndex] == status::id_reliable ) {
+                    if( debug_num_calls >= numTags ) {
+                        cerr << __FILE__ << ":" << __LINE__ << " center finding for more loops (" << debug_num_calls << ") than uplaoded "(<< numTags << ")?" << endl;
+                    }
                     pipe1->imageCenterOptLoop(
                         tagIndex,
                         cctag.rescaledOuterEllipse(),

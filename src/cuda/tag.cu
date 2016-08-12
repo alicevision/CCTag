@@ -398,6 +398,9 @@ void TagPipe::imageCenterOptLoop(
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
+    cerr << __FILE__ << ":" << __LINE << endl
+         << "    enter imageCenterOptLoop for tag " << tagIndex << endl
+         << "    number of cuts is " << vCutSize << endl;
     popart::geometry::ellipse e( ellipse.matrix()(0,0),
                                  ellipse.matrix()(0,1),
                                  ellipse.matrix()(0,2),
@@ -508,7 +511,12 @@ void TagPipe::uploadCuts( int                                 numTags,
 
     const int max_cuts_per_Tag = params._numCutsInIdentStep;
 
+    cerr << __FILE__ << ":" << __LINE__ << endl
+         << "    Uploading " << numTags << " tags" << endl;
+
     for( int tagIndex=0; tagIndex<numTags; tagIndex++ ) {
+        cerr << "    Tag " << tagIndex << " has " << vCuts[tagIndex].size() << " cuts" << endl;
+
         identification::CutStruct* csptr;
         
         csptr = &csptr_base[tagIndex * max_cuts_per_Tag];
