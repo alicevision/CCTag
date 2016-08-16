@@ -704,6 +704,8 @@ void TagPipe::allocSignalBuffer( int n )
 __host__
 void TagPipe::freeCutStructBuffer( )
 {
+    if( _num_cut_struct == 0 ) return;
+
     POP_CUDA_FREE( _d_cut_struct );
     POP_CUDA_FREE_HOST( _h_cut_struct );
     _num_cut_struct = 0;
@@ -712,6 +714,8 @@ void TagPipe::freeCutStructBuffer( )
 __host__
 void TagPipe::freeNearbyPointBuffer( )
 {
+    if( _num_nearby_point == 0 ) return;
+
     POP_CUDA_FREE( _d_nearby_point );
     _num_nearby_point = 0;
 }
@@ -719,6 +723,8 @@ void TagPipe::freeNearbyPointBuffer( )
 __host__
 void TagPipe::freeSignalBuffer( )
 {
+    if( _num_cut_signals == 0 ) return;
+
     POP_CUDA_FREE( _d_cut_signals );
     _num_cut_signals = 0;
 }

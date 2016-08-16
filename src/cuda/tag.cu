@@ -405,9 +405,7 @@ void TagPipe::imageCenterOptLoop(
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
-    cerr << __FILE__ << ":" << __LINE__ << endl
-         << "    enter imageCenterOptLoop for tag " << tagIndex << endl
-         << "    number of cuts is " << vCutSize << endl;
+    // cerr << __FILE__ << ":" << __LINE__ << " enter imageCenterOptLoop for tag " << tagIndex << " number of cuts is " << vCutSize << endl;
     popart::geometry::ellipse e( ellipse.matrix()(0,0),
                                  ellipse.matrix()(0,1),
                                  ellipse.matrix()(0,2),
@@ -487,23 +485,26 @@ void TagPipe::checkTagAllocations( const int                numTags,
     const size_t g = numTags * gridNSample * gridNSample;
 
     if( g*sizeof(NearbyPoint) > this->getNearbyPointBufferByteSize() ) {
+        freeNearbyPointBuffer( );
+        allocNearbyPointBuffer( g );
         cerr << __FILE__ << ":" << __LINE__
-             << " ERROR: re-interpreted image plane too small to hold point search results"
+             << " WARNING: re-allocating NearbyPoint buffer for " << g << " elements"
              << endl;
-        exit( -1 );
     }
 
     if( g*sizeof(identification::CutSignals) > this->getSignalBufferByteSize() ) {
+        freeSignalBuffer( );
+        allocSignalBuffer( g );
         cerr << __FILE__ << ":" << __LINE__
-             << " ERROR: re-interpreted image plane too small to hold all signal buffers"
+             << " WARNING: re-allocated Signal buffer for " << g << " elements"
              << endl;
-        exit( -1 );
     }
 
     if( numTags * params._numCutsInIdentStep * sizeof(identification::CutStruct) > this->getCutStructBufferByteSize() ) {
+        freeCutStructBuffer( );
+        allocCutStructBuffer( numTags * params._numCutsInIdentStep );
         cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold all intermediate homographies" << endl;
-        exit( -1 );
+             << " WARNING: re-allocated CutStruct buffer for " << numTags * params._numCutsInIdentStep << " elements" << endl;
     }
 }
 
@@ -518,11 +519,10 @@ void TagPipe::uploadCuts( int                                 numTags,
 
     const int max_cuts_per_Tag = params._numCutsInIdentStep;
 
-    cerr << __FILE__ << ":" << __LINE__ << endl
-         << "    Uploading " << numTags << " tags" << endl;
+    cerr << __FILE__ << ":" << __LINE__ << " Uploading " << numTags << " tags" << endl;
 
     for( int tagIndex=0; tagIndex<numTags; tagIndex++ ) {
-        cerr << "    Tag " << tagIndex << " has " << vCuts[tagIndex].size() << " cuts" << endl;
+        // cerr << "    Tag " << tagIndex << " has " << vCuts[tagIndex].size() << " cuts" << endl;
 
         identification::CutStruct* csptr;
         
