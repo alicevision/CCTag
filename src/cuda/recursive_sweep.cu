@@ -109,12 +109,12 @@ bool single_block_loop( cv::cuda::PtrStepSz<T> img )
     Processor proc;
     while( again ) {
         bool mark      = proc.check( img, idx, idy );
-        bool any_marks = __any( mark );
+        bool any_marks = ::__any( mark );
         if( threadIdx.x == 0 ) continuation[threadIdx.y] = any_marks;
         __syncthreads();
         mark = threadIdx.x < HYST_H ? continuation[threadIdx.x] : false;
         __syncthreads();
-        again = __any( mark );
+        again = ::__any( mark );
         if( again ) nothing_changed = false;
     }
 
