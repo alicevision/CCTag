@@ -102,6 +102,8 @@ static bool ReportChecks()
   std::clog << "Performance difference report:\n";
   std::clog << "  time,    mean=" << testChecker.elapsedTimeDifferenceMean() << ",stdev=" << testChecker.elapsedTimeDifferenceStdev() << std::endl;
   std::clog << "  quality, mean=" << testChecker.qualityDifferenceMean() << ",stdev=" << testChecker.qualityDifferenceStdev() << std::endl;
+  
+  return ok;
 }
 
 int main(int argc, char **argv)
