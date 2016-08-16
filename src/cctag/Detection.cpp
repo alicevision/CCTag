@@ -921,7 +921,7 @@ void cctagDetection(CCTag::List& markers,
             for( CCTag& cctag : markers ) {
                 if( detected[tagIndex] == status::id_reliable ) {
                     if( debug_num_calls >= numTags ) {
-                        cerr << __FILE__ << ":" << __LINE__ << " center finding for more loops (" << debug_num_calls << ") than uplaoded "(<< numTags << ")?" << endl;
+                        cerr << __FILE__ << ":" << __LINE__ << " center finding for more loops (" << debug_num_calls << ") than uploaded (" << numTags << ")?" << endl;
                     }
                     pipe1->imageCenterOptLoop(
                         tagIndex,

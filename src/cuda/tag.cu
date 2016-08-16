@@ -398,7 +398,7 @@ void TagPipe::imageCenterOptLoop(
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
-    cerr << __FILE__ << ":" << __LINE << endl
+    cerr << __FILE__ << ":" << __LINE__ << endl
          << "    enter imageCenterOptLoop for tag " << tagIndex << endl
          << "    number of cuts is " << vCutSize << endl;
     popart::geometry::ellipse e( ellipse.matrix()(0,0),
