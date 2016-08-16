@@ -7,12 +7,14 @@
  */
 #include <cuda_runtime.h>
 
-#include "frame.h"
-#include "frameparam.h"
-#include "clamp.h"
-#include "geom_matrix.h"
-#include "nearby_point.h"
-#include "tag_cut.h"
+#include "cuda/tag.h"
+#include "cuda/frame.h"
+#include "cuda/frameparam.h"
+#include "cuda/clamp.h"
+#include "cuda/assist.h"
+#include "cuda/geom_matrix.h"
+#include "cuda/nearby_point.h"
+#include "cuda/tag_cut.h"
 
 #undef NO_ATOMIC
 
@@ -217,7 +219,6 @@ void verify_idComputeResult( NearbyPoint*      point_buffer,
                     int j      = __float2int_rd( 1.0f + __fsqrt_rd(1.0f+8.0f*myPair) ) / 2;
                     int i      = myPair - j*(j-1)/2;
 
-                    int   ct   = 0;
                     float val  = 0.0f;
                     bool  comp = true;
 
@@ -246,7 +247,6 @@ void verify_idComputeResult( NearbyPoint*      point_buffer,
                                 float square = l_signals->sig[offset] - r_signals->sig[offset];
                                 val += ( square * square );
                             }
-                            ct = 1;
                         }
                     }
                   }
@@ -254,45 +254,6 @@ void verify_idComputeResult( NearbyPoint*      point_buffer,
             }
         }
     }
-
-
-#if 0
-    val += __shfl_down( val, 16 );
-    val += __shfl_down( val,  8 );
-    val += __shfl_down( val,  4 );
-    val += __shfl_down( val,  2 );
-    val += __shfl_down( val,  1 );
-
-    __shared__ float signal_sum[32];
-    __shared__ int   count_sum[32];
-
-    if( threadIdx.x == 0 ) {
-        signal_sum[threadIdx.y] = val;
-        count_sum [threadIdx.y] = ct;
-    }
-
-    __syncthreads();
-
-    if( threadIdx.y == 0 ) {
-        val = signal_sum[threadIdx.x];
-        val += __shfl_down( val, 16 );
-        val += __shfl_down( val,  8 );
-        val += __shfl_down( val,  4 );
-        val += __shfl_down( val,  2 );
-        val += __shfl_down( val,  1 );
-        ct  = count_sum[threadIdx.x];
-        ct  += __shfl_down( ct, 16 );
-        ct  += __shfl_down( ct,  8 );
-        ct  += __shfl_down( ct,  4 );
-        ct  += __shfl_down( ct,  2 );
-        ct  += __shfl_down( ct,  1 );
-
-        if( threadIdx.x == 0 ) {
-            atomicAdd( &nPoint->result,  val );
-            atomicAdd( &nPoint->resSize, ct );
-        }
-    }
-#endif
 }
 
 /* All the signals have been computed for the homographies rolled
@@ -507,7 +468,7 @@ void idBestNearbyPoint31max( NearbyPoint* point_buffer, const size_t gridSquare 
  * @param[inout] pointer lock a small piece of page-locked memory for device-to-host copying of results
  */
 __host__
-void Frame::idCostFunction(
+void TagPipe::idCostFunction(
     const int                           tagIndex,
     cudaStream_t                        tagStream,
     int                                 iterations,
@@ -524,7 +485,7 @@ void Frame::idCostFunction(
     /* reusing various image-sized plane */
     NearbyPoint*                 point_buffer;
     identification::CutSignals*  sig_buffer;
-    const identification::CutStruct* cut_buffer = getCutStructBuffer();
+    const identification::CutStruct* cut_buffer = getCutStructBufferDev();
 
     point_buffer  = getNearbyPointBuffer();
     sig_buffer    = getSignalBuffer();
@@ -571,7 +532,7 @@ POP_SYNC_CHK;
 
         popart::identification::idGetSignals
             <<<get_grid,get_block,0,tagStream>>>
-            ( _d_plane,
+            ( _frame[0]->getPlaneDev(),
               vCutSize,
               point_buffer,
               cut_buffer,
@@ -637,7 +598,7 @@ POP_SYNC_CHK;
 }
 
 __host__
-void Frame::imageCenterOptLoop(
+void TagPipe::imageCenterOptLoop(
     const int                           tagIndex,     // in - determines index in cut structure
     cudaStream_t                        tagStream,
     const popart::geometry::ellipse&    outerEllipse, // in
@@ -685,7 +646,7 @@ void Frame::imageCenterOptLoop(
 }
 
 __host__
-bool Frame::imageCenterRetrieve(
+bool TagPipe::imageCenterRetrieve(
     const int                           tagIndex,     // in - determines index in cut structure
     cudaStream_t                        tagStream,
     float2&                             bestPointOut, // out
@@ -705,64 +666,113 @@ bool Frame::imageCenterRetrieve(
 }
 
 __host__
-size_t Frame::getCutStructBufferByteSize( ) const
+void TagPipe::allocCutStructBuffer( int n )
 {
-    /* these are uint8_t */
-    return _d_mag.rows * _d_mag.step;
+    void* ptr;
+
+    POP_CUDA_MALLOC( &ptr, n*sizeof(identification::CutStruct) );
+    _d_cut_struct = (identification::CutStruct*)ptr;
+
+    POP_CUDA_MALLOC_HOST( &ptr, n*sizeof(identification::CutStruct) );
+    _h_cut_struct = (identification::CutStruct*)ptr;
+
+    _num_cut_struct = n;
 }
 
 __host__
-identification::CutStruct* Frame::getCutStructBuffer( ) const
+void TagPipe::allocNearbyPointBuffer( int n )
 {
-    return reinterpret_cast<identification::CutStruct*>( _d_mag.data );
+    void* ptr;
+
+    POP_CUDA_MALLOC( &ptr, n*sizeof(NearbyPoint) );
+    _d_nearby_point = (NearbyPoint*)ptr;
+
+    _num_nearby_point = n;
 }
 
 __host__
-identification::CutStruct* Frame::getCutStructBufferHost( ) const
+void TagPipe::allocSignalBuffer( int n )
 {
-    return reinterpret_cast<identification::CutStruct*>( _h_mag.data );
+    void* ptr;
+
+    POP_CUDA_MALLOC( &ptr, n*sizeof(identification::CutSignals) );
+    _d_cut_signals = (identification::CutSignals*)ptr;
+
+    _num_cut_signals = n;
 }
 
 __host__
-size_t Frame::getNearbyPointBufferByteSize( ) const
+void TagPipe::freeCutStructBuffer( )
 {
-    /* these are uint32_t */
-    return _d_map.rows * _d_map.step;
+    POP_CUDA_FREE( _d_cut_struct );
+    POP_CUDA_FREE_HOST( _h_cut_struct );
+    _num_cut_struct = 0;
 }
 
 __host__
-NearbyPoint* Frame::getNearbyPointBuffer( ) const
+void TagPipe::freeNearbyPointBuffer( )
 {
-    return reinterpret_cast<NearbyPoint*>( _d_map.data );
+    POP_CUDA_FREE( _d_nearby_point );
+    _num_nearby_point = 0;
 }
 
 __host__
-size_t Frame::getSignalBufferByteSize( ) const
+void TagPipe::freeSignalBuffer( )
 {
-    /* these are float */
-    return _d_intermediate.rows * _d_intermediate.step;
+    POP_CUDA_FREE( _d_cut_signals );
+    _num_cut_signals = 0;
 }
 
 __host__
-identification::CutSignals* Frame::getSignalBuffer( ) const
+size_t TagPipe::getCutStructBufferByteSize( ) const
 {
-    return reinterpret_cast<identification::CutSignals*>( _d_intermediate.data );
+    return _num_cut_struct * sizeof(identification::CutStruct);
 }
 
 __host__
-void Frame::clearSignalBuffer( )
+identification::CutStruct* TagPipe::getCutStructBufferDev( ) const
+{
+    return _d_cut_struct;
+}
+
+__host__
+identification::CutStruct* TagPipe::getCutStructBufferHost( ) const
+{
+    return _h_cut_struct;
+}
+
+__host__
+size_t TagPipe::getNearbyPointBufferByteSize( ) const
+{
+    return _num_nearby_point * sizeof(NearbyPoint);
+}
+
+__host__
+NearbyPoint* TagPipe::getNearbyPointBuffer( ) const
+{
+    return _d_nearby_point;
+}
+
+__host__
+size_t TagPipe::getSignalBufferByteSize( ) const
+{
+    return _num_cut_signals * sizeof(identification::CutSignals);
+}
+
+__host__
+identification::CutSignals* TagPipe::getSignalBuffer( ) const
+{
+    return _d_cut_signals;
+}
+
+__host__
+void TagPipe::clearSignalBuffer( )
 {
 #ifdef DEBUG_FRAME_UPLOAD_CUTS
-    if( _d_intermediate.step != _h_intermediate.step ||
-        _d_intermediate.rows != _h_intermediate.rows ) {
-        cerr << "intermediate dimensions should be identical on host and dev"
-             << endl;
-        exit( -1 );
-    }
     POP_CHK_CALL_IFSYNC;
-    POP_CUDA_MEMSET_ASYNC( _d_intermediate.data,
+    POP_CUDA_MEMSET_ASYNC( 0, // _d_intermediate.data,
                            -1,
-                           _h_intermediate.step * _h_intermediate.rows,
+                           0, // _h_intermediate.step * _h_intermediate.rows,
                            _stream );
     POP_CHK_CALL_IFSYNC;
 #endif // DEBUG_FRAME_UPLOAD_CUTS

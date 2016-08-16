@@ -30,6 +30,13 @@ namespace popart
 __host__
 TagPipe::TagPipe( const cctag::Parameters& params )
     : _params( params )
+    , _d_cut_struct( 0 )
+    , _h_cut_struct( 0 )
+    , _d_nearby_point( 0 )
+    , _d_cut_signals( 0 )
+    , _num_cut_struct( 0 )
+    , _num_nearby_point( 0 )
+    , _num_cut_signals( 0 )
 {
 }
 
@@ -419,13 +426,13 @@ void TagPipe::imageCenterOptLoop(
 
     popart::geometry::matrix3x3 bestHomography;
 
-    _frame[0]->imageCenterOptLoop( tagIndex,
-                                   _tag_streams[tagIndex],
-                                   e,
-                                   f,
-                                   vCutSize,
-                                   params,
-                                   cctag_pointer_buffer );
+    imageCenterOptLoop( tagIndex,
+                        _tag_streams[tagIndex],
+                        e,
+                        f,
+                        vCutSize,
+                        params,
+                        cctag_pointer_buffer );
 }
 
 __host__
@@ -440,13 +447,13 @@ bool TagPipe::imageCenterRetrieve(
     float2                      bestPoint;
     popart::geometry::matrix3x3 bestHomography;
 
-    bool success = _frame[0]->imageCenterRetrieve( tagIndex,
-                                                   _tag_streams[tagIndex],
-                                                   bestPoint,
-                                                   bestResidual,
-                                                   bestHomography,
-                                                   params,
-                                                   cctag_pointer_buffer );
+    bool success = imageCenterRetrieve( tagIndex,
+                                        _tag_streams[tagIndex],
+                                        bestPoint,
+                                        bestResidual,
+                                        bestHomography,
+                                        params,
+                                        cctag_pointer_buffer );
 
     if( success ) {
         center.x() = bestPoint.x;
@@ -479,21 +486,21 @@ void TagPipe::checkTagAllocations( const int                numTags,
 
     const size_t g = numTags * gridNSample * gridNSample;
 
-    if( g*sizeof(NearbyPoint) > _frame[0]->getNearbyPointBufferByteSize() ) {
+    if( g*sizeof(NearbyPoint) > this->getNearbyPointBufferByteSize() ) {
         cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold point search results"
+             << " ERROR: re-interpreted image plane too small to hold point search results"
              << endl;
         exit( -1 );
     }
 
-    if( g*sizeof(identification::CutSignals) > _frame[0]->getSignalBufferByteSize() ) {
+    if( g*sizeof(identification::CutSignals) > this->getSignalBufferByteSize() ) {
         cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold all signal buffers"
+             << " ERROR: re-interpreted image plane too small to hold all signal buffers"
              << endl;
         exit( -1 );
     }
 
-    if( numTags * params._numCutsInIdentStep * sizeof(identification::CutStruct) > _frame[0]->getCutStructBufferByteSize() ) {
+    if( numTags * params._numCutsInIdentStep * sizeof(identification::CutStruct) > this->getCutStructBufferByteSize() ) {
         cerr << __FILE__ << ":" << __LINE__
              << "ERROR: re-interpreted image plane too small to hold all intermediate homographies" << endl;
         exit( -1 );
@@ -507,7 +514,7 @@ void TagPipe::uploadCuts( int                                 numTags,
 {
     if( numTags == 0 || vCuts == 0 || vCuts->size() == 0 ) return;
 
-    identification::CutStruct* csptr_base = _frame[0]->getCutStructBufferHost();
+    identification::CutStruct* csptr_base = this->getCutStructBufferHost();
 
     const int max_cuts_per_Tag = params._numCutsInIdentStep;
 
@@ -548,8 +555,8 @@ void TagPipe::uploadCuts( int                                 numTags,
     }
 
     POP_CHK_CALL_IFSYNC;
-    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( _frame[0]->getCutStructBuffer(),
-                                    _frame[0]->getCutStructBufferHost(),
+    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( this->getCutStructBufferDev(),
+                                    this->getCutStructBufferHost(),
                                     numTags * max_cuts_per_Tag * sizeof(identification::CutStruct) );
 }
 

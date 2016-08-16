@@ -46,12 +46,12 @@
 #define GAUSS_DERIV 16 // first derivative
 
 namespace popart {
-namespace identification {
-// locally defined in frame_ident.cu only
-struct CutStruct;
-struct CutSignals;
-} // identification
-struct NearbyPoint;
+// namespace identification {
+// // locally defined in frame_ident.cu only
+// struct CutStruct;
+// struct CutSignals;
+// } // identification
+// struct NearbyPoint;
 
 /*************************************************************
  * FrameTexture
@@ -139,6 +139,8 @@ public:
     uint32_t getHeight( ) const { return _d_plane.rows; }
     uint32_t getPitch( ) const  { return _d_plane.step; }
 
+    cv::cuda::PtrStepSzb& getPlaneDev( ) { return _d_plane; }
+
     // implemented in frame_alloc.cu
     void allocRequiredMem( const cctag::Parameters& param );
     void initRequiredMem( );
@@ -213,58 +215,7 @@ public:
     cv::Mat* getMag( ) const;
     cv::Mat* getEdges( ) const;
 
-protected:
-    // implemented in frame_11_identify.cu
-    /* to reuse various image-sized buffers, but retrieve their
-     * bytesize to ensure that the new types fit into the
-     * already allocated space.
-     */
-    size_t                               getCutStructBufferByteSize( ) const;
-    popart::identification::CutStruct*   getCutStructBuffer( ) const;
-    popart::identification::CutStruct*   getCutStructBufferHost( ) const;
-    size_t                               getNearbyPointBufferByteSize( ) const;
-    popart::NearbyPoint*                 getNearbyPointBuffer( ) const;
-    size_t                               getSignalBufferByteSize( ) const;
-    popart::identification::CutSignals*  getSignalBuffer( ) const;
-    void                                 clearSignalBuffer( );
-
     friend class TagPipe;
-
-public:
-    // implemented in frame_11_identify.cu
-    __host__
-    void imageCenterOptLoop(
-        const int                           tagIndex,     // in
-        cudaStream_t                        tagStream,    // in
-        const popart::geometry::ellipse&    outerEllipse, // in
-        const float2&                       center,       // in
-        const int                           vCutSize,     // in
-        const cctag::Parameters&            params,       // in
-        NearbyPoint*                        cctag_pointer_buffer );
-
-    __host__
-    bool imageCenterRetrieve(
-        const int                           tagIndex,          // in
-        cudaStream_t                        tagStream,         // in
-        float2&                             bestPointOut,      // out
-        float&                              bestResidual,      // out
-        popart::geometry::matrix3x3&        bestHomographyOut, // out
-        const cctag::Parameters&            params,            // in
-        NearbyPoint*                        cctag_pointer_buffer );
-
-private:
-    // implemented in frame_11_identify.cu
-    __host__
-    void idCostFunction(
-        const int                           tagIndex,
-        cudaStream_t                        tagStream,
-        int                                 iterations,
-        const popart::geometry::ellipse&    ellipse,
-        const float2                        center,
-        const int                           vCutSize,     // in
-        float                               currentNeighbourSize,
-        const cctag::Parameters&            params,
-        NearbyPoint*                        cctag_pointer_buffer );
 
 public:
     void hostDebugDownload( const cctag::Parameters& params ); // async

@@ -21,6 +21,10 @@
 #include <boost/thread/condition.hpp>
 
 #include "cuda/tag_threads.h"
+#include "cuda/tag_cut.h"
+#include "cuda/geom_ellipse.h"
+#include "cuda/geom_matrix.h"
+
 #include "cctag/Params.hpp"
 #include "cctag/Types.hpp"
 #include "cctag/ImageCut.hpp"
@@ -70,9 +74,6 @@ public:
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
 
-    void checkTagAllocations( const int                numTags,
-                              const cctag::Parameters& params );
-
     void imageCenterOptLoop(
         const int                                  tagIndex,
         const cctag::numerical::geometry::Ellipse& ellipse,
@@ -113,6 +114,75 @@ public:
                                     const cv::Mat&           cpu_dx,
                                     const cv::Mat&           cpu_dy,
                                     const cctag::Parameters& params );
+
+private:
+    // implemented in frame_11_identify.cu
+    /* to reuse various image-sized buffers, but retrieve their
+     * bytesize to ensure that the new types fit into the
+     * already allocated space.
+     */
+    identification::CutStruct*   _d_cut_struct;
+    identification::CutStruct*   _h_cut_struct;
+    NearbyPoint*                 _d_nearby_point;
+    identification::CutSignals*  _d_cut_signals;
+    int                          _num_cut_struct;
+    int                          _num_nearby_point;
+    int                          _num_cut_signals;
+
+public:
+    void checkTagAllocations( const int                numTags,
+                              const cctag::Parameters& params );
+private:
+    void allocCutStructBuffer( int n );
+    void allocNearbyPointBuffer( int n );
+    void allocSignalBuffer( int n );
+    void freeCutStructBuffer( );
+    void freeNearbyPointBuffer( );
+    void freeSignalBuffer( );
+
+    size_t                       getCutStructBufferByteSize( ) const;
+    identification::CutStruct*   getCutStructBufferDev( ) const;
+    identification::CutStruct*   getCutStructBufferHost( ) const;
+    size_t                       getNearbyPointBufferByteSize( ) const;
+    NearbyPoint*                 getNearbyPointBuffer( ) const;
+    size_t                       getSignalBufferByteSize( ) const;
+    identification::CutSignals*  getSignalBuffer( ) const;
+    void                         clearSignalBuffer( );
+
+    // implemented in frame_11_identify.cu
+    __host__
+    void imageCenterOptLoop(
+        const int                           tagIndex,     // in
+        cudaStream_t                        tagStream,    // in
+        const popart::geometry::ellipse&    outerEllipse, // in
+        const float2&                       center,       // in
+        const int                           vCutSize,     // in
+        const cctag::Parameters&            params,       // in
+        NearbyPoint*                        cctag_pointer_buffer );
+
+    __host__
+    bool imageCenterRetrieve(
+        const int                           tagIndex,          // in
+        cudaStream_t                        tagStream,         // in
+        float2&                             bestPointOut,      // out
+        float&                              bestResidual,      // out
+        popart::geometry::matrix3x3&        bestHomographyOut, // out
+        const cctag::Parameters&            params,            // in
+        NearbyPoint*                        cctag_pointer_buffer );
+
+    // implemented in frame_11_identify.cu
+    __host__
+    void idCostFunction(
+        const int                           tagIndex,
+        cudaStream_t                        tagStream,
+        int                                 iterations,
+        const popart::geometry::ellipse&    ellipse,
+        const float2                        center,
+        const int                           vCutSize,     // in
+        float                               currentNeighbourSize,
+        const cctag::Parameters&            params,
+        NearbyPoint*                        cctag_pointer_buffer );
+
 };
 
 }; // namespace popart
