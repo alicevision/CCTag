@@ -6,7 +6,6 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/Statistic.hpp>
-#include <cctag/boostCv/cvImage.hpp>
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d/features2d.hpp>
