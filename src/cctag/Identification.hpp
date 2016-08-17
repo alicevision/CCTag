@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #pragma once
 
 #include <cctag/utils/VisualDebug.hpp>
@@ -6,7 +13,6 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/Statistic.hpp>
-#include <cctag/boostCv/cvImage.hpp>
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d/features2d.hpp>

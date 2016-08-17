@@ -1,10 +1,16 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cuda_runtime.h>
 
 #include "frame.h"
 #include "frameparam.h"
 #include "clamp.h"
 #include "geom_matrix.h"
-#include "geom_projtrans.h"
 #include "nearby_point.h"
 #include "tag_cut.h"
 
@@ -336,6 +342,7 @@ void idBestNearbyPoint32plus( NearbyPoint* point_buffer, const size_t gridSquare
             NearbyPoint*       dst_point = &point_buffer[0];
             const NearbyPoint* src_point = &point_buffer[bestIdx];
             memcpy( dst_point, src_point, sizeof( NearbyPoint ) );
+            dst_point->residual = bestRes;
         }
     }
 }
@@ -374,6 +381,7 @@ void idBestNearbyPoint31max( NearbyPoint* point_buffer, const size_t gridSquare 
             NearbyPoint*       dst_point = &point_buffer[0];
             const NearbyPoint* src_point = &point_buffer[bestIdx];
             memcpy( dst_point, src_point, sizeof( NearbyPoint ) );
+            dst_point->residual = bestRes;
         }
     }
 }
@@ -451,8 +459,8 @@ void Frame::idCostFunction(
               center,
               neighSize,
               point_buffer );
+POP_SYNC_CHK;
         POP_CHK_CALL_IFSYNC;
-
         dim3 get_block( 32, vCutSize, 1 ); // we use this to sum up signals
         dim3 get_grid( 1, gridNSample, gridNSample );
 
@@ -463,6 +471,7 @@ void Frame::idCostFunction(
               point_buffer,
               cut_buffer,
               sig_buffer );
+POP_SYNC_CHK;
         POP_CHK_CALL_IFSYNC;
 
         dim3 id_block( 32, // we use this to sum up signals
@@ -482,6 +491,7 @@ void Frame::idCostFunction(
         popart::identification::idComputeResult
             <<<id_grid,id_block,0,tagStream>>>
             ( point_buffer, cut_buffer, sig_buffer, vCutSize );
+POP_SYNC_CHK;
         POP_CHK_CALL_IFSYNC;
 
         /* We search for the minimum of gridNSample x gridNSample
@@ -495,11 +505,13 @@ void Frame::idCostFunction(
             popart::identification::idBestNearbyPoint31max
                 <<<1,32,0,tagStream>>>
                   ( point_buffer, gridSquare );
+POP_SYNC_CHK;
             POP_CHK_CALL_IFSYNC;
         } else {
             popart::identification::idBestNearbyPoint32plus
                 <<<1,32,0,tagStream>>>
                   ( point_buffer, gridSquare );
+POP_SYNC_CHK;
             POP_CHK_CALL_IFSYNC;
         }
 
@@ -562,6 +574,7 @@ bool Frame::imageCenterRetrieve(
     const int                           tagIndex,     // in - determines index in cut structure
     cudaStream_t                        tagStream,
     float2&                             bestPointOut, // out
+    float&                              bestResidual, // out
     popart::geometry::matrix3x3&        bestHomographyOut, // out
     const cctag::Parameters&            params,
     NearbyPoint*                        cctag_pointer_buffer )
@@ -572,6 +585,7 @@ bool Frame::imageCenterRetrieve(
 
     bestPointOut      = cctag_pointer_buffer->point;
     bestHomographyOut = cctag_pointer_buffer->mHomography;
+    bestResidual      = cctag_pointer_buffer->residual;
     return true;
 }
 

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef VISION_CCTAG_MULTIRESOLUTION_HPP_
 #define VISION_CCTAG_MULTIRESOLUTION_HPP_
 
@@ -5,7 +12,6 @@
 #include <cctag/Params.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Circle.hpp>
-#include <cctag/boostCv/cvImage.hpp>
 #include <cctag/ImagePyramid.hpp>
 #ifdef WITH_CUDA
 #include "cuda/tag.h"

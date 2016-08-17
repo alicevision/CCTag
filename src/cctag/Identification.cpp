@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/Identification.hpp>
 #include <cctag/ImageCut.hpp>
 #include <cctag/optimization/conditioner.hpp>
@@ -980,6 +987,7 @@ bool refineConicFamilyGlob(
         bool success = cudaPipe->imageCenterRetrieve(
             tagIndex,      // in
             optimalPoint,  // out
+            residual,      // out
             mHomography,   // out
             params,
             cctag_pointer_buffer );
@@ -1348,12 +1356,9 @@ int identify_step_1(
   )
 #endif
   
-  if ( outerPoints.size() < 5 )
-  {
-    // Can happen because points are retained too aggressively for higher accuracy
-    return status::too_few_outer_points;
-  }
-  
+
+  assert ( outerPoints.size() >= 5 );
+ 
   // todo: next line deprec, associated to SUBPIX_EDGE_OPTIM, do not remove.
   const float cutLengthOuterPointRefine = std::min( ellipse.a(), ellipse.b() ) * 0.12;
 

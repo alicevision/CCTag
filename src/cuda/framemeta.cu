@@ -1,11 +1,15 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <iostream>
 
 #include "onoff.h"
 #include "framemeta.h"
 #include "debug_macros.hpp"
-
-// #include <cuda_runtime.h>
-// #include <assert.h>
 
 namespace popart {
 
@@ -23,9 +27,6 @@ struct FrameMeta
     int   ring_counter_max;
     float identification_result;
     int   identification_resct;
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    int   num_nearby_points;
-#endif
 #ifndef NDEBUG
     int   num_edges_thinned;
 #endif // NDEBUG
@@ -93,9 +94,6 @@ void FrameMetaPtr::toDevice( FrameMetaEnum e, int val, cudaStream_t stream )
     intptr_t offset;
     switch( e ) {
     HOST_DEVICE_TRANSFER_ALL_CASES
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
-#endif
 #ifndef NDEBUG
     HOST_DEVICE_TRANSFER_CASE( Num_edges_thinned, num_edges_thinned )
 #endif // NDEBUG
@@ -131,9 +129,6 @@ void FrameMetaPtr::toDevice_D2S( FrameMetaEnum e, int* val, cudaStream_t stream 
     intptr_t offset;
     switch( e ) {
     HOST_DEVICE_TRANSFER_ALL_CASES
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
-#endif
 #ifndef NDEBUG
     HOST_DEVICE_TRANSFER_CASE( Num_edges_thinned, num_edges_thinned )
 #endif // NDEBUG
@@ -219,9 +214,6 @@ void FrameMetaPtr::fromDevice( FrameMetaEnum e, int& val, cudaStream_t stream )
     intptr_t offset;
     switch( e ) {
     HOST_DEVICE_TRANSFER_ALL_CASES
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    HOST_DEVICE_TRANSFER_CASE( Num_nearby_points, num_nearby_points )
-#endif
 #ifndef NDEBUG
     HOST_DEVICE_TRANSFER_CASE( Num_edges_thinned, num_edges_thinned )
 #endif // NDEBUG
@@ -293,9 +285,6 @@ OFFSET_GETTER_BODY( int,   ring_counter )
 OFFSET_GETTER_BODY( int,   ring_counter_max )
 OFFSET_GETTER_BODY( float, identification_result )
 OFFSET_GETTER_BODY( int,   identification_resct )
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-OFFSET_GETTER_BODY( int,   num_nearby_points )
-#endif
 #ifndef NDEBUG
 OFFSET_GETTER_BODY( int,   num_edges_thinned )
 #endif // NDEBUG

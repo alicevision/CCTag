@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #pragma once
 
 #include <cuda_runtime.h>
@@ -240,6 +247,7 @@ public:
         const int                           tagIndex,          // in
         cudaStream_t                        tagStream,         // in
         float2&                             bestPointOut,      // out
+        float&                              bestResidual,      // out
         popart::geometry::matrix3x3&        bestHomographyOut, // out
         const cctag::Parameters&            params,            // in
         NearbyPoint*                        cctag_pointer_buffer );

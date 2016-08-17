@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef PONCTUALCCTAG_HPP
 #define	PONCTUALCCTAG_HPP
 
@@ -59,7 +66,7 @@ void cctagDetection(
       const std::size_t frame,
       const cv::Mat & graySrc,
       logtime::Mgmt* durations = 0,
-      const std::size_t nCrowns = 3,
+      const std::size_t nRings = 3,
       const std::string & parameterFile = "",
       const std::string & cctagBankFilename = "");
 

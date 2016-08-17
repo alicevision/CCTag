@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #define png_infopp_NULL (png_infopp)NULL
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
@@ -857,6 +864,11 @@ void cctagDetection(CCTag::List& markers,
         /* identification in CUDA requires a host-side nearby point struct
          * in pinned memory for safe, non-blocking memcpy.
          */
+        if( markers.size() > 60 ) {
+            std::cerr << __FILE__ << ":" << __LINE__ << std::endl
+              << "   Found more than 60 (" << markers.size() << ") markers" << endl;
+        }
+
         for( CCTag& tag : markers ) {
             tag.acquireNearbyPointMemory( );
         }
@@ -961,6 +973,7 @@ void cctagDetection(CCTag::List& markers,
     {
       update(markersFinal, marker);
     }
+
     markers = markersFinal;
   
     markers.sort();
