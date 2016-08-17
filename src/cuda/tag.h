@@ -129,6 +129,11 @@ private:
     int                          _num_nearby_point;
     int                          _num_cut_signals;
 
+    intptr_t                     _d_cut_struct_end;
+    intptr_t                     _h_cut_struct_end;
+    intptr_t                     _d_nearby_point_end;
+    intptr_t                     _d_cut_signals_end;
+
 public:
     void checkTagAllocations( const int                numTags,
                               const cctag::Parameters& params );

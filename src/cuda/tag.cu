@@ -480,31 +480,34 @@ bool TagPipe::imageCenterRetrieve(
 void TagPipe::checkTagAllocations( const int                numTags,
                                    const cctag::Parameters& params )
 {
-    const size_t gridNSample   = params._imagedCenterNGridSample;
+    const size_t gridNSample = params._imagedCenterNGridSample;
+    const size_t numCuts     = params._numCutsInIdentStep;
 
-    const size_t g = numTags * gridNSample * gridNSample;
+    const size_t numCutStructs   = numTags * numCuts;
+    const size_t numCutSignals   = numTags * numCuts * gridNSample * gridNSample;
+    const size_t numNearbyPoints = numTags * gridNSample * gridNSample;
 
-    if( g*sizeof(NearbyPoint) > this->getNearbyPointBufferByteSize() ) {
+    if( numNearbyPoints * sizeof(NearbyPoint) > this->getNearbyPointBufferByteSize() ) {
         freeNearbyPointBuffer( );
-        allocNearbyPointBuffer( g );
+        allocNearbyPointBuffer( numNearbyPoints );
         cerr << __FILE__ << ":" << __LINE__
-             << " WARNING: re-allocating NearbyPoint buffer for " << g << " elements"
+             << " WARNING: re-allocating NearbyPoint buffer for " << numNearbyPoints << " elements"
              << endl;
     }
 
-    if( g*sizeof(identification::CutSignals) > this->getSignalBufferByteSize() ) {
+    if( numCutSignals > this->getSignalBufferByteSize() ) {
         freeSignalBuffer( );
-        allocSignalBuffer( g );
+        allocSignalBuffer( numCutSignals );
         cerr << __FILE__ << ":" << __LINE__
-             << " WARNING: re-allocated Signal buffer for " << g << " elements"
+             << " WARNING: re-allocated Signal buffer for " << numCutSignals << " elements"
              << endl;
     }
 
-    if( numTags * params._numCutsInIdentStep * sizeof(identification::CutStruct) > this->getCutStructBufferByteSize() ) {
+    if( numCutStructs * sizeof(identification::CutStruct) > this->getCutStructBufferByteSize() ) {
         freeCutStructBuffer( );
-        allocCutStructBuffer( numTags * params._numCutsInIdentStep );
+        allocCutStructBuffer( numCutStructs );
         cerr << __FILE__ << ":" << __LINE__
-             << " WARNING: re-allocated CutStruct buffer for " << numTags * params._numCutsInIdentStep << " elements" << endl;
+             << " WARNING: re-allocated CutStruct buffer for " << numCutStructs << " elements" << endl;
     }
 }
 
