@@ -23,6 +23,25 @@
 #include "cuda/tag_threads.h"
 #include "cuda/tag_cut.h"
 
+#if 1
+    __device__ __host__
+    inline int validate( const char* file, int line, int input, int reference )
+    {
+        if( input != reference ) {
+            printf( "%s:%d Divergence between standard conf %d and run-time %d\n", file, line, reference, input );
+            return 0;
+        }
+        return reference;
+    }
+    #define STRICT_CUTSIZE(sz) validate( __FILE__, __LINE__, sz, 22 )
+    #define STRICT_SAMPLE(sz)  validate( __FILE__, __LINE__, sz, 5 )
+    #define STRICT_SIGSIZE(sz) validate( __FILE__, __LINE__, sz, 100 )
+#else
+    #define STRICT_CUTSIZE(sz) sz
+    #define STRICT_SAMPLE(sz)  sz
+    #define STRICT_SIGSIZE(sz) sz
+#endif
+
 using namespace std;
 
 namespace popart
@@ -399,6 +418,7 @@ void TagPipe::debug_cpu_dxdy_out( TagPipe*                     pipe,
 __host__
 void TagPipe::imageCenterOptLoop(
     const int                                  tagIndex,
+    const int                                  debug_numTags,
     const cctag::numerical::geometry::Ellipse& ellipse,
     const cctag::Point2d<Eigen::Vector3f>&     center,
     const int                                  vCutSize,
@@ -425,6 +445,7 @@ void TagPipe::imageCenterOptLoop(
     popart::geometry::matrix3x3 bestHomography;
 
     imageCenterOptLoop( tagIndex,
+                        debug_numTags,
                         _tag_streams[tagIndex],
                         e,
                         f,
@@ -480,14 +501,14 @@ bool TagPipe::imageCenterRetrieve(
 void TagPipe::checkTagAllocations( const int                numTags,
                                    const cctag::Parameters& params )
 {
-    const size_t gridNSample = params._imagedCenterNGridSample;
-    const size_t numCuts     = params._numCutsInIdentStep;
+    const size_t gridNSample = STRICT_SAMPLE( params._imagedCenterNGridSample ); // 5
+    const size_t numCuts     = STRICT_CUTSIZE( params._numCutsInIdentStep ); // 22
 
     const size_t numCutStructs   = numTags * numCuts;
     const size_t numCutSignals   = numTags * numCuts * gridNSample * gridNSample;
-    const size_t numNearbyPoints = numTags * gridNSample * gridNSample;
+    const size_t numNearbyPointGrids = numTags;
 
-    if( numNearbyPoints * sizeof(NearbyPoint) > this->getNearbyPointBufferByteSize() ) {
+    if( numNearbyPointGrids * sizeof(NearbyPointGrid) > this->getNearbyPointGridBufferByteSize() ) {
         freeNearbyPointBuffer( );
         allocNearbyPointBuffer( numNearbyPoints );
         cerr << __FILE__ << ":" << __LINE__
@@ -516,11 +537,11 @@ void TagPipe::uploadCuts( int                                 numTags,
                           const std::vector<cctag::ImageCut>* vCuts,
                           const cctag::Parameters&            params )
 {
-    if( numTags == 0 || vCuts == 0 || vCuts->size() == 0 ) return;
+    if( numTags <= 0 || vCuts == 0 || vCuts->size() == 0 ) return;
 
     identification::CutStruct* csptr_base = this->getCutStructBufferHost();
 
-    const int max_cuts_per_Tag = params._numCutsInIdentStep;
+    const int max_cuts_per_Tag = STRICT_CUTSIZE( params._numCutsInIdentStep );
 
     cerr << __FILE__ << ":" << __LINE__ << " Uploading " << numTags << " tags" << endl;
 
@@ -531,7 +552,7 @@ void TagPipe::uploadCuts( int                                 numTags,
         
         csptr = &csptr_base[tagIndex * max_cuts_per_Tag];
 
-        if( vCuts[tagIndex].size() > max_cuts_per_Tag ) {
+        if( STRICT_CUTSIZE( vCuts[tagIndex].size() ) > max_cuts_per_Tag ) {
             cerr << __FILE__ << "," << __LINE__ << ":" << endl
                  << "    Programming error: assumption that number of cuts for a single tag is < params._numCutsInIdentStep is wrong" << endl;
             exit( -1 );

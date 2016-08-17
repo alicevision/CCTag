@@ -28,5 +28,20 @@ struct NearbyPoint
     popart::geometry::matrix3x3 mInvHomography;
 };
 
+struct NearbyPointGrid
+{
+    NearbyPoint grid[5][5];
+
+    __device__
+    inline NearbyPoint& getGrid( int x, int y ) {
+        if( x >= 0 && x < 5 && y >= 0 && y < 5 ) {
+            return grid[y][x];
+        } else {
+            printf("Nearby point grid access out of bounds (%d,%d)\n", x, y );
+            return grid[0][0];
+        }
+    }
+};
+
 }; // namespace popart
 

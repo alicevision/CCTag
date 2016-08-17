@@ -925,6 +925,7 @@ void cctagDetection(CCTag::List& markers,
                     }
                     pipe1->imageCenterOptLoop(
                         tagIndex,
+                        numTags, // for debugging only
                         cctag.rescaledOuterEllipse(),
                         cctag.centerImg(),
                         vSelectedCuts[tagIndex].size(),

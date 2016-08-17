@@ -74,14 +74,29 @@ public:
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
 
+public:
+    __host__
     void imageCenterOptLoop(
         const int                                  tagIndex,
+        const int                                  debug_numTags, // in - only for debugging
         const cctag::numerical::geometry::Ellipse& ellipse,
-        const cctag::Point2d<Eigen::Vector3f>&             center,
+        const cctag::Point2d<Eigen::Vector3f>&     center,
         const int                                  vCutSize,
         const cctag::Parameters&                   params,
         NearbyPoint*                               cctag_pointer_buffer );
 
+private:
+    __host__
+    void imageCenterOptLoop(
+        const int                           tagIndex,     // in
+        const int                           debug_numTags, // in - only for debugging
+        cudaStream_t                        tagStream,    // in
+        const popart::geometry::ellipse&    outerEllipse, // in
+        const float2&                       center,       // in
+        const int                           vCutSize,     // in
+        const cctag::Parameters&            params );     // in
+
+public:
     bool imageCenterRetrieve(
         const int                        tagIndex,
         cctag::Point2d<Eigen::Vector3f>& center,
@@ -148,22 +163,11 @@ private:
     size_t                       getCutStructBufferByteSize( ) const;
     identification::CutStruct*   getCutStructBufferDev( ) const;
     identification::CutStruct*   getCutStructBufferHost( ) const;
-    size_t                       getNearbyPointBufferByteSize( ) const;
-    NearbyPoint*                 getNearbyPointBuffer( ) const;
+    size_t                       getNearbyPointGridBufferByteSize( ) const;
+    NearbyPoint*                 getNearbyPointGridBuffer( int offset ) const;
     size_t                       getSignalBufferByteSize( ) const;
-    identification::CutSignals*  getSignalBuffer( ) const;
+    identification::CutSignals*  getSignalBuffer( bool& success ) const;
     void                         clearSignalBuffer( );
-
-    // implemented in frame_11_identify.cu
-    __host__
-    void imageCenterOptLoop(
-        const int                           tagIndex,     // in
-        cudaStream_t                        tagStream,    // in
-        const popart::geometry::ellipse&    outerEllipse, // in
-        const float2&                       center,       // in
-        const int                           vCutSize,     // in
-        const cctag::Parameters&            params,       // in
-        NearbyPoint*                        cctag_pointer_buffer );
 
     __host__
     bool imageCenterRetrieve(
@@ -179,6 +183,7 @@ private:
     __host__
     void idCostFunction(
         const int                           tagIndex,
+        const int                           debug_numTags,
         cudaStream_t                        tagStream,
         int                                 iterations,
         const popart::geometry::ellipse&    ellipse,

@@ -23,7 +23,7 @@
     inline int validate( const char* file, int line, int input, int reference )
     {
         if( input != reference ) {
-            printf( "%s:%d Divergence between standard conf and run-time\n", file, line );
+            printf( "%s:%d Divergence between standard conf %d and run-time %d\n", file, line, reference, input );
             return 0;
         }
         return reference;
@@ -45,7 +45,7 @@ namespace identification {
 
 __device__
 inline
-float getPixelBilinear( cv::cuda::PtrStepSzb src, float2 xy )
+float getPixelBilinear( const cv::cuda::PtrStepSzb src, float2 xy )
 {
     const int px = clamp( (int)xy.x, src.cols ); // floor of x
     const int py = clamp( (int)xy.y, src.rows ); // floor of y
@@ -74,8 +74,8 @@ float getPixelBilinear( cv::cuda::PtrStepSzb src, float2 xy )
 __device__
 inline
 void extractSignalUsingHomography( const CutStruct&                   cut,
-                                   CutSignals*                        signals,
-                                   cv::cuda::PtrStepSzb               src,
+                                   CutSignals&                        signals,
+                                   const cv::cuda::PtrStepSzb         src,
                                    const popart::geometry::matrix3x3& mHomography,
                                    const popart::geometry::matrix3x3& mInvHomography )
 {
@@ -109,12 +109,12 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
 
         if( __any( breaknow ) )
         {
-            if( threadIdx.x == 0 ) signals->outOfBounds = 1;
+            if( threadIdx.x == 0 ) signals.outOfBounds = 1;
             return;
         }
 
         // Bilinear interpolation
-        signals->sig[i] = popart::identification::getPixelBilinear( src, xyRes );
+        signals.sig[i] = popart::identification::getPixelBilinear( src, xyRes );
 
         x += stepX32;
         y += stepY32;
@@ -130,45 +130,43 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
  * once for every
  */
 __global__
-void idGetSignals( cv::cuda::PtrStepSzb src,
-                   const int            vCutSize,
-                   const NearbyPoint*   point_buffer,
-                   const CutStruct*     cut_buffer,
-                   CutSignals*          sig_buffer,
-                   intptr_t             d_nearby_point_end,
-                   intptr_t             d_cut_struct_end,
-                   intptr_t             d_cut_signals_end )
+void idGetSignals( cv::cuda::PtrStepSzb   src,
+                   const int              vCutSize,
+                   const NearbyPointGrid* point_buffer,
+                   const CutStruct*       cut_buffer,
+                   CutSignals*            sig_buffer,
+                   intptr_t               d_nearby_point_grid_end,
+                   intptr_t               d_cut_struct_end,
+                   intptr_t               d_cut_signals_end )
 {
     const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
     const int i = blockIdx.y;
     const int j = blockIdx.z;
-    const int idx = j * STRICT_SAMPLE(gridNSample) + i;
+    const int nearbyPointIndex = j * STRICT_SAMPLE(gridNSample) + i;
+    const int cutIndex = threadIdx.y;
 
-    const NearbyPoint* nPoint = &point_buffer[idx];
-    identification::CutSignals* signals = &sig_buffer[idx * STRICT_CUTSIZE(vCutSize)];
+    const NearbyPoint& nPoint = &point_buffer->getGrid(i,j);
 
-    int myCutIdx = blockIdx.x * blockDim.y + threadIdx.y;
-
-    if( myCutIdx >= STRICT_CUTSIZE(vCutSize) ) {
+    if( cutIndex >= STRICT_CUTSIZE(vCutSize) ) {
         // warps do never loose lockstep because of this
         return; // out of bounds
     }
 
-    const CutStruct& myCut     = cut_buffer[myCutIdx];
-    CutSignals*      mySignals = &signals[myCutIdx];
+    const CutStruct& myCut = cut_buffer[cutIndex];
+    CutSignals& mySignals  = sig_buffer[nearbyPointIndex * STRICT_CUTSIZE(vCutSize) + cutIndex];
 
-    if( threadIdx.x == 0 ) mySignals->outOfBounds = 0;
+    if( threadIdx.x == 0 ) mySignals.outOfBounds = 0;
 
-    if( (intptr_t)nPoint >= d_nearby_point_end ) {
+    if( (intptr_t)nPoint >= d_nearby_point_grid_end ) {
         printf("%s:%d nearby points out of bounds\n",__FILE__, __LINE__);
     }
     if( (intptr_t)&myCut >= d_cut_struct_end ) {
         printf("%s:%d cut structs out of bounds\n",__FILE__, __LINE__);
     }
-    if( (intptr_t)mySignals >= d_cut_signals_end ) {
+    if( (intptr_t)(&mySignals) >= d_cut_signals_end ) {
         printf( "%s:%d cut signals (cut %d) out of bounds %p vs %p\n",
                 __FILE__, __LINE__,
-                myCutIdx,
+                cutIndex,
                 mySignals,
                 d_cut_signals_end );
     }
@@ -176,8 +174,8 @@ void idGetSignals( cv::cuda::PtrStepSzb src,
     extractSignalUsingHomography( myCut,
                                   mySignals,
                                   src,
-                                  nPoint->mHomography,
-                                  nPoint->mInvHomography );
+                                  nPoint.mHomography,
+                                  nPoint.mInvHomography );
 }
 
 __global__
@@ -187,7 +185,7 @@ void initAllNearbyPoints(
     const popart::geometry::matrix3x3  mT,
     float2                             center,
     const float                        neighbourSize,
-    NearbyPoint*                       point_buffer )
+    NearbyPointGrid*                   point_buffer )
 {
     const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
 
@@ -207,11 +205,10 @@ void initAllNearbyPoints(
 
     const int i = blockIdx.y;
     const int j = blockIdx.z;
-    const int idx = j * STRICT_SAMPLE(gridNSample) + i;
+    // const int idx = j * STRICT_SAMPLE(gridNSample) + i;
 
 
-    NearbyPoint* nPoint = &point_buffer[idx];
-    // identification::CutSignals* signals = &sig_buffer[idx * vCutSize];
+    NearbyPoint& nPoint = point_buffer->getGrid(i,j);
 
     float2 condCenter = make_float2( center.x - halfWidth + i*stepSize,
                                      center.y - halfWidth + j*stepSize );
@@ -220,77 +217,14 @@ void initAllNearbyPoints(
     mT.invert( mInvT ); // note: returns false if it fails
     mInvT.condition( condCenter );
 
-    nPoint->point    = condCenter;
-    nPoint->result   = 0.0f;
-    nPoint->resSize  = 0;
-    nPoint->readable = true;
-    ellipse.computeHomographyFromImagedCenter( nPoint->point, nPoint->mHomography );
-    nPoint->mHomography.invert( nPoint->mInvHomography );
+    nPoint.point    = condCenter;
+    nPoint.result   = 0.0f;
+    nPoint.resSize  = 0;
+    nPoint.readable = true;
+    ellipse.computeHomographyFromImagedCenter( nPoint.point, nPoint.mHomography );
+    nPoint.mHomography.invert( nPoint.mInvHomography );
 }
 
-__global__
-void verify_idComputeResult( NearbyPoint*      point_buffer,
-                             const CutStruct*  cut_buffer,
-                             const CutSignals* sig_buffer,
-                             const int         vCutSize,
-                             const int         numPairs )
-{
-    const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample); // this is a global constant !
-    // const int grid_i   = blockIdx.y; - an X mesh point 0..gridNSample-1
-    // const int grid_j   = blockIdx.z; - a  Y mesh point 0..gridNSample-1
-    for( int grid_i=0; grid_i<STRICT_SAMPLE(gridNSample); grid_i++ ) {
-        for( int grid_j=0; grid_j<STRICT_SAMPLE(gridNSample); grid_j++ ) {
-            const int grid_idx = grid_j * STRICT_SAMPLE(gridNSample) + grid_i;
-            const CutSignals* allcut_signals = &sig_buffer[grid_idx * STRICT_CUTSIZE(vCutSize)];
-            // NearbyPoint* const nPoint  = &point_buffer[grid_idx];
-
-            const int blockIdx_x_limit = grid_divide( numPairs, 32 );
-            // for( int blockIdx_x=0; blockIdx_x<blockIdx_x_limit; blockIdx_x++ ) {
-            int blockIdx_x=blockIdx_x_limit-1; {
-                const int threadIdx_y_limit = 32;
-                const int threadIdx_x_limit = 32;
-                for( int threadIdx_y=0; threadIdx_y<threadIdx_y_limit; threadIdx_y++ ) {
-                  for( int threadIdx_x=0; threadIdx_x<threadIdx_x_limit; threadIdx_x++ ) {
-                    int myPair = blockIdx_x * 32 + threadIdx_y;
-                    int j      = __float2int_rd( 1.0f + __fsqrt_rd(1.0f+8.0f*myPair) ) / 2;
-                    int i      = myPair - j*(j-1)/2;
-
-                    float val  = 0.0f;
-                    bool  comp = true;
-
-                    comp = ( j < STRICT_CUTSIZE(vCutSize) && i < j );
-
-                    if( comp ) {
-                        const CutSignals* l_signals = &allcut_signals[i];
-                        const CutSignals* r_signals = &allcut_signals[j];
-                        // default sample cut length is 100
-                        comp  = ( threadIdx_x < tagParam.sampleCutLength ) &&
-                                not l_signals->outOfBounds &&
-                                not r_signals->outOfBounds;
-                        if( comp ) {
-                            // sigSize is always 100
-                            // anything else is an indication of major trouble
-                            if( STRICT_SIGSIZE(cut_buffer[i].sigSize) != 100 ) {
-                                printf("We read a sigSize that is not 100\n");
-                                printf("grid_i: %d grid_j: %d gridNSample: %d\n", grid_i, grid_j, STRICT_SAMPLE(gridNSample));
-                                printf("blockIdx_x: %d threadIdx_x: %d threadIdx_y: %d\n", blockIdx_x, threadIdx_x, threadIdx_y );
-                                printf("vCutSize: %d numPairs: %d\n", STRICT_CUTSIZE(vCutSize), numPairs );
-                                printf("myPair: %d i: %d j: %d\n", myPair, i, j );
-                                return;
-                            }
-                            const int limit = STRICT_SIGSIZE(cut_buffer[i].sigSize);
-                            for( int offset = threadIdx_x; offset < STRICT_SIGSIZE(limit); offset += 32 ) {
-                                float square = l_signals->sig[offset] - r_signals->sig[offset];
-                                val += ( square * square );
-                            }
-                        }
-                    }
-                  }
-                }
-            }
-        }
-    }
-}
 
 /* All the signals have been computed for the homographies rolled
  * this NearbyPoint structure by the previous call to idGetSignals.
@@ -506,6 +440,7 @@ void idBestNearbyPoint31max( NearbyPoint* point_buffer, const size_t gridSquare 
 __host__
 void TagPipe::idCostFunction(
     const int                           tagIndex,
+    const int                           debug_numTags,
     cudaStream_t                        tagStream,
     int                                 iterations,
     const popart::geometry::ellipse&    ellipse,
@@ -519,21 +454,21 @@ void TagPipe::idCostFunction(
     const size_t offset      = tagIndex * STRICT_SAMPLE(gridNSample) * STRICT_SAMPLE(gridNSample);
 
     /* reusing various image-sized plane */
-    NearbyPoint*                 point_buffer;
-    point_buffer  = getNearbyPointBuffer();
-    point_buffer  = &point_buffer[offset];
+    NearbyPoint* point_buffer  = getNearbyPointGridBuffer( tagIndex );
 
     const identification::CutStruct* cut_buffer = getCutStructBufferDev();
-    cut_buffer    = &cut_buffer[tagIndex * params._numCutsInIdentStep];
+    cut_buffer    = &cut_buffer[tagIndex * STRICT_CUTSIZE(params._numCutsInIdentStep)];
 
     identification::CutSignals*  sig_buffer;
-    sig_buffer    = getSignalBuffer();
-    sig_buffer    = &sig_buffer[offset * params._numCutsInIdentStep];
+    bool success;
+    sig_buffer    = getSignalBuffer( success );
+    if( not success ) return;
+    sig_buffer    = &sig_buffer[offset * STRICT_CUTSIZE(params._numCutsInIdentStep)];
 
     popart::geometry::matrix3x3 mT;
     ellipse.makeConditionerFromEllipse( mT );
     popart::geometry::matrix3x3 mInvT;
-    bool success = mT.invert( mInvT ); // note: returns false if it fails
+    success = mT.invert( mInvT ); // note: returns false if it fails
     if( not success ) {
         cerr << __FILE__ << ":" << __LINE__ << endl
              << "    Conditioner matrix extracted from ellipse is not invertable" << endl
@@ -562,14 +497,10 @@ void TagPipe::idCostFunction(
               neighSize,
               point_buffer );
 POP_SYNC_CHK;
-        POP_CHK_CALL_IFSYNC;
+
         dim3 get_block( 32, STRICT_CUTSIZE(vCutSize), 1 ); // we use this to sum up signals
         dim3 get_grid( 1, STRICT_SAMPLE(gridNSample), STRICT_SAMPLE(gridNSample) );
 
-        if( (intptr_t)point_buffer > _d_nearby_point_end ) {
-            cerr << __FILE__ << ":" << __LINE__ << " invalid point buffer address" << endl;
-            exit( -1 );
-        }
         if( (intptr_t)cut_buffer > _d_cut_struct_end ) {
             cerr << __FILE__ << ":" << __LINE__ << " invalid cut struct address" << endl;
             exit( -1 );
@@ -589,16 +520,6 @@ POP_SYNC_CHK;
               _d_cut_struct_end,
               _d_cut_signals_end );
 POP_SYNC_CHK;
-        POP_CHK_CALL_IFSYNC;
-
-        {
-            const int numPairs = STRICT_CUTSIZE(vCutSize)*(STRICT_CUTSIZE(vCutSize)-1)/2;
-
-            popart::identification::verify_idComputeResult
-                <<<1,1,0,tagStream>>>
-                ( point_buffer, cut_buffer, sig_buffer, STRICT_CUTSIZE(vCutSize), numPairs );
-POP_SYNC_CHK;
-        }
 
         dim3 id_block( 32, // we use this to sum up signals
                        32, // we can use some shared memory/warp magic for summing
@@ -619,7 +540,6 @@ POP_SYNC_CHK;
             <<<id_grid,id_block,0,tagStream>>>
             ( point_buffer, cut_buffer, sig_buffer, STRICT_CUTSIZE(vCutSize) );
 POP_SYNC_CHK;
-        POP_CHK_CALL_IFSYNC;
 
         /* We search for the minimum of gridNSample x gridNSample
          * nearby points. Default for gridNSample is 5.
@@ -651,6 +571,7 @@ POP_SYNC_CHK;
 __host__
 void TagPipe::imageCenterOptLoop(
     const int                           tagIndex,     // in - determines index in cut structure
+    const int                           debug_numTags, // in - only for debugging
     cudaStream_t                        tagStream,
     const popart::geometry::ellipse&    outerEllipse, // in
     const float2&                       center,       // in
@@ -678,6 +599,7 @@ void TagPipe::imageCenterOptLoop(
     neighbourSize = params._imagedCenterNeighbourSize;
 
     idCostFunction( tagIndex,
+                    debug_numTags,
                     tagStream,
                     iterations,
                     outerEllipse,
@@ -688,7 +610,13 @@ void TagPipe::imageCenterOptLoop(
                     cctag_pointer_buffer );
 
     NearbyPoint* point_buffer;
-    point_buffer  = getNearbyPointBuffer();
+    bool success;
+    point_buffer  = getNearbyPointGridBuffer( success );
+    if( not success ) {
+        cerr << __FILE__ << ":" << __LINE__ << " nearby point buffer is invalid on return" << endl;
+        exit( -1 );
+    }
+
     point_buffer  = &point_buffer[tagIndex * STRICT_SAMPLE(gridNSample) * STRICT_SAMPLE(gridNSample)];
 
     /* When this kernel finishes, the best point does not
@@ -742,11 +670,11 @@ void TagPipe::allocNearbyPointBuffer( int n )
 {
     void* ptr;
 
-    POP_CUDA_MALLOC( &ptr, n*sizeof(NearbyPoint) );
-    _d_nearby_point = (NearbyPoint*)ptr;
-    _d_nearby_point_end = (intptr_t)ptr + n*sizeof(NearbyPoint);
+    POP_CUDA_MALLOC( &ptr, n*sizeof(NearbyPointGrid) );
+    _d_nearby_point_grid = (NearbyPointGrid*)ptr;
+    _d_nearby_point_grid_end = (intptr_t)ptr + n*sizeof(NearbyPointGrid);
 
-    _num_nearby_point = n;
+    _num_nearby_point_grid = n;
 }
 
 __host__
@@ -772,9 +700,9 @@ void TagPipe::freeCutStructBuffer( )
 }
 
 __host__
-void TagPipe::freeNearbyPointBuffer( )
+void TagPipe::freeNearbyPointGridBuffer( )
 {
-    if( _num_nearby_point == 0 ) return;
+    if( _num_nearby_point_grid == 0 ) return;
 
     POP_CUDA_FREE( _d_nearby_point );
     _num_nearby_point = 0;
@@ -808,15 +736,19 @@ identification::CutStruct* TagPipe::getCutStructBufferHost( ) const
 }
 
 __host__
-size_t TagPipe::getNearbyPointBufferByteSize( ) const
+size_t TagPipe::getNearbyPointGridBufferByteSize( ) const
 {
-    return _num_nearby_point * sizeof(NearbyPoint);
+    return _num_nearby_point_grids * sizeof(NearbyPointGrid);
 }
 
 __host__
-NearbyPoint* TagPipe::getNearbyPointBuffer( ) const
+NearbyPoint* TagPipe::getNearbyPointGridBuffer( int offset ) const
 {
-    return _d_nearby_point;
+    if( offset < 0 || offset >= _d_nearby_point_grids ) {
+        cerr << __FILE__ << ":" << __LINE__ << " ERROR: accessing a nearby point grid out of bounds" << endl;
+        exit( -1 );
+    }
+    return &_d_nearby_point_grids[offset];
 }
 
 __host__
@@ -826,8 +758,9 @@ size_t TagPipe::getSignalBufferByteSize( ) const
 }
 
 __host__
-identification::CutSignals* TagPipe::getSignalBuffer( ) const
+identification::CutSignals* TagPipe::getSignalBuffer( bool& success ) const
 {
+    success = ( _d_cut_signals != 0 );
     return _d_cut_signals;
 }
 
