@@ -28,12 +28,8 @@ IF(USE_CUDA)
     include_directories("${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
     # include_directories("/usr/local/cuda/include/thrust/system/cuda/detail")
 
-    set_source_files_properties( ${CUDA_cpp} ${CUDA_cu}
-                                 PROPERTIES COMPILE_FLAGS "-g -Wall --std=c++11"
-    )
-    set_source_files_properties( ${CCTag_cpp}
-                                 PROPERTIES COMPILE_FLAGS "-std=c++11"
-    )
+    set_source_files_properties( ${CUDA_cpp} ${CUDA_cu} PROPERTIES COMPILE_FLAGS "-Wall --std=c++11")
+    set_source_files_properties( ${CCTag_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
 
     add_definitions("-DSM_ARCH=100")
     # add_definitions("-DSM_TARGETS=-gencode=arch=compute_52,code=\"sm_52,compute_52\"")
@@ -118,11 +114,6 @@ endif(USE_CUDA)
 
 add_executable(simulation ${CCTagSimulation_cpp})
 target_link_libraries(simulation PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
-
-#############################################################################
-
-ADD_EXECUTABLE( pgmdiff playground/pgmdiff.cc )
-TARGET_LINK_LIBRARIES( pgmdiff PUBLIC ${Boost_LIBRARIES} )
 
 #############################################################################
 

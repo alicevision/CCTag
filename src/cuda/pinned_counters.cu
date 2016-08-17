@@ -1,5 +1,13 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include "pinned_counters.h"
 #include "debug_macros.hpp"
+#include "onoff.h"
 
 #include <cuda_runtime.h>
 #include <iostream>
@@ -9,7 +17,7 @@ namespace popart {
 using namespace std;
 
 const int PinnedCounters::_max_counters = 100;
-const int PinnedCounters::_max_points   = 30;
+const int PinnedCounters::_max_points   = MAX_MARKER_FOR_IDENT;
 
 /* This is system-wide unique allocation
  */
@@ -40,14 +48,14 @@ int& PinnedCounters::getCounter( )
     return pinned_counters.obj_getCounter( );
 }
 
-NearbyPoint& PinnedCounters::getPoint( )
+NearbyPoint& PinnedCounters::getPoint( const char* file, int line )
 {
-    return pinned_counters.obj_getPoint( );
+    return pinned_counters.obj_getPoint( file, line );
 }
 
-NearbyPoint* PinnedCounters::getPointPtr( )
+NearbyPoint* PinnedCounters::getPointPtr( const char* file, int line )
 {
-    return pinned_counters.obj_getPointPtr( );
+    return pinned_counters.obj_getPointPtr( file, line );
 }
 
 void PinnedCounters::obj_init( )
@@ -78,7 +86,7 @@ int& PinnedCounters::obj_getCounter( )
     }
 }
 
-NearbyPoint& PinnedCounters::obj_getPoint( )
+NearbyPoint& PinnedCounters::obj_getPoint( const char* file, int line )
 {
     _lock.lock();
     if( _nearby_point_counter < _max_points ) {
@@ -88,13 +96,14 @@ NearbyPoint& PinnedCounters::obj_getPoint( )
     } else {
         _lock.unlock();
         cerr << __FILE__ << ":" << __LINE__
+             << "    called from " << file << ":" << line
              << "    Hard-coded number of Nearyby Points in pinned memory is too small." << endl
              << "    Increase and recompile." << endl;
         exit( -1 );
     }
 }
 
-NearbyPoint* PinnedCounters::obj_getPointPtr( )
+NearbyPoint* PinnedCounters::obj_getPointPtr( const char* file, int line )
 {
     _lock.lock();
     if( _nearby_point_counter < _max_points ) {
@@ -104,9 +113,10 @@ NearbyPoint* PinnedCounters::obj_getPointPtr( )
     } else {
         _lock.unlock();
         cerr << __FILE__ << ":" << __LINE__
+             << "    called from " << file << ":" << line
              << "    Hard-coded number of Nearyby Points in pinned memory is too small." << endl
              << "    Increase and recompile." << endl;
-        exit( -1 );
+        return 0;
     }
 }
 

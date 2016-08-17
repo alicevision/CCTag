@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef VISION_MARKER_CCTAG_CCTAG_HPP
 #define VISION_MARKER_CCTAG_CCTAG_HPP
 
@@ -6,7 +13,7 @@
 #include <cctag/Candidate.hpp>
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/Invert.hpp>
+// #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/Types.hpp>
 #include <cctag/ICCTag.hpp>
@@ -48,6 +55,9 @@ public:
     : _id(0)
     , _quality(0)
     , _status(0)
+#ifdef WITH_CUDA
+    , _cuda_result( 0 )
+#endif
   {
     setInitRadius();
   }
@@ -68,6 +78,9 @@ public:
     , _quality(quality)
     , _pyramidLevel(pyramidLevel)
     , _scale(scale)
+#ifdef WITH_CUDA
+    , _cuda_result( 0 )
+#endif
   {
     setInitRadius();
     _outerEllipse.setCenter( Point2d<Eigen::Vector3f>(_outerEllipse.center().x()+0.5f, _outerEllipse.center().y()+0.5f ) ); // todo@Lilian: + 0.5f
@@ -90,6 +103,9 @@ public:
     , _scale(cctag._scale)
     , _rescaledOuterEllipse(cctag._rescaledOuterEllipse)
     , _status(cctag._status)
+#ifdef WITH_CUDA
+    , _cuda_result( 0 )
+#endif
 #ifdef CCTAG_SERIALIZE
     , _flowComponents(cctag._flowComponents)
 #endif

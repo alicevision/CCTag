@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #pragma once
 
 #include "cuda/onoff.h"
@@ -75,11 +82,12 @@ public:
         NearbyPoint*                               cctag_pointer_buffer );
 
     bool imageCenterRetrieve(
-        const int                                  tagIndex,
-        cctag::Point2d<Eigen::Vector3f>&                   center,
-        Eigen::Matrix3f&       bestHomographyOut,
-        const cctag::Parameters&                   params,
-        NearbyPoint*                               cctag_pointer_buffer );
+        const int                        tagIndex,
+        cctag::Point2d<Eigen::Vector3f>& center,
+        float&                           bestResidual,
+        Eigen::Matrix3f&                 bestHomographyOut,
+        const cctag::Parameters&         params,
+        NearbyPoint*                     cctag_pointer_buffer );
 
     // size_t getSignalBufferByteSize( int level ) const;
 
@@ -105,13 +113,6 @@ public:
                                     const cv::Mat&           cpu_dx,
                                     const cv::Mat&           cpu_dy,
                                     const cctag::Parameters& params );
-
-#if 0
-    static void debug_cmp_edge_table( int                           layer,
-                                      const cctag::EdgePointsImage& cpu,
-                                      const cctag::EdgePointsImage& gpu,
-                                      const cctag::Parameters&      params );
-#endif
 };
 
 }; // namespace popart

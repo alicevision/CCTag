@@ -1,7 +1,14 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/CCTag.hpp>
 #include <cctag/utils/Defines.hpp>
 #include <cctag/DataSerialization.hpp>
-#include <cctag/algebra/Invert.hpp>
+// #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/Statistic.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>
@@ -105,7 +112,7 @@ void CCTag::scale(const float s)
 #ifdef WITH_CUDA
 void CCTag::acquireNearbyPointMemory( )
 {
-    _cuda_result = popart::PinnedCounters::getPointPtr();
+    _cuda_result = popart::PinnedCounters::getPointPtr( __FILE__, __LINE__ );
 }
 
 void CCTag::releaseNearbyPointMemory( )

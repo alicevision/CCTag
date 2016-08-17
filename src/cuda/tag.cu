@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include "tag.h"
 #include "frame.h"
 #include "frameparam.h"
@@ -114,21 +121,6 @@ void TagPipe::tagframe( )
 __host__
 void TagPipe::handleframe( int i )
 {
-#ifdef SHOW_DETAILED_TIMING
-    KeepTime* time_gauss;
-    KeepTime* time_mag;
-    KeepTime* time_hyst;
-    KeepTime* time_thin;
-    KeepTime* time_desc;
-    KeepTime* time_vote;
-    time_gauss = new KeepTime( _frame[i]->_stream );
-    time_mag   = new KeepTime( _frame[i]->_stream );
-    time_hyst  = new KeepTime( _frame[i]->_stream );
-    time_thin  = new KeepTime( _frame[i]->_stream );
-    time_desc  = new KeepTime( _frame[i]->_stream );
-    time_vote  = new KeepTime( _frame[i]->_stream );
-#endif
-
     _frame[i]->initRequiredMem( ); // async
 
     cudaEvent_t ev = _frame[0]->getUploadEvent( ); // async
@@ -138,22 +130,6 @@ void TagPipe::handleframe( int i )
         _frame[i]->uploadComplete( ); // unpin image
         _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
     }
-
-#ifdef SHOW_DETAILED_TIMING
-#error SHOW_DETAILED_TIMING needs to be rewritten
-    time_gauss->start();
-    time_gauss->stop();
-    time_mag->start();
-    time_mag->stop();
-    time_hyst->start();
-    time_hyst->stop();
-    time_thin->start();
-    time_thin->stop();
-    time_desc->start();
-    time_desc->stop();
-    time_vote->start();
-    time_vote->stop();
-#endif // not SHOW_DETAILED_TIMING
 
     // note: without visual debug, only level 0 performs download
     _frame[i]->applyPlaneDownload(); // async
@@ -179,22 +155,6 @@ void TagPipe::handleframe( int i )
 
     cudaStreamSynchronize( _frame[i]->_stream );
     cudaStreamSynchronize( _frame[i]->_download_stream );
-
-
-#ifdef SHOW_DETAILED_TIMING
-    time_gauss->report( "time for Gauss " );
-    time_mag  ->report( "time for Mag   " );
-    time_hyst ->report( "time for Hyst  " );
-    time_thin ->report( "time for Thin  " );
-    time_desc ->report( "time for Desc  " );
-    time_vote ->report( "time for Vote  " );
-    delete time_gauss;
-    delete time_mag;
-    delete time_hyst;
-    delete time_thin;
-    delete time_desc;
-    delete time_vote;
-#endif // not NDEBUG
 }
 
 __host__
@@ -429,52 +389,6 @@ void TagPipe::debug_cpu_dxdy_out( TagPipe*                     pipe,
     local_debug_cpu_dxdy_out( "dy", level, cpu_dy, gpu_dy, params );
 }
 
-#if 0
-void TagPipe::debug_cmp_edge_table( int                           layer,
-                                    const cctag::EdgePointsImage& cpu,
-                                    const cctag::EdgePointsImage& gpu,
-                                    const cctag::Parameters&      params )
-{
-    if( params._debugDir == "" ) {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl; )
-        return;
-    } else {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl; )
-    }
-
-    ostringstream filename;
-    filename << params._debugDir
-             << "diffcpugpu-" << layer << "-edge.ppm";
-
-    cv::cuda::PtrStepSzb plane;
-    plane.data = new uint8_t[ cpu.shape()[0] * cpu.shape()[1] ];
-    plane.step = cpu.shape()[0];
-    plane.cols = cpu.shape()[0];
-    plane.rows = cpu.shape()[1];
-
-    if( gpu.size() != 0 && gpu.size() != 0 ) {
-        for( int y=0; y<cpu.shape()[1]; y++ ) {
-            for( int x=0; x<cpu.shape()[0]; x++ ) {
-                if( cpu[x][y] != 0 && gpu[x][y] == 0 )
-                    plane.ptr(y)[x] = DebugImage::BLUE;
-                else if( cpu[x][y] == 0 && gpu[x][y] != 0 )
-                    plane.ptr(y)[x] = DebugImage::GREEN;
-                else if( cpu[x][y] != 0 && gpu[x][y] != 0 )
-                    plane.ptr(y)[x] = DebugImage::GREY1;
-                else
-                    plane.ptr(y)[x] = DebugImage::BLACK;
-            }
-        }
-
-        DebugImage::writePPM( filename.str(), plane );
-    }
-
-    delete [] plane.data;
-}
-#endif
-
 __host__
 void TagPipe::imageCenterOptLoop(
     const int                                  tagIndex,
@@ -515,6 +429,7 @@ __host__
 bool TagPipe::imageCenterRetrieve(
     const int                                  tagIndex,
     cctag::Point2d<Eigen::Vector3f>&           center,
+    float&                                     bestResidual,
     Eigen::Matrix3f&                           bestHomographyOut,
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
@@ -525,6 +440,7 @@ bool TagPipe::imageCenterRetrieve(
     bool success = _frame[0]->imageCenterRetrieve( tagIndex,
                                                    _tag_streams[tagIndex],
                                                    bestPoint,
+                                                   bestResidual,
                                                    bestHomography,
                                                    params,
                                                    cctag_pointer_buffer );
@@ -597,19 +513,21 @@ void TagPipe::uploadCuts( int                                 numTags,
         
         csptr = &csptr_base[tagIndex * max_cuts_per_Tag];
 
-#if 1
-// #ifndef NDEBUG
         if( vCuts[tagIndex].size() > max_cuts_per_Tag ) {
             cerr << __FILE__ << "," << __LINE__ << ":" << endl
                  << "    Programming error: assumption that number of cuts for a single tag is < params._numCutsInIdentStep is wrong" << endl;
             exit( -1 );
         }
-#endif // NDEBUG
 
         std::vector<cctag::ImageCut>::const_iterator vit  = vCuts[tagIndex].begin();
         std::vector<cctag::ImageCut>::const_iterator vend = vCuts[tagIndex].end();
 
         for( ; vit!=vend; vit++ ) {
+            if( vit->imgSignal().size() != 100 ) {
+                cerr << __FILE__ << ":" << __LINE__ << ":" << endl
+                     << "    Signal size in an image cut should currently be 100." << endl;
+                exit( -1 );
+            }
             csptr->start.x     = vit->start().x();
             csptr->start.y     = vit->start().y();
             csptr->stop.x      = vit->stop().x();

@@ -1,15 +1,13 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #pragma once
 
-// #include <cuda_runtime.h>
-// #include <assert.h>
-// #include <string>
-// #include <vector>
-
-// #include <opencv2/core/cuda_types.hpp>
-
 #include "frame.h"
-// #include "../cctag/Params.hpp"
-// #include "frame_vote.h"
 #include "triple_point.h"
 
 namespace popart {

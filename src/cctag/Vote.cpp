@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/Bresenham.hpp>
 #include <cctag/EdgePoint.hpp>
 #include <cctag/Types.hpp>
@@ -6,7 +13,7 @@
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/utils/FileDebug.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/Invert.hpp>
+// #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>
 #include <cctag/Statistic.hpp>

@@ -32,13 +32,15 @@ $ sudo apt-get install g++ git-all libpng12-dev libjpeg-dev libeigen3-dev libboo
 
 OpenCV need to be compiled separately.
 
+CCTag contains code optimized for AVX2  instruction set, which significantly increases detection performance. To enable it, add "-mavx2" to CMAKE_CXX_FLAGS.
+
 ----------
 
 ### Run the building process
 You now just need to be in the CCTag folder and run cmake:
 ```bash
 $ mkdir build && cd build
-$ cmake .. -DCCTAG_BUILD_MODE=RELEASE
+$ cmake ..
 $ make -j `nproc`
 ``` 
 
