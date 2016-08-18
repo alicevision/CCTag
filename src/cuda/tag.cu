@@ -27,9 +27,13 @@
     __device__ __host__
     inline int validate( const char* file, int line, int input, int reference )
     {
-        if( input != reference ) {
-            printf( "%s:%d Divergence between standard conf %d and run-time %d\n", file, line, reference, input );
-            return 0;
+        if( input < reference ) {
+            printf( "%s:%d Divergence: run-time value %d < conf %d\n", file, line, input, reference );
+            return input;
+        }
+        if( input > reference ) {
+            printf( "%s:%d Divergence: run-time value %d > conf %d\n", file, line, input, reference );
+            return reference;
         }
         return reference;
     }
