@@ -35,11 +35,6 @@
 #define DEBUG_WRITE_LINKED_AS_ASCII
 #define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
 
-/* Although some GPU code exists, it is too slow and edge
- * linking is still done on the host side.
- */
-#define EDGE_LINKING_HOST_SIDE
-
 //#define DEBUG_LINKED_USE_INT4_BUFFER
 
 /* Separable compilation allows one kernel to instantiate

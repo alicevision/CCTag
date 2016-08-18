@@ -211,18 +211,15 @@ void Frame::applyThinning( )
     debugPointIsOnEdge( _d_edges, _all_edgecoords, _stream );
 #endif // NDEBUG
 
-#ifdef EDGE_LINKING_HOST_SIDE
     /* After thinning_and_store, _all_edgecoords is no longer changed.
      * Make a non-blocking copy the number of items in the list to the host.
      */
     cudaEventRecord( _download_ready_event.edgecoords1, _stream );
-#endif // EDGE_LINKING_HOST_SIDE
 }
 
 __host__
 void Frame::applyThinDownload( )
 {
-#ifdef EDGE_LINKING_HOST_SIDE
     /* After thinning_and_store, _all_edgecoords is no longer changed
      * we can copy it to the host for edge linking
      */
@@ -241,7 +238,6 @@ void Frame::applyThinDownload( )
         _all_edgecoords.initHost( );
     }
 #endif // NDEBUG
-#endif // EDGE_LINKING_HOST_SIDE
 }
 
 }; // namespace popart

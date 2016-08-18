@@ -261,10 +261,6 @@ public: // HACK FOR DEBUGGING
 
     cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
 private:
-#ifndef EDGE_LINKING_HOST_SIDE
-    cv::cuda::PtrStepSzInt2 _h_ring_output;
-#endif
-
     // Stores coordinates of all edges. Valid after thinning.
     EdgeList<short2>        _all_edgecoords;
 
