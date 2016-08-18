@@ -913,7 +913,7 @@ void cctagDetection(CCTag::List& markers,
         if( pipe1 && numTags > 0 ) {
             pipe1->uploadCuts( numTags, vSelectedCuts, params );
 
-            cerr << __FILE__ << ":"<< __LINE__ << " WARNING: uncontrolled creation of CUDA streams!!!!" << endl;
+            // cerr << __FILE__ << ":"<< __LINE__ << " WARNING: uncontrolled creation of CUDA streams!!!!" << endl;
             pipe1->makeCudaStreams( numTags );
 
             tagIndex = 0;
