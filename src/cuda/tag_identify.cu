@@ -16,15 +16,17 @@
 #include "cuda/nearby_point.h"
 #include "cuda/tag_cut.h"
 
-#undef NO_ATOMIC
-
 #if 1
     __device__ __host__
     inline int validate( const char* file, int line, int input, int reference )
     {
-        if( input != reference ) {
-            printf( "%s:%d Divergence between standard conf %d and run-time %d\n", file, line, reference, input );
-            return 0;
+        if( input > reference ) {
+            printf( "%s:%d Divergence: run-time value %d < conf %d\n", file, line, input, reference );
+            return input;
+        }
+        if( input > reference ) {
+            printf( "%s:%d Divergence: run-time value %d > conf %d\n", file, line, input, reference );
+            return reference;
         }
         return reference;
     }
@@ -134,10 +136,8 @@ void idGetSignals( cv::cuda::PtrStepSzb   src,
                    const int              vCutSize,
                    const NearbyPointGrid* point_buffer,
                    const CutStruct*       cut_buffer,
-                   CutSignals*            sig_buffer,
-                   intptr_t               d_nearby_point_grid_end,
-                   intptr_t               d_cut_struct_end,
-                   intptr_t               d_cut_signals_end )
+                   CutSignalGrid*         sig_buffer,
+                   intptr_t               d_cut_struct_end )
 {
     const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
     const int i = blockIdx.y;
@@ -145,7 +145,7 @@ void idGetSignals( cv::cuda::PtrStepSzb   src,
     const int nearbyPointIndex = j * STRICT_SAMPLE(gridNSample) + i;
     const int cutIndex = threadIdx.y;
 
-    const NearbyPoint& nPoint = &point_buffer->getGrid(i,j);
+    const NearbyPoint& nPoint = point_buffer->getGrid(i,j);
 
     if( cutIndex >= STRICT_CUTSIZE(vCutSize) ) {
         // warps do never loose lockstep because of this
@@ -153,23 +153,9 @@ void idGetSignals( cv::cuda::PtrStepSzb   src,
     }
 
     const CutStruct& myCut = cut_buffer[cutIndex];
-    CutSignals& mySignals  = sig_buffer[nearbyPointIndex * STRICT_CUTSIZE(vCutSize) + cutIndex];
+    CutSignals& mySignals  = sig_buffer->getGrid( cutIndex, i, j ); //[nearbyPointIndex * STRICT_CUTSIZE(vCutSize) + cutIndex];
 
     if( threadIdx.x == 0 ) mySignals.outOfBounds = 0;
-
-    if( (intptr_t)nPoint >= d_nearby_point_grid_end ) {
-        printf("%s:%d nearby points out of bounds\n",__FILE__, __LINE__);
-    }
-    if( (intptr_t)&myCut >= d_cut_struct_end ) {
-        printf("%s:%d cut structs out of bounds\n",__FILE__, __LINE__);
-    }
-    if( (intptr_t)(&mySignals) >= d_cut_signals_end ) {
-        printf( "%s:%d cut signals (cut %d) out of bounds %p vs %p\n",
-                __FILE__, __LINE__,
-                cutIndex,
-                mySignals,
-                d_cut_signals_end );
-    }
 
     extractSignalUsingHomography( myCut,
                                   mySignals,
@@ -185,7 +171,7 @@ void initAllNearbyPoints(
     const popart::geometry::matrix3x3  mT,
     float2                             center,
     const float                        neighbourSize,
-    NearbyPointGrid*                   point_buffer )
+    NearbyPointGrid*                   d_nearbyPointGrid )
 {
     const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
 
@@ -198,7 +184,8 @@ void initAllNearbyPoints(
 
     if( not first_iteration ) {
         // the best center is located in point_buffer[0]
-        center = point_buffer[0].point;
+        // center = point_buffer[0].point;
+        center = d_nearbyPointGrid->getGrid(0,0).point;
         // @lilian: why do we need this "center = mT * center" in every iteration?
     }
     mT.condition( center );
@@ -207,8 +194,7 @@ void initAllNearbyPoints(
     const int j = blockIdx.z;
     // const int idx = j * STRICT_SAMPLE(gridNSample) + i;
 
-
-    NearbyPoint& nPoint = point_buffer->getGrid(i,j);
+    NearbyPoint& nPoint = d_nearbyPointGrid->getGrid(i,j);
 
     float2 condCenter = make_float2( center.x - halfWidth + i*stepSize,
                                      center.y - halfWidth + j*stepSize );
@@ -237,43 +223,40 @@ void initAllNearbyPoints(
  * store the minimum in result in the NearbyPoint structure.
  */
 __global__
-void idComputeResult( NearbyPoint*      point_buffer,
-                      const CutStruct*  cut_buffer,
-                      const CutSignals* sig_buffer,
-                      const int         vCutSize )
+void idComputeResult( NearbyPointGrid*     d_NearbyPointGrid,
+                      const CutStruct*     cut_buffer,
+                      const CutSignalGrid* sig_buffer,
+                      const int            vCutSize )
 {
-  const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
-  const int grid_i   = blockIdx.y;
-  const int grid_j   = blockIdx.z;
-  const int grid_idx = grid_j * STRICT_SAMPLE(gridNSample) + grid_i;
-  const CutSignals* allcut_signals = &sig_buffer[grid_idx * STRICT_CUTSIZE(vCutSize)];
-  NearbyPoint* const nPoint  = &point_buffer[grid_idx];
+    const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
+    const int grid_i   = blockIdx.y;
+    const int grid_j   = blockIdx.z;
+    const int grid_idx = grid_j * STRICT_SAMPLE(gridNSample) + grid_i;
+    // const CutSignals* allcut_signals = &sig_buffer[grid_idx * STRICT_CUTSIZE(vCutSize)];
+    NearbyPoint& nPoint  = d_NearbyPointGrid->getGrid( grid_i, grid_j );
 
-#ifdef NO_ATOMIC
-  const int numPairs = STRICT_CUTSIZE(vCutSize)*(STRICT_CUTSIZE(vCutSize)-1)/2;
-  for( int myPair = threadIdx.y; myPair < numPairs; myPair += 32 ) {
-#else
     int myPair = blockIdx.x * 32 + threadIdx.y;
-#endif
-    int j      = __float2int_rd( 1.0f + __fsqrt_rd(1.0f+8.0f*myPair) ) / 2;
-    int i      = myPair - j*(j-1)/2;
+    int left_cut  = __float2int_rd( 1.0f + __fsqrt_rd(1.0f+8.0f*myPair) ) / 2;
+    int right_cut = myPair - left_cut*(left_cut-1)/2;
 
     int   ct   = 0;
     float val  = 0.0f;
     bool  comp = true;
 
-    comp = ( j < STRICT_CUTSIZE(vCutSize) && i < j );
+    comp = ( left_cut < STRICT_CUTSIZE(vCutSize) && right_cut < left_cut );
 
     if( comp ) {
-        const CutSignals* l_signals = &allcut_signals[i];
-        const CutSignals* r_signals = &allcut_signals[j];
+        // const CutSignals* l_signals = &allcut_signals[i];
+        // const CutSignals* r_signals = &allcut_signals[left_cut];
+        const CutSignals& l_signals = sig_buffer->getGrid( left_cut,  grid_i, grid_j );
+        const CutSignals& r_signals = sig_buffer->getGrid( right_cut, grid_i, grid_j );
         comp  = ( threadIdx.x < tagParam.sampleCutLength ) &&
-                  not l_signals->outOfBounds &&
-                  not r_signals->outOfBounds;
+                  not l_signals.outOfBounds &&
+                  not r_signals.outOfBounds;
         if( comp ) {
-            const int limit = STRICT_SIGSIZE(cut_buffer[i].sigSize); // we could also use j ?
+            const int limit = STRICT_SIGSIZE(cut_buffer[left_cut].sigSize); // we could also use right_cut
             for( int offset = threadIdx.x; offset < STRICT_SIGSIZE(limit); offset += 32 ) {
-                float square = l_signals->sig[offset] - r_signals->sig[offset];
+                float square = l_signals.sig[offset] - r_signals.sig[offset];
                 val += ( square * square );
             }
             ct = 1;
@@ -294,12 +277,6 @@ void idComputeResult( NearbyPoint*      point_buffer,
         count_sum [threadIdx.y] = ct;
     }
 
-#if 0
-    if( threadIdx.x == 0 ) {
-        printf("idComputeResult (j,i)=(%d,%d) val=%f ct=%d\n",j,i,val,ct);
-    }
-#endif
-
     __syncthreads();
 
     if( threadIdx.y == 0 ) {
@@ -317,30 +294,25 @@ void idComputeResult( NearbyPoint*      point_buffer,
         ct  += __shfl_down( ct,  1 );
 
         if( threadIdx.x == 0 ) {
-#ifdef NO_ATOMIC
-            nPoint->result  += val;
-            nPoint->resSize += ct;
-#else
-            atomicAdd( &nPoint->result,  val );
-            atomicAdd( &nPoint->resSize, ct );
-#endif
+            atomicAdd( &nPoint.result,  val );
+            atomicAdd( &nPoint.resSize, ct );
         }
     }
-#ifdef NO_ATOMIC
-    __syncthreads();
-  }
-#endif
 }
 
 __global__
-void idBestNearbyPoint32plus( NearbyPoint* point_buffer, const size_t gridSquare )
+void idBestNearbyPoint32plus( NearbyPointGrid* d_NearbyPointGrid,
+                              const size_t     gridNSample )
 {
     // phase 1: each thread searches for its own best point
     float bestRes = FLT_MAX;
+    int   gridSquare = gridNSample * gridNSample;
     int   bestIdx = gridSquare-1;
     int   idx;
     for( idx=threadIdx.x; idx<gridSquare; idx+=32 ) {
-        const NearbyPoint& point = point_buffer[idx];
+        const int x = idx % gridNSample;
+        const int y = idx / gridNSample;
+        const NearbyPoint& point = d_NearbyPointGrid->getGrid(x,y);
         if( point.readable ) {
             bestIdx = idx;
             bestRes = point.result / point.resSize;
@@ -349,12 +321,14 @@ void idBestNearbyPoint32plus( NearbyPoint* point_buffer, const size_t gridSquare
     }
     __syncthreads();
     for( ; idx<gridSquare; idx+=32 ) {
-        const NearbyPoint& point = point_buffer[idx];
+        const int x = idx % gridNSample;
+        const int y = idx / gridNSample;
+        const NearbyPoint& point = d_NearbyPointGrid->getGrid(x,y);
         if( point.readable ) {
             float val = point.result / point.resSize;
             if( val < bestRes ) {
-                bestRes = val;
                 bestIdx = idx;
+                bestRes = val;
             }
         }
     }
@@ -375,23 +349,29 @@ void idBestNearbyPoint32plus( NearbyPoint* point_buffer, const size_t gridSquare
     // phase 3: copy the best point into index 0
     if( threadIdx.x == 0 ) {
         if( bestIdx != 0 ) {
-            NearbyPoint*       dst_point = &point_buffer[0];
-            const NearbyPoint* src_point = &point_buffer[bestIdx];
-            memcpy( dst_point, src_point, sizeof( NearbyPoint ) );
-            dst_point->residual = bestRes;
+            const int x = bestIdx % gridNSample;
+            const int y = bestIdx / gridNSample;
+            const NearbyPoint& src_point = d_NearbyPointGrid->getGrid(x,y);
+            NearbyPoint&       dst_point = d_NearbyPointGrid->getGrid(0,0);
+            memcpy( &dst_point, &src_point, sizeof( NearbyPoint ) );
+            dst_point.residual = bestRes;
         }
     }
 }
 
 __global__
-void idBestNearbyPoint31max( NearbyPoint* point_buffer, const size_t gridSquare )
+void idBestNearbyPoint31max( NearbyPointGrid* d_NearbyPointGrid,
+                             const size_t     gridNSample )
 {
     // phase 1: each thread retrieves its point
+    const size_t gridSquare = gridNSample * gridNSample;
     float bestRes = FLT_MAX;
     int   bestIdx = gridSquare-1;
     int   idx     = threadIdx.x;
     if( idx < gridSquare ) {
-        const NearbyPoint& point = point_buffer[idx];
+        const int x = idx % gridNSample;
+        const int y = idx / gridNSample;
+        const NearbyPoint& point = d_NearbyPointGrid->getGrid(x,y);
         if( point.readable ) {
             bestIdx = idx;
             bestRes = point.result / point.resSize;
@@ -414,10 +394,12 @@ void idBestNearbyPoint31max( NearbyPoint* point_buffer, const size_t gridSquare 
     // phase 3: copy the best point into index 0
     if( threadIdx.x == 0 ) {
         if( bestIdx != 0 ) {
-            NearbyPoint*       dst_point = &point_buffer[0];
-            const NearbyPoint* src_point = &point_buffer[bestIdx];
-            memcpy( dst_point, src_point, sizeof( NearbyPoint ) );
-            dst_point->residual = bestRes;
+            const int x = bestIdx % gridNSample;
+            const int y = bestIdx / gridNSample;
+            const NearbyPoint& src_point = d_NearbyPointGrid->getGrid(x,y);
+            NearbyPoint&       dst_point = d_NearbyPointGrid->getGrid(0,0);
+            memcpy( &dst_point, &src_point, sizeof( NearbyPoint ) );
+            dst_point.residual = bestRes;
         }
     }
 }
@@ -447,27 +429,23 @@ void TagPipe::idCostFunction(
     const float2                        center,
     const int                           vCutSize,
     float                               currentNeighbourSize,
-    const cctag::Parameters&            params,
-    NearbyPoint*                        cctag_pointer_buffer )
+    const cctag::Parameters&            params )
 {
     const size_t gridNSample = params._imagedCenterNGridSample;
     const size_t offset      = tagIndex * STRICT_SAMPLE(gridNSample) * STRICT_SAMPLE(gridNSample);
 
     /* reusing various image-sized plane */
-    NearbyPoint* point_buffer  = getNearbyPointGridBuffer( tagIndex );
+    NearbyPointGrid* d_NearbyPointGrid  = getNearbyPointGridBuffer( tagIndex );
 
     const identification::CutStruct* cut_buffer = getCutStructBufferDev();
     cut_buffer    = &cut_buffer[tagIndex * STRICT_CUTSIZE(params._numCutsInIdentStep)];
 
-    identification::CutSignals*  sig_buffer;
-    bool success;
-    sig_buffer    = getSignalBuffer( success );
-    if( not success ) return;
-    sig_buffer    = &sig_buffer[offset * STRICT_CUTSIZE(params._numCutsInIdentStep)];
+    CutSignalGrid* sig_buffer = getSignalGridBuffer( tagIndex );
 
     popart::geometry::matrix3x3 mT;
     ellipse.makeConditionerFromEllipse( mT );
     popart::geometry::matrix3x3 mInvT;
+    bool success;
     success = mT.invert( mInvT ); // note: returns false if it fails
     if( not success ) {
         cerr << __FILE__ << ":" << __LINE__ << endl
@@ -495,7 +473,7 @@ void TagPipe::idCostFunction(
               mT,
               center,
               neighSize,
-              point_buffer );
+              d_NearbyPointGrid );
 POP_SYNC_CHK;
 
         dim3 get_block( 32, STRICT_CUTSIZE(vCutSize), 1 ); // we use this to sum up signals
@@ -505,40 +483,30 @@ POP_SYNC_CHK;
             cerr << __FILE__ << ":" << __LINE__ << " invalid cut struct address" << endl;
             exit( -1 );
         }
-        if( (intptr_t)sig_buffer > _d_cut_signals_end ) {
-            cerr << __FILE__ << ":" << __LINE__ << " invalid cut signals address" << endl;
-            exit( -1 );
-        }
         popart::identification::idGetSignals
             <<<get_grid,get_block,0,tagStream>>>
             ( _frame[0]->getPlaneDev(),
               STRICT_CUTSIZE(vCutSize),
-              point_buffer,
+              d_NearbyPointGrid,        // in
               cut_buffer,
               sig_buffer,
-              _d_nearby_point_end,
-              _d_cut_struct_end,
-              _d_cut_signals_end );
+              _d_cut_struct_end );
 POP_SYNC_CHK;
 
         dim3 id_block( 32, // we use this to sum up signals
                        32, // we can use some shared memory/warp magic for summing
                        1 );
-#ifdef NO_ATOMIC
-#error no atomic
-        dim3 id_grid( 1,
-                      STRICT_SAMPLE(gridNSample),
-                      STRICT_SAMPLE(gridNSample) );
-#else
         const int numPairs = STRICT_CUTSIZE(vCutSize)*(STRICT_CUTSIZE(vCutSize)-1)/2;
         dim3 id_grid( grid_divide( numPairs, 32 ),
                       STRICT_SAMPLE(gridNSample),
                       STRICT_SAMPLE(gridNSample) );
-#endif
 
         popart::identification::idComputeResult
             <<<id_grid,id_block,0,tagStream>>>
-            ( point_buffer, cut_buffer, sig_buffer, STRICT_CUTSIZE(vCutSize) );
+            ( d_NearbyPointGrid,
+              cut_buffer,
+              sig_buffer,
+              STRICT_CUTSIZE(vCutSize) );
 POP_SYNC_CHK;
 
         /* We search for the minimum of gridNSample x gridNSample
@@ -551,15 +519,13 @@ POP_SYNC_CHK;
         if( gridSquare < 32 ) {
             popart::identification::idBestNearbyPoint31max
                 <<<1,32,0,tagStream>>>
-                  ( point_buffer, gridSquare );
+                  ( d_NearbyPointGrid, STRICT_SAMPLE(gridNSample) );
 POP_SYNC_CHK;
-            POP_CHK_CALL_IFSYNC;
         } else {
+cerr << __FILE__ << ":" << __LINE__ << " Untested code idBestNearbyPoint32plus" << endl;
             popart::identification::idBestNearbyPoint32plus
                 <<<1,32,0,tagStream>>>
-                  ( point_buffer, gridSquare );
-POP_SYNC_CHK;
-            POP_CHK_CALL_IFSYNC;
+                  ( d_NearbyPointGrid, STRICT_SAMPLE(gridNSample) );
         }
 
         currentNeighbourSize /= (float)((STRICT_SAMPLE(gridNSample)-1)/2) ;
@@ -580,11 +546,12 @@ void TagPipe::imageCenterOptLoop(
     NearbyPoint*                        cctag_pointer_buffer )
 {
     if( vCutSize != 22 ) {
-        cerr << __func__ << " is called from CPU code with vCutSize " << vCutSize << " instead of 22" << endl;
-        exit( -1 );
+        cerr << __FILE__ << ":" << __LINE__ << endl
+             << "    " << __func__ << " is called from CPU code with vCutSize " << vCutSize << " instead of 22" << endl;
+        if( vCutSize > 22 ) {
+            exit( -1 );
+        }
     }
-
-    clearSignalBuffer( );
 
     const float  maxSemiAxis   = std::max( outerEllipse.a(), outerEllipse.b() );
     const size_t gridNSample   = params._imagedCenterNGridSample;
@@ -598,6 +565,8 @@ void TagPipe::imageCenterOptLoop(
 
     neighbourSize = params._imagedCenterNeighbourSize;
 
+    NearbyPointGrid* d_nearbyPointGrid = getNearbyPointGridBuffer( tagIndex );
+
     idCostFunction( tagIndex,
                     debug_numTags,
                     tagStream,
@@ -606,24 +575,21 @@ void TagPipe::imageCenterOptLoop(
                     center,
                     STRICT_CUTSIZE(vCutSize),
                     neighbourSize,
-                    params,
-                    cctag_pointer_buffer );
-
-    NearbyPoint* point_buffer;
-    bool success;
-    point_buffer  = getNearbyPointGridBuffer( success );
-    if( not success ) {
-        cerr << __FILE__ << ":" << __LINE__ << " nearby point buffer is invalid on return" << endl;
-        exit( -1 );
-    }
-
-    point_buffer  = &point_buffer[tagIndex * STRICT_SAMPLE(gridNSample) * STRICT_SAMPLE(gridNSample)];
+                    params );
 
     /* When this kernel finishes, the best point does not
      * exist or it is stored in point_buffer[0]
      */
+    const NearbyPoint* dev_ptr = &d_nearbyPointGrid->getGrid(0,0);
+
+    /* This copy operation is initiated in imageCenterOptLoop instead
+     * if imageCenterRetrieve (where it is needed) because the async
+     * copy can run in the background.
+     *
+     * A SYNC IS NEEDED
+     */
     POP_CUDA_MEMCPY_TO_HOST_ASYNC( cctag_pointer_buffer,
-                                   point_buffer,
+                                   dev_ptr,
                                    sizeof(popart::NearbyPoint),
                                    tagStream );
     POP_CHK_CALL_IFSYNC;
@@ -666,27 +632,35 @@ void TagPipe::allocCutStructBuffer( int n )
 }
 
 __host__
-void TagPipe::allocNearbyPointBuffer( int n )
+void TagPipe::reallocNearbyPointGridBuffer( int n )
 {
+    if( n <= _num_nearby_point_grid ) return;
+
+    if( _num_nearby_point_grid != 0 ) {
+        POP_CUDA_FREE( _d_nearby_point_grid );
+    }
+
     void* ptr;
 
     POP_CUDA_MALLOC( &ptr, n*sizeof(NearbyPointGrid) );
-    _d_nearby_point_grid = (NearbyPointGrid*)ptr;
-    _d_nearby_point_grid_end = (intptr_t)ptr + n*sizeof(NearbyPointGrid);
-
+    _d_nearby_point_grid   = (NearbyPointGrid*)ptr;
     _num_nearby_point_grid = n;
 }
 
 __host__
-void TagPipe::allocSignalBuffer( int n )
+void TagPipe::reallocSignalGridBuffer( int n )
 {
+    if( n <= _num_cut_signal_grid ) return;
+
+    if( _num_cut_signal_grid != 0 ) {
+        POP_CUDA_FREE( _d_cut_signal_grid );
+
+    }
     void* ptr;
 
-    POP_CUDA_MALLOC( &ptr, n*sizeof(identification::CutSignals) );
-    _d_cut_signals = (identification::CutSignals*)ptr;
-    _d_cut_signals_end = (intptr_t)ptr + n*sizeof(identification::CutSignals);
-
-    _num_cut_signals = n;
+    POP_CUDA_MALLOC( &ptr, n*sizeof(CutSignalGrid) );
+    _d_cut_signal_grid   = (CutSignalGrid*)ptr;
+    _num_cut_signal_grid = n;
 }
 
 __host__
@@ -704,17 +678,17 @@ void TagPipe::freeNearbyPointGridBuffer( )
 {
     if( _num_nearby_point_grid == 0 ) return;
 
-    POP_CUDA_FREE( _d_nearby_point );
-    _num_nearby_point = 0;
+    POP_CUDA_FREE( _d_nearby_point_grid );
+    _num_nearby_point_grid = 0;
 }
 
 __host__
-void TagPipe::freeSignalBuffer( )
+void TagPipe::freeSignalGridBuffer( )
 {
-    if( _num_cut_signals == 0 ) return;
+    if( _num_cut_signal_grid == 0 ) return;
 
-    POP_CUDA_FREE( _d_cut_signals );
-    _num_cut_signals = 0;
+    POP_CUDA_FREE( _d_cut_signal_grid );
+    _num_cut_signal_grid = 0;
 }
 
 __host__
@@ -736,45 +710,23 @@ identification::CutStruct* TagPipe::getCutStructBufferHost( ) const
 }
 
 __host__
-size_t TagPipe::getNearbyPointGridBufferByteSize( ) const
+NearbyPointGrid* TagPipe::getNearbyPointGridBuffer( int tagIndex ) const
 {
-    return _num_nearby_point_grids * sizeof(NearbyPointGrid);
-}
-
-__host__
-NearbyPoint* TagPipe::getNearbyPointGridBuffer( int offset ) const
-{
-    if( offset < 0 || offset >= _d_nearby_point_grids ) {
+    if( tagIndex < 0 || tagIndex >= _num_nearby_point_grid ) {
         cerr << __FILE__ << ":" << __LINE__ << " ERROR: accessing a nearby point grid out of bounds" << endl;
         exit( -1 );
     }
-    return &_d_nearby_point_grids[offset];
+    return &_d_nearby_point_grid[tagIndex];
 }
 
 __host__
-size_t TagPipe::getSignalBufferByteSize( ) const
+CutSignalGrid* TagPipe::getSignalGridBuffer( int tagIndex ) const
 {
-    return _num_cut_signals * sizeof(identification::CutSignals);
-}
-
-__host__
-identification::CutSignals* TagPipe::getSignalBuffer( bool& success ) const
-{
-    success = ( _d_cut_signals != 0 );
-    return _d_cut_signals;
-}
-
-__host__
-void TagPipe::clearSignalBuffer( )
-{
-#ifdef DEBUG_FRAME_UPLOAD_CUTS
-    POP_CHK_CALL_IFSYNC;
-    POP_CUDA_MEMSET_ASYNC( 0, // _d_intermediate.data,
-                           -1,
-                           0, // _h_intermediate.step * _h_intermediate.rows,
-                           _stream );
-    POP_CHK_CALL_IFSYNC;
-#endif // DEBUG_FRAME_UPLOAD_CUTS
+    if( tagIndex < 0 || tagIndex >= _num_nearby_point_grid ) {
+        cerr << __FILE__ << ":" << __LINE__ << " ERROR: accessing a nearby point grid out of bounds" << endl;
+        exit( -1 );
+    }
+    return &_d_cut_signal_grid[tagIndex];
 }
 
 }; // namespace popart

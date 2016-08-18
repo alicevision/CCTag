@@ -56,12 +56,6 @@
 #define USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 
 
-/* Init _d_intermediate to 0 before uploading. Wastes time,
- * for debugging only. Required because of crash -O3 but not
- * with -G
- */
-#undef DEBUG_FRAME_UPLOAD_CUTS
-
 /* CUB functions always take a last parameters true or false.
  * If it is true, they run synchronously and print some debug
  * info.

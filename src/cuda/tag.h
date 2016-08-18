@@ -38,6 +38,7 @@ namespace popart
 
 class Frame; // forward decl means cctag/*.cpp need not recompile for frame.h
 class NearbyPoint;
+class NearbyPointGrid;
 
 class TagPipe
 {
@@ -94,7 +95,8 @@ private:
         const popart::geometry::ellipse&    outerEllipse, // in
         const float2&                       center,       // in
         const int                           vCutSize,     // in
-        const cctag::Parameters&            params );     // in
+        const cctag::Parameters&            params,       // in
+        NearbyPoint*                        cctag_pointer_buffer ); // out
 
 public:
     bool imageCenterRetrieve(
@@ -138,36 +140,33 @@ private:
      */
     identification::CutStruct*   _d_cut_struct;
     identification::CutStruct*   _h_cut_struct;
-    NearbyPoint*                 _d_nearby_point;
-    identification::CutSignals*  _d_cut_signals;
+    NearbyPointGrid*             _d_nearby_point_grid;
+    CutSignalGrid*               _d_cut_signal_grid;
     int                          _num_cut_struct;
-    int                          _num_nearby_point;
-    int                          _num_cut_signals;
+    int                          _num_nearby_point_grid;
+    int                          _num_cut_signal_grid;
 
     intptr_t                     _d_cut_struct_end;
     intptr_t                     _h_cut_struct_end;
-    intptr_t                     _d_nearby_point_end;
-    intptr_t                     _d_cut_signals_end;
 
 public:
     void checkTagAllocations( const int                numTags,
                               const cctag::Parameters& params );
 private:
-    void allocCutStructBuffer( int n );
-    void allocNearbyPointBuffer( int n );
-    void allocSignalBuffer( int n );
-    void freeCutStructBuffer( );
-    void freeNearbyPointBuffer( );
-    void freeSignalBuffer( );
+    void reallocNearbyPointGridBuffer( int n );
+    void freeNearbyPointGridBuffer( );
+    size_t           getNearbyPointGridBufferByteSize( ) const;
+    NearbyPointGrid* getNearbyPointGridBuffer( int tagIndex ) const;
 
-    size_t                       getCutStructBufferByteSize( ) const;
-    identification::CutStruct*   getCutStructBufferDev( ) const;
-    identification::CutStruct*   getCutStructBufferHost( ) const;
-    size_t                       getNearbyPointGridBufferByteSize( ) const;
-    NearbyPoint*                 getNearbyPointGridBuffer( int offset ) const;
-    size_t                       getSignalBufferByteSize( ) const;
-    identification::CutSignals*  getSignalBuffer( bool& success ) const;
-    void                         clearSignalBuffer( );
+    void allocCutStructBuffer( int n );
+    void freeCutStructBuffer( );
+    size_t                      getCutStructBufferByteSize( ) const;
+    identification::CutStruct*  getCutStructBufferDev( ) const;
+    identification::CutStruct*  getCutStructBufferHost( ) const;
+
+    void reallocSignalGridBuffer( int n );
+    void freeSignalGridBuffer( );
+    CutSignalGrid* getSignalGridBuffer( int tagIndex ) const;
 
     __host__
     bool imageCenterRetrieve(
@@ -190,8 +189,7 @@ private:
         const float2                        center,
         const int                           vCutSize,     // in
         float                               currentNeighbourSize,
-        const cctag::Parameters&            params,
-        NearbyPoint*                        cctag_pointer_buffer );
+        const cctag::Parameters&            params );
 
 };
 

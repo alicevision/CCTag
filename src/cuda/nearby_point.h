@@ -32,8 +32,17 @@ struct NearbyPointGrid
 {
     NearbyPoint grid[5][5];
 
-    __device__
+    __host__ __device__
     inline NearbyPoint& getGrid( int x, int y ) {
+        if( x >= 0 && x < 5 && y >= 0 && y < 5 ) {
+            return grid[y][x];
+        } else {
+            printf("Nearby point grid access out of bounds (%d,%d)\n", x, y );
+            return grid[0][0];
+        }
+    }
+    __host__ __device__
+    inline const NearbyPoint& getGrid( int x, int y ) const {
         if( x >= 0 && x < 5 && y >= 0 && y < 5 ) {
             return grid[y][x];
         } else {

@@ -51,11 +51,11 @@ TagPipe::TagPipe( const cctag::Parameters& params )
     : _params( params )
     , _d_cut_struct( 0 )
     , _h_cut_struct( 0 )
-    , _d_nearby_point( 0 )
-    , _d_cut_signals( 0 )
+    , _d_nearby_point_grid( 0 )
+    , _d_cut_signal_grid( 0 )
     , _num_cut_struct( 0 )
-    , _num_nearby_point( 0 )
-    , _num_cut_signals( 0 )
+    , _num_nearby_point_grid( 0 )
+    , _num_cut_signal_grid( 0 )
 {
 }
 
@@ -505,24 +505,10 @@ void TagPipe::checkTagAllocations( const int                numTags,
     const size_t numCuts     = STRICT_CUTSIZE( params._numCutsInIdentStep ); // 22
 
     const size_t numCutStructs   = numTags * numCuts;
-    const size_t numCutSignals   = numTags * numCuts * gridNSample * gridNSample;
-    const size_t numNearbyPointGrids = numTags;
+    // const size_t numCutSignals   = numTags * numCuts * gridNSample * gridNSample;
 
-    if( numNearbyPointGrids * sizeof(NearbyPointGrid) > this->getNearbyPointGridBufferByteSize() ) {
-        freeNearbyPointBuffer( );
-        allocNearbyPointBuffer( numNearbyPoints );
-        cerr << __FILE__ << ":" << __LINE__
-             << " WARNING: re-allocating NearbyPoint buffer for " << numNearbyPoints << " elements"
-             << endl;
-    }
-
-    if( numCutSignals > this->getSignalBufferByteSize() ) {
-        freeSignalBuffer( );
-        allocSignalBuffer( numCutSignals );
-        cerr << __FILE__ << ":" << __LINE__
-             << " WARNING: re-allocated Signal buffer for " << numCutSignals << " elements"
-             << endl;
-    }
+    reallocNearbyPointGridBuffer( numTags ); // each numTags is gridNSample^2 points
+    reallocSignalGridBuffer( numTags );      // each numTags is gridNSample^2 * numCuts signals
 
     if( numCutStructs * sizeof(identification::CutStruct) > this->getCutStructBufferByteSize() ) {
         freeCutStructBuffer( );
@@ -543,7 +529,7 @@ void TagPipe::uploadCuts( int                                 numTags,
 
     const int max_cuts_per_Tag = STRICT_CUTSIZE( params._numCutsInIdentStep );
 
-    cerr << __FILE__ << ":" << __LINE__ << " Uploading " << numTags << " tags" << endl;
+    cerr << endl << "==== Uploading " << numTags << " tags ====" << endl;
 
     for( int tagIndex=0; tagIndex<numTags; tagIndex++ ) {
         // cerr << "    Tag " << tagIndex << " has " << vCuts[tagIndex].size() << " cuts" << endl;
