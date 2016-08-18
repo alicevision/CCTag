@@ -27,6 +27,9 @@
     __device__ __host__
     inline int validate( const char* file, int line, int input, int reference )
     {
+#if 1
+        return min( input, reference );
+#else
         if( input < reference ) {
             printf( "%s:%d Divergence: run-time value %d < conf %d\n", file, line, input, reference );
             return input;
@@ -36,6 +39,7 @@
             return reference;
         }
         return reference;
+#endif
     }
     #define STRICT_CUTSIZE(sz) validate( __FILE__, __LINE__, sz, 22 )
     #define STRICT_SAMPLE(sz)  validate( __FILE__, __LINE__, sz, 5 )
