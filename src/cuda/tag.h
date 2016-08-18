@@ -138,33 +138,28 @@ private:
      * bytesize to ensure that the new types fit into the
      * already allocated space.
      */
-    identification::CutStruct*   _d_cut_struct;
-    identification::CutStruct*   _h_cut_struct;
-    NearbyPointGrid*             _d_nearby_point_grid;
-    CutSignalGrid*               _d_cut_signal_grid;
-    int                          _num_cut_struct;
-    int                          _num_nearby_point_grid;
-    int                          _num_cut_signal_grid;
-
-    intptr_t                     _d_cut_struct_end;
-    intptr_t                     _h_cut_struct_end;
+    CutStructGrid*   _d_cut_struct_grid;
+    CutStructGrid*   _h_cut_struct_grid;
+    NearbyPointGrid* _d_nearby_point_grid;
+    CutSignalGrid*   _d_cut_signal_grid;
+    int              _num_cut_struct_grid;
+    int              _num_nearby_point_grid;
+    int              _num_cut_signal_grid;
 
 public:
     void checkTagAllocations( const int                numTags,
                               const cctag::Parameters& params );
 private:
-    void reallocNearbyPointGridBuffer( int n );
+    void reallocNearbyPointGridBuffer( int numTags );
     void freeNearbyPointGridBuffer( );
-    size_t           getNearbyPointGridBufferByteSize( ) const;
     NearbyPointGrid* getNearbyPointGridBuffer( int tagIndex ) const;
 
-    void allocCutStructBuffer( int n );
-    void freeCutStructBuffer( );
-    size_t                      getCutStructBufferByteSize( ) const;
-    identification::CutStruct*  getCutStructBufferDev( ) const;
-    identification::CutStruct*  getCutStructBufferHost( ) const;
+    void reallocCutStructGridBuffer( int numTags );
+    void freeCutStructGridBuffer( );
+    CutStructGrid* getCutStructGridBufferDev( int tagIndex ) const;
+    CutStructGrid* getCutStructGridBufferHost( int tagIndex ) const;
 
-    void reallocSignalGridBuffer( int n );
+    void reallocSignalGridBuffer( int numTags );
     void freeSignalGridBuffer( );
     CutSignalGrid* getSignalGridBuffer( int tagIndex ) const;
 

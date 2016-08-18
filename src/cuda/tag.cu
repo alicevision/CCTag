@@ -53,11 +53,11 @@ namespace popart
 __host__
 TagPipe::TagPipe( const cctag::Parameters& params )
     : _params( params )
-    , _d_cut_struct( 0 )
-    , _h_cut_struct( 0 )
+    , _d_cut_struct_grid( 0 )
+    , _h_cut_struct_grid( 0 )
     , _d_nearby_point_grid( 0 )
     , _d_cut_signal_grid( 0 )
-    , _num_cut_struct( 0 )
+    , _num_cut_struct_grid( 0 )
     , _num_nearby_point_grid( 0 )
     , _num_cut_signal_grid( 0 )
 {
@@ -508,18 +508,9 @@ void TagPipe::checkTagAllocations( const int                numTags,
     const size_t gridNSample = STRICT_SAMPLE( params._imagedCenterNGridSample ); // 5
     const size_t numCuts     = STRICT_CUTSIZE( params._numCutsInIdentStep ); // 22
 
-    const size_t numCutStructs   = numTags * numCuts;
-    // const size_t numCutSignals   = numTags * numCuts * gridNSample * gridNSample;
-
     reallocNearbyPointGridBuffer( numTags ); // each numTags is gridNSample^2 points
     reallocSignalGridBuffer( numTags );      // each numTags is gridNSample^2 * numCuts signals
-
-    if( numCutStructs * sizeof(identification::CutStruct) > this->getCutStructBufferByteSize() ) {
-        freeCutStructBuffer( );
-        allocCutStructBuffer( numCutStructs );
-        cerr << __FILE__ << ":" << __LINE__
-             << " WARNING: re-allocated CutStruct buffer for " << numCutStructs << " elements" << endl;
-    }
+    reallocCutStructGridBuffer( numTags );   // each numTags is numCuts cut structs
 }
 
 __host__
@@ -529,8 +520,6 @@ void TagPipe::uploadCuts( int                                 numTags,
 {
     if( numTags <= 0 || vCuts == 0 || vCuts->size() == 0 ) return;
 
-    identification::CutStruct* csptr_base = this->getCutStructBufferHost();
-
     const int max_cuts_per_Tag = STRICT_CUTSIZE( params._numCutsInIdentStep );
 
     cerr << endl << "==== Uploading " << numTags << " tags ====" << endl;
@@ -538,9 +527,7 @@ void TagPipe::uploadCuts( int                                 numTags,
     for( int tagIndex=0; tagIndex<numTags; tagIndex++ ) {
         // cerr << "    Tag " << tagIndex << " has " << vCuts[tagIndex].size() << " cuts" << endl;
 
-        identification::CutStruct* csptr;
-        
-        csptr = &csptr_base[tagIndex * max_cuts_per_Tag];
+        CutStructGrid* cutGrid = this->getCutStructGridBufferHost( tagIndex );
 
         if( STRICT_CUTSIZE( vCuts[tagIndex].size() ) > max_cuts_per_Tag ) {
             cerr << __FILE__ << "," << __LINE__ << ":" << endl
@@ -551,27 +538,21 @@ void TagPipe::uploadCuts( int                                 numTags,
         std::vector<cctag::ImageCut>::const_iterator vit  = vCuts[tagIndex].begin();
         std::vector<cctag::ImageCut>::const_iterator vend = vCuts[tagIndex].end();
 
-        for( ; vit!=vend; vit++ ) {
-            if( vit->imgSignal().size() != 100 ) {
-                cerr << __FILE__ << ":" << __LINE__ << ":" << endl
-                     << "    Signal size in an image cut should currently be 100." << endl;
-                exit( -1 );
-            }
-            csptr->start.x     = vit->start().x();
-            csptr->start.y     = vit->start().y();
-            csptr->stop.x      = vit->stop().x();
-            csptr->stop.y      = vit->stop().y();
-            csptr->beginSig    = vit->beginSig();
-            csptr->endSig      = vit->endSig();
-            csptr->sigSize     = vit->imgSignal().size();
-            csptr++;
+        for( int cut=0 ; vit!=vend; vit++, cut++ ) {
+            cutGrid->getGrid(cut).start.x     = vit->start().x();
+            cutGrid->getGrid(cut).start.y     = vit->start().y();
+            cutGrid->getGrid(cut).stop.x      = vit->stop().x();
+            cutGrid->getGrid(cut).stop.y      = vit->stop().y();
+            cutGrid->getGrid(cut).beginSig    = vit->beginSig();
+            cutGrid->getGrid(cut).endSig      = vit->endSig();
+            cutGrid->getGrid(cut).sigSize     = STRICT_SIGSIZE( vit->imgSignal().size() );
         }
     }
 
     POP_CHK_CALL_IFSYNC;
-    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( this->getCutStructBufferDev(),
-                                    this->getCutStructBufferHost(),
-                                    numTags * max_cuts_per_Tag * sizeof(identification::CutStruct) );
+    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( this->getCutStructGridBufferDev( 0 ),
+                                    this->getCutStructGridBufferHost( 0 ),
+                                    numTags * sizeof(CutStructGrid) );
 }
 
 void TagPipe::makeCudaStreams( int numTags )

@@ -135,9 +135,8 @@ __global__
 void idGetSignals( cv::cuda::PtrStepSzb   src,
                    const int              vCutSize,
                    const NearbyPointGrid* point_buffer,
-                   const CutStruct*       cut_buffer,
-                   CutSignalGrid*         sig_buffer,
-                   intptr_t               d_cut_struct_end )
+                   const CutStructGrid*   cut_buffer,
+                   CutSignalGrid*         sig_buffer )
 {
     const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
     const int i = blockIdx.y;
@@ -152,7 +151,7 @@ void idGetSignals( cv::cuda::PtrStepSzb   src,
         return; // out of bounds
     }
 
-    const CutStruct& myCut = cut_buffer[cutIndex];
+    const CutStruct& myCut = cut_buffer->getGrid( cutIndex );
     CutSignals& mySignals  = sig_buffer->getGrid( cutIndex, i, j ); //[nearbyPointIndex * STRICT_CUTSIZE(vCutSize) + cutIndex];
 
     if( threadIdx.x == 0 ) mySignals.outOfBounds = 0;
@@ -224,7 +223,7 @@ void initAllNearbyPoints(
  */
 __global__
 void idComputeResult( NearbyPointGrid*     d_NearbyPointGrid,
-                      const CutStruct*     cut_buffer,
+                      const CutStructGrid* cut_buffer,
                       const CutSignalGrid* sig_buffer,
                       const int            vCutSize )
 {
@@ -254,7 +253,7 @@ void idComputeResult( NearbyPointGrid*     d_NearbyPointGrid,
                   not l_signals.outOfBounds &&
                   not r_signals.outOfBounds;
         if( comp ) {
-            const int limit = STRICT_SIGSIZE(cut_buffer[left_cut].sigSize); // we could also use right_cut
+            const int limit = STRICT_SIGSIZE(cut_buffer->getGrid(left_cut).sigSize); // we could also use right_cut
             for( int offset = threadIdx.x; offset < STRICT_SIGSIZE(limit); offset += 32 ) {
                 float square = l_signals.sig[offset] - r_signals.sig[offset];
                 val += ( square * square );
@@ -437,10 +436,8 @@ void TagPipe::idCostFunction(
     /* reusing various image-sized plane */
     NearbyPointGrid* d_NearbyPointGrid  = getNearbyPointGridBuffer( tagIndex );
 
-    const identification::CutStruct* cut_buffer = getCutStructBufferDev();
-    cut_buffer    = &cut_buffer[tagIndex * STRICT_CUTSIZE(params._numCutsInIdentStep)];
-
-    CutSignalGrid* sig_buffer = getSignalGridBuffer( tagIndex );
+    const CutStructGrid* cut_buffer = getCutStructGridBufferDev( tagIndex );
+    CutSignalGrid*       sig_buffer = getSignalGridBuffer( tagIndex );
 
     popart::geometry::matrix3x3 mT;
     ellipse.makeConditionerFromEllipse( mT );
@@ -479,18 +476,13 @@ POP_SYNC_CHK;
         dim3 get_block( 32, STRICT_CUTSIZE(vCutSize), 1 ); // we use this to sum up signals
         dim3 get_grid( 1, STRICT_SAMPLE(gridNSample), STRICT_SAMPLE(gridNSample) );
 
-        if( (intptr_t)cut_buffer > _d_cut_struct_end ) {
-            cerr << __FILE__ << ":" << __LINE__ << " invalid cut struct address" << endl;
-            exit( -1 );
-        }
         popart::identification::idGetSignals
             <<<get_grid,get_block,0,tagStream>>>
             ( _frame[0]->getPlaneDev(),
               STRICT_CUTSIZE(vCutSize),
               d_NearbyPointGrid,        // in
               cut_buffer,
-              sig_buffer,
-              _d_cut_struct_end );
+              sig_buffer );
 POP_SYNC_CHK;
 
         dim3 id_block( 32, // we use this to sum up signals
@@ -616,25 +608,30 @@ bool TagPipe::imageCenterRetrieve(
 }
 
 __host__
-void TagPipe::allocCutStructBuffer( int n )
+void TagPipe::reallocCutStructGridBuffer( int numTags )
 {
+    if( numTags <= _num_cut_struct_grid ) return;
+
+    if( _num_cut_struct_grid != 0 ) {
+        POP_CUDA_FREE( _d_cut_struct_grid );
+        POP_CUDA_FREE_HOST( _h_cut_struct_grid );
+    }
+
     void* ptr;
 
-    POP_CUDA_MALLOC( &ptr, n*sizeof(identification::CutStruct) );
-    _d_cut_struct = (identification::CutStruct*)ptr;
-    _d_cut_struct_end = (intptr_t)ptr + n*sizeof(identification::CutStruct);
+    POP_CUDA_MALLOC( &ptr, numTags*sizeof(CutStructGrid) );
+    _d_cut_struct_grid = (CutStructGrid*)ptr;
 
-    POP_CUDA_MALLOC_HOST( &ptr, n*sizeof(identification::CutStruct) );
-    _h_cut_struct = (identification::CutStruct*)ptr;
-    _h_cut_struct_end = (intptr_t)ptr + n*sizeof(identification::CutStruct);
+    POP_CUDA_MALLOC_HOST( &ptr, numTags*sizeof(CutStructGrid) );
+    _h_cut_struct_grid = (CutStructGrid*)ptr;
 
-    _num_cut_struct = n;
+    _num_cut_struct_grid = numTags;
 }
 
 __host__
-void TagPipe::reallocNearbyPointGridBuffer( int n )
+void TagPipe::reallocNearbyPointGridBuffer( int numTags )
 {
-    if( n <= _num_nearby_point_grid ) return;
+    if( numTags <= _num_nearby_point_grid ) return;
 
     if( _num_nearby_point_grid != 0 ) {
         POP_CUDA_FREE( _d_nearby_point_grid );
@@ -642,15 +639,15 @@ void TagPipe::reallocNearbyPointGridBuffer( int n )
 
     void* ptr;
 
-    POP_CUDA_MALLOC( &ptr, n*sizeof(NearbyPointGrid) );
+    POP_CUDA_MALLOC( &ptr, numTags*sizeof(NearbyPointGrid) );
     _d_nearby_point_grid   = (NearbyPointGrid*)ptr;
-    _num_nearby_point_grid = n;
+    _num_nearby_point_grid = numTags;
 }
 
 __host__
-void TagPipe::reallocSignalGridBuffer( int n )
+void TagPipe::reallocSignalGridBuffer( int numTags )
 {
-    if( n <= _num_cut_signal_grid ) return;
+    if( numTags <= _num_cut_signal_grid ) return;
 
     if( _num_cut_signal_grid != 0 ) {
         POP_CUDA_FREE( _d_cut_signal_grid );
@@ -658,19 +655,19 @@ void TagPipe::reallocSignalGridBuffer( int n )
     }
     void* ptr;
 
-    POP_CUDA_MALLOC( &ptr, n*sizeof(CutSignalGrid) );
+    POP_CUDA_MALLOC( &ptr, numTags*sizeof(CutSignalGrid) );
     _d_cut_signal_grid   = (CutSignalGrid*)ptr;
-    _num_cut_signal_grid = n;
+    _num_cut_signal_grid = numTags;
 }
 
 __host__
-void TagPipe::freeCutStructBuffer( )
+void TagPipe::freeCutStructGridBuffer( )
 {
-    if( _num_cut_struct == 0 ) return;
+    if( _num_cut_struct_grid == 0 ) return;
 
-    POP_CUDA_FREE( _d_cut_struct );
-    POP_CUDA_FREE_HOST( _h_cut_struct );
-    _num_cut_struct = 0;
+    POP_CUDA_FREE( _d_cut_struct_grid );
+    POP_CUDA_FREE_HOST( _h_cut_struct_grid );
+    _num_cut_struct_grid = 0;
 }
 
 __host__
@@ -692,21 +689,23 @@ void TagPipe::freeSignalGridBuffer( )
 }
 
 __host__
-size_t TagPipe::getCutStructBufferByteSize( ) const
+CutStructGrid* TagPipe::getCutStructGridBufferDev( int tagIndex ) const
 {
-    return _num_cut_struct * sizeof(identification::CutStruct);
+    if( tagIndex < 0 || tagIndex >= _num_cut_signal_grid ) {
+        cerr << __FILE__ << ":" << __LINE__ << " ERROR: accessing a nearby point grid out of bounds" << endl;
+        exit( -1 );
+    }
+    return &_d_cut_struct_grid[tagIndex];
 }
 
 __host__
-identification::CutStruct* TagPipe::getCutStructBufferDev( ) const
+CutStructGrid* TagPipe::getCutStructGridBufferHost( int tagIndex ) const
 {
-    return _d_cut_struct;
-}
-
-__host__
-identification::CutStruct* TagPipe::getCutStructBufferHost( ) const
-{
-    return _h_cut_struct;
+    if( tagIndex < 0 || tagIndex >= _num_cut_signal_grid ) {
+        cerr << __FILE__ << ":" << __LINE__ << " ERROR: accessing a nearby point grid out of bounds" << endl;
+        exit( -1 );
+    }
+    return &_h_cut_struct_grid[tagIndex];
 }
 
 __host__
