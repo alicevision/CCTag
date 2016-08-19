@@ -56,11 +56,13 @@ class TagPipe
 public:
     TagPipe( const cctag::Parameters& params );
 
+    inline int getId() const { return _tag_id; }
+
     void initialize( const uint32_t pix_w,
                      const uint32_t pix_h,
                      cctag::logtime::Mgmt* durations );
     void release( );
-    void load( unsigned char* pix );
+    void load( int frameId, unsigned char* pix );
     void tagframe( );
     void handleframe( int layer );
 
