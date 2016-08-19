@@ -775,7 +775,9 @@ popart::TagPipe* initCuda( int      pipeId,
  * @param[in] bank CCTag bank.
  * @param[in] No longer used.
  */
-void cctagDetection(CCTag::List& markers,
+void cctagDetection(
+        CCTag::List& markers,
+        int          pipeId,
         const std::size_t frame, 
         const cv::Mat & imgGraySrc,
         const Parameters & providedParams,
@@ -807,7 +809,7 @@ void cctagDetection(CCTag::List& markers,
     popart::TagPipe* pipe1 = 0;
 #ifdef WITH_CUDA
     if( params._useCuda ) {
-        pipe1 = initCuda( 0,
+        pipe1 = initCuda( pipeId,
                           imgGraySrc.size().width,
 	                      imgGraySrc.size().height,
 	                      params,
