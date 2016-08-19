@@ -477,7 +477,6 @@ bool TagPipe::idCostFunction(
               center,
               neighSize,
               d_NearbyPointGrid );
-POP_SYNC_CHK;
 
         dim3 get_block( 32, STRICT_CUTSIZE(vCutSize), 1 ); // we use this to sum up signals
         dim3 get_grid( 1, STRICT_SAMPLE(gridNSample), STRICT_SAMPLE(gridNSample) );
@@ -489,7 +488,6 @@ POP_SYNC_CHK;
               d_NearbyPointGrid,        // in
               cut_buffer,
               sig_buffer );
-POP_SYNC_CHK;
 
         dim3 id_block( 32, // we use this to sum up signals
                        32, // we can use some shared memory/warp magic for summing
@@ -505,7 +503,6 @@ POP_SYNC_CHK;
               cut_buffer,
               sig_buffer,
               STRICT_CUTSIZE(vCutSize) );
-POP_SYNC_CHK;
 
         /* We search for the minimum of gridNSample x gridNSample
          * nearby points. Default for gridNSample is 5.
@@ -518,7 +515,6 @@ POP_SYNC_CHK;
             popart::identification::idBestNearbyPoint31max
                 <<<1,32,0,tagStream>>>
                   ( d_NearbyPointGrid, STRICT_SAMPLE(gridNSample) );
-POP_SYNC_CHK;
         } else {
 cerr << __FILE__ << ":" << __LINE__ << " Untested code idBestNearbyPoint32plus" << endl;
             popart::identification::idBestNearbyPoint32plus
