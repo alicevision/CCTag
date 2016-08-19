@@ -49,7 +49,13 @@ using boost::timer;
 using namespace boost::gil;
 namespace bfs = boost::filesystem;
 
-void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ostream & output, std::string debugFileName = "")
+void detection( std::size_t frameId,
+                int         pipeId,
+                const cv::Mat & src,
+                const cctag::Parameters & params,
+                const cctag::CCTagMarkersBank & bank,
+                std::ostream & output,
+                std::string debugFileName = "")
 {
   
     if (debugFileName == "") {
@@ -67,7 +73,7 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     static cctag::logtime::Mgmt* durations = 0;
         
     //Call the main CCTag detection function
-    cctagDetection( markers, frameId , src, params, bank, true, durations );
+    cctagDetection( markers, pipeId, frameId , src, params, bank, true, durations );
 
     if( durations ) {
         durations->print( std::cerr );
@@ -208,10 +214,11 @@ int main(int argc, char** argv)
     cv::Mat graySrc;
     cv::cvtColor( src, graySrc, CV_BGR2GRAY );
 
+    const int pipeId = 0;
 #ifdef PRINT_TO_CERR
-    detection(0, graySrc, params, bank, std::cerr, myPath.stem().string());
+    detection(0, pipeId, graySrc, params, bank, std::cerr, myPath.stem().string());
 #else
-    detection(0, graySrc, params, bank, outputFile, myPath.stem().string());
+    detection(0, pipeId, graySrc, params, bank, outputFile, myPath.stem().string());
 #endif
 } else if (ext == ".avi" )
   {
@@ -259,10 +266,11 @@ int main(int argc, char** argv)
         //bitwise_not ( imgGray, imgGrayInverted );
       
         // Call the CCTag detection
+        const int pipeId = 0;
 #ifdef PRINT_TO_CERR
-        detection(frameId, *imgGray, params, bank, std::cerr, outFileName.str());
+        detection(frameId, pipeId, *imgGray, params, bank, std::cerr, outFileName.str());
 #else
-        detection(frameId, *imgGray, params, bank, outputFile, outFileName.str());
+        detection(frameId, pipeId, *imgGray, params, bank, outputFile, outFileName.str());
 #endif
         ++frameId; 
         if( frameId % 100 == 0 ) {
@@ -294,10 +302,11 @@ int main(int argc, char** argv)
         cv::cvtColor( src, imgGray, CV_BGR2GRAY );
       
         // Call the CCTag detection
+        int pipeId = ( frameId & 1 );
 #ifdef PRINT_TO_CERR
-        detection(frameId, imgGray, params, bank, std::cerr, fileInFolder.stem().string());
+        detection(frameId, pipeId, imgGray, params, bank, std::cerr, fileInFolder.stem().string());
 #else
-        detection(frameId, imgGray, params, bank, outputFile, fileInFolder.stem().string());
+        detection(frameId, pipeId, imgGray, params, bank, outputFile, fileInFolder.stem().string());
 #endif
 ++frameId;
       }

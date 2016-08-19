@@ -31,6 +31,8 @@
 #include "cctag/geometry/Ellipse.hpp"
 #include "cctag/geometry/Point.hpp"
 
+#define NUM_ID_STREAMS 8
+
 namespace cctag { namespace logtime { struct Mgmt; } };
 
 namespace popart
@@ -42,10 +44,14 @@ class NearbyPointGrid;
 
 class TagPipe
 {
+    static int                  _tag_id_running_number;
+
+    int                         _tag_id;
     std::vector<Frame*>         _frame;
     const cctag::Parameters&    _params;
     TagThreads                  _threads;
-    std::vector<cudaStream_t>   _tag_streams;
+    cudaStream_t                _tag_streams[NUM_ID_STREAMS];
+    cudaEvent_t                 _uploaded_event;
 
 public:
     TagPipe( const cctag::Parameters& params );
@@ -112,8 +118,6 @@ public:
     void uploadCuts( int                                 numTags,
                      const std::vector<cctag::ImageCut>* vCuts,
                      const cctag::Parameters&            params );
-
-    void makeCudaStreams( int numTags );
 
     void debug( unsigned char* pix,
                 const cctag::Parameters& params );
