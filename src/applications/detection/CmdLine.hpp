@@ -23,6 +23,7 @@ public:
     bool        _switchSync;
     std::string _debugDir;
     bool        _useCuda;
+    int         _parallel;
 #endif
 
     CmdLine( );

@@ -33,6 +33,7 @@ class EdgePointImage;
  * @brief Perform the CCTag detection on a gray scale image. Cf. application/detection/main.cpp for example of usage.
  * 
  * @param[out] markers Detected markers. WARNING: only markers with status == 1 are valid ones. (status available via getStatus()) 
+ * @param[in] pipeId Choose one of up to 3 parallel CUDA pipes
  * @param[in] frame A frame number. Can be anything (e.g. 0).
  * @param[in] imgGraySrc Gray scale input image.
  * @param[in] providedParams Contains all the parameters.
@@ -41,6 +42,7 @@ class EdgePointImage;
  */
 void cctagDetection(
         CCTag::List& markers,
+        int          pipeId,
         const std::size_t frame,
         const cv::Mat & graySrc,
         const Parameters & params,
