@@ -290,35 +290,34 @@ int main(int argc, char** argv)
 
     std::size_t frameId = 0;
 
-    std::vector<bfs::path> files[2];
+    std::map<int,bfs::path> files[2];
     for(const auto & fileInFolder : vFileInFolder) {
-        files[frameId & 1].push_back( fileInFolder );
-        frameId ^= 1;
+        files[frameId & 1].insert( std::pair<int,bfs::path>( frameId, fileInFolder ) );
+        frameId++;
     }
 
-std::cerr << "Hello" << std::endl;
     tbb::parallel_for( 0, 2, [&](size_t fileListIdx) {
       for(const auto & fileInFolder : files[fileListIdx]) {
-        const std::string subExt(bfs::extension(fileInFolder));
+        const std::string subExt(bfs::extension(fileInFolder.second));
       
         if ( (subExt == ".png") || (subExt == ".jpg") || (subExt == ".PNG") || (subExt == ".JPG") ) {
 
-          CCTAG_COUT( "Processing image " << fileInFolder.string() );
+          std::cerr << "Processing image " << fileInFolder.second.string() << std::endl;
 
 		  cv::Mat src;
-    	  src = cv::imread(fileInFolder.string());
+    	  src = cv::imread(fileInFolder.second.string());
 
           cv::Mat imgGray;
           cv::cvtColor( src, imgGray, CV_BGR2GRAY );
       
           // Call the CCTag detection
-          int pipeId = ( frameId & 1 );
+          int pipeId = ( fileInFolder.first & 1 );
 #ifdef PRINT_TO_CERR
-          detection(frameId, pipeId, imgGray, params, bank, std::cerr, fileInFolder.stem().string());
+          detection(fileInFolder.first, pipeId, imgGray, params, bank, std::cerr, fileInFolder.second.stem().string());
 #else
-          detection(frameId, pipeId, imgGray, params, bank, outputFile, fileInFolder.stem().string());
+          detection(fileInFolder.first, pipeId, imgGray, params, bank, outputFile, fileInFolder.second.stem().string());
 #endif
-          ++frameId;
+          std::cerr << "Done processing image " << fileInFolder.second.string() << std::endl;
         }
       }
     } );
