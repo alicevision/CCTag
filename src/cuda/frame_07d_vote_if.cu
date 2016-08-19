@@ -64,7 +64,6 @@ void dp_call_vote_if(
 
     NumVotersIsGreaterEqual select_op( voters );
 
-#ifdef CUB_INIT_CALLS
     size_t assist_buffer_sz = 0;
     err = cub::DeviceSelect::If( 0,
                                  assist_buffer_sz,
@@ -82,9 +81,6 @@ void dp_call_vote_if(
         meta.list_size_inner_points() = 0;
         return;
     }
-#else // not CUB_INIT_CALLS
-    size_t assist_buffer_sz = intermediate.step * intermediate.rows;
-#endif // not CUB_INIT_CALLS
     void*  assist_buffer = (void*)intermediate.data;
 
     cub::DeviceSelect::If( assist_buffer,
@@ -128,7 +124,6 @@ bool Frame::applyVoteIf( )
     size_t assist_buffer_sz;
 
     NumVotersIsGreaterEqual select_op( _voters.dev );
-#ifdef CUB_INIT_CALLS
     assist_buffer_sz  = 0;
     err = cub::DeviceSelect::If( 0,
                                  assist_buffer_sz,
@@ -146,10 +141,6 @@ bool Frame::applyVoteIf( )
         std::cerr << "cub::DeviceSelect::If requires too much intermediate memory. Crashing." << std::endl;
         exit( -1 );
     }
-#else
-    // THIS CODE WORKED BEFORE
-    assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
-#endif
 
     /* Filter all chosen inner points that have fewer
      * voters than required by Parameters.
