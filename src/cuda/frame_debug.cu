@@ -32,59 +32,6 @@ using namespace std;
  * Frame
  *************************************************************/
 
-void Frame::hostDebugDownload( const cctag::Parameters& params )
-{
-    delete [] _h_debug_hyst_edges;
-
-    _h_debug_hyst_edges = new unsigned char[ getWidth() * getHeight() ];
-
-    POP_SYNC_CHK;
-
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_debug_hyst_edges, getWidth() * sizeof(uint8_t),
-                              _d_hyst_edges.data, _d_hyst_edges.step,
-                              _d_hyst_edges.cols * sizeof(uint8_t),
-                              _d_hyst_edges.rows,
-                              cudaMemcpyDeviceToHost, _stream );
-
-    POP_CUDA_MEMCPY_2D_ASYNC( _h_edges.data, _h_edges.step,
-                              _d_edges.data, _d_edges.step,
-                              _d_edges.cols * sizeof(uint8_t),
-                              _d_edges.rows,
-                              cudaMemcpyDeviceToHost, _stream );
-    POP_CHK_CALL_IFSYNC;
-}
-
-void Frame::hostDebugCompare( unsigned char* pix )
-{
-#ifndef NDEBUG
-#ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
-    bool found_mistake = false;
-    size_t mistake_ct = 0;
-
-    for( int h=0; h<_d_plane.rows; h++ ) {
-        for( int w=0; w<_d_plane.cols; w++ ) {
-            size_t pos = h*_d_plane.cols+w;
-            if( pix[pos] != _h_plane.data[pos] ) {
-                mistake_ct++;
-                if( found_mistake == false ) {
-                    found_mistake = true;
-                    cerr << "Found first error at (" << w << "," << h << "): "
-                         << "orig " << pix[pos]
-                         << "copy " << _h_plane.data[pos]
-                         << endl;
-                }
-            }
-        }
-    }
-    if( found_mistake ) {
-        cerr << "Total errors: " << mistake_ct << endl;
-    } else {
-        cerr << "Found no difference between original and re-downloaded frame" << endl;
-    }
-#endif // DEBUG_WRITE_ORIGINAL_AS_PGM
-#endif // NDEBUG
-}
-
 void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& params )
 {
     filename = params._debugDir + filename;

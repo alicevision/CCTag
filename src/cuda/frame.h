@@ -218,14 +218,10 @@ public:
     friend class TagPipe;
 
 public:
-    void hostDebugDownload( const cctag::Parameters& params ); // async
-
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
     static void writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz );
 
     void writeHostDebugPlane( std::string filename, const cctag::Parameters& params );
-
-    void hostDebugCompare( unsigned char* pix );
 
 private:
     Frame( );  // forbidden

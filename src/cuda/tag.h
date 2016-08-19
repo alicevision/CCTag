@@ -121,23 +121,6 @@ public:
                      const std::vector<cctag::ImageCut>* vCuts,
                      const cctag::Parameters&            params );
 
-    void debug( unsigned char* pix,
-                const cctag::Parameters& params );
-
-    static void debug_cpu_origin( int                      layer,
-                                  const cv::Mat&           img,
-                                  const cctag::Parameters& params );
-
-    static void debug_cpu_edge_out( int                      layer,
-                                    const cv::Mat&           edges,
-                                    const cctag::Parameters& params );
-
-    static void debug_cpu_dxdy_out( TagPipe*                 pipe,
-                                    int                      layer,
-                                    const cv::Mat&           cpu_dx,
-                                    const cv::Mat&           cpu_dy,
-                                    const cctag::Parameters& params );
-
 private:
     // implemented in frame_11_identify.cu
     /* to reuse various image-sized buffers, but retrieve their
