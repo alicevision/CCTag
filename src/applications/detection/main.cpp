@@ -41,6 +41,8 @@
 #include <fstream>
 #include <exception>
 
+#include <tbb/tbb.h>
+
 #define PRINT_TO_CERR
 
 using namespace cctag;
@@ -288,31 +290,39 @@ int main(int argc, char** argv)
 
     std::size_t frameId = 0;
 
+    std::vector<bfs::path> files[2];
     for(const auto & fileInFolder : vFileInFolder) {
-      const std::string subExt(bfs::extension(fileInFolder));
-      
-      if ( (subExt == ".png") || (subExt == ".jpg") || (subExt == ".PNG") || (subExt == ".JPG") ) {
-
-        CCTAG_COUT( "Processing image " << fileInFolder.string() );
-
-		cv::Mat src;
-    	src = cv::imread(fileInFolder.string());
-
-        cv::Mat imgGray;
-        cv::cvtColor( src, imgGray, CV_BGR2GRAY );
-      
-        // Call the CCTag detection
-        int pipeId = ( frameId & 1 );
-#ifdef PRINT_TO_CERR
-        detection(frameId, pipeId, imgGray, params, bank, std::cerr, fileInFolder.stem().string());
-#else
-        detection(frameId, pipeId, imgGray, params, bank, outputFile, fileInFolder.stem().string());
-#endif
-++frameId;
-      }
+        files[frameId & 1].push_back( fileInFolder );
+        frameId ^= 1;
     }
-  }else
-  {
+
+std::cerr << "Hello" << std::endl;
+    tbb::parallel_for( 0, 2, [&](size_t fileListIdx) {
+      for(const auto & fileInFolder : files[fileListIdx]) {
+        const std::string subExt(bfs::extension(fileInFolder));
+      
+        if ( (subExt == ".png") || (subExt == ".jpg") || (subExt == ".PNG") || (subExt == ".JPG") ) {
+
+          CCTAG_COUT( "Processing image " << fileInFolder.string() );
+
+		  cv::Mat src;
+    	  src = cv::imread(fileInFolder.string());
+
+          cv::Mat imgGray;
+          cv::cvtColor( src, imgGray, CV_BGR2GRAY );
+      
+          // Call the CCTag detection
+          int pipeId = ( frameId & 1 );
+#ifdef PRINT_TO_CERR
+          detection(frameId, pipeId, imgGray, params, bank, std::cerr, fileInFolder.stem().string());
+#else
+          detection(frameId, pipeId, imgGray, params, bank, outputFile, fileInFolder.stem().string());
+#endif
+          ++frameId;
+        }
+      }
+    } );
+  } else {
       throw std::logic_error("Unrecognized input.");
   }
   outputFile.close();
