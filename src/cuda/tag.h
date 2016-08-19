@@ -175,7 +175,7 @@ private:
 
     // implemented in frame_11_identify.cu
     __host__
-    void idCostFunction(
+    bool idCostFunction(
         const int                           tagIndex,
         const int                           debug_numTags,
         cudaStream_t                        tagStream,

@@ -423,7 +423,7 @@ void idBestNearbyPoint31max( NearbyPointGrid* d_NearbyPointGrid,
  * @param[inout] pointer lock a small piece of page-locked memory for device-to-host copying of results
  */
 __host__
-void TagPipe::idCostFunction(
+bool TagPipe::idCostFunction(
     const int                           tagIndex,
     const int                           debug_numTags,
     cudaStream_t                        tagStream,
@@ -434,6 +434,8 @@ void TagPipe::idCostFunction(
     float                               currentNeighbourSize,
     const cctag::Parameters&            params )
 {
+    if( vCutSize < 2 ) return false;
+
     const size_t gridNSample = params._imagedCenterNGridSample;
     const size_t offset      = tagIndex * STRICT_SAMPLE(gridNSample) * STRICT_SAMPLE(gridNSample);
 
@@ -528,6 +530,8 @@ cerr << __FILE__ << ":" << __LINE__ << " Untested code idBestNearbyPoint32plus" 
 
         first_iteration = false;
     }
+
+    return true;
 }
 
 __host__
@@ -563,32 +567,41 @@ void TagPipe::imageCenterOptLoop(
 
     NearbyPointGrid* d_nearbyPointGrid = getNearbyPointGridBuffer( tagIndex );
 
-    idCostFunction( tagIndex,
-                    debug_numTags,
-                    tagStream,
-                    iterations,
-                    outerEllipse,
-                    center,
-                    STRICT_CUTSIZE(vCutSize),
-                    neighbourSize,
-                    params );
+    bool success = idCostFunction( tagIndex,
+                                   debug_numTags,
+                                   tagStream,
+                                   iterations,
+                                   outerEllipse,
+                                   center,
+                                   STRICT_CUTSIZE(vCutSize),
+                                   neighbourSize,
+                                   params );
 
-    /* When this kernel finishes, the best point does not
-     * exist or it is stored in point_buffer[0]
-     */
-    const NearbyPoint* dev_ptr = &d_nearbyPointGrid->getGrid(0,0);
+    if( success ) {
+        /* When this kernel finishes, the best point does not
+         * exist or it is stored in point_buffer[0]
+         */
+        const NearbyPoint* dev_ptr = &d_nearbyPointGrid->getGrid(0,0);
 
-    /* This copy operation is initiated in imageCenterOptLoop instead
-     * if imageCenterRetrieve (where it is needed) because the async
-     * copy can run in the background.
-     *
-     * A SYNC IS NEEDED
-     */
-    POP_CUDA_MEMCPY_TO_HOST_ASYNC( cctag_pointer_buffer,
-                                   dev_ptr,
-                                   sizeof(popart::NearbyPoint),
-                                   tagStream );
-    POP_CHK_CALL_IFSYNC;
+        /* This copy operation is initiated in imageCenterOptLoop instead
+         * if imageCenterRetrieve (where it is needed) because the async
+         * copy can run in the background.
+         *
+         * A SYNC IS NEEDED
+         */
+        POP_CUDA_MEMCPY_TO_HOST_ASYNC( cctag_pointer_buffer,
+                                       dev_ptr,
+                                       sizeof(popart::NearbyPoint),
+                                       tagStream );
+        POP_CHK_CALL_IFSYNC;
+    } else {
+        /* bogus values */
+        cctag_pointer_buffer->point = make_float2( 0, 0 );
+        cctag_pointer_buffer->result = 0.0001f;
+        cctag_pointer_buffer->resSize = 0;
+        cctag_pointer_buffer->readable = false;
+        cctag_pointer_buffer->residual = 1000.0f;
+    }
 }
 
 __host__
