@@ -249,6 +249,7 @@ cv::Mat* TagPipe::getEdges( size_t layer ) const
     return _frame[layer]->getEdges();
 }
 
+#if 0
 __host__
 void TagPipe::imageCenterOptLoop(
     const int                                  tagIndex,
@@ -287,6 +288,7 @@ void TagPipe::imageCenterOptLoop(
                         params,
                         cctag_pointer_buffer );
 }
+#endif
 
 __host__
 bool TagPipe::imageCenterRetrieve(

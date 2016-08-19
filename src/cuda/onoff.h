@@ -64,14 +64,6 @@
  */
 #undef RADIX_WITHOUT_DOUBLEBUFFER
 
-/* For the CUB version included with CUDA 7.0, it was possible to
- * pass an arbitrary device pointer pointing to sufficiently large
- * memory.
- * Standalone CUB 1.4.1 fails unless the init call for determining
- * intermediate buffer size is made.
- */
-#define CUB_INIT_CALLS
-
 /* Affects tag.cu.
 .* A Frame used two CUDA streams, one for upload and kernels, another
  * one for downloads.
