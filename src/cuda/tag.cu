@@ -54,6 +54,8 @@ using namespace std;
 
 namespace popart
 {
+int TagPipe::_tag_id_running_number = 0;
+
 __host__
 TagPipe::TagPipe( const cctag::Parameters& params )
     : _params( params )
@@ -65,6 +67,8 @@ TagPipe::TagPipe( const cctag::Parameters& params )
     , _num_nearby_point_grid( 0 )
     , _num_cut_signal_grid( 0 )
 {
+    _tag_id = _tag_id_running_number++;
+    cerr << "Creating TagPipe " << _tag_id << endl;
 }
 
 __host__
@@ -72,6 +76,7 @@ void TagPipe::initialize( const uint32_t pix_w,
                           const uint32_t pix_h,
                           cctag::logtime::Mgmt* durations )
 {
+    cerr << "Initializing TagPipe " << _tag_id << endl;
     PinnedCounters::init( );
 
     static bool tables_initialized = false;
@@ -112,17 +117,22 @@ void TagPipe::initialize( const uint32_t pix_w,
         _frame[i]->allocRequiredMem( _params ); // sync
     }
 
+    for( int i=0; i<NUM_ID_STREAMS; i++ ) {
+        POP_CUDA_STREAM_CREATE( &_tag_streams[i] );
+    }
+    cudaEventCreate( &_uploaded_event );
+
     _threads.init( this, num_layers );
 }
 
 __host__
 void TagPipe::release( )
 {
-    int numTags = _tag_streams.size();
-    for( int i=0; i<numTags; i++ ) {
+    cerr << "Releasing TagPipe " << _tag_id << endl;
+    cudaEventDestroy( _uploaded_event );
+    for( int i=0; i<NUM_ID_STREAMS; i++ ) {
         POP_CUDA_STREAM_DESTROY( _tag_streams[i] );
     }
-    _tag_streams.clear();
 
     PinnedCounters::release( );
 }
@@ -142,6 +152,7 @@ uint32_t TagPipe::getHeight( size_t layer ) const
 __host__
 void TagPipe::load( unsigned char* pix )
 {
+    cerr << "Loading image into TagPipe " << _tag_id << endl;
     _frame[0]->upload( pix ); // async
     _frame[0]->addUploadEvent( ); // async
 }
@@ -454,7 +465,7 @@ void TagPipe::imageCenterOptLoop(
 
     imageCenterOptLoop( tagIndex,
                         debug_numTags,
-                        _tag_streams[tagIndex],
+                        _tag_streams[tagIndex%NUM_ID_STREAMS],
                         e,
                         f,
                         vCutSize,
@@ -475,7 +486,7 @@ bool TagPipe::imageCenterRetrieve(
     popart::geometry::matrix3x3 bestHomography;
 
     bool success = imageCenterRetrieve( tagIndex,
-                                        _tag_streams[tagIndex],
+                                        _tag_streams[tagIndex%NUM_ID_STREAMS],
                                         bestPoint,
                                         bestResidual,
                                         bestHomography,
@@ -554,17 +565,13 @@ void TagPipe::uploadCuts( int                                 numTags,
     }
 
     POP_CHK_CALL_IFSYNC;
-    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( this->getCutStructGridBufferDev( 0 ),
-                                    this->getCutStructGridBufferHost( 0 ),
-                                    numTags * sizeof(CutStructGrid) );
-}
-
-void TagPipe::makeCudaStreams( int numTags )
-{
-    for( int i=_tag_streams.size(); i<numTags; i++ ) {
-        cudaStream_t stream;
-        POP_CUDA_STREAM_CREATE( &stream );
-        _tag_streams.push_back( stream );
+    POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( this->getCutStructGridBufferDev( 0 ),
+                                     this->getCutStructGridBufferHost( 0 ),
+                                     numTags * sizeof(CutStructGrid),
+                                     _tag_streams[0] );
+    cudaEventRecord( _uploaded_event, _tag_streams[0] );
+    for( int i=1; i<NUM_ID_STREAMS; i++ ) {
+        cudaStreamWaitEvent( _tag_streams[i], _uploaded_event, 0 );
     }
 }
 

@@ -63,6 +63,7 @@ protected:
  */
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
+      int                       pipeId,
       const std::size_t frame,
       const cv::Mat & graySrc,
       logtime::Mgmt* durations = 0,
@@ -72,6 +73,7 @@ void cctagDetection(
 
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
+      int                       pipeId,
       const std::size_t frame,
       const cv::Mat & graySrc,
       const cctag::Parameters & params,
