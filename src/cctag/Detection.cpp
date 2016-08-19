@@ -918,7 +918,9 @@ void cctagDetection(
             tagIndex = 0;
             int debug_num_calls = 0;
             for( CCTag& cctag : markers ) {
-                if( detected[tagIndex] == status::id_reliable ) {
+                if( vSelectedCuts[tagIndex].size() <= 2 ) {
+                    detected[tagIndex] = status::no_selected_cuts;
+                } else if( detected[tagIndex] == status::id_reliable ) {
                     if( debug_num_calls >= numTags ) {
                         cerr << __FILE__ << ":" << __LINE__ << " center finding for more loops (" << debug_num_calls << ") than uploaded (" << numTags << ")?" << endl;
                     }
