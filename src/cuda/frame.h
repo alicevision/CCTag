@@ -90,7 +90,7 @@ class Frame
 {
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
-    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe = 0 );
+    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int pipe_id );
     ~Frame( );
 
 public:

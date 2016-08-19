@@ -67,7 +67,8 @@ TagPipe::TagPipe( const cctag::Parameters& params )
     , _num_nearby_point_grid( 0 )
     , _num_cut_signal_grid( 0 )
 {
-    _tag_id = _tag_id_running_number++;
+    _tag_id = _tag_id_running_number;
+    _tag_id_running_number++;
     cerr << "Creating TagPipe " << _tag_id << endl;
 }
 
@@ -77,7 +78,7 @@ void TagPipe::initialize( const uint32_t pix_w,
                           cctag::logtime::Mgmt* durations )
 {
     cerr << "Initializing TagPipe " << _tag_id << endl;
-    PinnedCounters::init( );
+    PinnedCounters::init( getId() );
 
     static bool tables_initialized = false;
     if( not tables_initialized ) {
@@ -97,14 +98,14 @@ void TagPipe::initialize( const uint32_t pix_w,
 #ifdef USE_ONE_DOWNLOAD_STREAM
     cudaStream_t download_stream = 0;
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( f = new popart::Frame( w, h, i, download_stream ) ); // sync
+        _frame.push_back( f = new popart::Frame( w, h, i, download_stream, getId() ) ); // sync
         if( i==0 ) { download_stream = f->_download_stream; assert( download_stream != 0 ); }
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
 #else
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( f = new popart::Frame( w, h, i, 0 ) ); // sync
+        _frame.push_back( f = new popart::Frame( w, h, i, 0, getId() ) ); // sync
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
@@ -134,7 +135,7 @@ void TagPipe::release( )
         POP_CUDA_STREAM_DESTROY( _tag_streams[i] );
     }
 
-    PinnedCounters::release( );
+    PinnedCounters::release( getId() );
 }
 
 __host__
@@ -150,9 +151,9 @@ uint32_t TagPipe::getHeight( size_t layer ) const
 }
 
 __host__
-void TagPipe::load( unsigned char* pix )
+void TagPipe::load( int frameId, unsigned char* pix )
 {
-    cerr << "Loading image into TagPipe " << _tag_id << endl;
+    cerr << "Loading image " << frameId << " into TagPipe " << _tag_id << endl;
     _frame[0]->upload( pix ); // async
     _frame[0]->addUploadEvent( ); // async
 }

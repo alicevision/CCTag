@@ -822,7 +822,7 @@ void cctagDetection(
         assert( imgGraySrc.type() == CV_8U );
         unsigned char* pix = imgGraySrc.data;
 
-        pipe1->load( pix );
+        pipe1->load( frame, pix );
 
         if( durations ) {
             cudaDeviceSynchronize();
@@ -872,7 +872,7 @@ void cctagDetection(
         }
 
         for( CCTag& tag : markers ) {
-            tag.acquireNearbyPointMemory( );
+            tag.acquireNearbyPointMemory( pipe1->getId() );
         }
     }
 #endif // WITH_CUDA
@@ -968,7 +968,7 @@ void cctagDetection(
     if( pipe1 ) {
         /* Releasing all points in all threads in the process.
          */
-        CCTag::releaseNearbyPointMemory();
+        CCTag::releaseNearbyPointMemory( pipe1->getId() );
     }
 #endif
     

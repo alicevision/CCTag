@@ -94,3 +94,6 @@
  */
 #define MAX_MARKER_FOR_IDENT 60
 
+/* How many parallel pipelines can we have?
+ */
+#define MAX_PIPES	4
