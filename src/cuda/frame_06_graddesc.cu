@@ -321,11 +321,11 @@ void gradient_descent( FrameMetaPtr                     meta,
 #ifdef USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 __global__
 void dp_call_01_gradient_descent(
-    FrameMetaPtr                 meta,
-    const DevEdgeList<short2>    all_edgecoords, // input
-    const cv::cuda::PtrStepSzb   edge_image, // input
-    DevEdgeList<TriplePoint>     chainedEdgeCoords, // output
-    cv::cuda::PtrStepSz32s       edgepointIndexTable ) // output
+    FrameMetaPtr                     meta,
+    const DevEdgeList<CudaEdgePoint> all_edgecoords, // input
+    const cv::cuda::PtrStepSzb       edge_image, // input
+    DevEdgeList<TriplePoint>         chainedEdgeCoords, // output
+    cv::cuda::PtrStepSz32s           edgepointIndexTable ) // output
 {
     initChainedEdgeCoords_2( meta, chainedEdgeCoords );
 
@@ -361,8 +361,6 @@ bool Frame::applyDesc( )
         ( _meta,                          // input modified
           _all_edgecoords.dev,            // input
           _d_edges,                       // input
-          _d_dx,                          // input
-          _d_dy,                          // input
           _voters.dev,                    // output
           _vote._d_edgepoint_index_table ); // output
     POP_CHK_CALL_IFSYNC;
@@ -399,8 +397,6 @@ bool Frame::applyDesc( )
         ( _meta,
           _all_edgecoords.dev,
           _d_edges,
-          _d_dx,
-          _d_dy,
           _voters.dev,    // output - TriplePoints with before/after info
           _vote._d_edgepoint_index_table ); // output - table, map coord to TriplePoint index
     POP_CHK_CALL_IFSYNC;

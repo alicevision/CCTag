@@ -58,7 +58,6 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
      * _processedAux, sized MAX_POINTS/4
      *    these are initialized to 0 by the CPU and can be ignored
      */
-    // cerr << "Enter " << __FUNCTION__ << endl;
 
     int vote_sz = _voters.host.size;
     int all_sz  = _all_edgecoords.host.size;
@@ -71,7 +70,6 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
     if( vote_sz <= 0 ) {
         // no voting happened, no need for edge linking,
         // so no need for copying anything
-        // cerr << "Leave " << __FUNCTION__ << " (1)" << endl;
         return false;
     }
 
@@ -95,13 +93,16 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
     //            v_comp );
 #endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
-    EdgePoint* base_edge_point_ptr = out_edges(0);
-    if( sizeof(EdgePoint) != sizeof(CudaEdgePoint) ) {
+    cctag::EdgePoint* base_edge_point_ptr = out_edges(0);
+    if( sizeof(cctag::EdgePoint) != sizeof(CudaEdgePoint) ) {
         cerr << __FILE__ << ":" << __LINE__ << " Programming ERROR" << endl
              << "    CudaEdgePoint must be binary compatible with EdgePoint" << endl;
         exit( -1 );
     }
+
     memcpy( base_edge_point_ptr, _all_edgecoords.host.ptr, all_sz*sizeof(CudaEdgePoint) );
+    out_edges.cudaSetPointCount( all_sz );
+
     for( int offset = 0; offset < all_sz; offset++ ) {
           out_edges.cudaSetMapping( _all_edgecoords.host.ptr[offset]._coord.x,
                                     _all_edgecoords.host.ptr[offset]._coord.y,
@@ -208,7 +209,6 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
     out_edges.create_voter_lists(voter_lists);
 
 
-    // cerr << "Leave " << __FUNCTION__ << " (ok)" << endl;
     return true;
 }
 

@@ -103,12 +103,12 @@ void first_round( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 }
 
 __global__
-void second_round( cv::cuda::PtrStepSzb   src,          // input
-                   cv::cuda::PtrStepSz16s d_dx;         // input
-                   cv::cuda::PtrStepSz16s d_dy;         // input
-                   cv::cuda::PtrStepSzb   dst,          // output
-                   DevEdgeList<short2>    all_edgecoords,   // output
-                   FrameMetaPtr           meta )
+void second_round( cv::cuda::PtrStepSzb       src,          // input
+                   cv::cuda::PtrStepSz16s     d_dx,         // input
+                   cv::cuda::PtrStepSz16s     d_dy,         // input
+                   cv::cuda::PtrStepSzb       dst,          // output
+                   DevEdgeList<CudaEdgePoint> all_edgecoords,   // output
+                   FrameMetaPtr               meta )
 {
     const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;

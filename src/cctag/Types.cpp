@@ -73,6 +73,14 @@ void EdgePointCollection::cudaSetMapping( int x, int y, int offset )
     _linkList[2*offset+1] = -1;
 }
 
+/* stop-gap solution until CUDA-sided map has been
+ * re-written from indexing voters to indexing all
+ * edge points. Will finally become redundant.
+ */
+void EdgePointCollection::cudaSetPointCount( int count )
+{
+    point_count() = count;
+}
 
 // The input is suboptimal but we don't care: it matters only for the CPU version;
 // CUDA version will directly create the required representation.

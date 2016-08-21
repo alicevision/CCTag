@@ -139,6 +139,10 @@ public:
                             cv::cuda::PtrStepSzb            img,
                             bool                            normalize = true,
                             enum BaseColor                  b = WHITE );
+    static void plotPoints( const std::vector<CudaEdgePoint>& v,
+                            cv::cuda::PtrStepSzb     img,
+                            bool                     normalize = true,
+                            enum BaseColor           b = WHITE );
     static void plotPoints( const std::vector<int2>& v,
                             cv::cuda::PtrStepSzb     img,
                             bool                     normalize = true,

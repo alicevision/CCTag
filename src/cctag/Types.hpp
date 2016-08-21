@@ -158,6 +158,12 @@ public:
    * re-written from indexing voters to indexing all
    * edge points. Will finally become redundant.
    */
+  void cudaSetPointCount( int count );
+
+  /* stop-gap solution until CUDA-sided map has been
+   * re-written from indexing voters to indexing all
+   * edge points. Will finally become redundant.
+   */
   void cudaSetMapping( int x, int y, int offset );
 };
 

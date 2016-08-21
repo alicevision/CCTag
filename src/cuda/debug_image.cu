@@ -263,7 +263,7 @@ void DebugImage::plotPoints( const vector<CudaEdgePoint>& v, cv::cuda::PtrStepSz
 {
     normalizeImage( img, normalize );
 
-    vector<int2>::const_iterator cit, cend;
+    vector<CudaEdgePoint>::const_iterator cit, cend;
     cend = v.end();
     cout << "Plotting " << v.size() << " int2 coordinates into image of size " << img.cols << " x " << img.rows << endl;
     for( cit=v.begin(); cit!=cend; cit++ ) {

@@ -10,8 +10,9 @@
 namespace popart
 {
 
-class CudaEdgePoint : public Vector3s
+class CudaEdgePoint
 {
+public:
     short3   _coord;
     float2   _grad;
     float    _normGrad;
@@ -25,7 +26,7 @@ class CudaEdgePoint : public Vector3s
     {
         _coord       = make_short3( x, y, 1 ); // done after step 05
         _grad        = make_float2( dx, dy );  // done after step 05
-        _normGrad    = __hypotf( dx, dy );     // done after step 05
+        _normGrad    = hypotf( dx, dy );     // done after step 05
         _flowLength  = 0;
         _processed   = 0;
         _isMax       = -1;
