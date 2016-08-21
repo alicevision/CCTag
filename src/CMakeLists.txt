@@ -62,15 +62,13 @@ ENDIF(USE_CUDA)
 SET(CCTAG_LINK_LIBRARIES
     ${OpenCV_LIBS}
     ${Boost_LIBRARIES}
-    ${OPTPP_LIBRARIES}
-    ${Ceres_LIBRARIES}
     ${Eigen_LIBRARIES}
     ${PNG_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${Eigen_LIBRARIES}
     ${GLOG_LIBRARIES}
-    #${GSL_LIBRARIES}
     ${LAPACK_LIBRARIES}
+    ${TBB_LIBRARIES}
     pthread
     dl
     ${Gomp_LIBRARIES} )
