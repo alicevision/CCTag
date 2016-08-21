@@ -90,7 +90,7 @@ class Frame
 {
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
-    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe = 0 );
+    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int pipe_id );
     ~Frame( );
 
 public:
@@ -218,14 +218,10 @@ public:
     friend class TagPipe;
 
 public:
-    void hostDebugDownload( const cctag::Parameters& params ); // async
-
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
     static void writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz );
 
     void writeHostDebugPlane( std::string filename, const cctag::Parameters& params );
-
-    void hostDebugCompare( unsigned char* pix );
 
 private:
     Frame( );  // forbidden

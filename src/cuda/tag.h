@@ -31,6 +31,8 @@
 #include "cctag/geometry/Ellipse.hpp"
 #include "cctag/geometry/Point.hpp"
 
+#define NUM_ID_STREAMS 8
+
 namespace cctag { namespace logtime { struct Mgmt; } };
 
 namespace popart
@@ -42,19 +44,25 @@ class NearbyPointGrid;
 
 class TagPipe
 {
+    static int                  _tag_id_running_number;
+
+    int                         _tag_id;
     std::vector<Frame*>         _frame;
     const cctag::Parameters&    _params;
     TagThreads                  _threads;
-    std::vector<cudaStream_t>   _tag_streams;
+    cudaStream_t                _tag_streams[NUM_ID_STREAMS];
+    cudaEvent_t                 _uploaded_event;
 
 public:
     TagPipe( const cctag::Parameters& params );
+
+    inline int getId() const { return _tag_id; }
 
     void initialize( const uint32_t pix_w,
                      const uint32_t pix_h,
                      cctag::logtime::Mgmt* durations );
     void release( );
-    void load( unsigned char* pix );
+    void load( int frameId, unsigned char* pix );
     void tagframe( );
     void handleframe( int layer );
 
@@ -112,25 +120,6 @@ public:
     void uploadCuts( int                                 numTags,
                      const std::vector<cctag::ImageCut>* vCuts,
                      const cctag::Parameters&            params );
-
-    void makeCudaStreams( int numTags );
-
-    void debug( unsigned char* pix,
-                const cctag::Parameters& params );
-
-    static void debug_cpu_origin( int                      layer,
-                                  const cv::Mat&           img,
-                                  const cctag::Parameters& params );
-
-    static void debug_cpu_edge_out( int                      layer,
-                                    const cv::Mat&           edges,
-                                    const cctag::Parameters& params );
-
-    static void debug_cpu_dxdy_out( TagPipe*                 pipe,
-                                    int                      layer,
-                                    const cv::Mat&           cpu_dx,
-                                    const cv::Mat&           cpu_dy,
-                                    const cctag::Parameters& params );
 
 private:
     // implemented in frame_11_identify.cu
