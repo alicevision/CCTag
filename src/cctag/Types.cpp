@@ -60,6 +60,19 @@ void EdgePointCollection::add_point(int vx, int vy, float vdx, float vdy)
   // voter lists must be constructed afterwards
 }
 
+/* stop-gap solution until CUDA-sided map has been
+ * re-written from indexing voters to indexing all
+ * edge points. Will finally become redundant.
+ */
+void EdgePointCollection::cudaSetMapping( int x, int y, int offset )
+{
+    size_t imap = map_index( x, y );
+    _edgeMap[imap] = offset;
+
+    _linkList[2*offset+0] = -1;
+    _linkList[2*offset+1] = -1;
+}
+
 
 // The input is suboptimal but we don't care: it matters only for the CPU version;
 // CUDA version will directly create the required representation.

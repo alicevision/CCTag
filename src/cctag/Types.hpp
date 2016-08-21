@@ -153,6 +153,12 @@ public:
   {
     return test_bit(&_processedAux[0], (*this)(p));
   }
+
+  /* stop-gap solution until CUDA-sided map has been
+   * re-written from indexing voters to indexing all
+   * edge points. Will finally become redundant.
+   */
+  void cudaSetMapping( int x, int y, int offset );
 };
 
 } // namespace cctag

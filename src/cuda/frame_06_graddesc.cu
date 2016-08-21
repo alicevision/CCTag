@@ -69,10 +69,9 @@ bool gradient_descent_inner( const int                    idx,
                              const int                    idy,
                              int                          direction,
                              int4&                        out_edge_info,
-                             short2&                      out_edge_d,
+                             float2&                      out_edge_d,
                              const cv::cuda::PtrStepSzb   edge_image,
-                             const cv::cuda::PtrStepSz16s d_dx,
-                             const cv::cuda::PtrStepSz16s d_dy )
+                             const float2                 grad )
 {
     // const int offset = blockIdx.x * 32 + threadIdx.x;
     // int direction    = threadIdx.y == 0 ? -1 : 1;
@@ -97,11 +96,10 @@ bool gradient_descent_inner( const int                    idx,
         return false; // should never happen
     }
 
-    float  e     = 0.0f;
-    out_edge_d.x = d_dx.ptr(idy)[idx];
-    out_edge_d.y = d_dy.ptr(idy)[idx];
-    float  dx    = direction * out_edge_d.x;
-    float  dy    = direction * out_edge_d.y;
+    float  e   = 0.0f;
+    out_edge_d = grad;
+    float  dx  = direction * out_edge_d.x;
+    float  dy  = direction * out_edge_d.y;
 
     assert( dx!=0 || dy!=0 );
 
@@ -187,19 +185,17 @@ bool gradient_descent_inner( const int                    idx,
 }
 
 __global__
-void gradient_descent( FrameMetaPtr                 meta,
-                       const DevEdgeList<short2>    all_edgecoords, // input
-                       const cv::cuda::PtrStepSzb   edge_image,
-                       const cv::cuda::PtrStepSz16s d_dx,
-                       const cv::cuda::PtrStepSz16s d_dy,
-                       DevEdgeList<TriplePoint>     voters,    // output
-                       cv::cuda::PtrStepSz32s       edgepoint_index_table ) // output
+void gradient_descent( FrameMetaPtr                     meta,
+                       const DevEdgeList<CudaEdgePoint> all_edgecoords, // input
+                       const cv::cuda::PtrStepSzb       edge_image,
+                       DevEdgeList<TriplePoint>         voters,    // output
+                       cv::cuda::PtrStepSz32s           edgepoint_index_table ) // output
 {
     assert( blockDim.x * gridDim.x < meta.list_size_all_edgecoords() + 32 );
     assert( meta.list_size_voters() <= 2*meta.list_size_all_edgecoords() );
 
     int4   out_edge_info;
-    short2 out_edge_d;
+    float2 out_edge_d;
     bool   keep = false;
     // before -1  if threadIdx.y == 0
     // after   1  if threadIdx.y == 1
@@ -208,8 +204,9 @@ void gradient_descent( FrameMetaPtr                 meta,
 
     if( offset < meta.list_size_all_edgecoords() )
     {
-        const int idx       = all_edgecoords.ptr[offset].x;
-        const int idy       = all_edgecoords.ptr[offset].y;
+        const int idx       = all_edgecoords.ptr[offset]._coord.x;
+        const int idy       = all_edgecoords.ptr[offset]._coord.y;
+        const float2 grad   = all_edgecoords.ptr[offset]._grad;
         const int direction = threadIdx.y == 0 ? -1 : 1;
 
         keep = gradient_descent_inner( idx, idy,
@@ -217,8 +214,7 @@ void gradient_descent( FrameMetaPtr                 meta,
                                        out_edge_info,
                                        out_edge_d,
                                        edge_image,
-                                       d_dx,
-                                       d_dy );
+                                       grad );
     }
 
     __syncthreads();
@@ -328,8 +324,6 @@ void dp_call_01_gradient_descent(
     FrameMetaPtr                 meta,
     const DevEdgeList<short2>    all_edgecoords, // input
     const cv::cuda::PtrStepSzb   edge_image, // input
-    const cv::cuda::PtrStepSz16s dx, // input
-    const cv::cuda::PtrStepSz16s dy, // input
     DevEdgeList<TriplePoint>     chainedEdgeCoords, // output
     cv::cuda::PtrStepSz32s       edgepointIndexTable ) // output
 {
@@ -351,8 +345,6 @@ void dp_call_01_gradient_descent(
         ( meta,
           all_edgecoords,         // input
           edge_image,
-          dx,
-          dy,
           chainedEdgeCoords,  // output - TriplePoints with before/after info
           edgepointIndexTable ); // output - table, map coord to TriplePoint index
 }

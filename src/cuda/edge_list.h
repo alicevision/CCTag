@@ -164,7 +164,11 @@ inline void writeArray( std::vector<T>& out,
 }
 
 template <typename T>
-inline void writeArray( std::vector<T>& out, const T* debug_ptr, int debug_size, const int* indexlist, int indexsize )
+inline void writeArray( std::vector<T>& out,
+                        const T* debug_ptr,
+                        int debug_size,
+                        const int* indexlist,
+                        int indexsize )
 {
     for( int i=0; i<indexsize; i++ ) {
         int idx = indexlist[i];

@@ -23,6 +23,41 @@ using namespace std;
 bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
                          std::vector<cctag::EdgePoint*>& out_seedlist)
 {
+    /*
+     * Phase 1: fill the EdgePointCollection
+     * It holds:
+     * _edgeMapShape, sized 2
+     *    consists of ints
+     *    initialized to width, height
+     * _edgeMap, sized MAX_RESOLUTION*MAX_RESOLUTION
+     *    consists of ints
+     *    each int is an index into _edgeList
+     * _edgeList, sized MAX_POINTS
+     *    consists of EdgePoint
+     *    each EdgePoint consists of
+     *      Vector3s point
+     *        inherited; Vector3s is equivalent to short3
+     *      Vector2f grid
+     *        Vector 2f is equivalent to float2
+     *      float    normGrad
+     *      float    flowLength
+     *      uint64_t processed
+     *      int      isMax
+     *      int      nSegmentOut
+     * _linkList, sized 2*MAX_POINTS
+     *    consists of ints
+     *    each int is an index into _edgeList
+     * _votersIndex, sized MAX_POINTS+CUDA_OFFSET
+     *    consists of ints
+     *    each int is an index into _edgeList
+     * _votersList, sized MAX_VOTERLIST_SIZE
+     *    consists of ints
+     *    each int is an index into _edgeList
+     * _processedIn, sized MAX_POINTS/4
+     *    these are initialized to 0 by the CPU and can be ignored
+     * _processedAux, sized MAX_POINTS/4
+     *    these are initialized to 0 by the CPU and can be ignored
+     */
     // cerr << "Enter " << __FUNCTION__ << endl;
 
     int vote_sz = _voters.host.size;
@@ -49,23 +84,37 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
      */
 
 #ifdef SORT_ALL_EDGECOORDS_IN_EXPORT
-    /* remove a bit of randomness by sorting the list of edge point
-     * that is stored in the 1D array of int2 _all_edgecoords
-     *
-     * NOTE: move sorting to the GPU !!!
+    /* This removed a bit of randomness by sorting the list of edge point
+     * that was stored in the 1D array of int2 _all_edgecoords.
+     * With the modification to CudaEdgePoint, this is now impossible
+     * because the map relies on the coordinate's array index.
      */
-    int2cmp v_comp;
-    std::sort( _all_edgecoords.host.ptr,
-               _all_edgecoords.host.ptr+all_sz,
-               v_comp );
+    // int2cmp v_comp;
+    // std::sort( _all_edgecoords.host.ptr,
+    //            _all_edgecoords.host.ptr+all_sz,
+    //            v_comp );
 #endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
-    for(int i = 0; i < all_sz; ++i) {
+    EdgePoint* base_edge_point_ptr = out_edges(0);
+    if( sizeof(EdgePoint) != sizeof(CudaEdgePoint) ) {
+        cerr << __FILE__ << ":" << __LINE__ << " Programming ERROR" << endl
+             << "    CudaEdgePoint must be binary compatible with EdgePoint" << endl;
+        exit( -1 );
+    }
+    memcpy( base_edge_point_ptr, _all_edgecoords.host.ptr, all_sz*sizeof(CudaEdgePoint) );
+    for( int offset = 0; offset < all_sz; offset++ ) {
+          out_edges.cudaSetMapping( _all_edgecoords.host.ptr[offset]._coord.x,
+                                    _all_edgecoords.host.ptr[offset]._coord.y,
+                                    offset );
+    }
+#if 0
+    for( int i = 0; i < all_sz; ++i) {
           const short2& pt = _all_edgecoords.host.ptr[i];
           const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
           const int16_t dy = _h_dy.ptr(pt.y)[pt.x];
           out_edges.add_point(pt.x, pt.y, dx, dy);
     }
+#endif
 
     /* Block 2
      * Copying the linkage info for all edge points that voted for an inner

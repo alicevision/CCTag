@@ -259,6 +259,22 @@ void DebugImage::plotPoints( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb 
     }
 }
 
+void DebugImage::plotPoints( const vector<CudaEdgePoint>& v, cv::cuda::PtrStepSzb img, bool normalize, BaseColor b )
+{
+    normalizeImage( img, normalize );
+
+    vector<int2>::const_iterator cit, cend;
+    cend = v.end();
+    cout << "Plotting " << v.size() << " int2 coordinates into image of size " << img.cols << " x " << img.rows << endl;
+    for( cit=v.begin(); cit!=cend; cit++ ) {
+        if( outOfBounds( cit->_coord.x, cit->_coord.y, img ) ) {
+            cout << "Coord of point (" << cit->_coord.x << "," << cit->_coord.y << ") is out of bounds (line " << __LINE__ << ")" << endl;
+        } else {
+            img.ptr(cit->_coord.y)[cit->_coord.x] = getColor( b );
+        }
+    }
+}
+
 void DebugImage::plotPoints( const vector<int2>& v, cv::cuda::PtrStepSzb img, bool normalize, BaseColor b )
 {
     normalizeImage( img, normalize );

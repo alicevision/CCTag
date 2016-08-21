@@ -21,6 +21,7 @@
 #include "frame_07_vote.h"
 #include "triple_point.h"
 #include "cuda/geom_ellipse.h"
+#include "cuda/cuda_edge_point.h"
 #include "cuda/framemeta.h"
 #include "cuda/ptrstep.h"
 
@@ -258,7 +259,8 @@ public: // HACK FOR DEBUGGING
     cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
 private:
     // Stores coordinates of all edges. Valid after thinning.
-    EdgeList<short2>        _all_edgecoords;
+    // EdgeList<short2>        _all_edgecoords;
+    EdgeList<CudaEdgePoint> _all_edgecoords;
 
     // Stores all points that are recognized as potential voters
     // in gradient descent.
