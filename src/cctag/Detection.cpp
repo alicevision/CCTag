@@ -775,7 +775,9 @@ popart::TagPipe* initCuda( int      pipeId,
  * @param[in] bank CCTag bank.
  * @param[in] No longer used.
  */
-void cctagDetection(CCTag::List& markers,
+void cctagDetection(
+        CCTag::List& markers,
+        int          pipeId,
         const std::size_t frame, 
         const cv::Mat & imgGraySrc,
         const Parameters & providedParams,
@@ -807,7 +809,7 @@ void cctagDetection(CCTag::List& markers,
     popart::TagPipe* pipe1 = 0;
 #ifdef WITH_CUDA
     if( params._useCuda ) {
-        pipe1 = initCuda( 0,
+        pipe1 = initCuda( pipeId,
                           imgGraySrc.size().width,
 	                      imgGraySrc.size().height,
 	                      params,
@@ -820,7 +822,7 @@ void cctagDetection(CCTag::List& markers,
         assert( imgGraySrc.type() == CV_8U );
         unsigned char* pix = imgGraySrc.data;
 
-        pipe1->load( pix );
+        pipe1->load( frame, pix );
 
         if( durations ) {
             cudaDeviceSynchronize();
@@ -870,7 +872,7 @@ void cctagDetection(CCTag::List& markers,
         }
 
         for( CCTag& tag : markers ) {
-            tag.acquireNearbyPointMemory( );
+            tag.acquireNearbyPointMemory( pipe1->getId() );
         }
     }
 #endif // WITH_CUDA
@@ -905,16 +907,26 @@ void cctagDetection(CCTag::List& markers,
             tagIndex++;
         }
 
+        if( markers.size() != numTags ) {
+            cerr << __FILE__ << ":" << __LINE__ << " Number of markers has changed in identify_step_1" << endl;
+        }
+
 #ifdef WITH_CUDA
         if( pipe1 && numTags > 0 ) {
             pipe1->uploadCuts( numTags, &vSelectedCuts[0], params );
-            pipe1->makeCudaStreams( numTags );
 
             tagIndex = 0;
+            int debug_num_calls = 0;
             for( CCTag& cctag : markers ) {
-                if( detected[tagIndex] == status::id_reliable ) {
+                if( vSelectedCuts[tagIndex].size() <= 2 ) {
+                    detected[tagIndex] = status::no_selected_cuts;
+                } else if( detected[tagIndex] == status::id_reliable ) {
+                    if( debug_num_calls >= numTags ) {
+                        cerr << __FILE__ << ":" << __LINE__ << " center finding for more loops (" << debug_num_calls << ") than uploaded (" << numTags << ")?" << endl;
+                    }
                     pipe1->imageCenterOptLoop(
                         tagIndex,
+                        numTags, // for debugging only
                         cctag.rescaledOuterEllipse(),
                         cctag.centerImg(),
                         vSelectedCuts[tagIndex].size(),
@@ -958,7 +970,7 @@ void cctagDetection(CCTag::List& markers,
     if( pipe1 ) {
         /* Releasing all points in all threads in the process.
          */
-        CCTag::releaseNearbyPointMemory();
+        CCTag::releaseNearbyPointMemory( pipe1->getId() );
     }
 #endif
     

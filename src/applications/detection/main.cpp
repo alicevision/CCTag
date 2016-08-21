@@ -41,6 +41,8 @@
 #include <fstream>
 #include <exception>
 
+#include <tbb/tbb.h>
+
 #define PRINT_TO_CERR
 
 using namespace cctag;
@@ -49,7 +51,13 @@ using boost::timer;
 using namespace boost::gil;
 namespace bfs = boost::filesystem;
 
-void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters & params, const cctag::CCTagMarkersBank & bank, std::ostream & output, std::string debugFileName = "")
+void detection( std::size_t frameId,
+                int         pipeId,
+                const cv::Mat & src,
+                const cctag::Parameters & params,
+                const cctag::CCTagMarkersBank & bank,
+                std::ostream & output,
+                std::string debugFileName = "")
 {
   
     if (debugFileName == "") {
@@ -67,7 +75,7 @@ void detection(std::size_t frameId, const cv::Mat & src, const cctag::Parameters
     static cctag::logtime::Mgmt* durations = 0;
         
     //Call the main CCTag detection function
-    cctagDetection( markers, frameId , src, params, bank, true, durations );
+    cctagDetection( markers, pipeId, frameId , src, params, bank, true, durations );
 
     if( durations ) {
         durations->print( std::cerr );
@@ -208,10 +216,11 @@ int main(int argc, char** argv)
     cv::Mat graySrc;
     cv::cvtColor( src, graySrc, CV_BGR2GRAY );
 
+    const int pipeId = 0;
 #ifdef PRINT_TO_CERR
-    detection(0, graySrc, params, bank, std::cerr, myPath.stem().string());
+    detection(0, pipeId, graySrc, params, bank, std::cerr, myPath.stem().string());
 #else
-    detection(0, graySrc, params, bank, outputFile, myPath.stem().string());
+    detection(0, pipeId, graySrc, params, bank, outputFile, myPath.stem().string());
 #endif
 } else if (ext == ".avi" )
   {
@@ -259,10 +268,11 @@ int main(int argc, char** argv)
         //bitwise_not ( imgGray, imgGrayInverted );
       
         // Call the CCTag detection
+        const int pipeId = 0;
 #ifdef PRINT_TO_CERR
-        detection(frameId, *imgGray, params, bank, std::cerr, outFileName.str());
+        detection(frameId, pipeId, *imgGray, params, bank, std::cerr, outFileName.str());
 #else
-        detection(frameId, *imgGray, params, bank, outputFile, outFileName.str());
+        detection(frameId, pipeId, *imgGray, params, bank, outputFile, outFileName.str());
 #endif
         ++frameId; 
         if( frameId % 100 == 0 ) {
@@ -280,30 +290,38 @@ int main(int argc, char** argv)
 
     std::size_t frameId = 0;
 
+    std::map<int,bfs::path> files[2];
     for(const auto & fileInFolder : vFileInFolder) {
-      const std::string subExt(bfs::extension(fileInFolder));
-      
-      if ( (subExt == ".png") || (subExt == ".jpg") || (subExt == ".PNG") || (subExt == ".JPG") ) {
-
-        CCTAG_COUT( "Processing image " << fileInFolder.string() );
-
-		cv::Mat src;
-    	src = cv::imread(fileInFolder.string());
-
-        cv::Mat imgGray;
-        cv::cvtColor( src, imgGray, CV_BGR2GRAY );
-      
-        // Call the CCTag detection
-#ifdef PRINT_TO_CERR
-        detection(frameId, imgGray, params, bank, std::cerr, fileInFolder.stem().string());
-#else
-        detection(frameId, imgGray, params, bank, outputFile, fileInFolder.stem().string());
-#endif
-++frameId;
-      }
+        files[frameId & 1].insert( std::pair<int,bfs::path>( frameId, fileInFolder ) );
+        frameId++;
     }
-  }else
-  {
+
+    tbb::parallel_for( 0, 2, [&](size_t fileListIdx) {
+      for(const auto & fileInFolder : files[fileListIdx]) {
+        const std::string subExt(bfs::extension(fileInFolder.second));
+      
+        if ( (subExt == ".png") || (subExt == ".jpg") || (subExt == ".PNG") || (subExt == ".JPG") ) {
+
+          std::cerr << "Processing image " << fileInFolder.second.string() << std::endl;
+
+		  cv::Mat src;
+    	  src = cv::imread(fileInFolder.second.string());
+
+          cv::Mat imgGray;
+          cv::cvtColor( src, imgGray, CV_BGR2GRAY );
+      
+          // Call the CCTag detection
+          int pipeId = ( fileInFolder.first & 1 );
+#ifdef PRINT_TO_CERR
+          detection(fileInFolder.first, pipeId, imgGray, params, bank, std::cerr, fileInFolder.second.stem().string());
+#else
+          detection(fileInFolder.first, pipeId, imgGray, params, bank, outputFile, fileInFolder.second.stem().string());
+#endif
+          std::cerr << "Done processing image " << fileInFolder.second.string() << std::endl;
+        }
+      }
+    } );
+  } else {
       throw std::logic_error("Unrecognized input.");
   }
   outputFile.close();

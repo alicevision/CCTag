@@ -35,11 +35,6 @@
 #define DEBUG_WRITE_LINKED_AS_ASCII
 #define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
 
-/* Although some GPU code exists, it is too slow and edge
- * linking is still done on the host side.
- */
-#define EDGE_LINKING_HOST_SIDE
-
 //#define DEBUG_LINKED_USE_INT4_BUFFER
 
 /* Separable compilation allows one kernel to instantiate
@@ -56,12 +51,6 @@
 #define USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 
 
-/* Init _d_intermediate to 0 before uploading. Wastes time,
- * for debugging only. Required because of crash -O3 but not
- * with -G
- */
-#undef DEBUG_FRAME_UPLOAD_CUTS
-
 /* CUB functions always take a last parameters true or false.
  * If it is true, they run synchronously and print some debug
  * info.
@@ -74,14 +63,6 @@
  * However, so far they don't work.
  */
 #undef RADIX_WITHOUT_DOUBLEBUFFER
-
-/* For the CUB version included with CUDA 7.0, it was possible to
- * pass an arbitrary device pointer pointing to sufficiently large
- * memory.
- * Standalone CUB 1.4.1 fails unless the init call for determining
- * intermediate buffer size is made.
- */
-#define CUB_INIT_CALLS
 
 /* Affects tag.cu.
 .* A Frame used two CUDA streams, one for upload and kernels, another
@@ -105,3 +86,6 @@
  */
 #define MAX_MARKER_FOR_IDENT 60
 
+/* How many parallel pipelines can we have?
+ */
+#define MAX_PIPES	4

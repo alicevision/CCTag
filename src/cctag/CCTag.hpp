@@ -353,7 +353,7 @@ public:
    *  Instead, releaseNearbyPointMemory() invalidates all such
    *  pointers in the process.
    */
-  void acquireNearbyPointMemory( );
+  void acquireNearbyPointMemory( int pipeId );
 
   inline popart::NearbyPoint* getNearbyPointBuffer( ) {
     return _cuda_result;
@@ -363,7 +363,7 @@ public:
    *  Invalidates pointers in all objects and in all threads in
    *  this process.
    */
-  static void releaseNearbyPointMemory( );
+  static void releaseNearbyPointMemory( int pipeId );
 #endif
 
   void serialize(boost::archive::text_oarchive & ar, const unsigned int version);

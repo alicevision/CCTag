@@ -46,12 +46,12 @@
 #define GAUSS_DERIV 16 // first derivative
 
 namespace popart {
-namespace identification {
-// locally defined in frame_ident.cu only
-struct CutStruct;
-struct CutSignals;
-} // identification
-struct NearbyPoint;
+// namespace identification {
+// // locally defined in frame_ident.cu only
+// struct CutStruct;
+// struct CutSignals;
+// } // identification
+// struct NearbyPoint;
 
 /*************************************************************
  * FrameTexture
@@ -90,7 +90,7 @@ class Frame
 {
 public:
     // create continuous device memory, enough for @layers copies of @width x @height
-    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe = 0 );
+    Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int pipe_id );
     ~Frame( );
 
 public:
@@ -138,6 +138,8 @@ public:
     uint32_t getWidth( ) const  { return _d_plane.cols; }
     uint32_t getHeight( ) const { return _d_plane.rows; }
     uint32_t getPitch( ) const  { return _d_plane.step; }
+
+    cv::cuda::PtrStepSzb& getPlaneDev( ) { return _d_plane; }
 
     // implemented in frame_alloc.cu
     void allocRequiredMem( const cctag::Parameters& param );
@@ -213,68 +215,13 @@ public:
     cv::Mat* getMag( ) const;
     cv::Mat* getEdges( ) const;
 
-protected:
-    // implemented in frame_11_identify.cu
-    /* to reuse various image-sized buffers, but retrieve their
-     * bytesize to ensure that the new types fit into the
-     * already allocated space.
-     */
-    size_t                               getCutStructBufferByteSize( ) const;
-    popart::identification::CutStruct*   getCutStructBuffer( ) const;
-    popart::identification::CutStruct*   getCutStructBufferHost( ) const;
-    size_t                               getNearbyPointBufferByteSize( ) const;
-    popart::NearbyPoint*                 getNearbyPointBuffer( ) const;
-    size_t                               getSignalBufferByteSize( ) const;
-    popart::identification::CutSignals*  getSignalBuffer( ) const;
-    void                                 clearSignalBuffer( );
-
     friend class TagPipe;
 
 public:
-    // implemented in frame_11_identify.cu
-    __host__
-    void imageCenterOptLoop(
-        const int                           tagIndex,     // in
-        cudaStream_t                        tagStream,    // in
-        const popart::geometry::ellipse&    outerEllipse, // in
-        const float2&                       center,       // in
-        const int                           vCutSize,     // in
-        const cctag::Parameters&            params,       // in
-        NearbyPoint*                        cctag_pointer_buffer );
-
-    __host__
-    bool imageCenterRetrieve(
-        const int                           tagIndex,          // in
-        cudaStream_t                        tagStream,         // in
-        float2&                             bestPointOut,      // out
-        float&                              bestResidual,      // out
-        popart::geometry::matrix3x3&        bestHomographyOut, // out
-        const cctag::Parameters&            params,            // in
-        NearbyPoint*                        cctag_pointer_buffer );
-
-private:
-    // implemented in frame_11_identify.cu
-    __host__
-    void idCostFunction(
-        const int                           tagIndex,
-        cudaStream_t                        tagStream,
-        int                                 iterations,
-        const popart::geometry::ellipse&    ellipse,
-        const float2                        center,
-        const int                           vCutSize,     // in
-        float                               currentNeighbourSize,
-        const cctag::Parameters&            params,
-        NearbyPoint*                        cctag_pointer_buffer );
-
-public:
-    void hostDebugDownload( const cctag::Parameters& params ); // async
-
     static void writeInt2Array( const char* filename, const int2* array, uint32_t sz );
     static void writeTriplePointArray( const char* filename, const TriplePoint* array, uint32_t sz );
 
     void writeHostDebugPlane( std::string filename, const cctag::Parameters& params );
-
-    void hostDebugCompare( unsigned char* pix );
 
 private:
     Frame( );  // forbidden
@@ -310,10 +257,6 @@ public: // HACK FOR DEBUGGING
 
     cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
 private:
-#ifndef EDGE_LINKING_HOST_SIDE
-    cv::cuda::PtrStepSzInt2 _h_ring_output;
-#endif
-
     // Stores coordinates of all edges. Valid after thinning.
     EdgeList<short2>        _all_edgecoords;
 

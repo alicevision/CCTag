@@ -32,23 +32,23 @@ public:
     PinnedCounters( );
     ~PinnedCounters( );
 
-    static void init( );
-    static void release( );
+    static void init( int tagPipe );
+    static void release( int tagPipe );
 
-    static int& getCounter( );
+    static int& getCounter( int tagPipe );
 
     /** Returns a reference to a NearyPoint-sized section of host-side
      *  pinned memory.
      *  This function is only used by the constructors of the class
      *  CCTag in cctag before identification.
      */
-    static NearbyPoint& getPoint( const char* file, int line );
-    static NearbyPoint* getPointPtr( const char* file, int line );
+    static NearbyPoint& getPoint( int tagPipe, const char* file, int line );
+    static NearbyPoint* getPointPtr( int tagPipe, const char* file, int line );
 
     /** Called after all identification of all CCTags is complete.
      *  Invalidates all NearbyPoint references in all CCTag.
      */
-    static void releaseAllPoints( );
+    static void releaseAllPoints( int tagPipe );
 
 private:
     int*         _counters;

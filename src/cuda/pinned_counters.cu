@@ -21,7 +21,7 @@ const int PinnedCounters::_max_points   = MAX_MARKER_FOR_IDENT;
 
 /* This is system-wide unique allocation
  */
-PinnedCounters pinned_counters;
+PinnedCounters pinned_counters[MAX_PIPES];
 
 PinnedCounters::PinnedCounters( )
     : _counters( 0 )
@@ -34,28 +34,28 @@ PinnedCounters::~PinnedCounters( )
 {
 }
 
-void PinnedCounters::init( ) {
-    pinned_counters.obj_init();
+void PinnedCounters::init( int tagPipe ) {
+    pinned_counters[tagPipe].obj_init( );
 }
 
-void PinnedCounters::release( ) {
-    POP_CUDA_FREE_HOST( pinned_counters._counters );
-    POP_CUDA_FREE_HOST( pinned_counters._nearby_points );
+void PinnedCounters::release( int tagPipe ) {
+    POP_CUDA_FREE_HOST( pinned_counters[tagPipe]._counters );
+    POP_CUDA_FREE_HOST( pinned_counters[tagPipe]._nearby_points );
 }
 
-int& PinnedCounters::getCounter( )
+int& PinnedCounters::getCounter( int tagPipe )
 {
-    return pinned_counters.obj_getCounter( );
+    return pinned_counters[tagPipe].obj_getCounter( );
 }
 
-NearbyPoint& PinnedCounters::getPoint( const char* file, int line )
+NearbyPoint& PinnedCounters::getPoint( int tagPipe, const char* file, int line )
 {
-    return pinned_counters.obj_getPoint( file, line );
+    return pinned_counters[tagPipe].obj_getPoint( file, line );
 }
 
-NearbyPoint* PinnedCounters::getPointPtr( const char* file, int line )
+NearbyPoint* PinnedCounters::getPointPtr( int tagPipe, const char* file, int line )
 {
-    return pinned_counters.obj_getPointPtr( file, line );
+    return pinned_counters[tagPipe].obj_getPointPtr( file, line );
 }
 
 void PinnedCounters::obj_init( )
@@ -120,11 +120,11 @@ NearbyPoint* PinnedCounters::obj_getPointPtr( const char* file, int line )
     }
 }
 
-void PinnedCounters::releaseAllPoints( )
+void PinnedCounters::releaseAllPoints( int tagPipe )
 {
-    pinned_counters._lock.lock();
-    pinned_counters._nearby_point_counter = 0;
-    pinned_counters._lock.unlock();
+    pinned_counters[tagPipe]._lock.lock();
+    pinned_counters[tagPipe]._nearby_point_counter = 0;
+    pinned_counters[tagPipe]._lock.unlock();
 }
 
 } // namespace popart
