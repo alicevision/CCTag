@@ -15,49 +15,36 @@
 
 MESSAGE(STATUS "Looking for CCTag.")
 
-FIND_PATH(CCTAG_INCLUDE_DIR cctag/CCTag.hpp
+FIND_PATH(CCTAG_INCLUDE_DIR cctag/ICCTag.hpp
   HINTS
   $ENV{CCTAG_DIR}/include
   ${CCTAG_DIR}/include
   PATH_SUFFIXES
-  CCTag
+  cctag
 )
 
 find_package(OpenCV REQUIRED)
-find_package(OPTPP REQUIRED)
-find_package(Ceres REQUIRED)
-find_package(Glog REQUIRED)
 
 IF(CCTAG_INCLUDE_DIR)
-  MESSAGE(STATUS "CCTag headers found in ${CCTAG_INCLUDE_DIRS}")
+  MESSAGE(STATUS "CCTag headers found in ${CCTAG_INCLUDE_DIR}")
 ELSE()
   MESSAGE(STATUS "NOT FOUND")
 ENDIF (CCTAG_INCLUDE_DIR)
 
 SET(CCTAG_LIBRARIES_NAMES  
   CCTag
-  #third_party libraries
-  boost_filesystem
-  boost_system
-  boost_serialization
-  dl
+  # third_party libraries
+  # boost_filesystem
+  # boost_system
+  # boost_serialization
+  # dl
   ${OpenCV_LIBS}
-  ${OPTPP_LIBRARIES}
-  ${Ceres_LIBRARIES}
-  ${GLOG_LIBRARIES}
 )
 
 FIND_LIBRARY(CCTAG_LIBRARY NAMES ${CCTAG_LIBRARIES_NAMES}
   HINTS
   $ENV{CCTAG_DIR}/lib
   ${CCTAG_DIR}/lib
-  PATH_SUFFIXES
-  CCTag
-  #third_party libraries
-  ${OpenCV_LIB_DIR}
-  ${OPTPP_LIBRARY_DIRS}
-  ${Ceres_LIBRARY}
-  ${GLOG_LIBRARY_DIR_HINTS}
 )
 GET_FILENAME_COMPONENT(CCTAG_LIBRARY_DIR "${CCTAG_LIBRARY}" PATH)
 
