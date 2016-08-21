@@ -28,7 +28,8 @@ IF(USE_CUDA)
     include_directories("${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
     # include_directories("/usr/local/cuda/include/thrust/system/cuda/detail")
 
-    set_source_files_properties( ${CUDA_cpp} ${CUDA_cu} PROPERTIES COMPILE_FLAGS "-Wall --std=c++11")
+    set_source_files_properties( ${CUDA_cu} PROPERTIES COMPILE_FLAGS "-Wall --std=c++11")
+    set_source_files_properties( ${CUDA_cpp} PROPERTIES COMPILE_FLAGS "-Wall --std=c++11")
     set_source_files_properties( ${CCTag_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
 
     add_definitions("-DSM_ARCH=100")

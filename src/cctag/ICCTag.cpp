@@ -24,6 +24,7 @@ namespace cctag {
  * @brief Perform the CCTag detection on a gray scale image
  * 
  * @param[out] markers Detected markers. WARNING: only markers with status == 1 are valid ones. (status available via getStatus()) 
+ * @param[in] pipeId Choose between several CUDA pipeline instances
  * @param[in] frame A frame number. Can be anything (e.g. 0).
  * @param[in] graySrc Gray scale input image.
  * @param[in] nRings Number of CCTag rings.
@@ -33,6 +34,7 @@ namespace cctag {
  */
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
+      int                       pipeId,
       const std::size_t frame,
       const cv::Mat & graySrc,
       const std::size_t nRings,
@@ -63,11 +65,12 @@ void cctagDetection(
     bank = CCTagMarkersBank(cctagBankFilename);
   }
   
-  cctagDetection(markers, frame, graySrc, params, durations, &bank);
+  cctagDetection(markers, pipeId, frame, graySrc, params, durations, &bank);
 }
 
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
+      int                       pipeId,
       const std::size_t frame,
       const cv::Mat & graySrc,
       const cctag::Parameters & params,
@@ -79,10 +82,10 @@ void cctagDetection(
   if ( pBank == NULL)
   {
     CCTagMarkersBank bank(params._nCrowns);
-    cctag::cctagDetection(cctags, frame, graySrc, params, bank, false, durations);
+    cctag::cctagDetection(cctags, pipeId, frame, graySrc, params, bank, false, durations);
   }else
   {
-    cctag::cctagDetection(cctags, frame, graySrc, params, *pBank, false, durations);
+    cctag::cctagDetection(cctags, pipeId, frame, graySrc, params, *pBank, false, durations);
   }
   
   markers.clear();

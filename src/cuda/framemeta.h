@@ -8,8 +8,9 @@
 #pragma once
 
 #include <cuda_runtime.h>
+#include "onoff.h"
 
-#define FRAME_META_MAX_PIPES	4
+#define FRAME_META_MAX_PIPES	MAX_PIPES
 #define FRAME_META_MAX_LEVELS	8
 
 namespace popart {
