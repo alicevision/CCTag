@@ -22,7 +22,7 @@ IF(USE_CUDA)
 # I`m really sorry, but this makes CUDA compilation impossible
   SET(CMAKE_BUILD_TYPE Release)
 ELSE(USE_CUDA)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -mavx2")
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF(USE_CUDA)
 
