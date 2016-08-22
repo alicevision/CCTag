@@ -379,9 +379,6 @@ private:
 
     Voting _vote;
 
-    cudaEvent_t          _wait_for_upload;
-    const unsigned char* _image_to_upload;
-
 public:
     // if we run out of streams (there are 32), we may have to share
     // bool         _stream_inherited;
@@ -400,7 +397,7 @@ public:
         cudaEvent_t  edgecoords2;
         cudaEvent_t  descent1;
         cudaEvent_t  descent2;
-    }            _download_ready_event;
+    } _download_ready_event;
 };
 
 }; // namespace popart
