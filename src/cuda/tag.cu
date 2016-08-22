@@ -155,7 +155,6 @@ void TagPipe::load( int frameId, unsigned char* pix )
 {
     cerr << "Loading image " << frameId << " into TagPipe " << _tag_id << endl;
     _frame[0]->upload( pix ); // async
-    _frame[0]->addUploadEvent( ); // async
 }
 
 __host__

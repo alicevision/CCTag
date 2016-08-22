@@ -82,6 +82,110 @@ private:
     cudaResourceDesc    _resDesc;
 };
 
+struct LoadedFrame
+{
+    cv::cuda::PtrStepSzb _d_plane;
+    FrameTexture*        _texture;
+
+    LoadedFrame( int width, int height )
+    {
+        size_t pitch;
+        POP_CUDA_MALLOC_PITCH( (void**)&_d_plane.data, &pitch, width, height );
+        _d_plane.step = pitch;
+        _d_plane.cols = width;
+        _d_plane.rows = height;
+
+        _texture = new FrameTexture( _d_plane );
+    }
+
+    void load( const unsigned char* image )
+    {
+        mlock( image, _d_plane.cols * _d_plane.rows );
+        POP_CUDA_MEMCPY_2D_SYNC( _d_plane.data,
+                                 _d_plane.step,
+                                 _image,
+                                 _d_plane.cols,
+                                 _d_plane.cols,
+                                 _d_plane.rows,
+                                 cudaMemcpyHostToDevice );
+        munlock( image, _d_plane.cols * _d_plane.rows );
+    }
+};
+
+struct LoadedFrameBuffer
+{
+    std::queue<LoadedFrame*> _empty;
+    std::queue<LoadedFrame*> _filled;
+    std::mutex               _empty_lock;
+    std::condition_variable  _empty_cond;
+    std::mutex               _filled_lock;
+    std::condition_variable  _filled_cond;
+
+    LoadedFrameBuffer( int howmany, int width, int height )
+    {
+        _empty_lock.lock();
+        for( int i=0; i<howmany; i++ ) {
+            _empty.push_back( new LoadedFrame( width, height ) );
+        }
+        _empty_lock.unlock();
+    }
+
+    LoadedFrame* getFrame( )
+    {
+        _filled_lock.lock();
+        while( _filled.empty() ) {
+            _filled_cond.wait( _filled_lock );
+        }
+        LoadedFrame* ret = _filled.pop_front();
+        _filled_lock.unlock();
+        return ret;
+    }
+
+    void releaseFrame( LoadedFrame* f )
+    {
+        _empty_lock.lock();
+        _empty.push_back( f );
+        _empty_cond.notify_all();
+        _empty_lock.unlock();
+    }
+
+    void load( const unsigned char* image )
+    {
+        _empty_lock.lock();
+        while( _empty.empty() ) {
+            _empty_cond.wait( _filled_lock );
+        }
+        LoadedFrame* fillme = _empty.pop_front();
+        _empty_lock.unlock();
+
+        fillme->load( image );
+
+        _filled_lock.lock();
+        _filled.push_back( fillme );
+        _filled_cond.notify_all();
+        _filled_lock.unlock();
+    }
+
+    void load_nonblock( const unsigned char* image )
+    {
+        _empty_lock.lock();
+        if( _empty.empty() ) {
+            _empty_lock.unlock();
+            return false;
+        }
+        LoadedFrame* fillme = _empty.pop_front();
+        _empty_lock.unlock();
+
+        fillme->load( image );
+
+        _filled_lock.lock();
+        _filled.push_back( fillme );
+        _filled_cond.notify_all();
+        _filled_lock.unlock();
+        return true;
+    }
+};
+
 /*************************************************************
  * Frame
  * The basic structure for managing data stored on the GPU
@@ -125,7 +229,6 @@ public:
 
     void        allocUploadEvent( );
     void        deleteUploadEvent( );
-    void        addUploadEvent( );
     cudaEvent_t getUploadEvent( );
 
     void streamSync( ); // Wait for the asynchronous ops to finish
@@ -233,7 +336,6 @@ private:
 
     FrameMetaPtr            _meta; // lots of small variables
 
-    cv::cuda::PtrStepSzb    _d_plane;
     cv::cuda::PtrStepSzf    _d_intermediate;
     cv::cuda::PtrStepSzf    _d_smooth;
     cv::cuda::PtrStepSz16s  _d_dx; // cv::cuda::PtrStepSzf _d_dx;
@@ -277,7 +379,6 @@ private:
 
     Voting _vote;
 
-    FrameTexture*        _texture;
     cudaEvent_t          _wait_for_upload;
     const unsigned char* _image_to_upload;
 

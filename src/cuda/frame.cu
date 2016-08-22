@@ -28,8 +28,10 @@ using namespace std;
 
 Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int pipe_id )
     : _layer( my_layer )
+    , _double_buffer_filled( false )
     , _h_debug_hyst_edges( 0 )
     , _texture( 0 )
+    , _texture_double_buffer( 0 )
     , _wait_for_upload( 0 )
     , _meta( pipe_id, my_layer )
     , _all_edgecoords( pipe_id, _meta, List_size_all_edgecoords )
@@ -67,7 +69,11 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     _d_plane.step = pitch;
     _d_plane.cols = width;
     _d_plane.rows = height;
-    assert( pitch % _d_plane.elemSize() == 0 );
+
+    POP_CUDA_MALLOC_PITCH( (void**)&_d_plane_double_buffer.data, &pitch, width, height );
+    _d_plane_double_buffer.step = pitch;
+    _d_plane_double_buffer.cols = width;
+    _d_plane_double_buffer.rows = height;
 
     POP_CUDA_MEMSET_ASYNC( _d_plane.data,
                            0,
@@ -86,6 +92,7 @@ Frame::~Frame( )
 
     // required host-side planes
     delete _texture;
+    delete _texture_double_buffer;
 
     cudaEventDestroy( _stream_done );
     cudaEventDestroy( _download_stream_done );
@@ -103,28 +110,39 @@ Frame::~Frame( )
     POP_CUDA_STREAM_DESTROY( _stream );
 }
 
-void Frame::upload( const unsigned char* image )
+bool Frame::upload( const unsigned char* image )
 {
-    DO_TALK(
-      cerr << "source w=" << _d_plane.cols
-           << " source pitch=" << _d_plane.cols
-           << " dest pitch=" << _d_plane.step
-           << " height=" << _d_plane.rows
-           << endl;)
+    _double_buffer_lock.lock();
+    if( _double_buffer_filled ) {
+        swap( _d_plane.data, _d_plane_double_buffer.data );
+        swap( _texture, _texture_double_buffer );
+        _double_buffer_filled = false;
+        _double_buffer_lock.unlock();
+        return false;
+    } else {
+        // pin the image to memory
+        _image_to_upload = image;
 
-    // pin the image to memory
-    _image_to_upload = image;
+        mlock( _image_to_upload, getWidth() * getHeight() );
 
-    mlock( _image_to_upload, getWidth() * getHeight() );
+        POP_CUDA_MEMCPY_2D_ASYNC( _d_plane.data,
+                                  getPitch(),
+                                  _image_to_upload,
+                                  getWidth(),
+                                  getWidth(),
+                                  getHeight(),
+                                  cudaMemcpyHostToDevice,
+                                  _stream );
+        _double_buffer_lock.unlock();
+    }
 
-    POP_CUDA_MEMCPY_2D_ASYNC( _d_plane.data,
-                              getPitch(),
-                              _image_to_upload,
-                              getWidth(),
-                              getWidth(),
-                              getHeight(),
-                              cudaMemcpyHostToDevice,
-                              _stream );
+    cudaError_t err;
+    err = cudaEventRecord( _wait_for_upload, _stream );
+    POP_CUDA_FATAL_TEST( err, "Could not insert an event into a stream: " );
+}
+
+void Frame::preload( const unsigned char* image )
+{
 }
 
 void Frame::uploadComplete( )
@@ -139,8 +157,10 @@ void Frame::uploadComplete( )
 void Frame::createTexture( FrameTexture::Kind kind )
 {
     if( _texture ) delete _texture;
+    if( _texture_double_buffer ) delete _texture_double_buffer;
 
-    _texture = new FrameTexture( _d_plane );
+    _texture               = new FrameTexture( _d_plane );
+    _texture_double_buffer = new FrameTexture( _d_plane_double_buffer );
 }
 
 #if 0
@@ -179,7 +199,9 @@ void Frame::fillFromFrame( Frame& src )
 void Frame::deleteTexture( )
 {
     delete _texture;
+    delete _texture_double_buffer;
     _texture = 0;
+    _texture_double_buffer = 0;
 }
 
 void Frame::allocUploadEvent( )
@@ -192,13 +214,6 @@ void Frame::allocUploadEvent( )
 void Frame::deleteUploadEvent( )
 {
     cudaEventDestroy( _wait_for_upload );
-}
-
-void Frame::addUploadEvent( )
-{
-    cudaError_t err;
-    err = cudaEventRecord( _wait_for_upload, _stream );
-    POP_CUDA_FATAL_TEST( err, "Could not insert an event into a stream: " );
 }
 
 cudaEvent_t Frame::getUploadEvent( )

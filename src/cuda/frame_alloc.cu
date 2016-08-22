@@ -206,6 +206,7 @@ void Frame::initRequiredMem( )
 void Frame::releaseRequiredMem( )
 {
     POP_CUDA_FREE( _d_plane.data );
+    POP_CUDA_FREE( _d_plane_double_buffer.data );
 
     // allocated in allocRequiredMem
     POP_CUDA_FREE( _d_smooth.data );
