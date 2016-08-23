@@ -145,12 +145,6 @@ const TriplePoint* cl_inner(
 
     if( p == 0 ) return 0;
 
-#ifndef NDEBUG
-    p->debug_init( );
-    debug_inner_test_consistency( meta, "A", offset, p, edgepoint_index_table, voters );
-    p->debug_add( p->coord );
-#endif // NDEBUG
-
     float dist; // scalar to compute the distance ratio
 
     TriplePoint* current = vote::find_befor( meta, p, edgepoint_index_table, voters );
@@ -158,15 +152,9 @@ const TriplePoint* cl_inner(
     if( not current ) {
         return 0;
     }
-#ifndef NDEBUG
-    p->debug_add( current->coord );
-#endif
 
     // To save all sub-segments length
     int       vDistSize = 0;
-#ifndef NDEBUG
-    const int vDistMax  = tagParam.nCrowns * 2 - 1;
-#endif // NDEBUG
     float     vDist[RESERVE_MEM_MAX_CROWNS * 2 - 1];
     int flagDist = 1;
 
