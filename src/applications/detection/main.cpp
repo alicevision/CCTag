@@ -290,13 +290,18 @@ int main(int argc, char** argv)
 
     std::size_t frameId = 0;
 
-    std::map<int,bfs::path> files[2];
+    std::vector<std::map<int,bfs::path>> files;
+    files.resize( cmdline._parallel );
     for(const auto & fileInFolder : vFileInFolder) {
-        files[frameId & 1].insert( std::pair<int,bfs::path>( frameId, fileInFolder ) );
+        files[frameId % cmdline._parallel].insert( std::pair<int,bfs::path>( frameId, fileInFolder ) );
         frameId++;
     }
 
-    tbb::parallel_for( 0, 2, [&](size_t fileListIdx) {
+    tbb::parallel_for( 0, cmdline._parallel, [&](size_t fileListIdx) {
+      cudaEvent_t start;
+      cudaEvent_t end;
+      cudaEventCreate( &start );
+      cudaEventCreate( &end );
       for(const auto & fileInFolder : files[fileListIdx]) {
         const std::string subExt(bfs::extension(fileInFolder.second));
       
@@ -309,6 +314,8 @@ int main(int argc, char** argv)
 
           cv::Mat imgGray;
           cv::cvtColor( src, imgGray, CV_BGR2GRAY );
+          cudaDeviceSynchronize();
+          cudaEventRecord( start, 0 );
       
           // Call the CCTag detection
           int pipeId = ( fileInFolder.first & 1 );
@@ -317,9 +324,15 @@ int main(int argc, char** argv)
 #else
           detection(fileInFolder.first, pipeId, imgGray, params, bank, outputFile, fileInFolder.second.stem().string());
 #endif
-          std::cerr << "Done processing image " << fileInFolder.second.string() << std::endl;
+          cudaEventRecord( end, 0 );
+          cudaDeviceSynchronize();
+          float ms;
+          cudaEventElapsedTime( &ms, start, end );
+          std::cerr << "Done processing image " << fileInFolder.second.string() << " in " << ms << " ms" << std::endl;
         }
       }
+      cudaEventDestroy( start );
+      cudaEventDestroy( end );
     } );
   } else {
       throw std::logic_error("Unrecognized input.");
