@@ -786,6 +786,21 @@ void cctagDetection(
         cctag::logtime::Mgmt* durations )
 
 {
+float event_ms;
+cudaEvent_t ev_1;
+cudaEvent_t ev_2;
+cudaEvent_t ev_3;
+cudaEvent_t ev_4;
+cudaEvent_t ev_5;
+cudaEvent_t ev_6;
+cudaEventCreate( &ev_1 );
+cudaEventCreate( &ev_2 );
+cudaEventCreate( &ev_3 );
+cudaEventCreate( &ev_4 );
+cudaEventCreate( &ev_5 );
+cudaEventCreate( &ev_6 );
+
+cudaDeviceSynchronize(); cudaEventRecord( ev_1, 0 ); cudaDeviceSynchronize();
     using namespace cctag;
     
     const Parameters& params = Parameters::OverrideLoaded ?
@@ -829,14 +844,11 @@ void cctagDetection(
             durations->log( "after CUDA load" );
         }
 
+cudaDeviceSynchronize(); cudaEventRecord( ev_2, 0 ); cudaDeviceSynchronize();
+cudaEventElapsedTime( &event_ms, ev_1, ev_2 ); cerr << "Step 1: " << event_ms << " ms" << endl;
         pipe1->tagframe( );
 
         if( durations ) durations->log( "after CUDA stages" );
-
-#ifndef NDEBUG
-        pipe1->debug( pix, params );
-        if( durations ) durations->log( "after CUDA debug" );
-#endif // not NDEBUG
     } else { // not params.useCuda
 #endif // WITH_CUDA
 
@@ -851,6 +863,8 @@ void cctagDetection(
   
     if( durations ) durations->log( "before cctagMultiresDetection" );
 
+cudaDeviceSynchronize(); cudaEventRecord( ev_3, 0 ); cudaDeviceSynchronize();
+cudaEventElapsedTime( &event_ms, ev_2, ev_3 ); cerr << "Step 2: " << event_ms << " ms" << endl;
     cctagMultiresDetection( markers,
                             imgGraySrc,
                             imagePyramid,
@@ -858,6 +872,8 @@ void cctagDetection(
                             pipe1,
                             params,
                             durations );
+cudaDeviceSynchronize(); cudaEventRecord( ev_4, 0 ); cudaDeviceSynchronize();
+cudaEventElapsedTime( &event_ms, ev_3, ev_4 ); cerr << "Step 3: " << event_ms << " ms" << endl;
 
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
@@ -906,6 +922,8 @@ void cctagDetection(
 
             tagIndex++;
         }
+cudaDeviceSynchronize(); cudaEventRecord( ev_5, 0 ); cudaDeviceSynchronize();
+cudaEventElapsedTime( &event_ms, ev_4, ev_5 ); cerr << "Step 4: " << event_ms << " ms" << endl;
 
         if( markers.size() != numTags ) {
             cerr << __FILE__ << ":" << __LINE__ << " Number of markers has changed in identify_step_1" << endl;
@@ -965,6 +983,8 @@ void cctagDetection(
         }
         if( durations ) durations->log( "after cctag::identification::identify" );
     }
+cudaDeviceSynchronize(); cudaEventRecord( ev_6, 0 ); cudaDeviceSynchronize();
+cudaEventElapsedTime( &event_ms, ev_5, ev_6 ); cerr << "Step 5: " << event_ms << " ms" << endl;
 
 #ifdef WITH_CUDA
     if( pipe1 ) {
