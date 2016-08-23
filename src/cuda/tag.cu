@@ -250,7 +250,7 @@ cv::Mat* TagPipe::getEdges( size_t layer ) const
 }
 
 __host__
-void TagPipe::imageCenterOptLoop(
+void TagPipe::imageCenterOptPrepare(
     const int                                  tagIndex,
     const int                                  debug_numTags,
     const cctag::numerical::geometry::Ellipse& ellipse,
@@ -259,6 +259,9 @@ void TagPipe::imageCenterOptLoop(
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
+    if( _image_center_opt_input.size() == 0 ) {
+        _image_center_opt_input.reserve( debug_numTags );
+    }
     // cerr << __FILE__ << ":" << __LINE__ << " enter imageCenterOptLoop for tag " << tagIndex << " number of cuts is " << vCutSize << endl;
     popart::geometry::ellipse e( ellipse.matrix()(0,0),
                                  ellipse.matrix()(0,1),
@@ -276,16 +279,19 @@ void TagPipe::imageCenterOptLoop(
                                  ellipse.angle() );
     float2 f = make_float2( center.x(), center.y() );
 
-    popart::geometry::matrix3x3 bestHomography;
+    _image_center_opt_input.emplace_back( ImageCenter( tagIndex,
+                                                       debug_numTags,
+                                                       e,
+                                                       f,
+                                                       vCutSize,
+                                                       cctag_pointer_buffer,
+                                                       _params ) );
+}
 
-    imageCenterOptLoop( tagIndex,
-                        debug_numTags,
-                        _tag_streams[tagIndex%NUM_ID_STREAMS],
-                        e,
-                        f,
-                        vCutSize,
-                        params,
-                        cctag_pointer_buffer );
+__host__
+void TagPipe::imageCenterOpt( )
+{
+    imageCenterOptLoop( );
 }
 
 __host__

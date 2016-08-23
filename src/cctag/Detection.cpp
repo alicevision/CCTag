@@ -942,7 +942,7 @@ cudaEventElapsedTime( &event_ms, ev_4, ev_5 ); cerr << "Step 4: " << event_ms <<
                     if( debug_num_calls >= numTags ) {
                         cerr << __FILE__ << ":" << __LINE__ << " center finding for more loops (" << debug_num_calls << ") than uploaded (" << numTags << ")?" << endl;
                     }
-                    pipe1->imageCenterOptLoop(
+                    pipe1->imageCenterOptPrepare(
                         tagIndex,
                         numTags, // for debugging only
                         cctag.rescaledOuterEllipse(),
@@ -954,8 +954,10 @@ cudaEventElapsedTime( &event_ms, ev_4, ev_5 ); cerr << "Step 4: " << event_ms <<
 
                 tagIndex++;
             }
-            cudaDeviceSynchronize();
         }
+
+        pipe1->imageCenterOpt( );
+        cudaDeviceSynchronize();
 #endif // WITH_CUDA
 
         tagIndex = 0;
