@@ -151,6 +151,7 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
 __host__
 void Frame::initRequiredMem( )
 {
+#if 0
     POP_CUDA_MEMSET_ASYNC( _d_smooth.data,
                            0,
                            _d_smooth.step * _d_smooth.rows,
@@ -188,14 +189,15 @@ void Frame::initRequiredMem( )
 
     _all_edgecoords.init( _stream );
     _voters        .init( _stream );
-    _v_chosen_idx  .init( _stream );
     _inner_points  .init( _stream );
     _interm_inner_points.init( _stream );
+    _v_chosen_idx  .init( _stream );
 
     POP_CUDA_MEMSET_ASYNC( _v_chosen_flow_length,
                            0,
                            EDGE_POINT_MAX * sizeof(float),
                            _stream );
+#endif
 
     POP_CUDA_MEMSET_ASYNC( _vote._d_edgepoint_index_table.data,
                            0,

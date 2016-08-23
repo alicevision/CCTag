@@ -132,6 +132,10 @@ const TriplePoint* cl_inner(
     if( offset >= meta.list_size_voters() ) {
         return 0;
     }
+
+    chosen_idx.ptr[offset]     = 0;
+    chosen_flow_length[offset] = 0;
+
     if( offset == 0 ) {
         /* special case: offset 0 is intentionally empty */
         return 0;
