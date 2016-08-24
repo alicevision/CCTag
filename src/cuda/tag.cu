@@ -276,13 +276,13 @@ void TagPipe::imageCenterOptPrepare(
                                  ellipse.angle() );
     float2 f = make_float2( center.x(), center.y() );
 
-    new ImageCenter (&_h_image_center_opt_input[tagIndex]) ( tagIndex,
+    new (&_h_image_center_opt_input[tagIndex]) ImageCenter ( tagIndex,
                                                              debug_numTags,
                                                              e,
                                                              f,
                                                              vCutSize,
                                                              cctag_pointer_buffer,
-                                                             _params ) );
+                                                             _params );
 }
 
 __host__

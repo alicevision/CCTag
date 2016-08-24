@@ -593,7 +593,7 @@ void TagPipe::reallocCutStructGridBuffer( int numTags )
     _h_image_center_opt_input = (ImageCenter*)ptr;
 
     for( int i=0; i<_num_cut_struct_grid; i++ ) {
-        _h_image_center_opt_input[i]->setInvalid();
+        _h_image_center_opt_input[i].setInvalid();
     }
 
     _num_cut_struct_grid = numTags;

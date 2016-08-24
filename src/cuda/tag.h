@@ -124,10 +124,10 @@ private:
                 return;
             }
 
-            if( v._vCutSize != 22 ) {
-                cerr << __FILE__ << ":" << __LINE__ << endl
-                     << "    " << __func__ << " is called from CPU code with vCutSize " << v._vCutSize << " instead of 22" << endl;
-                if( v._vCutSize > 22 ) {
+            if( _vCutSize != 22 ) {
+                std::cerr << __FILE__ << ":" << __LINE__ << std::endl
+                     << "    " << __func__ << " is called from CPU code with vCutSize " << _vCutSize << " instead of 22" << std::endl;
+                if( _vCutSize > 22 ) {
                     exit( -1 );
                 }
             }
