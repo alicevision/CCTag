@@ -259,9 +259,6 @@ void TagPipe::imageCenterOptPrepare(
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
-    if( _image_center_opt_input.size() == 0 ) {
-        _image_center_opt_input.reserve( debug_numTags );
-    }
     // cerr << __FILE__ << ":" << __LINE__ << " enter imageCenterOptLoop for tag " << tagIndex << " number of cuts is " << vCutSize << endl;
     popart::geometry::ellipse e( ellipse.matrix()(0,0),
                                  ellipse.matrix()(0,1),
@@ -279,13 +276,13 @@ void TagPipe::imageCenterOptPrepare(
                                  ellipse.angle() );
     float2 f = make_float2( center.x(), center.y() );
 
-    _image_center_opt_input.emplace_back( ImageCenter( tagIndex,
-                                                       debug_numTags,
-                                                       e,
-                                                       f,
-                                                       vCutSize,
-                                                       cctag_pointer_buffer,
-                                                       _params ) );
+    new ImageCenter (&_h_image_center_opt_input[tagIndex]) ( tagIndex,
+                                                             debug_numTags,
+                                                             e,
+                                                             f,
+                                                             vCutSize,
+                                                             cctag_pointer_buffer,
+                                                             _params ) );
 }
 
 __host__

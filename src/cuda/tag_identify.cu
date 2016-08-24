@@ -419,8 +419,8 @@ void TagPipe::idCostFunction( vector<bool>& success )
 {
     const size_t gridNSample = _params._imagedCenterNGridSample;
 
-    for( int i=0; i<_image_center_opt_input.size(); i++ ) {
-        ImageCenter& v = _image_center_opt_input[i];
+    for( int i=0; i<_num_cut_struct_grid; i++ ) {
+        ImageCenter& v = _h_image_center_opt_input[i];
 
         if( not v._valid ) {
             success[i] = false;
@@ -506,24 +506,14 @@ void TagPipe::idCostFunction( vector<bool>& success )
 __host__
 void TagPipe::imageCenterOptLoop( )
 {
-    for( int i=0; i<_image_center_opt_input.size(); i++ ) {
-        const ImageCenter& v = _image_center_opt_input[i];
-
-        if( v._vCutSize != 22 ) {
-            cerr << __FILE__ << ":" << __LINE__ << endl
-                 << "    " << __func__ << " is called from CPU code with vCutSize " << v._vCutSize << " instead of 22" << endl;
-            if( v._vCutSize > 22 ) {
-                exit( -1 );
-            }
-        }
-    }
-
-    vector<bool> success( _image_center_opt_input.size() );
+    vector<bool> success( _num_cut_struct_grid );
 
     idCostFunction( success );
 
-    for( int i=0; i<_image_center_opt_input.size(); i++ ) {
-        const ImageCenter& v = _image_center_opt_input[i];
+    for( int i=0; i<_num_cut_struct_grid; i++ ) {
+        const ImageCenter& v = _h_image_center_opt_input[i];
+
+        if( not v._valid ) continue;
 
         if( success[i] ) {
             /* When this kernel finishes, the best point does not
@@ -584,6 +574,8 @@ void TagPipe::reallocCutStructGridBuffer( int numTags )
     if( _num_cut_struct_grid != 0 ) {
         POP_CUDA_FREE( _d_cut_struct_grid );
         POP_CUDA_FREE_HOST( _h_cut_struct_grid );
+        POP_CUDA_FREE( _d_image_center_opt_input );
+        POP_CUDA_FREE_HOST( _h_image_center_opt_input );
     }
 
     void* ptr;
@@ -593,6 +585,16 @@ void TagPipe::reallocCutStructGridBuffer( int numTags )
 
     POP_CUDA_MALLOC_HOST( &ptr, numTags*sizeof(CutStructGrid) );
     _h_cut_struct_grid = (CutStructGrid*)ptr;
+
+    POP_CUDA_MALLOC( &ptr, numTags*sizeof(ImageCenter) );
+    _d_image_center_opt_input = (ImageCenter*)ptr;
+
+    POP_CUDA_MALLOC_HOST( &ptr, numTags*sizeof(ImageCenter) );
+    _h_image_center_opt_input = (ImageCenter*)ptr;
+
+    for( int i=0; i<_num_cut_struct_grid; i++ ) {
+        _h_image_center_opt_input[i]->setInvalid();
+    }
 
     _num_cut_struct_grid = numTags;
 }
@@ -636,6 +638,8 @@ void TagPipe::freeCutStructGridBuffer( )
 
     POP_CUDA_FREE( _d_cut_struct_grid );
     POP_CUDA_FREE_HOST( _h_cut_struct_grid );
+    POP_CUDA_FREE( _d_image_center_opt_input );
+    POP_CUDA_FREE_HOST( _h_image_center_opt_input );
     _num_cut_struct_grid = 0;
 }
 

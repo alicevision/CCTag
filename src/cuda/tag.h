@@ -124,6 +124,14 @@ private:
                 return;
             }
 
+            if( v._vCutSize != 22 ) {
+                cerr << __FILE__ << ":" << __LINE__ << endl
+                     << "    " << __func__ << " is called from CPU code with vCutSize " << v._vCutSize << " instead of 22" << endl;
+                if( v._vCutSize > 22 ) {
+                    exit( -1 );
+                }
+            }
+
             /* Determine the number of iterations by iteration */
             while( neighbourSize * _maxSemiAxis > 0.02 ) {
                 _iterations += 1;
@@ -147,9 +155,15 @@ private:
             _outerEllipse.projectiveTransform( _mInvT, transformedEllipse );
             _transformedEllipseMaxRadius = std::max( transformedEllipse.a(), transformedEllipse.b() );
         }
+
+        void setInvalid( )
+        {
+            _valid = false;
+        }
     };
 
-    std::vector<ImageCenter> _image_center_opt_input;
+    ImageCenter* _d_image_center_opt_input;
+    ImageCenter* _h_image_center_opt_input;
 
 public:
     __host__
