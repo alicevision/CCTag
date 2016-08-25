@@ -427,6 +427,11 @@ void TagPipe::idCostFunction( )
         }
     }
 
+    POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( _d_image_center_opt_input,
+                                     _h_image_center_opt_input,
+                                     numTags*sizeof(ImageCenter).
+                                     _tag_stream );
+
     bool first_iteration = true;
 
     float currentNeighbourSize = _params._imagedCenterNeighbourSize;
@@ -439,8 +444,6 @@ void TagPipe::idCostFunction( )
                 continue;
             }
 
-            cudaStream_t& tagStream = _tag_streams[ v._tagIndex % NUM_ID_STREAMS ];
-
             if( v._iterations <= 0 ) {
                 continue;
             }
@@ -451,7 +454,7 @@ void TagPipe::idCostFunction( )
             dim3 grid( 1, gridNSample, gridNSample );
 
             popart::identification::initAllNearbyPoints
-                <<<grid,block,0,tagStream>>>
+                <<<grid,block,0,_tag_stream>>>
                 ( first_iteration,
                   v._outerEllipse,
                   v._mT,
@@ -463,7 +466,7 @@ void TagPipe::idCostFunction( )
             dim3 get_grid( 1, gridNSample, gridNSample );
 
             popart::identification::idGetSignals
-                <<<get_grid,get_block,0,tagStream>>>
+                <<<get_grid,get_block,0,_tag_stream>>>
                 ( _frame[0]->getPlaneDev(),
                   STRICT_CUTSIZE(v._vCutSize),
                   getNearbyPointGridBuffer( v._tagIndex ),        // in
@@ -479,7 +482,7 @@ void TagPipe::idCostFunction( )
                           gridNSample );
 
             popart::identification::idComputeResult
-                <<<id_grid,id_block,0,tagStream>>>
+                <<<id_grid,id_block,0,_tag_stream>>>
                 ( getNearbyPointGridBuffer( v._tagIndex ),
                   getCutStructGridBufferDev( v._tagIndex ),
                   getSignalGridBuffer( v._tagIndex ),
@@ -494,12 +497,12 @@ void TagPipe::idCostFunction( )
 
             if( gridSquare < 32 ) {
                 popart::identification::idBestNearbyPoint31max
-                    <<<1,32,0,tagStream>>>
+                    <<<1,32,0,_tag_stream>>>
                     ( getNearbyPointGridBuffer( v._tagIndex ), gridNSample );
             } else {
                 cerr << __FILE__ << ":" << __LINE__ << " Untested code idBestNearbyPoint32plus" << endl;
                 popart::identification::idBestNearbyPoint32plus
-                    <<<1,32,0,tagStream>>>
+                    <<<1,32,0,_tag_stream>>>
                     ( getNearbyPointGridBuffer( v._tagIndex ), gridNSample );
             }
 
@@ -533,12 +536,10 @@ void TagPipe::imageCenterOptLoop( )
              *
              * A SYNC IS NEEDED
              */
-            cudaStream_t& tagStream = _tag_streams[ v._tagIndex % NUM_ID_STREAMS ];
-
             POP_CUDA_MEMCPY_TO_HOST_ASYNC( v._cctag_pointer_buffer,
                                            dev_ptr,
                                            sizeof(popart::NearbyPoint),
-                                           tagStream );
+                                           _tag_stream );
             POP_CHK_CALL_IFSYNC;
         } else {
             /* bogus values */
@@ -554,7 +555,6 @@ void TagPipe::imageCenterOptLoop( )
 __host__
 bool TagPipe::imageCenterRetrieve(
     const int                           tagIndex,     // in - determines index in cut structure
-    cudaStream_t                        tagStream,
     float2&                             bestPointOut, // out
     float&                              bestResidual, // out
     popart::geometry::matrix3x3&        bestHomographyOut, // out

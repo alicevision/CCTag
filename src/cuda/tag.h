@@ -50,7 +50,7 @@ class TagPipe
     std::vector<Frame*>         _frame;
     const cctag::Parameters&    _params;
     TagThreads                  _threads;
-    cudaStream_t                _tag_streams[NUM_ID_STREAMS];
+    cudaStream_t                _tag_stream;
     cudaEvent_t                 _uploaded_event;
 
 public:
@@ -233,7 +233,6 @@ private:
     __host__
     bool imageCenterRetrieve(
         const int                           tagIndex,          // in
-        cudaStream_t                        tagStream,         // in
         float2&                             bestPointOut,      // out
         float&                              bestResidual,      // out
         popart::geometry::matrix3x3&        bestHomographyOut, // out
