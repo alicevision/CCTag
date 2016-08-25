@@ -441,8 +441,6 @@ void TagPipe::idCostFunction( )
 
             cudaStream_t& tagStream = _tag_streams[ v._tagIndex % NUM_ID_STREAMS ];
 
-            const CutStructGrid* cut_buffer = getCutStructGridBufferDev( v._tagIndex );
-
             if( v._iterations <= 0 ) {
                 continue;
             }
@@ -469,7 +467,7 @@ void TagPipe::idCostFunction( )
                 ( _frame[0]->getPlaneDev(),
                   STRICT_CUTSIZE(v._vCutSize),
                   getNearbyPointGridBuffer( v._tagIndex ),        // in
-                  cut_buffer,
+                  getCutStructGridBufferDev( v._tagIndex ),
                   getSignalGridBuffer( v._tagIndex ) );
 
             dim3 id_block( 32, // we use this to sum up signals
@@ -483,7 +481,7 @@ void TagPipe::idCostFunction( )
             popart::identification::idComputeResult
                 <<<id_grid,id_block,0,tagStream>>>
                 ( getNearbyPointGridBuffer( v._tagIndex ),
-                  cut_buffer,
+                  getCutStructGridBufferDev( v._tagIndex ),
                   getSignalGridBuffer( v._tagIndex ),
                   STRICT_CUTSIZE(v._vCutSize) );
 
