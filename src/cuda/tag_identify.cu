@@ -440,14 +440,8 @@ void TagPipe::idCostFunction( )
     for( ; iterations>0; iterations-- ) {
         for( int i=0; i<_num_cut_struct_grid; i++ ) {
             ImageCenter& v = _h_image_center_opt_input[i];
-
-            if( not v._valid ) {
-                continue;
-            }
-
-            if( v._iterations <= 0 ) {
-                continue;
-            }
+            if( not v._valid ) continue;
+            if( v._iterations <= 0 ) continue;
 
             const float neighSize = currentNeighbourSize * v._transformedEllipseMaxRadius;
 
@@ -463,6 +457,13 @@ void TagPipe::idCostFunction( )
                   neighSize,
                   getNearbyPointGridBuffer( v._tagIndex ) );
 
+        }
+
+        for( int i=0; i<_num_cut_struct_grid; i++ ) {
+            ImageCenter& v = _h_image_center_opt_input[i];
+            if( not v._valid ) continue;
+            if( v._iterations <= 0 ) continue;
+
             dim3 get_block( 32, STRICT_CUTSIZE(v._vCutSize), 1 ); // we use this to sum up signals
             dim3 get_grid( 1, gridNSample, gridNSample );
 
@@ -473,6 +474,12 @@ void TagPipe::idCostFunction( )
                   getNearbyPointGridBuffer( v._tagIndex ),        // in
                   getCutStructGridBufferDev( v._tagIndex ),
                   getSignalGridBuffer( v._tagIndex ) );
+        }
+
+        for( int i=0; i<_num_cut_struct_grid; i++ ) {
+            ImageCenter& v = _h_image_center_opt_input[i];
+            if( not v._valid ) continue;
+            if( v._iterations <= 0 ) continue;
 
             dim3 id_block( 32, // we use this to sum up signals
                         32, // we can use some shared memory/warp magic for summing
@@ -488,6 +495,12 @@ void TagPipe::idCostFunction( )
                   getCutStructGridBufferDev( v._tagIndex ),
                   getSignalGridBuffer( v._tagIndex ),
                   STRICT_CUTSIZE(v._vCutSize) );
+        }
+
+        for( int i=0; i<_num_cut_struct_grid; i++ ) {
+            ImageCenter& v = _h_image_center_opt_input[i];
+            if( not v._valid ) continue;
+            if( v._iterations <= 0 ) continue;
 
             /* We search for the minimum of gridNSample x gridNSample
             * nearby points. Default for gridNSample is 5.
@@ -501,7 +514,8 @@ void TagPipe::idCostFunction( )
                     <<<1,32,0,_tag_stream>>>
                     ( getNearbyPointGridBuffer( v._tagIndex ), gridNSample );
             } else {
-                cerr << __FILE__ << ":" << __LINE__ << " Untested code idBestNearbyPoint32plus" << endl;
+                cerr << __FILE__ << ":" << __LINE__
+                     << " Untested code idBestNearbyPoint32plus" << endl;
                 popart::identification::idBestNearbyPoint32plus
                     <<<1,32,0,_tag_stream>>>
                     ( getNearbyPointGridBuffer( v._tagIndex ), gridNSample );
