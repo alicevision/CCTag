@@ -415,7 +415,7 @@ void idBestNearbyPoint31max( NearbyPointGrid* d_NearbyPointGrid,
  * @param[in] iterations the caller defines how many refinement loop we execute
  */
 __host__
-void TagPipe::idCostFunction( vector<bool>& success )
+void TagPipe::idCostFunction( )
 {
     const size_t gridNSample = _params._imagedCenterNGridSample;
 
@@ -423,7 +423,6 @@ void TagPipe::idCostFunction( vector<bool>& success )
         ImageCenter& v = _h_image_center_opt_input[i];
 
         if( not v._valid ) {
-            success[i] = false;
             continue;
         }
 
@@ -498,24 +497,18 @@ void TagPipe::idCostFunction( vector<bool>& success )
 
             first_iteration = false;
         }
-
-        success[i] = true;
     }
 }
 
 __host__
 void TagPipe::imageCenterOptLoop( )
 {
-    vector<bool> success( _num_cut_struct_grid );
-
-    idCostFunction( success );
+    idCostFunction( );
 
     for( int i=0; i<_num_cut_struct_grid; i++ ) {
         const ImageCenter& v = _h_image_center_opt_input[i];
 
-        if( not v._valid ) continue;
-
-        if( success[i] ) {
+        if( v._valid ) {
             /* When this kernel finishes, the best point does not
             * exist or it is stored in point_buffer[0]
             */

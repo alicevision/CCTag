@@ -242,7 +242,7 @@ private:
 
     // implemented in frame_11_identify.cu
     __host__
-    void idCostFunction( std::vector<bool>& success );
+    void idCostFunction( );
 
 };
 
