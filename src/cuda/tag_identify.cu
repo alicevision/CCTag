@@ -170,6 +170,63 @@ void idGetSignals( cv::cuda::PtrStepSzb   src,
 __global__
 void initAllNearbyPoints(
     bool                               first_iteration,
+    ImageCenter*                       d_image_center_opt_input,
+    // const popart::geometry::ellipse    ellipse,
+    // const popart::geometry::matrix3x3  mT,
+    // float2                             center,
+    const float                        neighbourSize,
+    NearbyPointGrid*                   nearbyPoints )
+{
+    ImageCenter& v = d_image_center_opt_input[blockIdx.x];
+    if( not v._valid ) return;
+    if( v._iterations <= 0 ) return;
+
+    const popart::geometry::ellipse&   ellipse = v._outerEllipse;
+    const popart::geometry::matrix3x3& mT      = v._mt;
+    float2                             center  = v._center;
+    NearbyPointGrid*         d_nearbyPointGrid = &nearbyPoints[blockIdx.x];
+
+    const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
+
+    assert( gridDim.y == STRICT_SAMPLE(gridNSample) );
+    assert( gridDim.z == STRICT_SAMPLE(gridNSample) );
+
+    const float  gridWidth   = neighbourSize;
+    const float  halfWidth   = gridWidth/2.0f;
+    const float  stepSize    = gridWidth * __frcp_rn( float(STRICT_SAMPLE(gridNSample)-1) );
+
+    if( not first_iteration ) {
+        // the best center is located in point_buffer[0]
+        // center = point_buffer[0].point;
+        center = d_nearbyPointGrid->getGrid(0,0).point;
+        // @lilian: why do we need this "center = mT * center" in every iteration?
+    }
+    mT.condition( center );
+
+    const int i = blockIdx.y;
+    const int j = blockIdx.z;
+    // const int idx = j * STRICT_SAMPLE(gridNSample) + i;
+
+    NearbyPoint& nPoint = d_nearbyPointGrid->getGrid(i,j);
+
+    float2 condCenter = make_float2( center.x - halfWidth + i*stepSize,
+                                     center.y - halfWidth + j*stepSize );
+
+    popart::geometry::matrix3x3  mInvT;
+    mT.invert( mInvT ); // note: returns false if it fails
+    mInvT.condition( condCenter );
+
+    nPoint.point    = condCenter;
+    nPoint.result   = 0.0f;
+    nPoint.resSize  = 0;
+    nPoint.readable = true;
+    ellipse.computeHomographyFromImagedCenter( nPoint.point, nPoint.mHomography );
+    nPoint.mHomography.invert( nPoint.mInvHomography );
+}
+
+__global__
+void initAllNearbyPoints(
+    bool                               first_iteration,
     const popart::geometry::ellipse    ellipse,
     const popart::geometry::matrix3x3  mT,
     float2                             center,
@@ -438,6 +495,17 @@ void TagPipe::idCostFunction( )
     float currentNeighbourSize = _params._imagedCenterNeighbourSize;
 
     for( ; iterations>0; iterations-- ) {
+#if 1
+        dim3 block( 1, 1, 1 );
+        dim3 grid( _num_cut_struct_grid, gridNSample, gridNSample );
+
+        popart::identification::initAllNearbyPoints
+            <<<grid,block,0,_tag_stream>>>
+            ( first_iteration,
+              _d_image_center_opt_input,
+              neighSize,
+              _d_nearbyPointGrid );
+#else
         for( int i=0; i<_num_cut_struct_grid; i++ ) {
             ImageCenter& v = _h_image_center_opt_input[i];
             if( not v._valid ) continue;
@@ -458,6 +526,7 @@ void TagPipe::idCostFunction( )
                   getNearbyPointGridBuffer( v._tagIndex ) );
 
         }
+#endif
 
         for( int i=0; i<_num_cut_struct_grid; i++ ) {
             ImageCenter& v = _h_image_center_opt_input[i];
