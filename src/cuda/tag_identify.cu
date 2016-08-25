@@ -427,9 +427,10 @@ void TagPipe::idCostFunction( )
         }
     }
 
+    // NOTE: with a numTags parameter we could copy a bit faster
     POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( _d_image_center_opt_input,
                                      _h_image_center_opt_input,
-                                     numTags*sizeof(ImageCenter).
+                                     _num_cut_struct_grid * sizeof(ImageCenter),
                                      _tag_stream );
 
     bool first_iteration = true;
