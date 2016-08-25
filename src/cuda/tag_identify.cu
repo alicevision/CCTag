@@ -419,6 +419,14 @@ void TagPipe::idCostFunction( )
 {
     const size_t gridNSample = _params._imagedCenterNGridSample;
 
+    int iterations = 0;
+    for( int i=0; i<_num_cut_struct_grid; i++ ) {
+        ImageCenter& v = _h_image_center_opt_input[i];
+        if( v._valid ) {
+            iterations = std::max( iterations, v._iterations );
+        }
+    }
+
     for( int i=0; i<_num_cut_struct_grid; i++ ) {
         ImageCenter& v = _h_image_center_opt_input[i];
 
@@ -434,7 +442,11 @@ void TagPipe::idCostFunction( )
 
         bool first_iteration = true;
 
-        for( ; v._iterations>0; v._iterations-- ) {
+        for( ; iterations>0; iterations-- ) {
+            if( v._iterations <= 0 ) {
+                continue;
+            }
+
             float neighSize = currentNeighbourSize * v._transformedEllipseMaxRadius;
 
             dim3 block( 1, 1, 1 );
@@ -496,6 +508,8 @@ void TagPipe::idCostFunction( )
             currentNeighbourSize /= (float)((STRICT_SAMPLE(gridNSample)-1)/2) ;
 
             first_iteration = false;
+
+            v._iterations -= 1;
         }
     }
 }
