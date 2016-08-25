@@ -417,7 +417,7 @@ void idBestNearbyPoint31max( NearbyPointGrid* d_NearbyPointGrid,
 __host__
 void TagPipe::idCostFunction( )
 {
-    const size_t gridNSample = _params._imagedCenterNGridSample;
+    const size_t gridNSample = STRICT_SAMPLE(_params._imagedCenterNGridSample);
 
     int iterations = 0;
     for( int i=0; i<_num_cut_struct_grid; i++ ) {
@@ -428,6 +428,8 @@ void TagPipe::idCostFunction( )
     }
 
     bool first_iteration = true;
+
+    float currentNeighbourSize = _params._imagedCenterNeighbourSize;
 
     for( ; iterations>0; iterations-- ) {
         for( int i=0; i<_num_cut_struct_grid; i++ ) {
@@ -441,16 +443,14 @@ void TagPipe::idCostFunction( )
 
             const CutStructGrid* cut_buffer = getCutStructGridBufferDev( v._tagIndex );
 
-            float currentNeighbourSize = _params._imagedCenterNeighbourSize;
-
             if( v._iterations <= 0 ) {
                 continue;
             }
 
-            float neighSize = currentNeighbourSize * v._transformedEllipseMaxRadius;
+            const float neighSize = currentNeighbourSize * v._transformedEllipseMaxRadius;
 
             dim3 block( 1, 1, 1 );
-            dim3 grid( 1, STRICT_SAMPLE(gridNSample), STRICT_SAMPLE(gridNSample) );
+            dim3 grid( 1, gridNSample, gridNSample );
 
             popart::identification::initAllNearbyPoints
                 <<<grid,block,0,tagStream>>>
@@ -462,7 +462,7 @@ void TagPipe::idCostFunction( )
                   getNearbyPointGridBuffer( v._tagIndex ) );
 
             dim3 get_block( 32, STRICT_CUTSIZE(v._vCutSize), 1 ); // we use this to sum up signals
-            dim3 get_grid( 1, STRICT_SAMPLE(gridNSample), STRICT_SAMPLE(gridNSample) );
+            dim3 get_grid( 1, gridNSample, gridNSample );
 
             popart::identification::idGetSignals
                 <<<get_grid,get_block,0,tagStream>>>
@@ -477,8 +477,8 @@ void TagPipe::idCostFunction( )
                         1 );
             const int numPairs = STRICT_CUTSIZE(v._vCutSize)*(STRICT_CUTSIZE(v._vCutSize)-1)/2;
             dim3 id_grid( grid_divide( numPairs, 32 ),
-                          STRICT_SAMPLE(gridNSample),
-                          STRICT_SAMPLE(gridNSample) );
+                          gridNSample,
+                          gridNSample );
 
             popart::identification::idComputeResult
                 <<<id_grid,id_block,0,tagStream>>>
@@ -492,24 +492,24 @@ void TagPipe::idCostFunction( )
             * It is therefore most efficient to use a single-warp kernel
             * for the search.
             */
-            const int gridSquare = STRICT_SAMPLE(gridNSample) * STRICT_SAMPLE(gridNSample);
+            const int gridSquare = gridNSample * gridNSample;
 
             if( gridSquare < 32 ) {
                 popart::identification::idBestNearbyPoint31max
                     <<<1,32,0,tagStream>>>
-                    ( getNearbyPointGridBuffer( v._tagIndex ), STRICT_SAMPLE(gridNSample) );
+                    ( getNearbyPointGridBuffer( v._tagIndex ), gridNSample );
             } else {
                 cerr << __FILE__ << ":" << __LINE__ << " Untested code idBestNearbyPoint32plus" << endl;
                 popart::identification::idBestNearbyPoint32plus
                     <<<1,32,0,tagStream>>>
-                    ( getNearbyPointGridBuffer( v._tagIndex ), STRICT_SAMPLE(gridNSample) );
+                    ( getNearbyPointGridBuffer( v._tagIndex ), gridNSample );
             }
-
-            currentNeighbourSize /= (float)((STRICT_SAMPLE(gridNSample)-1)/2) ;
-
 
             v._iterations -= 1;
         }
+
+        currentNeighbourSize /= (float)((gridNSample-1)/2) ;
+
         first_iteration = false;
     }
 }
@@ -530,11 +530,11 @@ void TagPipe::imageCenterOptLoop( )
             const NearbyPoint* dev_ptr           = &d_nearbyPointGrid->getGrid(0,0);
 
             /* This copy operation is initiated in imageCenterOptLoop instead
-            * if imageCenterRetrieve (where it is needed) because the async
-            * copy can run in the background.
-            *
-            * A SYNC IS NEEDED
-            */
+             * if imageCenterRetrieve (where it is needed) because the async
+             * copy can run in the background.
+             *
+             * A SYNC IS NEEDED
+             */
             cudaStream_t& tagStream = _tag_streams[ v._tagIndex % NUM_ID_STREAMS ];
 
             POP_CUDA_MEMCPY_TO_HOST_ASYNC( v._cctag_pointer_buffer,
