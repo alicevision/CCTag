@@ -83,7 +83,6 @@ public:
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
 
-private:
     struct ImageCenter
     {
         bool                            _valid;
