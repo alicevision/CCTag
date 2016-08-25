@@ -427,22 +427,22 @@ void TagPipe::idCostFunction( )
         }
     }
 
-    for( int i=0; i<_num_cut_struct_grid; i++ ) {
-        ImageCenter& v = _h_image_center_opt_input[i];
+    bool first_iteration = true;
 
-        if( not v._valid ) {
-            continue;
-        }
+    for( ; iterations>0; iterations-- ) {
+        for( int i=0; i<_num_cut_struct_grid; i++ ) {
+            ImageCenter& v = _h_image_center_opt_input[i];
 
-        cudaStream_t& tagStream = _tag_streams[ v._tagIndex % NUM_ID_STREAMS ];
+            if( not v._valid ) {
+                continue;
+            }
 
-        const CutStructGrid* cut_buffer = getCutStructGridBufferDev( v._tagIndex );
+            cudaStream_t& tagStream = _tag_streams[ v._tagIndex % NUM_ID_STREAMS ];
 
-        float currentNeighbourSize = _params._imagedCenterNeighbourSize;
+            const CutStructGrid* cut_buffer = getCutStructGridBufferDev( v._tagIndex );
 
-        bool first_iteration = true;
+            float currentNeighbourSize = _params._imagedCenterNeighbourSize;
 
-        for( ; iterations>0; iterations-- ) {
             if( v._iterations <= 0 ) {
                 continue;
             }
@@ -507,10 +507,10 @@ void TagPipe::idCostFunction( )
 
             currentNeighbourSize /= (float)((STRICT_SAMPLE(gridNSample)-1)/2) ;
 
-            first_iteration = false;
 
             v._iterations -= 1;
         }
+        first_iteration = false;
     }
 }
 
