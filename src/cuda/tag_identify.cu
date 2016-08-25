@@ -137,6 +137,54 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
  */
 __global__
 void idGetSignals( cv::cuda::PtrStepSzb   src,
+                   TagPipe::ImageCenter*  d_image_center_opt_input,
+                   const NearbyPointGrid* point_grid,
+                   const CutStructGrid*   cut_grid,
+                   CutSignalGrid*         sig_grid )
+{
+    TagPipe::ImageCenter& v = d_image_center_opt_input[blockIdx.x];
+    if( not v._valid ) return;
+    if( v._iterations <= 0 ) return;
+
+    const int              vCutSize     = v.vCutSize;
+    const NearbyPointGrid* point_buffer = &point_grid[blockIdx.x]
+    const CutStructGrid*   cut_buffer   = &cut_grid[blockIdx.x]
+    CutSignalGrid*         sig_buffer   = &sig_grid[blockIdx.x]
+
+    const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
+    const int i = blockIdx.y;
+    const int j = blockIdx.z;
+    const int nearbyPointIndex = j * STRICT_SAMPLE(gridNSample) + i;
+    const int cutIndex = threadIdx.y;
+
+    const NearbyPoint& nPoint = point_buffer->getGrid(i,j);
+
+    if( cutIndex >= STRICT_CUTSIZE(vCutSize) ) {
+        // warps do never loose lockstep because of this
+        return; // out of bounds
+    }
+
+    const CutStruct& myCut = cut_buffer->getGrid( cutIndex );
+    CutSignals& mySignals  = sig_buffer->getGrid( cutIndex, i, j ); //[nearbyPointIndex * STRICT_CUTSIZE(vCutSize) + cutIndex];
+
+    if( threadIdx.x == 0 ) mySignals.outOfBounds = 0;
+
+    extractSignalUsingHomography( myCut,
+                                  mySignals,
+                                  src,
+                                  nPoint.mHomography,
+                                  nPoint.mInvHomography );
+}
+
+/* We use a pair of homographies to extract signals (<=128) for every
+ * cut, and every nearby point of a potential center.
+ * vCutMaxVecLen is a safety variable, could actually be 100.
+ * The function is called from
+ *     idNearbyPointDispatcher
+ * once for every
+ */
+__global__
+void idGetSignals( cv::cuda::PtrStepSzb   src,
                    const int              vCutSize,
                    const NearbyPointGrid* point_buffer,
                    const CutStructGrid*   cut_buffer,
@@ -456,6 +504,18 @@ void TagPipe::idCostFunction( )
               currentNeighbourSize,
               _d_nearby_point_grid );
 
+#if 1
+        dim3 get_block( 32, STRICT_CUTSIZE(v._vCutSize), 1 ); // we use this to sum up signals
+        dim3 get_grid( _num_cut_struct_grid, gridNSample, gridNSample );
+
+        popart::identification::idGetSignals
+            <<<get_grid,get_block,0,_tag_stream>>>
+            ( _frame[0]->getPlaneDev(),
+              _d_image_center_opt_input,
+              _d_nearby_point_grid,
+              _d_cut_struct_grid,
+              _d_cut_signal_grid );
+#else
         for( int i=0; i<_num_cut_struct_grid; i++ ) {
             ImageCenter& v = _h_image_center_opt_input[i];
             if( not v._valid ) continue;
@@ -472,6 +532,7 @@ void TagPipe::idCostFunction( )
                   getCutStructGridBufferDev( v._tagIndex ),
                   getSignalGridBuffer( v._tagIndex ) );
         }
+#endif
 
         for( int i=0; i<_num_cut_struct_grid; i++ ) {
             ImageCenter& v = _h_image_center_opt_input[i];
