@@ -170,19 +170,18 @@ void idGetSignals( cv::cuda::PtrStepSzb   src,
 __global__
 void initAllNearbyPoints(
     bool                               first_iteration,
-    ImageCenter*                       d_image_center_opt_input,
-    // const popart::geometry::ellipse    ellipse,
-    // const popart::geometry::matrix3x3  mT,
-    // float2                             center,
-    const float                        neighbourSize,
+    TagPipe::ImageCenter*              d_image_center_opt_input,
+    const float                        currentNeighbourSize,
     NearbyPointGrid*                   nearbyPoints )
 {
-    ImageCenter& v = d_image_center_opt_input[blockIdx.x];
+    TagPipe::ImageCenter& v = d_image_center_opt_input[blockIdx.x];
     if( not v._valid ) return;
     if( v._iterations <= 0 ) return;
 
+    const float neighbourSize = currentNeighbourSize * v._transformedEllipseMaxRadius;
+
     const popart::geometry::ellipse&   ellipse = v._outerEllipse;
-    const popart::geometry::matrix3x3& mT      = v._mt;
+    const popart::geometry::matrix3x3& mT      = v._mT;
     float2                             center  = v._center;
     NearbyPointGrid*         d_nearbyPointGrid = &nearbyPoints[blockIdx.x];
 
@@ -223,54 +222,6 @@ void initAllNearbyPoints(
     ellipse.computeHomographyFromImagedCenter( nPoint.point, nPoint.mHomography );
     nPoint.mHomography.invert( nPoint.mInvHomography );
 }
-
-__global__
-void initAllNearbyPoints(
-    bool                               first_iteration,
-    const popart::geometry::ellipse    ellipse,
-    const popart::geometry::matrix3x3  mT,
-    float2                             center,
-    const float                        neighbourSize,
-    NearbyPointGrid*                   d_nearbyPointGrid )
-{
-    const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
-
-    assert( gridDim.y == STRICT_SAMPLE(gridNSample) );
-    assert( gridDim.z == STRICT_SAMPLE(gridNSample) );
-
-    const float  gridWidth   = neighbourSize;
-    const float  halfWidth   = gridWidth/2.0f;
-    const float  stepSize    = gridWidth * __frcp_rn( float(STRICT_SAMPLE(gridNSample)-1) );
-
-    if( not first_iteration ) {
-        // the best center is located in point_buffer[0]
-        // center = point_buffer[0].point;
-        center = d_nearbyPointGrid->getGrid(0,0).point;
-        // @lilian: why do we need this "center = mT * center" in every iteration?
-    }
-    mT.condition( center );
-
-    const int i = blockIdx.y;
-    const int j = blockIdx.z;
-    // const int idx = j * STRICT_SAMPLE(gridNSample) + i;
-
-    NearbyPoint& nPoint = d_nearbyPointGrid->getGrid(i,j);
-
-    float2 condCenter = make_float2( center.x - halfWidth + i*stepSize,
-                                     center.y - halfWidth + j*stepSize );
-
-    popart::geometry::matrix3x3  mInvT;
-    mT.invert( mInvT ); // note: returns false if it fails
-    mInvT.condition( condCenter );
-
-    nPoint.point    = condCenter;
-    nPoint.result   = 0.0f;
-    nPoint.resSize  = 0;
-    nPoint.readable = true;
-    ellipse.computeHomographyFromImagedCenter( nPoint.point, nPoint.mHomography );
-    nPoint.mHomography.invert( nPoint.mInvHomography );
-}
-
 
 /* All the signals have been computed for the homographies rolled
  * this NearbyPoint structure by the previous call to idGetSignals.
@@ -495,7 +446,6 @@ void TagPipe::idCostFunction( )
     float currentNeighbourSize = _params._imagedCenterNeighbourSize;
 
     for( ; iterations>0; iterations-- ) {
-#if 1
         dim3 block( 1, 1, 1 );
         dim3 grid( _num_cut_struct_grid, gridNSample, gridNSample );
 
@@ -503,30 +453,8 @@ void TagPipe::idCostFunction( )
             <<<grid,block,0,_tag_stream>>>
             ( first_iteration,
               _d_image_center_opt_input,
-              neighSize,
-              _d_nearbyPointGrid );
-#else
-        for( int i=0; i<_num_cut_struct_grid; i++ ) {
-            ImageCenter& v = _h_image_center_opt_input[i];
-            if( not v._valid ) continue;
-            if( v._iterations <= 0 ) continue;
-
-            const float neighSize = currentNeighbourSize * v._transformedEllipseMaxRadius;
-
-            dim3 block( 1, 1, 1 );
-            dim3 grid( 1, gridNSample, gridNSample );
-
-            popart::identification::initAllNearbyPoints
-                <<<grid,block,0,_tag_stream>>>
-                ( first_iteration,
-                  v._outerEllipse,
-                  v._mT,
-                  v._center,
-                  neighSize,
-                  getNearbyPointGridBuffer( v._tagIndex ) );
-
-        }
-#endif
+              currentNeighbourSize,
+              _d_nearby_point_grid );
 
         for( int i=0; i<_num_cut_struct_grid; i++ ) {
             ImageCenter& v = _h_image_center_opt_input[i];
