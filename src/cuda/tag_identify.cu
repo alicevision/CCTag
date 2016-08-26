@@ -840,7 +840,6 @@ void TagPipe::idCostFunction( )
                     <<<1,32,0,_tag_stream>>>
                     ( getNearbyPointGridBuffer( v._tagIndex ), gridNSample );
             }
-#endif
 
             v._iterations -= 1;
         }
