@@ -146,10 +146,12 @@ void idGetSignals( cv::cuda::PtrStepSzb   src,
     if( not v._valid ) return;
     if( v._iterations <= 0 ) return;
 
-    const int              vCutSize     = v.vCutSize;
-    const NearbyPointGrid* point_buffer = &point_grid[blockIdx.x]
-    const CutStructGrid*   cut_buffer   = &cut_grid[blockIdx.x]
-    CutSignalGrid*         sig_buffer   = &sig_grid[blockIdx.x]
+    const int              vCutSize     = v._vCutSize;
+    const NearbyPointGrid* point_buffer = &point_grid[blockIdx.x];
+    const CutStructGrid*   cut_buffer   = &cut_grid[blockIdx.x];
+    CutSignalGrid*         sig_buffer   = &sig_grid[blockIdx.x];
+
+    if( threadIdx.y >= vCutSize ) return;
 
     const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
     const int i = blockIdx.y;
@@ -505,7 +507,7 @@ void TagPipe::idCostFunction( )
               _d_nearby_point_grid );
 
 #if 1
-        dim3 get_block( 32, STRICT_CUTSIZE(v._vCutSize), 1 ); // we use this to sum up signals
+        dim3 get_block( 32, _params._numCutsInIdentStep, 1 ); // we use this to sum up signals
         dim3 get_grid( _num_cut_struct_grid, gridNSample, gridNSample );
 
         popart::identification::idGetSignals
