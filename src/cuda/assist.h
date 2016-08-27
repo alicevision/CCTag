@@ -61,13 +61,13 @@ bool reduce_OR_32x32( bool cnt )
 {
     __shared__ int reduce_array[32];
 
-    int cnt_row = __any( cnt );
+    int cnt_row = ::__any( cnt );
     if( threadIdx.x == 0 ) {
         reduce_array[threadIdx.y] = cnt_row;
     }
     __syncthreads();
     if( threadIdx.y == 0 ) {
-        int cnt_col = __any( reduce_array[threadIdx.x] );
+        int cnt_col = ::__any( reduce_array[threadIdx.x] );
         if( threadIdx.x == 0 ) {
             reduce_array[0] = cnt_col;
         }

@@ -892,7 +892,7 @@ void cctagDetection(
         }
 #endif // WITH_CUDA
 
-        std::vector<cctag::ImageCut> vSelectedCuts[ numTags ];
+        std::vector<std::vector<cctag::ImageCut> > vSelectedCuts( numTags );
         int                          detected[ numTags ];
         int                          tagIndex = 0;
 
@@ -913,7 +913,7 @@ void cctagDetection(
 
 #ifdef WITH_CUDA
         if( pipe1 && numTags > 0 ) {
-            pipe1->uploadCuts( numTags, vSelectedCuts, params );
+            pipe1->uploadCuts( numTags, &vSelectedCuts[0], params );
 
             tagIndex = 0;
             int debug_num_calls = 0;
