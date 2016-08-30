@@ -325,6 +325,6 @@ int main(int argc, char** argv)
       throw std::logic_error("Unrecognized input.");
   }
   outputFile.close();
-  return 0;
+  return EXIT_SUCCESS;
 }
 
