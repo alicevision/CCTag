@@ -40,6 +40,7 @@
 #include <string>
 #include <fstream>
 #include <exception>
+#include <regex>
 
 #include <tbb/tbb.h>
 
@@ -50,6 +51,18 @@ using boost::timer;
 
 using namespace boost::gil;
 namespace bfs = boost::filesystem;
+
+/**
+ * @brief Check if a string is an integer number.
+ * 
+ * @param[in] s The string to check.
+ * @return Return true if the string is an integer number
+ */
+bool isInteger(std::string s)
+{
+  std::regex e("^-?\\d+");
+  return std::regex_match(s, e);
+}
 
 /**
  * @brief Draw the detected marker int the given image. The markers are drawn as a
