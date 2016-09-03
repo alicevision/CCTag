@@ -51,6 +51,25 @@ using boost::timer;
 using namespace boost::gil;
 namespace bfs = boost::filesystem;
 
+void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image)
+{
+  BOOST_FOREACH(const cctag::CCTag & marker, markers)
+  {
+    if(marker.getStatus() == 1)
+    {
+      cv::circle(image, cv::Point(marker.x(), marker.y()), 10, cv::Scalar(0, 255, 0 , 255), 3);
+      cv::putText(image, std::to_string(marker.id()), cv::Point(marker.x(), marker.y()), cv::FONT_HERSHEY_SIMPLEX, 5, cv::Scalar(0, 255, 0, 255), 3);
+    }
+    else
+    {
+      cv::circle(image, cv::Point(marker.x(), marker.y()), 10, cv::Scalar(0, 0, 255 , 255), 2);
+      cv::putText(image, std::to_string(marker.id()), cv::Point(marker.x(), marker.y()), cv::FONT_HERSHEY_SIMPLEX, 4, cv::Scalar(0, 0, 255, 255), 3);
+      
+    }
+
+  }
+}
+
 void detection(std::size_t frameId,
                int pipeId,
                const cv::Mat & src,
