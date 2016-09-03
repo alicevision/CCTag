@@ -284,32 +284,28 @@ int main(int argc, char** argv)
       return EXIT_FAILURE;
     }
 
-    // play loop
-    int lastFrame = video.get(CV_CAP_PROP_FRAME_COUNT);
-
-    std::list<cv::Mat*> frames;
+    const std::string windowName = "Detection result";
+    cv::namedWindow(windowName, cv::WINDOW_NORMAL);
 
     std::cerr << "Starting to read video frames" << std::endl;
-    while(video.get(CV_CAP_PROP_POS_FRAMES) < lastFrame)
+    std::size_t frameId = 0;
+
+    while(true)
     {
       cv::Mat frame;
       video >> frame;
-      cv::Mat* imgGray = new cv::Mat;
+      if(frame.empty())
+        break;
+      
+      cv::Mat imgGray;
 
       if(frame.channels() == 3 || frame.channels() == 4)
-        cv::cvtColor(frame, *imgGray, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(frame, imgGray, cv::COLOR_BGR2GRAY);
       else
-        frame.copyTo(*imgGray);
+        frame.copyTo(imgGray);
 
-      frames.push_back(imgGray);
-    }
-    std::cerr << "Done. Now processing." << std::endl;
+      boost::timer t;
 
-    boost::timer t;
-    std::size_t frameId = 0;
-
-    for(cv::Mat* imgGray : frames)
-    {
       // Set the output folder
       std::stringstream outFileName;
       outFileName << std::setfill('0') << std::setw(5) << frameId;
@@ -323,17 +319,23 @@ int main(int argc, char** argv)
       // Call the CCTag detection
       const int pipeId = 0;
 #ifdef PRINT_TO_CERR
-      detection(frameId, pipeId, *imgGray, params, bank, markers, std::cerr, outFileName.str());
+      detection(frameId, pipeId, imgGray, params, bank, markers, std::cerr, outFileName.str());
 #else
-      detection(frameId, pipeId, *imgGray, params, bank, markers, outputFile, outFileName.str());
+      detection(frameId, pipeId, imgGray, params, bank, markers, outputFile, outFileName.str());
 #endif
+      
+      // if the original image is b/w convert it to BGRA so we can draw colors
+      if(frame.channels() == 1)
+        cv::cvtColor(imgGray, frame, cv::COLOR_GRAY2BGRA);
+      
+      drawMarkers(markers, frame);
+      cv::imshow(windowName, frame);
+      // stop capturing by pressing ESC
+      if( cv::waitKey() == 27 ) break;
+
       ++frameId;
-      if(frameId % 100 == 0)
-      {
-        std::cerr << frameId << " (" << std::setprecision(3) << t.elapsed()*1000.0 / frameId << ") ";
-      }
     }
-    std::cerr << std::endl;
+
   }
   else if(bfs::is_directory(myPath))
   {
