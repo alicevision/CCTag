@@ -256,7 +256,7 @@ int main(int argc, char** argv)
     if(!video.isOpened())
     {
       CCTAG_COUT("Unable to open the video : " << cmdline._filename);
-      return -1;
+      return EXIT_FAILURE;
     }
 
     // play loop
