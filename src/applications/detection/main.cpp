@@ -236,7 +236,6 @@ int main(int argc, char** argv)
   bfs::path myPath(cmdline._filename);
   std::string ext(myPath.extension().string());
 
-  const bfs::path subFilenamePath(myPath.filename());
   const bfs::path parentPath(myPath.parent_path() == "" ? "." : myPath.parent_path());
   std::string outputFileName;
   if(!bfs::is_directory(myPath))
