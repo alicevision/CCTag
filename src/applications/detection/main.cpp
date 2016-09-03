@@ -91,8 +91,8 @@ void detection(std::size_t frameId,
   std::cout << "Total time: " << t.elapsed() << std::endl;
   CCTAG_COUT_NOENDL("Id : ");
 
-  int i = 0;
-  int nMarkers = 0;
+  std::size_t i = 0;
+  std::size_t nMarkers = 0;
   output << "#frame " << frameId << '\n';
   output << markers.size() << '\n';
 
