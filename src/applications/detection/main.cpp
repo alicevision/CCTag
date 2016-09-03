@@ -113,7 +113,7 @@ void detection(std::size_t frameId,
   std::size_t i = 0;
   std::size_t nMarkers = 0;
   output << "#frame " << frameId << '\n';
-  output << markers.size() << '\n';
+  output << "Detected " << markers.size() << " candidates" << '\n';
 
   BOOST_FOREACH(const cctag::CCTag & marker, markers)
   {
