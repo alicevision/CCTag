@@ -186,7 +186,7 @@ int main(int argc, char** argv)
     }
 
     // Read the parameter file provided by the user
-    std::ifstream ifs(cmdline._paramsFilename.c_str());
+    std::ifstream ifs(cmdline._paramsFilename);
     boost::archive::xml_iarchive ia(ifs);
     ia >> boost::serialization::make_nvp("CCTagsParams", params);
     CCTAG_COUT(params._nCrowns);
@@ -197,7 +197,7 @@ int main(int argc, char** argv)
   {
     // Use the default parameters and save them in defaultParameters.xml
     cmdline._paramsFilename = "defaultParameters.xml";
-    std::ofstream ofs(cmdline._paramsFilename.c_str());
+    std::ofstream ofs(cmdline._paramsFilename);
     boost::archive::xml_oarchive oa(ofs);
     oa << boost::serialization::make_nvp("CCTagsParams", params);
     CCTAG_COUT("Parameter file not provided. Default parameters are used.");
@@ -272,7 +272,7 @@ int main(int argc, char** argv)
     POP_INFO("looking at video " << myPath.string());
 
     // open video and check
-    cv::VideoCapture video(cmdline._filename.c_str());
+    cv::VideoCapture video(cmdline._filename);
     if(!video.isOpened())
     {
       CCTAG_COUT("Unable to open the video : " << cmdline._filename);
