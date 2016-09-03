@@ -324,6 +324,10 @@ int main(int argc, char** argv)
 
     std::cerr << "Starting to read video frames" << std::endl;
     std::size_t frameId = 0;
+    
+    // time to wait in milliseconds for keyboard input, used to switch from
+    // live to debug mode
+    int delay = 10;
 
     while(true)
     {
@@ -365,9 +369,17 @@ int main(int argc, char** argv)
       
       drawMarkers(markers, frame);
       cv::imshow(windowName, frame);
+      if( cv::waitKey(delay) == 27 ) break;
+      char key = (char) cv::waitKey(delay);
       // stop capturing by pressing ESC
-      if( cv::waitKey() == 27 ) break;
-
+      if(key == 27) 
+        break;
+      if(key == 'l' || key == 'L')
+        delay = 10;
+      // delay = 0 will wait for a key to be pressed
+      if(key == 'd' || key == 'D')
+        delay = 0;
+      
       ++frameId;
     }
 
