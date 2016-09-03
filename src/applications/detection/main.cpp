@@ -258,7 +258,7 @@ int main(int argc, char** argv)
 
     POP_INFO("looking at image " << myPath.string());
 
-    // Gray scale convertion
+    // Gray scale conversion
     cv::Mat src = cv::imread(cmdline._filename);
     cv::Mat graySrc;
     cv::cvtColor(src, graySrc, CV_BGR2GRAY);
