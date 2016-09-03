@@ -118,6 +118,14 @@ void detection(std::size_t frameId,
   BOOST_FOREACH(const cctag::CCTag & marker, markers)
   {
     output << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
+    ++i;
+    if(marker.getStatus() == 1)
+      ++nMarkers;
+  }
+  
+  i = 0;
+  BOOST_FOREACH(const cctag::CCTag & marker, markers)
+  {
     if(i == 0)
     {
       CCTAG_COUT_NOENDL(marker.id() + 1);
@@ -127,8 +135,6 @@ void detection(std::size_t frameId,
       CCTAG_COUT_NOENDL(", " << marker.id() + 1);
     }
     ++i;
-    if(marker.getStatus() == 1)
-      ++nMarkers;
   }
 
   std::cout << std::endl << nMarkers << " markers detected and identified" << std::endl;
