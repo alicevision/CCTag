@@ -51,20 +51,31 @@ using boost::timer;
 using namespace boost::gil;
 namespace bfs = boost::filesystem;
 
+/**
+ * @brief Draw the detected marker int the given image. The markers are drawn as a
+ * circle centered in the center of the marker and with its id. It draws the 
+ * well identified markers in green, the unknown / badly detected markers in red.
+ * 
+ * @param[in] markers The list of markers to draw.
+ * @param[out] image The image in which to draw the markers.
+ */
 void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image)
 {
   BOOST_FOREACH(const cctag::CCTag & marker, markers)
   {
+    const cv::Point center = cv::Point(marker.x(), marker.y());
+    const int radius = 10;
     if(marker.getStatus() == 1)
     {
-      cv::circle(image, cv::Point(marker.x(), marker.y()), 10, cv::Scalar(0, 255, 0 , 255), 3);
-      cv::putText(image, std::to_string(marker.id()), cv::Point(marker.x(), marker.y()), cv::FONT_HERSHEY_SIMPLEX, 5, cv::Scalar(0, 255, 0, 255), 3);
+      const cv::Scalar color = cv::Scalar(0, 255, 0 , 255);
+      cv::circle(image, center, radius, color, 3);
+      cv::putText(image, std::to_string(marker.id()), center, cv::FONT_HERSHEY_SIMPLEX, 5, color, 3);
     }
     else
     {
-      cv::circle(image, cv::Point(marker.x(), marker.y()), 10, cv::Scalar(0, 0, 255 , 255), 2);
-      cv::putText(image, std::to_string(marker.id()), cv::Point(marker.x(), marker.y()), cv::FONT_HERSHEY_SIMPLEX, 4, cv::Scalar(0, 0, 255, 255), 3);
-      
+      const cv::Scalar color = cv::Scalar(0, 0, 255 , 255);
+      cv::circle(image, center, radius, color, 2);
+      cv::putText(image, std::to_string(marker.id()), center, cv::FONT_HERSHEY_SIMPLEX, 4, color, 3);
     }
 
   }
