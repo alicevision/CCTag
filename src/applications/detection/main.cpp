@@ -56,6 +56,7 @@ void detection(std::size_t frameId,
                const cv::Mat & src,
                const cctag::Parameters & params,
                const cctag::CCTagMarkersBank & bank,
+               boost::ptr_list<CCTag> &markers,
                std::ostream & output,
                std::string debugFileName = "")
 {
@@ -67,7 +68,6 @@ void detection(std::size_t frameId,
 
   // Process markers detection
   boost::timer t;
-  boost::ptr_list<CCTag> markers;
 
   CCTagVisualDebug::instance().initBackgroundImage(src);
   CCTagVisualDebug::instance().setImageFileName(debugFileName);
@@ -240,10 +240,11 @@ int main(int argc, char** argv)
     cv::cvtColor(src, graySrc, CV_BGR2GRAY);
 
     const int pipeId = 0;
+    boost::ptr_list<CCTag> markers;
 #ifdef PRINT_TO_CERR
-    detection(0, pipeId, graySrc, params, bank, std::cerr, myPath.stem().string());
+    detection(0, pipeId, graySrc, params, bank, markers, std::cerr, myPath.stem().string());
 #else
-    detection(0, pipeId, graySrc, params, bank, outputFile, myPath.stem().string());
+    detection(0, pipeId, graySrc, params, bank, markers, outputFile, myPath.stem().string());
 #endif
   }
   else if(ext == ".avi")
@@ -288,6 +289,8 @@ int main(int argc, char** argv)
       // Set the output folder
       std::stringstream outFileName;
       outFileName << std::setfill('0') << std::setw(5) << frameId;
+      
+      boost::ptr_list<CCTag> markers;
 
       // Invert the image for the projection scenario
       //cv::Mat imgGrayInverted;
@@ -296,9 +299,9 @@ int main(int argc, char** argv)
       // Call the CCTag detection
       const int pipeId = 0;
 #ifdef PRINT_TO_CERR
-      detection(frameId, pipeId, *imgGray, params, bank, std::cerr, outFileName.str());
+      detection(frameId, pipeId, *imgGray, params, bank, markers, std::cerr, outFileName.str());
 #else
-      detection(frameId, pipeId, *imgGray, params, bank, outputFile, outFileName.str());
+      detection(frameId, pipeId, *imgGray, params, bank, markers, outputFile, outFileName.str());
 #endif
       ++frameId;
       if(frameId % 100 == 0)
@@ -345,10 +348,11 @@ int main(int argc, char** argv)
 
           // Call the CCTag detection
           int pipeId = (fileInFolder.first & 1);
+          boost::ptr_list<CCTag> markers;
 #ifdef PRINT_TO_CERR
-          detection(fileInFolder.first, pipeId, imgGray, params, bank, std::cerr, fileInFolder.second.stem().string());
+          detection(fileInFolder.first, pipeId, imgGray, params, bank, markers, std::cerr, fileInFolder.second.stem().string());
 #else
-          detection(fileInFolder.first, pipeId, imgGray, params, bank, outputFile, fileInFolder.second.stem().string());
+          detection(fileInFolder.first, pipeId, imgGray, params, bank, markers, outputFile, fileInFolder.second.stem().string());
 #endif
           std::cerr << "Done processing image " << fileInFolder.second.string() << std::endl;
         }
