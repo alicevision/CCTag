@@ -179,10 +179,10 @@ int main(int argc, char** argv)
 #endif
 
   // Check the (optional) parameters path
-  std::size_t nCrowns = std::atoi(cmdline._nCrowns.c_str());
+  const std::size_t nCrowns = std::atoi(cmdline._nCrowns.c_str());
   cctag::Parameters params(nCrowns);
 
-  if(cmdline._paramsFilename != "")
+  if(!cmdline._paramsFilename.empty())
   {
     if(!boost::filesystem::exists(cmdline._paramsFilename))
     {
