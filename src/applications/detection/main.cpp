@@ -151,7 +151,7 @@ int main(int argc, char** argv)
   cmdline.print(argv[0]);
 
   // Check input path
-  if(cmdline._filename.compare("") != 0)
+  if(!cmdline._filename.empty())
   {
     if(!boost::filesystem::exists(cmdline._filename))
     {
@@ -266,7 +266,7 @@ int main(int argc, char** argv)
     detection(0, pipeId, graySrc, params, bank, markers, outputFile, myPath.stem().string());
 #endif
   }
-  else if(ext == ".avi")
+  else if(ext == ".avi" || ext == ".mov")
   {
     CCTAG_COUT("*** Video mode ***");
     POP_INFO("looking at video " << myPath.string());
