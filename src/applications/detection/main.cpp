@@ -78,7 +78,7 @@ void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image)
   {
     const cv::Point center = cv::Point(marker.x(), marker.y());
     const int radius = 10;
-    if(marker.getStatus() == 1)
+    if(marker.getStatus() == status::id_reliable)
     {
       const cv::Scalar color = cv::Scalar(0, 255, 0 , 255);
       cv::circle(image, center, radius, color, 3);
@@ -156,7 +156,7 @@ void detection(std::size_t frameId,
   {
     outStream << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
     ++counter;
-    if(marker.getStatus() == 1)
+    if(marker.getStatus() == status::id_reliable)
       ++nMarkers;
   }
   
