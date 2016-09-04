@@ -58,7 +58,7 @@ namespace bfs = boost::filesystem;
  * @param[in] s The string to check.
  * @return Return true if the string is an integer number
  */
-bool isInteger(std::string s)
+bool isInteger(std::string &s)
 {
   std::regex e("^-?\\d+");
   return std::regex_match(s, e);
