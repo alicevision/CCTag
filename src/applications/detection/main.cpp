@@ -94,13 +94,26 @@ void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image)
   }
 }
 
+/**
+ * @brief Extract the cctag from an image.
+ * 
+ * @param[in] frameId The number of the frame.
+ * @param[in] pipeId The pipe id (used for multiple streams).
+ * @param[in] src The image to process.
+ * @param[in] params The parameters for the detection.
+ * @param[in] bank The marker bank.
+ * @param[out] markers The list of detected markers.
+ * @param[out] outStream The output stream on which to write debug information.
+ * @param[out] debugFileName The filename for the image to save with the detected 
+ * markers.
+ */
 void detection(std::size_t frameId,
                int pipeId,
                const cv::Mat & src,
                const cctag::Parameters & params,
                const cctag::CCTagMarkersBank & bank,
                boost::ptr_list<CCTag> &markers,
-               std::ostream & output,
+               std::ostream & outStream,
                std::string debugFileName = "")
 {
 
@@ -136,12 +149,12 @@ void detection(std::size_t frameId,
 
   std::size_t counter = 0;
   std::size_t nMarkers = 0;
-  output << "#frame " << frameId << '\n';
-  output << "Detected " << markers.size() << " candidates" << '\n';
+  outStream << "#frame " << frameId << '\n';
+  outStream << "Detected " << markers.size() << " candidates" << '\n';
 
   BOOST_FOREACH(const cctag::CCTag & marker, markers)
   {
-    output << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
+    outStream << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
     ++counter;
     if(marker.getStatus() == 1)
       ++nMarkers;
