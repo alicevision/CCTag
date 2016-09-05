@@ -41,7 +41,6 @@
 #include <string>
 #include <fstream>
 #include <exception>
-#include <regex>
 
 #include <tbb/tbb.h>
 
@@ -61,8 +60,7 @@ namespace bfs = boost::filesystem;
  */
 bool isInteger(std::string &s)
 {
-  std::regex e("^-?\\d+");
-  return std::regex_match(s, e);
+  return (s.size() == 1 && std::isdigit(s[0]));
 }
 
 /**
