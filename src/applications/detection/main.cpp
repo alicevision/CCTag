@@ -277,11 +277,11 @@ int main(int argc, char** argv)
   popart::device_prop_t deviceInfo(false);
 #endif // WITH_CUDA
 
-  bfs::path myPath(cmdline._filename);
+  bfs::path myPath(bfs::absolute(cmdline._filename));
   std::string ext(myPath.extension().string());
   boost::algorithm::to_lower(ext);
 
-  const bfs::path parentPath(myPath.parent_path() == "" ? "." : myPath.parent_path());
+  const bfs::path parentPath(myPath.parent_path());
   std::string outputFileName;
   if(!bfs::is_directory(myPath))
   {
