@@ -29,7 +29,7 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/algorithm/algorithm.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 
 #include <opencv/cv.h>
 #include <opencv2/videoio.hpp>
