@@ -29,6 +29,7 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/algorithm/algorithm.hpp>
 
 #include <opencv/cv.h>
 #include <opencv2/videoio.hpp>
@@ -278,6 +279,7 @@ int main(int argc, char** argv)
 
   bfs::path myPath(cmdline._filename);
   std::string ext(myPath.extension().string());
+  boost::algorithm::to_lower(ext);
 
   const bfs::path parentPath(myPath.parent_path() == "" ? "." : myPath.parent_path());
   std::string outputFileName;
@@ -294,7 +296,7 @@ int main(int argc, char** argv)
   std::ofstream outputFile;
   outputFile.open(outputFileName);
 
-  if((ext == ".png") || (ext == ".jpg") || (ext == ".PNG") || (ext == ".JPG"))
+  if((ext == ".png") || (ext == ".jpg"))
   {
 
     std::cout << "******************* Image mode **********************" << std::endl;
