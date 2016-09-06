@@ -77,17 +77,18 @@ void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image)
   {
     const cv::Point center = cv::Point(marker.x(), marker.y());
     const int radius = 10;
+    const int fontSize = 3;
     if(marker.getStatus() == status::id_reliable)
     {
       const cv::Scalar color = cv::Scalar(0, 255, 0 , 255);
       cv::circle(image, center, radius, color, 3);
-      cv::putText(image, std::to_string(marker.id()), center, cv::FONT_HERSHEY_SIMPLEX, 5, color, 3);
+      cv::putText(image, std::to_string(marker.id()), center, cv::FONT_HERSHEY_SIMPLEX, fontSize, color, 3);
     }
     else
     {
       const cv::Scalar color = cv::Scalar(0, 0, 255 , 255);
       cv::circle(image, center, radius, color, 2);
-      cv::putText(image, std::to_string(marker.id()), center, cv::FONT_HERSHEY_SIMPLEX, 4, color, 3);
+      cv::putText(image, std::to_string(marker.id()), center, cv::FONT_HERSHEY_SIMPLEX, fontSize, color, 3);
     }
 
   }
