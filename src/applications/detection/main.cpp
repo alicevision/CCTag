@@ -363,8 +363,6 @@ int main(int argc, char** argv)
       else
         frame.copyTo(imgGray);
 
-      boost::timer t;
-
       // Set the output folder
       std::stringstream outFileName;
       outFileName << std::setfill('0') << std::setw(5) << frameId;
