@@ -201,7 +201,7 @@ int main(int argc, char** argv)
     {
       useCamera = true;
     }
-    else if(!boost::filesystem::exists(cmdline._filename))
+    else if(!bfs::exists(cmdline._filename))
     {
       std::cerr << std::endl
               << "The input file \"" << cmdline._filename << "\" is missing" << std::endl;
@@ -226,7 +226,7 @@ int main(int argc, char** argv)
 
   if(!cmdline._paramsFilename.empty())
   {
-    if(!boost::filesystem::exists(cmdline._paramsFilename))
+    if(!bfs::exists(cmdline._paramsFilename))
     {
       std::cerr << std::endl
               << "The input file \"" << cmdline._paramsFilename << "\" is missing" << std::endl;
