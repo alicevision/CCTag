@@ -184,7 +184,7 @@ int main(int argc, char** argv)
 {
   CmdLine cmdline;
 
-  if(cmdline.parse(argc, argv) == false)
+  if(!cmdline.parse(argc, argv))
   {
     cmdline.usage(argv[0]);
     return EXIT_FAILURE;
