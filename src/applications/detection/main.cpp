@@ -239,7 +239,14 @@ int main(int argc, char** argv)
     ia >> boost::serialization::make_nvp("CCTagsParams", params);
     CCTAG_COUT(params._nCrowns);
     CCTAG_COUT(nCrowns);
-    assert(nCrowns == params._nCrowns);
+    if(nCrowns != params._nCrowns)
+    {
+      std::cerr << std::endl
+              << "The number of rings is inconsistent between the parameter file (" 
+              << params._nCrowns << ") and the command line (" 
+              << nCrowns << ")" << std::endl;
+      return EXIT_FAILURE;
+    }
   }
   else
   {
