@@ -73,7 +73,7 @@ bool isInteger(std::string &s)
  */
 void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image)
 {
-  BOOST_FOREACH(const cctag::CCTag & marker, markers)
+  for(const cctag::CCTag & marker : markers)
   {
     const cv::Point center = cv::Point(marker.x(), marker.y());
     const int radius = 10;
@@ -151,7 +151,7 @@ void detection(std::size_t frameId,
   outStream << "#frame " << frameId << '\n';
   outStream << "Detected " << markers.size() << " candidates" << '\n';
 
-  BOOST_FOREACH(const cctag::CCTag & marker, markers)
+  for(const cctag::CCTag & marker : markers)
   {
     outStream << marker.x() << " " << marker.y() << " " << marker.id() << " " << marker.getStatus() << '\n';
     ++counter;
@@ -160,7 +160,7 @@ void detection(std::size_t frameId,
   }
   
   counter = 0;
-  BOOST_FOREACH(const cctag::CCTag & marker, markers)
+  for(const cctag::CCTag & marker : markers)
   {
     if(counter == 0)
     {
