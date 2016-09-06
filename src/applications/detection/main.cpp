@@ -116,7 +116,7 @@ void detection(std::size_t frameId,
                std::string debugFileName = "")
 {
 
-  if(debugFileName == "")
+  if(debugFileName.empty())
   {
     debugFileName = "00000";
   }
@@ -267,7 +267,7 @@ int main(int argc, char** argv)
     params.setUseCuda(false);
   }
 
-  if(cmdline._debugDir != "")
+  if(!cmdline._debugDir.empty())
   {
     params.setDebugDir(cmdline._debugDir);
   }
