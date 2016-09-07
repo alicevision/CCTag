@@ -116,7 +116,7 @@ void CmdLine::usage( const char* const argv0 )
           "           [--use-cuda]\n"
           "           [--parallel <n>]\n"
           "\n"
-          "    <imgpath>  - path to an image (JPG, PNG) or video\n"
+          "    <imgpath>  - path to an image (JPG, PNG) or video (avi, mov) or camera index for live capture (0, 1...)\n"
           "    <nbrings>  - number of rings of the CCTags to detect\n"
           "    <bankpath> - path to a bank parameter file, e.g. 4Crowns/ids.txt \n"
           "    <output>   - output folder name \n"
