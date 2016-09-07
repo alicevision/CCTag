@@ -137,12 +137,12 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
  */
 __global__
 void idGetSignals( cv::cuda::PtrStepSzb   src,
-                   TagPipe::ImageCenter*  d_image_center_opt_input,
+                   ImageCenter*  d_image_center_opt_input,
                    const NearbyPointGrid* point_grid,
                    const CutStructGrid*   cut_grid,
                    CutSignalGrid*         sig_grid )
 {
-    TagPipe::ImageCenter& v = d_image_center_opt_input[blockIdx.x];
+    ImageCenter& v = d_image_center_opt_input[blockIdx.x];
     if( not v._valid ) return;
     if( v._iterations <= 0 ) return;
 
@@ -220,11 +220,11 @@ void idGetSignals( cv::cuda::PtrStepSzb   src,
 __global__
 void initAllNearbyPoints(
     bool                               first_iteration,
-    TagPipe::ImageCenter*              d_image_center_opt_input,
+    ImageCenter*              d_image_center_opt_input,
     const float                        currentNeighbourSize,
     NearbyPointGrid*                   nearbyPoints )
 {
-    TagPipe::ImageCenter& v = d_image_center_opt_input[blockIdx.x];
+    ImageCenter& v = d_image_center_opt_input[blockIdx.x];
     if( not v._valid ) return;
     if( v._iterations <= 0 ) return;
 
@@ -285,12 +285,12 @@ void initAllNearbyPoints(
  * store the minimum in result in the NearbyPoint structure.
  */
 __global__
-void idComputeResult( TagPipe::ImageCenter* d_image_center_opt_input,
+void idComputeResult( ImageCenter* d_image_center_opt_input,
                       NearbyPointGrid*      point_grid,
                       const CutStructGrid*  cut_grid,
                       const CutSignalGrid*  sig_grid )
 {
-    TagPipe::ImageCenter& v = d_image_center_opt_input[blockIdx.z];
+    ImageCenter& v = d_image_center_opt_input[blockIdx.z];
     if( not v._valid ) return;
     if( v._iterations <= 0 ) return;
 
@@ -460,12 +460,11 @@ void idComputeResult( NearbyPointGrid*     d_NearbyPointGrid,
 }
 #endif
 
-#if 1
 __global__
-void idBestNearbyPoint32plus( TagPipe::ImageCenter* d_image_center_opt_input,
+void idBestNearbyPoint32plus( ImageCenter* d_image_center_opt_input,
                               NearbyPointGrid*      point_grid )
 {
-    TagPipe::ImageCenter& v = d_image_center_opt_input[blockIdx.x];
+    ImageCenter& v = d_image_center_opt_input[blockIdx.x];
     if( not v._valid ) return;
     if( v._iterations <= 0 ) return;
 
@@ -526,73 +525,12 @@ void idBestNearbyPoint32plus( TagPipe::ImageCenter* d_image_center_opt_input,
         }
     }
 }
-#else
+
 __global__
-void idBestNearbyPoint32plus( NearbyPointGrid* d_NearbyPointGrid,
-                              const size_t     gridNSample )
-{
-    // phase 1: each thread searches for its own best point
-    float bestRes = FLT_MAX;
-    int   gridSquare = gridNSample * gridNSample;
-    int   bestIdx = gridSquare-1;
-    int   idx;
-    for( idx=threadIdx.x; idx<gridSquare; idx+=32 ) {
-        const int x = idx % gridNSample;
-        const int y = idx / gridNSample;
-        const NearbyPoint& point = d_NearbyPointGrid->getGrid(x,y);
-        if( point.readable ) {
-            bestIdx = idx;
-            bestRes = point.result / point.resSize;
-            break;
-        }
-    }
-    __syncthreads();
-    for( ; idx<gridSquare; idx+=32 ) {
-        const int x = idx % gridNSample;
-        const int y = idx / gridNSample;
-        const NearbyPoint& point = d_NearbyPointGrid->getGrid(x,y);
-        if( point.readable ) {
-            float val = point.result / point.resSize;
-            if( val < bestRes ) {
-                bestIdx = idx;
-                bestRes = val;
-            }
-        }
-    }
-    __syncthreads();
-
-    // phase 2: reduce to let thread 0 know the best point
-    #pragma unroll
-    for( int shft=4; shft>=0; shft-- ) {
-        int otherRes = __shfl_down( bestRes, (1 << shft) );
-        int otherIdx = __shfl_down( bestIdx, (1 << shft) );
-        if( otherRes < bestRes ) {
-            bestRes = otherRes;
-            bestIdx = otherIdx;
-        }
-    }
-    __syncthreads();
-
-    // phase 3: copy the best point into index 0
-    if( threadIdx.x == 0 ) {
-        if( bestIdx != 0 ) {
-            const int x = bestIdx % gridNSample;
-            const int y = bestIdx / gridNSample;
-            const NearbyPoint& src_point = d_NearbyPointGrid->getGrid(x,y);
-            NearbyPoint&       dst_point = d_NearbyPointGrid->getGrid(0,0);
-            memcpy( &dst_point, &src_point, sizeof( NearbyPoint ) );
-            dst_point.residual = bestRes;
-        }
-    }
-}
-#endif
-
-#if 1
-__global__
-void idBestNearbyPoint31max( TagPipe::ImageCenter* d_image_center_opt_input,
+void idBestNearbyPoint31max( ImageCenter* d_image_center_opt_input,
                              NearbyPointGrid*      point_grid )
 {
-    TagPipe::ImageCenter& v = d_image_center_opt_input[blockIdx.x];
+    ImageCenter& v = d_image_center_opt_input[blockIdx.x];
     if( not v._valid ) return;
     if( v._iterations <= 0 ) return;
 
@@ -639,52 +577,6 @@ void idBestNearbyPoint31max( TagPipe::ImageCenter* d_image_center_opt_input,
         }
     }
 }
-#else
-__global__
-void idBestNearbyPoint31max( NearbyPointGrid* d_NearbyPointGrid,
-                             const size_t     gridNSample )
-{
-    // phase 1: each thread retrieves its point
-    const size_t gridSquare = gridNSample * gridNSample;
-    float bestRes = FLT_MAX;
-    int   bestIdx = gridSquare-1;
-    int   idx     = threadIdx.x;
-    if( idx < gridSquare ) {
-        const int x = idx % gridNSample;
-        const int y = idx / gridNSample;
-        const NearbyPoint& point = d_NearbyPointGrid->getGrid(x,y);
-        if( point.readable ) {
-            bestIdx = idx;
-            bestRes = point.result / point.resSize;
-        }
-    }
-    __syncthreads();
-
-    // phase 2: reduce to let thread 0 know the best point
-    #pragma unroll
-    for( int shft=4; shft>=0; shft-- ) {
-        int otherRes = __shfl_down( bestRes, (1 << shft) );
-        int otherIdx = __shfl_down( bestIdx, (1 << shft) );
-        if( otherRes < bestRes ) {
-            bestRes = otherRes;
-            bestIdx = otherIdx;
-        }
-    }
-    __syncthreads();
-
-    // phase 3: copy the best point into index 0
-    if( threadIdx.x == 0 ) {
-        if( bestIdx != 0 ) {
-            const int x = bestIdx % gridNSample;
-            const int y = bestIdx / gridNSample;
-            const NearbyPoint& src_point = d_NearbyPointGrid->getGrid(x,y);
-            NearbyPoint&       dst_point = d_NearbyPointGrid->getGrid(0,0);
-            memcpy( &dst_point, &src_point, sizeof( NearbyPoint ) );
-            dst_point.residual = bestRes;
-        }
-    }
-}
-#endif
 
 } // namespace identification
 
@@ -795,7 +687,6 @@ void TagPipe::idCostFunction( )
         }
 #endif
 
-#if 1
         /* We search for the minimum of gridNSample x gridNSample
          * nearby points. Default for gridNSample is 5.
          * It is therefore most efficient to use a single-warp kernel
@@ -816,34 +707,6 @@ void TagPipe::idCostFunction( )
                 ( _d_image_center_opt_input,
                   _d_nearby_point_grid );
         }
-#else
-        for( int i=0; i<_num_cut_struct_grid; i++ ) {
-            ImageCenter& v = _h_image_center_opt_input[i];
-            if( not v._valid ) continue;
-            if( v._iterations <= 0 ) continue;
-
-            /* We search for the minimum of gridNSample x gridNSample
-             * nearby points. Default for gridNSample is 5.
-             * It is therefore most efficient to use a single-warp kernel
-             * for the search.
-             */
-            const int gridSquare = gridNSample * gridNSample;
-
-            if( gridSquare < 32 ) {
-                popart::identification::idBestNearbyPoint31max
-                    <<<1,32,0,_tag_stream>>>
-                    ( getNearbyPointGridBuffer( v._tagIndex ), gridNSample );
-            } else {
-                cerr << __FILE__ << ":" << __LINE__
-                     << " Untested code idBestNearbyPoint32plus" << endl;
-                popart::identification::idBestNearbyPoint32plus
-                    <<<1,32,0,_tag_stream>>>
-                    ( getNearbyPointGridBuffer( v._tagIndex ), gridNSample );
-            }
-
-            v._iterations -= 1;
-        }
-#endif
 
         currentNeighbourSize /= (float)((gridNSample-1)/2) ;
 

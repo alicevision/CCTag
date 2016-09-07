@@ -22,6 +22,7 @@
 
 #include "cuda/tag_threads.h"
 #include "cuda/tag_cut.h"
+#include "cuda/tag_img_center.h"
 #include "cuda/geom_ellipse.h"
 #include "cuda/geom_matrix.h"
 
@@ -82,84 +83,6 @@ public:
     cv::Mat* getDy( size_t layer ) const;
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
-
-    struct ImageCenter
-    {
-        bool                            _valid;
-        const int                       _tagIndex;     // in
-        const int                       _debug_numTags; // in - only for debugging
-        const popart::geometry::ellipse _outerEllipse; // in
-        popart::geometry::matrix3x3     _mT;
-        popart::geometry::matrix3x3     _mInvT;
-        const float                     _maxSemiAxis; // in
-        const float2                    _center;       // in
-        const int                       _vCutSize;     // in
-        int                             _iterations;
-        float                           _transformedEllipseMaxRadius;
-        NearbyPoint*                    _cctag_pointer_buffer; // out
-
-        ImageCenter( const int                       tagIndex,
-                     const int                       debug_numTags,
-                     const popart::geometry::ellipse outerEllipse,
-                     const float2&                   center,
-                     const int                       vCutSize,
-                     NearbyPoint*                    cctag_pointer_buffer,
-                     const cctag::Parameters& params )
-            : _valid( true )
-            , _tagIndex( tagIndex )
-            , _debug_numTags( debug_numTags )
-            , _outerEllipse( outerEllipse )
-            , _maxSemiAxis( std::max( outerEllipse.a(), outerEllipse.b() ) )
-            , _center( center )
-            , _vCutSize( vCutSize )
-            , _iterations( 0 )
-            , _cctag_pointer_buffer( cctag_pointer_buffer )
-        {
-            const size_t gridNSample   = params._imagedCenterNGridSample;
-            float        neighbourSize = params._imagedCenterNeighbourSize;
-
-            if( _vCutSize < 2 ) {
-                _valid = false;
-                return;
-            }
-
-            if( _vCutSize != 22 ) {
-                std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-                     << "    " << __func__ << " is called from CPU code with vCutSize " << _vCutSize << " instead of 22" << std::endl;
-                if( _vCutSize > 22 ) {
-                    exit( -1 );
-                }
-            }
-
-            /* Determine the number of iterations by iteration */
-            while( neighbourSize * _maxSemiAxis > 0.02 ) {
-                _iterations += 1;
-                neighbourSize /= (float)((gridNSample-1)/2) ;
-            }
-
-            _outerEllipse.makeConditionerFromEllipse( _mT );
-
-            bool good = _mT.invert( _mInvT );
-            if( not good ) {
-                std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-                          << "    Conditioner matrix extracted from ellipse is not invertable" << std::endl
-                          << "    Program logic error. Requires analysis before fixing." << std::endl
-                          << std::endl;
-                _valid = false;
-
-                return;
-            }
-
-            popart::geometry::ellipse transformedEllipse;
-            _outerEllipse.projectiveTransform( _mInvT, transformedEllipse );
-            _transformedEllipseMaxRadius = std::max( transformedEllipse.a(), transformedEllipse.b() );
-        }
-
-        void setInvalid( )
-        {
-            _valid = false;
-        }
-    };
 
     ImageCenter* _d_image_center_opt_input;
     ImageCenter* _h_image_center_opt_input;
