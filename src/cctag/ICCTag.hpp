@@ -41,6 +41,9 @@ public:
 
 	virtual ~ICCTag() {}
 
+	virtual ICCTag* clone() const = 0;
+
+
 protected:
 	float _x;
 	float _y;
@@ -49,6 +52,11 @@ protected:
                      // A marker correctly detected and identified has a status 1.
                      // Otherwise, it can be detected but not correctly identified.
 };
+
+inline ICCTag* new_clone(const ICCTag& a)
+{
+	return a.clone();
+}
 
 /**
  * @brief Perform the CCTag detection on a gray scale image
