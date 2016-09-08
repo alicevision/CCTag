@@ -125,3 +125,9 @@ find_package(JPEG REQUIRED)
 find_package(TBB 4 REQUIRED)
 
 add_subdirectory(src)
+
+install(
+  FILES cmake/FindCCTag.cmake
+  DESTINATION share/cmake
+  )
+
