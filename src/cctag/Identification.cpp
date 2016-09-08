@@ -13,12 +13,6 @@
 #undef SUBPIX_EDGE_OPTIM
 #include <cctag/SubPixEdgeOptimizer.hpp>
 
-#ifdef USE_IMAGE_CENTER_OPT // undefined. Depreciated
-#include <cctag/optimization/ImageCenterOptimizerCeres.hpp>
-#include <cctag/optimization/ImageCenterOptimizer.hpp>
-#include <cctag/optimization/LMImageCenterOptimizer.hpp>
-#endif // USE_IMAGE_CENTER_OPT
-
 #include <cctag/geometry/Circle.hpp>
 #include <cctag/utils/Talk.hpp>
 
