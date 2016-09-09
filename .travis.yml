@@ -10,16 +10,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-4.8
-            - lcov
-            - libpng-dev
-            - libjpeg8-dev
-            - libtiff4-dev
-            - libxxf86vm1
-            - libxxf86vm-dev
-            - libtbb-dev
-            - x11proto-xf86vidmode-dev
-            - libxrandr-dev
-            - libatlas-base-dev
       env: COMPILER=g++-4.8 TOOLSET=gcc
     - compiler: clang
       addons:
@@ -29,16 +19,6 @@ matrix:
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
-            - lcov
-            - libpng-dev
-            - libjpeg8-dev
-            - libtiff4-dev
-            - libxxf86vm1
-            - libxxf86vm-dev
-            - libtbb-dev
-            - x11proto-xf86vidmode-dev
-            - libxrandr-dev
-            - libatlas-base-dev
       env: COMPILER=clang++-3.7 TOOLSET=clang
 
 sudo: false
