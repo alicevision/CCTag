@@ -23,7 +23,7 @@ sub process_input
             $startTime = $event[2] unless $startTime;
         } elsif (/([0-9a-f]+)\s(.+?)\s\((.+)\)$/) {
             my ($func, $dso) = ($2, $3);
-            #$func =~ s/\(.+?\)$//;
+            ($func) = $func =~ /^([^<(]+)/; 
             push @bt, $func if $dso =~ /regression$/;
         }
         elsif (/^$/) {
