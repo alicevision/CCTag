@@ -39,10 +39,10 @@ sub process_bt
 
     $times{$tid} ||= [];
 
-    for my $lvl (0 .. scalar @_) {
+    foreach my $lvl (0 .. $#_) {
 	my $func = $_[$lvl];
-	$times{$tid}->[$lvl] ||= [];
-	process_fn($tid, $sample, $func, $times{$tid}->[$lvl]);
+	$funcs{$tid}->[$lvl] ||= [];
+	process_fn($tid, $sample, $func, $funcs{$tid}->[$lvl]);
     }
 
     # Must come last, needed for coalescing of intervals.
@@ -59,7 +59,7 @@ sub process_fn
 	++$intervals->[-1][-1];
     }
     else {
-	push @$intervals, [$sample, $sample, scalar @{$times{$tid}}];
+	push @$intervals, [$func, $sample_idx, $sample_idx];
     }
 }
 
