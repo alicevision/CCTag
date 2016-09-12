@@ -115,16 +115,9 @@ target_link_libraries(simulation PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
 #############################################################################
 
-set( FILES_TO_DEPLOY
-      ./cctag/ICCTag.hpp
-      ./cctag/Params.hpp
-      ./cctag/CCTagMarkersBank.hpp
-      ./cctag/utils/Talk.hpp
-      ./cctag/utils/Singleton.hpp
-      ./cctag/utils/LogTime.hpp)
-
-foreach ( file ${FILES_TO_DEPLOY} )
-get_filename_component( dir ${file} DIRECTORY )
-install( FILES ${file} DESTINATION include/${dir} )
-endforeach()
+install(
+  DIRECTORY cctag
+  DESTINATION include
+  COMPONENT headers
+  FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 

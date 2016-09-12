@@ -14,7 +14,6 @@
 #include <boost/foreach.hpp>
 #include <boost/math/special_functions/pow.hpp>
 #include <Eigen/Dense>
-#include <tbb/tbb.h>
 
 namespace cctag {
 namespace numerical {
