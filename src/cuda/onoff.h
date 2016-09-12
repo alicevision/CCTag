@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #pragma once
 
 // a macro that switches on printing in cctag
@@ -28,12 +35,7 @@
 #define DEBUG_WRITE_LINKED_AS_ASCII
 #define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
 
-/* Although some GPU code exists, it is too slow and edge
- * linking is still done on the host side.
- */
-#define EDGE_LINKING_HOST_SIDE
-
-#define DEBUG_LINKED_USE_INT4_BUFFER
+//#define DEBUG_LINKED_USE_INT4_BUFFER
 
 /* Separable compilation allows one kernel to instantiate
  * others. That avoids complexity on the host side when,
@@ -49,20 +51,6 @@
 #define USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 
 
-/* Init _d_intermediate to 0 before uploading. Wastes time,
- * for debugging only. Required because of crash -O3 but not
- * with -G
- */
-#undef DEBUG_FRAME_UPLOAD_CUTS
-
-/* Define if you want to compute identity both on GPU and CPU.
- * The GPU version takes precedence.
- * Otherwise, GPU is used if cudaPipe exists (the alternative,
- * param.useCuda == false is broken in the optim_identify_gpu
- * branch).
- */
-#undef CPU_GPU_COST_FUNCTION_COMPARE
-
 /* CUB functions always take a last parameters true or false.
  * If it is true, they run synchronously and print some debug
  * info.
@@ -75,21 +63,6 @@
  * However, so far they don't work.
  */
 #undef RADIX_WITHOUT_DOUBLEBUFFER
-
-/* For the CUB version included with CUDA 7.0, it was possible to
- * pass an arbitrary device pointer pointing to sufficiently large
- * memory.
- * Standalone CUB 1.4.1 fails unless the init call for determining
- * intermediate buffer size is made.
- */
-#define CUB_INIT_CALLS
-
-/* Chooses between two codepaths in tag.cu, one that adds synchronous
- * calling and timing for debug output, and another that does not.
- * When changing this, remember that a change or bugfix may be missing
- * n the new codepath!
- */
-#undef SHOW_DETAILED_TIMING
 
 /* Affects tag.cu.
 .* A Frame used two CUDA streams, one for upload and kernels, another
@@ -105,5 +78,14 @@
  * edge point coordinates to avoid randomness? If it appears that
  * this is the case, #define this.
  */
-#define SORT_ALL_EDGECOORDS_IN_EXPORT
+//#define SORT_ALL_EDGECOORDS_IN_EXPORT
 
+/* Space for nearby points must be allocated in pinned memory.
+ * The number of such objects must be limited, and this is the
+ * limits.
+ */
+#define MAX_MARKER_FOR_IDENT 60
+
+/* How many parallel pipelines can we have?
+ */
+#define MAX_PIPES	4

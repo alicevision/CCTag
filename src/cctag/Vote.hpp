@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef VISION_CCTAG_VOTE_HPP_
 #define VISION_CCTAG_VOTE_HPP_
 
@@ -7,7 +14,7 @@
 #include <cctag/Candidate.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
-#include <boost/unordered/unordered_set.hpp>
+#include <boost/container/flat_set.hpp>
 
 #include <cstddef>
 #include <list>
@@ -26,12 +33,10 @@ namespace cctag {
  * seeds: edge points having received enough votes to be considered as a seed, i.e.
  * as an edge point belonging on an inner elliptical arc of a cctag.
  * edgesMap: map of all the edge points
- * winners: map associating all seeds to their voters
  * cannyGradX: X derivative of the gray image
  * cannyGradY: Y derivative of the gray image
  */
-void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
-        const EdgePointsImage & edgesMap, WinnerMap& winners,
+void vote(EdgePointCollection& edgeCollection, std::vector<EdgePoint*> & seeds,
         const cv::Mat & dx,
         const cv::Mat & dy,
         const Parameters & params);
@@ -39,21 +44,21 @@ void vote(std::vector<EdgePoint> & points, std::vector<EdgePoint*> & seeds,
 /** @brief Retrieve all connected edges.
  * @param[out] convexEdgeSegment
  */
-void edgeLinking( const EdgePointsImage& img, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax, 
-	WinnerMap& winners, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
+void edgeLinking(EdgePointCollection& edgeCollection, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax, 
+	std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
 /** @brief Edge linking in a given direction
  * @param edges resulting edges sorted points
  */
-void edgeLinkingDir( const EdgePointsImage& img, boost::unordered_set<std::pair<int, int> >& processed,
-	EdgePoint* p, const int dir, std::list<EdgePoint*>& convexEdgeSegment,
-	WinnerMap& winners, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
+void edgeLinkingDir(EdgePointCollection& edgeCollection, boost::container::flat_set<unsigned int>& processed,
+	const EdgePoint* p, const int dir, std::list<EdgePoint*>& convexEdgeSegment,
+	std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
 /** @brief Concaten all childrens of each points
  * @param edges list of edges
  * @param childrens resulting childrens
  */
-void childrensOf( std::list<EdgePoint*>& edges, WinnerMap& winnerMap, std::list<EdgePoint*>& childrens );
+void childrensOf(const EdgePointCollection& edgeCollection, const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& childrens );
 
 /** @brief Concaten all childrens of each points
  * @param [in/out] edges list of childrens points (from a winner)
@@ -61,25 +66,26 @@ void childrensOf( std::list<EdgePoint*>& edges, WinnerMap& winnerMap, std::list<
 void outlierRemoval(
         const std::list<EdgePoint*>& childrens,
         std::vector<EdgePoint*>& filteredChildrens,
-        double & SmFinal,
-        double threshold,
+        float & SmFinal,
+        float threshold,
         std::size_t weightedType = NO_WEIGHT,
         const std::size_t maxSize = std::numeric_limits<int>::max());
 
-//void outlierRemoval( std::vector<EdgePoint*>& childrens, double & SmFinal, double threshold, std::size_t weightedType = 0 ); //todo@Lilian : templater le outlierRemoval
+//void outlierRemoval( std::vector<EdgePoint*>& childrens, float & SmFinal, float threshold, std::size_t weightedType = 0 ); //todo@Lilian : templater le outlierRemoval
 
 /** @brief Search for another segment after the ellipse growinf procedure
  * @param points from the first elliptical segment
  * @param points from the candidate segment
  */
 bool isAnotherSegment(
-      numerical::geometry::Ellipse & outerEllipse,
+        EdgePointCollection& edgeCollection,
+        numerical::geometry::Ellipse & outerEllipse,
         std::vector<EdgePoint*>&  outerEllipsePoints,
         const std::vector<EdgePoint*>& filteredChildrens,
         const Candidate & anotherCandidate,
-        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
+        std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
         std::size_t numCircles,
-        double thrMedianDistanceEllipse);
+        float thrMedianDistanceEllipse);
 
 } // namespace cctag
 

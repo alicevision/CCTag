@@ -1,7 +1,15 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef VISION_EDGEPOINT_HPP_
 #define VISION_EDGEPOINT_HPP_
 
 #include <cctag/geometry/Point.hpp>
+#include <cctag/utils/Defines.hpp>
 
 #include <cstddef>
 #include <sys/types.h>
@@ -13,90 +21,71 @@ namespace cctag
 
 class Label;
 
-class EdgePoint : public cctag::Point2dN<int>
+using Vector3s = Eigen::Matrix<short, 3, 1>;
+
+class EdgePoint : public Vector3s
 {
 public:
-  EdgePoint()
-    : cctag::Point2dN<int>( 0, 0 )
-    , _normGrad( -1.0 )
-    , _before( NULL )
-    , _after( NULL )
-    , _processed( -1 )
-    , _processedIn( false )
-    , _isMax( -1 )
-    , _edgeLinked( -1 )
-    , _nSegmentOut(-1)
-    , _flowLength (0)
-    ,_processedAux(false)
+  EdgePoint() = default;
 
-  {}
-
+  // XXX: should delete copy ctor; a lot of state is in EdgePointCollection
+  // That class checks incoming pointers though.
   EdgePoint( const EdgePoint& p )
-    : cctag::Point2dN<int>( p )
+    : Vector3s(p)
     , _grad( p._grad )
     , _normGrad ( p._normGrad )
-    , _before( p._before )
-    , _after( p._after )
-    , _processed( -1 )
-    , _processedIn( false )
-    , _isMax( -1 )
-    , _edgeLinked( -1 )
-    , _nSegmentOut(-1)
     , _flowLength (0)
-    , _processedAux(false)
+    , _processed( 0 )
+    , _isMax( -1 )
+    , _nSegmentOut(-1)
   {}
 
   EdgePoint( const int vx, const int vy, const float vdx, const float vdy )
-    : cctag::Point2dN<int>( vx, vy )
-    , _before( NULL )
-    , _after( NULL )
-    , _processed( -1 )
-    , _processedIn( false )
-    , _isMax( -1 )
-    , _edgeLinked( -1 )
-    , _nSegmentOut(-1)
+    : Vector3s( vx, vy, 1 )
+    , _grad(vdx, vdy)
+    , _normGrad(std::sqrt( vdx * vdx + vdy * vdy ))
     , _flowLength (0)
-    , _processedAux(false)
+    , _processed( 0 )
+    , _isMax( -1 )
+    , _nSegmentOut(-1)
   {
-    _normGrad = std::sqrt( vdx * vdx + vdy * vdy );
-    _grad = cctag::Point2dN<double>( (double) vdx , (double) vdy );
   }
 
-  void init( const int vx, const int vy, const float vdx, const float vdy )
+  Eigen::Vector2f gradient() const
   {
-    this->setX( vx );
-    this->setY( vy );
-    this->setW( 1 );
-    _grad = cctag::Point2dN<double>( (double) vdx , (double) vdy );
-    _normGrad = std::sqrt( vdx * vdx + vdy * vdy );
+    return _grad;
+  }
+  
+  float dX() const
+  {
+    return _grad(0);
+  }
+  
+   float dY() const
+  {
+    return _grad(1);
   }
 
-  virtual ~EdgePoint() {}
-
-  inline cctag::Point2dN<double> gradient() const
-  {
-    return _grad ;
-  }
-
-  inline double normGradient() const
+  float normGradient() const
   {
     return _normGrad ;
   }
 
   friend std::ostream& operator<<( std::ostream& os, const EdgePoint& eP );
 
-  cctag::Point2dN<double> _grad;
-  double _normGrad;
-  EdgePoint* _before;
-  EdgePoint* _after;
-  ssize_t _processed;
-  bool _processedIn;
-  ssize_t _isMax;
-  ssize_t _edgeLinked;
-  ssize_t _nSegmentOut; // std::size_t _nSegmentOut;
+private:
+  Eigen::Vector2f _grad;
+  float _normGrad;
+public:
   float _flowLength;
-  bool _processedAux;
+  uint64_t _processed;   // bitfield; must be 64-bit
+  int _isMax;
+  int _nSegmentOut;     // std::size_t _nSegmentOut;
 };
+
+// Calculation: sizeof(Vector3s)==8 (3*2=6 + 2 bytes of padding to 8 bytes)
+// 4*sizeof(float) == 16; plus uint64_t + 2 ints
+static_assert(sizeof(EdgePoint) == 8+16+16, "EdgePoint not packed");
 
 inline bool receivedMoreVoteThan(const EdgePoint * const p1,  const EdgePoint * const p2)
 {

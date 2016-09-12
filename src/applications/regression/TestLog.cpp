@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <math.h>
 #include <fstream>
 #include <chrono>
@@ -19,7 +26,7 @@ FrameLog FrameLog::detect(size_t frame, const cv::Mat& src, const Parameters& pa
   CCTag::List markers;
   
   const auto t0 = high_resolution_clock::now();
-  cctagDetection(markers, frame, src, parameters, bank, true, nullptr);
+  cctagDetection(markers, 0, frame, src, parameters, bank, true, nullptr);
   const auto t1 = high_resolution_clock::now();
   const auto td = duration_cast<milliseconds>(t1 - t0).count() / 1000.f;
   

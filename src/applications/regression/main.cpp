@@ -1,9 +1,15 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/program_options.hpp>
-
 #include "Regression.h"
 
 static std::string SourceDir;
@@ -103,6 +109,8 @@ static bool ReportChecks()
   std::clog << "Performance difference report:\n";
   std::clog << "  time,    mean=" << testChecker.elapsedTimeDifferenceMean() << ",stdev=" << testChecker.elapsedTimeDifferenceStdev() << std::endl;
   std::clog << "  quality, mean=" << testChecker.qualityDifferenceMean() << ",stdev=" << testChecker.qualityDifferenceStdev() << std::endl;
+  
+  return ok;
 }
 
 int main(int argc, char **argv)

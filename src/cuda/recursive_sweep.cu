@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cuda_runtime.h>
 #include "debug_macros.hpp"
 
@@ -109,12 +116,12 @@ bool single_block_loop( cv::cuda::PtrStepSz<T> img )
     Processor proc;
     while( again ) {
         bool mark      = proc.check( img, idx, idy );
-        bool any_marks = __any( mark );
+        bool any_marks = ::__any( mark );
         if( threadIdx.x == 0 ) continuation[threadIdx.y] = any_marks;
         __syncthreads();
         mark = threadIdx.x < HYST_H ? continuation[threadIdx.x] : false;
         __syncthreads();
-        again = __any( mark );
+        again = ::__any( mark );
         if( again ) nothing_changed = false;
     }
 

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef _CCTAG_NUMERICAL_MATRIX_HPP_
 #define	_CCTAG_NUMERICAL_MATRIX_HPP_
 
@@ -32,7 +39,7 @@ template<typename T>
 void f( typename Matrix<T>::Type m, typename BoundedMatrix<T, 3,4>::Type& mm );
 
 Matrixd m;
-f<double>(m);
+f<float>(m);
 
 //-----------------------------
 // define solution
@@ -138,7 +145,7 @@ private:
 //
 
 
-CCTAG_DEFINE_NUMERICAL_TYPES( double, d )
+CCTAG_DEFINE_NUMERICAL_TYPES( float, d )
 CCTAG_DEFINE_NUMERICAL_TYPES( float, f )
 //CCTAG_DEFINE_NUMERICAL_TYPES( int, i )
 //CCTAG_DEFINE_NUMERICAL_TYPES( char, c )

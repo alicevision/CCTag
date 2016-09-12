@@ -1,13 +1,16 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include "onoff.h"
 
-// #include <iostream>
-// #include <algorithm>
 #include <limits>
 #include <cuda_runtime.h>
 #include <cub/cub.cuh>
-// #include <stdio.h>
 #include "debug_macros.hpp"
-// #include "debug_is_on_edge.h"
 
 #include "frame.h"
 #include "framemeta.h"
@@ -47,7 +50,6 @@ bool Frame::applyVoteSortNoDP( )
                                    _interm_inner_points.dev.ptr );
 #endif // not RADIX_WITHOUT_DOUBLEBUFFER
 
-#ifdef CUB_INIT_CALLS
     assist_buffer_sz  = 0;
 
 #ifdef RADIX_WITHOUT_DOUBLEBUFFER
@@ -79,9 +81,6 @@ bool Frame::applyVoteSortNoDP( )
         std::cerr << "cub::DeviceRadixSort::SortKeys requires too much intermediate memory. Crashing." << std::endl;
 	    exit( -1 );
 	}
-#else // not CUB_INIT_CALLS
-    assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
-#endif // not CUB_INIT_CALLS
 
 #ifdef RADIX_WITHOUT_DOUBLEBUFFER
     err = cub::DeviceRadixSort::SortKeys( assist_buffer,
@@ -131,7 +130,6 @@ void Frame::applyVoteUniqNoDP( )
     void*  assist_buffer = (void*)_d_intermediate.data;
     size_t assist_buffer_sz;
 
-#ifdef CUB_INIT_CALLS
 	assist_buffer_sz  = 0;
 	// std::cerr << "before cub::DeviceSelect::Unique(0)" << std::endl;
 
@@ -154,9 +152,6 @@ void Frame::applyVoteUniqNoDP( )
             std::cerr << "cub::DeviceSelect::Unique requires too much intermediate memory. Crashing." << std::endl;
 	    exit( -1 );
 	}
-#else // not CUB_INIT_CALLS
-    assist_buffer_sz = _d_intermediate.step * _d_intermediate.rows;
-#endif // not CUB_INIT_CALLS
 
     /* Unique ensure that we check every "chosen" point only once.
      * Output is in _interm_inner_points.dev

@@ -28,12 +28,9 @@ IF(USE_CUDA)
     include_directories("${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
     # include_directories("/usr/local/cuda/include/thrust/system/cuda/detail")
 
-    set_source_files_properties( ${CUDA_cpp} ${CUDA_cu}
-                                 PROPERTIES COMPILE_FLAGS "-g -Wall"
-    )
-    set_source_files_properties( ${CCTag_cpp}
-                                 PROPERTIES COMPILE_FLAGS "-std=c++11"
-    )
+    set_source_files_properties( ${CUDA_cu} PROPERTIES COMPILE_FLAGS "-Wall --std=c++11")
+    set_source_files_properties( ${CUDA_cpp} PROPERTIES COMPILE_FLAGS "-Wall --std=c++11")
+    set_source_files_properties( ${CCTag_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
 
     add_definitions("-DSM_ARCH=100")
     # add_definitions("-DSM_TARGETS=-gencode=arch=compute_52,code=\"sm_52,compute_52\"")
@@ -65,21 +62,19 @@ ENDIF(USE_CUDA)
 SET(CCTAG_LINK_LIBRARIES
     ${OpenCV_LIBS}
     ${Boost_LIBRARIES}
-    ${OPTPP_LIBRARIES}
-    ${Ceres_LIBRARIES}
     ${Eigen_LIBRARIES}
     ${PNG_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${Eigen_LIBRARIES}
     ${GLOG_LIBRARIES}
-    ${GSL_LIBRARIES}
     ${LAPACK_LIBRARIES}
+    ${TBB_LIBRARIES}
     pthread
     dl
     ${Gomp_LIBRARIES} )
 
 target_link_libraries( CCTag PUBLIC ${CCTAG_LINK_LIBRARIES} )
-target_include_directories( CCTag PUBLIC .)
+target_include_directories( CCTag PUBLIC . ${TBB_INCLUDE_DIR})
 
 #############################################################################
 
@@ -91,44 +86,38 @@ set(CCTagRegression_cpp
   ./applications/regression/Regression.cpp)
 set_source_files_properties(${CCTagRegression_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
 
+set(CCTagSimulation_cpp ./applications/simulation/main.cpp)
+set_source_files_properties(${CCTagSimulation_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
+
 if(USE_CUDA)
     set_source_files_properties(${CCTagDetect_cpp} PROPERTIES COMPILE_FLAGS "-std=c++11")
     add_executable( detection ${CCTagDetect_cpp} )
     target_link_libraries(detection
-      CCTag CCTagCuda ${CUDA_LIBRARIES} ${OPTPP_LIBRARIES} ${Ceres_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
+      PUBLIC  CCTag CCTagCuda ${CUDA_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY} ${TBB_tbb_LIBRARY_RELEASE})
 
     add_executable(regression ${CCTagRegression_cpp})
     target_link_libraries(regression
-      CCTag CCTagCuda ${CUDA_LIBRARIES} ${OPTPP_LIBRARIES} ${Ceres_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
+      PUBLIC CCTag CCTagCuda ${CUDA_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY} ${TBB_tbb_LIBRARY_RELEASE})
 
     install(TARGETS CCTag CCTagCuda LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 else(USE_CUDA)
     ADD_EXECUTABLE(detection ${CCTagDetect_cpp})
-    target_link_libraries(detection CCTag ${OPTPP_LIBRARIES} ${Ceres_LIBRARIES})
+    target_link_libraries(detection PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
     add_executable(regression ${CCTagRegression_cpp})
-    target_link_libraries(regression CCTag ${OPTPP_LIBRARIES} ${Ceres_LIBRARIES})
+    target_link_libraries(regression PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
     install(TARGETS CCTag LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 endif(USE_CUDA)
 
-#############################################################################
-
-ADD_EXECUTABLE( pgmdiff playground/pgmdiff.cc )
-TARGET_LINK_LIBRARIES( pgmdiff PUBLIC ${Boost_LIBRARIES} )
+add_executable(simulation ${CCTagSimulation_cpp})
+target_link_libraries(simulation PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
 #############################################################################
 
-set( FILES_TO_DEPLOY
-      ./cctag/ICCTag.hpp
-      ./cctag/Params.hpp
-      ./cctag/CCTagMarkersBank.hpp
-      ./cctag/utils/Talk.hpp
-      ./cctag/utils/Singleton.hpp
-      ./cctag/utils/LogTime.hpp)
-
-foreach ( file ${FILES_TO_DEPLOY} )
-get_filename_component( dir ${file} DIRECTORY )
-install( FILES ${file} DESTINATION include/${dir} )
-endforeach()
+install(
+  DIRECTORY cctag
+  DESTINATION include
+  COMPONENT headers
+  FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 

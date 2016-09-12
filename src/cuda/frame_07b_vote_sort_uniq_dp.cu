@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include "onoff.h"
 
 #ifdef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
@@ -30,8 +37,6 @@ void dp_call_03_sort_uniq(
     cv::cuda::PtrStepSzb     intermediate ) // invalidated buffer
 {
     cudaError_t  err;
-    cudaStream_t childStream;
-    cudaStreamCreateWithFlags( &childStream, cudaStreamNonBlocking );
 
     int listsize = meta.list_size_inner_points();
 
@@ -55,7 +60,6 @@ void dp_call_03_sort_uniq(
      * The final result is stored in d_keys.d_buffers[d_keys.selector].
      * The other buffer is invalid.
      */
-#ifdef CUB_INIT_CALLS
     assist_buffer_sz  = 0;
 
     err = cub::DeviceRadixSort::SortKeys( 0,
@@ -64,21 +68,16 @@ void dp_call_03_sort_uniq(
                                           listsize,
                                           0,             // begin_bit
                                           sizeof(int)*8, // end_bit
-                                          childStream,   // use stream 0
+                                          0,
                                           DEBUG_CUB_FUNCTIONS );
     if( err != cudaSuccess ) {
         meta.list_size_interm_inner_points() = 0;
-        cudaStreamDestroy( childStream );
         return;
     }
     if( assist_buffer_sz > intermediate.step * intermediate.rows ) {
         meta.list_size_interm_inner_points() = 0;
-        cudaStreamDestroy( childStream );
         return;
     }
-#else // not CUB_INIT_CALLS
-    assist_buffer_sz = intermediate.step * intermediate.rows;
-#endif // not CUB_INIT_CALLS
 
     err = cub::DeviceRadixSort::SortKeys( assist_buffer,
                                           assist_buffer_sz,
@@ -86,13 +85,12 @@ void dp_call_03_sort_uniq(
                                           listsize,
                                           0,             // begin_bit
                                           sizeof(int)*8, // end_bit
-                                          childStream,   // use stream 0
+                                          0,   // use stream 0
                                           DEBUG_CUB_FUNCTIONS );        // synchronous for debugging
 
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
     if( err != cudaSuccess ) {
-        cudaStreamDestroy( childStream );
         return;
     }
 
@@ -113,7 +111,6 @@ void dp_call_03_sort_uniq(
     assert( interm_inner_points.ptr != 0 );
     assert( inner_points.ptr != 0 );
 
-#ifdef CUB_INIT_CALLS
     assist_buffer_sz = 0;
 
     err = cub::DeviceSelect::Unique( 0,
@@ -122,22 +119,16 @@ void dp_call_03_sort_uniq(
                                      interm_inner_points.ptr,   // output
                                      &meta.list_size_interm_inner_points(), // output
                                      meta.list_size_inner_points(), // input (unchanged in sort)
-                                     childStream,  // use stream 0
+                                     0,  // use stream 0
                                      DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
     if( err != cudaSuccess ) {
         meta.list_size_interm_inner_points() = 0;
-        cudaStreamDestroy( childStream );
         return;
     }
     if( assist_buffer_sz > intermediate.step * intermediate.rows ) {
         meta.list_size_interm_inner_points() = 0;
-        cudaStreamDestroy( childStream );
         return;
     }
-#else // not CUB_INIT_CALLS
-    // safety: SortKeys is allowed to alter assist_buffer_sz
-    assist_buffer_sz = intermediate.step * intermediate.rows;
-#endif // not CUB_INIT_CALLS
 
     /* Unique ensure that we check every "chosen" point only once.
      * Output is in _interm_inner_points.dev
@@ -148,10 +139,8 @@ void dp_call_03_sort_uniq(
                                      interm_inner_points.ptr,   // output
                                      &meta.list_size_interm_inner_points(), // output
                                      meta.list_size_inner_points(), // input (unchanged in sort)
-                                     childStream,  // use stream 0
+                                     0,  // use stream 0
                                      DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
-
-    cudaStreamDestroy( childStream );
 }
 
 } // namespace descent

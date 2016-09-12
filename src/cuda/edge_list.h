@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #pragma once
 
 #include <cuda_runtime.h>
@@ -75,9 +82,9 @@ struct HostEdgeList
     T*   ptr;
     int& size;
 
-    HostEdgeList( )
+    HostEdgeList( int pipeId )
         : ptr(0)
-        , size( PinnedCounters::getCounter() )
+        , size( PinnedCounters::getCounter( pipeId ) )
     {
         size = 0;
     }
@@ -180,9 +187,10 @@ public:
     DevEdgeList<T>  dev;
     HostEdgeList<T> host;
 
-    EdgeList( FrameMetaPtr& meta, FrameMetaEnum e )
+    EdgeList( int pipeId, FrameMetaPtr& meta, FrameMetaEnum e )
         : _meta( meta )
         , _e( e )
+        , host( pipeId )
     { }
     ~EdgeList( ) { }
 
@@ -290,8 +298,12 @@ public:
     __host__
     void init( cudaStream_t stream )
     {
+        static bool hostInited = false;
         dev .init( alloc_num, stream );
-        host.init( alloc_num );
+        if (!hostInited) {
+          hostInited = true;
+          host.init( alloc_num );
+        }
     }
 
     __host__

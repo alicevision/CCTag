@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #pragma once
 
 #include <iostream>
@@ -21,12 +28,6 @@ void pop_cuda_only_sync_calls( bool on );
 /*************************************************************
  * Group: warning and error messages
  *************************************************************/
-#define POP_INFO(s)
-
-#define POP_INFO2(silent,s) \
-    if (not silent) { \
-        std::cerr << __FILE__ << ":" << __LINE__ << std::endl << "    " << s << std::endl; \
-    }
 
 #define POP_FATAL(s) { \
         std::cerr << __FILE__ << ":" << __LINE__ << std::endl << "    " << s << std::endl; \
@@ -60,7 +61,6 @@ void pop_cuda_checkerror_ifsync( const char* file, size_t line );
 
 void pop_check_last_error( const char* file,
                            size_t      line );
-#define POP_CHK pop_check_last_error( __FILE__, __LINE__ )
 
 void pop_sync_and_check_last_error( const char* file,
                                     size_t      line );
@@ -72,8 +72,6 @@ void pop_info_gridsize( bool               silent,
                         const std::string& kernel,
                         const char*        file,
                         size_t             line );
-#define POP_INFO_GRIDSIZE(silent,grid,block,kernel) \
-    pop_info_gridsize(silent,grid,block,kernel,__FILE__,__LINE__)
 
 /*************************************************************
  * Group: memcpy and memset

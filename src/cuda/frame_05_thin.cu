@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cuda_runtime.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"
@@ -98,7 +105,7 @@ void first_round( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 __global__
 void second_round( cv::cuda::PtrStepSzb src,          // input
                    cv::cuda::PtrStepSzb dst,          // output
-                   DevEdgeList<int2>    all_edgecoords,   // output
+                   DevEdgeList<short2>  all_edgecoords,   // output
                    FrameMetaPtr         meta )
 {
     const int block_x = blockIdx.x * 32;
@@ -125,7 +132,7 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
 
     if( keep ) {
         if( write_index < EDGE_POINT_MAX ) {
-            all_edgecoords.ptr[write_index] = make_int2( idx, idy );
+            all_edgecoords.ptr[write_index] = make_short2( idx, idy );
         }
     }
 }
@@ -204,18 +211,15 @@ void Frame::applyThinning( )
     debugPointIsOnEdge( _d_edges, _all_edgecoords, _stream );
 #endif // NDEBUG
 
-#ifdef EDGE_LINKING_HOST_SIDE
     /* After thinning_and_store, _all_edgecoords is no longer changed.
      * Make a non-blocking copy the number of items in the list to the host.
      */
     cudaEventRecord( _download_ready_event.edgecoords1, _stream );
-#endif // EDGE_LINKING_HOST_SIDE
 }
 
 __host__
 void Frame::applyThinDownload( )
 {
-#ifdef EDGE_LINKING_HOST_SIDE
     /* After thinning_and_store, _all_edgecoords is no longer changed
      * we can copy it to the host for edge linking
      */
@@ -234,7 +238,6 @@ void Frame::applyThinDownload( )
         _all_edgecoords.initHost( );
     }
 #endif // NDEBUG
-#endif // EDGE_LINKING_HOST_SIDE
 }
 
 }; // namespace popart

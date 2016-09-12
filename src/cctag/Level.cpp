@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/Level.hpp>
 #include <cctag/filter/cvRecode.hpp>
 #include <cctag/filter/thinning.hpp>
@@ -47,8 +54,8 @@ Level::~Level( )
 }
 
 void Level::setLevel( const cv::Mat & src,
-                      const double thrLowCanny,
-                      const double thrHighCanny,
+                      const float thrLowCanny,
+                      const float thrHighCanny,
                       const cctag::Parameters* params )
 {
     if( _cuda_allocates ) {

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/utils/VisualDebug.hpp>
 #include <cctag/utils/FileDebug.hpp>
 
@@ -106,7 +113,7 @@ void CCTagVisualDebug::setImageFileName(const std::string& imageFileName) {
 void CCTagVisualDebug::initBackgroundImage(const cv::Mat & back)
 {
 #ifdef CCTAG_SERIALIZE
-  cv::Mat temp; // todo@Lilian: why do I need to use temp ?
+  cv::Mat temp;
   cvtColor(back, temp, cv::COLOR_GRAY2RGB);
   _backImage = temp.clone();
 #endif
@@ -124,7 +131,7 @@ void CCTagVisualDebug::newSession(const std::string & sessionName) {
 #endif
 }
 
-void CCTagVisualDebug::drawText(const cctag::Point2dN<double> & p, const std::string & text, const cctag::Color & color) {
+void CCTagVisualDebug::drawText(const cctag::Point2d<Eigen::Vector3f> & p, const std::string & text, const cctag::Color & color) {
 #ifdef CCTAG_SERIALIZE
   CvFont font1;
   cvInitFont(&font1, CV_FONT_HERSHEY_SIMPLEX, 0.8, 0.8, 0, 2);
@@ -136,7 +143,7 @@ void CCTagVisualDebug::drawText(const cctag::Point2dN<double> & p, const std::st
 #endif
 }
 
-void CCTagVisualDebug::drawPoint(const cctag::Point2dN<double> & point, const cctag::Color & color) {
+void CCTagVisualDebug::drawPoint(const cctag::Point2d<Eigen::Vector3f> & point, const cctag::Color & color) {
 #ifdef CCTAG_SERIALIZE
   if (point.x() >= 1 && point.x() < _backImage.cols-1 &&
           point.y() >= 1 && point.y() < _backImage.rows-1)
@@ -146,12 +153,12 @@ void CCTagVisualDebug::drawPoint(const cctag::Point2dN<double> & point, const cc
     cvColor.val[1] = 255*color[1]; 
     cvColor.val[2] = 255*color[2]; 
     _backImage.at<cv::Vec3b>(point.y(),point.x()) = cvColor;
-    //cv::rectangle(_backImage, cvPoint(point.x()-1.0,point.y()-1.0), cvPoint(point.x()+1.0,point.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
+    //cv::rectangle(_backImage, cvPoint(point.x()-1.f,point.y()-1.f), cvPoint(point.x()+1.f,point.y()+1.f), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
   }
 #endif // CCTAG_SERIALIZE
 }
 
-void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<double> & point, const cctag::Color & color) {
+void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<Eigen::Vector3f> & point, const cctag::Color & color) {
 #ifdef CCTAG_SERIALIZE
   if (point.x() >= 1 && point.x() < _backImage.cols-1 &&
           point.y() >= 1 && point.y() < _backImage.rows-1)
@@ -165,26 +172,26 @@ void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<double> & point, c
     cv::Point p2(point.x() + point.dX(),point.y() + point.dY());
     cv::arrowedLine( _backImage, p1, p2, cv::Scalar(255*color[0], 255*color[1], 255*color[2]) );
     
-    //cv::rectangle(_backImage, cvPoint(point.x()-1.0,point.y()-1.0), cvPoint(point.x()+1.0,point.y()+1.0), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
+    //cv::rectangle(_backImage, cvPoint(point.x()-1.f,point.y()-1.f), cvPoint(point.x()+1.f,point.y()+1.f), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
   }
 #endif // CCTAG_SERIALIZE
 }
 
-void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2dN<double> > & points, const cctag::Color & color)
+void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2d<Eigen::Vector3f> > & points, const cctag::Color & color)
 {
 #ifdef CCTAG_SERIALIZE
-  BOOST_FOREACH(const cctag::Point2dN<double> & point, points) {
+  BOOST_FOREACH(const cctag::Point2d<Eigen::Vector3f> & point, points) {
       CCTagVisualDebug::instance().drawPoint(point, cctag::color_red);
   }
 #endif
 }
 
-// todo templater la function ci-dessus avec celle ci-dessous
-void CCTagVisualDebug::drawPoints(const std::vector<cctag::DirectedPoint2d<double> > & points, const cctag::Color & color)
+// todo@Lilian: template that function
+void CCTagVisualDebug::drawPoints(const std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > & points, const cctag::Color & color)
 {
 #ifdef CCTAG_SERIALIZE
-  BOOST_FOREACH(const cctag::Point2dN<double> & point, points) {
-      CCTagVisualDebug::instance().drawPoint(cctag::Point2dN<double>(point.x(),point.y()), cctag::color_red);
+  BOOST_FOREACH(const cctag::Point2d<Eigen::Vector3f> & point, points) {
+      CCTagVisualDebug::instance().drawPoint(cctag::Point2d<Eigen::Vector3f>(point.x(),point.y()), cctag::color_red);
   }
 #endif
 }
@@ -198,7 +205,7 @@ void CCTagVisualDebug::drawMarker(const cctag::CCTag& marker, bool drawScaledMar
   } else {
       rescaledOuterEllipse = marker.outerEllipse();
   }
-  Point2dN<double> & center = rescaledOuterEllipse.center();
+  Point2d<Eigen::Vector3f> & center = rescaledOuterEllipse.center();
   
   // Display ellipses
   if (drawScaledMarker) {

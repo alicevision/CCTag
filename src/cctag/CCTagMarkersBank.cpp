@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/CCTagMarkersBank.hpp>
 #include <cctag/utils/Exceptions.hpp>
 #include <cctag/utils/Defines.hpp>
@@ -19,7 +26,7 @@ CCTagMarkersBank::CCTagMarkersBank( const std::size_t nCrowns )
   {
     for (int i=0; i<32; ++i)
     {
-      std::vector<double> line;
+      std::vector<float> line;
       line.reserve(5);
       for (int j=0; j<5; ++j)
       {
@@ -32,7 +39,7 @@ CCTagMarkersBank::CCTagMarkersBank( const std::size_t nCrowns )
   {
     for (int i=0; i<128; ++i)
     {
-      std::vector<double> line;
+      std::vector<float> line;
       line.reserve(7);
       for (int j=0; j<7; ++j)
       {
@@ -63,7 +70,7 @@ void CCTagMarkersBank::read( const std::string & file )
   std::string str;
   while ( std::getline( input, str ) )
   {
-    std::vector<double> rr;
+    std::vector<float> rr;
     cctagLineParse( str.begin(), str.end(), rr);
     if ( rr.size() )
     {
@@ -73,19 +80,19 @@ void CCTagMarkersBank::read( const std::string & file )
   input.close();
 }
 
-std::size_t CCTagMarkersBank::identify( const std::vector<double> & marker ) const
+std::size_t CCTagMarkersBank::identify( const std::vector<float> & marker ) const
 {
-  std::vector< std::vector<double> >::const_iterator itm = _markers.begin();
+  std::vector< std::vector<float> >::const_iterator itm = _markers.begin();
 
   std::size_t imin = 0;
-  double normMin = boost::numeric::bounds<double>::highest();
+  float normMin = boost::numeric::bounds<float>::highest();
   std::size_t i = 0;
 
   while( itm != _markers.end() )
   {
-    std::vector<double>::const_iterator itr1 = marker.begin();
-    std::vector<double>::const_iterator itr2 = itm->begin();
-    double norm = 0;
+    std::vector<float>::const_iterator itr1 = marker.begin();
+    std::vector<float>::const_iterator itr2 = itm->begin();
+    float norm = 0;
     while( itr1 != marker.end() && itr2 != itm->end() )
     {
       norm += ( *itr1 - *itr2 ) * ( *itr1 - *itr2 );
@@ -113,7 +120,7 @@ std::size_t CCTagMarkersBank::identify( const std::vector<double> & marker ) con
   }
 }
 
-const double CCTagMarkersBank::idThreeCrowns[32][5] =
+const float CCTagMarkersBank::idThreeCrowns[32][5] =
     {{2.000000,1.666667,1.428571,1.250000,1.111111},
     {2.222222,1.666667,1.428571,1.250000,1.111111},
     {2.222222,1.818182,1.428571,1.250000,1.111111},
@@ -147,7 +154,7 @@ const double CCTagMarkersBank::idThreeCrowns[32][5] =
     {3.333333,2.500000,1.818182,1.428571,1.176471},
     {4.000000,2.500000,1.818182,1.428571,1.176471}};
 
-const double CCTagMarkersBank::idFourCrowns[128][7] =
+const float CCTagMarkersBank::idFourCrowns[128][7] =
     {2.272727,1.923077,1.666667,1.470588,1.315789,1.190476,1.086957,
     2.500000,1.923077,1.666667,1.470588,1.315789,1.190476,1.086957,
     2.500000,2.083333,1.666667,1.470588,1.315789,1.190476,1.086957,

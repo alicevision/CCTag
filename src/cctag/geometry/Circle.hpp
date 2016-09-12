@@ -1,23 +1,23 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef _CCTAG_NUMERICAL_CIRCLE_HPP_
 #define _CCTAG_NUMERICAL_CIRCLE_HPP_
 
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Point.hpp>
-#include <cctag/algebra/Invert.hpp>
+// #include <cctag/algebra/Invert.hpp>
 #include <cctag/utils/Defines.hpp>
-
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix_expression.hpp>
-#include <boost/numeric/ublas/vector_expression.hpp>
-
+#include <Eigen/Dense>
 #include <cmath>
 
 namespace cctag {
 namespace numerical {
 namespace geometry {
-
-using namespace boost::numeric::ublas;
 
 class Circle : public Ellipse
 {
@@ -25,61 +25,45 @@ public:
 
 	Circle() : Ellipse() {}
 
-	Circle( const double r );
+	Circle( const float r );
 
-	Circle( const Point2dN<double>& center, const double r );
-	virtual ~Circle();
+	Circle( const Point2d<Eigen::Vector3f>& center, const float r );
 
 	template <typename T>
-	Circle( const Point2dN<T> & p1, const Point2dN<T> & p2, const Point2dN<T> & p3 )
+	Circle( const Point2d<T> & p1, const Point2d<T> & p2, const Point2d<T> & p3 )
 	{
-		const T x1 = p1.x();
-		const T y1 = p1.y();
-
-		const T x2 = p2.x();
-		const T y2 = p2.y();
-
-		const T x3 = p3.x();
-		const T y3 = p3.y();
-
-		const T det = ( x1 - x2 ) * ( y1 - y3 ) - ( y1 - y2 ) * ( x1 - x3 );
+		const float x1 = p1.x();
+		const float y1 = p1.y();
+		const float x2 = p2.x();
+		const float y2 = p2.y();
+		const float x3 = p3.x();
+		const float y3 = p3.y();
+		const float det = ( x1 - x2 ) * ( y1 - y3 ) - ( y1 - y2 ) * ( x1 - x3 );
 
 		if( det == 0 )
 		{
 			///@todo
 		}
 
-		bounded_matrix<double, 2, 2> A( 2, 2 );
+                Eigen::Matrix2f A;
+		A( 0, 0 ) = x2 - x1;
+		A( 0, 1 ) = y2 - y1;
+		A( 1, 0 ) = x3 - x1;
+		A( 1, 1 ) = y3 - y1;
 
-		A( 0, 0 ) = (double) x2 - x1;
-		A( 0, 1 ) = (double) y2 - y1;
-		A( 1, 0 ) = (double) x3 - x1;
-		A( 1, 1 ) = (double) y3 - y1;
+                Eigen::Vector2f bb;
+		bb( 0 ) = ( x1 + x2 ) / 2 * ( x2 - x1 ) + ( y1 + y2 ) / 2 * ( y2 - y1 );
+		bb( 1 ) = ( x1 + x3 ) / 2 * ( x3 - x1 ) + ( y1 + y3 ) / 2 * ( y3 - y1 );
 
-		bounded_vector<double, 2> bb( 2 );
+		//auto aux = A.colPivHouseholderQr().solve(bb);
+                auto aux = A.inverse()*bb;
 
-		bb( 0 ) = (double) ( x1 + x2 ) / 2 * ( x2 - x1 ) + ( y1 + y2 ) / 2 * ( y2 - y1 );
-		bb( 1 ) = (double) ( x1 + x3 ) / 2 * ( x3 - x1 ) + ( y1 + y3 ) / 2 * ( y3 - y1 );
+		float xc = aux( 0 );
+		float yc = aux( 1 );
+		float r = sqrt( ( x1 - xc ) * ( x1 - xc ) + ( y1 - yc ) * ( y1 - yc ) );
 
-		bounded_matrix<double, 2, 2> AInv( 2, 2 );
-
-		cctag::numerical::invert_2x2( A, AInv );
-
-		bounded_vector<double, 2> aux = prec_prod( AInv, bb );
-
-		double xc = aux( 0 );
-		double yc = aux( 1 );
-
-		double r = sqrt( ( x1 - xc ) * ( x1 - xc ) + ( y1 - yc ) * ( y1 - yc ) );
-
-		CCTAG_COUT_LILIAN( " xc = " << xc << " yc = " << yc << " r = " << r );
-
-		Point2dN<double> c( xc, yc );
-
-		Ellipse::init( c, r, r, 0.0 );
-
-		CCTAG_COUT_LILIAN( "center x = " << _center.x() << "  y = " << center().y() << " a = " << a() << " b = " << b() );
-
+		Point2d<Eigen::Vector3f> c( xc, yc );
+		Ellipse::init( c, r, r, 0.f );
 	}
 
 private:

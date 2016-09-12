@@ -1,8 +1,16 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #pragma once
 
 #include <cuda_runtime.h>
+#include "onoff.h"
 
-#define FRAME_META_MAX_PIPES	4
+#define FRAME_META_MAX_PIPES	MAX_PIPES
 #define FRAME_META_MAX_LEVELS	8
 
 namespace popart {
@@ -15,9 +23,6 @@ enum FrameMetaEnum
     Ring_counter_max,                 // int
     Identification_result,            // float
     Identification_resct,             // int
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    Num_nearby_points,                // int
-#endif
 #ifndef NDEBUG
     Num_edges_thinned,
 #endif // NDEBUG
@@ -74,9 +79,6 @@ struct FrameMetaPtr
     OFFSET_GETTER_HEADER( int, ring_counter_max )
     OFFSET_GETTER_HEADER( float, identification_result )
     OFFSET_GETTER_HEADER( int, identification_resct )
-#ifdef CPU_GPU_COST_FUNCTION_COMPARE
-    OFFSET_GETTER_HEADER( int, num_nearby_points )
-#endif
 #ifndef NDEBUG
     OFFSET_GETTER_HEADER( int, num_edges_thinned )
 #endif // NDEBUG

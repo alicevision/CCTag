@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include "onoff.h"
 
 #include <cuda_runtime.h>
@@ -7,24 +14,23 @@
 
 #include "frame.h"
 
+#include <tbb/tbb.h>
+
 namespace popart {
 
 using namespace std;
 
-bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
-                         cctag::EdgePointsImage&         out_edgemap,
-                         std::vector<cctag::EdgePoint*>& out_seedlist,
-                         cctag::WinnerMap&               winners )
+bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
+                         std::vector<cctag::EdgePoint*>& out_seedlist)
 {
     // cerr << "Enter " << __FUNCTION__ << endl;
 
     int vote_sz = _voters.host.size;
     int all_sz  = _all_edgecoords.host.size;
 
-    assert( out_edgelist.size() == 0 );
-    assert( out_edgemap.size() == 0 );
+    // assert( out_edges.points().size() == 0 );
+    // assert( out_edges.map().size() == 0 );
     assert( out_seedlist.size() == 0 );
-    assert( winners.size() == 0 );
     assert( vote_sz <= all_sz );
 
     if( vote_sz <= 0 ) {
@@ -54,20 +60,11 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
                v_comp );
 #endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
-    out_edgemap.resize( boost::extents[ _d_plane.cols ][ _d_plane.rows ] );
-    std::fill( out_edgemap.origin(), out_edgemap.origin() + out_edgemap.size(), (cctag::EdgePoint*)NULL );
-
-    out_edgelist.resize( all_sz );
-    // cctag::EdgePoint* array = new cctag::EdgePoint[ all_sz ];
-
-    for( int i=0; i<all_sz; i++ ) {
-        const int2&   pt = _all_edgecoords.host.ptr[i];
-        const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
-        const int16_t dy = _h_dy.ptr(pt.y)[pt.x];
-
-        out_edgelist[i].init( pt.x, pt.y, dx, dy );
-
-        out_edgemap[pt.x][pt.y] = &out_edgelist[i];
+    for(int i = 0; i < all_sz; ++i) {
+          const short2& pt = _all_edgecoords.host.ptr[i];
+          const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
+          const int16_t dy = _h_dy.ptr(pt.y)[pt.x];
+          out_edges.add_point(pt.x, pt.y, dx, dy);
     }
 
     /* Block 2
@@ -79,6 +76,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
      * Consequently, we have allocated memory for all of those above, and
      * we are copying linkage information for them in this block.
      */
+
     for( int i=1; i<vote_sz; i++ ) {
         const TriplePoint& pt = _voters.host.ptr[i];
         if( pt.coord.x == 0 && pt.coord.y == 0 ) {
@@ -90,7 +88,7 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
             }
             continue;
         }
-        cctag::EdgePoint* ep = out_edgemap[pt.coord.x][pt.coord.y];
+        cctag::EdgePoint* ep = out_edges(pt.coord.x,pt.coord.y);
         if( ep == 0 ) {
             cerr << __FILE__ << ":" << __LINE__ << ": "
                  << "Error: found a vote winner (" << pt.coord.x << "," << pt.coord.y << ")"
@@ -98,18 +96,18 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
             // cerr << "Leave " << __FUNCTION__ << " (2)" << endl;
             return false;
         }
-        assert( ep->_grad.getX() == (double)pt.d.x );
-        assert( ep->_grad.getY() == (double)pt.d.y );
+        assert( ep->gradient()(0) == (double)pt.d.x );
+        assert( ep->gradient()(1) == (double)pt.d.y );
 
         if( pt.descending.after.x != 0 || pt.descending.after.y != 0 ) {
-            cctag::EdgePoint* n = out_edgemap[pt.descending.after.x][pt.descending.after.y];
-            if( n != 0 )
-                ep->_after = n;
+            cctag::EdgePoint* n = out_edges(pt.descending.after.x, pt.descending.after.y);
+            if( n >= 0 )
+                out_edges.set_after(ep, out_edges(n));
         }
         if( pt.descending.befor.x != 0 || pt.descending.befor.y != 0 ) {
-            cctag::EdgePoint* n = out_edgemap[pt.descending.befor.x][pt.descending.befor.y];
-            if( n != 0 )
-                ep->_before = n;
+            cctag::EdgePoint* n = out_edges(pt.descending.befor.x, pt.descending.befor.y);
+            if( n >= 0 )
+                out_edges.set_before(ep, out_edges(n));
         }
 
         ep->_flowLength = pt._flowLength;
@@ -138,16 +136,8 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
     for( int i=0; i<_inner_points.host.size; i++ ) {
         int seedidx = _inner_points.host.ptr[i];
         const TriplePoint& pt = _voters.host.ptr[seedidx];
-        cctag::EdgePoint* ep = out_edgemap[pt.coord.x][pt.coord.y];
-
+        cctag::EdgePoint* ep = out_edges(pt.coord.x, pt.coord.y);
         out_seedlist[i] = ep;
-
-        /* Create an map of lists that contains an empty list for every
-         * inner point candidate. This list will be filled with outer
-         * points that voted for this inner point candidate.
-         */
-        winners.insert( std::pair<cctag::EdgePoint*,
-                                  std::list<cctag::EdgePoint*> >( ep, std::list<cctag::EdgePoint*>() ) );
     }
 
     /* Block 4
@@ -155,19 +145,20 @@ bool Frame::applyExport( std::vector<cctag::EdgePoint>&  out_edgelist,
      * a candidate inner point, they are added into the list for
      * that inner point.
      */
+    std::vector<std::vector<int>> voter_lists(out_edges.get_point_count());
     for( int i=1; i<vote_sz; i++ ) {
         const TriplePoint& pt   = _voters.host.ptr[i];
         const int          vote = _v_chosen_idx.host.ptr[i];
 
         if( vote != 0 ) {
             const TriplePoint& point = _voters.host.ptr[ vote ];
-            cctag::EdgePoint* potential_seed = out_edgemap[point.coord.x][point.coord.y];
-            if( winners.find(potential_seed) != winners.end() ) {
-                cctag::EdgePoint* this_voter = out_edgemap[pt.coord.x][pt.coord.y];
-                winners[potential_seed].push_back( this_voter );
-            }
+            int potential_seed = out_edges(out_edges(point.coord.x, point.coord.y));
+            voter_lists[potential_seed].push_back(out_edges(out_edges(pt.coord.x,pt.coord.y)));
         }
     }
+    out_edges.create_voter_lists(voter_lists);
+
+
     // cerr << "Leave " << __FUNCTION__ << " (ok)" << endl;
     return true;
 }

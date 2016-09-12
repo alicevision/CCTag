@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #pragma once
 
 #include "cuda/onoff.h"
@@ -14,43 +21,54 @@
 #include <boost/thread/condition.hpp>
 
 #include "cuda/tag_threads.h"
+#include "cuda/tag_cut.h"
+#include "cuda/geom_ellipse.h"
+#include "cuda/geom_matrix.h"
+
 #include "cctag/Params.hpp"
 #include "cctag/Types.hpp"
 #include "cctag/ImageCut.hpp"
 #include "cctag/geometry/Ellipse.hpp"
 #include "cctag/geometry/Point.hpp"
-#include "cctag/algebra/matrix/Matrix.hpp"
-#include "cctag/utils/LogTime.hpp"
+
+#define NUM_ID_STREAMS 8
+
+namespace cctag { namespace logtime { struct Mgmt; } };
 
 namespace popart
 {
 
 class Frame; // forward decl means cctag/*.cpp need not recompile for frame.h
 class NearbyPoint;
+class NearbyPointGrid;
 
 class TagPipe
 {
+    static int                  _tag_id_running_number;
+
+    int                         _tag_id;
     std::vector<Frame*>         _frame;
     const cctag::Parameters&    _params;
     TagThreads                  _threads;
-    std::vector<cudaStream_t>   _tag_streams;
+    cudaStream_t                _tag_streams[NUM_ID_STREAMS];
+    cudaEvent_t                 _uploaded_event;
 
 public:
     TagPipe( const cctag::Parameters& params );
+
+    inline int getId() const { return _tag_id; }
 
     void initialize( const uint32_t pix_w,
                      const uint32_t pix_h,
                      cctag::logtime::Mgmt* durations );
     void release( );
-    void load( unsigned char* pix );
+    void load( int frameId, unsigned char* pix );
     void tagframe( );
     void handleframe( int layer );
 
     void convertToHost( size_t                          layer,
-                        std::vector<cctag::EdgePoint>&  vPoints,
-                        cctag::EdgePointsImage&         edgeImage,
-                        std::vector<cctag::EdgePoint*>& seeds,
-                        cctag::WinnerMap&               winners );
+                        cctag::EdgePointCollection&     edgeCollection,
+                        std::vector<cctag::EdgePoint*>& seeds);
 
     inline std::size_t getNumOctaves( ) const {
         return _frame.size();
@@ -65,23 +83,37 @@ public:
     cv::Mat* getMag( size_t layer ) const;
     cv::Mat* getEdges( size_t layer ) const;
 
-    void checkTagAllocations( const int                numTags,
-                              const cctag::Parameters& params );
-
+public:
+    __host__
     void imageCenterOptLoop(
         const int                                  tagIndex,
+        const int                                  debug_numTags, // in - only for debugging
         const cctag::numerical::geometry::Ellipse& ellipse,
-        const cctag::Point2dN<double>&             center,
+        const cctag::Point2d<Eigen::Vector3f>&     center,
         const int                                  vCutSize,
         const cctag::Parameters&                   params,
         NearbyPoint*                               cctag_pointer_buffer );
 
+private:
+    __host__
+    void imageCenterOptLoop(
+        const int                           tagIndex,     // in
+        const int                           debug_numTags, // in - only for debugging
+        cudaStream_t                        tagStream,    // in
+        const popart::geometry::ellipse&    outerEllipse, // in
+        const float2&                       center,       // in
+        const int                           vCutSize,     // in
+        const cctag::Parameters&            params,       // in
+        NearbyPoint*                        cctag_pointer_buffer ); // out
+
+public:
     bool imageCenterRetrieve(
-        const int                                  tagIndex,
-        cctag::Point2dN<double>&                   center,
-        cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
-        const cctag::Parameters&                   params,
-        NearbyPoint*                               cctag_pointer_buffer );
+        const int                        tagIndex,
+        cctag::Point2d<Eigen::Vector3f>& center,
+        float&                           bestResidual,
+        Eigen::Matrix3f&                 bestHomographyOut,
+        const cctag::Parameters&         params,
+        NearbyPoint*                     cctag_pointer_buffer );
 
     // size_t getSignalBufferByteSize( int level ) const;
 
@@ -89,29 +121,60 @@ public:
                      const std::vector<cctag::ImageCut>* vCuts,
                      const cctag::Parameters&            params );
 
-    void makeCudaStreams( int numTags );
+private:
+    // implemented in frame_11_identify.cu
+    /* to reuse various image-sized buffers, but retrieve their
+     * bytesize to ensure that the new types fit into the
+     * already allocated space.
+     */
+    CutStructGrid*   _d_cut_struct_grid;
+    CutStructGrid*   _h_cut_struct_grid;
+    NearbyPointGrid* _d_nearby_point_grid;
+    CutSignalGrid*   _d_cut_signal_grid;
+    int              _num_cut_struct_grid;
+    int              _num_nearby_point_grid;
+    int              _num_cut_signal_grid;
 
-    void debug( unsigned char* pix,
-                const cctag::Parameters& params );
+public:
+    void checkTagAllocations( const int                numTags,
+                              const cctag::Parameters& params );
+private:
+    void reallocNearbyPointGridBuffer( int numTags );
+    void freeNearbyPointGridBuffer( );
+    NearbyPointGrid* getNearbyPointGridBuffer( int tagIndex ) const;
 
-    static void debug_cpu_origin( int                      layer,
-                                  const cv::Mat&           img,
-                                  const cctag::Parameters& params );
+    void reallocCutStructGridBuffer( int numTags );
+    void freeCutStructGridBuffer( );
+    CutStructGrid* getCutStructGridBufferDev( int tagIndex ) const;
+    CutStructGrid* getCutStructGridBufferHost( int tagIndex ) const;
 
-    static void debug_cpu_edge_out( int                      layer,
-                                    const cv::Mat&           edges,
-                                    const cctag::Parameters& params );
+    void reallocSignalGridBuffer( int numTags );
+    void freeSignalGridBuffer( );
+    CutSignalGrid* getSignalGridBuffer( int tagIndex ) const;
 
-    static void debug_cpu_dxdy_out( TagPipe*                 pipe,
-                                    int                      layer,
-                                    const cv::Mat&           cpu_dx,
-                                    const cv::Mat&           cpu_dy,
-                                    const cctag::Parameters& params );
+    __host__
+    bool imageCenterRetrieve(
+        const int                           tagIndex,          // in
+        cudaStream_t                        tagStream,         // in
+        float2&                             bestPointOut,      // out
+        float&                              bestResidual,      // out
+        popart::geometry::matrix3x3&        bestHomographyOut, // out
+        const cctag::Parameters&            params,            // in
+        NearbyPoint*                        cctag_pointer_buffer );
 
-    static void debug_cmp_edge_table( int                           layer,
-                                      const cctag::EdgePointsImage& cpu,
-                                      const cctag::EdgePointsImage& gpu,
-                                      const cctag::Parameters&      params );
+    // implemented in frame_11_identify.cu
+    __host__
+    bool idCostFunction(
+        const int                           tagIndex,
+        const int                           debug_numTags,
+        cudaStream_t                        tagStream,
+        int                                 iterations,
+        const popart::geometry::ellipse&    ellipse,
+        const float2                        center,
+        const int                           vCutSize,     // in
+        float                               currentNeighbourSize,
+        const cctag::Parameters&            params );
+
 };
 
 }; // namespace popart

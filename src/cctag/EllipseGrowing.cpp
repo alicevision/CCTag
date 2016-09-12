@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/EllipseGrowing.hpp>
 #include <cctag/CCTag.hpp>
 #include <cctag/EdgePoint.hpp>
@@ -9,15 +16,13 @@
 #include <cctag/geometry/Point.hpp>
 #include <cctag/utils/Defines.hpp>
 #include <cctag/utils/Talk.hpp> // for DO_TALK macro
-#include <cctag/algebra/Invert.hpp>
+// #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
 #include <opencv2/core/core_c.h>
 #include <opencv2/core/types_c.h>
 
 #include <boost/math/special_functions/pow.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/functional.hpp>
 #include <boost/foreach.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/mpl/bool.hpp>
@@ -35,8 +40,8 @@
 namespace cctag
 {
 
-bool initMarkerCenter(cctag::Point2dN<double> & markerCenter,
-        const std::vector< std::vector< Point2dN<double> > > & markerPoints,
+bool initMarkerCenter(cctag::Point2d<Eigen::Vector3f> & markerCenter,
+        const std::vector< std::vector< Point2d<Eigen::Vector3f> > > & markerPoints,
         int realPixelPerimeter)
 {
   cctag::numerical::geometry::Ellipse innerEllipse;
@@ -50,7 +55,7 @@ bool initMarkerCenter(cctag::Point2dN<double> & markerCenter,
       {
         numerical::ellipseFitting(innerEllipse, markerPoints[0]);
 
-        BOOST_FOREACH(Point2dN<double> pt, markerPoints[0])
+        BOOST_FOREACH(Point2d<Eigen::Vector3f> pt, markerPoints[0])
         {
           CCTagVisualDebug::instance().drawPoint(pt, cctag::color_red);
         }
@@ -75,23 +80,22 @@ bool initMarkerCenter(cctag::Point2dN<double> & markerCenter,
   return true;
 }
 
-bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens,
+bool addCandidateFlowtoCCTag(EdgePointCollection& edgeCollection,
+        const std::vector< EdgePoint* > & filteredChildrens,
         const std::vector< EdgePoint* > & outerEllipsePoints,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
-        std::vector< std::vector< DirectedPoint2d<double> > >& cctagPoints,
+        std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
         std::size_t numCircles)
 {
-  using namespace boost::numeric::ublas;
-
   //cctag::numerical::geometry::Ellipse innerBoundEllipse(outerEllipse.center(), outerEllipse.a()/8.0, outerEllipse.b()/8.0, outerEllipse.angle());
   cctagPoints.resize(numCircles);
 
-  std::vector< std::vector< DirectedPoint2d<double> > >::reverse_iterator itp = cctagPoints.rbegin();
+  std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >::reverse_iterator itp = cctagPoints.rbegin();
   itp->reserve(outerEllipsePoints.size());
 
   BOOST_FOREACH(EdgePoint * e, outerEllipsePoints)
   {
-    itp->push_back(DirectedPoint2d<double>(e->x(), e->y(), e->gradient().x(), e->gradient().y()));
+    itp->push_back(DirectedPoint2d<Eigen::Vector3f>(e->x(), e->y(), e->dX(), e->dY()));
   }
   ++itp;
   for (; itp != cctagPoints.rend(); ++itp)
@@ -103,8 +107,8 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
 
   DO_TALK( CCTAG_COUT_VAR_DEBUG(outerEllipse); )
 
-  bounded_vector<double, 2> gradE(2);
-  bounded_vector<double, 2> toto(2);
+  Eigen::Vector2f gradE(2);
+  Eigen::Vector2f toto(2);
 
   std::size_t nGradientOut = 0;
   std::size_t nAddedPoint = 0;
@@ -113,11 +117,11 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
   {
     int dir = -1;
     EdgePoint* p = *it;
-    const Point2dN<double> outerPoint(p->x(), p->y());
+    const Point2d<Eigen::Vector3f> outerPoint(p->x(), p->y());
 
-    boost::numeric::ublas::bounded_vector<double, 3> lineThroughCenter;
-    double a = outerPoint.x() - outerEllipse.center().x();
-    double b = outerPoint.y() - outerEllipse.center().y();
+    Eigen::Vector3f lineThroughCenter;
+    float a = outerPoint.x() - outerEllipse.center().x();
+    float b = outerPoint.y() - outerEllipse.center().y();
     lineThroughCenter(0) = a;
     lineThroughCenter(1) = b;
     lineThroughCenter(2) = -a * outerEllipse.center().x() - b * outerEllipse.center().y();
@@ -126,39 +130,39 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
     {
       if (dir == -1)
       {
-        p = p->_before;
+        p = edgeCollection.before(p);
       }
       else
       {
-        p = p->_after;
+        p = edgeCollection.after(p);
       }
 
 
-      if (!p->_processedAux)
+      if (!edgeCollection.test_processed_aux(p))
       {
         //CCTAG_COUT(*p);
 
-        p->_processedAux = true;
+        edgeCollection.set_processed_aux(p, true);
         vProcessedEdgePoint.push_back(p);
 
-        double normGrad = sqrt(p->_grad.x() * p->_grad.x() + p->_grad.y() * p->_grad.y());
+        float normGrad = sqrt(p->dX() * p->dX() + p->dY() * p->dY());
 
-        gradE(0) = p->_grad.x() / normGrad;
-        gradE(1) = p->_grad.y() / normGrad;
+        gradE(0) = p->dX() / normGrad;
+        gradE(1) = p->dY() / normGrad;
 
         toto(0) = outerEllipse.center().x() - p->x();
         toto(1) = outerEllipse.center().y() - p->y();
 
-        double distancePointToCenter = sqrt(toto(0) * toto(0) + toto(1) * toto(1));
+        float distancePointToCenter = sqrt(toto(0) * toto(0) + toto(1) * toto(1));
         toto(0) /= distancePointToCenter;
         toto(1) /= distancePointToCenter;
 
-        DirectedPoint2d<double> pointToAdd(p->x(), p->y(), p->gradient().x(), p->gradient().y());
+        DirectedPoint2d<Eigen::Vector3f> pointToAdd(p->x(), p->y(), p->dX(), p->dY());
 
         if (isInEllipse(outerEllipse, pointToAdd) && isOnTheSameSide(outerPoint, pointToAdd, lineThroughCenter))
           // isInHull( innerBoundEllipse, outerEllipse, pMid ) && isInHull( innerBoundEllipse, outerEllipse, pointToAdd ) &&
         {
-          if ((double(-dir) * inner_prod(gradE, toto) < -0.5) && (j >= numCircles - 2))
+          if ((float(-dir) * gradE.dot(toto) < -0.5f) && (j >= numCircles - 2))
           {
             ++nGradientOut;
           }
@@ -174,10 +178,9 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
           CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(PTS_OUT_WHILE_ASSEMBLING);
           cctagPoints.clear();
 
-          BOOST_FOREACH(EdgePoint* point, vProcessedEdgePoint)
-          {
-            point->_processedAux = false;
-          }
+          for (EdgePoint* point : vProcessedEdgePoint)
+            edgeCollection.set_processed_aux(point, false);
+
           return false;
         }
       }
@@ -185,14 +188,12 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
     }
   }
 
-  BOOST_FOREACH(EdgePoint* point, vProcessedEdgePoint)
-  {
-    point->_processedAux = false;
-  }
+  for (EdgePoint* point : vProcessedEdgePoint)
+    edgeCollection.set_processed_aux(point, false);
 
   //std::cin.ignore().get();
 
-  if (double(nGradientOut) / double(nAddedPoint) > 0.5)
+  if (float(nGradientOut) / float(nAddedPoint) > 0.5f)
   {
     cctagPoints.clear();
     CCTagFileDebug::instance().outputFlowComponentAssemblingInfos(BAD_GRAD_WHILE_ASSEMBLING);
@@ -216,14 +217,13 @@ bool addCandidateFlowtoCCTag(const std::vector< EdgePoint* > & filteredChildrens
  * @param[out] iMin1
  * @param[out] iMin2
  */
-bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2dN<int> & p1, Point2dN<int> & p2)
+bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2d<Vector3s> & p1, Point2d<Vector3s> & p2)
 {
   BOOST_ASSERT(filteredChildrens.size() >= 5);
 
-  // TODO constante à associer à la classe de l'algorithme... et choisir la meilleure valeur
-  static const double thrCosDiffMax = 0.25; //std::cos( boost::math::constants::pi<double>() / 2.0 );
+  static const float thrCosDiffMax = 0.25;
 
-  const double min = numerical::innerProdMin(filteredChildrens, thrCosDiffMax, p1, p2);
+  const float min = numerical::innerProdMin(filteredChildrens, thrCosDiffMax, p1, p2);
 
   return min <= thrCosDiffMax;
 }
@@ -236,53 +236,43 @@ bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2dN<i
  * @param iMin2
  * @return the circle
  */
-numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vector<EdgePoint*>& filteredChildrens, const Point2dN<int> & p1, const Point2dN<int> & p2)
+numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vector<EdgePoint*>& filteredChildrens, const Point2d<Eigen::Vector3i> & p1, const Point2d<Eigen::Vector3i> & p2)
 {
-  using namespace boost::numeric::ublas;
   // Compute the line passing through filteredChildrens[iMin1] and filteredChildrens[iMin2] and
   // find i such as d(filteredChildrens[i], l) is maximum.
-  bounded_matrix<double, 2, 2> mL(2, 2);
+  Eigen::Matrix2f mL;
 
   mL(0, 0) = p1.x();
   mL(0, 1) = p1.y();
   mL(1, 0) = p2.x();
   mL(1, 1) = p2.y();
 
-  bounded_vector<double, 2> minones(2);
+  Eigen::Vector2f minones(2);
   minones(0) = -1;
   minones(1) = -1;
 
-  bounded_matrix<double, 2, 2> mLInv(2, 2);
+  Eigen::Matrix2f mLInv = mL.inverse();
 
-  //Droite l=[a b c] passant par P1 et P2
-  //l = inv([x1 y1; x2 y2])*[-1;-1];
-  //l = [l;1];
-
-  // TODO inversion d'une matrice 2x2
-  cctag::numerical::invert_2x2(mL, mLInv);
-  //cctag::toolbox::matrixInvert(mL, mLInv);
-  bounded_vector<double, 2> aux = prec_prod(mLInv, minones);
-  bounded_vector<double, 3> l(3);
+  auto aux = mLInv * minones;
+  Eigen::Vector3f l;
   l(0) = aux(0);
   l(1) = aux(1);
   l(2) = 1;
 
-  const double normL = std::sqrt(boost::math::pow<2>(l(0)) + boost::math::pow<2>(l(1)));
-
-  //double distMax = std::abs( inner_prod( *( filteredChildrens[0] ), l ) ) / normL;
+  const float normL = std::sqrt(boost::math::pow<2>(l(0)) + boost::math::pow<2>(l(1)));
 
   const EdgePoint * pMax = filteredChildrens.front();
-  double distMax = std::min(
-                    cctag::numerical::distancePoints2D((Point2dN<int>)(*pMax), p1),
-                    cctag::numerical::distancePoints2D((Point2dN<int>)(*pMax), p2));
+  float distMax = std::min(
+                    cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*pMax), p1),
+                    cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*pMax), p2));
 
-  double dist;
+  float dist;
 
   BOOST_FOREACH(const EdgePoint * const e, filteredChildrens)
   {
     dist = std::min(
-            cctag::numerical::distancePoints2D((Point2dN<int>)(*e), p1),
-            cctag::numerical::distancePoints2D((Point2dN<int>)(*e), p2));
+            cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*e), p1),
+            cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*e), p2));
 
     if (dist > distMax)
     {
@@ -291,53 +281,45 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
     }
   }
 
-  //CCTAG_COUT_VAR_DEBUG(std::abs( inner_prod( *( filteredChildrens[iMax] ), l ) ) / normL);
+  Point2d<Eigen::Vector3f> equiPoint;
+  float distanceToAdd = cctag::numerical::distancePoints2D(p1, p2) / 50;
 
-  Point2dN<double> equiPoint;
-  double distanceToAdd = cctag::numerical::distancePoints2D(p1, p2) / 50; // match to the max/min of semi-axis ratio for an outer ellipse of a flow candidate
-
-  if (std::abs(inner_prod(*pMax, l)) / normL < 1e-6)
+  if (std::abs(pMax->cast<float>().dot(l)) / normL < 1e-6)
   {
-    double normGrad = std::sqrt(pMax->_grad.x() * pMax->_grad.x() + pMax->_grad.y() * pMax->_grad.y());
-    double gx = pMax->_grad.x() / normGrad;
-    double gy = pMax->_grad.y() / normGrad;
-    equiPoint.setX(pMax->x() + distanceToAdd * gx);
-    equiPoint.setY(pMax->y() + distanceToAdd * gy);
+    float normGrad = std::sqrt(pMax->dX() * pMax->dX() + pMax->dY() * pMax->dY());
+    float gx = pMax->dX() / normGrad;
+    float gy = pMax->dY() / normGrad;
+    equiPoint.x() = (pMax->x() + distanceToAdd * gx);
+    equiPoint.y() = (pMax->y() + distanceToAdd * gy);
   }
   else
   {
-    equiPoint.setX(pMax->x());
-    equiPoint.setY(pMax->y());
+    equiPoint.x() = (pMax->x());
+    equiPoint.y() = (pMax->y());
   }
 
-  //CCTAG_COUT("Create a circle \n" << Point2dN<double>(p1->x(), p1->y()) << " \n " << Point2dN<double>(p2->x(), p2->y())
-  //	<< " \n" << equiPoint );
-
-  numerical::geometry::Circle resCircle(Point2dN<double>(p1.x(), p1.y()), Point2dN<double>(p2.x(), p2.y()), equiPoint);
+  numerical::geometry::Circle resCircle(Point2d<Eigen::Vector3f>(p1.x(), p1.y()), Point2d<Eigen::Vector3f>(p2.x(), p2.y()), equiPoint);
   
   return resCircle;
 }
 
-bool ellipseGrowingInit(std::vector<EdgePoint> & points, const std::vector<EdgePoint*>& filteredChildrens, numerical::geometry::Ellipse& ellipse)
+bool ellipseGrowingInit(const std::vector<EdgePoint*>& filteredChildrens, numerical::geometry::Ellipse& ellipse)
 {
 
-  Point2dN<int> p1;
-  Point2dN<int> p2;
+  Point2d<Vector3s> p1;
+  Point2d<Vector3s> p2;
 
   bool goodInit = true;
 
   if (isGoodEGPoints(filteredChildrens, p1, p2))
   {
     // Ellipse fitting based on the filtered childrens
-    // todo@Lilian create the construction Ellipse(pts) which calls the following.
+    // todo@Lilian: create the construction Ellipse(pts) which calls the following.
     numerical::ellipseFitting(ellipse, filteredChildrens);
   }
   else
   {
-    // Initialize ellipse to a circle if the ellipse is not covered enough. 
-    // Previous call (heuristic based))
-    // ellipse = computeCircleFromOuterEllipsePoints(filteredChildrens, p1, p2);
-    // Ellipse fitting on the filtered childrens.
+    // Initialize ellipse to a circle if the arc coverage is not covered enough. 
     numerical::circleFitting(ellipse, filteredChildrens);
 
     goodInit = false;
@@ -347,12 +329,12 @@ bool ellipseGrowingInit(std::vector<EdgePoint> & points, const std::vector<EdgeP
 }
 
 void connectedPoint(std::vector<EdgePoint*>& pts, const int runId, 
-        const EdgePointsImage& img, numerical::geometry::Ellipse& qIn,
+        const EdgePointCollection& img, numerical::geometry::Ellipse& qIn,
         numerical::geometry::Ellipse& qOut, int x, int y)
 {
-  using namespace boost::numeric::ublas;
-  BOOST_ASSERT(img[x][y]);
-  img[x][y]->_processed = runId; // Set as processed
+  BOOST_ASSERT(img(x,y));
+  const size_t threadMask = (size_t)1 << runId;
+  img(x,y)->_processed |= threadMask;  // Set as processed
 
   static int xoff[] = {1, 1, 0, -1, -1, -1, 0, 1};
   static int yoff[] = {0, -1, -1, -1, 0, 1, 1, 1};
@@ -364,23 +346,24 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
     if (sx >= 0 && sx < int( img.shape()[0]) &&
         sy >= 0 && sy < int( img.shape()[1]))
     {
-      EdgePoint* e = img[sx][sy];
+      EdgePoint* e = img(sx,sy);
 
       if (e && // If unprocessed
           isInHull(qIn, qOut, e) &&
-          e->_processed != runId)
+          !(e->_processed & threadMask))
       {
-        bounded_vector<double, 2> gradE(2);
-        gradE(0) = e->_grad.x();
-        gradE(1) = e->_grad.y();
-        bounded_vector<double, 2> eO(2);
+        Eigen::Vector2f gradE;
+        gradE(0) = e->dX();
+        gradE(1) = e->dY();
+        
+        Eigen::Vector2f eO;
         eO(0) = qIn.center().x() - e->x();
         eO(1) = qIn.center().y() - e->y();
 
-        if (inner_prod(gradE, eO) < 0)
+        if (gradE.dot(eO) < 0)
         {
           pts.push_back(e);
-          e->_processed = runId;
+          e->_processed |= threadMask;
           connectedPoint(pts, runId, img, qIn, qOut, sx, sy);
         }
       }
@@ -388,26 +371,26 @@ void connectedPoint(std::vector<EdgePoint*>& pts, const int runId,
   }
 }
 
-void computeHull(const numerical::geometry::Ellipse& ellipse, double delta,
+void computeHull(const numerical::geometry::Ellipse& ellipse, float delta,
         numerical::geometry::Ellipse& qIn, numerical::geometry::Ellipse& qOut)
 {
-  qIn = numerical::geometry::Ellipse(cctag::Point2dN<double>(
+  qIn = numerical::geometry::Ellipse(cctag::Point2d<Eigen::Vector3f>(
           ellipse.center().x(),
           ellipse.center().y()),
-          std::max(ellipse.a() - delta, 0.001),
-          std::max(ellipse.b() - delta, 0.001),
+          std::max(ellipse.a() - delta, 0.001f),
+          std::max(ellipse.b() - delta, 0.001f),
           ellipse.angle());
-  qOut = numerical::geometry::Ellipse(cctag::Point2dN<double>(ellipse.center().x(),
+  qOut = numerical::geometry::Ellipse(cctag::Point2d<Eigen::Vector3f>(ellipse.center().x(),
           ellipse.center().y()),
           ellipse.a() + delta,
           ellipse.b() + delta,
           ellipse.angle());
 }
 
-void ellipseHull(const EdgePointsImage& img,
+void ellipseHull(const EdgePointCollection& img,
         std::vector<EdgePoint*>& pts,
         numerical::geometry::Ellipse& ellipse,
-        double delta, const std::size_t runId)
+        float delta, const std::size_t runId)
 {
   numerical::geometry::Ellipse qIn, qOut;
   computeHull(ellipse, delta, qIn, qOut);
@@ -422,21 +405,21 @@ void ellipseHull(const EdgePointsImage& img,
 }
 
 void ellipseGrowing2(
-        const EdgePointsImage& img,
+        const EdgePointCollection& img,
         const std::vector<EdgePoint*>& filteredChildrens, 
         std::vector<EdgePoint*>& outerEllipsePoints,
         numerical::geometry::Ellipse& ellipse,
-        const double ellipseGrowingEllipticHullWidth,
-        std::size_t & nSegmentOut,
-        std::size_t & runId,
+        const float ellipseGrowingEllipticHullWidth,
+        std::size_t runId,
         bool goodInit)
 {
+  const size_t threadMask = (size_t)1 << runId;
   outerEllipsePoints.reserve(filteredChildrens.size()*3);
 
   BOOST_FOREACH(EdgePoint * children, filteredChildrens)
   {
     outerEllipsePoints.push_back(children);
-    children->_processed = runId;
+    children->_processed |= threadMask;
   }
 
   int lastSizePoints = 0;
@@ -501,12 +484,12 @@ void ellipseGrowing2(
     for(auto & vedgePoint: edgePointsSets)
     {
       for(auto & point: vedgePoint)
-        point->_processed = -1; // Could be any value different of runId
+        point->_processed &= ~threadMask; // Could be any value different of runId
     }
     // Set as processed all the outerEllipsePoints
     for(auto & point: outerEllipsePoints)
     {
-      point->_processed = runId;
+      point->_processed |= threadMask;
     }
     
   }

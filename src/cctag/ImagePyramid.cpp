@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/utils/Defines.hpp>
 #include <cctag/ImagePyramid.hpp>
 #include <cctag/utils/VisualDebug.hpp>
@@ -25,7 +32,7 @@ ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::si
   }
 }
 
-void ImagePyramid::build( const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params )
+void ImagePyramid::build( const cv::Mat & src, const float thrLowCanny, const float thrHighCanny, const cctag::Parameters* params )
 {
 #ifdef WITH_CUDA
     if( params->_useCuda ) {
@@ -81,25 +88,6 @@ void ImagePyramid::build( const cv::Mat & src, const double thrLowCanny, const d
 #endif
 }
 
-void ImagePyramid::output()
-{
-  for(int i = 0; i < _levels.size() ; ++i)
-  {
-// todo@Lilian
-    std::string basename("/home/lilian/data/");
-    std::stringstream sSrc, sDx, sDy, sEdges;
-    sSrc << basename << "src_" << i << ".png";
-    CCTAG_COUT(sSrc.str());
-    imwrite(sSrc.str(), _levels[i]->getSrc());
-    sDx << basename << "dx_" << i << ".png";
-    imwrite(sDx.str(), _levels[i]->getDx());
-    sDy << basename << "dy_" << i << ".png";
-    imwrite(sDy.str(), _levels[i]->getDy());
-    sEdges << basename << "edges_" << i << ".png";
-    imwrite(sEdges.str(), _levels[i]->getEdges());
-  }
-}
-
 ImagePyramid::~ImagePyramid()
 {
   for(int i = 0; i < _levels.size() ; ++i)
@@ -132,7 +120,7 @@ void toUchar(const cv::Mat & src, cv::Mat & dst)
   CCTAG_COUT_VAR(min);
   CCTAG_COUT_VAR(max);
   
-  double scale = 255/(max-min);
+  float scale = 255/(max-min);
   
   for ( int i=0 ; i < width ; ++i)
   {

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #define png_infopp_NULL (png_infopp)NULL
 #define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
@@ -15,7 +22,6 @@
 #include <cctag/Detection.hpp>
 #include <cctag/utils/Talk.hpp> // for DO_TALK macro
 
-#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
 #include <boost/gil/image_view_factory.hpp>
@@ -41,35 +47,36 @@ namespace cctag
  *
  */
 
-bool intersectLineToTwoEllipses(
+static bool intersectLineToTwoEllipses(
         std::ssize_t y,
         const numerical::geometry::Ellipse & qIn,
         const numerical::geometry::Ellipse & qOut,
-        const EdgePointsImage & edgesMap,
+        const EdgePointCollection & edgeCollection,
         std::list<EdgePoint*> & pointsInHull)
 {
-  std::vector<double> intersectionsOut = numerical::geometry::intersectEllipseWithLine(qOut, y, true);
-  std::vector<double> intersectionsIn = numerical::geometry::intersectEllipseWithLine(qIn, y, true);
+  std::vector<float> intersectionsOut = numerical::geometry::intersectEllipseWithLine(qOut, y, true);
+  std::vector<float> intersectionsIn = numerical::geometry::intersectEllipseWithLine(qIn, y, true);
   BOOST_ASSERT(intersectionsOut.size() <= 2);
   BOOST_ASSERT(intersectionsIn.size() <= 2);
   if ((intersectionsOut.size() == 2) && (intersectionsIn.size() == 2))
   {
-    //@todo@Lilian, in/out the edgeMap
     std::ssize_t begin1 = std::max(0, (int) intersectionsOut[0]);
-    std::ssize_t end1 = std::min((int) edgesMap.shape()[0] - 1, (int) intersectionsIn[0]);
+    std::ssize_t end1 = std::min((int) edgeCollection.shape()[0] - 1, (int) intersectionsIn[0]);
 
     std::ssize_t begin2 = std::max(0, (int) intersectionsIn[1]);
-    std::ssize_t end2 = std::min((int) edgesMap.shape()[0] - 1, (int) intersectionsOut[1]);
+    std::ssize_t end2 = std::min((int) edgeCollection.shape()[0] - 1, (int) intersectionsOut[1]);
 
     for (int x = begin1; x <= end1; ++x)
     {
-      EdgePoint* edgePoint = edgesMap[x][y];
+      EdgePoint* edgePoint = edgeCollection(x,y);
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
-        if (boost::numeric::ublas::inner_prod(
-                subrange(edgePoint->gradient(), 0, 2),
-                subrange(qIn.center() - (*edgePoint), 0, 2)) < 0)
+        Eigen::Vector2f centerToPoint;
+        centerToPoint(0) = qIn.center().x() - (*edgePoint).x();
+        centerToPoint(1) = qIn.center().y() - (*edgePoint).y();
+        
+        if (edgePoint->gradient().dot(centerToPoint) < 0)
         {
           pointsInHull.push_back(edgePoint);
         }
@@ -77,13 +84,15 @@ bool intersectLineToTwoEllipses(
     }
     for (int x = begin2; x <= end2; ++x)
     {
-      EdgePoint* edgePoint = edgesMap[x][y];
+      EdgePoint* edgePoint = edgeCollection(x,y);
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
-        if (boost::numeric::ublas::inner_prod(
-                subrange(edgePoint->gradient(), 0, 2),
-                subrange(qIn.center() - (*edgePoint), 0, 2)) < 0)
+        Eigen::Vector2f centerToPoint;
+        centerToPoint(0) = qIn.center().x() - (*edgePoint).x();
+        centerToPoint(1) = qIn.center().y() - (*edgePoint).y();
+        
+        if (edgePoint->gradient().dot(centerToPoint) < 0)
         {
           pointsInHull.push_back(edgePoint);
         }
@@ -93,17 +102,20 @@ bool intersectLineToTwoEllipses(
   else if ((intersectionsOut.size() == 2) && (intersectionsIn.size() <= 1))
   {
     std::ssize_t begin = std::max(0, (int) intersectionsOut[0]);
-    std::ssize_t end = std::min((int) edgesMap.shape()[0] - 1, (int) intersectionsOut[1]);
+    std::ssize_t end = std::min((int) edgeCollection.shape()[0] - 1, (int) intersectionsOut[1]);
 
     for (int x = begin; x <= end; ++x)
     {
-      EdgePoint* edgePoint = edgesMap[x][y];
+      EdgePoint* edgePoint = edgeCollection(x,y);
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
-        if (boost::numeric::ublas::inner_prod(
-                subrange(edgePoint->gradient(), 0, 2),
-                subrange(qIn.center() - (*edgePoint), 0, 2)) < 0)
+        
+        Eigen::Vector2f centerToPoint;
+        centerToPoint(0) = qIn.center().x() - (*edgePoint).x();
+        centerToPoint(1) = qIn.center().y() - (*edgePoint).y();
+        
+        if (edgePoint->gradient().dot(centerToPoint) < 0)
         {
           pointsInHull.push_back(edgePoint);
         }
@@ -112,15 +124,17 @@ bool intersectLineToTwoEllipses(
   }
   else if ((intersectionsOut.size() == 1) && (intersectionsIn.size() == 0))
   {
-    if ((intersectionsOut[0] >= 0) && (intersectionsOut[0] < edgesMap.shape()[0]))
+    if ((intersectionsOut[0] >= 0) && (intersectionsOut[0] < edgeCollection.shape()[0]))
     {
-      EdgePoint* edgePoint = edgesMap[intersectionsOut[0]][y];
+      EdgePoint* edgePoint = edgeCollection(intersectionsOut[0],y);
       if (edgePoint)
       {
         // Check that the gradient is opposed to the ellipse's center before pushing it.
-        if (boost::numeric::ublas::inner_prod(
-                subrange(edgePoint->gradient(), 0, 2),
-                subrange(qIn.center() - (*edgePoint), 0, 2)) < 0)
+        Eigen::Vector2f centerToPoint;
+        centerToPoint(0) = qIn.center().x() - (*edgePoint).x();
+        centerToPoint(1) = qIn.center().y() - (*edgePoint).y();
+        
+        if (edgePoint->gradient().dot(centerToPoint) < 0)
         {
           pointsInHull.push_back(edgePoint);
         }
@@ -134,30 +148,30 @@ bool intersectLineToTwoEllipses(
   return true;
 }
 
-void selectEdgePointInEllipticHull(
-        const EdgePointsImage & edgesMap,
+static void selectEdgePointInEllipticHull(
+        const EdgePointCollection & edgeCollection,
         const numerical::geometry::Ellipse & outerEllipse,
-        double scale,
+        float scale,
         std::list<EdgePoint*> & pointsInHull)
 {
   numerical::geometry::Ellipse qIn, qOut;
   computeHull(outerEllipse, scale, qIn, qOut);
 
-  const double yCenter = outerEllipse.center().y();
+  const float yCenter = outerEllipse.center().y();
 
   int maxY = std::max(int(yCenter), 0);
-  int minY = std::min(int(yCenter), int(edgesMap.shape()[1]) - 1);
+  int minY = std::min(int(yCenter), int(edgeCollection.shape()[1]) - 1);
 
   // Visit the bottom part of the ellipse
-  for (std::ssize_t y = maxY; y < int( edgesMap.shape()[1]); ++y)
+  for (std::ssize_t y = maxY; y < int( edgeCollection.shape()[1]); ++y)
   {
-    if (!intersectLineToTwoEllipses(y, qIn, qOut, edgesMap, pointsInHull))
+    if (!intersectLineToTwoEllipses(y, qIn, qOut, edgeCollection, pointsInHull))
       break;
   }
   // Visit the upper part of the ellipse
   for (std::ssize_t y = minY; y >= 0; --y)
   {
-    if (!intersectLineToTwoEllipses(y, qIn, qOut, edgesMap, pointsInHull))
+    if (!intersectLineToTwoEllipses(y, qIn, qOut, edgeCollection, pointsInHull))
       break;
   }
 }
@@ -170,9 +184,7 @@ void update(
 
   BOOST_FOREACH(CCTag & currentMarker, markers)
   {
-    // If markerToAdd is overlapping with a marker contained in markers then
-    //if (currentMarker.isOverlapping(markerToAdd)) // todo: clean
-    if (currentMarker.isEqual(markerToAdd))       
+    if ( ( currentMarker.getStatus() > 0 ) && ( markerToAdd.getStatus() > 0 ) && currentMarker.isEqual(markerToAdd) )
     {
       if (markerToAdd.quality() > currentMarker.quality())
       {
@@ -181,21 +193,19 @@ void update(
       flag = true;
     }
   }
-  // else push back in markers.
   if (!flag)
   {
     markers.push_back(new CCTag(markerToAdd));
   }
 }
 
-void cctagMultiresDetection_inner(
+static void cctagMultiresDetection_inner(
         size_t                  i,
         CCTag::List&            pyramidMarkers,
         const cv::Mat&          imgGraySrc,
         Level*                  level,
         const std::size_t       frame,
-        std::vector<EdgePoint>& vPoints,
-        EdgePointsImage&        vEdgeMap,
+        EdgePointCollection&    edgeCollection,
         popart::TagPipe*        cuda_pipe,
         const Parameters &      params,
         cctag::logtime::Mgmt*   durations )
@@ -203,7 +213,6 @@ void cctagMultiresDetection_inner(
     DO_TALK( CCTAG_COUT_OPTIM(":::::::: Multiresolution level " << i << "::::::::"); )
 
     // Data structure for getting vote winners
-    WinnerMap winners;
     std::vector<EdgePoint*> seeds;
 
     boost::posix_time::time_duration d;
@@ -211,21 +220,16 @@ void cctagMultiresDetection_inner(
 #if defined(WITH_CUDA)
     // there is no point in measuring time in compare mode
     if( cuda_pipe ) {
-    cuda_pipe->convertToHost( i, 
-                              vPoints,
-                              vEdgeMap,
-                              seeds,
-                              winners );
-    if( durations ) {
-        cudaDeviceSynchronize();
-    }
-    level->setLevel( cuda_pipe, params );
+      cuda_pipe->convertToHost(i, edgeCollection, seeds);
+      if( durations ) {
+          cudaDeviceSynchronize();
+      }
+      level->setLevel( cuda_pipe, params );
 
-    CCTagVisualDebug::instance().setPyramidLevel(i);
-} else { // not cuda_pipe
+      CCTagVisualDebug::instance().setPyramidLevel(i);
+    } else { // not cuda_pipe
 #endif // defined(WITH_CUDA)
-    edgesPointsFromCanny( vPoints,
-                          vEdgeMap,
+    edgesPointsFromCanny( edgeCollection,
                           level->getEdges(),
                           level->getDx(),
                           level->getDy());
@@ -233,10 +237,8 @@ void cctagMultiresDetection_inner(
     CCTagVisualDebug::instance().setPyramidLevel(i);
 
     // Voting procedure applied on every edge points.
-    vote( vPoints,
+    vote( edgeCollection,
           seeds,        // output
-          vEdgeMap,
-          winners,      // output
           level->getDx(),
           level->getDy(),
           params );
@@ -253,11 +255,9 @@ void cctagMultiresDetection_inner(
 
     cctagDetectionFromEdges(
         pyramidMarkers,
-        vPoints,
+        edgeCollection,
         level->getSrc(),
-        winners,
         seeds,
-        vEdgeMap,
         frame, i, std::pow(2.0, (int) i), params,
         durations );
 
@@ -285,56 +285,32 @@ void cctagMultiresDetection(
   //	** launch CCTag detection based on the canny edge detection output.
 
   std::map<std::size_t, CCTag::List> pyramidMarkers;
-  std::vector<EdgePointsImage> vEdgeMaps;
-  vEdgeMaps.reserve(imagePyramid.getNbLevels());
-  std::vector<std::vector<EdgePoint > > vPoints;
+  std::list<EdgePointCollection> vEdgePointCollections;
 
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
   for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i ) {
     pyramidMarkers.insert( std::pair<std::size_t, CCTag::List>( i, CCTag::List() ) );
-
-    // Create EdgePoints for every detected edge points in edges.
-    // std::vector<EdgePoint> points;
-    // vPoints.push_back(points);
-    vPoints.push_back( std::vector<EdgePoint>() );
-    
-    // EdgePointsImage edgesMap;
-    // vEdgeMaps.push_back(edgesMap);
-    vEdgeMaps.push_back( EdgePointsImage() );
+    vEdgePointCollections.emplace_back(imgGraySrc.cols, imgGraySrc.rows);
     
     cctagMultiresDetection_inner( i,
                                   pyramidMarkers[i],
                                   imgGraySrc,
                                   imagePyramid.getLevel(i),
                                   frame,
-                                  vPoints.back(),
-                                  vEdgeMaps.back(),
+                                  vEdgePointCollections.back(),
                                   cuda_pipe,
                                   params,
                                   durations );
   }
   if( durations ) durations->log( "after cctagMultiresDetection_inner" );
   
-  // Delete overlapping markers while keeping the best ones.
-  
-  CCTag::List markersPrelim;
-  
+  // Gather the detected markers in the entire image pyramid
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
   for (std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers ; ++i)
-  // set the _numberOfProcessedMultiresLayers <= _numberOfMultiresLayers todo@Lilian
   {
     CCTag::List & markersList = pyramidMarkers[i];
-
-    BOOST_FOREACH(const CCTag & marker, markersList)
-    {
-        update(markersPrelim, marker);
-    }
-  }
-  
-  // todo: in which case is this double check required ?
-  for(const CCTag & marker : markersPrelim)
-  {
-    update(markers, marker);
+    for(const CCTag & marker : markersList)
+      markers.push_back(new CCTag(marker));
   }
   
   if( durations ) durations->log( "after update markers" );
@@ -353,7 +329,7 @@ void cctagMultiresDetection(
     if (i > 0)
     {
       BOOST_ASSERT( i < params._numberOfMultiresLayers );
-      double scale = marker.scale(); // pow( 2.0, (double)i );
+      float scale = marker.scale(); // pow( 2.0, (float)i );
 
       cctag::numerical::geometry::Ellipse rescaledOuterEllipse = marker.rescaledOuterEllipse();
 
@@ -363,7 +339,7 @@ void cctagMultiresDetection(
       
       
       std::list<EdgePoint*> pointsInHull;
-      selectEdgePointInEllipticHull(vEdgeMaps[0], rescaledOuterEllipse, scale, pointsInHull);
+      selectEdgePointInEllipticHull(vEdgePointCollections.front(), rescaledOuterEllipse, scale, pointsInHull);
 
       #ifdef CCTAG_OPTIM
         boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
@@ -371,7 +347,7 @@ void cctagMultiresDetection(
       
       std::vector<EdgePoint*> rescaledOuterEllipsePoints;
 
-      double SmFinal = 1e+10;
+      float SmFinal = 1e+10;
       
       cctag::outlierRemoval(
               pointsInHull,
@@ -393,21 +369,20 @@ void cctagMultiresDetection(
       {
         numerical::ellipseFitting(rescaledOuterEllipse, rescaledOuterEllipsePoints);
 
-        std::vector< DirectedPoint2d<double> > rescaledOuterEllipsePointsDouble;// todo@Lilian : add a reserve
+        std::vector< DirectedPoint2d<Eigen::Vector3f> > rescaledOuterEllipsePointsDouble;
         std::size_t numCircles = params._nCrowns * 2;
 
         BOOST_FOREACH(EdgePoint * e, rescaledOuterEllipsePoints)
         {
           rescaledOuterEllipsePointsDouble.push_back(
-                  DirectedPoint2d<double>(e->x(), e->y(),
-                  e->_grad.x(),
-                  e->_grad.y())
+                  DirectedPoint2d<Eigen::Vector3f>(e->x(), e->y(),
+                  e->dX(),
+                  e->dY())
           );
           
-          CCTagVisualDebug::instance().drawPoint(Point2dN<double>(e->x(), e->y()), cctag::color_red);
+          CCTagVisualDebug::instance().drawPoint(Point2d<Eigen::Vector3f>(e->x(), e->y()), cctag::color_red);
         }
-        //marker.setCenterImg(rescaledOuterEllipse.center());                                                                // todo
-        marker.setCenterImg(cctag::Point2dN<double>(marker.centerImg().getX() * scale, marker.centerImg().getY() * scale));  // decide between these two lines
+        marker.setCenterImg(cctag::Point2d<Eigen::Vector3f>(marker.centerImg().x() * scale, marker.centerImg().y() * scale));
         marker.setRescaledOuterEllipse(rescaledOuterEllipse);
         marker.setRescaledOuterEllipsePoints(rescaledOuterEllipsePointsDouble);
       }

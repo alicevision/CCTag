@@ -290,19 +290,19 @@ Ptr<BaseRowFilter> getLinearRowFilter(int srcType, int bufType,
 //! returns the primitive column filter with the specified kernel
 Ptr<BaseColumnFilter> getLinearColumnFilter(int bufType, int dstType,
                                             InputArray kernel, int anchor,
-                                            int symmetryType, double delta = 0,
+                                            int symmetryType, float delta = 0,
                                             int bits = 0);
 
 //! returns 2D filter with the specified kernel
 Ptr<BaseFilter> getLinearFilter(int srcType, int dstType,
                                            InputArray kernel,
                                            Point anchor = Point(-1,-1),
-                                           double delta = 0, int bits = 0);
+                                           float delta = 0, int bits = 0);
 
 //! returns the separable linear filter engine
 Ptr<FilterEngine> createSeparableLinearFilter(int srcType, int dstType,
                           InputArray rowKernel, InputArray columnKernel,
-                          Point anchor = Point(-1,-1), double delta = 0,
+                          Point anchor = Point(-1,-1), float delta = 0,
                           int rowBorderType = BORDER_DEFAULT,
                           int columnBorderType = -1,
                           const Scalar& borderValue = Scalar());
@@ -310,12 +310,12 @@ Ptr<FilterEngine> createSeparableLinearFilter(int srcType, int dstType,
 //! returns the non-separable linear filter engine
 Ptr<FilterEngine> createLinearFilter(int srcType, int dstType,
                  InputArray kernel, Point _anchor = Point(-1,-1),
-                 double delta = 0, int rowBorderType = BORDER_DEFAULT,
+                 float delta = 0, int rowBorderType = BORDER_DEFAULT,
                  int columnBorderType = -1, const Scalar& borderValue = Scalar());
 
 //! returns the Gaussian filter engine
 Ptr<FilterEngine> createGaussianFilter( int type, Size ksize,
-                                    double sigma1, double sigma2 = 0,
+                                    float sigma1, float sigma2 = 0,
                                     int borderType = BORDER_DEFAULT);
 
 //! returns filter engine for the generalized Sobel operator
@@ -330,7 +330,7 @@ Ptr<BaseRowFilter> getRowSumFilter(int srcType, int sumType,
 //! returns vertical 1D box filter
 Ptr<BaseColumnFilter> getColumnSumFilter( int sumType, int dstType,
                                                      int ksize, int anchor = -1,
-                                                     double scale = 1);
+                                                     float scale = 1);
 //! returns box filter engine
 Ptr<FilterEngine> createBoxFilter( int srcType, int dstType, Size ksize,
                                               Point anchor = Point(-1,-1),
@@ -367,7 +367,7 @@ static inline Point normalizeAnchor( Point anchor, Size ksize )
 void preprocess2DKernel( const Mat& kernel, std::vector<Point>& coords, std::vector<uchar>& coeffs );
 void crossCorr( const Mat& src, const Mat& templ, Mat& dst,
                Size corrsize, int ctype,
-               Point anchor=Point(0,0), double delta=0,
+               Point anchor=Point(0,0), float delta=0,
                int borderType=BORDER_REFLECT_101 );
 
 }

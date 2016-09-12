@@ -1,6 +1,11 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/Canny.hpp>
-
-#include <boost/gil/image_view.hpp>
 
 #include "utils/Defines.hpp"
 
@@ -15,34 +20,24 @@ namespace cctag
 {
 
 void edgesPointsFromCanny(
-        std::vector<EdgePoint>& points,
-        EdgePointsImage & edgePointsMap,
+        EdgePointCollection& edgeCollection,
         const cv::Mat & edges,
         const cv::Mat & dx,
         const cv::Mat & dy )
 {
   std::size_t width = edges.cols;
   std::size_t height = edges.rows;
-
-  edgePointsMap.resize( boost::extents[width][height] );
-  std::fill( edgePointsMap.origin(), edgePointsMap.origin() + edgePointsMap.size(), (EdgePoint*)NULL );
   
-  points.reserve( width * height / 2 ); // todo: allocate that in the memory pool @Lilian
-
   for( int y = 0 ; y < height ; ++y )
   {
     for( int x = 0 ; x < width ; ++x )
     {
       if ( edges.at<uchar>(y,x) == 255 )
       {
-        points.push_back( EdgePoint( x, y, (float) dx.at<short>(y,x), (float) dy.at<short>(y,x) ) );
-        
-        EdgePoint* p = &points.back();
-        edgePointsMap[x][y] = p;
+        edgeCollection.add_point(x, y, dx.at<short>(y,x), dy.at<short>(y,x));
       }
     }
   }
-
 }
 
 } // namespace cctag

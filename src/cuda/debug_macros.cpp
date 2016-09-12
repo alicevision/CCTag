@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include "debug_macros.hpp"
 
 #include <assert.h>
@@ -13,12 +20,8 @@ void pop_cuda_only_sync_calls( bool on )
     cuda_only_sync_calls = on;
 }
 
-void pop_cuda_checkerror_ifsync( const char* file, size_t line )
+void pop_check_last_error( const char* file, size_t line )
 {
-    if( not cuda_only_sync_calls ) return;
-
-    cudaDeviceSynchronize();
-
     cudaError_t err = cudaGetLastError( );
     if( err != cudaSuccess ) {
         std::cerr << __FILE__ << ":" << __LINE__ << std::endl
@@ -26,6 +29,20 @@ void pop_cuda_checkerror_ifsync( const char* file, size_t line )
                   << "    cudaGetLastError failed: " << cudaGetErrorString(err) << std::endl;
         exit( -__LINE__ );
     }
+}
+
+void pop_sync_and_check_last_error( const char* file, size_t line )
+{
+    cudaDeviceSynchronize();
+    pop_check_last_error( file, line );
+}
+
+void pop_cuda_checkerror_ifsync( const char* file, size_t line )
+{
+    if( not cuda_only_sync_calls ) return;
+
+    cudaDeviceSynchronize();
+    pop_check_last_error( file, line );
 }
 
 void pop_info_gridsize( bool silent, dim3& grid,dim3& block, const string& kernel, const char* file, size_t line )
@@ -61,30 +78,6 @@ void pop_stream_synchronize( cudaStream_t stream, const char* file, size_t line 
         std::cerr << __FILE__ << ":" << __LINE__ << std::endl
                   << "    called from " << file << ":" << line << std::endl
                   << "    cudaStreamSynchronize failed: " << cudaGetErrorString(err) << std::endl;
-        exit( -__LINE__ );
-    }
-}
-
-void pop_check_last_error( const char* file, size_t line )
-{
-    cudaError_t err = cudaGetLastError( );
-    if( err != cudaSuccess ) {
-        std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-                  << "    called from " << file << ":" << line << std::endl
-                  << "    cudaGetLastError failed: " << cudaGetErrorString(err) << std::endl;
-        exit( -__LINE__ );
-    }
-}
-
-void pop_sync_and_check_last_error( const char* file, size_t line )
-{
-    cudaDeviceSynchronize();
-
-    cudaError_t err = cudaGetLastError( );
-    if( err != cudaSuccess ) {
-        std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-                  << "    called from " << file << ":" << line << std::endl
-                  << "    cudaGetLastError failed: " << cudaGetErrorString(err) << std::endl;
         exit( -__LINE__ );
     }
 }

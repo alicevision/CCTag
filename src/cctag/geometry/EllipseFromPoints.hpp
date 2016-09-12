@@ -1,8 +1,14 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef _CCTAG_NUMERICAL_ELLIPSEFROMPOINTS_HPP_
 #define _CCTAG_NUMERICAL_ELLIPSEFROMPOINTS_HPP_
 
 #include <cctag/geometry/Ellipse.hpp>
-#include <cctag/algebra/matrix/Matrix.hpp>
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/types_c.h>
@@ -19,51 +25,32 @@ namespace cctag {
 namespace numerical {
 namespace geometry {
 
-Point2dN<double> extractEllipsePointAtAngle( const Ellipse & ellipse, double theta );
+Point2d<Eigen::Vector3f> extractEllipsePointAtAngle( const Ellipse & ellipse, float theta );
+
+Point2d<Eigen::Vector3f> pointOnEllipse( const Ellipse & ellipse, const Point2d<Eigen::Vector3f> & p );
+
 ///@todo rename this function
-void points( const Ellipse & ellipse, const std::size_t nb, std::vector< cctag::Point2dN<double> > & pts );
+void points( const Ellipse & ellipse, const std::size_t nb, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts );
 ///@todo rename this function
-void points( const Ellipse & ellipse, const std::size_t nb, const double phi1, const double phi2, std::vector< cctag::Point2dN<double> > & pts );
+void points( const Ellipse & ellipse, const std::size_t nb, const float phi1, const float phi2, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts );
+
+
+// Direct implementation of "NUMERICALLY STABLE DIRECT LEAST SQUARES FITTING OF ELLIPSES" by Halir, Flusser
+// Fitzgibbon's paper "Direct Least Squares Fitting of Ellipses" was previously THE method used in opencv; see commit
+// https://github.com/Itseez/opencv/commit/4eda1662aa01a184e0391a2bb2e557454de7eb86#diff-97c8133c3c171e64ea0df0db4abd033c
+template<typename It> // It must be an iterator pointing to something derived from Eigen::Matrix<T, 3, 1>, _or a pointer to it_
+void fitEllipse(It begin, It end, Ellipse& e);
 
 template <class T>
-void fitEllipse( const std::vector<cctag::Point2dN< T > > & points, Ellipse& e )
+void fitEllipse(const std::vector<cctag::Point2d<T>> & points, Ellipse& e)
 {
-	std::vector<cv::Point2f> cvpts;
-	cvpts.reserve( points.size() );
-	BOOST_FOREACH( const cctag::Point2dN< T > & pt, points )
-	{
-		cvpts.push_back( cv::Point2f( float(pt.x()), float(pt.y()) ) );
-	}
-
-	const cv::RotatedRect rR = cv::fitEllipse( cv::Mat( cvpts ) );
-	const double xC           = rR.center.x;
-	const double yC           = rR.center.y;
-
-	const double b = rR.size.height / 2.0;
-	const double a = rR.size.width / 2.0;
-
-	const double angle = rR.angle * boost::math::constants::pi<double>() / 180.0;
-
-	//CCTAG_TCOUT_VAR(points[0]);
-	//CCTAG_TCOUT_VAR(xC);
-	//CCTAG_TCOUT_VAR(yC);
-	//CCTAG_TCOUT_VAR(a);
-	//CCTAG_TCOUT_VAR(b);
-	//CCTAG_TCOUT_VAR(angle);
-
-	e.setParameters( Point2dN<double>( xC, yC ), a, b, angle );
-
-	//CCTAG_TCOUT_VAR(boost::numeric::ublas::inner_prod(points[0],bounded_vector<double,3>(boost::numeric::ublas::prec_prod(e.matrix(),points[0]))));
-
-	//cvWaitKey(0);
+  fitEllipse(points.begin(), points.end(), e);
 }
 
-void ellipsePoint( const cctag::numerical::geometry::Ellipse& ellipse, double theta, cctag::numerical::BoundedVector3d& pt );
-
-
-void computeIntermediatePoints(const Ellipse & ellipse, Point2dN<int> & pt11, Point2dN<int> & pt12, Point2dN<int> & pt21, Point2dN<int> & pt22);
-void rasterizeEllipticalArc(const Ellipse & ellipse, const Point2dN<int> & pt1, const Point2dN<int> & pt2, std::vector< Point2dN<int> > & vPoint, std::size_t intersectionIndex);
-void rasterizeEllipse( const Ellipse & ellipse, std::vector< Point2dN<int> > & vPoint );
+void ellipsePoint( const cctag::numerical::geometry::Ellipse& ellipse, float theta, Eigen::Vector3f& pt );
+void computeIntermediatePoints(const Ellipse & ellipse, Point2d<Eigen::Vector3i> & pt11, Point2d<Eigen::Vector3i> & pt12, Point2d<Eigen::Vector3i> & pt21, Point2d<Eigen::Vector3i> & pt22);
+void rasterizeEllipticalArc(const Ellipse & ellipse, const Point2d<Eigen::Vector3i> & pt1, const Point2d<Eigen::Vector3i> & pt2, std::vector< Point2d<Eigen::Vector3i> > & vPoint, std::size_t intersectionIndex);
+void rasterizeEllipse( const Ellipse & ellipse, std::vector< Point2d<Eigen::Vector3i> > & vPoint );
 
 /**
  * Get the pixel perimeter of an ellipse
@@ -73,13 +60,13 @@ void rasterizeEllipse( const Ellipse & ellipse, std::vector< Point2dN<int> > & v
 std::size_t rasterizeEllipsePerimeter( const Ellipse & ellipse );
 
 /**
- * @brief Compute intersections if there, between a line of equation Y = y and an ellipse.
+ * @brief Compute intersections if any, between a line of equation Y = y and an ellipse.
  *
  * @param[in] ellipse
- * @param[in] y ordonate for which we compute x values of intersections
+ * @param[in] y ordonate for which we compute intersection abscissa
  * @return intersected points sorted in ascend order (returns x coordinates: 0, 1, or 2 points).
  */
-std::vector<double> intersectEllipseWithLine( const numerical::geometry::Ellipse& ellipse, const double y, bool horizontal);
+std::vector<float> intersectEllipseWithLine( const numerical::geometry::Ellipse& ellipse, const float y, bool horizontal);
 
 }
 }

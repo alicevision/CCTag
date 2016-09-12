@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <getopt.h>
 #include <iostream>
 #include <string>
@@ -21,6 +28,7 @@ static const struct option longopts[] =
     {"sync",       no_argument,       0, 0xd0 },
     {"debug-dir",  required_argument, 0, 0xd1 },
     {"use-cuda",   no_argument,       0, 0xd2 },
+    {"parallel",   required_argument, 0, 0xd3 },
 #endif
     {0,0,0,0},
 };
@@ -35,6 +43,7 @@ CmdLine::CmdLine( )
     , _switchSync( false )
     , _debugDir( "" )
     , _useCuda( false )
+    , _parallel( 1 )
 #endif
 { }
 
@@ -65,6 +74,7 @@ bool CmdLine::parse( int argc, char* argv[] )
       case 0xd0 : _switchSync        = true;   break;
       case 0xd1 : _debugDir          = optarg; break;
       case 0xd2 : _useCuda           = true;   break;
+      case 0xd3 : _parallel          = strtol( optarg, NULL, 0 );   break;
 #endif
       default : break;
     }
@@ -104,8 +114,9 @@ void CmdLine::usage( const char* const argv0 )
           "           [--sync]\n"
           "           [--debug-dir <debugdir>]\n"
           "           [--use-cuda]\n"
+          "           [--parallel <n>]\n"
           "\n"
-          "    <imgpath>  - path to an image (JPG, PNG) or video\n"
+          "    <imgpath>  - path to an image (JPG, PNG) or video (avi, mov) or camera index for live capture (0, 1...)\n"
           "    <nbrings>  - number of rings of the CCTags to detect\n"
           "    <bankpath> - path to a bank parameter file, e.g. 4Crowns/ids.txt \n"
           "    <output>   - output folder name \n"
@@ -113,6 +124,7 @@ void CmdLine::usage( const char* const argv0 )
           "    --sync     - CUDA debug option, run all CUDA ops synchronously\n"
           "    <debugdir> - path storing image to debug intermediate GPU results\n"
           "    --use-cuda - select GPU code instead of CPU code\n"
+          "    --parallel - use <n> CUDA pipes concurrently (default 1)\n"
           "\n" << std::endl;
 }
 

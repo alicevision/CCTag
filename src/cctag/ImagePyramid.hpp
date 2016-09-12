@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef _CCTAG_IMAGEPYRAMID_HPP
 #define	_CCTAG_IMAGEPYRAMID_HPP
 
@@ -28,8 +35,7 @@ public:
   
     /* The pyramid building function is never called if CUDA is used.
      */
-  void build(const cv::Mat & src, const double thrLowCanny, const double thrHighCanny, const cctag::Parameters* params );
-  void output();
+  void build(const cv::Mat & src, const float thrLowCanny, const float thrHighCanny, const cctag::Parameters* params );
 
 private:
   std::vector<Level*> _levels;

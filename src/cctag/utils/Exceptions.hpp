@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef _CCTAG_EXCEPTIONS_HPP_
 #define _CCTAG_EXCEPTIONS_HPP_
 
@@ -188,7 +195,7 @@ typedef ::boost::error_info<struct tag_algorithm, ::std::string> algorithm;
  * @brief Time.
  * @remark Dev or user information.
  */
-typedef ::boost::error_info<struct tag_time, double> time;
+typedef ::boost::error_info<struct tag_time, float> time;
 /**
  * @brief Frame number.
  * @remark Dev or user information.

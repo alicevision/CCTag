@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/SubPixEdgeOptimizer.hpp>
 #include <cctag/ImageCut.hpp>
 #include <cctag/geometry/Distance.hpp>
@@ -62,45 +69,45 @@ void SubPixEdgeOptimizer::subPix( int n, const NEWMAT::ColumnVector& x, double& 
 
 	This *this_ptr = static_cast<This*>( objPtr );
 
-	const double normDir = cctag::numerical::distancePoints2D( this_ptr->_line.start(), this_ptr->_line.stop() );
-	const double dirx = ( this_ptr->_line.stop().x() - this_ptr->_line.start().x() ) / normDir;
-	const double diry = ( this_ptr->_line.stop().y() - this_ptr->_line.start().y() ) / normDir;
+	const float normDir = cctag::numerical::distancePoints2D( this_ptr->_line.start(), this_ptr->_line.stop() );
+	const float dirx = ( this_ptr->_line.stop().x() - this_ptr->_line.start().x() ) / normDir;
+	const float diry = ( this_ptr->_line.stop().y() - this_ptr->_line.start().y() ) / normDir;
 
-	const double width = x(1);
-	const double p0x = x(2);
-	const double p0y = this_ptr->_a * p0x + this_ptr->_b;
+	const float width = x(1);
+	const float p0x = x(2);
+	const float p0y = this_ptr->_a * p0x + this_ptr->_b;
 
-	const double imin = x(3);
-	const double imax = x(4);
+	const float imin = x(3);
+	const float imax = x(4);
 
-	double res = 0;
+	float res = 0;
 
 	const std::size_t signalLength = this_ptr->_line.imgSignal().size();
-	const double kx = ( this_ptr->_line.stop().x() - this_ptr->_line.start().x() ) / ( signalLength - 1.0 );
-	const double ky = ( this_ptr->_line.stop().y() - this_ptr->_line.start().y() ) / ( signalLength - 1.0 );
-	double pindx = this_ptr->_line.start().x();
-	double pindy = this_ptr->_line.start().y();
+	const float kx = ( this_ptr->_line.stop().x() - this_ptr->_line.start().x() ) / ( signalLength - 1.f );
+	const float ky = ( this_ptr->_line.stop().y() - this_ptr->_line.start().y() ) / ( signalLength - 1.f );
+	float pindx = this_ptr->_line.start().x();
+	float pindy = this_ptr->_line.start().y();
 
-	const boost::numeric::ublas::vector<double> & sig = this_ptr->_line.imgSignal();
+	const boost::numeric::ublas::vector<float> & sig = this_ptr->_line.imgSignal();
 
 	for( std::size_t i = 0 ; i < signalLength ; ++i )
 	{
-		const double t = ( ( pindx - p0x ) * dirx + ( pindy - p0y ) * diry ) / width;
+		const float t = ( ( pindx - p0x ) * dirx + ( pindy - p0y ) * diry ) / width;
 
 		// ft: signal modelization
-		double ft;
-		if ( t < -1.0 )
+		float ft;
+		if ( t < -1.f )
 		{
 			ft = imin;
 		}
-		else if ( t > 1.0 )
+		else if ( t > 1.f )
 		{
 			ft = imax;
 		}
 		else
 		{
 			// inside the slope
-			const double gt = 0.5 + 1.0 / boost::math::constants::pi<double>() * ( t * std::sqrt( 1.0 - t * t ) + std::asin( t ) );
+			const float gt = 0.5f + 1.f / boost::math::constants::pi<float>() * ( t * std::sqrt( 1.f - t * t ) + std::asin( t ) );
 			ft = gt * ( imax - imin ) + imin;
 		}
 		// minimization of the distance between signal and parametric model (least square sense).
@@ -110,16 +117,16 @@ void SubPixEdgeOptimizer::subPix( int n, const NEWMAT::ColumnVector& x, double& 
 		pindy += ky;
 	}
 
-	fx = res;
+	fx = (double)res;
 	result = NLPFunction;
 }
 
-Point2dN<double> SubPixEdgeOptimizer::operator()( const double widthContour, const double xp, const double imin, const double imax )
+Point2d<Eigen::Vector3f> SubPixEdgeOptimizer::operator()( const float widthContour, const float xp, const float imin, const float imax )
 {
 	using namespace OPTPP;
 	using namespace NEWMAT;
 
-	Point2dN<double> res;
+	Point2d<Eigen::Vector3f> res;
 	//  Create a Nonlinear problem object
 	_widthContour = widthContour;
 	_xp = xp;
@@ -138,7 +145,7 @@ Point2dN<double> SubPixEdgeOptimizer::operator()( const double widthContour, con
 
 	//#ifdef REG_TEST
 	ColumnVector x_sol = getXc();
-	double f_sol = getF();
+	float f_sol = getF();
 
 	// CCTAG_TCOUT( "Solution :" ); //don't delete.
 
@@ -148,8 +155,8 @@ Point2dN<double> SubPixEdgeOptimizer::operator()( const double widthContour, con
 	// CCTAG_TCOUT( "imax : " << x_sol(4) ); //don't delete.
 
 	// Point raffiné à retourner :
-	res.setX( x_sol(2) );
-	res.setY( _a * x_sol(2) + _b );
+	res.x() = ( x_sol(2) );
+	res.y() = ( _a * x_sol(2) + _b );
 
 	//CCTAG_TCOUT( "p0raffine : (" << res ); //don't delete.
 

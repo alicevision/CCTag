@@ -1,6 +1,0 @@
-#! /bin/bash
-
-rm -rf ./build
-
-./configure -DOpenCV_DIR=/home/lilian/cpp_workspace/romExtern/OpenCV-2.3.1/build -DBoostNumericBindings_DIR=/home/lilian/cpp_workspace/romExtern/boost-numeric-bindings -DOPTPP_ROOT=/home/lilian/cpp_workspace/romExtern/optpp-2.4 --debug-trycompile --debug-output -DCeres_ROOT_DIR=/home/lilian/cpp_workspace/romExtern/ceres-solver-1.9.0/build
-

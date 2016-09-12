@@ -1,7 +1,14 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/CCTag.hpp>
 #include <cctag/utils/Defines.hpp>
 #include <cctag/DataSerialization.hpp>
-#include <cctag/algebra/Invert.hpp>
+// #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/Statistic.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>
@@ -19,12 +26,6 @@
 #include <boost/timer.hpp>
 #include <boost/array.hpp>
 #include <boost/mpl/bool.hpp>
-#include <boost/numeric/ublas/expression_types.hpp>
-#include <boost/numeric/ublas/functional.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_expression.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_expression.hpp>
 
 #include <cstddef>
 #include <cmath>
@@ -33,11 +34,9 @@
 namespace cctag
 {
 
-namespace ublas = boost::numeric::ublas;
 namespace optimization = cctag::numerical::optimization;
 
-// todo@Lilian : used in the initRadiusRatio called in the CCTag constructor. Need to be changed while reading the CCTagBank build from the textFile.
-const boost::array<double, 5> CCTag::_radiusRatiosInit =
+const boost::array<float, 5> CCTag::_radiusRatiosInit =
 {
   (29.0 / 9.0),
   (29.0 / 13.0),
@@ -51,21 +50,21 @@ bool CCTag::isEqual(const CCTag& marker) const
   using namespace cctag::numerical::geometry;
   
   Ellipse centerEllipseA = _rescaledOuterEllipse;
-  centerEllipseA.setA( centerEllipseA.b()*0.2 );
-  centerEllipseA.setB( centerEllipseA.b()*0.2 );
+  centerEllipseA.setA( centerEllipseA.b()*0.5 );
+  centerEllipseA.setB( centerEllipseA.b()*0.5 );
   
   Ellipse centerEllipseB = marker.rescaledOuterEllipse();
-  centerEllipseB.setA( centerEllipseB.b()*0.2 );
-  centerEllipseB.setB( centerEllipseB.b()*0.2 );
+  centerEllipseB.setA( centerEllipseB.b()*0.5 );
+  centerEllipseB.setB( centerEllipseB.b()*0.5 );
   
-  bool sameSemiAxis =
-            ( std::abs( _rescaledOuterEllipse.a()/marker.rescaledOuterEllipse().a() - 1 ) < 0.3 ) &&
-            ( std::abs( _rescaledOuterEllipse.b()/marker.rescaledOuterEllipse().b() - 1 ) < 0.3 );
+  //bool sameSemiAxis =
+  //          ( std::abs( _rescaledOuterEllipse.a()/marker.rescaledOuterEllipse().a() - 1 ) < 0.3 ) &&
+  //          ( std::abs( _rescaledOuterEllipse.b()/marker.rescaledOuterEllipse().b() - 1 ) < 0.3 );
   
-  return isOverlappingEllipses(centerEllipseA, centerEllipseB) && sameSemiAxis;
+  return isOverlappingEllipses(centerEllipseA, centerEllipseB);// && sameSemiAxis;
 }
 
-void CCTag::condition(const cctag::numerical::BoundedMatrix3x3d & mT, const cctag::numerical::BoundedMatrix3x3d & mInvT)
+void CCTag::condition(const Eigen::Matrix3f & mT, const Eigen::Matrix3f & mInvT)
 {
   using namespace cctag::numerical::geometry;
 
@@ -80,7 +79,7 @@ void CCTag::condition(const cctag::numerical::BoundedMatrix3x3d & mT, const ccta
     cctag::numerical::normalizeDet1(ellipse.matrix());
   }
 
-  BOOST_FOREACH(std::vector<cctag::DirectedPoint2d<double> > & points, _points)
+  BOOST_FOREACH(std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > & points, _points)
   {
     cctag::numerical::optimization::condition(points, mT);
   }
@@ -88,37 +87,37 @@ void CCTag::condition(const cctag::numerical::BoundedMatrix3x3d & mT, const ccta
   cctag::numerical::optimization::condition(_centerImg, mT);
 }
 
-void CCTag::scale(const double s)
+void CCTag::scale(const float s)
 {
 
-  BOOST_FOREACH(std::vector< DirectedPoint2d<double> > &vp, _points)
+  BOOST_FOREACH(std::vector< DirectedPoint2d<Eigen::Vector3f> > &vp, _points)
   {
 
-    BOOST_FOREACH(DirectedPoint2d<double> & p, vp)
+    BOOST_FOREACH(DirectedPoint2d<Eigen::Vector3f> & p, vp)
     {
-      p.setX(p.x() * s);
-      p.setY(p.y() * s);
+      p.x() = p.x() * s;
+      p.y() = p.y() * s;
     }
   }
 
-  _centerImg.setX(_centerImg.x() * s);
-  _centerImg.setY(_centerImg.y() * s);
+  _centerImg.x() = _centerImg.x() * s;
+  _centerImg.y() = _centerImg.y() * s;
   
-  _outerEllipse.setCenter(Point2dN<double>(_outerEllipse.center().x() * s,
+  _outerEllipse.setCenter(Point2d<Eigen::Vector3f>(_outerEllipse.center().x() * s,
                           _outerEllipse.center().y() * s));
   _outerEllipse.setA(_outerEllipse.a() * s);
   _outerEllipse.setB(_outerEllipse.b() * s);
 }
 
 #ifdef WITH_CUDA
-void CCTag::acquireNearbyPointMemory( )
+void CCTag::acquireNearbyPointMemory( int tagId )
 {
-    _cuda_result = popart::PinnedCounters::getPointPtr();
+    _cuda_result = popart::PinnedCounters::getPointPtr( tagId, __FILE__, __LINE__ );
 }
 
-void CCTag::releaseNearbyPointMemory( )
+void CCTag::releaseNearbyPointMemory( int tagId )
 {
-    popart::PinnedCounters::releaseAllPoints();
+    popart::PinnedCounters::releaseAllPoints( tagId );
 }
 #endif
 
@@ -136,7 +135,7 @@ void CCTag::serialize(boost::archive::text_oarchive & ar, const unsigned int ver
   ar & BOOST_SERIALIZATION_NVP(_quality);
   serializePoints(ar, _points);
   serializeEllipses(ar, _ellipses);
-  serializeBoundedMatrix3x3d(ar, _mHomography);
+  serializeMatrix3f(ar, _mHomography);
   serializePoint(ar, _centerImg);
 #ifdef CCTAG_SERIALIZE
   serializeFlowComponents(ar, _flowComponents);
@@ -150,10 +149,10 @@ void CCTag::printTag( std::ostream& ostr ) const
 {
     ostr << setprecision(4)
          << "CCTag:" << endl
-	 << "    (" << _centerImg.getX() << "," << _centerImg.getY() << ")" << endl
+	 << "    (" << _centerImg.x() << "," << _centerImg.y() << ")" << endl
          << "    nCircles: " << _nCircles << endl
 	 << "    radius ratios: ";
-    for( double x : _radiusRatios ) {
+    for( float x : _radiusRatios ) {
         ostr << x << " ";
     }
     ostr << endl
@@ -172,9 +171,9 @@ void CCTag::printTag( std::ostream& ostr ) const
     }
     ostr << "    rescaledOuterEllipse: " << _rescaledOuterEllipse << endl
          << "    Points: " << endl;
-    for( const std::vector< DirectedPoint2d<double> >& v : _points ) {
+    for( const std::vector< DirectedPoint2d<Eigen::Vector3f> >& v : _points ) {
 	ostr << "        ";
-    	for( const DirectedPoint2d<double>& p : v ) {
+    	for( const DirectedPoint2d<Eigen::Vector3f>& p : v ) {
             ostr << "(" << p.x() << "," << p.y() << ") ";
     	}
 	ostr << endl;

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cuda_runtime.h>
 #include "debug_macros.hpp"
 
@@ -143,7 +150,7 @@ bool edge_block_loop( )
         bool mark = update_edge_pixel( threadIdx.y, threadIdx.x*4 );
 
         /* every row checks whether any pixel has been changed */
-        bool line_changed = __any( mark );
+        bool line_changed = ::__any( mark );
 
 #if 0
         /* the first thread of each row write the result to continuation[] */
@@ -159,7 +166,7 @@ bool edge_block_loop( )
          * threadfence() is implied by syncthreads() */
         __syncthreads();
 
-        /* Each thread in a warp reads __any() results for one of 32 warps.
+        /* Each thread in a warp reads ::__any() results for one of 32 warps.
          * Redundant, but I have no better idea for spreading the result
          * to all warps. */
         // mark = threadIdx.x < HYST_H ? continuation[threadIdx.x] : false;
@@ -170,13 +177,13 @@ bool edge_block_loop( )
          * If there has been any change in this round, try to spread
          * the change further.
          */
-        again = __any( mark );
+        again = ::__any( mark );
 #else
         if( threadIdx.x == 0 ) continuation[threadIdx.y] = line_changed;
         __syncthreads();
         if( threadIdx.y == 0 ) {
             mark = continuation[threadIdx.x];
-            again = __any(mark);
+            again = ::__any(mark);
             if( threadIdx.x == 0 ) {
                 continuation[0] = again;
             }
@@ -253,7 +260,7 @@ void edge_second( cv::cuda::PtrStepSzb img, FrameMetaPtr meta )
 
     bool something_changed = edge( meta );
 
-    if( __any( something_changed ) ) {
+    if( ::__any( something_changed ) ) {
         store( input );
     }
 }

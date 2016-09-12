@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #ifndef PONCTUALCCTAG_HPP
 #define	PONCTUALCCTAG_HPP
 
@@ -22,38 +29,59 @@ class ICCTag
 public:
 
 	ICCTag()
-		: _x( 0.0 )
-		, _y( 0.0 )
+		: _x( 0.f )
+		, _y( 0.f )
 		, _id( -1 )
 	{ }
                 
-        virtual double x() const = 0;
-        virtual double y() const = 0;
+        virtual float x() const = 0;
+        virtual float y() const = 0;
         virtual MarkerID id() const = 0;
         virtual int getStatus() const = 0;
 
 	virtual ~ICCTag() {}
 
+	virtual ICCTag* clone() const = 0;
+
+
 protected:
-	double _x;
-	double _y;
+	float _x;
+	float _y;
 	MarkerID _id;
-        int _status;
+        int _status; // WARNING: only markers with status == 1 are the valid ones. (status available via getStatus()) 
+                     // A marker correctly detected and identified has a status 1.
+                     // Otherwise, it can be detected but not correctly identified.
 };
 
-// implemeted in cctag/ICCTag.cpp
+inline ICCTag* new_clone(const ICCTag& a)
+{
+	return a.clone();
+}
+
+/**
+ * @brief Perform the CCTag detection on a gray scale image
+ * 
+ * @param[out] markers Detected markers. WARNING: only markers with status == 1 are the valid ones. (status available via getStatus()) 
+ * @param[in] frame A frame number. Can be anything (e.g. 0).
+ * @param[in] graySrc Gray scale input image.
+ * @param[in] nRings Number of CCTag rings.
+ * @param[in] parameterFile Path to a parameter file. If not provided default parameters will be used.
+ * @param[in] cctagBankFilename Path to the cctag bank. If not provided, radii will be the ones associated to the CCTags contained in the
+ * markersToPrint folder.
+ */
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
+      int                       pipeId,
       const std::size_t frame,
       const cv::Mat & graySrc,
       logtime::Mgmt* durations = 0,
-      const std::size_t nCrowns = 3,
+      const std::size_t nRings = 3,
       const std::string & parameterFile = "",
       const std::string & cctagBankFilename = "");
 
-// implemeted in cctag/ICCTag.cpp
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
+      int                       pipeId,
       const std::size_t frame,
       const cv::Mat & graySrc,
       const cctag::Parameters & params,

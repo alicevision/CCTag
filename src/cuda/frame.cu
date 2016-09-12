@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <iostream>
 #include <limits>
 #include <assert.h>
@@ -19,23 +26,20 @@ using namespace std;
  * Frame
  *************************************************************/
 
-Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int my_pipe )
+Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int pipe_id )
     : _layer( my_layer )
     , _h_debug_hyst_edges( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
-    , _meta( my_pipe, my_layer )
-    , _all_edgecoords( _meta, List_size_all_edgecoords )
-    , _voters( _meta, List_size_voters )
-    , _v_chosen_idx( _meta, List_size_chosen_idx )
-    , _inner_points( _meta, List_size_inner_points )
-    , _interm_inner_points( _meta, List_size_interm_inner_points )
+    , _meta( pipe_id, my_layer )
+    , _all_edgecoords( pipe_id, _meta, List_size_all_edgecoords )
+    , _voters( pipe_id, _meta, List_size_voters )
+    , _v_chosen_idx( pipe_id, _meta, List_size_chosen_idx )
+    , _inner_points( pipe_id, _meta, List_size_inner_points )
+    , _interm_inner_points( pipe_id, _meta, List_size_interm_inner_points )
     , _image_to_upload( 0 )
 {
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
-#ifndef EDGE_LINKING_HOST_SIDE
-    _h_ring_output.data = 0;
-#endif
 
     if( download_stream != 0 ) {
         _private_download_stream = false;

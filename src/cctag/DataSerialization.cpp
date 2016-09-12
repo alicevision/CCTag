@@ -1,12 +1,19 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include <cctag/DataSerialization.hpp>
 
 namespace cctag {
 
-void serializeRadiusRatios(boost::archive::text_oarchive & ar, const std::vector<double> & radiusRatios) {
+void serializeRadiusRatios(boost::archive::text_oarchive & ar, const std::vector<float> & radiusRatios) {
     const int sizeRadiusRatios = radiusRatios.size();
     ar & BOOST_SERIALIZATION_NVP(sizeRadiusRatios);
 
-    BOOST_FOREACH(const double & ratio, radiusRatios) {
+    BOOST_FOREACH(const float & ratio, radiusRatios) {
         ar & BOOST_SERIALIZATION_NVP(ratio);
     }
 }
@@ -15,7 +22,7 @@ void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet) {
     const int sizeIdSet = idSet.size();
     ar & BOOST_SERIALIZATION_NVP(sizeIdSet);
 
-    typedef std::pair< MarkerID, double > IdPair;
+    typedef std::pair< MarkerID, float > IdPair;
 
     BOOST_FOREACH(const IdPair & idPair, idSet) {
         ar & BOOST_SERIALIZATION_NVP(idPair.first);
@@ -23,18 +30,17 @@ void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet) {
     }
 }
 
-void serializePoint(boost::archive::text_oarchive & ar, const Point2dN<double> & point) {
-    const double x = point.x();
-    const double y = point.y();
+void serializePoint(boost::archive::text_oarchive & ar, const Point2d<Eigen::Vector3f> & point) {
+    const float x = point.x();
+    const float y = point.y();
 
     ar & BOOST_SERIALIZATION_NVP(x);
     ar & BOOST_SERIALIZATION_NVP(y);
 }
 
-// todo templater function above and bellow.
-void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<double> & point) {
-    const double x = point.x();
-    const double y = point.y();
+void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<Eigen::Vector3f> & point) {
+    const float x = point.x();
+    const float y = point.y();
 
     ar & BOOST_SERIALIZATION_NVP(x);
     ar & BOOST_SERIALIZATION_NVP(y);
@@ -43,8 +49,8 @@ void serializePoint(boost::archive::text_oarchive & ar, const DirectedPoint2d<do
 void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e) {
     const int x = e.x();
     const int y = e.y();
-    const double gx = e._grad.x();
-    const double gy = e._grad.y();
+    const float gx = e.dX();
+    const float gy = e.dY();
 
     ar & BOOST_SERIALIZATION_NVP(x);
     ar & BOOST_SERIALIZATION_NVP(y);
@@ -52,26 +58,26 @@ void serializeEdgePoint(boost::archive::text_oarchive & ar, const EdgePoint & e)
     ar & BOOST_SERIALIZATION_NVP(gy);
 }
 
-void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< DirectedPoint2d<double> > & points) {
+void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< DirectedPoint2d<Eigen::Vector3f> > & points) {
     const int sizePoints = points.size();
     ar & BOOST_SERIALIZATION_NVP(sizePoints);
 
-    BOOST_FOREACH(const DirectedPoint2d<double> & point, points) {
+    BOOST_FOREACH(const DirectedPoint2d<Eigen::Vector3f> & point, points) {
         serializePoint(ar, point);
     }
 }
 
-void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< DirectedPoint2d<double> > > & points) {
+void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > > & points) {
     const int sizePoints = points.size();
     ar & BOOST_SERIALIZATION_NVP(sizePoints);
 
-    BOOST_FOREACH(const std::vector< DirectedPoint2d<double> > & subPoints, points) {
+    BOOST_FOREACH(const std::vector< DirectedPoint2d<Eigen::Vector3f> > & subPoints, points) {
         serializeVecPoint(ar, subPoints);
     }
 }
 
 void serializeEllipse(boost::archive::text_oarchive & ar, const cctag::numerical::geometry::Ellipse & ellipse) {
-    serializeBoundedMatrix3x3d(ar, ellipse.matrix());
+    serializeMatrix3f(ar, ellipse.matrix());
 }
 
 void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cctag::numerical::geometry::Ellipse> & ellipses) {
@@ -83,7 +89,7 @@ void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cct
     }
 }
 
-void serializeBoundedMatrix3x3d(boost::archive::text_oarchive & ar, const cctag::numerical::BoundedMatrix3x3d & matrix) {
+void serializeMatrix3f(boost::archive::text_oarchive & ar, const Eigen::Matrix3f & matrix) {
     ar & BOOST_SERIALIZATION_NVP(matrix(0, 0));
     ar & BOOST_SERIALIZATION_NVP(matrix(1, 0));
     ar & BOOST_SERIALIZATION_NVP(matrix(2, 0));

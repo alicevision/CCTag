@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016, Simula Research Laboratory
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 #include "tag.h"
 #include "frame.h"
 #include "frameparam.h"
@@ -11,21 +18,58 @@
 #include "debug_image.h"
 #include "cctag/utils/Talk.hpp"
 #include "cuda/geom_ellipse.h"
-#include "cctag/algebra/matrix/Matrix.hpp"
 
-#include "cctag/utils/LogTime.hpp"
 #include "cuda/onoff.h"
 #include "cuda/tag_threads.h"
 #include "cuda/tag_cut.h"
+
+#if 1
+    __device__ __host__
+    inline int validate( const char* file, int line, int input, int reference )
+    {
+#if 1
+        return min( input, reference );
+#else
+        if( input < reference ) {
+            printf( "%s:%d Divergence: run-time value %d < conf %d\n", file, line, input, reference );
+            return input;
+        }
+        if( input > reference ) {
+            printf( "%s:%d Divergence: run-time value %d > conf %d\n", file, line, input, reference );
+            return reference;
+        }
+        return reference;
+#endif
+    }
+    #define STRICT_CUTSIZE(sz) validate( __FILE__, __LINE__, sz, 22 )
+    #define STRICT_SAMPLE(sz)  validate( __FILE__, __LINE__, sz, 5 )
+    #define STRICT_SIGSIZE(sz) validate( __FILE__, __LINE__, sz, 100 )
+#else
+    #define STRICT_CUTSIZE(sz) sz
+    #define STRICT_SAMPLE(sz)  sz
+    #define STRICT_SIGSIZE(sz) sz
+#endif
 
 using namespace std;
 
 namespace popart
 {
+int TagPipe::_tag_id_running_number = 0;
+
 __host__
 TagPipe::TagPipe( const cctag::Parameters& params )
     : _params( params )
+    , _d_cut_struct_grid( 0 )
+    , _h_cut_struct_grid( 0 )
+    , _d_nearby_point_grid( 0 )
+    , _d_cut_signal_grid( 0 )
+    , _num_cut_struct_grid( 0 )
+    , _num_nearby_point_grid( 0 )
+    , _num_cut_signal_grid( 0 )
 {
+    _tag_id = _tag_id_running_number;
+    _tag_id_running_number++;
+    cerr << "Creating TagPipe " << _tag_id << endl;
 }
 
 __host__
@@ -33,7 +77,8 @@ void TagPipe::initialize( const uint32_t pix_w,
                           const uint32_t pix_h,
                           cctag::logtime::Mgmt* durations )
 {
-    PinnedCounters::init( );
+    cerr << "Initializing TagPipe " << _tag_id << endl;
+    PinnedCounters::init( getId() );
 
     static bool tables_initialized = false;
     if( not tables_initialized ) {
@@ -53,14 +98,14 @@ void TagPipe::initialize( const uint32_t pix_w,
 #ifdef USE_ONE_DOWNLOAD_STREAM
     cudaStream_t download_stream = 0;
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( f = new popart::Frame( w, h, i, download_stream ) ); // sync
+        _frame.push_back( f = new popart::Frame( w, h, i, download_stream, getId() ) ); // sync
         if( i==0 ) { download_stream = f->_download_stream; assert( download_stream != 0 ); }
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
 #else
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( f = new popart::Frame( w, h, i, 0 ) ); // sync
+        _frame.push_back( f = new popart::Frame( w, h, i, 0, getId() ) ); // sync
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
@@ -73,19 +118,24 @@ void TagPipe::initialize( const uint32_t pix_w,
         _frame[i]->allocRequiredMem( _params ); // sync
     }
 
+    for( int i=0; i<NUM_ID_STREAMS; i++ ) {
+        POP_CUDA_STREAM_CREATE( &_tag_streams[i] );
+    }
+    cudaEventCreate( &_uploaded_event );
+
     _threads.init( this, num_layers );
 }
 
 __host__
 void TagPipe::release( )
 {
-    int numTags = _tag_streams.size();
-    for( int i=0; i<numTags; i++ ) {
+    cerr << "Releasing TagPipe " << _tag_id << endl;
+    cudaEventDestroy( _uploaded_event );
+    for( int i=0; i<NUM_ID_STREAMS; i++ ) {
         POP_CUDA_STREAM_DESTROY( _tag_streams[i] );
     }
-    _tag_streams.clear();
 
-    PinnedCounters::release( );
+    PinnedCounters::release( getId() );
 }
 
 __host__
@@ -101,8 +151,9 @@ uint32_t TagPipe::getHeight( size_t layer ) const
 }
 
 __host__
-void TagPipe::load( unsigned char* pix )
+void TagPipe::load( int frameId, unsigned char* pix )
 {
+    cerr << "Loading image " << frameId << " into TagPipe " << _tag_id << endl;
     _frame[0]->upload( pix ); // async
     _frame[0]->addUploadEvent( ); // async
 }
@@ -116,21 +167,6 @@ void TagPipe::tagframe( )
 __host__
 void TagPipe::handleframe( int i )
 {
-#ifdef SHOW_DETAILED_TIMING
-    KeepTime* time_gauss;
-    KeepTime* time_mag;
-    KeepTime* time_hyst;
-    KeepTime* time_thin;
-    KeepTime* time_desc;
-    KeepTime* time_vote;
-    time_gauss = new KeepTime( _frame[i]->_stream );
-    time_mag   = new KeepTime( _frame[i]->_stream );
-    time_hyst  = new KeepTime( _frame[i]->_stream );
-    time_thin  = new KeepTime( _frame[i]->_stream );
-    time_desc  = new KeepTime( _frame[i]->_stream );
-    time_vote  = new KeepTime( _frame[i]->_stream );
-#endif
-
     _frame[i]->initRequiredMem( ); // async
 
     cudaEvent_t ev = _frame[0]->getUploadEvent( ); // async
@@ -140,22 +176,6 @@ void TagPipe::handleframe( int i )
         _frame[i]->uploadComplete( ); // unpin image
         _frame[i]->fillFromTexture( *(_frame[0]) ); // aysnc
     }
-
-#ifdef SHOW_DETAILED_TIMING
-#error SHOW_DETAILED_TIMING needs to be rewritten
-    time_gauss->start();
-    time_gauss->stop();
-    time_mag->start();
-    time_mag->stop();
-    time_hyst->start();
-    time_hyst->stop();
-    time_thin->start();
-    time_thin->stop();
-    time_desc->start();
-    time_desc->stop();
-    time_vote->start();
-    time_vote->stop();
-#endif // not SHOW_DETAILED_TIMING
 
     // note: without visual debug, only level 0 performs download
     _frame[i]->applyPlaneDownload(); // async
@@ -181,34 +201,16 @@ void TagPipe::handleframe( int i )
 
     cudaStreamSynchronize( _frame[i]->_stream );
     cudaStreamSynchronize( _frame[i]->_download_stream );
-
-
-#ifdef SHOW_DETAILED_TIMING
-    time_gauss->report( "time for Gauss " );
-    time_mag  ->report( "time for Mag   " );
-    time_hyst ->report( "time for Hyst  " );
-    time_thin ->report( "time for Thin  " );
-    time_desc ->report( "time for Desc  " );
-    time_vote ->report( "time for Vote  " );
-    delete time_gauss;
-    delete time_mag;
-    delete time_hyst;
-    delete time_thin;
-    delete time_desc;
-    delete time_vote;
-#endif // not NDEBUG
 }
 
 __host__
 void TagPipe::convertToHost( size_t                          layer,
-                             std::vector<cctag::EdgePoint>&  vPoints,
-                             cctag::EdgePointsImage&         edgeImage,
-                             std::vector<cctag::EdgePoint*>& seeds,
-                             cctag::WinnerMap&               winners )
+                             cctag::EdgePointCollection&     edgeCollection,
+                             std::vector<cctag::EdgePoint*>& seeds)
 {
     assert( layer < _frame.size() );
 
-    _frame[layer]->applyExport( vPoints, edgeImage, seeds, winners );
+    _frame[layer]->applyExport( edgeCollection, seeds );
 
 }
 
@@ -248,244 +250,16 @@ cv::Mat* TagPipe::getEdges( size_t layer ) const
 }
 
 __host__
-void TagPipe::debug( unsigned char* pix, const cctag::Parameters& params )
-{
-    DO_TALK( cerr << "Enter " << __FUNCTION__ << endl; )
-
-    if( true ) {
-        if( params._debugDir == "" ) {
-            DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
-                << ": debugDir not set, not writing debug output" << endl; )
-            return;
-        } else {
-            DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-                 << params._debugDir << "] using that directory" << endl; )
-        }
-
-        // This is a debug block
-
-        int num_layers = _frame.size();
-
-        for( int i=0; i<num_layers; i++ ) {
-            _frame[i]->hostDebugDownload( params );
-        }
-        POP_SYNC_CHK;
-
-        _frame[0]->hostDebugCompare( pix );
-
-        for( int i=0; i<num_layers; i++ ) {
-            std::ostringstream ostr;
-            ostr << "gpu-" << i;
-            _frame[i]->writeHostDebugPlane( ostr.str(), params );
-        }
-        POP_SYNC_CHK;
-    }
-
-    DO_TALK( cerr << "terminating in tagframe" << endl; )
-    DO_TALK( cerr << "Leave " << __FUNCTION__ << endl; )
-    // exit( 0 );
-}
-
-void TagPipe::debug_cpu_origin( int                      layer,
-                                const cv::Mat&           img,
-                                const cctag::Parameters& params )
-{
-    if( params._debugDir == "" ) {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl; )
-        return;
-    } else {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl; )
-    }
-
-    ostringstream ascname;
-    ascname << params._debugDir << "cpu-" << layer << "-img-ascii.txt";
-    ofstream asc( ascname.str().c_str() );
-
-    int cols = img.size().width;
-    int rows = img.size().height;
-    for( int y=0; y<rows; y++ ) {
-        for( int x=0; x<cols; x++ ) {
-            uint8_t pix = img.at<uint8_t>(y,x);
-            asc << setw(3) << (int)pix << " ";
-        }
-        asc << endl;
-    }
-}
-
-void TagPipe::debug_cpu_edge_out( int                      layer,
-                                  const cv::Mat&           edges,
-                                  const cctag::Parameters& params )
-{
-    if( params._debugDir == "" ) {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl; )
-        return;
-    } else {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl; )
-    }
-
-    ostringstream filename;
-    filename << params._debugDir
-             << "cpu-" << layer << "-edges.ppm";
-
-    cv::cuda::PtrStepSzb plane;
-    plane.step = edges.size().width;
-    plane.cols = edges.size().width;
-    plane.rows = edges.size().height;
-    if( plane.cols == 0 || plane.rows == 0 ) return;
-    plane.data = new uint8_t[ plane.cols * plane.rows ];
-
-    for( int y=0; y<plane.rows; y++ )
-        for( int x=0; x<plane.cols; x++ ) {
-            plane.ptr(y)[x] = edges.at<uint8_t>(y,x);
-        }
-
-    DebugImage::writePGM( filename.str(), plane );
-
-    delete [] plane.data;
-}
-
-static void local_debug_cpu_dxdy_out( const char*                  dxdy,
-                                      size_t                       level,
-                                      const cv::Mat&               cpu,
-                                      const cv::cuda::PtrStepSz16s gpu,
-                                      const cctag::Parameters&     params )
-{
-    if( params._debugDir == "" ) {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl; )
-        return;
-    } else {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl; )
-    }
-
-    if( cpu.size().width  != gpu.cols ) {
-        cerr << __FILE__ << ":" << __LINE__
-             << " Error: array width CPU " << cpu.size().width << " vs GPU " << gpu.cols << endl;
-    }
-    if( cpu.size().height != gpu.rows ) {
-        cerr << __FILE__ << ":" << __LINE__
-             << " Error: array height CPU " << cpu.size().height << " vs GPU " << gpu.rows << endl;
-    }
-
-    int cols = min( cpu.size().width, gpu.cols );
-    int rows = min( cpu.size().height, gpu.rows );
-
-    if( cols == 0 || rows == 0 ) return;
-
-    cv::cuda::PtrStepSz16s plane;
-    plane.step = cols * sizeof(int16_t);
-    plane.cols = cols;
-    plane.rows = rows;
-    plane.data = new int16_t[ cols * rows ];
-
-    for( int y=0; y<rows; y++ ) {
-        for( int x=0; x<cols; x++ ) {
-            int16_t cpu_val = cpu.at<int16_t>(y,x);
-            int16_t gpu_val = gpu.ptr(y)[x];
-            plane.ptr(y)[x] = (int16_t)gpu_val - (int16_t)cpu_val;
-#if 0
-            if( y < 4 || x < 4 || y >= rows-4 || x >= cols-4 ) {
-                diffplane.ptr(y)[x] = 0;
-            }
-#endif
-        }
-    }
-    ostringstream asc_f_diff;
-    ostringstream img_f_diff;
-    asc_f_diff << params._debugDir << "diffcpugpu-" << level << "-" << dxdy << "-ascii.txt";
-    img_f_diff << params._debugDir << "diffcpugpu-" << level << "-" << dxdy << ".pgm";
-    DebugImage::writePGMscaled( img_f_diff.str(), plane );
-    DebugImage::writeASCII(     asc_f_diff.str(), plane );
-
-    for( int y=0; y<rows; y++ ) {
-        for( int x=0; x<cols; x++ ) {
-            int16_t cpu_val   = cpu.at<int16_t>(y,x);
-            plane.ptr(y)[x] = min<int16_t>( max<int16_t>( (int16_t)cpu_val, -255 ), 255 );
-        }
-    }
-
-    ostringstream asc_f_cpu;
-    ostringstream img_f_cpu;
-    asc_f_cpu  << params._debugDir << "cpu-" << level << "-" << dxdy << "-ascii.txt";
-    img_f_cpu  << params._debugDir << "cpu-" << level << "-" << dxdy << ".pgm";
-    DebugImage::writePGMscaled( img_f_cpu.str(), plane );
-    DebugImage::writeASCII(     asc_f_cpu.str(), plane );
-
-    delete [] plane.data;
-}
-
-void TagPipe::debug_cpu_dxdy_out( TagPipe*                     pipe,
-                                  int                          layer,
-                                  const cv::Mat&               cpu_dx,
-                                  const cv::Mat&               cpu_dy,
-                                  const cctag::Parameters&     params )
-{
-    const cv::cuda::PtrStepSz16s gpu_dx = pipe->_frame[layer]->_h_dx;
-    const cv::cuda::PtrStepSz16s gpu_dy = pipe->_frame[layer]->_h_dy;
-    size_t                       level  = pipe->_frame[layer]->getLayer();
-
-    local_debug_cpu_dxdy_out( "dx", level, cpu_dx, gpu_dx, params );
-    local_debug_cpu_dxdy_out( "dy", level, cpu_dy, gpu_dy, params );
-}
-
-void TagPipe::debug_cmp_edge_table( int                           layer,
-                                    const cctag::EdgePointsImage& cpu,
-                                    const cctag::EdgePointsImage& gpu,
-                                    const cctag::Parameters&      params )
-{
-    if( params._debugDir == "" ) {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__
-            << ": debugDir not set, not writing debug output" << endl; )
-        return;
-    } else {
-        DO_TALK( cerr << __FUNCTION__ << ":" << __LINE__ << ": debugDir is ["
-            << params._debugDir << "] using that directory" << endl; )
-    }
-
-    ostringstream filename;
-    filename << params._debugDir
-             << "diffcpugpu-" << layer << "-edge.ppm";
-
-    cv::cuda::PtrStepSzb plane;
-    plane.data = new uint8_t[ cpu.shape()[0] * cpu.shape()[1] ];
-    plane.step = cpu.shape()[0];
-    plane.cols = cpu.shape()[0];
-    plane.rows = cpu.shape()[1];
-
-    if( gpu.size() != 0 && gpu.size() != 0 ) {
-        for( int y=0; y<cpu.shape()[1]; y++ ) {
-            for( int x=0; x<cpu.shape()[0]; x++ ) {
-                if( cpu[x][y] != 0 && gpu[x][y] == 0 )
-                    plane.ptr(y)[x] = DebugImage::BLUE;
-                else if( cpu[x][y] == 0 && gpu[x][y] != 0 )
-                    plane.ptr(y)[x] = DebugImage::GREEN;
-                else if( cpu[x][y] != 0 && gpu[x][y] != 0 )
-                    plane.ptr(y)[x] = DebugImage::GREY1;
-                else
-                    plane.ptr(y)[x] = DebugImage::BLACK;
-            }
-        }
-
-        DebugImage::writePPM( filename.str(), plane );
-    }
-
-    delete [] plane.data;
-}
-
-__host__
 void TagPipe::imageCenterOptLoop(
     const int                                  tagIndex,
+    const int                                  debug_numTags,
     const cctag::numerical::geometry::Ellipse& ellipse,
-    const cctag::Point2dN<double>&             center,
+    const cctag::Point2d<Eigen::Vector3f>&     center,
     const int                                  vCutSize,
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
+    // cerr << __FILE__ << ":" << __LINE__ << " enter imageCenterOptLoop for tag " << tagIndex << " number of cuts is " << vCutSize << endl;
     popart::geometry::ellipse e( ellipse.matrix()(0,0),
                                  ellipse.matrix()(0,1),
                                  ellipse.matrix()(0,2),
@@ -504,32 +278,35 @@ void TagPipe::imageCenterOptLoop(
 
     popart::geometry::matrix3x3 bestHomography;
 
-    _frame[0]->imageCenterOptLoop( tagIndex,
-                                   _tag_streams[tagIndex],
-                                   e,
-                                   f,
-                                   vCutSize,
-                                   params,
-                                   cctag_pointer_buffer );
+    imageCenterOptLoop( tagIndex,
+                        debug_numTags,
+                        _tag_streams[tagIndex%NUM_ID_STREAMS],
+                        e,
+                        f,
+                        vCutSize,
+                        params,
+                        cctag_pointer_buffer );
 }
 
 __host__
 bool TagPipe::imageCenterRetrieve(
     const int                                  tagIndex,
-    cctag::Point2dN<double>&                   center,
-    cctag::numerical::BoundedMatrix3x3d&       bestHomographyOut,
+    cctag::Point2d<Eigen::Vector3f>&           center,
+    float&                                     bestResidual,
+    Eigen::Matrix3f&                           bestHomographyOut,
     const cctag::Parameters&                   params,
     NearbyPoint*                               cctag_pointer_buffer )
 {
     float2                      bestPoint;
     popart::geometry::matrix3x3 bestHomography;
 
-    bool success = _frame[0]->imageCenterRetrieve( tagIndex,
-                                                   _tag_streams[tagIndex],
-                                                   bestPoint,
-                                                   bestHomography,
-                                                   params,
-                                                   cctag_pointer_buffer );
+    bool success = imageCenterRetrieve( tagIndex,
+                                        _tag_streams[tagIndex%NUM_ID_STREAMS],
+                                        bestPoint,
+                                        bestResidual,
+                                        bestHomography,
+                                        params,
+                                        cctag_pointer_buffer );
 
     if( success ) {
         center.x() = bestPoint.x;
@@ -558,29 +335,12 @@ bool TagPipe::imageCenterRetrieve(
 void TagPipe::checkTagAllocations( const int                numTags,
                                    const cctag::Parameters& params )
 {
-    const size_t gridNSample   = params._imagedCenterNGridSample;
+    const size_t gridNSample = STRICT_SAMPLE( params._imagedCenterNGridSample ); // 5
+    const size_t numCuts     = STRICT_CUTSIZE( params._numCutsInIdentStep ); // 22
 
-    const size_t g = numTags * gridNSample * gridNSample;
-
-    if( g*sizeof(NearbyPoint) > _frame[0]->getNearbyPointBufferByteSize() ) {
-        cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold point search results"
-             << endl;
-        exit( -1 );
-    }
-
-    if( g*sizeof(identification::CutSignals) > _frame[0]->getSignalBufferByteSize() ) {
-        cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold all signal buffers"
-             << endl;
-        exit( -1 );
-    }
-
-    if( numTags * params._numCutsInIdentStep * sizeof(identification::CutStruct) > _frame[0]->getCutStructBufferByteSize() ) {
-        cerr << __FILE__ << ":" << __LINE__
-             << "ERROR: re-interpreted image plane too small to hold all intermediate homographies" << endl;
-        exit( -1 );
-    }
+    reallocNearbyPointGridBuffer( numTags ); // each numTags is gridNSample^2 points
+    reallocSignalGridBuffer( numTags );      // each numTags is gridNSample^2 * numCuts signals
+    reallocCutStructGridBuffer( numTags );   // each numTags is numCuts cut structs
 }
 
 __host__
@@ -588,53 +348,45 @@ void TagPipe::uploadCuts( int                                 numTags,
                           const std::vector<cctag::ImageCut>* vCuts,
                           const cctag::Parameters&            params )
 {
-    if( numTags == 0 || vCuts == 0 || vCuts->size() == 0 ) return;
+    if( numTags <= 0 || vCuts == 0 || vCuts->size() == 0 ) return;
 
-    identification::CutStruct* csptr_base = _frame[0]->getCutStructBufferHost();
+    const int max_cuts_per_Tag = STRICT_CUTSIZE( params._numCutsInIdentStep );
 
-    const int max_cuts_per_Tag = params._numCutsInIdentStep;
+    cerr << endl << "==== Uploading " << numTags << " tags ====" << endl;
 
     for( int tagIndex=0; tagIndex<numTags; tagIndex++ ) {
-        identification::CutStruct* csptr;
-        
-        csptr = &csptr_base[tagIndex * max_cuts_per_Tag];
+        // cerr << "    Tag " << tagIndex << " has " << vCuts[tagIndex].size() << " cuts" << endl;
 
-#if 1
-// #ifndef NDEBUG
-        if( vCuts[tagIndex].size() > max_cuts_per_Tag ) {
+        CutStructGrid* cutGrid = this->getCutStructGridBufferHost( tagIndex );
+
+        if( STRICT_CUTSIZE( vCuts[tagIndex].size() ) > max_cuts_per_Tag ) {
             cerr << __FILE__ << "," << __LINE__ << ":" << endl
                  << "    Programming error: assumption that number of cuts for a single tag is < params._numCutsInIdentStep is wrong" << endl;
             exit( -1 );
         }
-#endif // NDEBUG
 
         std::vector<cctag::ImageCut>::const_iterator vit  = vCuts[tagIndex].begin();
         std::vector<cctag::ImageCut>::const_iterator vend = vCuts[tagIndex].end();
 
-        for( ; vit!=vend; vit++ ) {
-            csptr->start.x     = vit->start().getX();
-            csptr->start.y     = vit->start().getY();
-            csptr->stop.x      = vit->stop().getX();
-            csptr->stop.y      = vit->stop().getY();
-            csptr->beginSig    = vit->beginSig();
-            csptr->endSig      = vit->endSig();
-            csptr->sigSize     = vit->imgSignal().size();
-            csptr++;
+        for( int cut=0 ; vit!=vend; vit++, cut++ ) {
+            cutGrid->getGrid(cut).start.x     = vit->start().x();
+            cutGrid->getGrid(cut).start.y     = vit->start().y();
+            cutGrid->getGrid(cut).stop.x      = vit->stop().x();
+            cutGrid->getGrid(cut).stop.y      = vit->stop().y();
+            cutGrid->getGrid(cut).beginSig    = vit->beginSig();
+            cutGrid->getGrid(cut).endSig      = vit->endSig();
+            cutGrid->getGrid(cut).sigSize     = STRICT_SIGSIZE( vit->imgSignal().size() );
         }
     }
 
     POP_CHK_CALL_IFSYNC;
-    POP_CUDA_MEMCPY_TO_DEVICE_SYNC( _frame[0]->getCutStructBuffer(),
-                                    _frame[0]->getCutStructBufferHost(),
-                                    numTags * max_cuts_per_Tag * sizeof(identification::CutStruct) );
-}
-
-void TagPipe::makeCudaStreams( int numTags )
-{
-    for( int i=_tag_streams.size(); i<numTags; i++ ) {
-        cudaStream_t stream;
-        POP_CUDA_STREAM_CREATE( &stream );
-        _tag_streams.push_back( stream );
+    POP_CUDA_MEMCPY_TO_DEVICE_ASYNC( this->getCutStructGridBufferDev( 0 ),
+                                     this->getCutStructGridBufferHost( 0 ),
+                                     numTags * sizeof(CutStructGrid),
+                                     _tag_streams[0] );
+    cudaEventRecord( _uploaded_event, _tag_streams[0] );
+    for( int i=1; i<NUM_ID_STREAMS; i++ ) {
+        cudaStreamWaitEvent( _tag_streams[i], _uploaded_event, 0 );
     }
 }
 
