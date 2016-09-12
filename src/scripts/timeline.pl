@@ -6,10 +6,8 @@ use strict;
 
 use Data::Dumper;
 
-# Call stacks can be incomplete, so we disregard stack level.
-# TODO: use sample index start/end; easier than times!
 my %times;                    # {tid} -> [samples]
-my %funcs;                    # {tid} -> {func} -> [[begin, end, first_sample_index, count], ...]
+my %funcs;                    # {tid} -> [lvl] -> [[func, b_index, e_eindex]...] (indices of time samples for tid)
 
 sub process_input
 {
@@ -25,7 +23,7 @@ sub process_input
             $startTime = $event[2] unless $startTime;
         } elsif (/([0-9a-f]+)\s(.+?)\s\((.+)\)$/) {
             my ($func, $dso) = ($2, $3);
-            $func =~ s/\(.+//;
+            #$func =~ s/\(.+?\)$//;
             push @bt, $func if $dso =~ /regression$/;
         }
         elsif (/^$/) {
@@ -41,32 +39,28 @@ sub process_bt
 
     $times{$tid} ||= [];
 
-    foreach my $func (@_) {
-        $funcs{$tid}->{$func} ||= [];
-        process_fn($tid, $sample, $funcs{$tid}->{$func});
+    for my $lvl (0 .. scalar @_) {
+	my $func = $_[$lvl];
+	$times{$tid}->[$lvl] ||= [];
+	process_fn($tid, $sample, $func, $times{$tid}->[$lvl]);
     }
 
+    # Must come last, needed for coalescing of intervals.
     push @{$times{$tid}}, $sample;
 }
 
 sub process_fn
 {
-    my ($tid, $sample, $intervals) = @_;
+    my ($tid, $sample, $func, $intervals) = @_;
+    my $sample_idx = @{$times{$tid}};
 
-    if (!@{$times{$tid}} || !@{$intervals}) {
-        push @$intervals, [$sample, $sample, scalar @{$times{$tid}}, 1];
-        return;
+    # Extend interval if no gaps and history exists, otherwise new interval.
+    if ($sample_idx && @$intervals && ($intervals->[-1][0] eq $func) && ($intervals->[-1][-1]+1 == $sample_idx)) {
+	++$intervals->[-1][-1];
     }
-
-    # No gap between all samples and samples for this fn; extend interval
-    if ($intervals->[-1][1] == $times{$tid}->[-1]) {
-        $intervals->[-1][1] = $sample;
-        ++$intervals->[-1][3];
-        return;
+    else {
+	push @$intervals, [$sample, $sample, scalar @{$times{$tid}}];
     }
-
-    # Start new interval.
-    push @$intervals, [$sample, $sample, scalar @{$times{$tid}}, 1];
 }
 
 process_input;
