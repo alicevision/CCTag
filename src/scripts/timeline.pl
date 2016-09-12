@@ -4,10 +4,12 @@
 use warnings;
 use strict;
 
-use Data::Dumper;
+#use Data::Dumper;
+use JSON;
 
 my %times;                    # {tid} -> [samples]
 my %funcs;                    # {tid} -> [lvl] -> [[func, b_index, e_eindex]...] (indices of time samples for tid)
+my $mainThread;
 
 sub process_input
 {
@@ -20,7 +22,8 @@ sub process_input
             @bt = ();
             @event = split /\s+/;
             $event[2] =~ s/://;
-            $startTime = $event[2] unless $startTime;
+            $startTime ||= $event[2];
+            $mainThread ||= $event[1];
         } elsif (/([0-9a-f]+)\s(.+?)\s\((.+)\)$/) {
             my ($func, $dso) = ($2, $3);
             ($func) = $func =~ /^([^<(]+)/; 
@@ -63,7 +66,32 @@ sub process_fn
     }
 }
 
-process_input;
+sub process_thread
+{
+    my $tid = shift;
+    my $id = 0;
+    my @data;
 
-print Dumper(%funcs);
+    foreach my $lvl (0 .. $#{$funcs{$tid}}) {
+        foreach my $span (@{$funcs{$tid}->[$lvl]}) {
+            push @data,
+            {
+                id => $id++,
+                group => $lvl,
+                content => $span->[0],
+                start => $span->[1],
+                end => $span->[2]
+            };
+        }
+    }
+
+    return \@data;
+}
+
+process_input;
+my $timeline = process_thread $mainThread;
+print JSON->new->pretty->encode($timeline), "\n";
+
+
+
  
