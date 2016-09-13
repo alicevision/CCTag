@@ -6,6 +6,7 @@ use strict;
 
 #use Data::Dumper;
 use JSON;
+use Tenjin;
 
 my %times;                    # {tid} -> [samples]
 my %funcs;                    # {tid} -> [lvl] -> [[func, b_index, e_eindex]...] (indices of time samples for tid)
@@ -90,7 +91,13 @@ sub process_thread
 
 process_input;
 my $timeline = process_thread $mainThread;
-print JSON->new->pretty->encode($timeline), "\n";
+my $timeline_json = JSON->new->pretty->encode($timeline);
+
+my $tenjin = Tenjin->new();
+my $context = { profile_data => $timeline_json };
+my $html = $tenjin->render('t1.plhtml', $context);
+print $html;
+
 
 
 
