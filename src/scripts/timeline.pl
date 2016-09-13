@@ -81,7 +81,9 @@ sub process_thread
                 group => $lvl,
                 content => $span->[0],
                 start => $span->[1],
-                end => $span->[2]
+                end => $span->[2],
+		t_b => $times{$tid}[$span->[1]],
+		t_e => $times{$tid}[$span->[2]]
             };
 
 	    $item->{'className'} = 'popart' if $span->[0] =~ /popart::/;

@@ -51,7 +51,7 @@
   timeline.on('select', function(properties) {
     var item = items.get(properties.items[0]);
     var f = document.getElementById('selected_function');
-    f.innerHTML = item.content + "; DURATION=" + (item.end - item.start);
+    f.innerHTML = item.content + "; SAMPLES=" + (item.end - item.start) + "; T=" + (item.t_e - item.t_b)*1e6;
   });
 </script>
 </body>
