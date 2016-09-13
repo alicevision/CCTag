@@ -7,6 +7,10 @@
     body, html {
       font-family: sans-serif;
     }
+
+    .vis-item.popart {
+      background-color: red;
+    }
   </style>
 
   <script src="vis.js/dist/vis.js"></script>
@@ -38,7 +42,7 @@
 
   // Create a Timeline
   var timeline = new vis.Timeline(container);
-  timeline.setOptions({groupOrder: 'content'});
+  timeline.setOptions({groupOrder: 'content', stack: false});
   timeline.setGroups(groups);
   timeline.setItems(items);
 </script>

@@ -75,7 +75,7 @@ sub process_thread
 
     foreach my $lvl (0 .. $#{$funcs{$tid}}) {
         foreach my $span (@{$funcs{$tid}->[$lvl]}) {
-            push @data,
+	    my $item = 
             {
                 id => $id++,
                 group => $lvl,
@@ -83,6 +83,10 @@ sub process_thread
                 start => $span->[1],
                 end => $span->[2]
             };
+
+	    $item->{'className'} = 'popart' if $span->[0] =~ /popart::/;
+
+	    push @data, $item;
         }
     }
 
