@@ -90,15 +90,14 @@ sub process_thread
 }
 
 process_input;
+
 my $timeline = process_thread $mainThread;
 my $timeline_json = JSON->new->pretty->encode($timeline);
 
 my $tenjin = Tenjin->new();
-my $context = { profile_data => $timeline_json };
+my $context = {
+    profile_data => $timeline_json,
+    max_depth => scalar @{$funcs{$mainThread}}
+};
 my $html = $tenjin->render('t1.plhtml', $context);
 print $html;
-
-
-
-
- 

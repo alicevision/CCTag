@@ -24,6 +24,12 @@
   // DOM element where the Timeline will be attached
   var container = document.getElementById('visualization');
 
+  // Make groups.
+  var groups = new vis.DataSet();
+  for (var g = 0; g < [== $max_depth ==]; ++g) {
+    groups.add({id: g, content: g});
+  }
+
   // Create a DataSet (allows two way data-binding)
   var items = new vis.DataSet([== $profile_data ==]);
 
@@ -31,7 +37,10 @@
   var options = {};
 
   // Create a Timeline
-  var timeline = new vis.Timeline(container, items, options);
+  var timeline = new vis.Timeline(container);
+  timeline.setOptions({groupOrder: 'content'});
+  timeline.setGroups(groups);
+  timeline.setItems(items);
 </script>
 </body>
 </html>
