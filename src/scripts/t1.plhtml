@@ -21,6 +21,7 @@
 <p>
   A basic timeline. You can move and zoom the timeline, and select items.
 </p>
+<p id="selected_function"></p>
 
 <div id="visualization"></div>
 
@@ -45,6 +46,13 @@
   timeline.setOptions({groupOrder: 'content', stack: false});
   timeline.setGroups(groups);
   timeline.setItems(items);
+
+  // Print full function name on item select.
+  timeline.on('select', function(properties) {
+    var item = items.get(properties.items[0]);
+    var f = document.getElementById('selected_function');
+    f.innerHTML = item.content + "; DURATION=" + (item.end - item.start);
+  });
 </script>
 </body>
 </html>
