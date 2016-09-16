@@ -69,16 +69,16 @@ sub process_fn
 
 sub process_thread
 {
-    my $tid = shift;
-    my $id = 0;
-    my @data;
+    my($tid, $data) = @_;
+    my $id = scalar @$data;
 
     foreach my $lvl (0 .. $#{$funcs{$tid}}) {
         foreach my $span (@{$funcs{$tid}->[$lvl]}) {
 	    my $item = 
             {
                 id => $id++,
-                group => $lvl,
+                group => int($tid),
+		subgroup => $lvl,
                 content => $span->[0],
                 start => $span->[1],
                 end => $span->[2],
@@ -88,22 +88,32 @@ sub process_thread
 
 	    $item->{'className'} = 'popart' if $span->[0] =~ /popart::/;
 
-	    push @data, $item;
+	    push @$data, $item;
         }
     }
 
-    return \@data;
+    return $data;
 }
 
 process_input;
 
-my $timeline = process_thread $mainThread;
-my $timeline_json = JSON->new->pretty->encode($timeline);
+my $timeline = [];
+my @threads;
 
+foreach my $tid (keys %funcs) {
+    process_thread $tid, $timeline;
+    push @threads, {
+	id => int($tid),
+	content => $tid
+    };
+}
+
+my $json_enc = JSON->new->pretty;
 my $tenjin = Tenjin->new();
 my $context = {
-    profile_data => $timeline_json,
-    max_depth => scalar @{$funcs{$mainThread}}
+    main_thread => $mainThread,
+    profile_data => $json_enc->encode($timeline),
+    threads => $json_enc->encode(\@threads)
 };
 my $html = $tenjin->render('t1.plhtml', $context);
 print $html;

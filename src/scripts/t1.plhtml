@@ -19,7 +19,7 @@
 <body>
 
 <p>
-  A basic timeline. You can move and zoom the timeline, and select items.
+  Thread/stack profile. MAIN THREAD: [== $main_thread ==]
 </p>
 <p id="selected_function"></p>
 
@@ -30,10 +30,7 @@
   var container = document.getElementById('visualization');
 
   // Make groups.
-  var groups = new vis.DataSet();
-  for (var g = 0; g < [== $max_depth ==]; ++g) {
-    groups.add({id: g, content: g});
-  }
+  var groups = new vis.DataSet([== $threads ==]);
 
   // Create a DataSet (allows two way data-binding)
   var items = new vis.DataSet([== $profile_data ==]);
@@ -42,10 +39,14 @@
   var options = {};
 
   // Create a Timeline
-  var timeline = new vis.Timeline(container);
-  timeline.setOptions({groupOrder: 'content', stack: false});
-  timeline.setGroups(groups);
-  timeline.setItems(items);
+  var timeline = new vis.Timeline(
+    container,
+    items,
+    groups,
+    {
+      groupOrder: 'content',
+      stack: false
+    });
 
   // Print full function name on item select.
   timeline.on('select', function(properties) {
