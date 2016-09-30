@@ -66,12 +66,9 @@ SET(CCTAG_LINK_LIBRARIES
     ${PNG_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${Eigen_LIBRARIES}
-    ${GLOG_LIBRARIES}
-    ${LAPACK_LIBRARIES}
     ${TBB_LIBRARIES}
     pthread
-    dl
-    ${Gomp_LIBRARIES} )
+    dl )
 
 target_link_libraries( CCTag PUBLIC ${CCTAG_LINK_LIBRARIES} )
 target_include_directories( CCTag PUBLIC . ${TBB_INCLUDE_DIR})
