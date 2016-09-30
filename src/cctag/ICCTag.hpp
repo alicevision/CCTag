@@ -12,7 +12,6 @@
 #include <cctag/CCTagMarkersBank.hpp>
 
 #include <boost/ptr_container/ptr_list.hpp>
-#include <boost/gil/gil_all.hpp>
 
 #include <opencv2/core/core.hpp>
 

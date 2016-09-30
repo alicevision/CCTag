@@ -12,13 +12,9 @@
 #include <cctag/CCTagMarkersBank.hpp>
 #include <cctag/Types.hpp>
 #include <cctag/Params.hpp>
-#include "cctag/utils/LogTime.hpp"
+#include <cctag/utils/LogTime.hpp>
 
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/serialization.hpp>
-#include <boost/gil/image_view.hpp>
-#include <boost/gil/image_view_factory.hpp>
-#include <boost/gil/typedefs.hpp>
+#include <opencv2/opencv.hpp>
 
 #include <cstddef>
 #include <string>

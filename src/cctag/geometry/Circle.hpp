@@ -10,7 +10,6 @@
 
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Point.hpp>
-// #include <cctag/algebra/Invert.hpp>
 #include <cctag/utils/Defines.hpp>
 #include <Eigen/Dense>
 #include <cmath>

@@ -14,16 +14,12 @@
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/Statistic.hpp>
 
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/opencv.hpp>
 
 #include <boost/foreach.hpp>
-#include <boost/gil/gil_all.hpp>
-#include <boost/gil/typedefs.hpp>
 #include <boost/accumulators/statistics/median.hpp>
 #include <boost/foreach.hpp>
 #include <boost/math/special_functions/pow.hpp>
-#include <boost/gil/extension/io/jpeg_io.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <cmath>

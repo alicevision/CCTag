@@ -7,7 +7,6 @@
  */
 #define png_infopp_NULL (png_infopp)NULL
 #define int_p_NULL (int*)NULL
-#include <boost/gil/extension/io/png_io.hpp>
 
 #include <cctag/utils/FileDebug.hpp>
 #include <cctag/EllipseGrowing.hpp>
@@ -40,8 +39,6 @@
 #include <boost/unordered/unordered_set.hpp>
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-
-#include <opencv2/opencv.hpp>
 
 #include <cmath>
 #include <exception>

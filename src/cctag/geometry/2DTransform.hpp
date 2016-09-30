@@ -8,10 +8,9 @@
 #ifndef _CCTAG_2DTRANSFORM_HPP_
 #define _CCTAG_2DTRANSFORM_HPP_
 
-#include <vector>
 #include <cctag/geometry/Ellipse.hpp>
-#include <boost/foreach.hpp>
 #include <Eigen/Core>
+#include <vector>
 
 namespace cctag {
 namespace viewGeometry {

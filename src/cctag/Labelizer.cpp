@@ -8,9 +8,11 @@
 #include <cctag/Labelizer.hpp>
 #include <cctag/Label.hpp>
 
+#if 0
+
 #include <boost/gil/locator.hpp>
 
-#if 0
+
 namespace cctag {
 
 Labelizer::Labelizer()

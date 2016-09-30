@@ -18,7 +18,6 @@
 #include "cctag/Params.hpp"
 #include "cctag/utils/Talk.hpp" // do DO_TALK macro
 
-#include <boost/gil/image_view.hpp>
 #include <boost/timer.hpp>
 
 #include <stdlib.h> // for ::abs

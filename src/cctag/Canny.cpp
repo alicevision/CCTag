@@ -9,13 +9,6 @@
 
 #include "utils/Defines.hpp"
 
-//#define USE_CANNY_OCV3
-#ifdef USE_CANNY_OCV3
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <boost/timer.hpp>
-#endif
-
 namespace cctag
 {
 

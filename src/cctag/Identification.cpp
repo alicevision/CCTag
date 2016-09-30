@@ -20,8 +20,6 @@
 #include "cuda/tag.h"
 #endif
 
-#include <opencv2/opencv.hpp>
-
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/mean.hpp>
 #include <boost/accumulators/statistics/median.hpp>

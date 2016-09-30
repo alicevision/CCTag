@@ -11,7 +11,7 @@
 #include <cctag/EdgePoint.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
-#include <boost/unordered/unordered_set.hpp>
+#include <list>
 
 namespace cctag
 {

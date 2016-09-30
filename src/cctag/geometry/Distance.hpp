@@ -10,9 +10,6 @@
 
 #include <cctag/geometry/Ellipse.hpp>
 #include <boost/math/special_functions/pow.hpp>
-#include <boost/units/cmath.hpp>
-#include <boost/foreach.hpp>
-#include <boost/math/special_functions/pow.hpp>
 #include <Eigen/Dense>
 
 namespace cctag {

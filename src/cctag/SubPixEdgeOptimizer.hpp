@@ -13,15 +13,6 @@
 #include <cctag/geometry/Point.hpp>
 #include <cctag/utils/Defines.hpp>
 
-#ifdef WITH_OPTPP
-#include <OPT++_config.h>
-#include <newmat.h>
-#include <OptLBFGS.h>
-#include <NLF.h>
-#include <OptQNewton.h>
-#include <newmat.h>
-#endif
-
 namespace cctag {
 
 #if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM) // undefined. Deprecated
