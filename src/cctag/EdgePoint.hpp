@@ -19,8 +19,6 @@
 namespace cctag
 {
 
-class Label;
-
 using Vector3s = Eigen::Matrix<short, 3, 1>;
 
 class EdgePoint : public Vector3s
