@@ -42,7 +42,7 @@ if(USE_CUDA)
     	message( FATAL_ERROR "We must link CCTag library static with CUDA" )
     endif()
     add_library( CCTag STATIC ${CCTag_cpp} )
-    CUDA_ADD_LIBRARY( CCTagCuda STATIC ${CCTag_cpp} ${CUDA_cpp} ${CUDA_cu} )
+    CUDA_ADD_LIBRARY( CCTagCuda STATIC ${CUDA_cpp} ${CUDA_cu} )
 else(USE_CUDA)
     set(CUDA_cpp "")
 
