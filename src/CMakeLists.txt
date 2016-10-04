@@ -38,12 +38,11 @@ if(USE_CUDA)
     # set(BUILD_SHARED_LIBS ON)
 
 
-    if( COMPILE_STATIC_CCTAG_LIBRARY )
-    	add_library( CCTag STATIC ${CCTag_cpp} )
-    	CUDA_ADD_LIBRARY( CCTagCuda STATIC ${CCTag_cpp} ${CUDA_cpp} ${CUDA_cu} )
-    else( COMPILE_STATIC_CCTAG_LIBRARY )
+    if(NOT COMPILE_STATIC_CCTAG_LIBRARY)
     	message( FATAL_ERROR "We must link CCTag library static with CUDA" )
-    endif( COMPILE_STATIC_CCTAG_LIBRARY )
+    endif()
+    add_library( CCTag STATIC ${CCTag_cpp} )
+    CUDA_ADD_LIBRARY( CCTagCuda STATIC ${CCTag_cpp} ${CUDA_cpp} ${CUDA_cu} )
 else(USE_CUDA)
     set(CUDA_cpp "")
 
