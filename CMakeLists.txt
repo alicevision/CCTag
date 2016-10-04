@@ -18,13 +18,13 @@ endif()
 # set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   ")
 # set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
-IF(USE_CUDA)
+if(USE_CUDA)
 # I`m really sorry, but this makes CUDA compilation impossible
-  SET(CMAKE_BUILD_TYPE Release)
-ELSE(USE_CUDA)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  SET(CMAKE_BUILD_TYPE Release)
-ENDIF(USE_CUDA)
+  set(CMAKE_BUILD_TYPE Release)
+else(USE_CUDA)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_BUILD_TYPE Release)
+endif(USE_CUDA)
 
 add_definitions("-DCUB_CDP")
 
@@ -76,10 +76,10 @@ endif(Boost_FOUND)
 # No matter if we want to use CUDA or not. It's needed for OpenCV.
 find_package(CUDA 7.0)
 
-IF(USE_CUDA)
+if(USE_CUDA)
   message( STATUS "Try using CUDA" )
-  IF(CUDA_FOUND)
-    SET(CUDA_SEPARABLE_COMPILATION ON)
+  if(CUDA_FOUND)
+    set(CUDA_SEPARABLE_COMPILATION ON)
     include_directories(${CUDA_INCLUDE_DIRS})
     add_definitions("-DWITH_CUDA")
     set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
@@ -93,15 +93,15 @@ IF(USE_CUDA)
     # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;-v")
     # DOES NOT WORK UNTIL CUDA 7.5:
     # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
-  ELSE(CUDA_FOUND)
+  else(CUDA_FOUND)
     message( FATAL_ERROR "Failed to find CUDA" )
-  ENDIF(CUDA_FOUND)
+  endif(CUDA_FOUND)
 
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
-ELSE(USE_CUDA)
+else(USE_CUDA)
   message( STATUS "Avoid using CUDA" )
-ENDIF(USE_CUDA)
+endif(USE_CUDA)
 
 # FIND OPENCV
 list(APPEND CMAKE_MODULE_PATH "${OpenCV_DIR}")
