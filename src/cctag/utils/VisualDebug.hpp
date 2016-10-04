@@ -28,13 +28,13 @@ public:
 
     void setPyramidLevel(int level);
 
-    int getPyramidLevel();
+    int getPyramidLevel() const;
     
     void resetMarkerIndex();
 
     void incrementMarkerIndex();
     
-    std::size_t getMarkerIndex();
+    std::size_t getMarkerIndex() const; 
     
     std::string getPath() const;
 
