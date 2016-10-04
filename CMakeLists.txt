@@ -4,7 +4,8 @@ cmake_minimum_required(VERSION 3.4)
 
 include(ExternalProject)
 
-project( CCTag )
+project(CCTag VERSION 1.0.0)
+
 
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
