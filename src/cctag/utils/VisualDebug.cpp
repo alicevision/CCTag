@@ -67,7 +67,7 @@ void CCTagVisualDebug::setPyramidLevel(int level) {
 #endif
 }
 
-int CCTagVisualDebug::getPyramidLevel() {
+int CCTagVisualDebug::getPyramidLevel() const {
     return _pyramidLevel;
 }
 
@@ -85,7 +85,7 @@ void CCTagVisualDebug::incrementMarkerIndex()
 #endif
 }
 
-std::size_t CCTagVisualDebug::getMarkerIndex() 
+std::size_t CCTagVisualDebug::getMarkerIndex() const
 {
 #ifdef CCTAG_SERIALIZE
   return _markerIndex;

@@ -7,7 +7,6 @@
  */
 #define png_infopp_NULL (png_infopp)NULL
 #define int_p_NULL (int*)NULL
-#include <boost/gil/extension/io/png_io.hpp>
 
 #include "cctag/utils/FileDebug.hpp"
 #include "cctag/utils/VisualDebug.hpp"
@@ -49,7 +48,6 @@
 using namespace cctag;
 using boost::timer;
 
-using namespace boost::gil;
 namespace bfs = boost::filesystem;
 
 /**

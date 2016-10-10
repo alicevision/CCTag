@@ -9,10 +9,6 @@
 #include <cctag/Bresenham.hpp>
 #include <cctag/utils/FileDebug.hpp>
 
-//#include <cctag/filter/gilTools.hpp>
-
-#include <boost/gil/image_view.hpp>
-#include <boost/gil/gil_all.hpp>
 #include <boost/multi_array.hpp>
 #include <boost/math/special_functions/sign.hpp>
 

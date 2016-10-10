@@ -11,9 +11,8 @@
 #include <cctag/EdgePoint.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 
-#include <boost/foreach.hpp>
-
 #include <vector>
+#include <list>
 
 #include "Types.hpp"
 

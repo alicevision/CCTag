@@ -8,11 +8,9 @@
 #include <cctag/utils/Defines.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/core/mat.hpp>
-
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/pow.hpp>
+#include <boost/math/constants/constants.hpp>
 
 namespace cctag {
 namespace numerical {

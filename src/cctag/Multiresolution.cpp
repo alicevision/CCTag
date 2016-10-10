@@ -7,9 +7,6 @@
  */
 #define png_infopp_NULL (png_infopp)NULL
 #define int_p_NULL (int*)NULL
-#include <boost/gil/extension/io/png_io.hpp>
-#include <boost/gil/image_view_factory.hpp>
-#include <limits>
 
 #include <cctag/Multiresolution.hpp>
 #include <cctag/utils/VisualDebug.hpp>
@@ -22,9 +19,6 @@
 #include <cctag/Detection.hpp>
 #include <cctag/utils/Talk.hpp> // for DO_TALK macro
 
-#include <boost/gil/image_view.hpp>
-#include <boost/gil/typedefs.hpp>
-#include <boost/gil/image_view_factory.hpp>
 #include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -32,6 +26,8 @@
 #include <sstream>
 #include <fstream>
 #include <map>
+
+#include <limits>
 
 #ifdef WITH_CUDA
 #include <cuda_runtime.h> // only for debugging!!!

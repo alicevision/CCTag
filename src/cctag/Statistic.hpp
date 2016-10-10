@@ -8,9 +8,6 @@
 #ifndef _CCTAG_STATISTIC_HPP_
 #define _CCTAG_STATISTIC_HPP_
 
-#include <boost/units/cmath.hpp>
-#include <boost/swap.hpp>
-
 #include <cmath>
 #include <algorithm>
 #include <vector>

@@ -8,6 +8,8 @@
 #include <cctag/CCTagFlowComponent.hpp>
 #include <cctag/utils/Defines.hpp>
 
+#include <boost/foreach.hpp>
+
 namespace cctag
 {
 

@@ -2,31 +2,28 @@
 cmake_policy(SET CMP0054 OLD) # behaviour keywords in CMake if tests
 # ENDIF(COMMAND cmake_policy)
 
-FILE( GLOB_RECURSE
+file( GLOB_RECURSE
       CCTag_hpp
       ./cctag/*.hpp
 )
 
-FILE( GLOB_RECURSE
+file( GLOB_RECURSE
       CCTag_cpp
       ./cctag/*.cpp
 )
 
-IF(USE_CUDA)
-    FILE( GLOB_RECURSE
+if(USE_CUDA)
+    file( GLOB_RECURSE
           CUDA_cpp
           ./cuda/*.cpp
     )
-    FILE( GLOB_RECURSE
+    file( GLOB_RECURSE
           CUDA_cu
           ./cuda/*.cu
     )
 
     include_directories("${CMAKE_SOURCE_DIR}/src")
-    # include_directories("/home/labo/Install/cub-1.4.1")
-    # include_directories("/local/home/griff/GIT/github/cub-1.4.1")
     include_directories("${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
-    # include_directories("/usr/local/cuda/include/thrust/system/cuda/detail")
 
     set_source_files_properties( ${CUDA_cu} PROPERTIES COMPILE_FLAGS "-Wall --std=c++11")
     set_source_files_properties( ${CUDA_cpp} PROPERTIES COMPILE_FLAGS "-Wall --std=c++11")
@@ -41,37 +38,33 @@ IF(USE_CUDA)
     # set(BUILD_SHARED_LIBS ON)
 
 
-    IF( COMPILE_STATIC_CCTAG_LIBRARY )
-    	ADD_LIBRARY( CCTag STATIC ${CCTag_cpp} )
-    	CUDA_ADD_LIBRARY( CCTagCuda STATIC ${CUDA_cpp} ${CUDA_cu} )
-    ELSE( COMPILE_STATIC_CCTAG_LIBRARY )
-    	MESSAGE( FATAL_ERROR "We must link CCTag library static with CUDA" )
-    ENDIF( COMPILE_STATIC_CCTAG_LIBRARY )
-ELSE(USE_CUDA)
-    SET(CUDA_cpp "")
+    if(NOT COMPILE_STATIC_CCTAG_LIBRARY)
+    	message( FATAL_ERROR "We must link CCTag library static with CUDA" )
+    endif()
+    add_library( CCTag STATIC ${CCTag_cpp} )
+    CUDA_ADD_LIBRARY( CCTagCuda STATIC ${CUDA_cpp} ${CUDA_cu} )
+else(USE_CUDA)
+    set(CUDA_cpp "")
 
-    IF( COMPILE_STATIC_CCTAG_LIBRARY )
-    	MESSAGE( STATUS "Compiling static library" )
+    if( COMPILE_STATIC_CCTAG_LIBRARY )
+    	message( STATUS "Compiling static library" )
     	add_library( CCTag STATIC ${CCTag_cpp} )
-    ELSE( COMPILE_STATIC_CCTAG_LIBRARY )
-    	MESSAGE( STATUS "Compiling shared library" )
+    else( COMPILE_STATIC_CCTAG_LIBRARY )
+    	message( STATUS "Compiling shared library" )
     	add_library( CCTag SHARED ${CCTag_cpp} )
-    ENDIF( COMPILE_STATIC_CCTAG_LIBRARY )
-ENDIF(USE_CUDA)
+    endif( COMPILE_STATIC_CCTAG_LIBRARY )
+endif(USE_CUDA)
 
-SET(CCTAG_LINK_LIBRARIES
+set(CCTAG_LINK_LIBRARIES
     ${OpenCV_LIBS}
     ${Boost_LIBRARIES}
     ${Eigen_LIBRARIES}
     ${PNG_LIBRARIES}
     ${JPEG_LIBRARIES}
     ${Eigen_LIBRARIES}
-    ${GLOG_LIBRARIES}
-    ${LAPACK_LIBRARIES}
     ${TBB_LIBRARIES}
     pthread
-    dl
-    ${Gomp_LIBRARIES} )
+    dl )
 
 target_link_libraries( CCTag PUBLIC ${CCTAG_LINK_LIBRARIES} )
 target_include_directories( CCTag PUBLIC . ${TBB_INCLUDE_DIR})
@@ -101,7 +94,7 @@ if(USE_CUDA)
 
     install(TARGETS CCTag CCTagCuda LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
 else(USE_CUDA)
-    ADD_EXECUTABLE(detection ${CCTagDetect_cpp})
+    add_executable(detection ${CCTagDetect_cpp})
     target_link_libraries(detection PUBLIC CCTag ${TBB_tbb_LIBRARY_RELEASE})
 
     add_executable(regression ${CCTagRegression_cpp})

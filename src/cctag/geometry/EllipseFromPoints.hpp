@@ -10,12 +10,6 @@
 
 #include <cctag/geometry/Ellipse.hpp>
 
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/core/types_c.h>
-
-#include <boost/foreach.hpp>
-#include <boost/math/constants/constants.hpp>
-
 #include <cstddef>
 #include <cmath>
 #include <vector>
