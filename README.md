@@ -53,3 +53,5 @@ Acknowledgments
 ---------
 
 This has been developed in the context of the European project [POPART](http://www.popartproject.eu/) founded by European Union’s Horizon 2020 research and innovation programme under grant agreement No 644874.
+
+Additional contributions for performance optimizations have been funded by the Norwegian RCN FORNY2020 project FLEXCAM.
