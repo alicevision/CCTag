@@ -954,10 +954,10 @@ cudaEventElapsedTime( &event_ms, ev_4, ev_5 ); cerr << "Step 4: " << event_ms <<
 
                 tagIndex++;
             }
-        }
 
-        pipe1->imageCenterOpt( );
-        cudaDeviceSynchronize();
+            pipe1->imageCenterOpt( );
+            cudaDeviceSynchronize();
+        }
 #endif // WITH_CUDA
 
         tagIndex = 0;

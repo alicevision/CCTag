@@ -294,15 +294,15 @@ void idComputeResult( TagPipe::ImageCenter* d_image_center_opt_input,
     if( not v._valid ) return;
     if( v._iterations <= 0 ) return;
 
-    const int              vCutSize          = v.vCutSize;
-    NearbyPointGrid*       d_NearbyPointGrid = &point_grid[blockIdx.z]
-    const CutStructGrid*   cut_buffer        = &cut_grid[blockIdx.z]
-    CutSignalGrid*         sig_buffer        = &sig_grid[blockIdx.z]
+    const int              vCutSize          = v._vCutSize;
+    NearbyPointGrid*       d_NearbyPointGrid = &point_grid[blockIdx.z];
+    const CutStructGrid*   cut_buffer        = &cut_grid[blockIdx.z];
+    const CutSignalGrid*   sig_buffer        = &sig_grid[blockIdx.z];
 
     const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
     const int grid_i   = blockIdx.y % gridNSample;
     const int grid_j   = blockIdx.y / gridNSample;
-    const int grid_idx = blockIdx.y; // grid_j * gridNSample + grid_i;
+    // const int grid_idx = blockIdx.y; // grid_j * gridNSample + grid_i;
     // const CutSignals* allcut_signals = &sig_buffer[grid_idx * STRICT_CUTSIZE(vCutSize)];
     NearbyPoint& nPoint  = d_NearbyPointGrid->getGrid( grid_i, grid_j );
 
@@ -469,11 +469,11 @@ void idBestNearbyPoint32plus( TagPipe::ImageCenter* d_image_center_opt_input,
     if( not v._valid ) return;
     if( v._iterations <= 0 ) return;
 
-    NearbyPointGrid*       d_NearbyPointGrid = &point_grid[blockIdx.x]
+    NearbyPointGrid*       d_NearbyPointGrid = &point_grid[blockIdx.x];
 
     // phase 1: each thread searches for its own best point
     float bestRes = FLT_MAX;
-    const int gridNSample = tagParam._imagedCenterNGridSample;
+    const int gridNSample = tagParam.gridNSample;
     const int   gridSquare = gridNSample * gridNSample;
     int   bestIdx = gridSquare-1;
     int   idx;
@@ -596,10 +596,10 @@ void idBestNearbyPoint31max( TagPipe::ImageCenter* d_image_center_opt_input,
     if( not v._valid ) return;
     if( v._iterations <= 0 ) return;
 
-    NearbyPointGrid*       d_NearbyPointGrid = &point_grid[blockIdx.x]
+    NearbyPointGrid*       d_NearbyPointGrid = &point_grid[blockIdx.x];
 
     // phase 1: each thread retrieves its point
-    const int gridNSample = tagParam._imagedCenterNGridSample;
+    const int gridNSample = tagParam.gridNSample;
     const size_t gridSquare = gridNSample * gridNSample;
     float bestRes = FLT_MAX;
     int   bestIdx = gridSquare-1;
@@ -761,7 +761,7 @@ void TagPipe::idCostFunction( )
             dim3 id_block( 32, // we use this to sum up signals
                         32, // we can use some shared memory/warp magic for summing
                         1 );
-            const int numPairs = _param._numCutsInIdentStep * (_param._numCutsInIdentStep-1) / 2;
+            const int numPairs = _params._numCutsInIdentStep * (_params._numCutsInIdentStep-1) / 2;
             dim3 id_grid( grid_divide( numPairs, 32 ),
                           gridNSample*gridNSample,
                           _num_cut_struct_grid );
@@ -840,10 +840,10 @@ void TagPipe::idCostFunction( )
                     <<<1,32,0,_tag_stream>>>
                     ( getNearbyPointGridBuffer( v._tagIndex ), gridNSample );
             }
-#endif
 
             v._iterations -= 1;
         }
+#endif
 
         currentNeighbourSize /= (float)((gridNSample-1)/2) ;
 
