@@ -31,7 +31,12 @@ add_definitions("-DCUB_CDP")
 # Store all the output
 if(CCTAG_SERIALIZE)
   add_definitions("-DCCTAG_SERIALIZE")
-endif(CCTAG_SERIALIZE)
+endif()
+
+if(VISUAL_DEBUG)
+  add_definitions("-DVISUAL_DEBUG")
+endif()
+
 
 # Disable output stream
 if(CCTAG_NO_COUT)
