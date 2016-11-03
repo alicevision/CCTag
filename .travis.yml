@@ -201,7 +201,7 @@ before_script:
   - >
      cmake \
        -DCMAKE_CXX_COMPILER=$COMPILER \
-       -DCCTAG_BUILD_MODE=$BUILD_TYPE \
+       -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
        -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
        -DEigen_INCLUDE_DIR_HINTS=$EIGEN_INSTALL \
        -DBOOST_ROOT=$BOOST_INSTALL \
