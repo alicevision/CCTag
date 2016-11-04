@@ -20,7 +20,43 @@ matrix:
             - x11proto-xf86vidmode-dev
             - libxrandr-dev
             - libatlas-base-dev
-      env: COMPILER=g++-4.8 TOOLSET=gcc
+      env: COMPILER=g++-4.8 TOOLSET=gcc VISUAL_DEBUG=ON CCTAG_SERIALIZE=ON
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.8
+            - lcov
+            - libpng-dev
+            - libjpeg8-dev
+            - libtiff4-dev
+            - libxxf86vm1
+            - libxxf86vm-dev
+            - libtbb-dev
+            - x11proto-xf86vidmode-dev
+            - libxrandr-dev
+            - libatlas-base-dev
+      env: COMPILER=g++-4.8 TOOLSET=gcc VISUAL_DEBUG=OFF CCTAG_SERIALIZE=ON
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.8
+            - lcov
+            - libpng-dev
+            - libjpeg8-dev
+            - libtiff4-dev
+            - libxxf86vm1
+            - libxxf86vm-dev
+            - libtbb-dev
+            - x11proto-xf86vidmode-dev
+            - libxrandr-dev
+            - libatlas-base-dev
+      env: COMPILER=g++-4.8 TOOLSET=gcc VISUAL_DEBUG=OFF CCTAG_SERIALIZE=OFF
     - compiler: clang
       addons:
         apt:
@@ -39,7 +75,7 @@ matrix:
             - x11proto-xf86vidmode-dev
             - libxrandr-dev
             - libatlas-base-dev
-      env: COMPILER=clang++-3.7 TOOLSET=clang
+      env: COMPILER=clang++-3.7 TOOLSET=clang VISUAL_DEBUG=ON CCTAG_SERIALIZE=ON
 
 sudo: false
 
@@ -165,10 +201,12 @@ before_script:
   - >
      cmake \
        -DCMAKE_CXX_COMPILER=$COMPILER \
-       -DCCTAG_BUILD_MODE=$BUILD_TYPE \
+       -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
        -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
        -DEigen_INCLUDE_DIR_HINTS=$EIGEN_INSTALL \
        -DBOOST_ROOT=$BOOST_INSTALL \
+       -DVISUAL_DEBUG=$VISUAL_DEBUG \
+       -DCCTAG_SERIALIZE=$CCTAG_SERIALIZE \
        . $CCTAG_SOURCE
 
 script:
