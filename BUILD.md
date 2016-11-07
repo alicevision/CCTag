@@ -30,9 +30,9 @@ On a recent Ubuntu-like distribution (e.g. 14.04), you may want to try to run:
 $ sudo apt-get install g++ git-all libpng12-dev libjpeg-dev libeigen3-dev libboost-atomic-dev libboost-chrono-dev libboost-date-time-dev libboost-dev libboost-program-options-dev libboost-exception-dev libboost-filesystem-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev libboost-timer-dev
 ```
 
-OpenCV need to be compiled separately and installed in some OPENCV_INSTALL path. Then, when running cmake you need to provide the path to the location where `OpenCVConfig.cmake` is installed, usually ${OPENCV_INSTALL}/share/share/OpenCV/ (see below).
+OpenCV need to be compiled separately and installed in some `OPENCV_INSTALL` path. Then, when running cmake you need to provide the path to the location where `OpenCVConfig.cmake` is installed, usually `${OPENCV_INSTALL}/share/share/OpenCV/` (see below).
 
-CCTag contains code optimized for AVX2  instruction set, which significantly increases detection performance. To enable it, add "-mavx2" to CMAKE_CXX_FLAGS.
+CCTag contains code optimized for AVX2  instruction set, which significantly increases detection performance. To enable it, add "-mavx2" to `CMAKE_CXX_FLAGS`.
 
 ----------
 
@@ -44,6 +44,34 @@ $ mkdir build && cd build
 $ cmake .. -DOpenCV_DIR=${OPENCV_INSTALL}/share/share/OpenCV/
 $ make -j `nproc`
 ``` 
+
+If you want to install the library to, say, a CCTAG_INSTALL path, just add `-DCMAKE_INSTALL_PREFIX=$CCTAG_INSTALL` at cmake command line.
+
+----------
+
+### Using CCTag as third party
+
+When you install CCTag a file `CCTagConfig.cmake` is installed in `$CCTAG_INSTALL/lib/cmake/CCTag/` that allows you to import the library in your CMake project.
+In your `CMakeLists.txt` file just add the dependency
+
+```cmake
+# Find the package from the CCTagConfig.cmake 
+# in <prefix>/lib/cmake/CCTag/. Under the namespace CCTag::
+# it exposes the target popsift that allows you to compile
+# and link with the library
+find_package(CCTag CONFIG REQUIRED)
+...
+# suppose you want to try it out in a executable
+add_executable(cctagtest yourfile.cpp)
+# add link to the library
+target_link_libraries(cctagtest PUBLIC CCTag::CCTag)
+```
+
+Then, in order to build just pass the location of `CCTagConfig.cmake` from the cmake command line:
+
+```bash
+cmake .. -DCCTag_DIR=$CCTAG_INSTALL/lib/cmake/CCTag/
+```
 
 ----------
 
