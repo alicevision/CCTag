@@ -6,7 +6,7 @@ Building instructions
 ----------------------
 
 Required tools:
-* CMake to build the code
+* CMake >= 3.4 to build the code
 * git
 * C/C++ compiler (gcc >= 4.6 or visual studio or clang)
 For CUDA
@@ -30,17 +30,18 @@ On a recent Ubuntu-like distribution (e.g. 14.04), you may want to try to run:
 $ sudo apt-get install g++ git-all libpng12-dev libjpeg-dev libeigen3-dev libboost-atomic-dev libboost-chrono-dev libboost-date-time-dev libboost-dev libboost-program-options-dev libboost-exception-dev libboost-filesystem-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev libboost-timer-dev
 ```
 
-OpenCV need to be compiled separately.
+OpenCV need to be compiled separately and installed in some OPENCV_INSTALL path. Then, when running cmake you need to provide the path to the location where `OpenCVConfig.cmake` is installed, usually ${OPENCV_INSTALL}/share/share/OpenCV/ (see below).
 
 CCTag contains code optimized for AVX2  instruction set, which significantly increases detection performance. To enable it, add "-mavx2" to CMAKE_CXX_FLAGS.
 
 ----------
 
 ### Run the building process
+
 You now just need to be in the CCTag folder and run cmake:
 ```bash
 $ mkdir build && cd build
-$ cmake ..
+$ cmake .. -DOpenCV_DIR=${OPENCV_INSTALL}/share/share/OpenCV/
 $ make -j `nproc`
 ``` 
 
