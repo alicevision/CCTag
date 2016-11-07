@@ -106,20 +106,20 @@ env:
     - CCTAG_SOURCE=${TRAVIS_BUILD_DIR}
     - CCTAG_BUILD=${TRAVIS_BUILD_DIR}/build
     # OPENCV
-    - OPENCV_ROOT=${TRAVIS_BUILD_DIR}/opencv3
+    - OPENCV_ROOT=${HOME}/opencv3
     - OPENCV_SOURCE=${OPENCV_ROOT}/source
     - OPENCV_CONTRIB=${OPENCV_ROOT}/contrib
     - OPENCV_BUILD=${OPENCV_ROOT}/build
     - OPENCV_INSTALL=${OPENCV_ROOT}/install
     # EIGEN
-    - EIGEN_INSTALL=${TRAVIS_BUILD_DIR}/eigen
+    - EIGEN_INSTALL=${HOME}/eigen
     # BOOST
-    - BOOST_ROOT=${TRAVIS_BUILD_DIR}/boost
+    - BOOST_ROOT=${HOME}/boost
     - BOOST_SOURCE=${BOOST_ROOT}/source
     - BOOST_INSTALL=${BOOST_ROOT}/install
     # CMAKE
     - CMAKE_URL="https://cmake.org/files/v3.6/cmake-3.6.1-Linux-x86_64.tar.gz"
-    - CMAKE_ROOT=${TRAVIS_BUILD_DIR}/cmake
+    - CMAKE_ROOT=${HOME}/cmake
     - CMAKE_SOURCE=${CMAKE_ROOT}/source
     - CMAKE_INSTALL=${CMAKE_ROOT}/install
 
