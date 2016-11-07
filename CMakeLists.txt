@@ -79,8 +79,6 @@ else(USE_CUDA)
 endif(USE_CUDA)
 
 # FIND OPENCV
-#list(APPEND CMAKE_MODULE_PATH "${OpenCV_DIR}")
-
 find_package(OpenCV REQUIRED)
 
 # FIND Eigen
