@@ -201,6 +201,7 @@ before_script:
   - >
      cmake \
        -DCMAKE_CXX_COMPILER=$COMPILER \
+       -DUSE_CUDA=OFF \
        -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
        -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
        -DEigen_INCLUDE_DIR_HINTS=$EIGEN_INSTALL \
