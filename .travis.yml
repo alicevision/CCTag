@@ -105,6 +105,7 @@ env:
     - BUILD_PROCESSOR="`uname -p`"
     - CCTAG_SOURCE=${TRAVIS_BUILD_DIR}
     - CCTAG_BUILD=${TRAVIS_BUILD_DIR}/build
+    - CCTAG_INSTALL=${CCTAG_BUILD}/install
     # OPENCV
     - OPENCV_ROOT=${HOME}/opencv3
     - OPENCV_SOURCE=${OPENCV_ROOT}/source
@@ -201,6 +202,7 @@ before_script:
   - >
      cmake \
        -DCMAKE_CXX_COMPILER=$COMPILER \
+       -DCMAKE_INSTALL_PREFIX=$CCTAG_INSTALL \
        -DUSE_CUDA=OFF \
        -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
        -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
@@ -212,7 +214,7 @@ before_script:
 
 script:
 # limit GCC builds to a reduced number of thread for the virtual machine
-  - make -j 2 VERBOSE=1
+  - make install -j 2 VERBOSE=1
 # Perform unit tests
   # - make test
 
