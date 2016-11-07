@@ -106,6 +106,8 @@ env:
     - CCTAG_SOURCE=${TRAVIS_BUILD_DIR}
     - CCTAG_BUILD=${TRAVIS_BUILD_DIR}/build
     - CCTAG_INSTALL=${CCTAG_BUILD}/install
+    - CCTAG_SOURCE_APP=$CCTAG_SOURCE/src/applications
+    - CCTAG_BUILD_APP=${CCTAG_SOURCE_APP}/build
     # OPENCV
     - OPENCV_ROOT=${HOME}/opencv3
     - OPENCV_SOURCE=${OPENCV_ROOT}/source
@@ -217,6 +219,19 @@ script:
   - make install -j 2 VERBOSE=1
 # Perform unit tests
   # - make test
+
+  # Test if it compiles as third party
+  - cd $CCTAG_SOURCE_APP
+  - mkdir --parent $CCTAG_BUILD_APP
+  - cd $CCTAG_BUILD_APP
+  - >
+     cmake -DCMAKE_CXX_COMPILER=$COMPILER \
+       -DCCTag_DIR=/$CCTAG_INSTALL/lib/cmake/CCTag/ \
+       -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
+       -DBOOST_ROOT=$BOOST_INSTALL \
+       -DCMAKE_INSTALL_PREFIX=`pwd`/install \
+       . $CCTAG_SOURCE_APP
+  - make install -j 2 VERBOSE=1
 
 after_success:
   - du -hs $OPENCV_INSTALL
