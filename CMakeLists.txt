@@ -12,6 +12,10 @@ option(CCTAG_NO_COUT "Disable output stream" ON)
 option(USE_CUDA "Compile the library with CUDA support" ON)
 option(COMPILE_STATIC_CCTAG_LIBRARY "Generate static library" ON)
 
+# Cuda architecture valeues
+set(CCTAG_SM_ARCH 100)
+set(CCTAG_SM 100)
+
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
 

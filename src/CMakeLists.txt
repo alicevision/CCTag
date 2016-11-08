@@ -28,7 +28,7 @@ if(USE_CUDA)
     message( FATAL_ERROR "We must link CCTag library static with CUDA" )
   endif()
 
-  set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DSM_ARCH=100;-DSM=100;-DCUB_CDP")
+  set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DSM_ARCH=${CCTAG_SM_ARCH};-DSM=${CCTAG_SM};-DCUB_CDP")
  
   # this must go before CUDA_ADD_LIBRARY otherwise we won't be able to add it
   # after
@@ -47,7 +47,7 @@ if(USE_CUDA)
 
   target_compile_definitions(CCTag 
                          PUBLIC ${Boost_DEFINITIONS} 
-                         PUBLIC -DWITH_CUDA -DSM_ARCH=100 -DSM=100 -DCUB_CDP
+                         PUBLIC -DWITH_CUDA -DSM_ARCH=${CCTAG_SM_ARCH} -DSM=${CCTAG_SM} -DCUB_CDP
                          PRIVATE ${TBB_DEFINITIONS} ${PNG_DEFINITIONS}) 
 
   # enable serialization
