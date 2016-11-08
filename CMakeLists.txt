@@ -9,7 +9,7 @@ project(CCTag VERSION 1.0.0 LANGUAGES C CXX)
 #CMakeDependentOption
 option(CCTAG_SERIALIZE "Store all the output" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
-option(USE_CUDA "Compile the library with CUDA support" ON)
+option(WITH_CUDA "Compile the library with CUDA support" ON)
 option(COMPILE_STATIC_CCTAG_LIBRARY "Generate static library" ON)
 
 # Cuda architecture valeues
@@ -59,7 +59,7 @@ endif(APPLE)
 find_package(Boost 1.53.0 REQUIRED
     COMPONENTS date_time chrono thread serialization system filesystem atomic program_options timer)
 
-if(USE_CUDA)
+if(WITH_CUDA)
   message( STATUS "Try finding CUDA" )
   find_package(CUDA 7.0 REQUIRED)
   set(CUDA_SEPARABLE_COMPILATION ON)
@@ -78,9 +78,9 @@ if(USE_CUDA)
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
-else(USE_CUDA)
+else(WITH_CUDA)
   message( STATUS "Building without CUDA" )
-endif(USE_CUDA)
+endif(WITH_CUDA)
 
 # FIND OPENCV
 find_package(OpenCV REQUIRED)

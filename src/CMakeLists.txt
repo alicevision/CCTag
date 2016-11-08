@@ -7,7 +7,7 @@ file( GLOB_RECURSE
       ./cctag/*.cpp
 )
 
-if(USE_CUDA)
+if(WITH_CUDA)
   file( GLOB_RECURSE
         CUDA_cpp
         ./cuda/*.cpp
@@ -65,7 +65,7 @@ if(USE_CUDA)
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
-else(USE_CUDA)
+else(WITH_CUDA)
 
   set(CUDA_cpp "")
 
@@ -105,7 +105,7 @@ else(USE_CUDA)
                       PUBLIC ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} 
                       PRIVATE ${TBB_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} pthread dl)
 
-endif(USE_CUDA)
+endif(WITH_CUDA)
 
 
 
@@ -140,6 +140,7 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in"
                               "${project_config}"
                               INSTALL_DESTINATION "${config_install_dir}")
 
+
 # Targets:
 #   * <prefix>/lib/libCCTag.a
 #   * header location after install: <prefix>/include/
@@ -155,11 +156,12 @@ install(TARGETS CCTag
 install(DIRECTORY "cctag"
         DESTINATION "${include_install_dir}"
         FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
-if(USE_CUDA)
+if(WITH_CUDA)
   install(DIRECTORY "cuda"
           DESTINATION "${include_install_dir}"
           FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 endif()
+
 
 # Config
 #   * <prefix>/lib/cmake/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake
