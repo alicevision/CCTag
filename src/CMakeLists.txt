@@ -65,7 +65,8 @@ if(WITH_CUDA)
 
   # This is nececessary for the CCTagConfig.cmake to correctly export the
   # includes, always because we used CUDA_ADD_LIBRARY
-  set_target_properties(CCTag PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${Eigen_INCLUDE_DIR};${OpenCV_INCLUDE_DIRS}")
+  set_target_properties(CCTag PROPERTIES INTERFACE_INCLUDE_DIRECTORIES 
+       "${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${Eigen_INCLUDE_DIR};${OpenCV_INCLUDE_DIRS}")
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
