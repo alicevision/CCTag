@@ -2,11 +2,6 @@
 cmake_policy(SET CMP0054 OLD) # behaviour keywords in CMake if tests
 # ENDIF(COMMAND cmake_policy)
 
-#file( GLOB_RECURSE
-#      CCTag_hpp
-#      ./cctag/*.hpp
-#)
-
 file( GLOB_RECURSE
       CCTag_cpp
       ./cctag/*.cpp

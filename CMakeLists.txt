@@ -53,7 +53,7 @@ endif(APPLE)
 # FIND BOOST
 # TODO: determine minimal version and minimal components
 find_package(Boost 1.53.0 REQUIRED
-    COMPONENTS date_time chrono thread serialization system filesystem atomic program_options timer QUIET)
+    COMPONENTS date_time chrono thread serialization system filesystem atomic program_options timer)
 
 if(USE_CUDA)
   message( STATUS "Try finding CUDA" )
