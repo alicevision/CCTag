@@ -12,6 +12,10 @@
 #cmakedefine CCTAG_SERIALIZE
 #endif
 
+#ifndef VISUAL_DEBUG
+#cmakedefine VISUAL_DEBUG
+#endif
+
 #ifndef CCTAG_NO_COUT
 #cmakedefine CCTAG_NO_COUT
 #endif

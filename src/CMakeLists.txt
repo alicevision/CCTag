@@ -58,6 +58,10 @@ if(WITH_CUDA)
   if(CCTAG_NO_COUT)
     target_compile_definitions(CCTag PUBLIC "-DCCTAG_NO_COUT")
   endif(CCTAG_NO_COUT)
+  # Enable visual debug
+  if(VISUAL_DEBUG)
+    target_compile_definitions(CCTag PRIVATE "-DVISUAL_DEBUG")
+  endif(VISUAL_DEBUG)
 
   # This is nececessary for the CCTagConfig.cmake to correctly export the
   # includes, always because we used CUDA_ADD_LIBRARY
@@ -100,6 +104,11 @@ else(WITH_CUDA)
   if(CCTAG_NO_COUT)
     target_compile_definitions(CCTag PUBLIC "-DCCTAG_NO_COUT")
   endif(CCTAG_NO_COUT)
+  
+  # Enable visual debug
+  if(VISUAL_DEBUG)
+    target_compile_definitions(CCTag PRIVATE "-DVISUAL_DEBUG")
+  endif(VISUAL_DEBUG)
   
   target_link_libraries(CCTag 
                       PUBLIC ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} 
