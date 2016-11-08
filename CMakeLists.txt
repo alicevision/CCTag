@@ -64,9 +64,11 @@ if(WITH_CUDA)
   message( STATUS "Try finding CUDA" )
   find_package(CUDA 7.0 REQUIRED)
   set(CUDA_SEPARABLE_COMPILATION ON)
-  #    include_directories(${CUDA_INCLUDE_DIRS})
-  #    add_definitions("-DWITH_CUDA")
-  set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
+  
+  # Enabling the following line may cause nvcc to complain because a double "" is
+  # inserted in the compile line. It may be a FindCUDA.cmake bug
+  # https://gitlab.kitware.com/cmake/cmake/issues/16411
+#  set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
   set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3;-DNDEBUG")
   # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-G;-g;-DNDEBUG")
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--std=c++11")
