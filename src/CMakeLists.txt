@@ -135,7 +135,8 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in"
                               "${project_config}"
                               INSTALL_DESTINATION "${config_install_dir}")
 
-configure_file("${PROJECT_SOURCE_DIR}/cmake/config.hpp.in" ${confighpp_name} @ONLY)
+# config file
+configure_file("${PROJECT_SOURCE_DIR}/cmake/config.hpp.in" ${generated_dir}/${confighpp_name} @ONLY)
 
 # Targets:
 #   * <prefix>/lib/libCCTag.a
@@ -158,7 +159,7 @@ if(WITH_CUDA)
           FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 endif()
 
-install( FILES "${CMAKE_CURRENT_BINARY_DIR}/${confighpp_name}"
+install( FILES "${generated_dir}/${confighpp_name}"
     DESTINATION "${include_install_dir}")
 
 # Config
