@@ -110,6 +110,8 @@ set(config_install_dir "lib/cmake/${PROJECT_NAME}")
 set(include_install_dir "include")
 # the name for the generated config.hpp
 set(confighpp_name "cctag_config.hpp")
+# the name for the generated header version file
+set(versionhpp_name "version.hpp")
 
 # build directory containing the generated files
 set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
@@ -138,6 +140,9 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in"
 # config file
 configure_file("${PROJECT_SOURCE_DIR}/cmake/config.hpp.in" ${generated_dir}/${confighpp_name} @ONLY)
 
+# version file
+configure_file("${PROJECT_SOURCE_DIR}/cmake/version.hpp.in" ${generated_dir}/${versionhpp_name} @ONLY)
+
 # Targets:
 #   * <prefix>/lib/libCCTag.a
 #   * header location after install: <prefix>/include/
@@ -160,6 +165,9 @@ if(WITH_CUDA)
 endif()
 
 install( FILES "${generated_dir}/${confighpp_name}"
+    DESTINATION "${include_install_dir}")
+
+install( FILES "${generated_dir}/${versionhpp_name}"
     DESTINATION "${include_install_dir}")
 
 # Config
