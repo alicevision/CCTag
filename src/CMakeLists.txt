@@ -23,7 +23,6 @@ if(WITH_CUDA)
   # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
   # set(BUILD_SHARED_LIBS ON)
 
-
   if(NOT COMPILE_STATIC_CCTAG_LIBRARY)
     message( FATAL_ERROR "We must link CCTag library static with CUDA" )
   endif()
@@ -49,19 +48,6 @@ if(WITH_CUDA)
                          PUBLIC ${Boost_DEFINITIONS} 
                          PUBLIC -DWITH_CUDA -DSM_ARCH=${CCTAG_SM_ARCH} -DSM=${CCTAG_SM} -DCUB_CDP
                          PRIVATE ${TBB_DEFINITIONS} ${PNG_DEFINITIONS}) 
-
-  # enable serialization
-  if(CCTAG_SERIALIZE)
-    target_compile_definitions(CCTag PUBLIC "-DCCTAG_SERIALIZE")
-  endif(CCTAG_SERIALIZE)
-  # Disable output stream
-  if(CCTAG_NO_COUT)
-    target_compile_definitions(CCTag PUBLIC "-DCCTAG_NO_COUT")
-  endif(CCTAG_NO_COUT)
-  # Enable visual debug
-  if(VISUAL_DEBUG)
-    target_compile_definitions(CCTag PRIVATE "-DVISUAL_DEBUG")
-  endif(VISUAL_DEBUG)
 
   # This is nececessary for the CCTagConfig.cmake to correctly export the
   # includes, always because we used CUDA_ADD_LIBRARY
@@ -96,27 +82,24 @@ else(WITH_CUDA)
                            PUBLIC ${Boost_DEFINITIONS} 
                            PRIVATE ${TBB_DEFINITIONS} ${PNG_DEFINITIONS}) 
   
-  # enable serialization
-  if(CCTAG_SERIALIZE)
-    target_compile_definitions(CCTag PUBLIC "-DCCTAG_SERIALIZE")
-  endif(CCTAG_SERIALIZE)
-  
-  # Disable output stream
-  if(CCTAG_NO_COUT)
-    target_compile_definitions(CCTag PUBLIC "-DCCTAG_NO_COUT")
-  endif(CCTAG_NO_COUT)
-  
-  # Enable visual debug
-  if(VISUAL_DEBUG)
-    target_compile_definitions(CCTag PRIVATE "-DVISUAL_DEBUG")
-  endif(VISUAL_DEBUG)
-  
   target_link_libraries(CCTag 
                       PUBLIC ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} 
                       PRIVATE ${TBB_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} pthread dl)
 
 endif(WITH_CUDA)
 
+# enable serialization
+if(CCTAG_SERIALIZE)
+  target_compile_definitions(CCTag PUBLIC "-DCCTAG_SERIALIZE")
+endif(CCTAG_SERIALIZE)
+# Disable output stream
+if(CCTAG_NO_COUT)
+  target_compile_definitions(CCTag PUBLIC "-DCCTAG_NO_COUT")
+endif(CCTAG_NO_COUT)
+# Enable visual debug
+if(VISUAL_DEBUG)
+  target_compile_definitions(CCTag PRIVATE "-DVISUAL_DEBUG")
+endif(VISUAL_DEBUG)
 
 
 # EXPORTING THE LIBRARY
