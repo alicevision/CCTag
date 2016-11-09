@@ -33,8 +33,8 @@ if(WITH_CUDA)
   # this must go before CUDA_ADD_LIBRARY otherwise we won't be able to add it
   # after
   # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA.cmake#L147
-  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
-                      "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
+  INCLUDE_DIRECTORIES("$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>" 
+                      ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
                       "${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
  
   CUDA_ADD_LIBRARY( CCTag STATIC ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
@@ -66,7 +66,7 @@ if(WITH_CUDA)
   # This is nececessary for the CCTagConfig.cmake to correctly export the
   # includes, always because we used CUDA_ADD_LIBRARY
   set_target_properties(CCTag PROPERTIES INTERFACE_INCLUDE_DIRECTORIES 
-       "${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${Eigen_INCLUDE_DIR};${OpenCV_INCLUDE_DIRS}")
+       "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>;${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${Eigen_INCLUDE_DIR};${OpenCV_INCLUDE_DIRS}")
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
@@ -84,10 +84,10 @@ else(WITH_CUDA)
   endif( COMPILE_STATIC_CCTAG_LIBRARY )
 
   target_include_directories(CCTag 
-                           PUBLIC ${Boost_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS}
-                           PRIVATE ${TBB_INCLUDE_DIR} ${PNG_INCLUDE_DIRS} ${JPEG_INCLUDE_DIR}
                            PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
-                                  "$<INSTALL_INTERFACE:include/>") 
+                                  "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>"
+                           PUBLIC ${Boost_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS}
+                           PRIVATE ${TBB_INCLUDE_DIR} ${PNG_INCLUDE_DIRS} ${JPEG_INCLUDE_DIR}) 
 
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
