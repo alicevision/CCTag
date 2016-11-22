@@ -52,12 +52,12 @@ If you want to install the library to, say, a CCTAG_INSTALL path, just add `-DCM
 ### Using CCTag as third party
 
 When you install CCTag a file `CCTagConfig.cmake` is installed in `$CCTAG_INSTALL/lib/cmake/CCTag/` that allows you to import the library in your CMake project.
-In your `CMakeLists.txt` file just add the dependency
+In your `CMakeLists.txt` file you can add the dependency in this way:
 
 ```cmake
 # Find the package from the CCTagConfig.cmake 
 # in <prefix>/lib/cmake/CCTag/. Under the namespace CCTag::
-# it exposes the target popsift that allows you to compile
+# it exposes the target CCTag that allows you to compile
 # and link with the library
 find_package(CCTag CONFIG REQUIRED)
 ...
