@@ -24,7 +24,8 @@ if(WITH_CUDA)
   # set(BUILD_SHARED_LIBS ON)
 
   if(NOT COMPILE_STATIC_CCTAG_LIBRARY)
-    message( FATAL_ERROR "We must link CCTag library static with CUDA" )
+    message( FATAL_ERROR "In order to use CUDA the library must be build as static library. \
+             To disable cuda and build a dynamic library use -DWITH_CUDA=OFF" )
   endif()
 
   set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DSM_ARCH=${CCTAG_SM_ARCH};-DSM=${CCTAG_SM};-DCUB_CDP")
