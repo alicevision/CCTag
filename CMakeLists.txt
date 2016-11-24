@@ -4,7 +4,18 @@ cmake_minimum_required(VERSION 3.4)
 
 include(ExternalProject)
 
-project( CCTag )
+project(CCTag VERSION 1.0.0 LANGUAGES C CXX)
+
+#CMakeDependentOption
+option(CCTAG_SERIALIZE "Store all the output" OFF)
+option(VISUAL_DEBUG "Enable visual debug" OFF)
+option(CCTAG_NO_COUT "Disable output stream" ON)
+option(WITH_CUDA "Compile the library with CUDA support" ON)
+option(COMPILE_STATIC_CCTAG_LIBRARY "Generate static library" ON)
+
+# Cuda architecture valeues
+set(CCTAG_SM_ARCH 100)
+set(CCTAG_SM 100)
 
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
@@ -15,33 +26,12 @@ else()
   message(WARNING "Compiling without ${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake" )
 endif()
 
-# set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   ")
-# set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-
-if(USE_CUDA)
 # I`m really sorry, but this makes CUDA compilation impossible
-  set(CMAKE_BUILD_TYPE Release)
-else(USE_CUDA)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  set(CMAKE_BUILD_TYPE Release)
-endif(USE_CUDA)
-
-add_definitions("-DCUB_CDP")
-
-# Store all the output
-if(CCTAG_SERIALIZE)
-  add_definitions("-DCCTAG_SERIALIZE")
-endif()
-
-if(VISUAL_DEBUG)
-  add_definitions("-DVISUAL_DEBUG")
-endif()
-
-
-# Disable output stream
-if(CCTAG_NO_COUT)
-  add_definitions("-DCCTAG_NO_COUT")
-endif(CCTAG_NO_COUT)
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall ")
 
 # set the path where we can find the findXXX.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
@@ -68,57 +58,38 @@ endif(APPLE)
 # FIND BOOST
 # TODO: determine minimal version and minimal components
 find_package(Boost 1.53.0 REQUIRED
-    COMPONENTS date_time chrono thread serialization system filesystem atomic program_options timer QUIET)
-if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-  # link_directories(${Boost_LIB_DIR})
-  add_definitions(${Boost_DEFINITIONS})
-  message( STATUS "Found BOOST: ${Boost_LIBRARIES}" )
-else(Boost_FOUND)
-  message( FATAL_ERROR "Boost not found" )
-endif(Boost_FOUND)
+    COMPONENTS date_time chrono thread serialization system filesystem atomic program_options timer)
 
-# No matter if we want to use CUDA or not. It's needed for OpenCV.
-find_package(CUDA 7.0)
-
-if(USE_CUDA)
-  message( STATUS "Try using CUDA" )
-  if(CUDA_FOUND)
-    set(CUDA_SEPARABLE_COMPILATION ON)
-    include_directories(${CUDA_INCLUDE_DIRS})
-    add_definitions("-DWITH_CUDA")
-    set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
-    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3;-DNDEBUG")
-    # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-G;-g;-DNDEBUG")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--std=c++11")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=compute_52")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
-    # MORE NOISE:
-    # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;-v")
-    # DOES NOT WORK UNTIL CUDA 7.5:
-    # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
-  else(CUDA_FOUND)
-    message( FATAL_ERROR "Failed to find CUDA" )
-  endif(CUDA_FOUND)
-
+if(WITH_CUDA)
+  message( STATUS "Try finding CUDA" )
+  find_package(CUDA 7.0 REQUIRED)
+  set(CUDA_SEPARABLE_COMPILATION ON)
+  
+  # Enabling the following line may cause nvcc to complain because a double "" is
+  # inserted in the compile line. It may be a FindCUDA.cmake bug
+  # https://gitlab.kitware.com/cmake/cmake/issues/16411
+#  set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
+  set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3;-DNDEBUG")
+  # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-G;-g;-DNDEBUG")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--std=c++11")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=compute_52")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
+  # MORE NOISE:
+  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;-v")
+  # DOES NOT WORK UNTIL CUDA 7.5:
+  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
-else(USE_CUDA)
-  message( STATUS "Avoid using CUDA" )
-endif(USE_CUDA)
+else(WITH_CUDA)
+  message( STATUS "Building without CUDA" )
+endif(WITH_CUDA)
 
 # FIND OPENCV
-list(APPEND CMAKE_MODULE_PATH "${OpenCV_DIR}")
-
 find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
-add_definitions(${OpenCV_DEFINITIONS})
 
 # FIND Eigen
 find_package(Eigen REQUIRED)
-include_directories(${Eigen_INCLUDE_DIR})
-add_definitions(${Eigen_DEFINITIONS})
 
 # FIND PNG
 find_package(PNG REQUIRED)
@@ -130,9 +101,4 @@ find_package(JPEG REQUIRED)
 find_package(TBB 4 REQUIRED)
 
 add_subdirectory(src)
-
-install(
-  FILES cmake/FindCCTag.cmake
-  DESTINATION share/cmake
-  )
 
