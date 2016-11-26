@@ -610,7 +610,7 @@ bool TagPipe::imageCenterRetrieve(
     const cctag::Parameters&            params,
     NearbyPoint*                        cctag_pointer_buffer )
 {
-    if( not cctag_pointer_buffer->readable ) {
+    if( !cctag_pointer_buffer || !cctag_pointer_buffer->readable ) {
         return false;
     }
 

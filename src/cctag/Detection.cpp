@@ -921,14 +921,22 @@ void cctagDetection(
                     if( debug_num_calls >= numTags ) {
                         cerr << __FILE__ << ":" << __LINE__ << " center finding for more loops (" << debug_num_calls << ") than uploaded (" << numTags << ")?" << endl;
                     }
-                    pipe1->imageCenterOptLoop(
-                        tagIndex,
-                        numTags, // for debugging only
-                        cctag.rescaledOuterEllipse(),
-                        cctag.centerImg(),
-                        vSelectedCuts[tagIndex].size(),
-                        params,
-                        cctag.getNearbyPointBuffer() );
+                    cctag::NearbyPoint* nearbyPointBuffer = cctag.getNearbyPointBuffer();
+                    if(!nearbyPointBuffer)
+                    {
+                        detected[tagIndex] = status::no_selected_cuts;
+                    }
+                    else
+                    {
+                        pipe1->imageCenterOptLoop(
+                            tagIndex,
+                            numTags, // for debugging only
+                            cctag.rescaledOuterEllipse(),
+                            cctag.centerImg(),
+                            vSelectedCuts[tagIndex].size(),
+                            params,
+                            nearbyPointBuffer );
+                    }
                 }
 
                 tagIndex++;
