@@ -863,9 +863,9 @@ void cctagDetection(
         /* identification in CUDA requires a host-side nearby point struct
          * in pinned memory for safe, non-blocking memcpy.
          */
-        if( markers.size() > 60 ) {
+        if( markers.size() > MAX_MARKER_FOR_IDENT ) {
             std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-              << "   Found more than 60 (" << markers.size() << ") markers" << endl;
+              << "   Found more than " << MAX_MARKER_FOR_IDENT << " (" << markers.size() << ") markers" << endl;
         }
 
         for( CCTag& tag : markers ) {
