@@ -20,7 +20,7 @@ EdgePointCollection::EdgePointCollection(size_t w, size_t h) :
   _processedIn(new unsigned[MAX_POINTS/4]),
   _processedAux(new unsigned[MAX_POINTS/4])
 {
-  if (w > MAX_RESOLUTION || h > MAX_RESOLUTION)
+  if (w*h > MAX_RESOLUTION*MAX_RESOLUTION)
     throw std::length_error("EdgePointCollection::set_frame_size: dimension too large");
 
   point_count() = 0;
