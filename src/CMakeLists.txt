@@ -175,6 +175,8 @@ set(include_install_dir "include")
 set(confighpp_name "cctag_config.hpp")
 # the name for the generated header version file
 set(versionhpp_name "version.hpp")
+# where to install the generated files
+set(install_dir_generated "${include_install_dir}/cctag")
 
 # build directory containing the generated files
 set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
@@ -231,12 +233,14 @@ else()
           PATTERN "cuda/*" EXCLUDE)
 endif()
 
+# install the config and version generated files
 install( FILES "${generated_dir}/${confighpp_name}"
-    DESTINATION "${include_install_dir}")
+    DESTINATION "${install_dir_generated}")
 
 install( FILES "${generated_dir}/${versionhpp_name}"
-    DESTINATION "${include_install_dir}")
+    DESTINATION "${install_dir_generated}")
 
+# install cmake config files
 # Config
 #   * <prefix>/lib/cmake/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake
 #   * <prefix>/lib/cmake/${PROJECT_NAME}${PROJECT_NAME}ConfigVersion.cmake
