@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include "cuda/onoff.h"
+#include "cctag/cuda/onoff.h"
 
 #include <string>
 #include <vector>
@@ -20,10 +20,10 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
 
-#include "cuda/tag_threads.h"
-#include "cuda/tag_cut.h"
-#include "cuda/geom_ellipse.h"
-#include "cuda/geom_matrix.h"
+#include "cctag/cuda/tag_threads.h"
+#include "cctag/cuda/tag_cut.h"
+#include "cctag/cuda/geom_ellipse.h"
+#include "cctag/cuda/geom_matrix.h"
 
 #include "cctag/Params.hpp"
 #include "cctag/Types.hpp"

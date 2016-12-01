@@ -9,8 +9,8 @@
 
 #include <cuda_runtime.h>
 #include <iostream>
-#include "cuda/triple_point.h"
-#include "cuda/edge_list.h"
+#include "cctag/cuda/triple_point.h"
+#include "cctag/cuda/edge_list.h"
 
 __host__
 inline bool tpcmp( const int2& l, const int2& r )

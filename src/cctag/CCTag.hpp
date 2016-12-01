@@ -30,7 +30,7 @@
 #include <boost/archive/text_oarchive.hpp>
 
 #ifdef WITH_CUDA
-#include "cuda/pinned_counters.h"
+#include "cctag/cuda/pinned_counters.h"
 #endif
 
 #include <algorithm>

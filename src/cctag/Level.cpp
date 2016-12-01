@@ -10,7 +10,7 @@
 #include <cctag/filter/thinning.hpp>
 #include "cctag/utils/Talk.hpp"
 #ifdef WITH_CUDA
-#include "cuda/tag.h"
+#include "cctag/cuda/tag.h"
 #endif
 
 namespace cctag {

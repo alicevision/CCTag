@@ -37,67 +37,48 @@ set( CCTag_cpp
         ./cctag/utils/LogTime.cpp
         ./cctag/utils/Talk.cpp
         ./cctag/utils/VisualDebug.cpp)
-message(STATUS "${CCTag_cpp}")
-
-#  file( GLOB_RECURSE
-#        CUDA_cpp
-#        ./cuda/*.cpp
-#  )
-#message(STATUS "UDA_cpp ${CUDA_cpp}")
-#  file( GLOB_RECURSE
-#        CUDA_cu
-#        ./cuda/*.cu
-#  )
-#message(STATUS "CUDA_cu ${CUDA_cu}")
 
 if(WITH_CUDA)
-#  file( GLOB_RECURSE
-#        CUDA_cpp
-#        ./cuda/*.cpp
-#  )
+
   set(CUDA_cpp 
-        ./cuda/debug_macros.cpp
-        ./cuda/device_prop.cpp)
-message(STATUS "CUDA_cpp ${CUDA_cpp}")
-#  file( GLOB_RECURSE
-#        CUDA_cu
-#        ./cuda/*.cu
-#  )
+        ./cctag/cuda/debug_macros.cpp
+        ./cctag/cuda/device_prop.cpp)
+
   set(CUDA_cu
-        ./cuda/assist.cu
-        ./cuda/cmp_list.cu
-        ./cuda/debug_image.cu
-        ./cuda/debug_is_on_edge.cu
-        ./cuda/frame.cu
-        ./cuda/frame_01_tex.cu
-        ./cuda/frame_02_gaussian.cu
-        ./cuda/frame_03_magmap.cu
-        ./cuda/frame_04_hyst.cu
-        ./cuda/frame_05_thin.cu
-        ./cuda/frame_06_graddesc.cu
-        ./cuda/frame_07_vote.cu
-        ./cuda/frame_07a_vote_line.cu
-        ./cuda/frame_07b_vote_sort_uniq_dp.cu
-        ./cuda/frame_07b_vote_sort_uniq_nodp.cu
-        ./cuda/frame_07c_eval.cu
-        ./cuda/frame_07d_vote_if.cu
-        ./cuda/frame_07e_download.cu
-        ./cuda/frame_alloc.cu
-        ./cuda/frame_debug.cu
-        ./cuda/frame_export.cu
-        ./cuda/framemeta.cu
-        ./cuda/frameparam.cu
-        ./cuda/geom_ellipse.cu
-        ./cuda/geom_matrix.cu
-        ./cuda/keep_time.cu
-        ./cuda/pinned_counters.cu
-        ./cuda/ptrstep.cu
-        ./cuda/recursive_sweep.cu
-        ./cuda/tag.cu
-        ./cuda/tag_identify.cu
-        ./cuda/tag_threads.cu
-        ./cuda/triple_point.cu)
-message(STATUS "CUDA_cu ${CUDA_cu}")
+        ./cctag/cuda/assist.cu
+        ./cctag/cuda/cmp_list.cu
+        ./cctag/cuda/debug_image.cu
+        ./cctag/cuda/debug_is_on_edge.cu
+        ./cctag/cuda/frame.cu
+        ./cctag/cuda/frame_01_tex.cu
+        ./cctag/cuda/frame_02_gaussian.cu
+        ./cctag/cuda/frame_03_magmap.cu
+        ./cctag/cuda/frame_04_hyst.cu
+        ./cctag/cuda/frame_05_thin.cu
+        ./cctag/cuda/frame_06_graddesc.cu
+        ./cctag/cuda/frame_07_vote.cu
+        ./cctag/cuda/frame_07a_vote_line.cu
+        ./cctag/cuda/frame_07b_vote_sort_uniq_dp.cu
+        ./cctag/cuda/frame_07b_vote_sort_uniq_nodp.cu
+        ./cctag/cuda/frame_07c_eval.cu
+        ./cctag/cuda/frame_07d_vote_if.cu
+        ./cctag/cuda/frame_07e_download.cu
+        ./cctag/cuda/frame_alloc.cu
+        ./cctag/cuda/frame_debug.cu
+        ./cctag/cuda/frame_export.cu
+        ./cctag/cuda/framemeta.cu
+        ./cctag/cuda/frameparam.cu
+        ./cctag/cuda/geom_ellipse.cu
+        ./cctag/cuda/geom_matrix.cu
+        ./cctag/cuda/keep_time.cu
+        ./cctag/cuda/pinned_counters.cu
+        ./cctag/cuda/ptrstep.cu
+        ./cctag/cuda/recursive_sweep.cu
+        ./cctag/cuda/tag.cu
+        ./cctag/cuda/tag_identify.cu
+        ./cctag/cuda/tag_threads.cu
+        ./cctag/cuda/triple_point.cu)
+
   # add_definitions("-DSM_TARGETS=-gencode=arch=compute_52,code=\"sm_52,compute_52\"")
 
   # set(CUDA_SEPARABLE_COMPILATION ON)
@@ -237,13 +218,17 @@ install(TARGETS CCTag
         INCLUDES DESTINATION "${include_install_dir}")
 
 # Headers:
-install(DIRECTORY "cctag"
-        DESTINATION "${include_install_dir}"
-        FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+
+
 if(WITH_CUDA)
-  install(DIRECTORY "cuda"
+  install(DIRECTORY "cctag"
           DESTINATION "${include_install_dir}"
           FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+else()
+  install(DIRECTORY "cctag"
+          DESTINATION "${include_install_dir}"
+          FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
+          PATTERN "cuda/*" EXCLUDE)
 endif()
 
 install( FILES "${generated_dir}/${confighpp_name}"

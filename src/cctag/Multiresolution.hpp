@@ -14,7 +14,7 @@
 #include <cctag/geometry/Circle.hpp>
 #include <cctag/ImagePyramid.hpp>
 #ifdef WITH_CUDA
-#include "cuda/tag.h"
+#include "cctag/cuda/tag.h"
 #endif
 #include "cctag/utils/LogTime.hpp"
 

@@ -15,8 +15,8 @@
 #include "CmdLine.hpp"
 
 #ifdef WITH_CUDA
-#include "cuda/device_prop.hpp"
-#include "cuda/debug_macros.hpp"
+#include "cctag/cuda/device_prop.hpp"
+#include "cctag/cuda/debug_macros.hpp"
 #endif // WITH_CUDA
 
 #include <boost/filesystem/convenience.hpp>

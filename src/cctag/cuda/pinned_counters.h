@@ -8,7 +8,7 @@
 #pragma once
 
 #include <boost/thread/mutex.hpp>
-#include "cuda/nearby_point.h"
+#include "cctag/cuda/nearby_point.h"
 
 namespace popart {
 

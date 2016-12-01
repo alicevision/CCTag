@@ -7,14 +7,14 @@
  */
 #include <cuda_runtime.h>
 
-#include "cuda/tag.h"
-#include "cuda/frame.h"
-#include "cuda/frameparam.h"
-#include "cuda/clamp.h"
-#include "cuda/assist.h"
-#include "cuda/geom_matrix.h"
-#include "cuda/nearby_point.h"
-#include "cuda/tag_cut.h"
+#include "tag.h"
+#include "frame.h"
+#include "frameparam.h"
+#include "clamp.h"
+#include "assist.h"
+#include "geom_matrix.h"
+#include "nearby_point.h"
+#include "tag_cut.h"
 
 #if 1
     __device__ __host__

@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include "cuda/cmp_list.h"
+#include "cmp_list.h"
 
 using namespace popart;
 

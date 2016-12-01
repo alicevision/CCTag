@@ -20,9 +20,9 @@
 #include "cctag/ImageCut.hpp"
 #include "frame_07_vote.h"
 #include "triple_point.h"
-#include "cuda/geom_ellipse.h"
-#include "cuda/framemeta.h"
-#include "cuda/ptrstep.h"
+#include "cctag/cuda/geom_ellipse.h"
+#include "cctag/cuda/framemeta.h"
+#include "cctag/cuda/ptrstep.h"
 
 #define RESERVE_MEM_MAX_CROWNS  5
 

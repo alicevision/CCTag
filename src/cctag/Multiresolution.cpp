@@ -31,7 +31,7 @@
 
 #ifdef WITH_CUDA
 #include <cuda_runtime.h> // only for debugging!!!
-#include "cuda/tag.h"
+#include "cctag/cuda/tag.h"
 #endif
 
 

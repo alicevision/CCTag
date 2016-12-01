@@ -7,9 +7,9 @@
  */
 #include <iostream>
 
-#include "cuda/tag_threads.h"
-#include "cuda/tag.h"
-#include "cuda/frame.h"
+#include "tag_threads.h"
+#include "tag.h"
+#include "frame.h"
 
 namespace popart
 {

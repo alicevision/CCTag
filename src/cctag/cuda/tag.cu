@@ -17,11 +17,11 @@
 
 #include "debug_image.h"
 #include "cctag/utils/Talk.hpp"
-#include "cuda/geom_ellipse.h"
+#include "geom_ellipse.h"
 
-#include "cuda/onoff.h"
-#include "cuda/tag_threads.h"
-#include "cuda/tag_cut.h"
+#include "onoff.h"
+#include "tag_threads.h"
+#include "tag_cut.h"
 
 #if 1
     __device__ __host__

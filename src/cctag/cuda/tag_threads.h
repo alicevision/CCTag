@@ -17,7 +17,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
 
-// #include "cuda/onoff.h"
+// #include "cctag/cuda/onoff.h"
 // #include "cctag/Params.hpp"
 // #include "cctag/Types.hpp"
 // #include "cctag/ImageCut.hpp"

@@ -17,7 +17,7 @@
 #include <cctag/utils/Talk.hpp>
 
 #ifdef WITH_CUDA
-#include "cuda/tag.h"
+#include "cctag/cuda/tag.h"
 #endif
 
 #include <boost/accumulators/accumulators.hpp>
@@ -31,7 +31,7 @@
 
 #include <tbb/tbb.h>
 
-#include "cuda/onoff.h"
+#include "cctag/cuda/onoff.h"
 
 namespace cctag {
 namespace identification {

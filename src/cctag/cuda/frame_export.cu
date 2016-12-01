@@ -10,7 +10,7 @@
 #include <cuda_runtime.h>
 #include <algorithm> // for copy
 #include <iterator> // for ostream_iterator
-#include "cuda/cmp_list.h"
+#include "cmp_list.h"
 
 #include "frame.h"
 
