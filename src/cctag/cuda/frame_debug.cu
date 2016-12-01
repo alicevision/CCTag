@@ -24,7 +24,7 @@
 
 #undef CHATTY_WRITE_DEBUG_PLANE
 
-namespace popart {
+namespace cctag {
 
 using namespace std;
 
@@ -192,5 +192,5 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // NDEBUG
 }
 
-}; // namespace popart
+}; // namespace cctag
 

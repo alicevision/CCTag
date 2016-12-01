@@ -12,7 +12,7 @@
 #include "frame.h"
 #include "assist.h"
 
-namespace popart
+namespace cctag
 {
 
 using namespace std;
@@ -240,5 +240,5 @@ void Frame::applyThinDownload( )
 #endif // NDEBUG
 }
 
-}; // namespace popart
+}; // namespace cctag
 

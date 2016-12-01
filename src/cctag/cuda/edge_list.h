@@ -17,7 +17,7 @@
 #include "framemeta.h"
 #include "pinned_counters.h"
 
-namespace popart {
+namespace cctag {
 
 #ifndef NDEBUG
 enum EdgeListFilter
@@ -388,5 +388,5 @@ public:
 #endif // NDEBUG
 };
 
-}; // namespace popart
+}; // namespace cctag
 

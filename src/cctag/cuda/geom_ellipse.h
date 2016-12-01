@@ -10,7 +10,7 @@
 #include <cuda_runtime.h>
 #include "geom_matrix.h"
 
-namespace popart {
+namespace cctag {
 namespace geometry {
 
 struct ellipse
@@ -131,5 +131,5 @@ private:
 };
 
 }; // namespace geometry
-}; // namespace popart
+}; // namespace cctag
 

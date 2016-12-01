@@ -7,7 +7,7 @@
  */
 #include "cmp_list.h"
 
-using namespace popart;
+using namespace cctag;
 
 __host__
 vote_index_sort::vote_index_sort( const HostEdgeList<TriplePoint>& voters )

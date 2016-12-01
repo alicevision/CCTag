@@ -52,7 +52,7 @@
 
 using namespace std;
 
-namespace popart
+namespace cctag
 {
 int TagPipe::_tag_id_running_number = 0;
 
@@ -94,24 +94,24 @@ void TagPipe::initialize( const uint32_t pix_w,
 
     uint32_t w = pix_w;
     uint32_t h = pix_h;
-    popart::Frame* f;
+    cctag::Frame* f;
 #ifdef USE_ONE_DOWNLOAD_STREAM
     cudaStream_t download_stream = 0;
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( f = new popart::Frame( w, h, i, download_stream, getId() ) ); // sync
+        _frame.push_back( f = new cctag::Frame( w, h, i, download_stream, getId() ) ); // sync
         if( i==0 ) { download_stream = f->_download_stream; assert( download_stream != 0 ); }
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
 #else
     for( int i=0; i<num_layers; i++ ) {
-        _frame.push_back( f = new popart::Frame( w, h, i, 0, getId() ) ); // sync
+        _frame.push_back( f = new cctag::Frame( w, h, i, 0, getId() ) ); // sync
         w = ( w >> 1 ) + ( w & 1 );
         h = ( h >> 1 ) + ( h & 1 );
     }
 #endif
 
-    _frame[0]->createTexture( popart::FrameTexture::normalized_uchar_to_float); // sync
+    _frame[0]->createTexture( cctag::FrameTexture::normalized_uchar_to_float); // sync
     _frame[0]->allocUploadEvent( ); // sync
 
     for( int i=0; i<num_layers; i++ ) {
@@ -260,7 +260,7 @@ void TagPipe::imageCenterOptLoop(
     NearbyPoint*                               cctag_pointer_buffer )
 {
     // cerr << __FILE__ << ":" << __LINE__ << " enter imageCenterOptLoop for tag " << tagIndex << " number of cuts is " << vCutSize << endl;
-    popart::geometry::ellipse e( ellipse.matrix()(0,0),
+    cctag::geometry::ellipse e( ellipse.matrix()(0,0),
                                  ellipse.matrix()(0,1),
                                  ellipse.matrix()(0,2),
                                  ellipse.matrix()(1,0),
@@ -276,7 +276,7 @@ void TagPipe::imageCenterOptLoop(
                                  ellipse.angle() );
     float2 f = make_float2( center.x(), center.y() );
 
-    popart::geometry::matrix3x3 bestHomography;
+    cctag::geometry::matrix3x3 bestHomography;
 
     imageCenterOptLoop( tagIndex,
                         debug_numTags,
@@ -298,7 +298,7 @@ bool TagPipe::imageCenterRetrieve(
     NearbyPoint*                               cctag_pointer_buffer )
 {
     float2                      bestPoint;
-    popart::geometry::matrix3x3 bestHomography;
+    cctag::geometry::matrix3x3 bestHomography;
 
     bool success = imageCenterRetrieve( tagIndex,
                                         _tag_streams[tagIndex%NUM_ID_STREAMS],
@@ -390,5 +390,5 @@ void TagPipe::uploadCuts( int                                 numTags,
     }
 }
 
-}; // namespace popart
+}; // namespace cctag
 

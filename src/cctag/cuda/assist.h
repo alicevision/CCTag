@@ -15,7 +15,7 @@ using namespace std;
 
 std::ostream& operator<<( std::ostream& ostr, const dim3& p );
 
-namespace popart
+namespace cctag
 {
 
 /* This computation is needed very frequently when a dim3 grid block is
@@ -77,5 +77,5 @@ bool reduce_OR_32x32( bool cnt )
     return ( cnt_row != 0 );
 }
 
-}; // namespace popart
+}; // namespace cctag
 

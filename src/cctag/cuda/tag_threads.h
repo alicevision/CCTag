@@ -26,7 +26,7 @@
 // #include "cctag/algebra/matrix/Matrix.hpp"
 // #include "cctag/utils/LogTime.hpp"
 
-namespace popart
+namespace cctag
 {
 
 class TagPipe;
@@ -90,5 +90,5 @@ public:
     void frameDonePost( );
 };
 
-}; // namespace popart
+}; // namespace cctag
 

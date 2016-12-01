@@ -19,7 +19,7 @@
 
 using namespace std;
 
-namespace popart
+namespace cctag
 {
 
 #if 0
@@ -111,5 +111,5 @@ void debug_inner_test_consistency( FrameMetaPtr&                  meta,
 }
 #endif // NDEBUG
 
-} // namespace popart
+} // namespace cctag
 

@@ -14,7 +14,7 @@
 #include "assist.h"
 
 
-namespace popart
+namespace cctag
 {
 
 using namespace std;
@@ -154,5 +154,5 @@ void Frame::applyMagDownload( )
 #endif // DEBUG_WRITE_MAP_AS_PGM
 }
 
-}; // namespace popart
+}; // namespace cctag
 

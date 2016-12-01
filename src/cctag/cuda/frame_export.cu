@@ -16,7 +16,7 @@
 
 #include <tbb/tbb.h>
 
-namespace popart {
+namespace cctag {
 
 using namespace std;
 
@@ -203,5 +203,5 @@ cv::Mat* Frame::getEdges( ) const
     return ptr;
 }
 
-}; // namespace popart
+}; // namespace cctag
 

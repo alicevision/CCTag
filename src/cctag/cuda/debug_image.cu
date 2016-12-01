@@ -20,7 +20,7 @@
 #include "debug_image.h"
 #include "assist.h"
 
-namespace popart {
+namespace cctag {
 
 using namespace std;
 
@@ -355,5 +355,5 @@ void DebugImage::plotLines( EdgeList<TriplePoint>& points,
 }
 #endif // NDEBUG
 
-}; // namespace popart
+}; // namespace cctag
 

@@ -10,7 +10,7 @@
 
 #include "frame.h"
 
-namespace popart
+namespace cctag
 {
 
 using namespace std;
@@ -239,5 +239,5 @@ void Frame::releaseRequiredMem( )
     POP_CUDA_FREE( _d_interm_int );
 }
 
-}; // namespace popart
+}; // namespace cctag
 

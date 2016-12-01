@@ -11,7 +11,7 @@
 #include <iostream>
 #include <stdio.h>
 
-namespace popart {
+namespace cctag {
 namespace geometry {
 
 class matrix3x3
@@ -180,5 +180,5 @@ __host__ __device__
 matrix3x3 prod( const matrix3x3& l,       const matrix3x3_tView& r );
 
 }; // namespace geometry
-}; // namespace popart
+}; // namespace cctag
 

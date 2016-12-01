@@ -9,7 +9,7 @@
 
 using namespace std;
 
-namespace popart {
+namespace cctag {
 namespace geometry {
 
 __host__ __device__
@@ -160,5 +160,5 @@ matrix3x3 prod( const matrix3x3& l, const matrix3x3_tView& r )
 }
 
 }; // namespace geometry
-}; // namespace popart
+}; // namespace cctag
 

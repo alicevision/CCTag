@@ -12,7 +12,7 @@
 #include <cuda_runtime.h>
 #include <iostream>
 
-namespace popart {
+namespace cctag {
 
 using namespace std;
 
@@ -127,5 +127,5 @@ void PinnedCounters::releaseAllPoints( int tagPipe )
     pinned_counters[tagPipe]._lock.unlock();
 }
 
-} // namespace popart
+} // namespace cctag
 

@@ -10,7 +10,7 @@
 
 #include <opencv2/opencv.hpp>
 
-namespace popart {
+namespace cctag {
     class TagPipe;
 };
 
@@ -31,7 +31,7 @@ public:
                  const float thrHighCanny,
                  const cctag::Parameters* params );
 #ifdef WITH_CUDA
-  void setLevel( popart::TagPipe* cuda_pipe,
+  void setLevel( cctag::TagPipe* cuda_pipe,
                  const cctag::Parameters& params );
 #endif // WITH_CUDA
 

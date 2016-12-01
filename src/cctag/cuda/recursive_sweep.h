@@ -12,7 +12,7 @@
 
 using namespace std;
 
-namespace popart
+namespace cctag
 {
 
 namespace recursive_sweep
@@ -25,5 +25,5 @@ __host__
 void connectComponents( cv::cuda::PtrStepSz32s& img, int* dev_counter, cudaStream_t stream );
 
 }; // namespace recursive_sweep
-}; // namespace popart
+}; // namespace cctag
 

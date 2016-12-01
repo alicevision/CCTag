@@ -11,7 +11,7 @@
 
 using namespace std;
 
-namespace popart {
+namespace cctag {
 
 static bool cuda_only_sync_calls = false;
 
@@ -314,5 +314,5 @@ void pop_cuda_stream_destroy( cudaStream_t stream, const char* file, uint32_t li
     POP_CUDA_FATAL_TEST_FL( err, "cudaStreamDestroy failed: ", file, line );
 }
 
-}; // namespace popart
+}; // namespace cctag
 

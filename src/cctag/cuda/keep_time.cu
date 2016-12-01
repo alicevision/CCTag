@@ -13,7 +13,7 @@
 
 using namespace std;
 
-namespace popart {
+namespace cctag {
 
 KeepTime::KeepTime( cudaStream_t s )
     : _stream( s )
@@ -81,5 +81,5 @@ void KeepTime::waitFor( cudaStream_t otherStream )
 
 }
 
-} // namespace popart
+} // namespace cctag
 

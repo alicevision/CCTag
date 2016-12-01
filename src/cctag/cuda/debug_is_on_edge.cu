@@ -10,7 +10,7 @@
 #include "debug_is_on_edge.h"
 #include "assist.h"
 
-namespace popart
+namespace cctag
 {
 
 using namespace std;
@@ -64,5 +64,5 @@ void debugPointIsOnEdge( FrameMetaPtr&               meta,
 }
 #endif // NDEBUG
 
-}; // namespace popart
+}; // namespace cctag
 

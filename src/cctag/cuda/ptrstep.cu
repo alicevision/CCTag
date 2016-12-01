@@ -7,7 +7,7 @@
  */
 #include "ptrstep.h"
 
-namespace popart {
+namespace cctag {
 
 PtrStepSzbClone::PtrStepSzbClone( const cv::cuda::PtrStepSzb& orig )
     : e ( orig )
@@ -35,5 +35,5 @@ PtrStepSzbNull::~PtrStepSzbNull( )
     delete [] e.data;
 }
 
-} // namespace popart
+} // namespace cctag
 

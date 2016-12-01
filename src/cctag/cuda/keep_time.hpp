@@ -12,7 +12,7 @@
 
 using namespace std;
 
-namespace popart {
+namespace cctag {
 
 struct KeepTime
 {
@@ -33,5 +33,5 @@ struct KeepTime
     void waitFor( cudaStream_t otherStream );
 };
 
-} // namespace popart
+} // namespace cctag
 

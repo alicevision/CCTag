@@ -21,7 +21,7 @@
 
 using namespace std;
 
-namespace popart
+namespace cctag
 {
 
 namespace descent
@@ -418,5 +418,5 @@ bool Frame::applyDesc( )
 #endif // not USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 
 
-} // namespace popart
+} // namespace cctag
 

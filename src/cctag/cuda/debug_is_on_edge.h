@@ -9,7 +9,7 @@
 
 #include "frame.h"
 
-namespace popart
+namespace cctag
 {
 
 #ifndef NDEBUG
@@ -26,5 +26,5 @@ void debugPointIsOnEdge( const cv::cuda::PtrStepSzb& edge_img,
 
 #endif // NDEBUG
 
-}; // namespace popart
+}; // namespace cctag
 

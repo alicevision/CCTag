@@ -9,7 +9,7 @@
 
 #include <cuda_runtime.h>
 
-namespace popart {
+namespace cctag {
 
 namespace identification {
 
@@ -78,5 +78,5 @@ struct CutSignalGrid
     }
 };
 
-}; // namespace popart
+}; // namespace cctag
 

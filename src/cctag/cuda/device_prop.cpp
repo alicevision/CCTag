@@ -12,7 +12,7 @@
 
 using namespace std;
 
-namespace popart {
+namespace cctag {
 
 device_prop_t::device_prop_t( bool output )
 {
@@ -103,5 +103,5 @@ device_prop_t::~device_prop_t( )
     }
 }
 
-}; // namespace popart
+}; // namespace cctag
 

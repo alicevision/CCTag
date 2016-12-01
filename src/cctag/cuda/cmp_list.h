@@ -32,7 +32,7 @@ class tp_cmp
 {
 public:
     __host__
-    inline bool operator()( const popart::TriplePoint& l, const popart::TriplePoint& r )
+    inline bool operator()( const cctag::TriplePoint& l, const cctag::TriplePoint& r )
     {
         return tpcmp( l.coord, r.coord );
     }
@@ -42,7 +42,7 @@ class vote_index_sort
 {
 public:
     __host__
-    vote_index_sort( const popart::HostEdgeList<popart::TriplePoint>& voters );
+    vote_index_sort( const cctag::HostEdgeList<cctag::TriplePoint>& voters );
 
     __host__
     inline bool operator()( const int l, const int r )
@@ -57,7 +57,7 @@ public:
     }
 
 private:
-    const popart::HostEdgeList<popart::TriplePoint>& _voters;
+    const cctag::HostEdgeList<cctag::TriplePoint>& _voters;
 };
 
 std::ostream& operator<<( std::ostream& ostr, const int2& v );

@@ -812,10 +812,10 @@ bool refineConicFamilyGlob(
         Point2d<Eigen::Vector3f> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
-        popart::TagPipe* cudaPipe,
+        cctag::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params,
-        popart::NearbyPoint* cctag_pointer_buffer,
+        cctag::NearbyPoint* cctag_pointer_buffer,
         float & residual)
 {
     using namespace cctag::numerical;
@@ -1321,7 +1321,7 @@ int identify_step_2(
   std::vector<cctag::ImageCut>& vSelectedCuts,
   const std::vector< std::vector<float> > & radiusRatios, // todo: directly use the CCTagBank
   const cv::Mat &  src,
-  popart::TagPipe* cudaPipe,
+  cctag::TagPipe* cudaPipe,
   const cctag::Parameters & params)
 {
   // Get the outer ellipse in its original scale, i.e. in src.

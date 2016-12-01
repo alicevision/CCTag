@@ -10,7 +10,7 @@
 #include "cctag/Params.hpp"
 #include <cuda_runtime.h>
 
-namespace popart {
+namespace cctag {
 
 struct FrameParam
 {
@@ -33,5 +33,5 @@ struct FrameParam
 extern __constant__ FrameParam tagParam;
 
 
-} // namespace popart
+} // namespace cctag
 

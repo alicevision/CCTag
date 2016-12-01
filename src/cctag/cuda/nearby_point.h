@@ -11,7 +11,7 @@
 
 #include "geom_matrix.h"
 
-namespace popart {
+namespace cctag {
 
 struct NearbyPoint
 {
@@ -24,8 +24,8 @@ struct NearbyPoint
     /* These homographies are computed once for each NearbyPoint,
      * and used for all of its Cuts. The best one must be returned.
      */
-    popart::geometry::matrix3x3 mHomography;
-    popart::geometry::matrix3x3 mInvHomography;
+    cctag::geometry::matrix3x3 mHomography;
+    cctag::geometry::matrix3x3 mInvHomography;
 };
 
 struct NearbyPointGrid
@@ -52,5 +52,5 @@ struct NearbyPointGrid
     }
 };
 
-}; // namespace popart
+}; // namespace cctag
 

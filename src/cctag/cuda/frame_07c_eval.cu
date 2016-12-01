@@ -19,7 +19,7 @@ using namespace std;
 
 #define CONC_POINTS 8
 
-namespace popart {
+namespace cctag {
 
 namespace vote {
 
@@ -246,5 +246,5 @@ bool Frame::applyVoteEval( )
 }
 #endif // not USE_SEPARABLE_COMPILATION_FOR_EVAL
 
-} // namespace popart
+} // namespace cctag
 

@@ -29,7 +29,7 @@ namespace cv {
     }
 };
 
-namespace popart {
+namespace cctag {
 
 struct Voting
 {
@@ -48,5 +48,5 @@ void debug_inner_test_consistency( FrameMetaPtr&                  meta,
                                    const DevEdgeList<TriplePoint> voters );
 #endif // NDEBUG
 
-}; // namespace popart
+}; // namespace cctag
 

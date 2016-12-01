@@ -21,7 +21,7 @@
 
 using namespace std;
 
-namespace popart {
+namespace cctag {
 
 struct NumVotersIsGreaterEqual
 {
@@ -163,5 +163,5 @@ bool Frame::applyVoteIf( )
 }
 #endif // not USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 
-} // namespace popart
+} // namespace cctag
 

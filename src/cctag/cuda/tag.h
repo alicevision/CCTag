@@ -35,7 +35,7 @@
 
 namespace cctag { namespace logtime { struct Mgmt; } };
 
-namespace popart
+namespace cctag
 {
 
 class Frame; // forward decl means cctag/*.cpp need not recompile for frame.h
@@ -100,7 +100,7 @@ private:
         const int                           tagIndex,     // in
         const int                           debug_numTags, // in - only for debugging
         cudaStream_t                        tagStream,    // in
-        const popart::geometry::ellipse&    outerEllipse, // in
+        const cctag::geometry::ellipse&    outerEllipse, // in
         const float2&                       center,       // in
         const int                           vCutSize,     // in
         const cctag::Parameters&            params,       // in
@@ -158,7 +158,7 @@ private:
         cudaStream_t                        tagStream,         // in
         float2&                             bestPointOut,      // out
         float&                              bestResidual,      // out
-        popart::geometry::matrix3x3&        bestHomographyOut, // out
+        cctag::geometry::matrix3x3&        bestHomographyOut, // out
         const cctag::Parameters&            params,            // in
         NearbyPoint*                        cctag_pointer_buffer );
 
@@ -169,7 +169,7 @@ private:
         const int                           debug_numTags,
         cudaStream_t                        tagStream,
         int                                 iterations,
-        const popart::geometry::ellipse&    ellipse,
+        const cctag::geometry::ellipse&    ellipse,
         const float2                        center,
         const int                           vCutSize,     // in
         float                               currentNeighbourSize,
@@ -177,5 +177,5 @@ private:
 
 };
 
-}; // namespace popart
+}; // namespace cctag
 

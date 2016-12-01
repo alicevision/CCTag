@@ -45,7 +45,7 @@
 
 using namespace std;
 
-namespace popart {
+namespace cctag {
 
 namespace identification {
 
@@ -82,8 +82,8 @@ inline
 void extractSignalUsingHomography( const CutStruct&                   cut,
                                    CutSignals&                        signals,
                                    const cv::cuda::PtrStepSzb         src,
-                                   const popart::geometry::matrix3x3& mHomography,
-                                   const popart::geometry::matrix3x3& mInvHomography )
+                                   const cctag::geometry::matrix3x3& mHomography,
+                                   const cctag::geometry::matrix3x3& mInvHomography )
 {
     float2 backProjStop;
 
@@ -120,7 +120,7 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
         }
 
         // Bilinear interpolation
-        signals.sig[i] = popart::identification::getPixelBilinear( src, xyRes );
+        signals.sig[i] = cctag::identification::getPixelBilinear( src, xyRes );
 
         x += stepX32;
         y += stepY32;
@@ -170,8 +170,8 @@ void idGetSignals( cv::cuda::PtrStepSzb   src,
 __global__
 void initAllNearbyPoints(
     bool                               first_iteration,
-    const popart::geometry::ellipse    ellipse,
-    const popart::geometry::matrix3x3  mT,
+    const cctag::geometry::ellipse    ellipse,
+    const cctag::geometry::matrix3x3  mT,
     float2                             center,
     const float                        neighbourSize,
     NearbyPointGrid*                   d_nearbyPointGrid )
@@ -202,7 +202,7 @@ void initAllNearbyPoints(
     float2 condCenter = make_float2( center.x - halfWidth + i*stepSize,
                                      center.y - halfWidth + j*stepSize );
 
-    popart::geometry::matrix3x3  mInvT;
+    cctag::geometry::matrix3x3  mInvT;
     mT.invert( mInvT ); // note: returns false if it fails
     mInvT.condition( condCenter );
 
@@ -428,7 +428,7 @@ bool TagPipe::idCostFunction(
     const int                           debug_numTags,
     cudaStream_t                        tagStream,
     int                                 iterations,
-    const popart::geometry::ellipse&    ellipse,
+    const cctag::geometry::ellipse&    ellipse,
     const float2                        center,
     const int                           vCutSize,
     float                               currentNeighbourSize,
@@ -445,9 +445,9 @@ bool TagPipe::idCostFunction(
     const CutStructGrid* cut_buffer = getCutStructGridBufferDev( tagIndex );
     CutSignalGrid*       sig_buffer = getSignalGridBuffer( tagIndex );
 
-    popart::geometry::matrix3x3 mT;
+    cctag::geometry::matrix3x3 mT;
     ellipse.makeConditionerFromEllipse( mT );
-    popart::geometry::matrix3x3 mInvT;
+    cctag::geometry::matrix3x3 mInvT;
     bool success;
     success = mT.invert( mInvT ); // note: returns false if it fails
     if( not success ) {
@@ -457,7 +457,7 @@ bool TagPipe::idCostFunction(
              << endl;
     }
 
-    popart::geometry::ellipse transformedEllipse;
+    cctag::geometry::ellipse transformedEllipse;
     ellipse.projectiveTransform( mInvT, transformedEllipse );
 
     bool first_iteration = true;
@@ -469,7 +469,7 @@ bool TagPipe::idCostFunction(
         dim3 block( 1, 1, 1 );
         dim3 grid( 1, STRICT_SAMPLE(gridNSample), STRICT_SAMPLE(gridNSample) );
 
-        popart::identification::initAllNearbyPoints
+        cctag::identification::initAllNearbyPoints
             <<<grid,block,0,tagStream>>>
             ( first_iteration,
               ellipse,
@@ -481,7 +481,7 @@ bool TagPipe::idCostFunction(
         dim3 get_block( 32, STRICT_CUTSIZE(vCutSize), 1 ); // we use this to sum up signals
         dim3 get_grid( 1, STRICT_SAMPLE(gridNSample), STRICT_SAMPLE(gridNSample) );
 
-        popart::identification::idGetSignals
+        cctag::identification::idGetSignals
             <<<get_grid,get_block,0,tagStream>>>
             ( _frame[0]->getPlaneDev(),
               STRICT_CUTSIZE(vCutSize),
@@ -497,7 +497,7 @@ bool TagPipe::idCostFunction(
                       STRICT_SAMPLE(gridNSample),
                       STRICT_SAMPLE(gridNSample) );
 
-        popart::identification::idComputeResult
+        cctag::identification::idComputeResult
             <<<id_grid,id_block,0,tagStream>>>
             ( d_NearbyPointGrid,
               cut_buffer,
@@ -512,12 +512,12 @@ bool TagPipe::idCostFunction(
         const int gridSquare = STRICT_SAMPLE(gridNSample) * STRICT_SAMPLE(gridNSample);
 
         if( gridSquare < 32 ) {
-            popart::identification::idBestNearbyPoint31max
+            cctag::identification::idBestNearbyPoint31max
                 <<<1,32,0,tagStream>>>
                   ( d_NearbyPointGrid, STRICT_SAMPLE(gridNSample) );
         } else {
 cerr << __FILE__ << ":" << __LINE__ << " Untested code idBestNearbyPoint32plus" << endl;
-            popart::identification::idBestNearbyPoint32plus
+            cctag::identification::idBestNearbyPoint32plus
                 <<<1,32,0,tagStream>>>
                   ( d_NearbyPointGrid, STRICT_SAMPLE(gridNSample) );
         }
@@ -535,7 +535,7 @@ void TagPipe::imageCenterOptLoop(
     const int                           tagIndex,     // in - determines index in cut structure
     const int                           debug_numTags, // in - only for debugging
     cudaStream_t                        tagStream,
-    const popart::geometry::ellipse&    outerEllipse, // in
+    const cctag::geometry::ellipse&    outerEllipse, // in
     const float2&                       center,       // in
     const int                           vCutSize,
     const cctag::Parameters&            params,
@@ -587,7 +587,7 @@ void TagPipe::imageCenterOptLoop(
          */
         POP_CUDA_MEMCPY_TO_HOST_ASYNC( cctag_pointer_buffer,
                                        dev_ptr,
-                                       sizeof(popart::NearbyPoint),
+                                       sizeof(cctag::NearbyPoint),
                                        tagStream );
         POP_CHK_CALL_IFSYNC;
     } else {
@@ -606,7 +606,7 @@ bool TagPipe::imageCenterRetrieve(
     cudaStream_t                        tagStream,
     float2&                             bestPointOut, // out
     float&                              bestResidual, // out
-    popart::geometry::matrix3x3&        bestHomographyOut, // out
+    cctag::geometry::matrix3x3&        bestHomographyOut, // out
     const cctag::Parameters&            params,
     NearbyPoint*                        cctag_pointer_buffer )
 {
@@ -741,5 +741,5 @@ CutSignalGrid* TagPipe::getSignalGridBuffer( int tagIndex ) const
     return &_d_cut_signal_grid[tagIndex];
 }
 
-}; // namespace popart
+}; // namespace cctag
 

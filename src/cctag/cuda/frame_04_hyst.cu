@@ -12,7 +12,7 @@
 #include "clamp.h"
 #include "assist.h"
 
-namespace popart
+namespace cctag
 {
 
 using namespace std;
@@ -387,5 +387,5 @@ void Frame::applyHyst( )
 #endif // not USE_SEPARABLE_COMPILATION_FOR_HYST
 }
 
-}; // namespace popart
+}; // namespace cctag
 

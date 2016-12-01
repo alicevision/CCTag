@@ -11,7 +11,7 @@
 #include "framemeta.h"
 #include "debug_macros.hpp"
 
-namespace popart {
+namespace cctag {
 
 /*************************************************************
  * FrameMeta
@@ -295,5 +295,5 @@ OFFSET_GETTER_BODY( int,   list_size_inner_points )
 OFFSET_GETTER_BODY( int,   list_size_interm_inner_points )
 OFFSET_GETTER_BODY( int,   swap_buffers_after_sort )
 
-}; // namespace popart
+}; // namespace cctag
 

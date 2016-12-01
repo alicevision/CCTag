@@ -15,7 +15,7 @@
 #include <inttypes.h>
 #include <cuda_runtime.h>
 
-namespace popart {
+namespace cctag {
 
 /*************************************************************
  * Global switch to use exclusively synchronous CUDA calls
@@ -258,5 +258,5 @@ void pop_stream_synchronize( cudaStream_t stream,
 #define POP_CUDA_SYNC( stream ) \
     pop_stream_synchronize( stream, __FILE__, __LINE__ )
 
-}; // namespace popart
+}; // namespace cctag
 

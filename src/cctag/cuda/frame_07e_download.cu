@@ -13,7 +13,7 @@
 
 using namespace std;
 
-namespace popart
+namespace cctag
 {
 
 /* After vote_eval_chosen, _voters is no longer changed
@@ -32,5 +32,5 @@ void Frame::applyVoteDownload( )
     _inner_points.copyDataFromDeviceAsync( _download_stream );
 }
 
-} // namespace popart
+} // namespace cctag
 

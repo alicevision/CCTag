@@ -18,7 +18,7 @@
 #include "frame.h"
 #include "cctag/utils/Talk.hpp"
 
-namespace popart {
+namespace cctag {
 
 using namespace std;
 
@@ -262,5 +262,5 @@ FrameTexture::~FrameTexture( )
     POP_CUDA_FATAL_TEST( err, "Could not destroy texture object: " );
 }
 
-}; // namespace popart
+}; // namespace cctag
 

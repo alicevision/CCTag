@@ -22,7 +22,7 @@
 
 using namespace std;
 
-namespace popart {
+namespace cctag {
 namespace vote {
 
 __device__ inline
@@ -404,5 +404,5 @@ bool Frame::applyVoteConstructLine( )
 }
 #endif // not USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
 
-} // namespace popart
+} // namespace cctag
 

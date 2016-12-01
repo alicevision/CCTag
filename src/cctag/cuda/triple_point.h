@@ -11,7 +11,7 @@
 #include <string>
 #include <sstream>
 
-namespace popart {
+namespace cctag {
 
 /*************************************************************
  * TriplePoint
@@ -69,5 +69,5 @@ inline void TriplePoint::debug_commit( )
 }
 #endif
 
-}; // namespace popart
+}; // namespace cctag
 

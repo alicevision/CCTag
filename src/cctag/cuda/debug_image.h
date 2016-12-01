@@ -10,7 +10,7 @@
 #include "frame.h"
 #include "triple_point.h"
 
-namespace popart {
+namespace cctag {
 
 /* The class DebugImage could be a namespace, but I like the private
  * section.
@@ -176,5 +176,5 @@ DebugImage::BaseColor operator++( DebugImage::BaseColor& c, int )
     return c;
 }
 
-}; // namespace popart
+}; // namespace cctag
 

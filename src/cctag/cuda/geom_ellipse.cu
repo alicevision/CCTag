@@ -12,7 +12,7 @@
 
 using namespace std;
 
-namespace popart {
+namespace cctag {
 namespace geometry {
 
 
@@ -94,8 +94,8 @@ __host__ __device__
 ellipse ellipse::transform( const matrix3x3& mT ) const
 {
     matrix3x3_tView mtransposed( mT ); // not a copy!
-	const matrix3x3 a   = popart::geometry::prod( mtransposed, _matrix );
-	const matrix3x3 mET = popart::geometry::prod( a, mT );
+	const matrix3x3 a   = cctag::geometry::prod( mtransposed, _matrix );
+	const matrix3x3 mET = cctag::geometry::prod( a, mT );
 	return ellipse( mET );
 }
 #endif
@@ -314,9 +314,9 @@ void ellipse::computeMatrix()
 
     if( tmp.invert( tmpInv ) )
     {
-        _matrix = popart::geometry::prod( diag, tmpInv );
+        _matrix = cctag::geometry::prod( diag, tmpInv );
         matrix3x3_tView tmpInvTrans( tmpInv ); // not a copy!
-        _matrix = popart::geometry::prod( tmpInvTrans, _matrix );
+        _matrix = cctag::geometry::prod( tmpInvTrans, _matrix );
     }
     else
     {
@@ -343,9 +343,9 @@ void ellipse::computeMatrix()
 
     if( tmp.invert( tmpInv ) )
     {
-        _matrix = popart::geometry::prod( diag, tmpInv );
+        _matrix = cctag::geometry::prod( diag, tmpInv );
         matrix3x3_tView tmpInvTrans( tmpInv ); // not a copy!
-        _matrix = popart::geometry::prod( tmpInvTrans, _matrix );
+        _matrix = cctag::geometry::prod( tmpInvTrans, _matrix );
     }
     else
     {
@@ -410,7 +410,7 @@ void ellipse::computeHomographyFromImagedCenter( const float2 center, matrix3x3&
         }
     }
 
-    mHomography = popart::geometry::prod( mTInvCan, mHomography ); // mHomography = mTInvCan*mHomography
+    mHomography = cctag::geometry::prod( mTInvCan, mHomography ); // mHomography = mTInvCan*mHomography
 }
 
 __host__ __device__
@@ -458,5 +458,5 @@ std::ostream& operator<<(std::ostream& os, const ellipse& e)
 #endif
 
 }; // namespace geometry
-}; // namespace popart
+}; // namespace cctag
 

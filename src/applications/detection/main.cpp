@@ -216,7 +216,7 @@ int main(int argc, char** argv)
   }
 
 #ifdef WITH_CUDA
-  popart::pop_cuda_only_sync_calls(cmdline._switchSync);
+  cctag::pop_cuda_only_sync_calls(cmdline._switchSync);
 #endif
 
   // Check the (optional) parameters path
@@ -278,7 +278,7 @@ int main(int argc, char** argv)
     params.setDebugDir(cmdline._debugDir);
   }
 
-  popart::device_prop_t deviceInfo(false);
+  cctag::device_prop_t deviceInfo(false);
 #endif // WITH_CUDA
 
   bfs::path myPath(bfs::absolute(cmdline._filename));

@@ -23,7 +23,7 @@
 
 using namespace std;
 
-namespace popart
+namespace cctag
 {
 
 namespace descent
@@ -170,7 +170,7 @@ bool Frame::applyVoteSortUniq( )
     return true;
 }
 
-} // namespace popart
+} // namespace cctag
 
 #else // not USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 // other file

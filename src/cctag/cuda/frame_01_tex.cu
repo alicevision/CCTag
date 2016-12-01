@@ -10,7 +10,7 @@
 
 #include <cuda_runtime.h>
 
-namespace popart {
+namespace cctag {
 
 using namespace std;
 
@@ -55,5 +55,5 @@ void Frame::applyPlaneDownload( )
                        cudaMemcpyDeviceToHost, _download_stream );
 }
 
-}; // namespace popart
+}; // namespace cctag
 

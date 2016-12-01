@@ -45,7 +45,7 @@
 #define GAUSS_TABLE  0 // Gauss parameters
 #define GAUSS_DERIV 16 // first derivative
 
-namespace popart {
+namespace cctag {
 // namespace identification {
 // // locally defined in frame_ident.cu only
 // struct CutStruct;
@@ -302,5 +302,5 @@ public:
     }            _download_ready_event;
 };
 
-}; // namespace popart
+}; // namespace cctag
 

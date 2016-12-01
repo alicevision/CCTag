@@ -13,7 +13,7 @@
 #define FRAME_META_MAX_PIPES	MAX_PIPES
 #define FRAME_META_MAX_LEVELS	8
 
-namespace popart {
+namespace cctag {
 
 enum FrameMetaEnum
 {
@@ -97,5 +97,5 @@ private:
     // FrameMetaPtr& operator=( const FrameMetaPtr& );
 };
 
-} // namespace popart
+} // namespace cctag
 

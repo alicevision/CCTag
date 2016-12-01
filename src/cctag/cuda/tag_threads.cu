@@ -11,7 +11,7 @@
 #include "tag.h"
 #include "frame.h"
 
-namespace popart
+namespace cctag
 {
 
 using namespace std;
@@ -67,5 +67,5 @@ void TagThreads::frameReadyPost( ) { _frameReady.post( _layers ); }
 void TagThreads::frameDoneWait( )  { _frameDone.wait( _layers );  }
 void TagThreads::frameDonePost( )  { _frameDone.post( 1 ); }
 
-}; // namespace popart
+}; // namespace cctag
 

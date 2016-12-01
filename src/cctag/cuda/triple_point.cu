@@ -8,7 +8,7 @@
 #include "triple_point.h"
 #include <iomanip>
 
-namespace popart {
+namespace cctag {
 
 #ifndef NDEBUG
 __host__
@@ -37,5 +37,5 @@ std::string TriplePoint::debug_out( ) const
 }
 #endif
 
-}; // namespace popart
+}; // namespace cctag
 

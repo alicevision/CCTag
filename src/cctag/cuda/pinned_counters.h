@@ -10,7 +10,7 @@
 #include <boost/thread/mutex.hpp>
 #include "cctag/cuda/nearby_point.h"
 
-namespace popart {
+namespace cctag {
 
 /** Pinned Counters provides other classes with pieces of memory that
  *  have been allocated in pinned memory.
@@ -67,5 +67,5 @@ private:
     NearbyPoint* obj_getPointPtr( const char* file, int line );
 };
 
-} // namespace popart
+} // namespace cctag
 

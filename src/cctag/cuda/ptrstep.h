@@ -36,7 +36,7 @@ namespace cv {
     }
 };
 
-namespace popart {
+namespace cctag {
 
 struct PtrStepSzbClone
 {
@@ -70,5 +70,5 @@ private:
     PtrStepSzbNull& operator=( const PtrStepSzbNull& );
 };
 
-} // namespace popart
+} // namespace cctag
 

@@ -9,7 +9,7 @@
 #include "frame.h"
 #include "debug_macros.hpp"
 
-namespace popart {
+namespace cctag {
 
 __constant__ FrameParam tagParam;
 
@@ -55,5 +55,5 @@ void FrameParam::init( const cctag::Parameters& params )
     POP_CUDA_FATAL_TEST( err, "Could not copy CCTag params to device symbol tagParam" );
 }
 
-} // namespace popart
+} // namespace cctag
 

@@ -18,7 +18,7 @@
 
 using namespace std;
 
-namespace popart
+namespace cctag
 {
 
 #ifdef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
@@ -183,5 +183,5 @@ bool Frame::applyVoteSortUniq( )
 
 #endif // USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 
-} // namespace popart
+} // namespace cctag
 

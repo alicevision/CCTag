@@ -27,7 +27,7 @@
 
 //#define NAIVE_SELECTCUT
 
-namespace popart {
+namespace cctag {
 class TagPipe;
 class NearbyPoint;
 };
@@ -61,7 +61,7 @@ int identify_step_1(
     std::vector<cctag::ImageCut>& vSelectedCuts,
 	// const std::vector< std::vector<float> > & radiusRatios,
 	const cv::Mat & src,
-    // popart::TagPipe* pipe,
+    // cctag::TagPipe* pipe,
 	const cctag::Parameters & params);
 
 /**
@@ -84,7 +84,7 @@ int identify_step_2(
     std::vector<cctag::ImageCut>& vSelectedCuts,
 	const std::vector< std::vector<float> > & radiusRatios,
 	const cv::Mat & src,
-    popart::TagPipe* pipe,
+    cctag::TagPipe* pipe,
 	const cctag::Parameters & params);
 
 typedef std::vector< std::vector<float> > RadiusRatioBank;
@@ -253,10 +253,10 @@ bool refineConicFamilyGlob(
         Point2d<Eigen::Vector3f> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
-        popart::TagPipe* cudaPipe,
+        cctag::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters params,
-        popart::NearbyPoint* cctag_pointer_buffer,
+        cctag::NearbyPoint* cctag_pointer_buffer,
         float & residual);
 
 /**

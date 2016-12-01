@@ -10,7 +10,7 @@
 #include <vector>
 #include <cuda_runtime.h>
 
-namespace popart {
+namespace cctag {
 
 class device_prop_t
 {
@@ -24,5 +24,5 @@ public:
     void set( int n );
 };
 
-}; // namespace popart
+}; // namespace cctag
 
