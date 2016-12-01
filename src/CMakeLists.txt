@@ -2,21 +2,102 @@
 cmake_policy(SET CMP0054 OLD) # behaviour keywords in CMake if tests
 # ENDIF(COMMAND cmake_policy)
 
-file( GLOB_RECURSE
-      CCTag_cpp
-      ./cctag/*.cpp
-)
+set( CCTag_cpp
+        ./cctag/Bresenham.cpp
+        ./cctag/CCTag.cpp
+        ./cctag/CCTagFlowComponent.cpp
+        ./cctag/CCTagMarkersBank.cpp
+        ./cctag/Candidate.cpp
+        ./cctag/Canny.cpp
+        ./cctag/DataSerialization.cpp
+        ./cctag/Detection.cpp
+        ./cctag/EdgePoint.cpp
+        ./cctag/EllipseGrowing.cpp
+        ./cctag/Fitting.cpp
+        ./cctag/ICCTag.cpp
+        ./cctag/Identification.cpp
+        ./cctag/ImagePyramid.cpp
+        ./cctag/Level.cpp
+        ./cctag/Multiresolution.cpp
+        ./cctag/Params.cpp
+        ./cctag/Statistic.cpp
+        ./cctag/SubPixEdgeOptimizer.cpp
+        ./cctag/Types.cpp
+        ./cctag/Vote.cpp
+        ./cctag/algebra/matrix/Operation.cpp
+        ./cctag/filter/cvRecode.cpp
+        ./cctag/filter/thinning.cpp
+        ./cctag/geometry/2DTransform.cpp
+        ./cctag/geometry/Circle.cpp
+        ./cctag/geometry/Distance.cpp
+        ./cctag/geometry/Ellipse.cpp
+        ./cctag/geometry/EllipseFromPoints.cpp
+        ./cctag/utils/Backtrace.cpp
+        ./cctag/utils/FileDebug.cpp
+        ./cctag/utils/LogTime.cpp
+        ./cctag/utils/Talk.cpp
+        ./cctag/utils/VisualDebug.cpp)
+message(STATUS "${CCTag_cpp}")
+
+#  file( GLOB_RECURSE
+#        CUDA_cpp
+#        ./cuda/*.cpp
+#  )
+#message(STATUS "UDA_cpp ${CUDA_cpp}")
+#  file( GLOB_RECURSE
+#        CUDA_cu
+#        ./cuda/*.cu
+#  )
+#message(STATUS "CUDA_cu ${CUDA_cu}")
 
 if(WITH_CUDA)
-  file( GLOB_RECURSE
-        CUDA_cpp
-        ./cuda/*.cpp
-  )
-  file( GLOB_RECURSE
-        CUDA_cu
-        ./cuda/*.cu
-  )
-
+#  file( GLOB_RECURSE
+#        CUDA_cpp
+#        ./cuda/*.cpp
+#  )
+  set(CUDA_cpp 
+        ./cuda/debug_macros.cpp
+        ./cuda/device_prop.cpp)
+message(STATUS "CUDA_cpp ${CUDA_cpp}")
+#  file( GLOB_RECURSE
+#        CUDA_cu
+#        ./cuda/*.cu
+#  )
+  set(CUDA_cu
+        ./cuda/assist.cu
+        ./cuda/cmp_list.cu
+        ./cuda/debug_image.cu
+        ./cuda/debug_is_on_edge.cu
+        ./cuda/frame.cu
+        ./cuda/frame_01_tex.cu
+        ./cuda/frame_02_gaussian.cu
+        ./cuda/frame_03_magmap.cu
+        ./cuda/frame_04_hyst.cu
+        ./cuda/frame_05_thin.cu
+        ./cuda/frame_06_graddesc.cu
+        ./cuda/frame_07_vote.cu
+        ./cuda/frame_07a_vote_line.cu
+        ./cuda/frame_07b_vote_sort_uniq_dp.cu
+        ./cuda/frame_07b_vote_sort_uniq_nodp.cu
+        ./cuda/frame_07c_eval.cu
+        ./cuda/frame_07d_vote_if.cu
+        ./cuda/frame_07e_download.cu
+        ./cuda/frame_alloc.cu
+        ./cuda/frame_debug.cu
+        ./cuda/frame_export.cu
+        ./cuda/framemeta.cu
+        ./cuda/frameparam.cu
+        ./cuda/geom_ellipse.cu
+        ./cuda/geom_matrix.cu
+        ./cuda/keep_time.cu
+        ./cuda/pinned_counters.cu
+        ./cuda/ptrstep.cu
+        ./cuda/recursive_sweep.cu
+        ./cuda/tag.cu
+        ./cuda/tag_identify.cu
+        ./cuda/tag_threads.cu
+        ./cuda/triple_point.cu)
+message(STATUS "CUDA_cu ${CUDA_cu}")
   # add_definitions("-DSM_TARGETS=-gencode=arch=compute_52,code=\"sm_52,compute_52\"")
 
   # set(CUDA_SEPARABLE_COMPILATION ON)
