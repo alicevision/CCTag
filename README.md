@@ -23,8 +23,8 @@ Building
 See [BUILD](BUILD.md) text file.
 
 Continuous integration: 
- - [![Build Status](https://travis-ci.org/poparteu/CCTag.svg?branch=master)](https://travis-ci.org/poparteu/CCTag) master branch.
- - [![Build Status](https://travis-ci.org/poparteu/CCTag.svg?branch=develop)](https://travis-ci.org/poparteu/CCTag) develop branch.
+ - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=master)](https://travis-ci.org/alicevision/CCTag) master branch.
+ - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=develop)](https://travis-ci.org/alicevision/CCTag) develop branch.
 
 Running
 -------
