@@ -21,7 +21,7 @@ EdgePointCollection::EdgePointCollection(size_t w, size_t h) :
   _processedAux(new unsigned[MAX_POINTS/4])
 {
   if (w > MAX_RESOLUTION || h > MAX_RESOLUTION)
-    throw std::length_error("EdgePointCollection::set_frame_size: dimension too large");
+    throw std::length_error("EdgePointCollection::set_frame_size: image resolution is too large");
 
   point_count() = 0;
   _edgeMapShape[0] = w; _edgeMapShape[1] = h;
