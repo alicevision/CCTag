@@ -65,12 +65,17 @@ if(WITH_CUDA)
   find_package(CUDA 7.0 REQUIRED)
   set(CUDA_SEPARABLE_COMPILATION ON)
   
-  # Enabling the following line may cause nvcc to complain because a double "" is
-  # inserted in the compile line. It may be a FindCUDA.cmake bug
-  # https://gitlab.kitware.com/cmake/cmake/issues/16411
-#  set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
-  set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3;-DNDEBUG")
-  # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-G;-g;-DNDEBUG")
+  # The following if should not be necessary, but apparently there is a bug in FindCUDA.cmake that
+  # generate an empty string in the nvcc command line causing the compilation to fail.
+  # see https://gitlab.kitware.com/cmake/cmake/issues/16411
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "Building in debug mode")
+    set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
+  else()
+    message(STATUS "Building in release mode")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3;-DNDEBUG")
+    # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-G;-g;-DNDEBUG")
+  endif()
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--std=c++11")
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52")
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=compute_52")

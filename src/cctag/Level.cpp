@@ -10,7 +10,7 @@
 #include <cctag/filter/thinning.hpp>
 #include "cctag/utils/Talk.hpp"
 #ifdef WITH_CUDA
-#include "cuda/tag.h"
+#include "cctag/cuda/tag.h"
 #endif
 
 namespace cctag {
@@ -80,7 +80,7 @@ void Level::setLevel( const cv::Mat & src,
 }
 
 #ifdef WITH_CUDA
-void Level::setLevel( popart::TagPipe*         cuda_pipe,
+void Level::setLevel( cctag::TagPipe*         cuda_pipe,
                       const cctag::Parameters& params )
 {
     if( not _cuda_allocates ) {

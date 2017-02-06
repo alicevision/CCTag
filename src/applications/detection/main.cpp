@@ -15,8 +15,8 @@
 #include "CmdLine.hpp"
 
 #ifdef WITH_CUDA
-#include "cuda/device_prop.hpp"
-#include "cuda/debug_macros.hpp"
+#include "cctag/cuda/device_prop.hpp"
+#include "cctag/cuda/debug_macros.hpp"
 #endif // WITH_CUDA
 
 #include <boost/filesystem/convenience.hpp>
@@ -216,7 +216,7 @@ int main(int argc, char** argv)
   }
 
 #ifdef WITH_CUDA
-  popart::pop_cuda_only_sync_calls(cmdline._switchSync);
+  cctag::pop_cuda_only_sync_calls(cmdline._switchSync);
 #endif
 
   // Check the (optional) parameters path
@@ -278,7 +278,7 @@ int main(int argc, char** argv)
     params.setDebugDir(cmdline._debugDir);
   }
 
-  popart::device_prop_t deviceInfo(false);
+  cctag::device_prop_t deviceInfo(false);
 #endif // WITH_CUDA
 
   bfs::path myPath(bfs::absolute(cmdline._filename));

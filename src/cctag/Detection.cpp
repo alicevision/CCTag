@@ -28,7 +28,7 @@
 #include <cctag/utils/Defines.hpp>
 #include <cctag/utils/Talk.hpp> // for DO_TALK macro
 #ifdef WITH_CUDA
-#include "cuda/tag.h"
+#include "cctag/cuda/tag.h"
 #endif
 
 #include <boost/foreach.hpp>
@@ -66,7 +66,7 @@ namespace { using CandidatePtr = std::unique_ptr<Candidate>; }
  * code should be able to.
  * BEWARE: this is untested
  */
-std::vector<popart::TagPipe*> cudaPipelines;
+std::vector<cctag::TagPipe*> cudaPipelines;
 
 static void constructFlowComponentFromSeed(
         EdgePoint * seed,
@@ -735,7 +735,7 @@ void createImageForVoteResultDebug(
 }
 
 #ifdef WITH_CUDA
-popart::TagPipe* initCuda( int      pipeId,
+cctag::TagPipe* initCuda( int      pipeId,
                            uint32_t width,
                            uint32_t height, 
                            const Parameters & params,
@@ -745,10 +745,10 @@ popart::TagPipe* initCuda( int      pipeId,
         cudaPipelines.resize( pipeId+1 );
     }
 
-    popart::TagPipe* pipe1 = cudaPipelines[pipeId];
+    cctag::TagPipe* pipe1 = cudaPipelines[pipeId];
 
     if( not pipe1 ) {
-        pipe1 = new popart::TagPipe( params );
+        pipe1 = new cctag::TagPipe( params );
         pipe1->initialize( width, height, durations );
         cudaPipelines[pipeId] = pipe1;
     } else {
@@ -803,7 +803,7 @@ void cctagDetection(
                                params._numberOfProcessedMultiresLayers,
                                cuda_allocates );
 
-    popart::TagPipe* pipe1 = 0;
+    cctag::TagPipe* pipe1 = 0;
 #ifdef WITH_CUDA
     if( params._useCuda ) {
         pipe1 = initCuda( pipeId,

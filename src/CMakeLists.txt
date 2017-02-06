@@ -2,20 +2,82 @@
 cmake_policy(SET CMP0054 OLD) # behaviour keywords in CMake if tests
 # ENDIF(COMMAND cmake_policy)
 
-file( GLOB_RECURSE
-      CCTag_cpp
-      ./cctag/*.cpp
-)
+set( CCTag_cpp
+        ./cctag/Bresenham.cpp
+        ./cctag/CCTag.cpp
+        ./cctag/CCTagFlowComponent.cpp
+        ./cctag/CCTagMarkersBank.cpp
+        ./cctag/Candidate.cpp
+        ./cctag/Canny.cpp
+        ./cctag/DataSerialization.cpp
+        ./cctag/Detection.cpp
+        ./cctag/EdgePoint.cpp
+        ./cctag/EllipseGrowing.cpp
+        ./cctag/Fitting.cpp
+        ./cctag/ICCTag.cpp
+        ./cctag/Identification.cpp
+        ./cctag/ImagePyramid.cpp
+        ./cctag/Level.cpp
+        ./cctag/Multiresolution.cpp
+        ./cctag/Params.cpp
+        ./cctag/Statistic.cpp
+        ./cctag/SubPixEdgeOptimizer.cpp
+        ./cctag/Types.cpp
+        ./cctag/Vote.cpp
+        ./cctag/algebra/matrix/Operation.cpp
+        ./cctag/filter/cvRecode.cpp
+        ./cctag/filter/thinning.cpp
+        ./cctag/geometry/2DTransform.cpp
+        ./cctag/geometry/Circle.cpp
+        ./cctag/geometry/Distance.cpp
+        ./cctag/geometry/Ellipse.cpp
+        ./cctag/geometry/EllipseFromPoints.cpp
+        ./cctag/utils/Backtrace.cpp
+        ./cctag/utils/FileDebug.cpp
+        ./cctag/utils/LogTime.cpp
+        ./cctag/utils/Talk.cpp
+        ./cctag/utils/VisualDebug.cpp)
 
 if(WITH_CUDA)
-  file( GLOB_RECURSE
-        CUDA_cpp
-        ./cuda/*.cpp
-  )
-  file( GLOB_RECURSE
-        CUDA_cu
-        ./cuda/*.cu
-  )
+
+  set(CUDA_cpp 
+        ./cctag/cuda/debug_macros.cpp
+        ./cctag/cuda/device_prop.cpp)
+
+  set(CUDA_cu
+        ./cctag/cuda/assist.cu
+        ./cctag/cuda/cmp_list.cu
+        ./cctag/cuda/debug_image.cu
+        ./cctag/cuda/debug_is_on_edge.cu
+        ./cctag/cuda/frame.cu
+        ./cctag/cuda/frame_01_tex.cu
+        ./cctag/cuda/frame_02_gaussian.cu
+        ./cctag/cuda/frame_03_magmap.cu
+        ./cctag/cuda/frame_04_hyst.cu
+        ./cctag/cuda/frame_05_thin.cu
+        ./cctag/cuda/frame_06_graddesc.cu
+        ./cctag/cuda/frame_07_vote.cu
+        ./cctag/cuda/frame_07a_vote_line.cu
+        ./cctag/cuda/frame_07b_vote_sort_uniq_dp.cu
+        ./cctag/cuda/frame_07b_vote_sort_uniq_nodp.cu
+        ./cctag/cuda/frame_07c_eval.cu
+        ./cctag/cuda/frame_07d_vote_if.cu
+        ./cctag/cuda/frame_07e_download.cu
+        ./cctag/cuda/frame_alloc.cu
+        ./cctag/cuda/frame_debug.cu
+        ./cctag/cuda/frame_export.cu
+        ./cctag/cuda/framemeta.cu
+        ./cctag/cuda/frameparam.cu
+        ./cctag/cuda/geom_ellipse.cu
+        ./cctag/cuda/geom_matrix.cu
+        ./cctag/cuda/keep_time.cu
+        ./cctag/cuda/pinned_counters.cu
+        ./cctag/cuda/ptrstep.cu
+        ./cctag/cuda/recursive_sweep.cu
+        ./cctag/cuda/tag.cu
+        ./cctag/cuda/tag_identify.cu
+        ./cctag/cuda/tag_threads.cu
+        ./cctag/cuda/triple_point.cu)
 
   # add_definitions("-DSM_TARGETS=-gencode=arch=compute_52,code=\"sm_52,compute_52\"")
 
@@ -113,6 +175,8 @@ set(include_install_dir "include")
 set(confighpp_name "cctag_config.hpp")
 # the name for the generated header version file
 set(versionhpp_name "version.hpp")
+# where to install the generated files
+set(install_dir_generated "${include_install_dir}/cctag")
 
 # build directory containing the generated files
 set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
@@ -156,21 +220,27 @@ install(TARGETS CCTag
         INCLUDES DESTINATION "${include_install_dir}")
 
 # Headers:
-install(DIRECTORY "cctag"
-        DESTINATION "${include_install_dir}"
-        FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+
+
 if(WITH_CUDA)
-  install(DIRECTORY "cuda"
+  install(DIRECTORY "cctag"
           DESTINATION "${include_install_dir}"
           FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+else()
+  install(DIRECTORY "cctag"
+          DESTINATION "${include_install_dir}"
+          FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
+          PATTERN "cuda/*" EXCLUDE)
 endif()
 
+# install the config and version generated files
 install( FILES "${generated_dir}/${confighpp_name}"
-    DESTINATION "${include_install_dir}")
+    DESTINATION "${install_dir_generated}")
 
 install( FILES "${generated_dir}/${versionhpp_name}"
-    DESTINATION "${include_install_dir}")
+    DESTINATION "${install_dir_generated}")
 
+# install cmake config files
 # Config
 #   * <prefix>/lib/cmake/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake
 #   * <prefix>/lib/cmake/${PROJECT_NAME}${PROJECT_NAME}ConfigVersion.cmake

@@ -14,7 +14,7 @@
 #include <cctag/geometry/Circle.hpp>
 #include <cctag/ImagePyramid.hpp>
 #ifdef WITH_CUDA
-#include "cuda/tag.h"
+#include "cctag/cuda/tag.h"
 #endif
 #include "cctag/utils/LogTime.hpp"
 
@@ -42,7 +42,7 @@ void cctagMultiresDetection(
         const cv::Mat& imgGraySrc,
         const ImagePyramid& imagePyramid,
         const std::size_t   frame,
-        popart::TagPipe*    cuda_pipe,
+        cctag::TagPipe*    cuda_pipe,
         const Parameters&   params,
         cctag::logtime::Mgmt* durations );
 

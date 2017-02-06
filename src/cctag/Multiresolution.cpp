@@ -31,7 +31,7 @@
 
 #ifdef WITH_CUDA
 #include <cuda_runtime.h> // only for debugging!!!
-#include "cuda/tag.h"
+#include "cctag/cuda/tag.h"
 #endif
 
 
@@ -202,7 +202,7 @@ static void cctagMultiresDetection_inner(
         Level*                  level,
         const std::size_t       frame,
         EdgePointCollection&    edgeCollection,
-        popart::TagPipe*        cuda_pipe,
+        cctag::TagPipe*        cuda_pipe,
         const Parameters &      params,
         cctag::logtime::Mgmt*   durations )
 {
@@ -273,7 +273,7 @@ void cctagMultiresDetection(
         const cv::Mat& imgGraySrc,
         const ImagePyramid& imagePyramid,
         const std::size_t   frame,
-        popart::TagPipe*    cuda_pipe,
+        cctag::TagPipe*    cuda_pipe,
         const Parameters&   params,
         cctag::logtime::Mgmt* durations )
 {

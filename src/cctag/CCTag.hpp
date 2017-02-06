@@ -30,7 +30,7 @@
 #include <boost/archive/text_oarchive.hpp>
 
 #ifdef WITH_CUDA
-#include "cuda/pinned_counters.h"
+#include "cctag/cuda/pinned_counters.h"
 #endif
 
 #include <algorithm>
@@ -355,7 +355,7 @@ public:
    */
   void acquireNearbyPointMemory( int pipeId );
 
-  inline popart::NearbyPoint* getNearbyPointBuffer( ) {
+  inline cctag::NearbyPoint* getNearbyPointBuffer( ) {
     return _cuda_result;
   }
 
@@ -400,7 +400,7 @@ protected:
    *  Valid from the construction of the CCTag until identify()
    *  is complete.
    */
-  popart::NearbyPoint* _cuda_result;
+  cctag::NearbyPoint* _cuda_result;
 #endif
 
 #ifdef CCTAG_SERIALIZE
