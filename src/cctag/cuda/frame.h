@@ -207,7 +207,8 @@ public:
 
     // implemented in frame_export.cu
     bool applyExport( cctag::EdgePointCollection& out_edges,
-                      std::vector<cctag::EdgePoint*>& out_seedlist);
+                      std::vector<cctag::EdgePoint*>& out_seedlist,
+                      const int max_edge_pt );
 
     cv::Mat* getPlane( ) const;
     cv::Mat* getDx( ) const;
