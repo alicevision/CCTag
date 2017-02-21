@@ -206,11 +206,12 @@ void TagPipe::handleframe( int i )
 __host__
 void TagPipe::convertToHost( size_t                          layer,
                              cctag::EdgePointCollection&     edgeCollection,
-                             std::vector<cctag::EdgePoint*>& seeds)
+                             std::vector<cctag::EdgePoint*>& seeds,
+                             const int                       max_edge_ct )
 {
     assert( layer < _frame.size() );
 
-    _frame[layer]->applyExport( edgeCollection, seeds );
+    _frame[layer]->applyExport( edgeCollection, seeds, max_edge_ct );
 
 }
 

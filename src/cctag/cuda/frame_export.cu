@@ -21,7 +21,8 @@ namespace cctag {
 using namespace std;
 
 bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
-                         std::vector<cctag::EdgePoint*>& out_seedlist)
+                         std::vector<cctag::EdgePoint*>& out_seedlist,
+                         const int max_edge_pt )
 {
     // cerr << "Enter " << __FUNCTION__ << endl;
 
@@ -60,7 +61,7 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
                v_comp );
 #endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
-    for(int i = 0; i < all_sz; ++i) {
+    for(int i = 0; i < min(all_sz,max_edge_pt); ++i) {
           const short2& pt = _all_edgecoords.host.ptr[i];
           const int16_t dx = _h_dx.ptr(pt.y)[pt.x];
           const int16_t dy = _h_dy.ptr(pt.y)[pt.x];
