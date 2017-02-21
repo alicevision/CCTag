@@ -863,9 +863,9 @@ void cctagDetection(
         /* identification in CUDA requires a host-side nearby point struct
          * in pinned memory for safe, non-blocking memcpy.
          */
-        if( markers.size() > 60 ) {
+        if( markers.size() > MAX_MARKER_FOR_IDENT ) {
             std::cerr << __FILE__ << ":" << __LINE__ << std::endl
-              << "   Found more than 60 (" << markers.size() << ") markers" << endl;
+              << "   Found more than " << MAX_MARKER_FOR_IDENT << " (" << markers.size() << ") markers" << endl;
         }
 
         for( CCTag& tag : markers ) {
@@ -921,14 +921,22 @@ void cctagDetection(
                     if( debug_num_calls >= numTags ) {
                         cerr << __FILE__ << ":" << __LINE__ << " center finding for more loops (" << debug_num_calls << ") than uploaded (" << numTags << ")?" << endl;
                     }
-                    pipe1->imageCenterOptLoop(
-                        tagIndex,
-                        numTags, // for debugging only
-                        cctag.rescaledOuterEllipse(),
-                        cctag.centerImg(),
-                        vSelectedCuts[tagIndex].size(),
-                        params,
-                        cctag.getNearbyPointBuffer() );
+                    cctag::NearbyPoint* nearbyPointBuffer = cctag.getNearbyPointBuffer();
+                    if(!nearbyPointBuffer)
+                    {
+                        detected[tagIndex] = status::no_selected_cuts;
+                    }
+                    else
+                    {
+                        pipe1->imageCenterOptLoop(
+                            tagIndex,
+                            numTags, // for debugging only
+                            cctag.rescaledOuterEllipse(),
+                            cctag.centerImg(),
+                            vSelectedCuts[tagIndex].size(),
+                            params,
+                            nearbyPointBuffer );
+                    }
                 }
 
                 tagIndex++;
