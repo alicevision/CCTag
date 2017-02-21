@@ -28,11 +28,8 @@ message(STATUS "BOOST already there")
 endif()
 
 # OPENCV
-if(NOT OpenCV_FOUND)
-  find_package(OpenCV REQUIRED)
-else()
-message(STATUS "OPENCV already there")
-endif()
+find_package(OpenCV REQUIRED core videoio imgproc imgcodecs highgui)
+
 # TBB
 if(NOT TBB_FOUND)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
