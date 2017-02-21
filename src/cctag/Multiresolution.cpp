@@ -216,7 +216,7 @@ static void cctagMultiresDetection_inner(
 #if defined(WITH_CUDA)
     // there is no point in measuring time in compare mode
     if( cuda_pipe ) {
-      cuda_pipe->convertToHost(i, edgeCollection, seeds);
+      cuda_pipe->convertToHost(i, edgeCollection, seeds, cctag::EdgePointCollection::MAX_POINTS );
       if( durations ) {
           cudaDeviceSynchronize();
       }
@@ -284,7 +284,9 @@ void cctagMultiresDetection(
   std::list<EdgePointCollection> vEdgePointCollections;
 
   BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
-  for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i ) {
+  // for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i )
+  for( int i = params._numberOfProcessedMultiresLayers-1; i >= 0; i-- )
+  {
     pyramidMarkers.insert( std::pair<std::size_t, CCTag::List>( i, CCTag::List() ) );
     vEdgePointCollections.emplace_back(imgGraySrc.cols, imgGraySrc.rows);
     

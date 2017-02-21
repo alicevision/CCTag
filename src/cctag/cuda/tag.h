@@ -68,7 +68,8 @@ public:
 
     void convertToHost( size_t                          layer,
                         cctag::EdgePointCollection&     edgeCollection,
-                        std::vector<cctag::EdgePoint*>& seeds);
+                        std::vector<cctag::EdgePoint*>& seeds,
+                        const int                       max_edge_ct );
 
     inline std::size_t getNumOctaves( ) const {
         return _frame.size();
