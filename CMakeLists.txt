@@ -97,7 +97,7 @@ find_package(OpenCV REQUIRED)
 find_package(Eigen REQUIRED)
 
 # FIND PNG
-find_package(PNG REQUIRED)
+find_package(PNG)
 
 # FIND JPEG
 find_package(JPEG REQUIRED)
