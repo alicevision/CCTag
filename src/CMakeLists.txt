@@ -140,13 +140,13 @@ else(WITH_CUDA)
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
-target_compile_definitions(CCTag 
-                           PUBLIC ${Boost_DEFINITIONS} 
-                           PRIVATE ${TBB_DEFINITIONS}) 
-  
-target_link_libraries(CCTag 
-                      PUBLIC ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} 
-                      PRIVATE ${TBB_LIBRARIES} pthread dl)
+  target_compile_definitions(CCTag 
+                             PUBLIC ${Boost_DEFINITIONS} 
+                             PRIVATE ${TBB_DEFINITIONS}) 
+    
+  target_link_libraries(CCTag 
+                        PUBLIC ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} 
+                        PRIVATE ${TBB_LIBRARIES} pthread dl)
 
 endif(WITH_CUDA)
 
