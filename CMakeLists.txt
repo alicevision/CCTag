@@ -91,16 +91,10 @@ else(WITH_CUDA)
 endif(WITH_CUDA)
 
 # FIND OPENCV
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
 
 # FIND Eigen
 find_package(Eigen REQUIRED)
-
-# FIND PNG
-find_package(PNG REQUIRED)
-
-# FIND JPEG
-find_package(JPEG REQUIRED)
 
 # FIND Intel TBB
 find_package(TBB 4 REQUIRED)

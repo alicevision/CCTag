@@ -28,11 +28,8 @@ message(STATUS "BOOST already there")
 endif()
 
 # OPENCV
-if(NOT OpenCV_FOUND)
-  find_package(OpenCV REQUIRED)
-else()
-message(STATUS "OPENCV already there")
-endif()
+find_package(OpenCV REQUIRED core videoio imgproc imgcodecs highgui)
+
 # TBB
 if(NOT TBB_FOUND)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
@@ -59,7 +56,7 @@ set(CCTagSimulation_cpp ./simulation/main.cpp)
 get_target_property(testprop CCTag::CCTag INTERFACE_INCLUDE_DIRECTORIES )
 
 add_executable(detection ${CCTagDetect_cpp})
-target_include_directories(detection PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIR})
+target_include_directories(detection PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS})
 target_link_libraries(detection PUBLIC CCTag::CCTag ${TBB_tbb_LIBRARY_RELEASE} ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
 add_executable(regression ${CCTagRegression_cpp})
