@@ -96,7 +96,7 @@ if(WITH_CUDA)
   # after
   # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA.cmake#L147
   INCLUDE_DIRECTORIES("$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>" 
-                      ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
+                      ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR} ${TBB_INCLUDE_DIRS}
                       "${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
  
   CUDA_ADD_LIBRARY( CCTag STATIC ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
@@ -104,13 +104,12 @@ if(WITH_CUDA)
   # since we used CUDA_ADD_LIBRARY we cannot use PUBLIC or PRIVATE here
   target_link_libraries(CCTag 
                        ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} 
-                       ${TBB_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} 
-                       ${CUDA_CUDADEVRT_LIBRARY} pthread dl)
+                       ${TBB_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY} pthread dl)
 
   target_compile_definitions(CCTag 
                          PUBLIC ${Boost_DEFINITIONS} 
                          PUBLIC -DWITH_CUDA -DSM_ARCH=${CCTAG_SM_ARCH} -DSM=${CCTAG_SM} -DCUB_CDP
-                         PRIVATE ${TBB_DEFINITIONS} ${PNG_DEFINITIONS}) 
+                         PRIVATE ${TBB_DEFINITIONS}) 
 
   # This is nececessary for the CCTagConfig.cmake to correctly export the
   # includes, always because we used CUDA_ADD_LIBRARY
@@ -136,18 +135,18 @@ else(WITH_CUDA)
                            PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
                                   "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>"
                            PUBLIC ${Boost_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS}
-                           PRIVATE ${TBB_INCLUDE_DIR} ${PNG_INCLUDE_DIRS} ${JPEG_INCLUDE_DIR}) 
+                           PRIVATE ${TBB_INCLUDE_DIRS}) 
 
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
-  target_compile_definitions(CCTag 
+target_compile_definitions(CCTag 
                            PUBLIC ${Boost_DEFINITIONS} 
-                           PRIVATE ${TBB_DEFINITIONS} ${PNG_DEFINITIONS}) 
+                           PRIVATE ${TBB_DEFINITIONS}) 
   
-  target_link_libraries(CCTag 
+target_link_libraries(CCTag 
                       PUBLIC ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} 
-                      PRIVATE ${TBB_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} pthread dl)
+                      PRIVATE ${TBB_LIBRARIES} pthread dl)
 
 endif(WITH_CUDA)
 

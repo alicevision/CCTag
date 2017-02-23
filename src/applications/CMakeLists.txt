@@ -56,7 +56,7 @@ set(CCTagSimulation_cpp ./simulation/main.cpp)
 get_target_property(testprop CCTag::CCTag INTERFACE_INCLUDE_DIRECTORIES )
 
 add_executable(detection ${CCTagDetect_cpp})
-target_include_directories(detection PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIR})
+target_include_directories(detection PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS})
 target_link_libraries(detection PUBLIC CCTag::CCTag ${TBB_tbb_LIBRARY_RELEASE} ${OpenCV_LIBS} ${Boost_LIBRARIES})
 
 add_executable(regression ${CCTagRegression_cpp})
