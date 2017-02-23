@@ -21,7 +21,7 @@ class EdgePointCollection
 public:
   static constexpr size_t MAX_POINTS = size_t(1) << 20;
 private:
-  static constexpr size_t MAX_RESOLUTION = 5120;
+  static constexpr size_t MAX_RESOLUTION = 6144;
   static constexpr size_t CUDA_OFFSET = 1024; // 4 kB, one page
   static constexpr size_t MAX_VOTERLIST_SIZE = 16*MAX_POINTS;
   
