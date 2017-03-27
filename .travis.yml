@@ -2,89 +2,14 @@
 language: cpp
 sudo: required
 
-matrix:
-  include:
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.8
-            - lcov
-            - libpng-dev
-            - libjpeg8-dev
-            - libtiff4-dev
-            - libxxf86vm1
-            - libxxf86vm-dev
-            - libtbb-dev
-            - x11proto-xf86vidmode-dev
-            - libxrandr-dev
-            - libatlas-base-dev
-      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc VISUAL_DEBUG=ON CCTAG_SERIALIZE=ON WITH_CUDA=ON
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.8
-            - lcov
-            - libpng-dev
-            - libjpeg8-dev
-            - libtiff4-dev
-            - libxxf86vm1
-            - libxxf86vm-dev
-            - libtbb-dev
-            - x11proto-xf86vidmode-dev
-            - libxrandr-dev
-            - libatlas-base-dev
-      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc VISUAL_DEBUG=OFF CCTAG_SERIALIZE=ON WITH_CUDA=OFF
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.8
-            - lcov
-            - libpng-dev
-            - libjpeg8-dev
-            - libtiff4-dev
-            - libxxf86vm1
-            - libxxf86vm-dev
-            - libtbb-dev
-            - x11proto-xf86vidmode-dev
-            - libxrandr-dev
-            - libatlas-base-dev
-      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc VISUAL_DEBUG=OFF CCTAG_SERIALIZE=OFF WITH_CUDA=ON
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-          packages:
-            - clang-3.7
-            - lcov
-            - libpng-dev
-            - libjpeg8-dev
-            - libtiff4-dev
-            - libxxf86vm1
-            - libxxf86vm-dev
-            - libtbb-dev
-            - x11proto-xf86vidmode-dev
-            - libxrandr-dev
-            - libatlas-base-dev
-      # clang is not supported in cuda 7.0
-      env: CXX_COMPILER=clang++-3.7 C_COMPILER=clang-3.7 TOOLSET=clang VISUAL_DEBUG=ON CCTAG_SERIALIZE=ON WITH_CUDA=OFF
-
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
+      - llvm-toolchain-precise-3.7
     packages:
-      # - cmake
+      - g++-4.8
+      - clang-3.7
       - lcov
       - libpng-dev
       - libjpeg8-dev
@@ -94,8 +19,19 @@ addons:
       - libtbb-dev
       - x11proto-xf86vidmode-dev
       - libxrandr-dev
-      # - g++-4.8
       - libatlas-base-dev
+
+matrix:
+  include:
+    - compiler: gcc
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc VISUAL_DEBUG=ON CCTAG_SERIALIZE=ON WITH_CUDA=ON
+    - compiler: gcc
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc VISUAL_DEBUG=OFF CCTAG_SERIALIZE=ON WITH_CUDA=OFF
+    - compiler: gcc
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc VISUAL_DEBUG=OFF CCTAG_SERIALIZE=OFF WITH_CUDA=ON
+    - compiler: clang
+      # clang is not supported in cuda 7.0
+      env: CXX_COMPILER=clang++-3.7 C_COMPILER=clang-3.7 TOOLSET=clang VISUAL_DEBUG=ON CCTAG_SERIALIZE=ON WITH_CUDA=OFF
 
 env:
   global:
