@@ -10,15 +10,10 @@ addons:
     packages:
       - g++-4.8
       - clang-3.7
-      - lcov
       - libpng-dev
       - libjpeg8-dev
       - libtiff4-dev
-      - libxxf86vm1
-      - libxxf86vm-dev
       - libtbb-dev
-      - x11proto-xf86vidmode-dev
-      - libxrandr-dev
       - libatlas-base-dev
 
 matrix:
