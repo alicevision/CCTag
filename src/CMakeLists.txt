@@ -95,7 +95,7 @@ if(WITH_CUDA)
   # this must go before CUDA_ADD_LIBRARY otherwise we won't be able to add it
   # after
   # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA.cmake#L147
-  INCLUDE_DIRECTORIES("$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>" 
+  include_directories(${CMAKE_CURRENT_LIST_DIR}
                       ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR} ${TBB_INCLUDE_DIRS}
                       "${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
  
