@@ -14,7 +14,7 @@ For CUDA
 
 ### Getting the sources:
 ```shell
-$ git clone https://github.com/poparteu/CCTag.git
+$ git clone https://github.com/alicevision/CCTag.git
 ```
 
 ###  Dependencies
