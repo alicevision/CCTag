@@ -50,7 +50,7 @@ void EdgePointCollection::add_point(int vx, int vy, float vdx, float vdy)
   // so it's safe to re-new it in place w/o calling the dtor firs.
   
   if (point_count() >= MAX_POINTS)
-    throw std::logic_error("EdgePointCollection::add_point: too many edge points");
+    throw std::logic_error(std::string("EdgePointCollection::add_point: too many edge points (nb points: ") + std::to_string(point_count()) + ", max: " + std::to_string(MAX_POINTS) + ")");
   
   size_t ipoint = point_count()++;
   _edgeMap[imap] = ipoint;
