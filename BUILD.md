@@ -32,7 +32,7 @@ $ sudo apt-get install g++ git-all libpng12-dev libjpeg-dev libeigen3-dev libboo
 
 OpenCV need to be compiled separately and installed in some `OPENCV_INSTALL` path. Then, when running cmake you need to provide the path to the location where `OpenCVConfig.cmake` is installed, usually `${OPENCV_INSTALL}/share/share/OpenCV/` (see below).
 
-CCTag contains code optimized for AVX2  instruction set, which significantly increases detection performance. To enable it, add "-mavx2" to `CMAKE_CXX_FLAGS`.
+CCTag contains code optimized for AVX2  instruction set, which significantly increases detection performance. You can enable it with the option: `cmake -DCCTAG_ENABLE_SIMD_AVX2=ON`.
 
 ----------
 

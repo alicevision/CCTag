@@ -12,8 +12,20 @@ option(VISUAL_DEBUG "Enable visual debug" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
 option(WITH_CUDA "Compile the library with CUDA support" ON)
 option(COMPILE_STATIC_CCTAG_LIBRARY "Generate static library" ON)
+option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
 
-# Cuda architecture valeues
+if(CCTAG_ENABLE_SIMD_AVX2)
+  if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+    add_definitions(-mavx2)
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    add_definitions(/QxAVX2)
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_definitions(/arch:AVX2)
+  endif()
+  message(STATUS "CCTAG: AVX2 optimizations enabled.")
+endif()
+
+# Cuda architecture values
 set(CCTAG_SM_ARCH 100)
 set(CCTAG_SM 100)
 
