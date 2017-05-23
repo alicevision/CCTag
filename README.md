@@ -17,6 +17,8 @@ Please respect the provided margins. The reported detection rate and localizatio
 
 The four rings CCTags will be available soon.
 
+Check your graphic card CUDA compatibility [here](https://github.com/tpruvot/ccminer/wiki/Compatibility).
+
 Building
 --------
 
