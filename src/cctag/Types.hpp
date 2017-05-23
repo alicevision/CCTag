@@ -19,7 +19,7 @@ namespace cctag {
 class EdgePointCollection
 {
 public:
-  static constexpr size_t MAX_POINTS = size_t(1) << 20;
+  static constexpr size_t MAX_POINTS = size_t(1) << 24;
 private:
   static constexpr size_t MAX_RESOLUTION = 6144;
   static constexpr size_t CUDA_OFFSET = 1024; // 4 kB, one page

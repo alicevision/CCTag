@@ -12,8 +12,20 @@ option(VISUAL_DEBUG "Enable visual debug" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
 option(WITH_CUDA "Compile the library with CUDA support" ON)
 option(COMPILE_STATIC_CCTAG_LIBRARY "Generate static library" ON)
+option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
 
-# Cuda architecture valeues
+if(CCTAG_ENABLE_SIMD_AVX2)
+  if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+    add_definitions(-mavx2)
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    add_definitions(/QxAVX2)
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_definitions(/arch:AVX2)
+  endif()
+  message(STATUS "CCTAG: AVX2 optimizations enabled.")
+endif()
+
+# Cuda architecture values
 set(CCTAG_SM_ARCH 100)
 set(CCTAG_SM 100)
 
@@ -76,9 +88,24 @@ if(WITH_CUDA)
     set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3;-DNDEBUG")
     # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-G;-g;-DNDEBUG")
   endif()
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--std=c++11")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52")
+
+  #set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
+  #set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_35,code=sm_35")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_50,code=sm_50")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_52,code=sm_52")
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=compute_52")
+  
+  if(NOT CUDA_VERSION VERSION_LESS 8.0) # cuda >= 8.0
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_60,code=sm_60")
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_61,code=sm_61")
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_62,code=sm_62")
+  endif()
+  
+  if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
+  endif()
+
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
   # MORE NOISE:
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;-v")
