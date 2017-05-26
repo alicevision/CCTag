@@ -25,12 +25,12 @@ void FrameParam::init( const cctag::Parameters& params )
     tagParamInitialized = true;
 
     if( params._nCrowns > RESERVE_MEM_MAX_CROWNS ) {
-        cerr << "Error in " << __FILE__ << ":" << __LINE__ << ":" << endl
+        std::cerr << "Error in " << __FILE__ << ":" << __LINE__ << ":" << std::endl
              << "    static maximum of parameter crowns is "
              << RESERVE_MEM_MAX_CROWNS
-             << ", parameter file wants " << params._nCrowns << endl
-             << "    edit " << __FILE__ << " and recompile" << endl
-             << endl;
+             << ", parameter file wants " << params._nCrowns << std::endl
+             << "    edit " << __FILE__ << " and recompile" << std::endl
+             << std::endl;
     }
 
     FrameParam p;
