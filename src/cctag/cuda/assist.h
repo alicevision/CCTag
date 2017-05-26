@@ -11,12 +11,9 @@
 #include <cuda_runtime.h>
 #include <opencv2/core/cuda_types.hpp>
 
-using namespace std;
+namespace cctag {
 
 std::ostream& operator<<( std::ostream& ostr, const dim3& p );
-
-namespace cctag
-{
 
 /* This computation is needed very frequently when a dim3 grid block is
  * initialized. It ensure that the tail is not forgotten.
