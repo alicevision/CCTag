@@ -302,7 +302,7 @@ struct File : virtual public Value
 {
 	File()
 	{}
-	File( const std::string path )
+	File( const std::string& path )
 	{
 		*this << filename(path);
 	}
@@ -315,7 +315,7 @@ struct FileNotExist : virtual public File
 {
 	FileNotExist()
 	{}
-	FileNotExist( const std::string path )
+	FileNotExist( const std::string& path )
 	: File( path )
 	{}
 };
@@ -327,7 +327,7 @@ struct NoDirectory : virtual public File
 {
 	NoDirectory()
 	{}
-	NoDirectory( const std::string path )
+	NoDirectory( const std::string& path )
 	: File( path )
 	{}
 };
@@ -339,7 +339,7 @@ struct ReadOnlyFile : virtual public File
 {
 	ReadOnlyFile()
 	{}
-	ReadOnlyFile( const std::string path )
+	ReadOnlyFile( const std::string& path )
 	: File( path )
 	{}
 };

@@ -190,7 +190,7 @@ public:
     return _radiusRatios;
   }
 
-  void setRadiusRatios(const std::vector<float> radiusRatios)
+  void setRadiusRatios(const std::vector<float>& radiusRatios)
   {
     _radiusRatios = radiusRatios;
   }
@@ -235,7 +235,7 @@ public:
     return _ellipses;
   }
 
-  void setEllipses(const std::vector<cctag::numerical::geometry::Ellipse> ellipses)
+  void setEllipses(const std::vector<cctag::numerical::geometry::Ellipse>& ellipses)
   {
     _ellipses = ellipses;
   }
@@ -275,7 +275,7 @@ public:
     return _idSet;
   }
 
-  void setIdSet(const IdSet idSet)
+  void setIdSet(const IdSet& idSet)
   {
     _idSet = idSet;
   }
