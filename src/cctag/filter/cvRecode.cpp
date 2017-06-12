@@ -123,31 +123,31 @@ void cvRecodedCanny(
       //    t = (-width:width);
       //    gaussian1D = exp(-(t.*t)/(2*ssq))/(2*pi*ssq)     % the gaussian 1D filter
       
-       float gaussian1D[9] = { 0.000053390535453, 
-                      0.001768051711852,
-                      0.021539279301849,
-                      0.096532352630054,
-                      0.159154943091895,
-                      0.096532352630054,
-                      0.021539279301849,
-                      0.001768051711852,
-                      0.000053390535453
-       };
+//       float gaussian1D[9] = { 0.000053390535453, 
+//                      0.001768051711852,
+//                      0.021539279301849,
+//                      0.096532352630054,
+//                      0.159154943091895,
+//                      0.096532352630054,
+//                      0.021539279301849,
+//                      0.001768051711852,
+//                      0.000053390535453
+//       };
        
       // ** Matlab code to generate the derivative of gaussian 1D kernel **
       //    t = -width:width;
       //    dgaussian1D = -t.*exp(-(t.*t)/(2*ssq))/(pi*ssq)/0.159154943091895 % the derivative of gaussian 1D filter
        
-      float dgaussian1D[9] = { 0.002683701023220,
-               0.066653979229454,
-               0.541341132946452,
-               1.213061319425269,
-               0,
-               -1.213061319425269,
-               -0.541341132946452,
-               -0.066653979229454,
-               -0.002683701023220 //1D gaussian derivative with sigma=1 divided by / 0.159154943091895
-       };
+//      float dgaussian1D[9] = { 0.002683701023220,
+//               0.066653979229454,
+//               0.541341132946452,
+//               1.213061319425269,
+//               0,
+//               -1.213061319425269,
+//               -0.541341132946452,
+//               -0.066653979229454,
+//               -0.002683701023220 //1D gaussian derivative with sigma=1 divided by / 0.159154943091895
+//       };
        
       // The first option is to apply successively the (above) 1D kernels (delivered the same result as the second option used below with a 9x9 2D kernel )
       // ** Matlab code on how to use the 1D kernels **   

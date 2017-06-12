@@ -107,10 +107,8 @@ void computeIntermediatePoints(const Ellipse & ellipse, Point2d<Eigen::Vector3i>
 	pt22.y() = (boost::math::round( v22( 1 ) ) );
 }
 
-void rasterizeEllipticalArc(const Ellipse & ellipse, const Point2d<Eigen::Vector3i> & pt1, const Point2d<Eigen::Vector3i> & pt2, std::vector< Point2d<Eigen::Vector3i> > & vPoint, std::size_t intersectionIndex){
-
-	const float xCenter = ellipse.center().x();
-	const float yCenter = ellipse.center().y();
+void rasterizeEllipticalArc(const Ellipse & ellipse, const Point2d<Eigen::Vector3i> & pt1, const Point2d<Eigen::Vector3i> & pt2, std::vector< Point2d<Eigen::Vector3i> > & vPoint, std::size_t intersectionIndex)
+{
 
 	const int mx = std::abs(pt2.x() - pt1.x());
 	const int my = std::abs(pt2.y() - pt1.y());

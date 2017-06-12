@@ -897,7 +897,6 @@ bool refineConicFamilyGlob(
         getSignals(vCuts,mHomography,src);
         boost::posix_time::ptime tend( boost::posix_time::microsec_clock::local_time() );
         boost::posix_time::time_duration d = tend - tstart;
-        const float spendTime = d.total_milliseconds();
     }
     
     // Residual normalization
@@ -1003,10 +1002,7 @@ bool imageCenterOptimizationGlob(
 
     minRes = std::numeric_limits<float>::max();
     Eigen::Matrix3f mTempHomography;
-
-#ifdef OPTIM_CENTER_VISUAL_DEBUG // Visual debug durign the optim
-    int k = 0;
-#endif // OPTIM_CENTER_VISUAL_DEBUG   
+ 
     // For all points nearby the center ////////////////////////////////////////
     for(const cctag::Point2d<Eigen::Vector3f> & point : nearbyPoints)
     {
@@ -1153,7 +1149,7 @@ float costFunctionGlob(
     return std::numeric_limits<float>::max();
   }else{
     // normalize, dividing by the total number of pairs in the image bounds.
-    return res /= resSize;
+    return res / resSize;
   }
 }
 

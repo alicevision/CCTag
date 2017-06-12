@@ -45,7 +45,6 @@ bool initMarkerCenter(cctag::Point2d<Eigen::Vector3f> & markerCenter,
         int realPixelPerimeter)
 {
   cctag::numerical::geometry::Ellipse innerEllipse;
-  std::size_t nbEllipse = markerPoints.size();
 
   try
   {
