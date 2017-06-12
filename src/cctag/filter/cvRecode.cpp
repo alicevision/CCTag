@@ -604,7 +604,7 @@ void cvRecodedCanny(
 #endif // USE_INTEGER_REP
     unsigned char write_mag[size.width * size.height];
     int idx=0;
-    for( it = mag_collect.begin(); it!=mag_collect.end(); it++ ) {
+    for( it = mag_collect.begin(); it!=mag_collect.end(); ++it ) {
       write_mag[idx++] = uint8_t( ( *it - minval ) * 256 / ( maxval - minval ) );
     }
     mag_img_file->write( (const char*)write_mag, size.width*size.height );
