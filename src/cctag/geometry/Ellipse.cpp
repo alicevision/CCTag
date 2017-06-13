@@ -185,7 +185,6 @@ void Ellipse::getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual)
   float par3 = q4;
   float par4 = 2*q3;
   float par5 = 2*q5;
-  float par6 = q6;
   
   float thetarad    = 0.5f*atan2(par2,par1 - par3);
   float cost        = cos(thetarad);
@@ -194,7 +193,6 @@ void Ellipse::getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual)
   float cos_squared = cost * cost;
   float cos_sin     = sint * cost;
 
-  float Ao          = par6;
   float Au          = par4 * cost + par5 * sint;
   float Av          = -par4 * sint + par5 * cost;
   float Auu         = par1 * cos_squared + par3 * sin_squared + par2 * cos_sin;

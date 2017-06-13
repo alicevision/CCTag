@@ -571,8 +571,6 @@ void vote(EdgePointCollection& edgeCollection,
 
         std::size_t cnt = 0;
 
-        float S1m, S2m;
-
         std::array<int, 5> permutations;
         std::vector<cctag::Point2d<Eigen::Vector3f> > points;
         points.reserve(5);
@@ -633,8 +631,6 @@ void vote(EdgePointCollection& edgeCollection,
                     qm = q;
                     Sm = S;
 
-                    S1m = S1;
-                    S2m = S2;
                 } else {
                     ++cnt;
                 }

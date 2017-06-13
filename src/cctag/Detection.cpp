@@ -257,9 +257,7 @@ static void completeFlowComponent(
   }
   catch (cv::Exception& e)
   {
-    DO_TALK( CCTAG_COUT_DEBUG( "OpenCV exception" ); )
-
-    const char* err_msg = e.what();
+    DO_TALK( CCTAG_COUT_DEBUG( "OpenCV exception: " +  e.what() ); )
   }
   catch (...)
   {

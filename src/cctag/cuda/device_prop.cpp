@@ -54,7 +54,7 @@ void device_prop_t::print( )
 {
     // for( auto ptr : _properties ) {
     std::vector<cudaDeviceProp*>::const_iterator p;
-    for( p = _properties.begin(); p!=_properties.end(); p++ ) {
+    for( p = _properties.begin(); p!=_properties.end(); ++p ) {
         cudaDeviceProp* ptr = *p;
         std::cout << "Device information:" << endl
                   << "    Name: " << ptr->name << endl
