@@ -47,6 +47,9 @@ set(CCTagRegression_cpp
   ./regression/TestLog.cpp
   ./regression/Regression.cpp)
 
+set(CCTagSimulation_cpp
+  ./simulation/main.cpp)
+
 get_target_property(testprop CCTag::CCTag INTERFACE_INCLUDE_DIRECTORIES )
 
 set(CCTagDetect_cpp ./detection/main.cpp ./detection/CmdLine.cpp)
