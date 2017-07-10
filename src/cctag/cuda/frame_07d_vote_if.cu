@@ -5,11 +5,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+#include <cuda.h>
+
+#if CUDA_VERSION >= 8000
+#include <thrust/copy.h>
+#include <thrust/device_ptr.h>
+#else
+#include <cub/cub.cuh>
+#endif
+
 #include <iostream>
 #include <algorithm>
 #include <limits>
 #include <cuda_runtime.h>
-#include <cub/cub.cuh>
 #include <stdio.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"
@@ -26,7 +34,6 @@ namespace cctag {
 struct NumVotersIsGreaterEqual
 {
     DevEdgeList<TriplePoint> _array;
-    int                      _compare;
 
     __host__ __device__
     __forceinline__
@@ -40,6 +47,34 @@ struct NumVotersIsGreaterEqual
         return (_array.ptr[a]._winnerSize >= tagParam.minVotesToSelectCandidate );
     }
 };
+
+#if CUDA_VERSION >= 8000
+__host__
+bool Frame::applyVoteIf( )
+{
+    if( _interm_inner_points.host.size == 0 ) {
+        return false;
+    }
+
+    int                     sz           = _interm_inner_points.host.size;
+    thrust::device_ptr<int> input_begin  = thrust::device_pointer_cast( _interm_inner_points.dev.ptr );
+    thrust::device_ptr<int> input_end    = input_begin + sz;
+    thrust::device_ptr<int> output_begin = thrust::device_pointer_cast( _inner_points.dev.ptr );
+    thrust::device_ptr<int> output_end;
+
+    NumVotersIsGreaterEqual select_op( _voters.dev );
+
+    output_end = thrust::copy_if( input_begin, input_end, output_begin, select_op );
+
+    sz = output_end - output_begin;
+
+    POP_CUDA_SYNC( _stream );
+    _meta.toDevice( List_size_inner_points, sz, _stream );
+    _inner_points.host.size = sz;
+
+    return true;
+}
+#else // not CUDA_VERSION >= 8000
 
 #ifdef USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 
@@ -162,6 +197,7 @@ bool Frame::applyVoteIf( )
     return true;
 }
 #endif // not USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
+#endif // not CUDA_VERSION >= 8000
 
 } // namespace cctag
 

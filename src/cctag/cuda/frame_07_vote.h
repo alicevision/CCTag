@@ -7,9 +7,15 @@
  */
 #pragma once
 
+#include <cuda.h>
+
 #include <cuda_runtime.h>
 #include <opencv2/core/cuda_types.hpp>
+
+#if CUDA_VERSION >= 8000
+#else
 #include <cub/cub.cuh>
+#endif
 
 #include "onoff.h"
 

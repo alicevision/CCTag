@@ -5,14 +5,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include "onoff.h"
+#include <cuda.h>
 
+#ifndef CUDA_VERSION
+#error need a CUDA_VERSION string
+#endif
+
+#if CUDA_VERSION < 8000
+
+#include "onoff.h"
 #ifdef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 
+#include <cuda_runtime.h>
 #include <iostream>
 #include <algorithm>
 #include <limits>
-#include <cuda_runtime.h>
 #include <cub/cub.cuh>
 #include <stdio.h>
 #include "debug_macros.hpp"
@@ -175,4 +182,6 @@ bool Frame::applyVoteSortUniq( )
 #else // not USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 // other file
 #endif // not USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
+
+#endif // CUDA_VERSION < 8000
 
