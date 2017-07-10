@@ -65,10 +65,12 @@ else()
   target_link_libraries(detection PUBLIC CCTag::CCTag ${TBB_tbb_LIBRARY_RELEASE} ${OpenCV_LIBS} ${Boost_LIBRARIES})
 endif()
 
-
 add_executable(regression ${CCTagRegression_cpp})
 target_include_directories(regression PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(regression PUBLIC CCTag::CCTag ${OpenCV_LIBS} ${Boost_LIBRARIES} ) 
 
+add_executable(simulation ${CCTagSimulation_cpp})
+target_include_directories(simulation PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(simulation PUBLIC ${OpenCV_LIBS})
 
-install(TARGETS detection regression DESTINATION bin)
+install(TARGETS detection regression simulation DESTINATION bin)
