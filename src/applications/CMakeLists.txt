@@ -55,7 +55,7 @@ get_target_property(testprop CCTag::CCTag INTERFACE_INCLUDE_DIRECTORIES )
 set(CCTagDetect_cpp ./detection/main.cpp ./detection/CmdLine.cpp)
 add_executable(detection ${CCTagDetect_cpp})
 
-find_package(DevIL REQUIRED COMPONENTS IL ILU) # yields IL_FOUND, IL_LIBRARIES, IL_INCLUDE_DIR
+find_package(DevIL COMPONENTS IL ILU) # yields IL_FOUND, IL_LIBRARIES, IL_INCLUDE_DIR
 
 if(IL_FOUND OR DevIL_FOUND)
   message(STATUS "DevIL found")
