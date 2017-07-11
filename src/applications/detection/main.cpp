@@ -321,7 +321,8 @@ int main(int argc, char** argv)
       std::cerr << "Could not load image " << cmdline._filename << std::endl;
       return 0;
     }
-    if( img.Convert( IL_LUMINANCE ) == false ) {
+    if( img.Convert( IL_LUMINANCE ) == false )
+    {
       std::cerr << "Failed converting image " << cmdline._filename << " to unsigned greyscale image" << std::endl;
       exit( -1 );
     }
