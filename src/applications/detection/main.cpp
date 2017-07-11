@@ -316,7 +316,8 @@ int main(int argc, char** argv)
     std::cout << "******************* Image mode **********************" << std::endl;
     POP_INFO("looking at image " << myPath.string());
     ilImage img;
-    if( img.Load( cmdline._filename.c_str() ) == false ) {
+    if( img.Load( cmdline._filename.c_str() ) == false )
+    {
       std::cerr << "Could not load image " << cmdline._filename << std::endl;
       return 0;
     }
