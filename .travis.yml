@@ -134,18 +134,18 @@ before_script:
   # https://software.intel.com/en-us/forums/intel-threading-building-blocks/topic/431422
   - sudo sed -i '345s/.*/\#if \(__GNUC__==4 \&\& __GNUC_MINOR__>=4 \&\& __GXX_EXPERIMENTAL_CXX0X__\) || __clang_major__ >= 3/' /usr/include/tbb/pipeline.h
   # Create build folder
-  - mkdir $CCTAG_BUILD
+  - mkdir --parent $CCTAG_BUILD
   - cd $CCTAG_BUILD
   # Classic release build
   - >
      cmake \
        -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
        -DCMAKE_C_COMPILER=$C_COMPILER \
-       -DCMAKE_INSTALL_PREFIX=$CCTAG_INSTALL \
-       -DWITH_CUDA=$WITH_CUDA \
-       -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-       -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
-       -DEigen_INCLUDE_DIR_HINTS=$EIGEN_INSTALL \
+       -DCMAKE_INSTALL_PREFIX:PATH=$CCTAG_INSTALL \
+       -DWITH_CUDA:BOOL=$WITH_CUDA \
+       -DCMAKE_BUILD_TYPE:BOOL=$BUILD_TYPE \
+       -DOpenCV_DIR:PATH=$OPENCV_INSTALL/share/OpenCV \
+       -DEigen_INCLUDE_DIR_HINTS:PATH=$EIGEN_INSTALL \
        . $CCTAG_SOURCE
 
 script:
@@ -159,9 +159,9 @@ script:
   - >
      cmake -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
        -DCMAKE_C_COMPILER=$C_COMPILER \
-       -DCCTag_DIR=/$CCTAG_INSTALL/lib/cmake/CCTag/ \
-       -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
-       -DCMAKE_INSTALL_PREFIX=`pwd`/install \
+       -DCCTag_DIR:PATH=/$CCTAG_INSTALL/lib/cmake/CCTag/ \
+       -DOpenCV_DIR:PATH=$OPENCV_INSTALL/share/OpenCV \
+       -DCMAKE_INSTALL_PREFIX:PATH=`pwd`/install \
        . $CCTAG_SOURCE_APP
   - make install -j 2 VERBOSE=1
 
