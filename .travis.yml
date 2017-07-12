@@ -49,6 +49,8 @@ env:
     - CCTAG_SOURCE=${TRAVIS_BUILD_DIR}
     - CCTAG_BUILD=${TRAVIS_BUILD_DIR}/build
     - CCTAG_INSTALL=${CCTAG_BUILD}/install
+    - CCTAG_BUILD_VARIANT=${TRAVIS_BUILD_DIR}/build
+    - CCTAG_INSTALL_VARIANT=${CCTAG_BUILD_VARIANT}/install
     - CCTAG_SOURCE_APP=$CCTAG_SOURCE/src/applications
     - CCTAG_BUILD_APP=${CCTAG_SOURCE_APP}/build
     # OPENCV
@@ -164,6 +166,26 @@ script:
        -DCMAKE_INSTALL_PREFIX:PATH=`pwd`/install \
        . $CCTAG_SOURCE_APP
   - make install -j 2 VERBOSE=1
+
+  # For builds without cuda test also another variant with
+  # VISUAL_DEBUG and CCTAG_SERIALIZE
+  - >
+     if [ "${WITH_CUDA}" = "OFF" ]; then
+        mkdir --parent $CCTAG_BUILD_VARIANT
+        cd $CCTAG_BUILD_VARIANT
+        cmake \
+         -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
+         -DCMAKE_C_COMPILER=$C_COMPILER \
+         -DCMAKE_INSTALL_PREFIX:PATH=$CCTAG_INSTALL_VARIANT \
+         -DWITH_CUDA:BOOL=$WITH_CUDA \
+         -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+         -DVISUAL_DEBUG:BOOL=ON \
+         -DCCTAG_SERIALIZE:BOOL=ON \
+         -DOpenCV_DIR:PATH=$OPENCV_INSTALL/share/OpenCV \
+         -DEigen_INCLUDE_DIR_HINTS:PATH=$EIGEN_INSTALL \
+         . $CCTAG_SOURCE
+        make install -j 2 VERBOSE=1
+     fi
 
 after_success:
   - du -hs $OPENCV_INSTALL
