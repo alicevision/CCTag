@@ -10,6 +10,7 @@ addons:
     packages:
       - g++-4.8
       - clang-3.8
+      - libeigen3-dev
       - libpng-dev
       - libjpeg8-dev
       - libtiff4-dev
@@ -59,8 +60,6 @@ env:
     - OPENCV_CONTRIB=${OPENCV_ROOT}/contrib
     - OPENCV_BUILD=${OPENCV_ROOT}/build
     - OPENCV_INSTALL=${OPENCV_ROOT}/install
-    # EIGEN
-    - EIGEN_INSTALL=${HOME}/eigen
     # CMAKE
     - CMAKE_URL="https://cmake.org/files/v3.6/cmake-3.6.1-Linux-x86_64.tar.gz"
     - CMAKE_ROOT=${HOME}/cmake
@@ -78,14 +77,6 @@ before_install:
       mkdir --parent $OPENCV_BUILD
       mkdir --parent $OPENCV_INSTALL
       git clone --recursive --branch 3.0.0 --depth 1 https://github.com/Itseez/opencv.git $OPENCV_SOURCE;
-    fi
- # EIGEN
- - >
-    if [ "$(ls -A $EIGEN_INSTALL)" ]; then
-      echo "Eigen found in cache.";
-    else
-      mkdir --parent $EIGEN_INSTALL
-      hg clone -r 3.2.8 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL;
     fi
  # CMAKE most recent version
  - >
@@ -147,7 +138,6 @@ before_script:
        -DWITH_CUDA:BOOL=$WITH_CUDA \
        -DCMAKE_BUILD_TYPE:BOOL=$BUILD_TYPE \
        -DOpenCV_DIR:PATH=$OPENCV_INSTALL/share/OpenCV \
-       -DEigen_INCLUDE_DIR_HINTS:PATH=$EIGEN_INSTALL \
        . $CCTAG_SOURCE
 
 script:
@@ -182,7 +172,6 @@ script:
          -DVISUAL_DEBUG:BOOL=ON \
          -DCCTAG_SERIALIZE:BOOL=ON \
          -DOpenCV_DIR:PATH=$OPENCV_INSTALL/share/OpenCV \
-         -DEigen_INCLUDE_DIR_HINTS:PATH=$EIGEN_INSTALL \
          . $CCTAG_SOURCE
         make install -j 2 VERBOSE=1
      fi
@@ -193,5 +182,4 @@ after_success:
 cache:
   directories:
     - $OPENCV_INSTALL
-    - $EIGEN_INSTALL
     - $CMAKE_INSTALL

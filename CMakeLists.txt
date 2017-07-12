@@ -42,7 +42,7 @@ endif()
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  
+
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall ")
 
 # set the path where we can find the findXXX.cmake
@@ -50,7 +50,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   # -Wno-c++11-narrowing to solve "non-type template argument evaluates to -1" error in boost::gil
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-extensions -Wno-c++11-narrowing")
+  # -Wno-deprecated-register to avoid the noise of some older eigen versions
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-extensions -Wno-c++11-narrowing -Wno-deprecated-register")
 endif()
 
 if(APPLE)
@@ -76,7 +77,7 @@ if(WITH_CUDA)
   message( STATUS "Try finding CUDA" )
   find_package(CUDA 7.0 REQUIRED)
   set(CUDA_SEPARABLE_COMPILATION ON)
-  
+
   # The following if should not be necessary, but apparently there is a bug in FindCUDA.cmake that
   # generate an empty string in the nvcc command line causing the compilation to fail.
   # see https://gitlab.kitware.com/cmake/cmake/issues/16411
@@ -95,13 +96,13 @@ if(WITH_CUDA)
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_50,code=sm_50")
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_52,code=sm_52")
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=compute_52")
-  
+
   if(NOT CUDA_VERSION VERSION_LESS 8.0) # cuda >= 8.0
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_60,code=sm_60")
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_61,code=sm_61")
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_62,code=sm_62")
   endif()
-  
+
   if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
   endif()
@@ -134,5 +135,4 @@ CONFIGURE_FILE(
   "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake"
   IMMEDIATE @ONLY)
 ADD_CUSTOM_TARGET(uninstall
-  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake") 
-
+  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake")
