@@ -1,4 +1,4 @@
-
+dist: trusty
 language: cpp
 sudo: required
 
@@ -6,27 +6,39 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - llvm-toolchain-precise-3.7
+      - llvm-toolchain-precise
     packages:
       - g++-4.8
-      - clang-3.7
+      - clang-3.8
       - libpng-dev
       - libjpeg8-dev
       - libtiff4-dev
       - libtbb-dev
       - libatlas-base-dev
+      - libboost-atomic1.55-dev
+      - libboost-chrono1.55-dev
+      - libboost-filesystem1.55-dev
+      - libboost-date-time1.55-dev
+      - libboost-program-options1.55-dev
+      - libboost-serialization1.55-dev
+      - libboost-system1.55-dev
+      - libboost-thread1.55-dev
+      - libboost-timer1.55-dev
 
 matrix:
   include:
     - compiler: gcc
-      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc VISUAL_DEBUG=ON CCTAG_SERIALIZE=ON WITH_CUDA=ON
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc WITH_CUDA=ON CUDA_VERSION_MAJOR="7" CUDA_VERSION_MINOR="0" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}-28" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
     - compiler: gcc
-      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc VISUAL_DEBUG=OFF CCTAG_SERIALIZE=ON WITH_CUDA=OFF
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc WITH_CUDA=ON CUDA_VERSION_MAJOR="7" CUDA_VERSION_MINOR="5" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}-18" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
     - compiler: gcc
-      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc VISUAL_DEBUG=OFF CCTAG_SERIALIZE=OFF WITH_CUDA=ON
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc WITH_CUDA=ON CUDA_VERSION_MAJOR="8" CUDA_VERSION_MINOR="0" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}.61-1" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
+    - compiler: gcc
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc WITH_CUDA=OFF
     - compiler: clang
-      # clang is not supported in cuda 7.0
-      env: CXX_COMPILER=clang++-3.7 C_COMPILER=clang-3.7 TOOLSET=clang VISUAL_DEBUG=ON CCTAG_SERIALIZE=ON WITH_CUDA=OFF
+      # clang 3.8 is  supported in cuda >= 8.0
+      env: CXX_COMPILER=clang++-3.8 C_COMPILER=clang-3.8 TOOLSET=clang WITH_CUDA=OFF CUDA_VERSION_MAJOR="8" CUDA_VERSION_MINOR="0" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}.61-1" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
+
 
 env:
   global:
@@ -48,9 +60,9 @@ env:
     # EIGEN
     - EIGEN_INSTALL=${HOME}/eigen
     # BOOST
-    - BOOST_ROOT=${HOME}/boost
-    - BOOST_SOURCE=${BOOST_ROOT}/source
-    - BOOST_INSTALL=${BOOST_ROOT}/install
+    # - BOOST_ROOT=${HOME}/boost
+    # - BOOST_SOURCE=${BOOST_ROOT}/source
+    # - BOOST_INSTALL=${BOOST_ROOT}/install
     # CMAKE
     - CMAKE_URL="https://cmake.org/files/v3.6/cmake-3.6.1-Linux-x86_64.tar.gz"
     - CMAKE_ROOT=${HOME}/cmake
@@ -76,18 +88,18 @@ before_install:
     else
       mkdir --parent $EIGEN_INSTALL
       hg clone -r 3.2.8 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL;
-    fi 
+    fi
  # BOOST
- - >
-    if [ "$(ls -A $BOOST_INSTALL)" ]; then
-      echo "Boost found in cache.";
-    else
-      mkdir --parent $BOOST_SOURCE
-      mkdir --parent $BOOST_INSTALL
-      travis_retry wget https://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz;
-      tar -xf boost_1_58_0.tar.gz;
-      cp -r boost_1_58_0/* $BOOST_SOURCE;
-    fi 
+ # - >
+ #    if [ "$(ls -A $BOOST_INSTALL)" ]; then
+ #      echo "Boost found in cache.";
+ #    else
+ #      mkdir --parent $BOOST_SOURCE
+ #      mkdir --parent $BOOST_INSTALL
+ #      travis_retry wget https://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz;
+ #      tar -xf boost_1_58_0.tar.gz;
+ #      cp -r boost_1_58_0/* $BOOST_SOURCE;
+ #    fi
  # CMAKE most recent version
  - >
     if [ "$(ls -A ${CMAKE_INSTALL})" ]; then
@@ -108,15 +120,13 @@ install:
   # CUDA (only if needed)
   - >
      if [ "${WITH_CUDA}" = "ON" ]; then
-       CUDA_REPO_PKG=cuda-repo-ubuntu1404_7.0-28_amd64.deb;
-       travis_retry wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/$CUDA_REPO_PKG
-       sudo dpkg -i $CUDA_REPO_PKG;
-       rm $CUDA_REPO_PKG;
-       sudo apt-get -y update;
-       CUDA_PKG_VERSION="7-0";
-       CUDA_VERSION="7.0";
+       CUDA_REPO_PKG=cuda-repo-ubuntu1404_${CUDA_PKG_LONGVERSION}_amd64.deb
+       wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/$CUDA_REPO_PKG
+       sudo dpkg -i $CUDA_REPO_PKG
+       rm $CUDA_REPO_PKG
+       sudo apt-get -y update
        sudo apt-get install -y --no-install-recommends  cuda-core-$CUDA_PKG_VERSION  cuda-cudart-dev-$CUDA_PKG_VERSION  cuda-cublas-dev-$CUDA_PKG_VERSION cuda-curand-dev-$CUDA_PKG_VERSION
-       sudo ln -s /usr/local/cuda-$CUDA_VERSION /usr/local/cuda;
+       sudo ln -s /usr/local/cuda-${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} /usr/local/cuda
      fi
   # OPENCV
   - >
@@ -134,14 +144,16 @@ install:
        make install;
      fi
   # BOOST
-  - >
-     if [ ! "$(ls -A $BOOST_INSTALL)" ]; then
-       cd $BOOST_SOURCE
-       ./bootstrap.sh --with-toolset=${TOOLSET} --with-libraries=date_time,chrono,thread,serialization,system,filesystem,atomic,program_options,timer --prefix=$BOOST_INSTALL;
-       ./b2 link=shared install > null;
-     fi
+  # - >
+  #    if [ ! "$(ls -A $BOOST_INSTALL)" ]; then
+  #      cd $BOOST_SOURCE
+  #      ./bootstrap.sh --with-toolset=${TOOLSET} --with-libraries=date_time,chrono,thread,serialization,system,filesystem,atomic,program_options,timer --prefix=$BOOST_INSTALL;
+  #      ./b2 link=shared install > null;
+  #    fi
 
 before_script:
+  # patch tbb
+  - sudo sed -i '345s/.*/\#if \(__GNUC__==4 \&\& __GNUC_MINOR__>=4 \&\& __GXX_EXPERIMENTAL_CXX0X__\) || __clang_major__ >= 3/' /usr/include/tbb/pipeline.h
   # Create build folder
   - mkdir $CCTAG_BUILD
   - cd $CCTAG_BUILD
@@ -155,16 +167,11 @@ before_script:
        -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
        -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
        -DEigen_INCLUDE_DIR_HINTS=$EIGEN_INSTALL \
-       -DBOOST_ROOT=$BOOST_INSTALL \
-       -DVISUAL_DEBUG=$VISUAL_DEBUG \
-       -DCCTAG_SERIALIZE=$CCTAG_SERIALIZE \
        . $CCTAG_SOURCE
 
 script:
-# limit GCC builds to a reduced number of thread for the virtual machine
+  # classic make install
   - make install -j 2 VERBOSE=1
-# Perform unit tests
-  # - make test
 
   # Test if it compiles as third party
   - cd $CCTAG_SOURCE_APP
@@ -175,7 +182,6 @@ script:
        -DCMAKE_C_COMPILER=$C_COMPILER \
        -DCCTag_DIR=/$CCTAG_INSTALL/lib/cmake/CCTag/ \
        -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
-       -DBOOST_ROOT=$BOOST_INSTALL \
        -DCMAKE_INSTALL_PREFIX=`pwd`/install \
        . $CCTAG_SOURCE_APP
   - make install -j 2 VERBOSE=1
@@ -186,6 +192,5 @@ after_success:
 cache:
   directories:
     - $OPENCV_INSTALL
-    - $BOOST_INSTALL
     - $EIGEN_INSTALL
     - $CMAKE_INSTALL
