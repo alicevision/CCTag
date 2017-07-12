@@ -59,10 +59,6 @@ env:
     - OPENCV_INSTALL=${OPENCV_ROOT}/install
     # EIGEN
     - EIGEN_INSTALL=${HOME}/eigen
-    # BOOST
-    # - BOOST_ROOT=${HOME}/boost
-    # - BOOST_SOURCE=${BOOST_ROOT}/source
-    # - BOOST_INSTALL=${BOOST_ROOT}/install
     # CMAKE
     - CMAKE_URL="https://cmake.org/files/v3.6/cmake-3.6.1-Linux-x86_64.tar.gz"
     - CMAKE_ROOT=${HOME}/cmake
@@ -89,17 +85,6 @@ before_install:
       mkdir --parent $EIGEN_INSTALL
       hg clone -r 3.2.8 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL;
     fi
- # BOOST
- # - >
- #    if [ "$(ls -A $BOOST_INSTALL)" ]; then
- #      echo "Boost found in cache.";
- #    else
- #      mkdir --parent $BOOST_SOURCE
- #      mkdir --parent $BOOST_INSTALL
- #      travis_retry wget https://sourceforge.net/projects/boost/files/boost/1.58.0/boost_1_58_0.tar.gz;
- #      tar -xf boost_1_58_0.tar.gz;
- #      cp -r boost_1_58_0/* $BOOST_SOURCE;
- #    fi
  # CMAKE most recent version
  - >
     if [ "$(ls -A ${CMAKE_INSTALL})" ]; then
@@ -143,16 +128,10 @@ install:
        make -j 2 > null;
        make install;
      fi
-  # BOOST
-  # - >
-  #    if [ ! "$(ls -A $BOOST_INSTALL)" ]; then
-  #      cd $BOOST_SOURCE
-  #      ./bootstrap.sh --with-toolset=${TOOLSET} --with-libraries=date_time,chrono,thread,serialization,system,filesystem,atomic,program_options,timer --prefix=$BOOST_INSTALL;
-  #      ./b2 link=shared install > null;
-  #    fi
 
 before_script:
   # patch tbb
+  # https://software.intel.com/en-us/forums/intel-threading-building-blocks/topic/431422
   - sudo sed -i '345s/.*/\#if \(__GNUC__==4 \&\& __GNUC_MINOR__>=4 \&\& __GXX_EXPERIMENTAL_CXX0X__\) || __clang_major__ >= 3/' /usr/include/tbb/pipeline.h
   # Create build folder
   - mkdir $CCTAG_BUILD
