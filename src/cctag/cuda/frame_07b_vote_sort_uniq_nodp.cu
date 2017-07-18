@@ -5,10 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+#include <cuda.h>
+
+#ifndef CUDA_VERSION
+#error need a CUDA_VERSION string
+#endif
+
+#if CUDA_VERSION < 8000
+
 #include "onoff.h"
 
-#include <limits>
 #include <cuda_runtime.h>
+#include <limits>
 #include <cub/cub.cuh>
 #include "debug_macros.hpp"
 
@@ -184,4 +192,6 @@ bool Frame::applyVoteSortUniq( )
 #endif // USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 
 } // namespace cctag
+
+#endif // CUDA_VERSION < 8000
 

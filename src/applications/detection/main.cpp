@@ -32,6 +32,10 @@
 #include <opencv2/core/core.hpp>
 #include "opencv2/opencv.hpp"
 
+#ifdef USE_DEVIL
+#include <devil_cpp_wrapper.hpp>
+#endif
+
 #include <sstream>
 #include <iostream>
 #include <string>
@@ -297,6 +301,48 @@ int main(int argc, char** argv)
   std::ofstream outputFile;
   outputFile.open(outputFileName);
 
+#if USE_DEVIL
+  if( (ext == ".bmp") ||
+      (ext == ".gif") ||
+      (ext == ".jpg") ||
+      (ext == ".lbm") ||
+      (ext == ".pbm") ||
+      (ext == ".pgm") ||
+      (ext == ".png") ||
+      (ext == ".ppm") ||
+      (ext == ".tga") ||
+      (ext == ".tif") )
+  {
+    std::cout << "******************* Image mode **********************" << std::endl;
+    POP_INFO("looking at image " << myPath.string());
+    ilImage img;
+    if( img.Load( cmdline._filename.c_str() ) == false )
+    {
+      std::cerr << "Could not load image " << cmdline._filename << std::endl;
+      return 0;
+    }
+    if( img.Convert( IL_LUMINANCE ) == false )
+    {
+      std::cerr << "Failed converting image " << cmdline._filename << " to unsigned greyscale image" << std::endl;
+      exit( -1 );
+    }
+    int w = img.Width();
+    int h = img.Height();
+    std::cout << "Loading " << w << " x " << h << " image " << cmdline._filename << std::endl;
+    unsigned char* image_data = img.GetData();
+    cv::Mat graySrc = cv::Mat( h, w, CV_8U, image_data );
+
+    imwrite( "ballo.jpg", graySrc );
+
+    const int pipeId = 0;
+    boost::ptr_list<CCTag> markers;
+#ifdef PRINT_TO_CERR
+    detection(0, pipeId, graySrc, params, bank, markers, std::cerr, myPath.stem().string());
+#else // PRINT_TO_CERR
+    detection(0, pipeId, graySrc, params, bank, markers, outputFile, myPath.stem().string());
+#endif // PRINT_TO_CERR
+  }
+#else // USE_DEVIL
   if((ext == ".png") || (ext == ".jpg"))
   {
 
@@ -313,10 +359,11 @@ int main(int argc, char** argv)
     boost::ptr_list<CCTag> markers;
 #ifdef PRINT_TO_CERR
     detection(0, pipeId, graySrc, params, bank, markers, std::cerr, myPath.stem().string());
-#else
+#else // PRINT_TO_CERR
     detection(0, pipeId, graySrc, params, bank, markers, outputFile, myPath.stem().string());
-#endif
+#endif // PRINT_TO_CERR
   }
+#endif // USE_DEVIL
   else if(ext == ".avi" || ext == ".mov" || useCamera)
   {
     CCTAG_COUT("*** Video mode ***");
@@ -448,6 +495,7 @@ int main(int argc, char** argv)
   }
   else
   {
+    std::cerr << "The input file format is not supported" << std::endl;
     throw std::logic_error("Unrecognized input.");
   }
   outputFile.close();

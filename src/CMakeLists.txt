@@ -60,6 +60,7 @@ if(WITH_CUDA)
         ./cctag/cuda/frame_07a_vote_line.cu
         ./cctag/cuda/frame_07b_vote_sort_uniq_dp.cu
         ./cctag/cuda/frame_07b_vote_sort_uniq_nodp.cu
+        ./cctag/cuda/frame_07b_vote_sort_uniq_thrust.cu
         ./cctag/cuda/frame_07c_eval.cu
         ./cctag/cuda/frame_07d_vote_if.cu
         ./cctag/cuda/frame_07e_download.cu
@@ -95,8 +96,11 @@ if(WITH_CUDA)
   # this must go before CUDA_ADD_LIBRARY otherwise we won't be able to add it
   # after
   # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA.cmake#L147
+  # INCLUDE_DIRECTORIES -- "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>" 
   include_directories(${CMAKE_CURRENT_LIST_DIR}
-                      ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR} ${TBB_INCLUDE_DIRS}
+                      ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
+		      ${TBB_INCLUDE_DIRS}
+                      "${CMAKE_SOURCE_DIR}/src"
                       "${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
  
   CUDA_ADD_LIBRARY( CCTag STATIC ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
