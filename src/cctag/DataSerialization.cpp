@@ -13,7 +13,7 @@ void serializeRadiusRatios(boost::archive::text_oarchive & ar, const std::vector
     const int sizeRadiusRatios = radiusRatios.size();
     ar & BOOST_SERIALIZATION_NVP(sizeRadiusRatios);
 
-    BOOST_FOREACH(const float & ratio, radiusRatios) {
+    for(const float & ratio : radiusRatios) {
         ar & BOOST_SERIALIZATION_NVP(ratio);
     }
 }
@@ -24,7 +24,7 @@ void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet) {
 
     typedef std::pair< MarkerID, float > IdPair;
 
-    BOOST_FOREACH(const IdPair & idPair, idSet) {
+    for(const IdPair & idPair : idSet) {
         ar & BOOST_SERIALIZATION_NVP(idPair.first);
         ar & BOOST_SERIALIZATION_NVP(idPair.second);
     }
@@ -62,7 +62,7 @@ void serializeVecPoint(boost::archive::text_oarchive & ar, const std::vector< Di
     const int sizePoints = points.size();
     ar & BOOST_SERIALIZATION_NVP(sizePoints);
 
-    BOOST_FOREACH(const DirectedPoint2d<Eigen::Vector3f> & point, points) {
+    for(const DirectedPoint2d<Eigen::Vector3f> & point : points) {
         serializePoint(ar, point);
     }
 }
@@ -71,7 +71,7 @@ void serializePoints(boost::archive::text_oarchive & ar, const std::vector< std:
     const int sizePoints = points.size();
     ar & BOOST_SERIALIZATION_NVP(sizePoints);
 
-    BOOST_FOREACH(const std::vector< DirectedPoint2d<Eigen::Vector3f> > & subPoints, points) {
+    for(const std::vector< DirectedPoint2d<Eigen::Vector3f> > & subPoints : points) {
         serializeVecPoint(ar, subPoints);
     }
 }
@@ -84,7 +84,7 @@ void serializeEllipses(boost::archive::text_oarchive & ar, const std::vector<cct
     const int sizeEllipses = ellipses.size();
     ar & BOOST_SERIALIZATION_NVP(sizeEllipses);
 
-    BOOST_FOREACH(const cctag::numerical::geometry::Ellipse & ellipse, ellipses) {
+    for(const cctag::numerical::geometry::Ellipse & ellipse : ellipses) {
         serializeEllipse(ar, ellipse);
     }
 }
@@ -107,7 +107,7 @@ void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowC
     const std::size_t sizeOuterEllipsePoints = outerEllipsePoints.size();
     ar & BOOST_SERIALIZATION_NVP(sizeOuterEllipsePoints);
 
-    BOOST_FOREACH(const EdgePoint & e, outerEllipsePoints) {
+    for(const EdgePoint & e : outerEllipsePoints) {
         serializeEdgePoint(ar, e);
     }
 
@@ -116,9 +116,9 @@ void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowC
     const std::size_t sizeFilteredChildrens = flowComponent._filteredFieldLines.size();
     ar & BOOST_SERIALIZATION_NVP(sizeFilteredChildrens);
 
-    BOOST_FOREACH(const std::vector<EdgePoint> & fL, flowComponent._filteredFieldLines) {
+    for(const std::vector<EdgePoint> & fL : flowComponent._filteredFieldLines) {
 
-        BOOST_FOREACH(const EdgePoint & e, fL) {
+        for(const EdgePoint & e : fL) {
             serializeEdgePoint(ar, e);
         }
     }
@@ -126,9 +126,9 @@ void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowC
     const std::size_t sizeChildrens = flowComponent._fieldLines.size();
     ar & BOOST_SERIALIZATION_NVP(sizeChildrens);
 
-    BOOST_FOREACH(const std::vector<EdgePoint> & fL, flowComponent._fieldLines) {
+    for(const std::vector<EdgePoint> & fL : flowComponent._fieldLines) {
 
-        BOOST_FOREACH(const EdgePoint & e, fL) {
+        for(const EdgePoint & e : fL) {
             serializeEdgePoint(ar, e);
         }
     }
@@ -137,7 +137,7 @@ void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowC
     const std::size_t sizeConvexEdgeSegment = convexEdgeSegment.size();
     ar & BOOST_SERIALIZATION_NVP(sizeConvexEdgeSegment);
 
-    BOOST_FOREACH(const EdgePoint & e, convexEdgeSegment) {
+    for(const EdgePoint & e : convexEdgeSegment) {
         serializeEdgePoint(ar, e);
     }
 
@@ -149,7 +149,7 @@ void serializeFlowComponents(boost::archive::text_oarchive & ar, const std::vect
     const std::size_t sizeFlowComponents = flowComponents.size();
     ar & BOOST_SERIALIZATION_NVP(sizeFlowComponents);
 
-    BOOST_FOREACH(const CCTagFlowComponent & flowComponent, flowComponents) {
+    for(const CCTagFlowComponent & flowComponent : flowComponents) {
         serializeFlowComponent(ar, flowComponent);
     }
 }

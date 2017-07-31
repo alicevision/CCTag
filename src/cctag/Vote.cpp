@@ -340,7 +340,7 @@ void vote(EdgePointCollection& edgeCollection,
         int n = 0;
         if ((i == maxLength) || (stop == CONVEXITY_LOST)) {
             if (convexEdgeSegment.size() > windowSizeOnInnerEllipticSegment) {
-                BOOST_FOREACH(EdgePoint * collectedP, convexEdgeSegment) {
+                for(EdgePoint * collectedP : convexEdgeSegment) {
                     if (n == convexEdgeSegment.size() - windowSizeOnInnerEllipticSegment) {
                         break;
                     } else {
@@ -511,7 +511,7 @@ void vote(EdgePointCollection& edgeCollection,
             vDistFinal.clear();
             vDistFinal.reserve(childrens.size());
 
-            BOOST_FOREACH(EdgePoint * e, childrens) {
+            for(EdgePoint * e : childrens) {
 
                 float distFinal = 1e300;
 
@@ -663,7 +663,7 @@ void vote(EdgePointCollection& edgeCollection,
                 std::vector<float> vDistFinal;
                 vDistFinal.reserve(outerEllipsePointsTemp.size());
 
-                BOOST_FOREACH(EdgePoint * p, outerEllipsePointsTemp) {
+                for(EdgePoint * p : outerEllipsePointsTemp) {
                     float distFinal = numerical::distancePointEllipse(*p, outerEllipseTemp);
                     vDistFinal.push_back(distFinal);
                 }

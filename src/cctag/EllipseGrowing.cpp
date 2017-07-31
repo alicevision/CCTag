@@ -54,7 +54,7 @@ bool initMarkerCenter(cctag::Point2d<Eigen::Vector3f> & markerCenter,
       {
         numerical::ellipseFitting(innerEllipse, markerPoints[0]);
 
-        BOOST_FOREACH(Point2d<Eigen::Vector3f> pt, markerPoints[0])
+        for(Point2d<Eigen::Vector3f> pt : markerPoints[0])
         {
           CCTagVisualDebug::instance().drawPoint(pt, cctag::color_red);
         }
@@ -92,7 +92,7 @@ bool addCandidateFlowtoCCTag(EdgePointCollection& edgeCollection,
   std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >::reverse_iterator itp = cctagPoints.rbegin();
   itp->reserve(outerEllipsePoints.size());
 
-  BOOST_FOREACH(EdgePoint * e, outerEllipsePoints)
+  for(EdgePoint * e : outerEllipsePoints)
   {
     itp->push_back(DirectedPoint2d<Eigen::Vector3f>(e->x(), e->y(), e->dX(), e->dY()));
   }
@@ -267,7 +267,7 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
 
   float dist;
 
-  BOOST_FOREACH(const EdgePoint * const e, filteredChildrens)
+  for(const EdgePoint * const e : filteredChildrens)
   {
     dist = std::min(
             cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*e), p1),
@@ -415,7 +415,7 @@ void ellipseGrowing2(
   const size_t threadMask = (size_t)1 << runId;
   outerEllipsePoints.reserve(filteredChildrens.size()*3);
 
-  BOOST_FOREACH(EdgePoint * children, filteredChildrens)
+  for(EdgePoint * children : filteredChildrens)
   {
     outerEllipsePoints.push_back(children);
     children->_processed |= threadMask;
@@ -441,7 +441,7 @@ void ellipseGrowing2(
       numerical::geometry::Ellipse qIn, qOut;
       computeHull(ellipse, ellipseGrowingEllipticHullWidth, qIn, qOut);
       lastSizePoints = 0;
-      BOOST_FOREACH(const EdgePoint * point, outerEllipsePoints)
+      for(const EdgePoint * point : outerEllipsePoints)
       {
         if (isInHull(qIn, qOut, point))
         {
@@ -459,7 +459,7 @@ void ellipseGrowing2(
 
       computeHull(ellipse, ellipseGrowingEllipticHullWidth, qIn, qOut);
       newSizePoints = 0;
-      BOOST_FOREACH(const EdgePoint * point, outerEllipsePoints)
+      for(const EdgePoint * point : outerEllipsePoints)
       {
         if (isInHull(qIn, qOut, point))
         {

@@ -89,7 +89,7 @@ void cctagDetection(
   }
   
   markers.clear();
-  BOOST_FOREACH(const cctag::CCTag & cctag, cctags)
+  for(const cctag::CCTag & cctag : cctags)
   {
     markers.push_back(new cctag::CCTag(cctag));
   }

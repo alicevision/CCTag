@@ -180,7 +180,7 @@ void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<Eigen::Vector3f> &
 void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2d<Eigen::Vector3f> > & points, const cctag::Color & color)
 {
 #ifdef CCTAG_SERIALIZE
-  BOOST_FOREACH(const cctag::Point2d<Eigen::Vector3f> & point, points) {
+  for(const cctag::Point2d<Eigen::Vector3f> & point : points) {
       CCTagVisualDebug::instance().drawPoint(point, cctag::color_red);
   }
 #endif
@@ -190,7 +190,7 @@ void CCTagVisualDebug::drawPoints(const std::vector<cctag::Point2d<Eigen::Vector
 void CCTagVisualDebug::drawPoints(const std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > & points, const cctag::Color & color)
 {
 #ifdef CCTAG_SERIALIZE
-  BOOST_FOREACH(const cctag::Point2d<Eigen::Vector3f> & point, points) {
+  for(const cctag::Point2d<Eigen::Vector3f> & point : points) {
       CCTagVisualDebug::instance().drawPoint(cctag::Point2d<Eigen::Vector3f>(point.x(),point.y()), cctag::color_red);
   }
 #endif
@@ -283,7 +283,7 @@ void CCTagVisualDebug::out(const std::string & filename) const {
 
 void CCTagVisualDebug::outPutAllSessions() const {
 #if defined(CCTAG_SERIALIZE) && defined(VISUAL_DEBUG)
-    BOOST_FOREACH(const Sessions::const_iterator::value_type & v, _sessions) {
+    for(const Sessions::const_iterator::value_type & v : _sessions) {
         const std::string filename = _path + "/" + v.first + ".png";
         cv::imwrite(filename, v.second);
     }
@@ -296,7 +296,7 @@ void CCTagVisualDebug::writeLocalizationView(cctag::CCTag::List& markers) const 
     localizationResultFileName << "../localization/" << _imageFileName;
     CCTagVisualDebug::instance().newSession(localizationResultFileName.str());
 
-    BOOST_FOREACH(const cctag::CCTag & marker, markers) {
+    for(const cctag::CCTag & marker : markers) {
         CCTagVisualDebug::instance().drawMarker(marker);
         CCTagVisualDebug::instance().drawInfos(marker);
     }
@@ -310,7 +310,7 @@ void CCTagVisualDebug::writeIdentificationView(cctag::CCTag::List& markers) cons
     identificationResultFileName << "../identification/" << _imageFileName;
     CCTagVisualDebug::instance().newSession(identificationResultFileName.str());
 
-    BOOST_FOREACH(const cctag::CCTag & marker, markers) {
+    for(const cctag::CCTag & marker : markers) {
         CCTagVisualDebug::instance().drawMarker(marker);
         CCTagVisualDebug::instance().drawPoints(marker.rescaledOuterEllipsePoints(), cctag::color_red);
         CCTagVisualDebug::instance().drawInfos(marker);

@@ -29,12 +29,12 @@ CCTagFlowComponent::CCTagFlowComponent(
 
   _outerEllipsePoints.reserve(outerEllipsePoints.size());
 
-  BOOST_FOREACH(const EdgePoint * e, outerEllipsePoints)
+  for(const EdgePoint * e : outerEllipsePoints)
   {
     _outerEllipsePoints.push_back(EdgePoint(*e));
   }
 
-  BOOST_FOREACH(const EdgePoint * e, convexEdgeSegment)
+  for(const EdgePoint * e : convexEdgeSegment)
   {
     _convexEdgeSegment.push_back(EdgePoint(*e));
   }

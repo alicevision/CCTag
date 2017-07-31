@@ -54,7 +54,7 @@ void CCTagFileDebug::outputFlowComponentAssemblingInfos(int status)
 #if defined CCTAG_SERIALIZE && defined DEBUG
     boost::archive::text_oarchive oa(*_sstream);
 
-    BOOST_FOREACH(const int index, _vflowComponentIndex) {
+    for(const int index : _vflowComponentIndex) {
         oa & BOOST_SERIALIZATION_NVP(index);
     }
     oa & BOOST_SERIALIZATION_NVP(status);
@@ -68,7 +68,7 @@ void CCTagFileDebug::outputFlowComponentAssemblingInfos(int status)
 void CCTagFileDebug::printInfos()
 {
     CCTAG_COUT("Print infos");
-    BOOST_FOREACH(const int index, _vflowComponentIndex) {
+    for(const int index : _vflowComponentIndex) {
         CCTAG_COUT_VAR(index);
     }
     CCTAG_COUT_VAR(_isAssembled);

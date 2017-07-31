@@ -335,7 +335,7 @@ public:
 
   void setFlowComponents(const std::vector<Candidate> & candidates, const EdgePointCollection& edgeCollection)
   {
-    BOOST_FOREACH(const Candidate & candidate, candidates)
+    for(const Candidate & candidate : candidates)
     {
       addFlowComponent(candidate, edgeCollection);
     }

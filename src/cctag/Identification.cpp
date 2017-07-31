@@ -1405,7 +1405,7 @@ int identify_step_2(
       int i = 0;
       int iMax = 0;
 
-      BOOST_FOREACH(const std::list<float> & lResult, vScore)
+      for(const std::list<float> & lResult : vScore)
       {
         if (lResult.size() > maxSize)
         {
@@ -1420,7 +1420,7 @@ int identify_step_2(
       assert( vScore.size() > 0 );
       assert( vScore.size() > iMax );
 #endif // GRIFF_DEBUG
-      BOOST_FOREACH(const float & proba, vScore[iMax])
+      for(const float & proba : vScore[iMax])
       {
         score += proba;
       }

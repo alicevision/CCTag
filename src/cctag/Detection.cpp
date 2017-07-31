@@ -158,7 +158,7 @@ static void completeFlowComponent(
     {
       ssize_t nSegmentCommon = -1;
 
-      BOOST_FOREACH(EdgePoint * p, filteredChildrens)
+      for(EdgePoint * p : filteredChildrens)
       {
         if (p->_nSegmentOut != -1)
         {
@@ -181,7 +181,7 @@ static void completeFlowComponent(
         nLabel = nSegmentCommon;
       }
 
-      BOOST_FOREACH(EdgePoint * p, filteredChildrens)
+      for(EdgePoint * p : filteredChildrens)
       {
         p->_nSegmentOut = nLabel;
       }
@@ -205,7 +205,7 @@ static void completeFlowComponent(
 
     float distMax = 0;
 
-    BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
+    for(EdgePoint * p : outerEllipsePoints)
     {
       float distFinal = numerical::distancePointEllipse(*p, outerEllipse);
       vDistFinal.push_back(distFinal);
@@ -304,7 +304,7 @@ static void flowComponentAssembling(
 
   {
     // Search for another segment
-    BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
+    for(const Candidate & anotherCandidate : vCandidateLoopTwo)
     {
       if (&candidate != &anotherCandidate)
       {
@@ -482,7 +482,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
       float distMax = 0;
 
       // TODO@stian: TBB parallel reduction
-      BOOST_FOREACH(EdgePoint * p, outerEllipsePoints)
+      for(EdgePoint * p : outerEllipsePoints)
       {
         float distFinal = numerical::distancePointEllipse(*p, outerEllipse);
         resSquare += distFinal; //*distFinal;
@@ -501,7 +501,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
 
       bool isValid = true;
 
-      BOOST_FOREACH(const EdgePoint * p, outerEllipsePoints)
+      for(const EdgePoint * p : outerEllipsePoints)
       {
         if (!isInHull(qIn, qOut, p))
         {
@@ -523,7 +523,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
       float quality2 = 0;
 
       // todo@Lilian: no longer used ?
-      BOOST_FOREACH(const EdgePoint* p, outerEllipsePoints)
+      for(const EdgePoint* p : outerEllipsePoints)
       {
         quality2 += p->normGradient();
       }
@@ -658,7 +658,7 @@ void cctagDetectionFromEdges(
   DO_TALK(
     CCTAG_COUT_VAR_DEBUG(vCandidateLoopTwo.size());
     CCTAG_COUT_DEBUG("================= List of seeds =================");
-    BOOST_FOREACH(const Candidate & anotherCandidate, vCandidateLoopTwo)
+    for(const Candidate & anotherCandidate : vCandidateLoopTwo)
     {
       CCTAG_COUT_DEBUG("X = [ " << anotherCandidate._seed->x() << " , " << anotherCandidate._seed->y() << "]");
     }
@@ -994,7 +994,7 @@ void cctagDetection(
     CCTagVisualDebug::instance().writeIdentificationView(markers);
     CCTagFileDebug::instance().newSession("identification.txt");
 
-    BOOST_FOREACH(const CCTag & marker, markers)
+    for(const CCTag & marker : markers)
     {
         CCTagFileDebug::instance().outputMarkerInfos(marker);
     }
