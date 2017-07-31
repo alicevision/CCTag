@@ -79,7 +79,7 @@ bool CmdLine::parse( int argc, char* argv[] )
       default : break;
     }
   }
-  return ( has_i & has_n );
+  return ( has_i && has_n );
 }
 
 void CmdLine::print( const char* const argv0 )
