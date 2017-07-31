@@ -12,7 +12,7 @@ namespace logtime {
 
 bool Mgmt::Measurement::doPrint( ) const
 {
-    return ( _probe != 0 );
+    return ( _probe != nullptr );
 }
 
 void Mgmt::Measurement::print( std::ostream& ostr ) const

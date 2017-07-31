@@ -23,11 +23,11 @@ Level::Level( std::size_t width, std::size_t height, int level, bool cuda_alloca
     , _rows( height )
 {
     if( _cuda_allocates ) {
-        _src   = 0;
-        _dx    = 0;
-        _dy    = 0;
-        _mag   = 0;
-        _edges = 0;
+        _src   = nullptr;
+        _dx    = nullptr;
+        _dy    = nullptr;
+        _mag   = nullptr;
+        _edges = nullptr;
     } else {
         // Allocation
         _src   = new cv::Mat(height, width, CV_8UC1);

@@ -1345,7 +1345,7 @@ int identify_step_2(
 #ifdef WITH_CUDA
                         cctag.getNearbyPointBuffer(),
 #else
-                        0,
+                        nullptr,
 #endif
                         residual
                         );

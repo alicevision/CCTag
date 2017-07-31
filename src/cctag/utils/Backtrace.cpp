@@ -79,14 +79,14 @@ namespace boost {
             std::ostringstream res;
             res.imbue(std::locale::classic());
             res << ptr<<": ";
-            Dl_info info = {0};
+            Dl_info info = {nullptr};
             if(dladdr(ptr,&info) == 0) {
                 res << "???";
             }
             else {
                 if(info.dli_sname) {
                     int status = 0;
-                    char *demangled = abi::__cxa_demangle(info.dli_sname,0,0,&status);
+                    char *demangled = abi::__cxa_demangle(info.dli_sname,nullptr,nullptr,&status);
                     if(demangled) {
                         res << demangled;
                         free(demangled);

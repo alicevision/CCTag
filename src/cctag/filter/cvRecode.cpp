@@ -59,7 +59,7 @@ void cvRecodedCanny(
   
   boost::timer t;  
   std::vector<uchar*> stack;
-  uchar** stack_top = 0, ** stack_bottom = 0;
+  uchar** stack_top = nullptr, ** stack_bottom = nullptr;
   
   CvSize size;
   int flags = aperture_size;
@@ -374,8 +374,8 @@ void cvRecodedCanny(
 #else // USE_INTEGER_REP
   std::vector<float> mag_collect;
 #endif // USE_INTEGER_REP
-  std::ofstream* mag_img_file  = 0;
-  std::ofstream* hyst_img_file = 0;
+  std::ofstream* mag_img_file  = nullptr;
+  std::ofstream* hyst_img_file = nullptr;
 
 #ifdef WITH_CUDE
   if( params->_debugDir == "" ) {

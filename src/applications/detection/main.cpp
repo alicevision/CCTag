@@ -128,7 +128,7 @@ void detection(std::size_t frameId,
   CCTagVisualDebug::instance().setImageFileName(debugFileName);
   CCTagFileDebug::instance().setPath(CCTagVisualDebug::instance().getPath());
 
-  static cctag::logtime::Mgmt* durations = 0;
+  static cctag::logtime::Mgmt* durations = nullptr;
 
   //Call the main CCTag detection function
   cctagDetection(markers, pipeId, frameId, src, params, bank, true, durations);

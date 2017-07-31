@@ -798,7 +798,7 @@ void cctagDetection(
                                params._numberOfProcessedMultiresLayers,
                                cuda_allocates );
 
-    cctag::TagPipe* pipe1 = 0;
+    cctag::TagPipe* pipe1 = nullptr;
 #ifdef WITH_CUDA
     if( params._useCuda ) {
         pipe1 = initCuda( pipeId,

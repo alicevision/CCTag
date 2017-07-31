@@ -198,8 +198,8 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, floa
             using namespace boost::numeric;
             //using namespace cctag::numerical;
 
-            EdgePoint* pAngle1 = NULL;
-            EdgePoint* pAngle2 = NULL;
+            EdgePoint* pAngle1 = nullptr;
+            EdgePoint* pAngle2 = nullptr;
 
             float min = 1.1;
 

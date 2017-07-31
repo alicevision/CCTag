@@ -35,7 +35,7 @@ namespace boost {
         {
             if(frames_no == 0)
                 return;
-            frames_.resize(frames_no,0);
+            frames_.resize(frames_no, nullptr);
             int size = stack_trace::trace(&frames_.front(),frames_no);
             frames_.resize(size);
         }
@@ -53,7 +53,7 @@ namespace boost {
         {
             if(frame_no < stack_size())
                 return frames_[frame_no];
-            return 0;
+            return nullptr;
         }
 
         void trace_line(unsigned frame_no,std::ostream &out) const

@@ -44,7 +44,7 @@ void cctagDetection(
         const Parameters & params,
         const cctag::CCTagMarkersBank & bank,
         const bool bDisplayEllipses = true,
-        logtime::Mgmt* durations = 0 );
+        logtime::Mgmt* durations = nullptr );
 
 void cctagDetectionFromEdges(
         CCTag::List&            markers,

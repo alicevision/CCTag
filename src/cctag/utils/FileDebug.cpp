@@ -17,7 +17,7 @@ namespace cctag
 {
 
 CCTagFileDebug::CCTagFileDebug()
-: _sstream(NULL) {
+: _sstream(nullptr) {
 
 }
 

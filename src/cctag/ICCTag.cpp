@@ -79,7 +79,7 @@ void cctagDetection(
 {
   boost::ptr_list<cctag::CCTag> cctags;
   
-  if ( pBank == NULL)
+  if ( pBank == nullptr)
   {
     CCTagMarkersBank bank(params._nCrowns);
     cctag::cctagDetection(cctags, pipeId, frame, graySrc, params, bank, false, durations);

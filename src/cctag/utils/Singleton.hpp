@@ -56,7 +56,7 @@ public:
 };
 
 template <class T>
-T * Singleton<T>::inst = NULL;
+T * Singleton<T>::inst = nullptr;
 
 template <class T>Singleton<T>::~Singleton() {}
 

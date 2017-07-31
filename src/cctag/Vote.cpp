@@ -110,7 +110,7 @@ void vote(EdgePointCollection& edgeCollection,
         // direction.
         EdgePoint* current = edgeCollection.before(&p);
         // Here current contains the edge point lying on the 2nd ellipse (from outer to inner)
-        EdgePoint* choosen = NULL;
+        EdgePoint* choosen = nullptr;
 
         // To save all sub-segments length
         std::vector<float> vDist; ///
@@ -132,7 +132,7 @@ void vote(EdgePointCollection& edgeCollection,
 
                 // Iterate over all crowns
                 while (i < params._nCrowns) {
-                    choosen = NULL;
+                    choosen = nullptr;
                     
                     // First in the gradient direction
                     EdgePoint* target = edgeCollection.after(current);
