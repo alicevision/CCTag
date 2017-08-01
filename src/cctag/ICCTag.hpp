@@ -27,26 +27,26 @@ class ICCTag
 {
 public:
 
-	ICCTag()
-		: _x( 0.f )
-		, _y( 0.f )
-		, _id( -1 )
-	{ }
+    ICCTag()
+        : _x( 0.f )
+        , _y( 0.f )
+        , _id( -1 )
+    { }
                 
-        virtual float x() const = 0;
-        virtual float y() const = 0;
-        virtual MarkerID id() const = 0;
-        virtual int getStatus() const = 0;
+	virtual float x() const = 0;
+	virtual float y() const = 0;
+	virtual MarkerID id() const = 0;
+	virtual int getStatus() const = 0;
 
-	virtual ~ICCTag() = default;
+    virtual ~ICCTag() = default;
 
-	virtual ICCTag* clone() const = 0;
+    virtual ICCTag* clone() const = 0;
 
 
 protected:
-	float _x;
-	float _y;
-	MarkerID _id;
+    float _x;
+    float _y;
+    MarkerID _id;
         int _status; // WARNING: only markers with status == 1 are the valid ones. (status available via getStatus()) 
                      // A marker correctly detected and identified has a status 1.
                      // Otherwise, it can be detected but not correctly identified.
@@ -54,7 +54,7 @@ protected:
 
 inline ICCTag* new_clone(const ICCTag& a)
 {
-	return a.clone();
+    return a.clone();
 }
 
 /**
