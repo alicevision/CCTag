@@ -73,8 +73,8 @@ void cctagDetection(
       int                       pipeId,
       std::size_t frame,
       const cv::Mat & graySrc,
-      logtime::Mgmt* durations = nullptr,
       std::size_t nRings = 3,
+      logtime::Mgmt* durations = nullptr,
       const std::string & parameterFile = "",
       const std::string & cctagBankFilename = "");
 
