@@ -369,10 +369,9 @@ void cctagMultiresDetection(
 
         for(EdgePoint * e : rescaledOuterEllipsePoints)
         {
-          rescaledOuterEllipsePointsDouble.push_back(
-                  DirectedPoint2d<Eigen::Vector3f>(e->x(), e->y(),
+          rescaledOuterEllipsePointsDouble.emplace_back(e->x(), e->y(),
                   e->dX(),
-                  e->dY())
+                  e->dY()
           );
           
           CCTagVisualDebug::instance().drawPoint(Point2d<Eigen::Vector3f>(e->x(), e->y()), cctag::color_red);

@@ -123,9 +123,9 @@ void rasterizeEllipticalArc(const Ellipse & ellipse, const Point2d<Eigen::Vector
 			std::vector<float> intersections = intersectEllipseWithLine( ellipse, x, false );
 
 			if( intersections.size() == 2 ){
-				vPoint.push_back(Point2d<Eigen::Vector3i>(x,boost::math::round(intersections[intersectionIndex])));
+				vPoint.emplace_back(x,boost::math::round(intersections[intersectionIndex]));
 			}else if( intersections.size() == 1 ){
-				vPoint.push_back(Point2d<Eigen::Vector3i>(x,boost::math::round(intersections[0])));
+				vPoint.emplace_back(x,boost::math::round(intersections[0]));
 			}
 		}
 
@@ -138,9 +138,9 @@ void rasterizeEllipticalArc(const Ellipse & ellipse, const Point2d<Eigen::Vector
 			std::vector<float> intersections = intersectEllipseWithLine( ellipse, y, true );
 
 			if( intersections.size() == 2 ){
-				vPoint.push_back(Point2d<Eigen::Vector3i>(boost::math::round(intersections[intersectionIndex]),y));
+				vPoint.emplace_back(boost::math::round(intersections[intersectionIndex]), y);
 			}else if( intersections.size() == 1 ){
-				vPoint.push_back(Point2d<Eigen::Vector3i>(boost::math::round(intersections[0]),y));
+				vPoint.emplace_back(boost::math::round(intersections[0]), y);
 			}
 		}
 	}

@@ -316,8 +316,7 @@ public:
 
   void addFlowComponent(const Candidate & candidate, const EdgePointCollection& edgeCollection)
   {
-    _flowComponents.push_back(
-      CCTagFlowComponent(
+    _flowComponents.emplace_back(
         edgeCollection,
         candidate._outerEllipsePoints,
         candidate._childrens,
@@ -325,7 +324,7 @@ public:
         candidate._outerEllipse,
         candidate._convexEdgeSegment,
         *(candidate._seed),
-        _nCircles));
+        _nCircles);
   }
 
   void setFlowComponents(const std::vector<CCTagFlowComponent> & flowComponents)

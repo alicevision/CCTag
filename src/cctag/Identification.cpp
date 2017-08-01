@@ -480,7 +480,7 @@ void collectCuts(
     // Here only beginSig is set based on the input argument beginSig while endSig is set to 1.f as 
     // any type of cctags encodes, by construction, a 1D bar-code until the outer ellipse (image 
     // of the unit circle).
-    cuts.push_back( cctag::ImageCut(center, outerPoint, beginSig, 1.f, nSamplesInCut) );
+    cuts.emplace_back(center, outerPoint, beginSig, 1.f, nSamplesInCut );
     cctag::ImageCut & cut = cuts.back();
     cutInterpolated( cut, src);
     // Remove the cut from the vector if out of the image bounds.
@@ -1441,7 +1441,7 @@ int identify_step_2(
         for(const float radiusRatio : cctag.radiusRatios())
         {
           cctag::numerical::geometry::Circle circle(1.f / radiusRatio);
-          ellipses.push_back(cctag::numerical::geometry::Ellipse(mInvH.transpose()*circle.matrix()*mInvH));
+          ellipses.emplace_back(mInvH.transpose()*circle.matrix()*mInvH);
         }
 
         // Push the outer ellipse

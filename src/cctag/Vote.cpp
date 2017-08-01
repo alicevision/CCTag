@@ -413,7 +413,7 @@ void vote(EdgePointCollection& edgeCollection,
               if (iEdgePoint == std::size_t(k*step) )
               {
                 ++k;
-                pts.push_back(edgePoint->cast<float>());
+                pts.emplace_back(edgePoint->cast<float>());
                 CCTagVisualDebug::instance().drawPoint(cctag::Point2d<Eigen::Vector3f>(pts.back()), cctag::color_red);
 
                 if (weightedType == INV_GRAD_WEIGHT) {
@@ -553,7 +553,7 @@ void vote(EdgePointCollection& edgeCollection,
         std::vector<Eigen::Vector3f> pts;
         pts.reserve(outerEllipsePoints.size());
         for (std::vector<EdgePoint*>::iterator it = outerEllipsePoints.begin(); it != outerEllipsePoints.end(); ++it) {
-            pts.push_back((*it)->cast<float>());
+            pts.emplace_back((*it)->cast<float>());
         }
 
         // Copy/Align content of anotherOuterEllipsePoints
@@ -561,7 +561,7 @@ void vote(EdgePointCollection& edgeCollection,
         anotherPts.reserve(anotherOuterEllipsePoints.size());
         for (std::vector<EdgePoint*>::const_iterator it = anotherOuterEllipsePoints.begin(); it != anotherOuterEllipsePoints.end(); ++it) {
             // todo@Lilian: avoid copy, idem in outlierRemoval
-            anotherPts.push_back((*it)->cast<float>());
+            anotherPts.emplace_back((*it)->cast<float>());
         }
 
         std::vector<float> distRef;
@@ -582,7 +582,7 @@ void vote(EdgePointCollection& edgeCollection,
             
             auto it = permutations.begin();
             for (size_t i = 0; i < 4; ++i) {
-                points.push_back(Point2d<Eigen::Vector3f>(float(pts[*it](0)), float(pts[*it](1))));
+                points.emplace_back(float(pts[*it](0)), float(pts[*it](1)));
                 ++it;
             }
 
@@ -590,7 +590,7 @@ void vote(EdgePointCollection& edgeCollection,
 
             it = permutations.begin();
             for (size_t i = 0; i < 4; ++i) {
-                points.push_back(Point2d<Eigen::Vector3f>(float(anotherOuterEllipsePoints[*it]->x()), float(anotherOuterEllipsePoints[*it]->y())));
+                points.emplace_back(float(anotherOuterEllipsePoints[*it]->x()), float(anotherOuterEllipsePoints[*it]->y()));
                 ++it;
             }
 
