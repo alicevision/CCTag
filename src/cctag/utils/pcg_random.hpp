@@ -455,7 +455,7 @@ public:
         }
     }
 
-    engine(itype state = itype(0xcafef00dd15ea5e5ULL))
+    explicit engine(itype state = itype(0xcafef00dd15ea5e5ULL))
         : state_(this->is_mcg ? state|state_type(3U)
                               : bump(state + this->increment()))
     {
@@ -1229,7 +1229,7 @@ public:
         advance(distance, false);
     }
 
-    extended(const result_type* data)
+    explicit extended(const result_type* data)
         : baseclass()
     {
         datainit(data);
@@ -1258,7 +1258,7 @@ public:
         selfinit();
     }
 
-    extended(state_type seed)
+    explicit extended(state_type seed)
         : baseclass(seed)
     {
         selfinit();
@@ -1283,7 +1283,7 @@ public:
     template<typename SeedSeq, typename = typename std::enable_if<
            !std::is_convertible<SeedSeq, result_type>::value
         && !std::is_convertible<SeedSeq, extended>::value>::type>
-    extended(SeedSeq&& seedSeq)
+    explicit extended(SeedSeq&& seedSeq)
         : baseclass(seedSeq)
     {
         generate_to<table_size>(seedSeq, data_);

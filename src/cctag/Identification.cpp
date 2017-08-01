@@ -102,17 +102,17 @@ bool orazioDistanceRobust(
       accumulator_set< float, features< tag::mean > > accSup;
       
       bool doAccumulate = false;
-      for( std::size_t i = 0 ; i < imgSig.size(); ++i )
+      for(float i : imgSig)
       {
-        if ( (!doAccumulate) && ( imgSig[i] < medianSig ) )
+        if ( (!doAccumulate) && ( i < medianSig ) )
           doAccumulate = true;
           
         if (doAccumulate)
         {
-          if ( imgSig[i] < medianSig )
-            accInf( imgSig[i] );
+          if ( i < medianSig )
+            accInf( i );
           else
-            accSup( imgSig[i] );
+            accSup( i );
         }
       }
       const float muw = boost::accumulators::mean( accSup );
@@ -134,18 +134,18 @@ bool orazioDistanceRobust(
         // Compute the idc-th profile from the radius ratio
         // todo@Lilian: to be pre-computed
         float x = cut.beginSig();
-        for( std::size_t i = 0; i < digit.size(); ++i )
+        for(float & i : digit)
         {
           std::ssize_t ldum = 0;
-          for( std::size_t j = 0; j < rrBank[idc].size(); ++j )
+          for(float j : rrBank[idc])
           {
-            if( 1.f / rrBank[idc][j] <= x )
+            if( 1.f / j <= x )
             {
               ++ldum;
             }
           }
           // set odd value to -1 and even value to 1
-          digit[i] = - ( ldum % 2 ) * 2 + 1;
+          i = - ( ldum % 2 ) * 2 + 1;
           
           x += stepX;
         }
