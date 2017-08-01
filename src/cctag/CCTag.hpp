@@ -56,7 +56,7 @@ public:
     , _quality(0)
     , _status(0)
 #ifdef WITH_CUDA
-    , _cuda_result( 0 )
+    , _cuda_result( nullptr )
 #endif
   {
     setInitRadius();
@@ -79,7 +79,7 @@ public:
     , _pyramidLevel(pyramidLevel)
     , _scale(scale)
 #ifdef WITH_CUDA
-    , _cuda_result( 0 )
+    , _cuda_result( nullptr )
 #endif
   {
     setInitRadius();
@@ -104,7 +104,7 @@ public:
     , _rescaledOuterEllipse(cctag._rescaledOuterEllipse)
     , _status(cctag._status)
 #ifdef WITH_CUDA
-    , _cuda_result( 0 )
+    , _cuda_result( nullptr )
 #endif
 #ifdef CCTAG_SERIALIZE
     , _flowComponents(cctag._flowComponents)
@@ -112,9 +112,7 @@ public:
   {
   }
 
-  ~CCTag() override
-  {
-  }
+  virtual ~CCTag() = default;
 
 #ifndef NDEBUG
   void printTag( std::ostream& ostr ) const;

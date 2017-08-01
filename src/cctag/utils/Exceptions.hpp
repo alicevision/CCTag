@@ -60,7 +60,8 @@ public:
 	using This = error_info<Tag, T>;
 	using value_type = T;
 
-	error_info() {}
+	error_info() = default;
+
 	error_info( const This& v )
 	{
 		_value._v << v._value._v.str();
@@ -72,7 +73,7 @@ public:
 		_value._v << value;
 	}
 
-	~error_info() throw( ) override  {}
+	virtual ~error_info() throw( )  = default;
 
 	template<typename V>
 	This& operator+( const V& v )

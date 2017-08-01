@@ -16,13 +16,9 @@ namespace bfs = boost::filesystem;
 namespace cctag
 {
 
-CCTagVisualDebug::CCTagVisualDebug()
-{
-}
+CCTagVisualDebug::CCTagVisualDebug() = default;
 
-CCTagVisualDebug::~CCTagVisualDebug()
-{
-}
+CCTagVisualDebug::~CCTagVisualDebug() = default;
 
 void CCTagVisualDebug::initializeFolders(const boost::filesystem::path & rootPath, const std::string & outputFolder, std::size_t nCrowns)
 {

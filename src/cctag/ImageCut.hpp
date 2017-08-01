@@ -65,7 +65,7 @@ public:
   
   void setOutOfBounds(const bool outOfBounds) { _outOfBounds = outOfBounds; }
   
-  virtual ~ImageCut() {}
+  virtual ~ImageCut() = default;
   
 private:
   

@@ -21,10 +21,7 @@ CCTagFileDebug::CCTagFileDebug()
 
 }
 
-CCTagFileDebug::~CCTagFileDebug()
-{
-
-}
+CCTagFileDebug::~CCTagFileDebug() = default;
 
 void CCTagFileDebug::setPath(const std::string& folderName)
 {

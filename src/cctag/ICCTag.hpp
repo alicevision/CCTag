@@ -38,7 +38,7 @@ public:
         virtual MarkerID id() const = 0;
         virtual int getStatus() const = 0;
 
-	virtual ~ICCTag() {}
+	virtual ~ICCTag() = default;
 
 	virtual ICCTag* clone() const = 0;
 

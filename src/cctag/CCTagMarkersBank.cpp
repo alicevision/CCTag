@@ -55,9 +55,6 @@ CCTagMarkersBank::CCTagMarkersBank( const std::string & file )
   read( file );
 }
 
-CCTagMarkersBank::~CCTagMarkersBank()
-{
-}
 
 void CCTagMarkersBank::read( const std::string & file )
 {

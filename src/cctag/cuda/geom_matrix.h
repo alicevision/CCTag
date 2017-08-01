@@ -20,7 +20,7 @@ class matrix3x3
 
 public:
     __host__ __device__
-    matrix3x3( ) { }
+    matrix3x3( ) = default;
 
     // Note: default copy contructor and
     //       default assignment operator

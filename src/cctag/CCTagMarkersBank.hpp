@@ -29,7 +29,7 @@ public:
   CCTagMarkersBank( const std::size_t nCrowns );
   CCTagMarkersBank( const std::string & file );
   
-  virtual ~CCTagMarkersBank();
+  virtual ~CCTagMarkersBank() = default;
 
   void read( const std::string & file );
   std::size_t identify( const std::vector<float> & marker ) const;

@@ -40,9 +40,7 @@ namespace boost {
             frames_.resize(size);
         }
 
-        virtual ~backtrace() throw()
-        {
-        }
+        virtual ~backtrace() throw() = default;
 
         size_t stack_size() const
         {

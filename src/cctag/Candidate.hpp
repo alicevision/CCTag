@@ -32,7 +32,7 @@ public:
 		, _nLabel(nLabel)
 	{}
 
-	virtual ~Candidate() {}
+	virtual ~Candidate() = default;
 
 	EdgePoint* _seed;
 	std::list<EdgePoint*> _convexEdgeSegment;
