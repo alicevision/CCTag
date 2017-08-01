@@ -112,7 +112,7 @@ public:
   {
   }
 
-  virtual ~CCTag()
+  ~CCTag() override
   {
   }
 
@@ -122,11 +122,11 @@ public:
 
   void scale(const float s);
 
-  float x() const {
+  float x() const override {
     return _centerImg.x();
   }
   
-  float y() const {
+  float y() const override {
     return _centerImg.y();
   }
   
@@ -260,7 +260,7 @@ public:
     return true;
   }
 
-  MarkerID id() const
+  MarkerID id() const override
   {
     return _id;
   }
@@ -280,7 +280,7 @@ public:
     _idSet = idSet;
   }
 
-  int getStatus() const
+  int getStatus() const override
   {
     return _status;
   }
@@ -298,7 +298,7 @@ public:
 
   //friend std::ostream& operator<<(std::ostream& os, const CCTag& cm);
 
-  inline CCTag* clone() const
+  inline CCTag* clone() const override
   {
     return new CCTag(*this);
   }

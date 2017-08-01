@@ -72,7 +72,7 @@ public:
 		_value._v << value;
 	}
 
-	~error_info() throw( ) {}
+	~error_info() throw( ) override  {}
 
 	template<typename V>
 	This& operator+( const V& v )
@@ -87,7 +87,7 @@ public:
 private:
 	
 	#if( BOOST_VERSION >= 105400 )
-	inline std::string name_value_string() const
+	inline std::string name_value_string() const override
 	{
 		return to_string_stub(*this);
 	}
