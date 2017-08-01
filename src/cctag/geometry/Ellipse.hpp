@@ -30,7 +30,7 @@ public:
 	{
 	}
 
-	Ellipse( const Matrix& matrix );
+	explicit Ellipse( const Matrix& matrix );
 	Ellipse( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle );
 
 	inline const Matrix& matrix() const { return _matrix; }

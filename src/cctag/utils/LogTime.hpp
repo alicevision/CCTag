@@ -51,7 +51,7 @@ struct Mgmt
     int                      _reserved;
     int                      _idx;
 
-    Mgmt( int rsvp );
+    explicit Mgmt( int rsvp );
 
     void resetStartTime( );
 

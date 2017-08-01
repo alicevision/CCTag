@@ -26,8 +26,8 @@ namespace cctag
 class CCTagMarkersBank
 {
 public:
-  CCTagMarkersBank( const std::size_t nCrowns );
-  CCTagMarkersBank( const std::string & file );
+  explicit CCTagMarkersBank( const std::size_t nCrowns );
+  explicit CCTagMarkersBank( const std::string & file );
   
   virtual ~CCTagMarkersBank() = default;
 

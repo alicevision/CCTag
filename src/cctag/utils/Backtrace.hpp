@@ -31,7 +31,7 @@ namespace boost {
         
         static size_t const default_stack_size = 32;
 
-        backtrace(size_t frames_no = default_stack_size) 
+        explicit backtrace(size_t frames_no = default_stack_size)
         {
             if(frames_no == 0)
                 return;
@@ -160,7 +160,7 @@ namespace boost {
     namespace details {
         class trace_manip {
         public:
-            trace_manip(backtrace const *tr) :
+            explicit trace_manip(backtrace const *tr) :
                 tr_(tr)
             {
             }

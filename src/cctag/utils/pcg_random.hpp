@@ -320,7 +320,7 @@ public:
 protected:
     specific_stream() = default;
 
-    specific_stream(itype specific_seq)
+    explicit specific_stream(itype specific_seq)
         : inc_((specific_seq << 1) | itype(1U))
     {
         // Nothing (else) to do.

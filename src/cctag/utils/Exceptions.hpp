@@ -68,7 +68,7 @@ public:
 	}
 
 	template<typename V>
-	error_info( const V& value )
+	explicit error_info( const V& value )
 	{
 		_value._v << value;
 	}
@@ -303,7 +303,7 @@ struct File : virtual public Value
 {
 	File()
 	{}
-	File( const std::string& path )
+	explicit File( const std::string& path )
 	{
 		*this << filename(path);
 	}
@@ -316,7 +316,7 @@ struct FileNotExist : virtual public File
 {
 	FileNotExist()
 	{}
-	FileNotExist( const std::string& path )
+	explicit FileNotExist( const std::string& path )
 	: File( path )
 	{}
 };
@@ -328,7 +328,7 @@ struct NoDirectory : virtual public File
 {
 	NoDirectory()
 	{}
-	NoDirectory( const std::string& path )
+	explicit NoDirectory( const std::string& path )
 	: File( path )
 	{}
 };
@@ -340,7 +340,7 @@ struct ReadOnlyFile : virtual public File
 {
 	ReadOnlyFile()
 	{}
-	ReadOnlyFile( const std::string& path )
+	explicit ReadOnlyFile( const std::string& path )
 	: File( path )
 	{}
 };

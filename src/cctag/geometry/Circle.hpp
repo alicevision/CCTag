@@ -24,7 +24,7 @@ public:
 
 	Circle() : Ellipse() {}
 
-	Circle( const float r );
+	explicit Circle( const float r );
 
 	Circle( const Point2d<Eigen::Vector3f>& center, const float r );
 
