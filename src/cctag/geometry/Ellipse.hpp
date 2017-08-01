@@ -19,7 +19,7 @@ namespace geometry {
 class Ellipse
 {
 public:
-	typedef Eigen::Matrix3f Matrix;
+	using Matrix = Eigen::Matrix3f;
         
 	Ellipse()
                 : _matrix(Eigen::Matrix3f::Zero())

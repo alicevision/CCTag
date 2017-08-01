@@ -48,10 +48,10 @@ public:
 
     struct RandomColorMap
     {
-        typedef unsigned char                 Byte_t;
-        typedef std::map<Byte_t,RandomColor>  map_t;
-        typedef map_t::iterator               it_t;
-        typedef std::pair<Byte_t,RandomColor> pair_t;
+        using Byte_t = unsigned char;
+        using map_t = std::map<Byte_t,RandomColor>;
+        using it_t = map_t::iterator;
+        using pair_t = std::pair<Byte_t,RandomColor>;
 
         map_t random_mapping;
 

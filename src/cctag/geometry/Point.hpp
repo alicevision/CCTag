@@ -64,8 +64,8 @@ template<class T>
 class DirectedPoint2d : public Point2d<T>
 {
         using Scalar = typename Point2d<T>::Scalar;
-	typedef Point2d<T> Parent;
-	typedef DirectedPoint2d<T> This;
+	using Parent = Point2d<T>;
+	using This = DirectedPoint2d<T>;
         
         Eigen::Vector2f _grad;
 

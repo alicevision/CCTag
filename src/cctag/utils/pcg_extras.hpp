@@ -79,7 +79,7 @@
  */
 #if __SIZEOF_INT128__
     namespace pcg_extras {
-        typedef __uint128_t pcg128_t;
+        using pcg128_t = __uint128_t;
     }
     #define PCG_128BIT_CONSTANT(high,low) \
             ((pcg128_t(high) << 64) + low)
@@ -105,7 +105,7 @@ namespace pcg_extras {
  */
 
 #ifndef PCG_BITCOUNT_T
-    typedef uint8_t bitcount_t;
+    using bitcount_t = uint8_t;
 #else
     typedef PCG_BITCOUNT_T bitcount_t;
 #endif
@@ -384,8 +384,8 @@ SrcIter uneven_copy_impl(
     SrcIter src_first, DestIter dest_first, DestIter dest_last,
     std::true_type)
 {
-    typedef typename std::iterator_traits<SrcIter>::value_type  src_t;
-    typedef typename std::iterator_traits<DestIter>::value_type dest_t;
+    using src_t = typename std::iterator_traits<SrcIter>::value_type;
+    using dest_t = typename std::iterator_traits<DestIter>::value_type;
 
     constexpr bitcount_t SRC_SIZE  = sizeof(src_t);
     constexpr bitcount_t DEST_SIZE = sizeof(dest_t);
@@ -413,8 +413,8 @@ SrcIter uneven_copy_impl(
     SrcIter src_first, DestIter dest_first, DestIter dest_last,
     std::false_type)
 {
-    typedef typename std::iterator_traits<SrcIter>::value_type  src_t;
-    typedef typename std::iterator_traits<DestIter>::value_type dest_t;
+    using src_t = typename std::iterator_traits<SrcIter>::value_type;
+    using dest_t = typename std::iterator_traits<DestIter>::value_type;
 
     constexpr auto SRC_SIZE  = sizeof(src_t);
     constexpr auto SRC_BITS  = SRC_SIZE * 8;
@@ -441,8 +441,8 @@ template<class SrcIter, class DestIter>
 inline SrcIter uneven_copy(SrcIter src_first,
                            DestIter dest_first, DestIter dest_last)
 {
-    typedef typename std::iterator_traits<SrcIter>::value_type  src_t;
-    typedef typename std::iterator_traits<DestIter>::value_type dest_t;
+    using src_t = typename std::iterator_traits<SrcIter>::value_type;
+    using dest_t = typename std::iterator_traits<DestIter>::value_type;
 
     constexpr bool DEST_IS_SMALLER = sizeof(dest_t) < sizeof(src_t);
 
@@ -465,7 +465,7 @@ template <size_t size, typename SeedSeq, typename DestIter>
 void generate_to_impl(SeedSeq&& generator, DestIter dest,
                       std::false_type)
 {
-    typedef typename std::iterator_traits<DestIter>::value_type dest_t;
+    using dest_t = typename std::iterator_traits<DestIter>::value_type;
     constexpr auto DEST_SIZE = sizeof(dest_t);
     constexpr auto GEN_SIZE  = sizeof(uint32_t);
 
@@ -493,7 +493,7 @@ void generate_to_impl(SeedSeq&& generator, DestIter dest,
 template <size_t size, typename SeedSeq, typename DestIter>
 inline void generate_to(SeedSeq&& generator, DestIter dest)
 {
-    typedef typename std::iterator_traits<DestIter>::value_type dest_t;
+    using dest_t = typename std::iterator_traits<DestIter>::value_type;
     constexpr bool IS_32BIT = sizeof(dest_t) == sizeof(uint32_t);
 
     generate_to_impl<size>(std::forward<SeedSeq>(generator), dest,
@@ -517,7 +517,7 @@ template <typename RngType>
 auto bounded_rand(RngType& rng, typename RngType::result_type upper_bound)
         -> typename RngType::result_type
 {
-    typedef typename RngType::result_type rtype;
+    using rtype = typename RngType::result_type;
     rtype threshold = (RngType::max() - RngType::min() + rtype(1) - upper_bound)
                     % upper_bound;
     for (;;) {
@@ -530,7 +530,7 @@ auto bounded_rand(RngType& rng, typename RngType::result_type upper_bound)
 template <typename Iter, typename RandType>
 void shuffle(Iter from, Iter to, RandType&& rng)
 {
-    typedef typename std::iterator_traits<Iter>::difference_type delta_t;
+    using delta_t = typename std::iterator_traits<Iter>::difference_type;
     auto count = to - from;
     while (count > 1) {
         delta_t chosen(bounded_rand(rng, count));
@@ -558,7 +558,7 @@ class seed_seq_from {
 private:
     RngType rng_;
 
-    typedef uint_least32_t result_type;
+    using result_type = uint_least32_t;
 
 public:
     template<typename... Args>

@@ -87,8 +87,8 @@ int identify_step_2(
     cctag::TagPipe* pipe,
 	const cctag::Parameters & params);
 
-typedef std::vector< std::vector<float> > RadiusRatioBank;
-typedef std::vector< std::pair< cctag::Point2d<Eigen::Vector3f>, cctag::ImageCut > > CutSelectionVec;
+using RadiusRatioBank = std::vector<std::vector<float>>;
+using CutSelectionVec =  std::vector< std::pair< cctag::Point2d<Eigen::Vector3f>, cctag::ImageCut>>;
 
 /**
  * @brief Apply a planar homography to a 2D point.
@@ -344,7 +344,7 @@ float costFunctionGlob(
 template<typename VecT>
 typename VecT::value_type computeMedian( const VecT& vec )
 {
-  typedef typename VecT::value_type T;
+  using T = typename VecT::value_type;
   //BOOST_ASSERT( vec.size() > 0 );
 
   const std::size_t s = (vec.size() / 2) + 1;

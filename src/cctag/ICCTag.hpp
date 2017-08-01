@@ -21,7 +21,7 @@ namespace logtime {
 struct Mgmt;
 }
   
-typedef int MarkerID;
+using MarkerID = int;
 
 class ICCTag
 {

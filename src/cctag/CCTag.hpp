@@ -46,8 +46,8 @@ typedef std::vector< std::pair< MarkerID, float > > IdSet;
 class CCTag : public ICCTag
 {
 public:
-  typedef boost::ptr_vector<CCTag> Vector;
-  typedef boost::ptr_list<CCTag> List;
+  using Vector = boost::ptr_vector<CCTag>;
+  using List = boost::ptr_list<CCTag>;
 
 public:
 

@@ -37,7 +37,7 @@ namespace boost {
 
 struct error_info_sstream
 {
-	typedef std::ostringstream value_type;
+	using value_type = std::ostringstream;
 	value_type _v;
 };
 
@@ -56,9 +56,9 @@ template<class Tag>
 class error_info<Tag, error_info_sstream>: public exception_detail::error_info_base
 {
 public:
-	typedef error_info_sstream T;
-	typedef error_info<Tag, T> This;
-	typedef T value_type;
+	using T = boost::error_info_sstream;
+	using This = error_info<Tag, T>;
+	using value_type = T;
 
 	error_info() {}
 	error_info( const This& v )
@@ -205,7 +205,7 @@ typedef ::boost::error_info<struct tag_frame, long int> frame;
  * @brief Problem with a file.
  * @remark User information.
  */
-typedef ::boost::errinfo_file_name filename;
+using filename = ::boost::errinfo_file_name;
 /// @}
 #endif
 
