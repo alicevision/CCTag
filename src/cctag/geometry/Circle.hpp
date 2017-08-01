@@ -24,9 +24,9 @@ public:
 
 	Circle() : Ellipse() {}
 
-	explicit Circle( const float r );
+	explicit Circle( float r );
 
-	Circle( const Point2d<Eigen::Vector3f>& center, const float r );
+	Circle( const Point2d<Eigen::Vector3f>& center, float r );
 
 	template <typename T>
 	Circle( const Point2d<T> & p1, const Point2d<T> & p2, const Point2d<T> & p3 )

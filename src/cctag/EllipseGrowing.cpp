@@ -327,7 +327,7 @@ bool ellipseGrowingInit(const std::vector<EdgePoint*>& filteredChildrens, numeri
   return goodInit;
 }
 
-void connectedPoint(std::vector<EdgePoint*>& pts, const int runId, 
+void connectedPoint(std::vector<EdgePoint*>& pts, int runId,
         const EdgePointCollection& img, numerical::geometry::Ellipse& qIn,
         numerical::geometry::Ellipse& qOut, int x, int y)
 {
@@ -389,7 +389,8 @@ void computeHull(const numerical::geometry::Ellipse& ellipse, float delta,
 void ellipseHull(const EdgePointCollection& img,
         std::vector<EdgePoint*>& pts,
         numerical::geometry::Ellipse& ellipse,
-        float delta, const std::size_t runId)
+        float delta,
+        std::size_t runId)
 {
   numerical::geometry::Ellipse qIn, qOut;
   computeHull(ellipse, delta, qIn, qOut);
@@ -408,7 +409,7 @@ void ellipseGrowing2(
         const std::vector<EdgePoint*>& filteredChildrens, 
         std::vector<EdgePoint*>& outerEllipsePoints,
         numerical::geometry::Ellipse& ellipse,
-        const float ellipseGrowingEllipticHullWidth,
+        float ellipseGrowingEllipticHullWidth,
         std::size_t runId,
         bool goodInit)
 {

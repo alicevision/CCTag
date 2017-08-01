@@ -49,7 +49,7 @@ bool orazioDistanceRobust(
         std::vector<std::list<float> > & vScore,
         const RadiusRatioBank & rrBank,
         const std::vector<cctag::ImageCut> & cuts,
-        const float minIdentProba)
+        float minIdentProba)
 {
   BOOST_ASSERT( cuts.size() > 0 );
 
@@ -277,7 +277,7 @@ void extractSignalUsingHomography(
   //blurImageCut(sigma, cut);
 }
 
-void blurImageCut(const float sigma, std::vector<float> & signal)
+void blurImageCut(float sigma, std::vector<float> & signal)
 {
   //const std::vector<float> kernel = { 0.0044, 0.0540, 0.2420, 0.3991, 0.2420, 0.0540, 0.0044 };
   const std::vector<float> kernel = { 0.0276, 0.0663, 0.1238, 0.1802, 0.2042, 0.1802, 0.1238, 0.0663, 0.0276 };
@@ -327,8 +327,8 @@ void extractSignalUsingHomographyDeprec(
         const cv::Mat & src,
         Eigen::Matrix3f & mHomography,
         std::size_t nSamples,
-        const float begin,
-        const float end)
+        float begin,
+        float end)
 {
   using namespace boost;
   using namespace cctag::numerical;
@@ -470,8 +470,8 @@ void collectCuts(
         const cv::Mat & src,
         const cctag::Point2d<Eigen::Vector3f> & center,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
-        const std::size_t nSamplesInCut,
-        const float beginSig )
+        std::size_t nSamplesInCut,
+        float beginSig )
 {
   // Collect all the 1D image signals from center to the outer points.
   cuts.reserve( outerPoints.size() );
@@ -598,7 +598,7 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
 }
 
 /* Ugly -> perform an iterative optimization*/
-bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, const float scale, const size_t numSamplesOuterEdgePointsRefinement)
+bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, float scale, std::size_t numSamplesOuterEdgePointsRefinement)
 {
     // Subpixellic refinement of the outer edge points ///////////////////////////
     const float cutLengthOuterPointRefine = 3.f * sqrt(2.f) * scale; // with scale=2^i, i=0..nLevel
@@ -807,14 +807,14 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
-        const int tagIndex,
+        int tagIndex,
         Eigen::Matrix3f & mHomography,
         Point2d<Eigen::Vector3f> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
         cctag::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::Parameters params,
+        const cctag::Parameters & params,
         cctag::NearbyPoint* cctag_pointer_buffer,
         float & residual)
 {
@@ -978,10 +978,10 @@ bool imageCenterOptimizationGlob(
         std::vector< cctag::ImageCut > & vCuts,
         cctag::Point2d<Eigen::Vector3f> & center,
         float & minRes,
-        const float neighbourSize,
+        float neighbourSize,
         const cv::Mat & src, 
         const cctag::numerical::geometry::Ellipse& outerEllipse,
-        const cctag::Parameters params )
+        const cctag::Parameters & params )
 {
     cctag::Point2d<Eigen::Vector3f> optimalPoint;
     Eigen::Matrix3f optimalHomography;
@@ -1166,7 +1166,7 @@ float costFunctionGlob(
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
 int identify_step_1(
-  const int tagIndex,
+  int tagIndex,
   const CCTag & cctag,
   std::vector<cctag::ImageCut>& vSelectedCuts,
   const cv::Mat &  src,
@@ -1312,7 +1312,7 @@ int identify_step_1(
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
 int identify_step_2(
-  const int tagIndex,
+  int tagIndex,
   CCTag & cctag,
   std::vector<cctag::ImageCut>& vSelectedCuts,
   const std::vector< std::vector<float> > & radiusRatios, // todo: directly use the CCTagBank

@@ -20,7 +20,7 @@ ImagePyramid::ImagePyramid()
 {
 }
 
-ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::size_t nLevels, bool cuda_allocates )
+ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, std::size_t nLevels, bool cuda_allocates )
 {
   _levels.clear();
   _levels.resize(nLevels);
@@ -32,7 +32,7 @@ ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, const std::si
   }
 }
 
-void ImagePyramid::build( const cv::Mat & src, const float thrLowCanny, const float thrHighCanny, const cctag::Parameters* params )
+void ImagePyramid::build( const cv::Mat & src, float thrLowCanny, float thrHighCanny, const cctag::Parameters* params )
 {
 #ifdef WITH_CUDA
     if( params->_useCuda ) {
@@ -101,7 +101,7 @@ std::size_t ImagePyramid::getNbLevels() const
   return _levels.size();
 }
 
-Level* ImagePyramid::getLevel( const std::size_t level ) const
+Level* ImagePyramid::getLevel( std::size_t level ) const
 {
         return _levels[level];
 }

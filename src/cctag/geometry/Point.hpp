@@ -84,7 +84,7 @@ public:
           _grad(1) = dY;
         }
 
-	DirectedPoint2d( const Scalar px, const Scalar py, float dX, float dY)
+	DirectedPoint2d( const Scalar & px, const Scalar & py, float dX, float dY)
 		: Point2d<T>( px, py )
 	{
           _grad(0) = dX;

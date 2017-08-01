@@ -56,7 +56,7 @@ enum NeighborType {
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
 int identify_step_1(
-    const int tagIndex,
+    int tagIndex,
 	const CCTag & cctag,
     std::vector<cctag::ImageCut>& vSelectedCuts,
 	// const std::vector< std::vector<float> > & radiusRatios,
@@ -79,7 +79,7 @@ int identify_step_1(
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
 int identify_step_2(
-    const int tagIndex,
+    int tagIndex,
 	CCTag & cctag,
     std::vector<cctag::ImageCut>& vSelectedCuts,
 	const std::vector< std::vector<float> > & radiusRatios,
@@ -126,7 +126,7 @@ bool orazioDistanceRobust(
         std::vector<std::list<float> > & vScore,
         const RadiusRatioBank & rrBank,
         const std::vector<cctag::ImageCut> & cuts,
-        const float minIdentProba);
+        float minIdentProba);
 
 /**
  * @brief Extract a rectified 1D signal along an image cut based on an homography.
@@ -148,8 +148,8 @@ void extractSignalUsingHomographyDeprec(
         const cv::Mat & src,
         Eigen::Matrix3f & mHomography,
         std::size_t nSamples = 100,
-        const float begin = 0.f,
-        const float end = 1.f );
+        float begin = 0.f,
+        float end = 1.f );
 
 /**
  * @brief Extract a regularly sampled 1D signal along an image cut.
@@ -164,9 +164,9 @@ void cutInterpolated(
 
 std::pair<float,float> convImageCut(const std::vector<float> & kernel, ImageCut & cut);
 
-void blurImageCut(const float sigma, cctag::ImageCut & cut);
+void blurImageCut(float sigma, cctag::ImageCut & cut);
 
-bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, const float scale, const size_t numSamplesOuterEdgePointsRefinement);
+bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, float scale, size_t numSamplesOuterEdgePointsRefinement);
 
 /**
  * @brief Collect signals (image cuts) from center to outer ellipse points
@@ -183,8 +183,8 @@ void collectCuts(
         const cv::Mat & src,
         const cctag::Point2d<Eigen::Vector3f> & center,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
-        const std::size_t sampleCutLength,
-        const std::size_t startOffset );
+        std::size_t sampleCutLength,
+        std::size_t startOffset );
 
 /*
  * @brief Bilinear interpolation for a point whose coordinates are (x,y)
@@ -248,14 +248,14 @@ void getSignals(
  * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
-        const int tagIndex,
+        int tagIndex,
         Eigen::Matrix3f & mHomography,
         Point2d<Eigen::Vector3f> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
         cctag::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::Parameters params,
+        const cctag::Parameters & params,
         cctag::NearbyPoint* cctag_pointer_buffer,
         float & residual);
 
@@ -278,10 +278,10 @@ bool imageCenterOptimizationGlob(
         std::vector< cctag::ImageCut > & vCuts,
         cctag::Point2d<Eigen::Vector3f> & center,
         float & minRes,
-        const float neighbourSize,
+        float neighbourSize,
         const cv::Mat & src, 
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::Parameters params );
+        const cctag::Parameters & params );
 
 
 /**
@@ -299,9 +299,9 @@ void getNearbyPoints(
           const cctag::numerical::geometry::Ellipse & ellipse,
           const cctag::Point2d<Eigen::Vector3f> & center,
           std::vector<cctag::Point2d<Eigen::Vector3f> > & nearbyPoints,
-          const float neighbourSize,
-          const std::size_t gridNSample,
-          const NeighborType neighborType);
+          float neighbourSize,
+          std::size_t gridNSample,
+          NeighborType neighborType);
 
 /**
  * @brief Compute an homography (up to a 2D rotation) based on its imaged origin [0,0,1]'
@@ -386,11 +386,11 @@ inline float dis( const float sig, const float val, const float mub, const float
 bool refineConicFamily(
         CCTag & cctag,
         std::vector< cctag::ImageCut > & fsig,
-        const std::size_t lengthSig,
+        std::size_t lengthSig,
         const cv::Mat & src,
         const cctag::numerical::geometry::Ellipse & ellipse,
         const std::vector< cctag::Point2d<Eigen::Vector3f> > & pr,
-        const bool useLmDif );
+        bool useLmDif );
 
 /* depreciated */
 /**
@@ -416,8 +416,8 @@ bool orazioDistance(
         IdSet& idSet,
         const RadiusRatioBank & rrBank,
         const std::vector<cctag::ImageCut> & cuts,
-        const std::size_t startOffset,
-        const float minIdentProba,
+        std::size_t startOffset,
+        float minIdentProba,
         std::size_t sizeIds);
 
 } // namespace identification

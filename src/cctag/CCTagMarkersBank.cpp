@@ -19,7 +19,7 @@
 namespace cctag
 {
 
-CCTagMarkersBank::CCTagMarkersBank( const std::size_t nCrowns )
+CCTagMarkersBank::CCTagMarkersBank( std::size_t nCrowns )
 {
   _markers.clear();
   if ( nCrowns == 3 )

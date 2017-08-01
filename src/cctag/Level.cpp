@@ -54,8 +54,8 @@ Level::~Level( )
 }
 
 void Level::setLevel( const cv::Mat & src,
-                      const float thrLowCanny,
-                      const float thrHighCanny,
+                      float thrLowCanny,
+                      float thrHighCanny,
                       const cctag::Parameters* params )
 {
     if( _cuda_allocates ) {

@@ -48,13 +48,13 @@ Point2d<Eigen::Vector3f> pointOnEllipse( const Ellipse & ellipse, const Point2d<
   return res;
 }
 
-void points( const Ellipse & ellipse, const std::size_t nb, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts )
+void points( const Ellipse & ellipse, std::size_t nb, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts )
 {
 	const float step = 2.0 * boost::math::constants::pi<float>() / nb;
 	points( ellipse, nb, step, 2 * boost::math::constants::pi<float>(), pts );
 }
 
-void points( const Ellipse & ellipse, const std::size_t nb, const float phi1, const float phi2, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts )
+void points( const Ellipse & ellipse, std::size_t nb, const float phi1, const float phi2, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts )
 {
 	const float step = 2.0 * boost::math::constants::pi<float>() / nb;
 	pts.reserve( std::size_t( ( phi2 - phi1 ) / step ) + 1 );
@@ -154,7 +154,7 @@ void rasterizeEllipticalArc(const Ellipse & ellipse, const Point2d<Eigen::Vector
  * Return intersection(s) values.
  */
 
-std::vector<float> intersectEllipseWithLine( const numerical::geometry::Ellipse& ellipse, const float y, bool horizontal)
+std::vector<float> intersectEllipseWithLine( const numerical::geometry::Ellipse& ellipse, float y, bool horizontal)
 {
 	using boost::math::pow;
 	std::vector<float> res;

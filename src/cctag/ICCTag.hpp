@@ -71,17 +71,17 @@ inline ICCTag* new_clone(const ICCTag& a)
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       int                       pipeId,
-      const std::size_t frame,
+      std::size_t frame,
       const cv::Mat & graySrc,
       logtime::Mgmt* durations = nullptr,
-      const std::size_t nRings = 3,
+      std::size_t nRings = 3,
       const std::string & parameterFile = "",
       const std::string & cctagBankFilename = "");
 
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       int                       pipeId,
-      const std::size_t frame,
+      std::size_t frame,
       const cv::Mat & graySrc,
       const cctag::Parameters & params,
       logtime::Mgmt* durations = nullptr,

@@ -571,7 +571,7 @@ void cctagDetectionFromEdges(
         EdgePointCollection& edgeCollection,
         const cv::Mat&          src,
         const std::vector<EdgePoint*>& seeds,
-        const std::size_t frame,
+        std::size_t frame,
         int pyramidLevel,
         float scale,
         const Parameters & providedParams,
@@ -770,11 +770,11 @@ cctag::TagPipe* initCuda( int      pipeId,
 void cctagDetection(
         CCTag::List& markers,
         int          pipeId,
-        const std::size_t frame, 
+        std::size_t frame,
         const cv::Mat & imgGraySrc,
         const Parameters & providedParams,
         const cctag::CCTagMarkersBank & bank,
-        const bool bDisplayEllipses,
+        bool bDisplayEllipses,
         cctag::logtime::Mgmt* durations )
 
 {

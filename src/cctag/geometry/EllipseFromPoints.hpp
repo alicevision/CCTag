@@ -24,9 +24,9 @@ Point2d<Eigen::Vector3f> extractEllipsePointAtAngle( const Ellipse & ellipse, fl
 Point2d<Eigen::Vector3f> pointOnEllipse( const Ellipse & ellipse, const Point2d<Eigen::Vector3f> & p );
 
 ///@todo rename this function
-void points( const Ellipse & ellipse, const std::size_t nb, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts );
+void points( const Ellipse & ellipse, std::size_t nb, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts );
 ///@todo rename this function
-void points( const Ellipse & ellipse, const std::size_t nb, const float phi1, const float phi2, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts );
+void points( const Ellipse & ellipse, std::size_t nb, float phi1, float phi2, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts );
 
 
 // Direct implementation of "NUMERICALLY STABLE DIRECT LEAST SQUARES FITTING OF ELLIPSES" by Halir, Flusser
@@ -60,7 +60,7 @@ std::size_t rasterizeEllipsePerimeter( const Ellipse & ellipse );
  * @param[in] y ordonate for which we compute intersection abscissa
  * @return intersected points sorted in ascend order (returns x coordinates: 0, 1, or 2 points).
  */
-std::vector<float> intersectEllipseWithLine( const numerical::geometry::Ellipse& ellipse, const float y, bool horizontal);
+std::vector<float> intersectEllipseWithLine( const numerical::geometry::Ellipse& ellipse, float y, bool horizontal);
 
 }
 }

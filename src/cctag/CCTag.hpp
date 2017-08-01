@@ -118,7 +118,7 @@ public:
   void printTag( std::ostream& ostr ) const;
 #endif
 
-  void scale(const float s);
+  void scale(float s);
 
   float x() const override {
     return _centerImg.x();
@@ -363,7 +363,7 @@ public:
   static void releaseNearbyPointMemory( int pipeId );
 #endif
 
-  void serialize(boost::archive::text_oarchive & ar, const unsigned int version);
+  void serialize(boost::archive::text_oarchive & ar, unsigned int version);
 
 protected:
 

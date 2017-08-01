@@ -39,11 +39,11 @@ class EdgePointImage;
 void cctagDetection(
         CCTag::List& markers,
         int          pipeId,
-        const std::size_t frame,
+        std::size_t frame,
         const cv::Mat & graySrc,
         const Parameters & params,
         const cctag::CCTagMarkersBank & bank,
-        const bool bDisplayEllipses = true,
+        bool bDisplayEllipses = true,
         logtime::Mgmt* durations = nullptr );
 
 void cctagDetectionFromEdges(
@@ -51,7 +51,7 @@ void cctagDetectionFromEdges(
         EdgePointCollection& edgeCollection,
         const cv::Mat&          src,
         const std::vector<EdgePoint*>& seeds,
-        const std::size_t       frame,
+        std::size_t       frame,
         int pyramidLevel,
         float scale,
         const Parameters & params,

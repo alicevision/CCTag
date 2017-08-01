@@ -51,7 +51,7 @@ void edgeLinking(EdgePointCollection& edgeCollection, std::list<EdgePoint*>& con
  * @param edges resulting edges sorted points
  */
 void edgeLinkingDir(EdgePointCollection& edgeCollection, boost::container::flat_set<unsigned int>& processed,
-	const EdgePoint* p, const int dir, std::list<EdgePoint*>& convexEdgeSegment,
+	const EdgePoint* p, int dir, std::list<EdgePoint*>& convexEdgeSegment,
 	std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
 /** @brief Concaten all childrens of each points
@@ -69,7 +69,7 @@ void outlierRemoval(
         float & SmFinal,
         float threshold,
         std::size_t weightedType = NO_WEIGHT,
-        const std::size_t maxSize = std::numeric_limits<int>::max());
+        std::size_t maxSize = std::numeric_limits<std::size_t>::max());
 
 //void outlierRemoval( std::vector<EdgePoint*>& childrens, float & SmFinal, float threshold, std::size_t weightedType = 0 ); //todo@Lilian : templater le outlierRemoval
 

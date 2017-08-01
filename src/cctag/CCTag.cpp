@@ -87,7 +87,7 @@ void CCTag::condition(const Eigen::Matrix3f & mT, const Eigen::Matrix3f & mInvT)
   cctag::numerical::optimization::condition(_centerImg, mT);
 }
 
-void CCTag::scale(const float s)
+void CCTag::scale(float s)
 {
 
   for(std::vector< DirectedPoint2d<Eigen::Vector3f> > &vp : _points)
@@ -121,7 +121,7 @@ void CCTag::releaseNearbyPointMemory( int tagId )
 }
 #endif
 
-void CCTag::serialize(boost::archive::text_oarchive & ar, const unsigned int version)
+void CCTag::serialize(boost::archive::text_oarchive & ar, unsigned int version)
 {
   ar & BOOST_SERIALIZATION_NVP(_nCircles);
   ar & BOOST_SERIALIZATION_NVP(_id);

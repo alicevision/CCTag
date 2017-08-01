@@ -35,7 +35,7 @@ EdgePoint* gradientDirectionDescent(
         const EdgePointCollection& canny,
         const EdgePoint& p,
         int dir,
-        const std::size_t nmax, 
+        std::size_t nmax,
         const cv::Mat & imgDx, 
         const cv::Mat & imgDy, 
         int thrGradient)

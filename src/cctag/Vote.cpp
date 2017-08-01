@@ -247,8 +247,13 @@ void vote(EdgePointCollection& edgeCollection,
         }
     }
     
-    void edgeLinkingDir(EdgePointCollection& edgeCollection, boost::container::flat_set<unsigned int>& processed, const EdgePoint* p, const int dir,
-            std::list<EdgePoint*>& convexEdgeSegment, std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
+    void edgeLinkingDir(EdgePointCollection& edgeCollection,
+                        boost::container::flat_set<unsigned int>& processed,
+                        const EdgePoint* p,
+                        int dir,
+                        std::list<EdgePoint*>& convexEdgeSegment,
+                        std::size_t windowSizeOnInnerEllipticSegment,
+                        float averageVoteMin) {
         
         std::deque<float> phi;
         std::size_t i = 0;
@@ -380,7 +385,7 @@ void vote(EdgePointCollection& edgeCollection,
             float & SmFinal,
             float threshold,
             std::size_t weightedType,
-            const std::size_t maxSize)
+            std::size_t maxSize)
     {
       
       filteredChildrens.reserve(childrens.size());
