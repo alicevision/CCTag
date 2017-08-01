@@ -85,7 +85,7 @@ void cctagDetection(
       const cv::Mat & graySrc,
       const cctag::Parameters & params,
       logtime::Mgmt* durations = nullptr,
-      const CCTagMarkersBank * bank = nullptr);
+      const CCTagMarkersBank * pBank = nullptr);
 
 }
 

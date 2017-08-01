@@ -29,8 +29,8 @@ EdgePoint* gradientDirectionDescent(
   const EdgePoint& p,
   int dir,
   std::size_t nmax,
-  const cv::Mat & dx, 
-  const cv::Mat & dy,
+  const cv::Mat & imgDx,
+  const cv::Mat & imgDy,
   int thrGradient);
 
 } // namespace cctag

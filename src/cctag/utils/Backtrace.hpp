@@ -20,10 +20,10 @@
 namespace boost {
 
     namespace stack_trace {
-        int trace(void **addresses,int size);
+        int trace(void **addresses, int size);
         void write_symbols(void *const *addresses,int size,std::ostream &);
         std::string get_symbol(void *address);
-        std::string get_symbols(void * const *address,int size);
+        std::string get_symbols(void * const *addresses,int size);
     } // stack_trace
 
     class backtrace {

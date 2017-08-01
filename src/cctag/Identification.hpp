@@ -84,7 +84,7 @@ int identify_step_2(
     std::vector<cctag::ImageCut>& vSelectedCuts,
 	const std::vector< std::vector<float> > & radiusRatios,
 	const cv::Mat & src,
-    cctag::TagPipe* pipe,
+    cctag::TagPipe* cudaPipe,
 	const cctag::Parameters & params);
 
 using RadiusRatioBank = std::vector<std::vector<float>>;
@@ -142,9 +142,9 @@ void extractSignalUsingHomography(
         const Eigen::Matrix3f & mHomography,
         const Eigen::Matrix3f & mInvHomography);
 
-/* depreciated */
+/* deprecated */
 void extractSignalUsingHomographyDeprec(
-        cctag::ImageCut & rectifiedSig,
+        cctag::ImageCut & rectifiedCut,
         const cv::Mat & src,
         Eigen::Matrix3f & mHomography,
         std::size_t nSamples = 100,

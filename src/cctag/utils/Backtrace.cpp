@@ -47,9 +47,9 @@ namespace boost {
     namespace stack_trace {
         #if defined(BOOST_HAVE_EXECINFO)
         
-        int trace(void **array,int n)
+        int trace(void **addresses, int size)
         {
-            return :: backtrace(array,n);
+            return :: backtrace(addresses, size);
         }
         
         #elif defined(BOOST_MSVC)
@@ -72,15 +72,15 @@ namespace boost {
         
         #if defined(BOOST_HAVE_DLADDR) && defined(BOOST_HAVE_ABI_CXA_DEMANGLE)
         
-        std::string get_symbol(void *ptr)
+        std::string get_symbol(void *address)
         {
-            if(!ptr)
+            if(!address)
                 return std::string();
             std::ostringstream res;
             res.imbue(std::locale::classic());
-            res << ptr<<": ";
+            res << address<<": ";
             Dl_info info = {nullptr};
-            if(dladdr(ptr,&info) == 0) {
+            if(dladdr(address,&info) == 0) {
                 res << "???";
             }
             else {
@@ -99,7 +99,7 @@ namespace boost {
                     res << "???";
                 }
 
-                unsigned offset = (char *)ptr - (char *)info.dli_saddr;
+                unsigned offset = (char *)address - (char *)info.dli_saddr;
                 res << std::hex <<" + 0x" << offset ;
 
                 if(info.dli_fname)

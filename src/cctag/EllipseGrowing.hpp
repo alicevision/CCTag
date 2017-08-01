@@ -128,7 +128,7 @@ void ellipseHull( const EdgePointCollection& img, std::vector<EdgePoint*>& pts, 
 
 void ellipseGrowing2( const EdgePointCollection& img, const std::vector<EdgePoint*>& filteredChildrens,
                       std::vector<EdgePoint*>& outerEllipsePoints, numerical::geometry::Ellipse& ellipse,
-                      float ellipseGrowingEllipticHullWidth, std::size_t nLabel, bool goodInit);
+                      float ellipseGrowingEllipticHullWidth, std::size_t runId, bool goodInit);
 
 } // namespace cctag
 

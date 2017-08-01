@@ -20,13 +20,13 @@
 namespace cctag {
 namespace numerical {
 
-float innerProdMin( const std::vector<cctag::EdgePoint*>& childrens, float thrCosDiffMax, Point2d<Vector3s> & p1, Point2d<Vector3s> & p2 );
+float innerProdMin( const std::vector<cctag::EdgePoint*>& filteredChildren, float thrCosDiffMax, Point2d<Vector3s> & p1, Point2d<Vector3s> & p2 );
 
 void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points);
 
-void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector< Point2d<Eigen::Vector3f> >& childrens );
+void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector< Point2d<Eigen::Vector3f> >& points );
 
-void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& childrens );
+void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points );
 
 } // namespace numerical
 } // namespace cctag

@@ -40,8 +40,8 @@ void cctagDetection(
         CCTag::List& markers,
         int          pipeId,
         std::size_t frame,
-        const cv::Mat & graySrc,
-        const Parameters & params,
+        const cv::Mat & imgGraySrc,
+        const Parameters & providedParams,
         const cctag::CCTagMarkersBank & bank,
         bool bDisplayEllipses = true,
         logtime::Mgmt* durations = nullptr );
@@ -54,7 +54,7 @@ void cctagDetectionFromEdges(
         std::size_t       frame,
         int pyramidLevel,
         float scale,
-        const Parameters & params,
+        const Parameters & providedParams,
         logtime::Mgmt* durations );
 
 void createImageForVoteResultDebug(

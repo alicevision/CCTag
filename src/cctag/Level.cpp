@@ -15,8 +15,8 @@
 
 namespace cctag {
 
-Level::Level( std::size_t width, std::size_t height, int level, bool cuda_allocates )
-    : _level( level )
+Level::Level( std::size_t width, std::size_t height, int debug_info_level, bool cuda_allocates )
+    : _level( debug_info_level )
     , _cuda_allocates( cuda_allocates )
     , _mat_initialized_from_cuda( false )
     , _cols( width )
