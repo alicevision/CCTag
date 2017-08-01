@@ -51,7 +51,7 @@ namespace cctag {
             void initFlowComponentsIndex(int size);
             void resetFlowComponent();
             void incrementFlowComponentIndex(int n);
-            void setResearchArea(cctag::numerical::geometry::Ellipse circularResearchArea);
+            void setResearchArea(const cctag::numerical::geometry::Ellipse& circularResearchArea);
             void setFlowComponentAssemblingState( bool isAssembled, int indexSelectedFlowComponent);
             void outputFlowComponentInfos(const cctag::CCTagFlowComponent & flowComponent);
             

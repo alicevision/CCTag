@@ -54,7 +54,7 @@ bool initMarkerCenter(cctag::Point2d<Eigen::Vector3f> & markerCenter,
       {
         numerical::ellipseFitting(innerEllipse, markerPoints[0]);
 
-        for(Point2d<Eigen::Vector3f> pt : markerPoints[0])
+        for(const Point2d<Eigen::Vector3f>& pt : markerPoints[0])
         {
           CCTagVisualDebug::instance().drawPoint(pt, cctag::color_red);
         }

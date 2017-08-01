@@ -8,8 +8,8 @@
 #include <algorithm>
 #include "Regression.h"
 
-static void RemoveAllFiles(const boost::filesystem::path dirPath);
-static std::vector<boost::filesystem::path> CollectFiles(const boost::filesystem::path dirPath);
+static void RemoveAllFiles(const boost::filesystem::path& dirPath);
+static std::vector<boost::filesystem::path> CollectFiles(const boost::filesystem::path& dirPath);
 static bool SortTags(FrameLog& log);
 
 /////////////////////////////////////////////////////////////////////////////
@@ -171,14 +171,14 @@ void TestChecker::compare(const DetectedTag& referenceTag, const DetectedTag& te
 
 /////////////////////////////////////////////////////////////////////////////
 
-static void RemoveAllFiles(const boost::filesystem::path dirPath)
+static void RemoveAllFiles(const boost::filesystem::path& dirPath)
 {
   using namespace boost::filesystem;
   remove_all(dirPath);
   create_directories(dirPath);
 }
 
-static std::vector<boost::filesystem::path> CollectFiles(const boost::filesystem::path dirPath)
+static std::vector<boost::filesystem::path> CollectFiles(const boost::filesystem::path& dirPath)
 {
   using namespace boost::filesystem;
   std::vector<path> filePaths;

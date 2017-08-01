@@ -103,7 +103,7 @@ void CCTagFileDebug::incrementFlowComponentIndex(int n)
 #endif            
 }
 
-void CCTagFileDebug::setResearchArea(cctag::numerical::geometry::Ellipse circularResearchArea)
+void CCTagFileDebug::setResearchArea(const cctag::numerical::geometry::Ellipse& circularResearchArea)
 {
 #if defined CCTAG_SERIALIZE && defined DEBUG
     _researchArea = circularResearchArea;
