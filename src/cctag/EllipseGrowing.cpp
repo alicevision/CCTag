@@ -80,7 +80,7 @@ bool initMarkerCenter(cctag::Point2d<Eigen::Vector3f> & markerCenter,
 }
 
 bool addCandidateFlowtoCCTag(EdgePointCollection& edgeCollection,
-        const std::vector< EdgePoint* > & filteredChildrens,
+        const std::vector< EdgePoint* > & filteredChildren,
         const std::vector< EdgePoint* > & outerEllipsePoints,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
         std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
@@ -99,7 +99,7 @@ bool addCandidateFlowtoCCTag(EdgePointCollection& edgeCollection,
   ++itp;
   for (; itp != cctagPoints.rend(); ++itp)
   {
-    itp->reserve(filteredChildrens.size());
+    itp->reserve(filteredChildren.size());
   }
 
   std::list<EdgePoint*> vProcessedEdgePoint;
@@ -112,7 +112,7 @@ bool addCandidateFlowtoCCTag(EdgePointCollection& edgeCollection,
   std::size_t nGradientOut = 0;
   std::size_t nAddedPoint = 0;
 
-  for (std::vector<EdgePoint*>::const_iterator it = filteredChildrens.begin(); it != filteredChildrens.end(); ++it)
+  for (std::vector<EdgePoint*>::const_iterator it = filteredChildren.begin(); it != filteredChildren.end(); ++it)
   {
     int dir = -1;
     EdgePoint* p = *it;
@@ -210,19 +210,19 @@ bool addCandidateFlowtoCCTag(EdgePointCollection& edgeCollection,
  * The goal is to avoid particular cases, with a bad initialization. The
  * condition is that the ellipse is too flattened.
  *
- * @pre childrens size >=5
+ * @pre children size >=5
  *
- * @param[in] childrens
+ * @param[in] children
  * @param[out] iMin1
  * @param[out] iMin2
  */
-bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2d<Vector3s> & p1, Point2d<Vector3s> & p2)
+bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildren, Point2d<Vector3s> & p1, Point2d<Vector3s> & p2)
 {
-  BOOST_ASSERT(filteredChildrens.size() >= 5);
+  BOOST_ASSERT(filteredChildren.size() >= 5);
 
   static const float thrCosDiffMax = 0.25;
 
-  const float min = numerical::innerProdMin(filteredChildrens, thrCosDiffMax, p1, p2);
+  const float min = numerical::innerProdMin(filteredChildren, thrCosDiffMax, p1, p2);
 
   return min <= thrCosDiffMax;
 }
@@ -230,15 +230,15 @@ bool isGoodEGPoints(const std::vector<EdgePoint*>& filteredChildrens, Point2d<Ve
 /**
  * @brief Create a circle that matches outer ellipse points.
  *
- * @param childrens
+ * @param children
  * @param iMin1
  * @param iMin2
  * @return the circle
  */
-numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vector<EdgePoint*>& filteredChildrens, const Point2d<Eigen::Vector3i> & p1, const Point2d<Eigen::Vector3i> & p2)
+numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vector<EdgePoint*>& filteredChildren, const Point2d<Eigen::Vector3i> & p1, const Point2d<Eigen::Vector3i> & p2)
 {
-  // Compute the line passing through filteredChildrens[iMin1] and filteredChildrens[iMin2] and
-  // find i such as d(filteredChildrens[i], l) is maximum.
+  // Compute the line passing through filteredChildren[iMin1] and filteredChildren[iMin2] and
+  // find i such as d(filteredChildren[i], l) is maximum.
   Eigen::Matrix2f mL;
 
   mL(0, 0) = p1.x();
@@ -260,13 +260,13 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
 
   const float normL = std::sqrt(boost::math::pow<2>(l(0)) + boost::math::pow<2>(l(1)));
 
-  const EdgePoint * pMax = filteredChildrens.front();
+  const EdgePoint * pMax = filteredChildren.front();
   float distMax = std::min(
                     cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*pMax), p1),
                     cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*pMax), p2));
 
 
-  for(const EdgePoint * const e : filteredChildrens)
+  for(const EdgePoint * const e : filteredChildren)
   {
     const float dist = std::min(
             cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*e), p1),
@@ -301,7 +301,7 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
   return resCircle;
 }
 
-bool ellipseGrowingInit(const std::vector<EdgePoint*>& filteredChildrens, numerical::geometry::Ellipse& ellipse)
+bool ellipseGrowingInit(const std::vector<EdgePoint*>& filteredChildren, numerical::geometry::Ellipse& ellipse)
 {
 
   Point2d<Vector3s> p1;
@@ -309,16 +309,16 @@ bool ellipseGrowingInit(const std::vector<EdgePoint*>& filteredChildrens, numeri
 
   bool goodInit = true;
 
-  if (isGoodEGPoints(filteredChildrens, p1, p2))
+  if (isGoodEGPoints(filteredChildren, p1, p2))
   {
-    // Ellipse fitting based on the filtered childrens
+    // Ellipse fitting based on the filtered children
     // todo@Lilian: create the construction Ellipse(pts) which calls the following.
-    numerical::ellipseFitting(ellipse, filteredChildrens);
+    numerical::ellipseFitting(ellipse, filteredChildren);
   }
   else
   {
     // Initialize ellipse to a circle if the arc coverage is not covered enough. 
-    numerical::circleFitting(ellipse, filteredChildrens);
+    numerical::circleFitting(ellipse, filteredChildren);
 
     goodInit = false;
   }
@@ -405,7 +405,7 @@ void ellipseHull(const EdgePointCollection& img,
 
 void ellipseGrowing2(
         const EdgePointCollection& img,
-        const std::vector<EdgePoint*>& filteredChildrens, 
+        const std::vector<EdgePoint*>& filteredChildren,
         std::vector<EdgePoint*>& outerEllipsePoints,
         numerical::geometry::Ellipse& ellipse,
         float ellipseGrowingEllipticHullWidth,
@@ -413,9 +413,9 @@ void ellipseGrowing2(
         bool goodInit)
 {
   const size_t threadMask = (size_t)1 << runId;
-  outerEllipsePoints.reserve(filteredChildrens.size()*3);
+  outerEllipsePoints.reserve(filteredChildren.size()*3);
 
-  for(EdgePoint * children : filteredChildrens)
+  for(EdgePoint * children : filteredChildren)
   {
     outerEllipsePoints.push_back(children);
     children->_processed |= threadMask;

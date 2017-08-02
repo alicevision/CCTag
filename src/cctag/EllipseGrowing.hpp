@@ -55,14 +55,14 @@ bool initMarkerCenter(
 
 bool addCandidateFlowtoCCTag(
         EdgePointCollection& edgeCollection,
-        const std::vector< EdgePoint* > & filteredChildrens,
+        const std::vector< EdgePoint* > & filteredChildren,
         const std::vector< EdgePoint* > & outerEllipsePoints,
         const cctag::numerical::geometry::Ellipse& outerEllipse,
         std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
         std::size_t numCircles);
 
 bool ellipseGrowingInit(
-        const std::vector<EdgePoint*>& filteredChildrens,
+        const std::vector<EdgePoint*>& filteredChildren,
         cctag::numerical::geometry::Ellipse& ellipse);
 
 /** @brief Is a point in an elliptical hull ?
@@ -120,13 +120,13 @@ void computeHull( const cctag::numerical::geometry::Ellipse& ellipse, float delt
 void ellipseHull( const EdgePointCollection& img, std::vector<EdgePoint*>& pts, cctag::numerical::geometry::Ellipse& ellipse, float delta, std::size_t runId);
 
 /** @brief Ellipse growing
- * @param childrens vote winner children points
+ * @param children vote winner children points
  * @param outerEllipsePoints outer ellipse points
  * @param ellipse target ellipse
  * @param Width of elliptic hull in ellipse growing
  */
 
-void ellipseGrowing2( const EdgePointCollection& img, const std::vector<EdgePoint*>& filteredChildrens,
+void ellipseGrowing2( const EdgePointCollection& img, const std::vector<EdgePoint*>& filteredChildren,
                       std::vector<EdgePoint*>& outerEllipsePoints, numerical::geometry::Ellipse& ellipse,
                       float ellipseGrowingEllipticHullWidth, std::size_t runId, bool goodInit);
 

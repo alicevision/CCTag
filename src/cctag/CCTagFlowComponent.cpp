@@ -16,8 +16,8 @@ namespace cctag
 CCTagFlowComponent::CCTagFlowComponent(
   const EdgePointCollection& edgeCollection,
   const std::vector<EdgePoint*> & outerEllipsePoints,
-  const std::list<EdgePoint*> & childrens,
-  const std::vector<EdgePoint*> & filteredChildrens,
+  const std::list<EdgePoint*> & children,
+  const std::vector<EdgePoint*> & filteredChildren,
   const cctag::numerical::geometry::Ellipse & outerEllipse,
   const std::list<EdgePoint*> & convexEdgeSegment,
   const EdgePoint & seed,
@@ -39,18 +39,18 @@ CCTagFlowComponent::CCTagFlowComponent(
     _convexEdgeSegment.emplace_back(*e);
   }
 
-  setFieldLines(childrens, edgeCollection);
-  setFilteredFieldLines(filteredChildrens, edgeCollection);
+  setFieldLines(children, edgeCollection);
+  setFilteredFieldLines(filteredChildren, edgeCollection);
 
 }
 
-void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens, const EdgePointCollection& edgeCollection)
+void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildren, const EdgePointCollection& edgeCollection)
 {
-  _filteredFieldLines.resize(filteredChildrens.size());
+  _filteredFieldLines.resize(filteredChildren.size());
 
   std::size_t i = 0;
 
-  for(auto p : filteredChildrens)
+  for(auto p : filteredChildren)
   {
     int dir = -1;
     std::vector<EdgePoint> & vE = _filteredFieldLines[i];
@@ -77,13 +77,13 @@ void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & f
   }
 }
 
-void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens, const EdgePointCollection& edgeCollection)
+void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & children, const EdgePointCollection& edgeCollection)
 {
-  _fieldLines.resize(childrens.size());
+  _fieldLines.resize(children.size());
 
   std::size_t i = 0;
 
-  for (std::list<EdgePoint*>::const_iterator it = childrens.begin(); it != childrens.end(); ++it)
+  for (std::list<EdgePoint*>::const_iterator it = children.begin(); it != children.end(); ++it)
   {
     int dir = -1;
     EdgePoint* p = *it;

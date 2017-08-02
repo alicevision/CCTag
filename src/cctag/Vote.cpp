@@ -395,7 +395,7 @@ void vote(EdgePointCollection& edgeCollection,
         return;
     }
 
-    void childrensOf(const EdgePointCollection& edgeCollection, const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& childrens) {
+    void childrenOf(const EdgePointCollection& edgeCollection, const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& children) {
         std::size_t voteMax = 1;
 
         for (const EdgePoint* e : edges) {
@@ -408,24 +408,24 @@ void vote(EdgePointCollection& edgeCollection,
 
                 if (voters.second - voters.first >= voteMax / 14)
                 for (; voters.first != voters.second; ++voters.first)
-                  childrens.push_back(edgeCollection(*voters.first));
+                  children.push_back(edgeCollection(*voters.first));
             }
         }
     }
 
     void outlierRemoval(
-            const std::list<EdgePoint*>& childrens,
-            std::vector<EdgePoint*>& filteredChildrens,
+            const std::list<EdgePoint*>& children,
+            std::vector<EdgePoint*>& filteredChildren,
             float & SmFinal,
             float threshold,
             std::size_t weightedType,
             std::size_t maxSize)
     {
       
-      filteredChildrens.reserve(childrens.size());
+      filteredChildren.reserve(children.size());
       
-      const std::size_t nSubsampleSize = std::min(childrens.size(), maxSize);
-      const float step = (float) childrens.size()/ (float) nSubsampleSize;    
+      const std::size_t nSubsampleSize = std::min(children.size(), maxSize);
+      const float step = (float) children.size()/ (float) nSubsampleSize;
 
         // Precondition
         if (nSubsampleSize >= 5) {
@@ -434,10 +434,10 @@ void vote(EdgePointCollection& edgeCollection,
             const float f = 1.f;
 
             std::vector<Eigen::Vector3f> pts;
-            pts.reserve(childrens.size());
+            pts.reserve(children.size());
 
             std::vector<float> weights;
-            weights.reserve(childrens.size());
+            weights.reserve(children.size());
 
             // Store a subset of EdgePoint* on which the robust ellipse estimation will
             // performed. Considering a subset of points is valid as what matters is the 
@@ -447,7 +447,7 @@ void vote(EdgePointCollection& edgeCollection,
 
             std::size_t k = 0;
             std::size_t iEdgePoint = 0;
-            for(const auto edgePoint : childrens )
+            for(const auto edgePoint : children )
             {
               if (iEdgePoint == std::size_t(k*step) )
               {
@@ -548,9 +548,9 @@ void vote(EdgePointCollection& edgeCollection,
 
             std::vector<float> vDistFinal;
             vDistFinal.clear();
-            vDistFinal.reserve(childrens.size());
+            vDistFinal.reserve(children.size());
 
-            for(EdgePoint * e : childrens) {
+            for(EdgePoint * e : children) {
 
                 float distFinal = 1e300;
 
@@ -564,7 +564,7 @@ void vote(EdgePointCollection& edgeCollection,
  
                 if (distFinal < threshold * Sm) {
 
-                    filteredChildrens.push_back(e);
+                    filteredChildren.push_back(e);
                     vDistFinal.push_back(distFinal);
                 }
             }
@@ -576,7 +576,7 @@ void vote(EdgePointCollection& edgeCollection,
             EdgePointCollection& edgeCollection,
             numerical::geometry::Ellipse & outerEllipse,
             std::vector<EdgePoint*>& outerEllipsePoints,
-            const std::vector<EdgePoint*>& filteredChildrens,
+            const std::vector<EdgePoint*>& filteredChildren,
             const Candidate & anotherCandidate,
             std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
             std::size_t numCircles,
@@ -711,7 +711,7 @@ void vote(EdgePointCollection& edgeCollection,
                 const float SmFinal = numerical::medianRef(vDistFinal);
 
                 if (SmFinal < thrMedianDistanceEllipse) {
-                    if (addCandidateFlowtoCCTag(edgeCollection, anotherCandidate._filteredChildrens, anotherOuterEllipsePoints, outerEllipseTemp, cctagPoints, numCircles)) {
+                    if (addCandidateFlowtoCCTag(edgeCollection, anotherCandidate._filteredChildren, anotherOuterEllipsePoints, outerEllipseTemp, cctagPoints, numCircles)) {
                         outerEllipsePoints = outerEllipsePointsTemp;
                         outerEllipse = outerEllipseTemp;
 

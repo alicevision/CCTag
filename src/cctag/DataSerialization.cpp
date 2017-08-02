@@ -113,8 +113,8 @@ void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowC
 
     serializeEllipse(ar, flowComponent._outerEllipse);
 
-    const std::size_t sizeFilteredChildrens = flowComponent._filteredFieldLines.size();
-    ar & BOOST_SERIALIZATION_NVP(sizeFilteredChildrens);
+    const std::size_t sizeFilteredChildren = flowComponent._filteredFieldLines.size();
+    ar & BOOST_SERIALIZATION_NVP(sizeFilteredChildren);
 
     for(const std::vector<EdgePoint> & fL : flowComponent._filteredFieldLines) {
 
@@ -123,8 +123,8 @@ void serializeFlowComponent(boost::archive::text_oarchive & ar, const CCTagFlowC
         }
     }
 
-    const std::size_t sizeChildrens = flowComponent._fieldLines.size();
-    ar & BOOST_SERIALIZATION_NVP(sizeChildrens);
+    const std::size_t sizechildren = flowComponent._fieldLines.size();
+    ar & BOOST_SERIALIZATION_NVP(sizechildren);
 
     for(const std::vector<EdgePoint> & fL : flowComponent._fieldLines) {
 

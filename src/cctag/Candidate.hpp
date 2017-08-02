@@ -22,12 +22,12 @@ public:
     
 	Candidate( EdgePoint* seed, const std::list<EdgePoint*> & convexEdgeSegment,
 		const std::vector<EdgePoint*> & outerEllipsePoints, const cctag::numerical::geometry::Ellipse & outerEllipse,
-		const std::vector<EdgePoint*> & filteredChildrens, int score, std::size_t nLabel )
+		const std::vector<EdgePoint*> & filteredChildren, int score, std::size_t nLabel )
 		: _seed( seed )
 		, _convexEdgeSegment( convexEdgeSegment )
 		, _outerEllipsePoints( outerEllipsePoints )
 	        , _outerEllipse ( outerEllipse )
-		, _filteredChildrens(filteredChildrens)
+		, _filteredChildren(filteredChildren)
 		, _score(score)
 		, _nLabel(nLabel)
 	{}
@@ -38,7 +38,7 @@ public:
 	std::list<EdgePoint*> _convexEdgeSegment;
 	std::vector<EdgePoint*> _outerEllipsePoints;
 	cctag::numerical::geometry::Ellipse _outerEllipse;
-	std::vector<EdgePoint*> _filteredChildrens;
+	std::vector<EdgePoint*> _filteredChildren;
 	int _score;
 	std::size_t _nLabel;
         float _averageReceivedVote;
@@ -46,14 +46,14 @@ public:
         
 #ifdef CCTAG_SERIALIZE
         // From here -- only used for results analysis --
-        std::list<EdgePoint*> _childrens;
+        std::list<EdgePoint*> _children;
         
-        void setChildrens(const std::list<EdgePoint*> & childrens){
-            _childrens = childrens;
+        void setchildren(const std::list<EdgePoint*> & children){
+            _children = children;
         }        
         
-        const std::list<EdgePoint*> & getChildrens(){
-            return _childrens;
+        const std::list<EdgePoint*> & getchildren(){
+            return _children;
         }
         
         // To here -- only used for results analysis --

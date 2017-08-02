@@ -124,32 +124,32 @@ static void completeFlowComponent(
   
   try
   {
-    std::list<EdgePoint*> childrens;
+    std::list<EdgePoint*> children;
 
-    childrensOf(edgeCollection, candidate._convexEdgeSegment, childrens);
+    childrenOf(edgeCollection, candidate._convexEdgeSegment, children);
 
-    if (childrens.size() < params._minPointsSegmentCandidate)
+    if (children.size() < params._minPointsSegmentCandidate)
     {
       return;
     }
 
-    candidate._score = childrens.size();
+    candidate._score = children.size();
 
     float SmFinal = 1e+10;
 
-    std::vector<EdgePoint*> & filteredChildrens = candidate._filteredChildrens;
+    std::vector<EdgePoint*> & filteredChildren = candidate._filteredChildren;
 
     outlierRemoval(
-            childrens, 
-            filteredChildrens,
+            children,
+            filteredChildren,
             SmFinal, 
             params._threshRobustEstimationOfOuterEllipse,
             kWeight,
             60);
 
-    if (filteredChildrens.size() < 5)
+    if (filteredChildren.size() < 5)
     {
-      DO_TALK( CCTAG_COUT_DEBUG(" filteredChildrens.size() < 5 "); )
+      DO_TALK( CCTAG_COUT_DEBUG(" filteredChildren.size() < 5 "); )
       return;
     }
 
@@ -158,7 +158,7 @@ static void completeFlowComponent(
     {
       ssize_t nSegmentCommon = -1;
 
-      for(EdgePoint * p : filteredChildrens)
+      for(EdgePoint * p : filteredChildren)
       {
         if (p->_nSegmentOut != -1)
         {
@@ -181,7 +181,7 @@ static void completeFlowComponent(
         nLabel = nSegmentCommon;
       }
 
-      for(EdgePoint * p : filteredChildrens)
+      for(EdgePoint * p : filteredChildren)
       {
         p->_nSegmentOut = nLabel;
       }
@@ -192,9 +192,9 @@ static void completeFlowComponent(
 
     bool goodInit = false;
 
-    goodInit = ellipseGrowingInit(filteredChildrens, outerEllipse);
+    goodInit = ellipseGrowingInit(filteredChildren, outerEllipse);
 
-    ellipseGrowing2(edgeCollection, filteredChildrens, outerEllipsePoints, outerEllipse,
+    ellipseGrowing2(edgeCollection, filteredChildren, outerEllipsePoints, outerEllipse,
                     params._ellipseGrowingEllipticHullWidth, runId, goodInit);
 
     candidate._nLabel = nLabel;
@@ -244,11 +244,11 @@ static void completeFlowComponent(
     }
 
 #ifdef CCTAG_SERIALIZE
-    // Add childrens to output the filtering results (from outlierRemoval)
-    vCandidateLoopTwo.back().setChildrens(childrens);
+    // Add children to output the filtering results (from outlierRemoval)
+    vCandidateLoopTwo.back().setchildren(children);
 
     // Write all selectedFlowComponent
-    CCTagFlowComponent flowComponent(edgeCollection, outerEllipsePoints, childrens, filteredChildrens,
+    CCTagFlowComponent flowComponent(edgeCollection, outerEllipsePoints, children, filteredChildren,
                                      outerEllipse, candidate._convexEdgeSegment,
                                     *(candidate._seed), params._nCircles);
     CCTagFileDebug::instance().outputFlowComponentInfos(flowComponent);
@@ -357,7 +357,7 @@ static void flowComponentAssembling(
     DO_TALK( CCTAG_COUT_VAR_DEBUG(selectedCandidate._outerEllipse); )
 
     if( isAnotherSegment(edgeCollection, outerEllipse, outerEllipsePoints, 
-            selectedCandidate._filteredChildrens, selectedCandidate,
+            selectedCandidate._filteredChildren, selectedCandidate,
             cctagPoints, params._nCrowns * 2,
             params._thrMedianDistanceEllipse) )
     {
@@ -425,7 +425,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
       }
 
       // Add the flowComponent from candidate to cctagPoints
-      if (! addCandidateFlowtoCCTag(edgeCollection, candidate._filteredChildrens, 
+      if (! addCandidateFlowtoCCTag(edgeCollection, candidate._filteredChildren,
               candidate._outerEllipsePoints, outerEllipse,
               cctagPoints, params._nCrowns * 2))
       {

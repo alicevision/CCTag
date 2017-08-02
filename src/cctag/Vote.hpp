@@ -54,24 +54,24 @@ void edgeLinkingDir(EdgePointCollection& edgeCollection, boost::container::flat_
 	const EdgePoint* p, int dir, std::list<EdgePoint*>& convexEdgeSegment,
 	std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin);
 
-/** @brief Concaten all childrens of each points
+/** @brief Concaten all children of each points
  * @param edges list of edges
- * @param childrens resulting childrens
+ * @param children resulting children
  */
-void childrensOf(const EdgePointCollection& edgeCollection, const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& childrens );
+void childrenOf(const EdgePointCollection& edgeCollection, const std::list<EdgePoint*>& edges, std::list<EdgePoint*>& children );
 
-/** @brief Concaten all childrens of each points
- * @param [in/out] edges list of childrens points (from a winner)
+/** @brief Concaten all children of each points
+ * @param [in/out] edges list of children points (from a winner)
  */
 void outlierRemoval(
-        const std::list<EdgePoint*>& childrens,
-        std::vector<EdgePoint*>& filteredChildrens,
+        const std::list<EdgePoint*>& children,
+        std::vector<EdgePoint*>& filteredChildren,
         float & SmFinal,
         float threshold,
         std::size_t weightedType = NO_WEIGHT,
         std::size_t maxSize = std::numeric_limits<std::size_t>::max());
 
-//void outlierRemoval( std::vector<EdgePoint*>& childrens, float & SmFinal, float threshold, std::size_t weightedType = 0 ); //todo@Lilian : templater le outlierRemoval
+//void outlierRemoval( std::vector<EdgePoint*>& children, float & SmFinal, float threshold, std::size_t weightedType = 0 ); //todo@Lilian : templater le outlierRemoval
 
 /** @brief Search for another segment after the ellipse growinf procedure
  * @param points from the first elliptical segment
@@ -81,7 +81,7 @@ bool isAnotherSegment(
         EdgePointCollection& edgeCollection,
         numerical::geometry::Ellipse & outerEllipse,
         std::vector<EdgePoint*>&  outerEllipsePoints,
-        const std::vector<EdgePoint*>& filteredChildrens,
+        const std::vector<EdgePoint*>& filteredChildren,
         const Candidate & anotherCandidate,
         std::vector< std::vector< DirectedPoint2d<Eigen::Vector3f> > >& cctagPoints,
         std::size_t numCircles,

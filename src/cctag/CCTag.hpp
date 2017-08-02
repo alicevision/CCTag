@@ -317,8 +317,8 @@ public:
     _flowComponents.emplace_back(
         edgeCollection,
         candidate._outerEllipsePoints,
-        candidate._childrens,
-        candidate._filteredChildrens,
+        candidate._children,
+        candidate._filteredChildren,
         candidate._outerEllipse,
         candidate._convexEdgeSegment,
         *(candidate._seed),
