@@ -100,11 +100,9 @@ void vote(EdgePointCollection& edgeCollection,
     }
 
     
-    for (int iEdgePoint = 0; iEdgePoint < pointCount; ++iEdgePoint ) {
+    for (int iEdgePoint = 0; iEdgePoint < pointCount; ++iEdgePoint )
+    {
         EdgePoint& p = *edgeCollection(iEdgePoint);
-        float lastDist, dist, totalDistance; // scalar to compute the distance ratio
-        float cosDiffTheta; // difference in subsequent gradients orientation
-        std::size_t i = 1;
         
         // Alternate from the edge point found in the direction opposed to the gradient
         // direction.
@@ -115,65 +113,81 @@ void vote(EdgePointCollection& edgeCollection,
         // To save all sub-segments length
         std::vector<float> vDist; ///
         vDist.reserve(params._nCrowns * 2 - 1);
-        int flagDist = 1;
 
         // Length of the reconstructed field line approximation between the two
         // extremities.
-        totalDistance = 0.f;
+        float totalDistance = 0.f;
 
-        if (current) {
-            cosDiffTheta = -p.gradient().dot(current->gradient());
-            if (cosDiffTheta >= params._angleVoting) {
-                lastDist = cctag::numerical::distancePoints2D(p, *current);
+        if (current != nullptr)
+        {
+            // difference in subsequent gradients orientation
+            float cosDiffTheta = -p.gradient().dot(current->gradient());
+            if (cosDiffTheta >= params._angleVoting)
+            {
+                float lastDist = cctag::numerical::distancePoints2D(p, *current);
                 vDist.push_back(lastDist);
                 
                 // Add the sub-segment length to the total distance.
                 totalDistance += lastDist;
 
+                std::size_t i = 1;
                 // Iterate over all crowns
-                while (i < params._nCrowns) {
+                while (i < params._nCrowns)
+                {
                     choosen = nullptr;
                     
                     // First in the gradient direction
                     EdgePoint* target = edgeCollection.after(current);
                     // No edge point was found in that direction
-                    if (!target) {
+                    if (target == nullptr)
+                    {
                         break;
                     }
                     
                     // Check the difference of two consecutive angles
                     cosDiffTheta = -target->gradient().dot(current->gradient());
-                    if (cosDiffTheta >= params._angleVoting) {
-                        dist = cctag::numerical::distancePoints2D(*target, *current);
+                    if (cosDiffTheta >= params._angleVoting)
+                    {
+                        // scalar used to compute the distance ratio
+                        float dist = cctag::numerical::distancePoints2D(*target, *current);
                         vDist.push_back(dist);
                         totalDistance += dist;
 
+                        int flagDist = 1;
+
                         // Check the distance ratio
-                        if (vDist.size() > 1) {
-                            for (int iDist = 0; iDist < vDist.size(); ++iDist) {
-                                for (int jDist = iDist + 1; jDist < vDist.size(); ++jDist) {
+                        if (vDist.size() > 1)
+                        {
+                            for (int iDist = 0; iDist < vDist.size(); ++iDist)
+                            {
+                                for (int jDist = iDist + 1; jDist < vDist.size(); ++jDist)
+                                {
                                     flagDist = (vDist[iDist] <= vDist[jDist] * params._ratioVoting) && (vDist[jDist] <= vDist[iDist] * params._ratioVoting) && flagDist;
                                 }
                             }
                         }
 
-                        if (flagDist)
+                        if (flagDist != 0)
                         {
                             lastDist = dist;
                             current = target;
                             // Second in the opposite gradient direction
                             target = edgeCollection.before(current);
-                            if (!target) {
+                            if (target == nullptr)
+                            {
                                 break;
                             }
                             cosDiffTheta = -target->gradient().dot(current->gradient());
-                            if (cosDiffTheta >= params._angleVoting) {
+                            if (cosDiffTheta >= params._angleVoting)
+                            {
                                 dist = cctag::numerical::distancePoints2D(*target, *current);
                                 vDist.push_back(dist);
                                 totalDistance += dist;
 
-                                for (int iDist = 0; iDist < vDist.size(); ++iDist) {
-                                    for (int jDist = iDist + 1; jDist < vDist.size(); ++jDist) {
+                                for (int iDist = 0; iDist < vDist.size(); ++iDist)
+                                {
+                                    for (int jDist = iDist + 1; jDist < vDist.size(); ++jDist)
+                                    {
                                         flagDist = (vDist[iDist] <= vDist[jDist] * params._ratioVoting) && (vDist[jDist] <= vDist[iDist] * params._ratioVoting) && flagDist;
                                     }
                                 }
@@ -183,27 +197,37 @@ void vote(EdgePointCollection& edgeCollection,
                                     lastDist = dist;
                                     current = target;
                                     choosen = current;
-                                    if (!current) {
+                                    if (current == nullptr)
+                                    {
                                         break;
                                     }
-                                } else {
+                                }
+                                else
+                                {
                                     break;
                                 }
-                            } else {
+                            }
+                            else
+                            {
                                 break;
                             }
-                        } else {
+                        }
+                        else
+                        {
                             break;
                         }
-                    } else {
+                    }
+                    else
+                    {
                         break;
                     }
                     ++i;
-                }
+                } // while
             }
         }
         // Check if winner was found
-        if (choosen) {
+        if (choosen != nullptr)
+        {
             int iChoosen = edgeCollection(choosen);
             voters[iChoosen].push_back(edgeCollection(&p));
             // update flow length average scale factor
@@ -342,21 +366,31 @@ void vote(EdgePointCollection& edgeCollection,
             ++i;
         }
 
-        int n = 0;
-        if ((i == maxLength) || (stop == CONVEXITY_LOST)) {
-            if (convexEdgeSegment.size() > windowSizeOnInnerEllipticSegment) {
-                for(EdgePoint * collectedP : convexEdgeSegment) {
-                    if (n == convexEdgeSegment.size() - windowSizeOnInnerEllipticSegment) {
+        if ((i == maxLength) || (stop == CONVEXITY_LOST))
+        {
+            if (convexEdgeSegment.size() > windowSizeOnInnerEllipticSegment)
+            {
+                int n = 0;
+                for(EdgePoint * collectedP : convexEdgeSegment)
+                {
+                    if (n == convexEdgeSegment.size() - windowSizeOnInnerEllipticSegment)
+                    {
                         break;
-                    } else {
+                    }
+                    else
+                    {
                         edgeCollection.set_processed_in(collectedP, true);
                         ++n;
                     }
                 }
             }
-        } else if (stop == EDGE_NOT_FOUND) {
+        }
+        else if (stop == EDGE_NOT_FOUND)
+        {
             for (EdgePoint* collectedP : convexEdgeSegment)
-              edgeCollection.set_processed_in(collectedP, true);
+            {
+                edgeCollection.set_processed_in(collectedP, true);
+            }
         }
         return;
     }

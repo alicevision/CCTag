@@ -203,15 +203,14 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildren, float
 
             float min = 1.1;
 
-            float normGrad = -1;
-
             float distMax = 0.f;
 
             EdgePoint* p0 = filteredChildren.front();
 
-            if (filteredChildren.size()) {
+            if (!filteredChildren.empty())
+            {
 
-                normGrad = std::sqrt(p0->dX() * p0->dX() + p0->dY() * p0->dY());
+                float normGrad = std::sqrt(p0->dX() * p0->dX() + p0->dY() * p0->dY());
 
                 // Step 1
                 float gx0 = p0->dX() / normGrad;

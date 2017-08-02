@@ -295,7 +295,6 @@ static void flowComponentAssembling(
 
   int score = -1;
   int iMax = 0;
-  int i = 0;
 
   float ratioExpension = 2.5;
   numerical::geometry::Circle circularResearchArea(
@@ -303,6 +302,7 @@ static void flowComponentAssembling(
          candidate._seed->_flowLength * ratioExpension);
 
   {
+    int i = 0;
     // Search for another segment
     for(const Candidate & anotherCandidate : vCandidateLoopTwo)
     {

@@ -265,11 +265,10 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
                     cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*pMax), p1),
                     cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*pMax), p2));
 
-  float dist;
 
   for(const EdgePoint * const e : filteredChildrens)
   {
-    dist = std::min(
+    const float dist = std::min(
             cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*e), p1),
             cctag::numerical::distancePoints2D((Point2d<Vector3s>)(*e), p2));
 
