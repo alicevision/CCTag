@@ -123,18 +123,18 @@ int main(int argc, char **argv)
     
     if (mode == "gen-ref") {
       GenerateReference();
-      return 0;
+      return EXIT_SUCCESS;
     }
     
     if (mode == "gen-test") {
       TestRunner testRunner(SourceDir, DestinationDir, UseCuda);
       testRunner.generateTestResults();
-      return 0;
+      return EXIT_SUCCESS;
     }
     
     if (mode == "compare") {
       bool ok = ReportChecks();
-      return ok ? 0 : 1;
+      return ok ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     
     throw std::logic_error("internal error: invalid mode");
@@ -146,6 +146,6 @@ int main(int argc, char **argv)
   catch (std::exception& e) {
     std::cerr << "FATAL ERROR: " << e.what() << std::endl;
   }
-  return 1;
+  return EXIT_FAILURE;
 }
 
