@@ -90,9 +90,9 @@ void ImagePyramid::build( const cv::Mat & src, float thrLowCanny, float thrHighC
 
 ImagePyramid::~ImagePyramid()
 {
-  for(int i = 0; i < _levels.size() ; ++i)
+  for(auto & _level : _levels)
   {
-    delete _levels[i];
+    delete _level;
   }
 };
 

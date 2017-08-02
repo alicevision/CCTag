@@ -557,16 +557,18 @@ void vote(EdgePointCollection& edgeCollection,
         // Copy/Align content of outerEllipsePoints
         std::vector<Eigen::Vector3f> pts;
         pts.reserve(outerEllipsePoints.size());
-        for (std::vector<EdgePoint*>::iterator it = outerEllipsePoints.begin(); it != outerEllipsePoints.end(); ++it) {
-            pts.emplace_back((*it)->cast<float>());
+        for(const auto & outerEllipsePoint : outerEllipsePoints)
+        {
+            pts.push_back(outerEllipsePoint->cast<float>());
         }
 
         // Copy/Align content of anotherOuterEllipsePoints
         std::vector<Eigen::Vector3f> anotherPts;
         anotherPts.reserve(anotherOuterEllipsePoints.size());
-        for (std::vector<EdgePoint*>::const_iterator it = anotherOuterEllipsePoints.begin(); it != anotherOuterEllipsePoints.end(); ++it) {
+        for(const auto & anotherOuterEllipsePoint : anotherOuterEllipsePoints)
+        {
             // todo@Lilian: avoid copy, idem in outlierRemoval
-            anotherPts.emplace_back((*it)->cast<float>());
+            anotherPts.push_back(anotherOuterEllipsePoint->cast<float>());
         }
 
         std::vector<float> distRef;
