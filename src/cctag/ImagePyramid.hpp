@@ -12,7 +12,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <stdint.h>
+#include <cstdint>
 #include <cstddef>
 #include <vector>
 

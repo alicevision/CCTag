@@ -20,7 +20,7 @@
 
 #include <boost/timer.hpp>
 
-#include <stdlib.h> // for ::abs
+#include <cstdlib> // for ::abs
 #include <climits>
 #include <cmath>
 #include <cstddef>

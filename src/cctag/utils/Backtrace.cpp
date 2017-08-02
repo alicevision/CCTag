@@ -29,8 +29,8 @@
 #ifdef BOOST_HAVE_DLADDR
 #include <dlfcn.h>
 #endif
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 #include <ostream>
 #include <sstream>
 #include <iomanip>

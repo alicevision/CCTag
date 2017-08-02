@@ -22,9 +22,9 @@
 #include <cctag/geometry/Point.hpp>
 #include <cctag/Fitting.hpp>
 #include <cmath>
-#include <float.h>
+#include <cfloat>
 #include <fstream>
-#include <math.h>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
