@@ -13,6 +13,7 @@
 #include <boost/math/special_functions/sign.hpp>
 #include <Eigen/Core>
 #include <Eigen/LU>
+#include <Eigen/Geometry>
 
 #include <algorithm>
 #include <cmath>
@@ -27,12 +28,12 @@ Ellipse::Ellipse( const Eigen::Matrix3f& matrix )
 	computeParameters();
 }
 
-Ellipse::Ellipse( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle )
+Ellipse::Ellipse( const Point2d<Eigen::Vector3f>& center, float a, float b, float angle )
 {
 	init( center, a, b, angle );
 }
 
-void Ellipse::init( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle )
+void Ellipse::init( const Point2d<Eigen::Vector3f>& center, float a, float b, float angle )
 {
 	if( a < 0.f || b < 0.f )
 	{
@@ -54,18 +55,9 @@ void Ellipse::setMatrix( const Eigen::Matrix3f& matrix )
 	computeParameters();
 }
 
-void Ellipse::setParameters( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle )
+void Ellipse::setParameters( const Point2d<Eigen::Vector3f>& center, float a, float b, float angle )
 {
-	if( a < 0.f || b < 0.f )
-	{
-		CCTAG_THROW( exception::Bug()
-			<< exception::dev( "Semi axes must be real positive!" ) );
-	}
-	_center = center;
-	_a      = a;
-	_b      = b;
-	_angle  = angle;
-	computeMatrix();
+    init(center, a, b, angle);
 }
 
 void Ellipse::setCenter( const Point2d<Eigen::Vector3f>& center )
@@ -74,7 +66,7 @@ void Ellipse::setCenter( const Point2d<Eigen::Vector3f>& center )
 	computeMatrix();
 }
 
-void Ellipse::setA( const float a )
+void Ellipse::setA( float a )
 {
 	if( a < 0.f )
 	{
@@ -85,7 +77,7 @@ void Ellipse::setA( const float a )
 	computeMatrix();
 }
 
-void Ellipse::setB( const float b )
+void Ellipse::setB( float b )
 {
 	if( b < 0.f )
 	{
@@ -96,7 +88,7 @@ void Ellipse::setB( const float b )
 	computeMatrix();
 }
 
-void Ellipse::setAngle( const float angle )
+void Ellipse::setAngle( float angle )
 {
 	_angle = angle;
 	computeMatrix();
@@ -104,7 +96,7 @@ void Ellipse::setAngle( const float angle )
 
 Ellipse Ellipse::transform(const Matrix& mT) const
 {
-  auto a = mT.transpose() * _matrix;
+  const auto a = mT.transpose() * _matrix;
   auto mET = a * mT;
   //const Matrix a = prec_prod( boost::numeric::ublas::trans(mT), _matrix );
   //const Matrix mET = prec_prod( a, mT );
@@ -113,7 +105,7 @@ Ellipse Ellipse::transform(const Matrix& mT) const
 
 void Ellipse::computeParameters()
 {
-        Eigen::VectorXf par(6);
+    Eigen::VectorXf par(6);
 	par( 0 ) = _matrix( 0, 0 );
 	par( 1 ) = 2.0 * _matrix( 0, 1 );
 	par( 2 ) = _matrix( 1, 1 );
@@ -269,15 +261,11 @@ std::ostream& operator<<(std::ostream& os, const Ellipse& e)
   return os;
 }
 
-/* 
- * @brief Sort a set of points by angle along an elliptical arc. Possibly return a subset of these 
- *        points if requested.
- */
 void getSortedOuterPoints(
         const Ellipse & ellipse,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & points,
         std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & resPoints,
-        const std::size_t requestedSize)
+        std::size_t requestedSize)
 {
   // map with the key = angle and the point index
   // Sort points in points by angle
