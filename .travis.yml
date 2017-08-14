@@ -23,6 +23,7 @@ addons:
       - libboost-program-options1.55-dev
       - libboost-serialization1.55-dev
       - libboost-system1.55-dev
+      - libboost-test1.55-dev
       - libboost-thread1.55-dev
       - libboost-timer1.55-dev
 
@@ -145,6 +146,7 @@ before_script:
 script:
   # classic make install
   - make install -j 2 VERBOSE=1
+  - make test
 
   # Test if it compiles as third party
   - cd $CCTAG_SOURCE_APP
@@ -176,6 +178,7 @@ script:
          -DOpenCV_DIR:PATH=$OPENCV_INSTALL/share/OpenCV \
          . $CCTAG_SOURCE
         make install -j 2 VERBOSE=1
+        make test
      fi
 
 after_success:
