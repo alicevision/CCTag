@@ -173,43 +173,43 @@ void Ellipse::computeParameters()
 void Ellipse::getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual) const 
 {
 
-  float q1 = _matrix(0,0);
-  float q2 = _matrix(0,1);
-  float q3 = _matrix(0,2);
-  float q4 = _matrix(1,1);
-  float q5 = _matrix(1,2);
-  float q6 = _matrix(2,2);
+  const float q1 = _matrix(0,0);
+  const float q2 = _matrix(0,1);
+  const float q3 = _matrix(0,2);
+  const float q4 = _matrix(1,1);
+  const float q5 = _matrix(1,2);
+  const float q6 = _matrix(2,2);
   
-  float par1 = q1;
-  float par2 = 2*q2;
-  float par3 = q4;
-  float par4 = 2*q3;
-  float par5 = 2*q5;
+  const float par1 = q1;
+  const float par2 = 2*q2;
+  const float par3 = q4;
+  const float par4 = 2*q3;
+  const float par5 = 2*q5;
+
+  const float thetarad    = 0.5f*std::atan2(par2,par1 - par3);
+  const float cost        = std::cos(thetarad);
+  const float sint        = std::sin(thetarad);
+  const float sin_squared = sint * sint;
+  const float cos_squared = cost * cost;
+  const float cos_sin     = sint * cost;
+
+  const float Au          = par4 * cost + par5 * sint;
+  const float Av          = -par4 * sint + par5 * cost;
+  const float Auu         = par1 * cos_squared + par3 * sin_squared + par2 * cos_sin;
+  const float Avv         = par1 * sin_squared + par3 * cos_squared - par2 * cos_sin;
+
+  const float tuCentre    = - Au/(2*Auu);
+  const float tvCentre    = - Av/(2*Avv);
+
+  const float uCentre     = tuCentre * cost - tvCentre * sint;
+  const float vCentre     = tuCentre * sint + tvCentre * cost;
   
-  float thetarad    = 0.5f*atan2(par2,par1 - par3);
-  float cost        = cos(thetarad);
-  float sint        = sin(thetarad);
-  float sin_squared = sint * sint;
-  float cos_squared = cost * cost;
-  float cos_sin     = sint * cost;
-
-  float Au          = par4 * cost + par5 * sint;
-  float Av          = -par4 * sint + par5 * cost;
-  float Auu         = par1 * cos_squared + par3 * sin_squared + par2 * cos_sin;
-  float Avv         = par1 * sin_squared + par3 * cos_squared - par2 * cos_sin;
-
-  float tuCentre    = - Au/(2*Auu);
-  float tvCentre    = - Av/(2*Avv);
-
-  float uCentre     = tuCentre * cost - tvCentre * sint;
-  float vCentre     = tuCentre * sint + tvCentre * cost;
-  
-  float qt1 = cost*(cost*q1 + q2*sint) + sint*(cost*q2 + q4*sint);
-  float qt2 = cost*(cost*q2 + q4*sint) - sint*(cost*q1 + q2*sint);
-  float qt3 = cost*q3 + q5*sint + uCentre*(cost*q1 + q2*sint) + vCentre*(cost*q2 + q4*sint);
-  float qt4 = cost*(cost*q4 - q2*sint) - sint*(cost*q2 - q1*sint);
-  float qt5 = cost*q5 - q3*sint + uCentre*(cost*q2 - q1*sint) + vCentre*(cost*q4 - q2*sint);
-  float qt6 =  q6 + uCentre*(q3 + q1*uCentre + q2*vCentre) + vCentre*(q5 + q2*uCentre + q4*vCentre) + q3*uCentre + q5*vCentre;
+  const float qt1 = cost*(cost*q1 + q2*sint) + sint*(cost*q2 + q4*sint);
+  const float qt2 = cost*(cost*q2 + q4*sint) - sint*(cost*q1 + q2*sint);
+  const float qt3 = cost*q3 + q5*sint + uCentre*(cost*q1 + q2*sint) + vCentre*(cost*q2 + q4*sint);
+  const float qt4 = cost*(cost*q4 - q2*sint) - sint*(cost*q2 - q1*sint);
+  const float qt5 = cost*q5 - q3*sint + uCentre*(cost*q2 - q1*sint) + vCentre*(cost*q4 - q2*sint);
+  const float qt6 =  q6 + uCentre*(q3 + q1*uCentre + q2*vCentre) + vCentre*(q5 + q2*uCentre + q4*vCentre) + q3*uCentre + q5*vCentre;
   
   mCanonic(0,0) = qt1;    mCanonic(0,1) = qt2;   mCanonic(0,2) = qt3;
   mCanonic(1,0) = qt2;    mCanonic(1,1) = qt4;   mCanonic(1,2) = qt5;
