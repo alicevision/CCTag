@@ -257,3 +257,8 @@ install(EXPORT "${targets_export_name}"
         DESTINATION "${config_install_dir}")
 
 add_subdirectory(applications)
+
+if(BUILD_TESTS)
+    add_subdirectory(cctag/test)
+    add_subdirectory(cctag/geometry/test)
+endif()
