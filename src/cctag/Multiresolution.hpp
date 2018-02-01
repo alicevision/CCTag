@@ -41,7 +41,7 @@ void cctagMultiresDetection(
         CCTag::List& markers,
         const cv::Mat& imgGraySrc,
         const ImagePyramid& imagePyramid,
-        const std::size_t   frame,
+        std::size_t   frame,
         cctag::TagPipe*    cuda_pipe,
         const Parameters&   params,
         cctag::logtime::Mgmt* durations );

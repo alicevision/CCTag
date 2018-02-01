@@ -26,7 +26,7 @@
 
 namespace cctag {
 
-#if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM) // undefined. Depreciated
+#if defined(WITH_OPTPP) && defined(SUBPIX_EDGE_OPTIM) // undefined. Deprecated
 
 SubPixEdgeOptimizer::SubPixEdgeOptimizer( const cctag::ImageCut & line )
 : Parent( 4, &SubPixEdgeOptimizer::subPix, NULL, this )

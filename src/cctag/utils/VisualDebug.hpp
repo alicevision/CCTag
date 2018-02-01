@@ -42,16 +42,16 @@ public:
 
     void initBackgroundImage(const cv::Mat & back);
     
-    void initializeFolders(const boost::filesystem::path & filename, const std::string & outputFolder, std::size_t nCrowns = 4);
+    void initializeFolders(const boost::filesystem::path & rootPath, const std::string & outputFolder, std::size_t nCrowns = 4);
 
     void newSession(const std::string & sessionName);
 
     void drawText(const cctag::Point2d<Eigen::Vector3f> & p, const std::string & text, const cctag::Color & color);
 
-    void drawPoint(const cctag::Point2d<Eigen::Vector3f> & p, const cctag::Color & color);
+    void drawPoint(const cctag::Point2d<Eigen::Vector3f> & point, const cctag::Color & color);
     void drawPoint(const cctag::DirectedPoint2d<Eigen::Vector3f> & point, const cctag::Color & color);
 
-    void drawPoints(const std::vector<cctag::Point2d<Eigen::Vector3f> > & pts, const cctag::Color & color);
+    void drawPoints(const std::vector<cctag::Point2d<Eigen::Vector3f> > & points, const cctag::Color & color);
     
     void drawPoints(const std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > & points, const cctag::Color & color);
 

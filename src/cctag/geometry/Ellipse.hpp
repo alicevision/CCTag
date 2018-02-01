@@ -19,7 +19,7 @@ namespace geometry {
 class Ellipse
 {
 public:
-	typedef Eigen::Matrix3f Matrix;
+	using Matrix = Eigen::Matrix3f;
         
 	Ellipse()
                 : _matrix(Eigen::Matrix3f::Zero())
@@ -30,8 +30,8 @@ public:
 	{
 	}
 
-	Ellipse( const Matrix& matrix );
-	Ellipse( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle );
+	explicit Ellipse( const Matrix& matrix );
+	Ellipse( const Point2d<Eigen::Vector3f>& center, float a, float b, float angle );
 
 	inline const Matrix& matrix() const { return _matrix; }
 	inline Matrix& matrix() { return _matrix; }
@@ -43,15 +43,15 @@ public:
 
 	void setMatrix( const Matrix& matrix );
 
-	void setParameters( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle );
+	void setParameters( const Point2d<Eigen::Vector3f>& center, float a, float b, float angle );
 
 	void setCenter( const Point2d<Eigen::Vector3f>& center );
 
-	void setA( const float a );
+	void setA( float a );
 
-	void setB( const float b );
+	void setB( float b );
 
-	void setAngle( const float angle );
+	void setAngle( float angle );
 
 	Ellipse transform(const Matrix& mT) const;
 
@@ -61,7 +61,7 @@ public:
         
         void getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual) const;
 
-	void init( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle );
+	void init( const Point2d<Eigen::Vector3f>& center, float a, float b, float angle );
 
 	friend  std::ostream& operator<<(std::ostream& os, const Ellipse& e);
 
@@ -77,7 +77,7 @@ void getSortedOuterPoints(
         const Ellipse & ellipse,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & points,
         std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & resPoints,
-        const std::size_t requestedSize);
+        std::size_t requestedSize);
 
 void scale(const Ellipse & ellipse, Ellipse & rescaleEllipse, float scale);
 

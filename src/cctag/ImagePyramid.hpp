@@ -12,7 +12,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <stdint.h>
+#include <cstdint>
 #include <cstddef>
 #include <vector>
 
@@ -25,17 +25,17 @@ class ImagePyramid
 public:
   ImagePyramid();
   
-  ImagePyramid( const std::size_t width, const std::size_t height, const std::size_t nLevels, bool cuda_allocates );
+  ImagePyramid( std::size_t width, std::size_t height, std::size_t nLevels, bool cuda_allocates );
   
   ~ImagePyramid();
 
-  Level* getLevel( const std::size_t level ) const;
+  Level* getLevel( std::size_t level ) const;
   
   std::size_t getNbLevels() const;
   
     /* The pyramid building function is never called if CUDA is used.
      */
-  void build(const cv::Mat & src, const float thrLowCanny, const float thrHighCanny, const cctag::Parameters* params );
+  void build(const cv::Mat & src, float thrLowCanny, float thrHighCanny, const cctag::Parameters* params );
 
 private:
   std::vector<Level*> _levels;

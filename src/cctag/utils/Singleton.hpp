@@ -26,10 +26,10 @@ class Singleton
 private:
 	static T* inst;
 
-	Singleton( const Singleton& ) {}
+	Singleton( const Singleton& ) = default;
 	Singleton & operator=( const Singleton& ) {}
 
-protected: Singleton() {}
+protected: Singleton() = default;
 	virtual ~Singleton() = 0;
 
 public:
@@ -50,24 +50,23 @@ public:
 	static void destroy()
 	{
 		delete inst;
-		inst = NULL;
+		inst = nullptr;
 	}
 
 };
 
 template <class T>
-T * Singleton<T>::inst = NULL;
+T * Singleton<T>::inst = nullptr;
 
-template <class T>Singleton<T>::~Singleton() {}
+template <class T>Singleton<T>::~Singleton() = default;
 
 ///macro to implement singleton. Use it in derived class declaration
 #define MAKE_SINGLETON( Class ) \
 	public: \
 		friend class Singleton < Class >; \
 	private: \
-		Class() { \
-		} \
-		~Class() {}
+		Class() = default; \
+		~Class() = default;
 
 ///macro to implement singleton. Use it in derived class declaration
 #define MAKE_SINGLETON_WITHCONSTRUCTORS( Class ) \

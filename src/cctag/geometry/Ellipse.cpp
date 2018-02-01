@@ -27,12 +27,12 @@ Ellipse::Ellipse( const Eigen::Matrix3f& matrix )
 	computeParameters();
 }
 
-Ellipse::Ellipse( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle )
+Ellipse::Ellipse( const Point2d<Eigen::Vector3f>& center, float a, float b, float angle )
 {
 	init( center, a, b, angle );
 }
 
-void Ellipse::init( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle )
+void Ellipse::init( const Point2d<Eigen::Vector3f>& center, float a, float b, float angle )
 {
 	if( a < 0.f || b < 0.f )
 	{
@@ -54,7 +54,7 @@ void Ellipse::setMatrix( const Eigen::Matrix3f& matrix )
 	computeParameters();
 }
 
-void Ellipse::setParameters( const Point2d<Eigen::Vector3f>& center, const float a, const float b, const float angle )
+void Ellipse::setParameters( const Point2d<Eigen::Vector3f>& center, float a, float b, float angle )
 {
 	if( a < 0.f || b < 0.f )
 	{
@@ -74,7 +74,7 @@ void Ellipse::setCenter( const Point2d<Eigen::Vector3f>& center )
 	computeMatrix();
 }
 
-void Ellipse::setA( const float a )
+void Ellipse::setA( float a )
 {
 	if( a < 0.f )
 	{
@@ -85,7 +85,7 @@ void Ellipse::setA( const float a )
 	computeMatrix();
 }
 
-void Ellipse::setB( const float b )
+void Ellipse::setB( float b )
 {
 	if( b < 0.f )
 	{
@@ -96,7 +96,7 @@ void Ellipse::setB( const float b )
 	computeMatrix();
 }
 
-void Ellipse::setAngle( const float angle )
+void Ellipse::setAngle( float angle )
 {
 	_angle = angle;
 	computeMatrix();
@@ -277,7 +277,7 @@ void getSortedOuterPoints(
         const Ellipse & ellipse,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & points,
         std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & resPoints,
-        const std::size_t requestedSize)
+        std::size_t requestedSize)
 {
   // map with the key = angle and the point index
   // Sort points in points by angle

@@ -27,15 +27,15 @@ public:
 
   CCTagFlowComponent(const EdgePointCollection& edgeCollection,
                      const std::vector<EdgePoint*> & outerEllipsePoints,
-                     const std::list<EdgePoint*> & childrens,
-                     const std::vector<EdgePoint*> & filteredChildrens,
+                     const std::list<EdgePoint*> & children,
+                     const std::vector<EdgePoint*> & filteredChildren,
                      const cctag::numerical::geometry::Ellipse & outerEllipse,
                      const std::list<EdgePoint*> & convexEdgeSegment,
                      const EdgePoint & seed,
                      std::size_t nCircles);
 
-  void setFieldLines(const std::list<EdgePoint*> & childrens, const EdgePointCollection& edgeCollection);
-  void setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens, const EdgePointCollection& edgeCollection);
+  void setFieldLines(const std::list<EdgePoint*> & children, const EdgePointCollection& edgeCollection);
+  void setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildren, const EdgePointCollection& edgeCollection);
 
   std::vector<EdgePoint> _outerEllipsePoints;
   cctag::numerical::geometry::Ellipse _outerEllipse;

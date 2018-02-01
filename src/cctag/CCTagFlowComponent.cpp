@@ -16,8 +16,8 @@ namespace cctag
 CCTagFlowComponent::CCTagFlowComponent(
   const EdgePointCollection& edgeCollection,
   const std::vector<EdgePoint*> & outerEllipsePoints,
-  const std::list<EdgePoint*> & childrens,
-  const std::vector<EdgePoint*> & filteredChildrens,
+  const std::list<EdgePoint*> & children,
+  const std::vector<EdgePoint*> & filteredChildren,
   const cctag::numerical::geometry::Ellipse & outerEllipse,
   const std::list<EdgePoint*> & convexEdgeSegment,
   const EdgePoint & seed,
@@ -29,36 +29,34 @@ CCTagFlowComponent::CCTagFlowComponent(
 
   _outerEllipsePoints.reserve(outerEllipsePoints.size());
 
-  BOOST_FOREACH(const EdgePoint * e, outerEllipsePoints)
+  for(const EdgePoint * e : outerEllipsePoints)
   {
-    _outerEllipsePoints.push_back(EdgePoint(*e));
+    _outerEllipsePoints.emplace_back(*e);
   }
 
-  BOOST_FOREACH(const EdgePoint * e, convexEdgeSegment)
+  for(const EdgePoint * e : convexEdgeSegment)
   {
-    _convexEdgeSegment.push_back(EdgePoint(*e));
+    _convexEdgeSegment.emplace_back(*e);
   }
 
-  setFieldLines(childrens, edgeCollection);
-  setFilteredFieldLines(filteredChildrens, edgeCollection);
+  setFieldLines(children, edgeCollection);
+  setFilteredFieldLines(filteredChildren, edgeCollection);
 
 }
 
-void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildrens, const EdgePointCollection& edgeCollection)
+void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & filteredChildren, const EdgePointCollection& edgeCollection)
 {
-  _filteredFieldLines.resize(filteredChildrens.size());
+  _filteredFieldLines.resize(filteredChildren.size());
 
   std::size_t i = 0;
 
-  for (std::vector<EdgePoint*>::const_iterator it = filteredChildrens.begin(); it != filteredChildrens.end(); ++it)
+  for(auto p : filteredChildren)
   {
     int dir = -1;
-    EdgePoint* p = *it;
-
     std::vector<EdgePoint> & vE = _filteredFieldLines[i];
 
     vE.reserve(_nCircles);
-    vE.push_back(EdgePoint(*p));
+    vE.emplace_back(*p);
 
     for (std::size_t j = 1; j < _nCircles; ++j)
     {
@@ -71,7 +69,7 @@ void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & f
         p = edgeCollection.after(p);
       }
 
-      vE.push_back(EdgePoint(*p));
+      vE.emplace_back(*p);
 
       dir = -dir;
     }
@@ -79,13 +77,13 @@ void CCTagFlowComponent::setFilteredFieldLines(const std::vector<EdgePoint*> & f
   }
 }
 
-void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens, const EdgePointCollection& edgeCollection)
+void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & children, const EdgePointCollection& edgeCollection)
 {
-  _fieldLines.resize(childrens.size());
+  _fieldLines.resize(children.size());
 
   std::size_t i = 0;
 
-  for (std::list<EdgePoint*>::const_iterator it = childrens.begin(); it != childrens.end(); ++it)
+  for (std::list<EdgePoint*>::const_iterator it = children.begin(); it != children.end(); ++it)
   {
     int dir = -1;
     EdgePoint* p = *it;
@@ -94,7 +92,7 @@ void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens, 
     std::vector<EdgePoint> & vE = _fieldLines[i];
 
     vE.reserve(_nCircles);
-    vE.push_back(EdgePoint(*p));
+    vE.emplace_back(*p);
 
     for (std::size_t j = 1; j < _nCircles; ++j)
     {
@@ -108,7 +106,7 @@ void CCTagFlowComponent::setFieldLines(const std::list<EdgePoint*> & childrens, 
       }
 
       assert( p );
-      vE.push_back(EdgePoint(*p));
+      vE.emplace_back(*p);
 
       dir = -dir;
     }

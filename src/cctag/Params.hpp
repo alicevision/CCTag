@@ -108,7 +108,7 @@ struct Parameters
   static Parameters Override;
   static void LoadOverride();
 
-  Parameters(const std::size_t nCrowns = kDefaultNCrowns);
+  explicit Parameters(std::size_t nCrowns = kDefaultNCrowns);
 
   float _cannyThrLow; // canny low threshold
   float _cannyThrHigh; // canny high threshold

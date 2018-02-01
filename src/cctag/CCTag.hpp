@@ -46,8 +46,8 @@ typedef std::vector< std::pair< MarkerID, float > > IdSet;
 class CCTag : public ICCTag
 {
 public:
-  typedef boost::ptr_vector<CCTag> Vector;
-  typedef boost::ptr_list<CCTag> List;
+  using Vector = boost::ptr_vector<CCTag>;
+  using List = boost::ptr_list<CCTag>;
 
 public:
 
@@ -56,7 +56,7 @@ public:
     , _quality(0)
     , _status(0)
 #ifdef WITH_CUDA
-    , _cuda_result( 0 )
+    , _cuda_result( nullptr )
 #endif
   {
     setInitRadius();
@@ -79,7 +79,7 @@ public:
     , _pyramidLevel(pyramidLevel)
     , _scale(scale)
 #ifdef WITH_CUDA
-    , _cuda_result( 0 )
+    , _cuda_result( nullptr )
 #endif
   {
     setInitRadius();
@@ -104,7 +104,7 @@ public:
     , _rescaledOuterEllipse(cctag._rescaledOuterEllipse)
     , _status(cctag._status)
 #ifdef WITH_CUDA
-    , _cuda_result( 0 )
+    , _cuda_result( nullptr )
 #endif
 #ifdef CCTAG_SERIALIZE
     , _flowComponents(cctag._flowComponents)
@@ -112,21 +112,19 @@ public:
   {
   }
 
-  virtual ~CCTag()
-  {
-  }
+  virtual ~CCTag() = default;
 
 #ifndef NDEBUG
   void printTag( std::ostream& ostr ) const;
 #endif
 
-  void scale(const float s);
+  void scale(float s);
 
-  float x() const {
+  float x() const override {
     return _centerImg.x();
   }
   
-  float y() const {
+  float y() const override {
     return _centerImg.y();
   }
   
@@ -260,7 +258,7 @@ public:
     return true;
   }
 
-  MarkerID id() const
+  MarkerID id() const override
   {
     return _id;
   }
@@ -280,7 +278,7 @@ public:
     _idSet = idSet;
   }
 
-  int getStatus() const
+  int getStatus() const override
   {
     return _status;
   }
@@ -298,7 +296,7 @@ public:
 
   //friend std::ostream& operator<<(std::ostream& os, const CCTag& cm);
 
-  inline CCTag* clone() const
+  inline CCTag* clone() const override
   {
     return new CCTag(*this);
   }
@@ -316,16 +314,15 @@ public:
 
   void addFlowComponent(const Candidate & candidate, const EdgePointCollection& edgeCollection)
   {
-    _flowComponents.push_back(
-      CCTagFlowComponent(
+    _flowComponents.emplace_back(
         edgeCollection,
         candidate._outerEllipsePoints,
-        candidate._childrens,
-        candidate._filteredChildrens,
+        candidate._children,
+        candidate._filteredChildren,
         candidate._outerEllipse,
         candidate._convexEdgeSegment,
         *(candidate._seed),
-        _nCircles));
+        _nCircles);
   }
 
   void setFlowComponents(const std::vector<CCTagFlowComponent> & flowComponents)
@@ -335,7 +332,7 @@ public:
 
   void setFlowComponents(const std::vector<Candidate> & candidates, const EdgePointCollection& edgeCollection)
   {
-    BOOST_FOREACH(const Candidate & candidate, candidates)
+    for(const Candidate & candidate : candidates)
     {
       addFlowComponent(candidate, edgeCollection);
     }
@@ -366,7 +363,7 @@ public:
   static void releaseNearbyPointMemory( int pipeId );
 #endif
 
-  void serialize(boost::archive::text_oarchive & ar, const unsigned int version);
+  void serialize(boost::archive::text_oarchive & ar, unsigned int version);
 
 protected:
 

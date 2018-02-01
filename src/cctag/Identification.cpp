@@ -49,7 +49,7 @@ bool orazioDistanceRobust(
         std::vector<std::list<float> > & vScore,
         const RadiusRatioBank & rrBank,
         const std::vector<cctag::ImageCut> & cuts,
-        const float minIdentProba)
+        float minIdentProba)
 {
   BOOST_ASSERT( cuts.size() > 0 );
 
@@ -102,17 +102,17 @@ bool orazioDistanceRobust(
       accumulator_set< float, features< tag::mean > > accSup;
       
       bool doAccumulate = false;
-      for( std::size_t i = 0 ; i < imgSig.size(); ++i )
+      for(float i : imgSig)
       {
-        if ( (!doAccumulate) && ( imgSig[i] < medianSig ) )
+        if ( (!doAccumulate) && ( i < medianSig ) )
           doAccumulate = true;
           
         if (doAccumulate)
         {
-          if ( imgSig[i] < medianSig )
-            accInf( imgSig[i] );
+          if ( i < medianSig )
+            accInf( i );
           else
-            accSup( imgSig[i] );
+            accSup( i );
         }
       }
       const float muw = boost::accumulators::mean( accSup );
@@ -134,18 +134,18 @@ bool orazioDistanceRobust(
         // Compute the idc-th profile from the radius ratio
         // todo@Lilian: to be pre-computed
         float x = cut.beginSig();
-        for( std::size_t i = 0; i < digit.size(); ++i )
+        for(float & i : digit)
         {
           std::ssize_t ldum = 0;
-          for( std::size_t j = 0; j < rrBank[idc].size(); ++j )
+          for(float j : rrBank[idc])
           {
-            if( 1.f / rrBank[idc][j] <= x )
+            if( 1.f / j <= x )
             {
               ++ldum;
             }
           }
           // set odd value to -1 and even value to 1
-          digit[i] = - ( ldum % 2 ) * 2 + 1;
+          i = - ( ldum % 2 ) * 2 + 1;
           
           x += stepX;
         }
@@ -277,7 +277,7 @@ void extractSignalUsingHomography(
   //blurImageCut(sigma, cut);
 }
 
-void blurImageCut(const float sigma, std::vector<float> & signal)
+void blurImageCut(float sigma, std::vector<float> & signal)
 {
   //const std::vector<float> kernel = { 0.0044, 0.0540, 0.2420, 0.3991, 0.2420, 0.0540, 0.0044 };
   const std::vector<float> kernel = { 0.0276, 0.0663, 0.1238, 0.1802, 0.2042, 0.1802, 0.1238, 0.0663, 0.0276 };
@@ -327,8 +327,8 @@ void extractSignalUsingHomographyDeprec(
         const cv::Mat & src,
         Eigen::Matrix3f & mHomography,
         std::size_t nSamples,
-        const float begin,
-        const float end)
+        float begin,
+        float end)
 {
   using namespace boost;
   using namespace cctag::numerical;
@@ -470,8 +470,8 @@ void collectCuts(
         const cv::Mat & src,
         const cctag::Point2d<Eigen::Vector3f> & center,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
-        const std::size_t nSamplesInCut,
-        const float beginSig )
+        std::size_t nSamplesInCut,
+        float beginSig )
 {
   // Collect all the 1D image signals from center to the outer points.
   cuts.reserve( outerPoints.size() );
@@ -480,7 +480,7 @@ void collectCuts(
     // Here only beginSig is set based on the input argument beginSig while endSig is set to 1.f as 
     // any type of cctags encodes, by construction, a 1D bar-code until the outer ellipse (image 
     // of the unit circle).
-    cuts.push_back( cctag::ImageCut(center, outerPoint, beginSig, 1.f, nSamplesInCut) );
+    cuts.emplace_back(center, outerPoint, beginSig, 1.f, nSamplesInCut );
     cctag::ImageCut & cut = cuts.back();
     cutInterpolated( cut, src);
     // Remove the cut from the vector if out of the image bounds.
@@ -598,7 +598,7 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
 }
 
 /* Ugly -> perform an iterative optimization*/
-bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, const float scale, const size_t numSamplesOuterEdgePointsRefinement)
+bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, float scale, std::size_t numSamplesOuterEdgePointsRefinement)
 {
     // Subpixellic refinement of the outer edge points ///////////////////////////
     const float cutLengthOuterPointRefine = 3.f * sqrt(2.f) * scale; // with scale=2^i, i=0..nLevel
@@ -807,14 +807,14 @@ void computeHomographyFromEllipseAndImagedCenter(
  * @return true if the optimization has found a solution, false otherwise.
  */
 bool refineConicFamilyGlob(
-        const int tagIndex,
+        int tagIndex,
         Eigen::Matrix3f & mHomography,
         Point2d<Eigen::Vector3f> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
         const cv::Mat & src,
         cctag::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
-        const cctag::Parameters params,
+        const cctag::Parameters & params,
         cctag::NearbyPoint* cctag_pointer_buffer,
         float & residual)
 {
@@ -978,10 +978,10 @@ bool imageCenterOptimizationGlob(
         std::vector< cctag::ImageCut > & vCuts,
         cctag::Point2d<Eigen::Vector3f> & center,
         float & minRes,
-        const float neighbourSize,
+        float neighbourSize,
         const cv::Mat & src, 
         const cctag::numerical::geometry::Ellipse& outerEllipse,
-        const cctag::Parameters params )
+        const cctag::Parameters & params )
 {
     cctag::Point2d<Eigen::Vector3f> optimalPoint;
     Eigen::Matrix3f optimalHomography;
@@ -1166,7 +1166,7 @@ float costFunctionGlob(
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
 int identify_step_1(
-  const int tagIndex,
+  int tagIndex,
   const CCTag & cctag,
   std::vector<cctag::ImageCut>& vSelectedCuts,
   const cv::Mat &  src,
@@ -1312,7 +1312,7 @@ int identify_step_1(
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
 int identify_step_2(
-  const int tagIndex,
+  int tagIndex,
   CCTag & cctag,
   std::vector<cctag::ImageCut>& vSelectedCuts,
   const std::vector< std::vector<float> > & radiusRatios, // todo: directly use the CCTagBank
@@ -1345,7 +1345,7 @@ int identify_step_2(
 #ifdef WITH_CUDA
                         cctag.getNearbyPointBuffer(),
 #else
-                        0,
+                        nullptr,
 #endif
                         residual
                         );
@@ -1405,7 +1405,7 @@ int identify_step_2(
       int i = 0;
       int iMax = 0;
 
-      BOOST_FOREACH(const std::list<float> & lResult, vScore)
+      for(const std::list<float> & lResult : vScore)
       {
         if (lResult.size() > maxSize)
         {
@@ -1420,7 +1420,7 @@ int identify_step_2(
       assert( vScore.size() > 0 );
       assert( vScore.size() > iMax );
 #endif // GRIFF_DEBUG
-      BOOST_FOREACH(const float & proba, vScore[iMax])
+      for(const float & proba : vScore[iMax])
       {
         score += proba;
       }
@@ -1441,7 +1441,7 @@ int identify_step_2(
         for(const float radiusRatio : cctag.radiusRatios())
         {
           cctag::numerical::geometry::Circle circle(1.f / radiusRatio);
-          ellipses.push_back(cctag::numerical::geometry::Ellipse(mInvH.transpose()*circle.matrix()*mInvH));
+          ellipses.emplace_back(mInvH.transpose()*circle.matrix()*mInvH);
         }
 
         // Push the outer ellipse

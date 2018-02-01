@@ -35,12 +35,12 @@ EdgePoint* gradientDirectionDescent(
         const EdgePointCollection& canny,
         const EdgePoint& p,
         int dir,
-        const std::size_t nmax, 
+        std::size_t nmax,
         const cv::Mat & imgDx, 
         const cv::Mat & imgDy, 
         int thrGradient)
 {
-    EdgePoint* ret = NULL;
+    EdgePoint* ret = nullptr;
     float e        = 0.0f;
     float dx       = dir * imgDx.at<short>(p.y(),p.x());
     float dy       = dir * imgDy.at<short>(p.y(),p.x());
@@ -96,7 +96,7 @@ EdgePoint* gradientDirectionDescent(
         }
         else
         {
-                return NULL;
+                return nullptr;
         }
 
         while( n <= nmax)
@@ -126,13 +126,13 @@ EdgePoint* gradientDirectionDescent(
                     }
                     else
                     {
-                            return NULL;
+                            return nullptr;
                     }
                 }
             }
             else
             {
-                    return NULL;
+                    return nullptr;
             }
         }
     }
@@ -166,7 +166,7 @@ EdgePoint* gradientDirectionDescent(
         }
         else
         {
-            return NULL;
+            return nullptr;
         }
 
         while( n <= nmax)
@@ -196,17 +196,17 @@ EdgePoint* gradientDirectionDescent(
                     }
                     else
                     {
-                        return NULL;
+                        return nullptr;
                     }
                 }
             }
             else
             {
-                return NULL;
+                return nullptr;
             }
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 } // namespace cctag

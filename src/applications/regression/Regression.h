@@ -43,7 +43,7 @@ class TestChecker
   
   struct check_error : public std::runtime_error
   {
-    check_error(const std::string& what) : runtime_error(what)
+    explicit check_error(const std::string& what) : runtime_error(what)
     { }
   };
 

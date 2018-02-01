@@ -35,9 +35,9 @@ namespace cctag {
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       int                       pipeId,
-      const std::size_t frame,
+      std::size_t frame,
       const cv::Mat & graySrc,
-      const std::size_t nRings,
+      std::size_t nRings,
       logtime::Mgmt* durations,
       const std::string & parameterFilename,
       const std::string & cctagBankFilename)
@@ -71,7 +71,7 @@ void cctagDetection(
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       int                       pipeId,
-      const std::size_t frame,
+      std::size_t frame,
       const cv::Mat & graySrc,
       const cctag::Parameters & params,
       logtime::Mgmt* durations,
@@ -79,7 +79,7 @@ void cctagDetection(
 {
   boost::ptr_list<cctag::CCTag> cctags;
   
-  if ( pBank == NULL)
+  if ( pBank == nullptr)
   {
     CCTagMarkersBank bank(params._nCrowns);
     cctag::cctagDetection(cctags, pipeId, frame, graySrc, params, bank, false, durations);
@@ -89,7 +89,7 @@ void cctagDetection(
   }
   
   markers.clear();
-  BOOST_FOREACH(const cctag::CCTag & cctag, cctags)
+  for(const cctag::CCTag & cctag : cctags)
   {
     markers.push_back(new cctag::CCTag(cctag));
   }
