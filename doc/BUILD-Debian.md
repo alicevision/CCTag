@@ -9,16 +9,14 @@ TODO
 7. install gfortran
 8. install optpp
 9. install eigen
-10. install glog
-11. install SuiteSparse
-12. install the Ceres Solver
-13. install jpeg9a
-14. install libpng
-15. install GNU scientific library
-16. install ncurses
-17. install CMake
-18. create the machine-specific config file
-19. compile CCTag
+10. install SuiteSparse
+11. install the Ceres Solver
+12. install jpeg9a
+13. install libpng
+14. install ncurses
+15. install CMake
+16. create the machine-specific config file
+17. compile CCTag
 
 2. install boost numeric bindings
 Install from GIT. I have installed from tiker.net
@@ -66,13 +64,10 @@ copied manually. E.g.:
 9. install eigen
 apt-get install libeigen3-dev
 
-10. install glog
-apt-get install libgoogle-glog-dev
-
-11. install SuiteSparse
+10. install SuiteSparse
 apt-get install libsuitesparse-dev
 
-12. install the Ceres Solver
+11. install the Ceres Solver
 Get the latest version.
 git clone https://ceres-solver.googlesource.com/ceres-solver
 Build and install, e.g.
@@ -80,29 +75,26 @@ Build and install, e.g.
     cmake -DCMAKE_INSTALL_PREFIX=/home/labo/Install ..
     make; make install
 
-13. install jpeg9a
+12. install jpeg9a
 apt-get install libjpeg-dev
 
-14. install libpng
+13. install libpng
 apt-get install libpng12-dev
 
-15. install GNU scientific library
-apt-get install libgsl0-dev
-
-16. install ncurses
+14. install ncurses
 apt-get install libncurses5-dev
 
-17. install CMake
+15. install CMake
 We need at least CMake 3.4 because CUDA Dynamic Parallelism does not
 work with CMake before this. Not yet available in debian packages.
 Download from https://cmake.org/download/
 Configure, compile and install the one that is already installed.
 
-18. create the machine-specific config file
+16. create the machine-specific config file
 cp mpg-2014-20.cmake.example <hostname>.cmake
 change variables in this file, e.g. set Release/Debug
 
-19. compile CCTag
+17. compile CCTag
 There is a self-made configure script (this is not an autoconf
 configure). It uses cmake to configure in the subdirectory named
 build/<current-git-branch>.
