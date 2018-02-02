@@ -23,7 +23,7 @@ class CCTagVisualDebug : public Singleton<CCTagVisualDebug> {
     MAKE_SINGLETON_WITHCONSTRUCTORS(CCTagVisualDebug)
 
 public:
-    typedef std::map<std::string, cv::Mat> Sessions;
+    using Sessions = std::map<std::string, cv::Mat>;
 public:
 
     void setPyramidLevel(int level);
