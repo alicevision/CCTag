@@ -91,11 +91,11 @@ if(WITH_CUDA)
   endif()
 
   if(CUDA_VERSION_MAJOR GREATER 7)
-    set(PopSift_CUDA_CC_LIST_BASIC 35 50 52 60 61 62)
+    set(CCTAG_CUDA_CC_LIST_BASIC 35 50 52 60 61 62)
   else(CUDA_VERSION_MAJOR GREATER 7)
-    set(PopSift_CUDA_CC_LIST_BASIC 35 50 52 )
+    set(CCTAG_CUDA_CC_LIST_BASIC 35 50 52 )
   endif(CUDA_VERSION_MAJOR GREATER 7)
-  set(PopSift_CUDA_CC_LIST ${PopSift_CUDA_CC_LIST_BASIC} CACHE STRING "CUDA CC versions to compile")
+  set(CCTAG_CUDA_CC_LIST ${CCTAG_CUDA_CC_LIST_BASIC} CACHE STRING "CUDA CC versions to compile")
 
   if(UNIX AND NOT APPLE)
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xcompiler;-rdynamic;-lineinfo")
@@ -108,18 +108,18 @@ if(WITH_CUDA)
   #
   # Add all requested CUDA CCs to the command line for offline compilation
   #
-  list(SORT PopSift_CUDA_CC_LIST)
-  foreach(PopSift_CC_VERSION ${PopSift_CUDA_CC_LIST})
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${PopSift_CC_VERSION},code=sm_${PopSift_CC_VERSION}")
-  endforeach(PopSift_CC_VERSION)
+  list(SORT CCTAG_CUDA_CC_LIST)
+  foreach(CCTAG_CC_VERSION ${CCTAG_CUDA_CC_LIST})
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${CCTAG_CC_VERSION},code=sm_${CCTAG_CC_VERSION}")
+  endforeach(CCTAG_CC_VERSION)
 
   #
   # Use the highest request CUDA CC for CUDA JIT compilation
   #
-  list(LENGTH PopSift_CUDA_CC_LIST PopSift_CC_LIST_LEN)
-  MATH(EXPR PopSift_CC_LIST_LEN "${PopSift_CC_LIST_LEN}-1")
-  list(GET PopSift_CUDA_CC_LIST ${PopSift_CC_LIST_LEN} PopSift_CUDA_CC_LIST_LAST)
-  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${PopSift_CUDA_CC_LIST_LAST},code=compute_${PopSift_CUDA_CC_LIST_LAST}")
+  list(LENGTH CCTAG_CUDA_CC_LIST CCTAG_CC_LIST_LEN)
+  MATH(EXPR CCTAG_CC_LIST_LEN "${CCTAG_CC_LIST_LEN}-1")
+  list(GET CCTAG_CUDA_CC_LIST ${CCTAG_CC_LIST_LEN} CCTAG_CUDA_CC_LIST_LAST)
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${CCTAG_CUDA_CC_LIST_LAST},code=compute_${CCTAG_CUDA_CC_LIST_LAST}")
 
   # default stream legacy implies that the 0 stream synchronizes all streams
   # default stream per-thread implies that each host thread has one non-synchronizing 0-stream
@@ -127,7 +127,7 @@ if(WITH_CUDA)
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
 
   message(STATUS "CUDA Version is ${CUDA_VERSION}")
-  message(STATUS "Compiling for CUDA CCs: ${PopSift_CUDA_CC_LIST}")
+  message(STATUS "Compiling for CUDA CCs: ${CCTAG_CUDA_CC_LIST}")
   if(CUDA_VERSION>=7.5)
     set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
     set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
