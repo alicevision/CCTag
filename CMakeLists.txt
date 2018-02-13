@@ -90,29 +90,58 @@ if(WITH_CUDA)
     # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-G;-g;-DNDEBUG")
   endif()
 
-  #set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
-  #set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_35,code=sm_35")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_50,code=sm_50")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_52,code=sm_52")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=compute_52")
+  if(CUDA_VERSION_MAJOR GREATER 7)
+    set(PopSift_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62)
+  else(CUDA_VERSION_MAJOR GREATER 7)
+    set(PopSift_CUDA_CC_LIST_BASIC 30 35 50 52 )
+  endif(CUDA_VERSION_MAJOR GREATER 7)
+  set(PopSift_CUDA_CC_LIST ${PopSift_CUDA_CC_LIST_BASIC} CACHE STRING "CUDA CC versions to compile")
 
-  if(NOT CUDA_VERSION VERSION_LESS 8.0) # cuda >= 8.0
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_60,code=sm_60")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_61,code=sm_61")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_62,code=sm_62")
-  endif()
+  if(UNIX AND NOT APPLE)
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xcompiler;-rdynamic;-lineinfo")
+    # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xptxas;-v")
+    # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xptxas;-warn-double-usage")
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--keep")
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--source-in-ptx")
+  endif(UNIX AND NOT APPLE)
+
+  #
+  # Add all requested CUDA CCs to the command line for offline compilation
+  #
+  list(SORT PopSift_CUDA_CC_LIST)
+  foreach(PopSift_CC_VERSION ${PopSift_CUDA_CC_LIST})
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${PopSift_CC_VERSION},code=sm_${PopSift_CC_VERSION}")
+  endforeach(PopSift_CC_VERSION)
+
+  #
+  # Use the highest request CUDA CC for CUDA JIT compilation
+  #
+  list(LENGTH PopSift_CUDA_CC_LIST PopSift_CC_LIST_LEN)
+  MATH(EXPR PopSift_CC_LIST_LEN "${PopSift_CC_LIST_LEN}-1")
+  list(GET PopSift_CUDA_CC_LIST ${PopSift_CC_LIST_LEN} PopSift_CUDA_CC_LIST_LAST)
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${PopSift_CUDA_CC_LIST_LAST},code=compute_${PopSift_CUDA_CC_LIST_LAST}")
+
+  # default stream legacy implies that the 0 stream synchronizes all streams
+  # default stream per-thread implies that each host thread has one non-synchronizing 0-stream
+  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;legacy")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
+
+  message(STATUS "CUDA Version is ${CUDA_VERSION}")
+  message(STATUS "Compiling for CUDA CCs: ${PopSift_CUDA_CC_LIST}")
+  if(CUDA_VERSION>=7.5)
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
+    set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
+  else(CUDA_VERSION>=7.5)
+  endif(CUDA_VERSION>=7.5)
+
+  # library required for CUDA dynamic parallelism, forgotten by CMake 3.4
+  cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
   if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
   endif()
-
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
-  # MORE NOISE:
-  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;-v")
-  # DOES NOT WORK UNTIL CUDA 7.5:
-  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
-  cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
 else(WITH_CUDA)
   message( STATUS "Building without CUDA" )
