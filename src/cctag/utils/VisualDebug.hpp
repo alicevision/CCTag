@@ -32,9 +32,11 @@ public:
     
     void resetMarkerIndex();
 
+#ifdef CCTAG_SERIALIZE
     void incrementMarkerIndex();
     
     std::size_t getMarkerIndex() const; 
+#endif
     
     std::string getPath() const;
 
