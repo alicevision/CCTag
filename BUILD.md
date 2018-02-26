@@ -46,6 +46,7 @@ $ make -j `nproc`
 ``` 
 
 If you want to install the library to, say, a CCTAG_INSTALL path, just add `-DCMAKE_INSTALL_PREFIX=$CCTAG_INSTALL` at cmake command line.
+If you want to build CCTag as a shared library: `-DBUILD_SHARED_LIBS=ON`.
 
 ----------
 
