@@ -11,7 +11,8 @@ option(CCTAG_SERIALIZE "Store all the output" OFF)
 option(VISUAL_DEBUG "Enable visual debug" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
 option(WITH_CUDA "Compile the library with CUDA support" ON)
-option(COMPILE_STATIC_CCTAG_LIBRARY "Generate static library" ON)
+
+option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
 
 if(CCTAG_ENABLE_SIMD_AVX2)
@@ -106,6 +107,11 @@ if(WITH_CUDA)
   endif()
 
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
+
+  if(CCTAG_USE_POSITION_INDEPENDENT_CODE)
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xcompiler;-fPIC")
+  endif()
+
   # MORE NOISE:
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;-v")
   # DOES NOT WORK UNTIL CUDA 7.5:
