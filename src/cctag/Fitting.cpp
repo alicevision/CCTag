@@ -129,15 +129,15 @@ static Conic fit_solver(It begin, It end)
     cond = 4*evr.row(0)*evr.row(2) - evr.row(1)*evr.row(1);
   }
 
-    const auto eps = std::numeric_limits<float>::epsilon();
-  float min = std::numeric_limits<float>::max();
+  const auto eps = std::numeric_limits<float>::epsilon();
+  float minValue = std::numeric_limits<float>::max();
   int imin = -1;
   for (int i = 0; i < 3; ++i)
   {
-      if (cond(i) > eps && cond(i) < min)
+      if (cond(i) > eps && cond(i) < minValue)
       {
           imin = i;
-          min = cond(i);
+          minValue = cond(i);
       }
   }
   
