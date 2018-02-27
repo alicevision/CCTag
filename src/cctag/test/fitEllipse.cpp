@@ -131,11 +131,8 @@ BOOST_AUTO_TEST_CASE(test_float2)
 
 BOOST_AUTO_TEST_CASE(test_withGT)
 {
-    const float aGT = 5.0f;
-    const float bGT = 3.0f;
-    const float cxGT = 16.0f;
-    const float cyGT = -4.0f;
-
+    // const float aGT = 5.0f;
+    // const float bGT = 3.0f;
     // some points satisfying x^2/aGT^2 + y^2/bGT^2 = 1
     std::vector<Point3f> pts;
     pts.reserve(21);
