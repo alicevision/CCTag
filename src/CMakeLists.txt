@@ -86,11 +86,6 @@ if(WITH_CUDA)
   # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
   # set(BUILD_SHARED_LIBS ON)
 
-  if(NOT COMPILE_STATIC_CCTAG_LIBRARY)
-    message( FATAL_ERROR "In order to use CUDA the library must be build as static library. \
-             To disable cuda and build a dynamic library use -DWITH_CUDA=OFF" )
-  endif()
-
   set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DSM_ARCH=${CCTAG_SM_ARCH};-DSM=${CCTAG_SM};-DCUB_CDP")
  
   # this must go before CUDA_ADD_LIBRARY otherwise we won't be able to add it
@@ -103,7 +98,7 @@ if(WITH_CUDA)
                       "${CMAKE_SOURCE_DIR}/src"
                       "${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
  
-  CUDA_ADD_LIBRARY( CCTag STATIC ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
+  CUDA_ADD_LIBRARY(CCTag ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
 
   # since we used CUDA_ADD_LIBRARY we cannot use PUBLIC or PRIVATE here
   target_link_libraries(CCTag 
@@ -126,14 +121,9 @@ else(WITH_CUDA)
 
   set(CUDA_cpp "")
 
-  if( COMPILE_STATIC_CCTAG_LIBRARY )
-    message( STATUS "Compiling static library" )
-    add_library( CCTag STATIC ${CCTag_cpp} )
-  else( COMPILE_STATIC_CCTAG_LIBRARY )
-    message( STATUS "Compiling shared library" )
-    add_library( CCTag SHARED ${CCTag_cpp} )
-    set_target_properties(CCTag PROPERTIES VERSION ${PROJECT_VERSION})
-  endif( COMPILE_STATIC_CCTAG_LIBRARY )
+  message( STATUS "Declare CCTag library" )
+  add_library(CCTag ${CCTag_cpp})
+  set_target_properties(CCTag PROPERTIES VERSION ${PROJECT_VERSION})
 
   target_include_directories(CCTag 
                            PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
