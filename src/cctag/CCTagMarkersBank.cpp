@@ -19,31 +19,32 @@
 namespace cctag
 {
 
-CCTagMarkersBank::CCTagMarkersBank( const std::size_t nCrowns )
+CCTagMarkersBank::CCTagMarkersBank( std::size_t nCrowns )
 {
   _markers.clear();
   if ( nCrowns == 3 )
   {
-    for (int i=0; i<32; ++i)
+    for(const auto & idThreeCrown : CCTagMarkersBank::idThreeCrowns)
     {
       std::vector<float> line;
       line.reserve(5);
-      for (int j=0; j<5; ++j)
+      for(float j : idThreeCrown)
       {
-        line.push_back(CCTagMarkersBank::idThreeCrowns[i][j]);
+        line.push_back(j);
       }
       _markers.push_back(line);
     }
     
-  }else if ( nCrowns == 4 )
+  }
+  else if ( nCrowns == 4 )
   {
-    for (int i=0; i<128; ++i)
+    for(const auto & idFourCrown : CCTagMarkersBank::idFourCrowns)
     {
       std::vector<float> line;
       line.reserve(7);
-      for (int j=0; j<7; ++j)
+      for(float j : idFourCrown)
       {
-        line.push_back(CCTagMarkersBank::idFourCrowns[i][j]);
+        line.push_back(j);
       }
       _markers.push_back(line);
     }
@@ -55,9 +56,6 @@ CCTagMarkersBank::CCTagMarkersBank( const std::string & file )
   read( file );
 }
 
-CCTagMarkersBank::~CCTagMarkersBank()
-{
-}
 
 void CCTagMarkersBank::read( const std::string & file )
 {

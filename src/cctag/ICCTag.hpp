@@ -21,32 +21,32 @@ namespace logtime {
 struct Mgmt;
 }
   
-typedef int MarkerID;
+using MarkerID = int;
 
 class ICCTag
 {
 public:
 
-	ICCTag()
-		: _x( 0.f )
-		, _y( 0.f )
-		, _id( -1 )
-	{ }
+    ICCTag()
+        : _x( 0.f )
+        , _y( 0.f )
+        , _id( -1 )
+    { }
                 
-        virtual float x() const = 0;
-        virtual float y() const = 0;
-        virtual MarkerID id() const = 0;
-        virtual int getStatus() const = 0;
+	virtual float x() const = 0;
+	virtual float y() const = 0;
+	virtual MarkerID id() const = 0;
+	virtual int getStatus() const = 0;
 
-	virtual ~ICCTag() {}
+    virtual ~ICCTag() = default;
 
-	virtual ICCTag* clone() const = 0;
+    virtual ICCTag* clone() const = 0;
 
 
 protected:
-	float _x;
-	float _y;
-	MarkerID _id;
+    float _x;
+    float _y;
+    MarkerID _id;
         int _status; // WARNING: only markers with status == 1 are the valid ones. (status available via getStatus()) 
                      // A marker correctly detected and identified has a status 1.
                      // Otherwise, it can be detected but not correctly identified.
@@ -54,7 +54,7 @@ protected:
 
 inline ICCTag* new_clone(const ICCTag& a)
 {
-	return a.clone();
+    return a.clone();
 }
 
 /**
@@ -71,21 +71,21 @@ inline ICCTag* new_clone(const ICCTag& a)
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       int                       pipeId,
-      const std::size_t frame,
+      std::size_t frame,
       const cv::Mat & graySrc,
-      logtime::Mgmt* durations = 0,
-      const std::size_t nRings = 3,
+      std::size_t nRings = 3,
+      logtime::Mgmt* durations = nullptr,
       const std::string & parameterFile = "",
       const std::string & cctagBankFilename = "");
 
 void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       int                       pipeId,
-      const std::size_t frame,
+      std::size_t frame,
       const cv::Mat & graySrc,
       const cctag::Parameters & params,
-      logtime::Mgmt* durations = 0,
-      const CCTagMarkersBank * bank = NULL);
+      logtime::Mgmt* durations = nullptr,
+      const CCTagMarkersBank * pBank = nullptr);
 
 }
 

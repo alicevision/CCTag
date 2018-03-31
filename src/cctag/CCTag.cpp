@@ -73,13 +73,13 @@ void CCTag::condition(const Eigen::Matrix3f & mT, const Eigen::Matrix3f & mInvT)
   cctag::numerical::normalizeDet1(_outerEllipse.matrix());
 
   // Condition all ellipses
-  BOOST_FOREACH(cctag::numerical::geometry::Ellipse & ellipse, _ellipses)
+  for(cctag::numerical::geometry::Ellipse & ellipse : _ellipses)
   {
     ellipse = ellipse.transform(mInvT);
     cctag::numerical::normalizeDet1(ellipse.matrix());
   }
 
-  BOOST_FOREACH(std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > & points, _points)
+  for(std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > & points : _points)
   {
     cctag::numerical::optimization::condition(points, mT);
   }
@@ -87,13 +87,13 @@ void CCTag::condition(const Eigen::Matrix3f & mT, const Eigen::Matrix3f & mInvT)
   cctag::numerical::optimization::condition(_centerImg, mT);
 }
 
-void CCTag::scale(const float s)
+void CCTag::scale(float s)
 {
 
-  BOOST_FOREACH(std::vector< DirectedPoint2d<Eigen::Vector3f> > &vp, _points)
+  for(std::vector< DirectedPoint2d<Eigen::Vector3f> > &vp : _points)
   {
 
-    BOOST_FOREACH(DirectedPoint2d<Eigen::Vector3f> & p, vp)
+    for(DirectedPoint2d<Eigen::Vector3f> & p : vp)
     {
       p.x() = p.x() * s;
       p.y() = p.y() * s;
@@ -121,7 +121,7 @@ void CCTag::releaseNearbyPointMemory( int tagId )
 }
 #endif
 
-void CCTag::serialize(boost::archive::text_oarchive & ar, const unsigned int version)
+void CCTag::serialize(boost::archive::text_oarchive & ar, unsigned int version)
 {
   ar & BOOST_SERIALIZATION_NVP(_nCircles);
   ar & BOOST_SERIALIZATION_NVP(_id);

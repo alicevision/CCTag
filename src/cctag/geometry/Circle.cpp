@@ -14,12 +14,12 @@ namespace cctag {
 namespace numerical {
 namespace geometry {
 
-Circle::Circle( const Point2d<Eigen::Vector3f>& center, const float r )
+Circle::Circle( const Point2d<Eigen::Vector3f>& center, float r )
 	: Ellipse( center, r, r, 0.f )
 {
 }
 
-Circle::Circle( const float r )
+Circle::Circle( float r )
 	: Ellipse( Point2d<Eigen::Vector3f>(0.f, 0.f) , r, r, 0.f )
 {
 }

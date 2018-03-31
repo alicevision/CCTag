@@ -39,22 +39,22 @@ class EdgePointImage;
 void cctagDetection(
         CCTag::List& markers,
         int          pipeId,
-        const std::size_t frame,
-        const cv::Mat & graySrc,
-        const Parameters & params,
+        std::size_t frame,
+        const cv::Mat & imgGraySrc,
+        const Parameters & providedParams,
         const cctag::CCTagMarkersBank & bank,
-        const bool bDisplayEllipses = true,
-        logtime::Mgmt* durations = 0 );
+        bool bDisplayEllipses = true,
+        logtime::Mgmt* durations = nullptr );
 
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
         EdgePointCollection& edgeCollection,
         const cv::Mat&          src,
         const std::vector<EdgePoint*>& seeds,
-        const std::size_t       frame,
+        std::size_t       frame,
         int pyramidLevel,
         float scale,
-        const Parameters & params,
+        const Parameters & providedParams,
         logtime::Mgmt* durations );
 
 void createImageForVoteResultDebug(

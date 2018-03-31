@@ -26,12 +26,12 @@
 
 namespace cv {
     namespace cuda {
-        typedef PtrStepSz<int16_t>  PtrStepSz16s;
-        typedef PtrStepSz<uint32_t> PtrStepSz32u;
-        typedef PtrStepSz<int32_t>  PtrStepSz32s;
-        typedef PtrStep<int16_t>    PtrStep16s;
-        typedef PtrStep<uint32_t>   PtrStep32u;
-        typedef PtrStep<int32_t>    PtrStep32s;
+        using PtrStepSz16s = PtrStepSz<int16_t>;
+        using PtrStepSz32u = PtrStepSz<uint32_t>;
+        using PtrStepSz32s = PtrStepSz<int32_t>;
+        using PtrStep16s = PtrStep<int16_t>;
+        using PtrStep32u = PtrStep<uint32_t>;
+        using PtrStep32s = PtrStep<int32_t>;
     }
 };
 

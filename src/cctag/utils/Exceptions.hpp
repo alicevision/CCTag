@@ -37,7 +37,7 @@ namespace boost {
 
 struct error_info_sstream
 {
-	typedef std::ostringstream value_type;
+	using value_type = std::ostringstream;
 	value_type _v;
 };
 
@@ -56,23 +56,24 @@ template<class Tag>
 class error_info<Tag, error_info_sstream>: public exception_detail::error_info_base
 {
 public:
-	typedef error_info_sstream T;
-	typedef error_info<Tag, T> This;
-	typedef T value_type;
+	using T = boost::error_info_sstream;
+	using This = error_info<Tag, T>;
+	using value_type = T;
 
-	error_info() {}
+	error_info() = default;
+
 	error_info( const This& v )
 	{
 		_value._v << v._value._v.str();
 	}
 
 	template<typename V>
-	error_info( const V& value )
+	explicit error_info( const V& value )
 	{
 		_value._v << value;
 	}
 
-	~error_info() throw( ) {}
+	virtual ~error_info() throw( )  = default;
 
 	template<typename V>
 	This& operator+( const V& v )
@@ -87,7 +88,7 @@ public:
 private:
 	
 	#if( BOOST_VERSION >= 105400 )
-	inline std::string name_value_string() const
+	inline std::string name_value_string() const override
 	{
 		return to_string_stub(*this);
 	}
@@ -205,7 +206,7 @@ typedef ::boost::error_info<struct tag_frame, long int> frame;
  * @brief Problem with a file.
  * @remark User information.
  */
-typedef ::boost::errinfo_file_name filename;
+using filename = ::boost::errinfo_file_name;
 /// @}
 #endif
 
@@ -302,7 +303,7 @@ struct File : virtual public Value
 {
 	File()
 	{}
-	File( const std::string& path )
+	explicit File( const std::string& path )
 	{
 		*this << filename(path);
 	}
@@ -315,7 +316,7 @@ struct FileNotExist : virtual public File
 {
 	FileNotExist()
 	{}
-	FileNotExist( const std::string& path )
+	explicit FileNotExist( const std::string& path )
 	: File( path )
 	{}
 };
@@ -327,7 +328,7 @@ struct NoDirectory : virtual public File
 {
 	NoDirectory()
 	{}
-	NoDirectory( const std::string& path )
+	explicit NoDirectory( const std::string& path )
 	: File( path )
 	{}
 };
@@ -339,7 +340,7 @@ struct ReadOnlyFile : virtual public File
 {
 	ReadOnlyFile()
 	{}
-	ReadOnlyFile( const std::string& path )
+	explicit ReadOnlyFile( const std::string& path )
 	: File( path )
 	{}
 };

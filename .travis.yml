@@ -184,7 +184,13 @@ script:
 after_success:
   - du -hs $OPENCV_INSTALL
 
+# Before uploading the new cache archive
+before_cache:
+  - ccache -s
+
 cache:
+  ccache: true
+
   directories:
     - $OPENCV_INSTALL
     - $CMAKE_INSTALL

@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include "Params.hpp"
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <boost/archive/xml_iarchive.hpp>
@@ -32,7 +32,7 @@ void Parameters::LoadOverride()
   std::cout << "CCTag: loaded parameters override file: " << path << std::endl;
 }
 
-Parameters::Parameters(const std::size_t nCrowns)
+Parameters::Parameters(std::size_t nCrowns)
     : _cannyThrLow( kDefaultCannyThrLow )
     , _cannyThrHigh( kDefaultCannyThrHigh )
     , _distSearch( kDefaultDistSearch )

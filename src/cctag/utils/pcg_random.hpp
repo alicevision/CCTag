@@ -188,7 +188,7 @@ protected:
     }
 
 public:
-    typedef itype state_type;
+    using state_type = itype;
 
     constexpr itype increment() const {
         return itype(reinterpret_cast<unsigned long>(this) | 1);
@@ -228,7 +228,7 @@ protected:
     }
 
 public:
-    typedef itype state_type;
+    using state_type = itype;
 
     static constexpr itype increment() {
         return 0;
@@ -262,7 +262,7 @@ protected:
     }
 
 public:
-    typedef itype state_type;
+    using state_type = itype;
 
     static constexpr itype stream()
     {
@@ -293,8 +293,8 @@ protected:
     itype inc_ = default_increment<itype>::increment();
 
 public:
-    typedef itype state_type;
-    typedef itype stream_state;
+    using state_type = itype;
+    using stream_state = itype;
 
     constexpr itype increment() const {
         return inc_;
@@ -320,7 +320,7 @@ public:
 protected:
     specific_stream() = default;
 
-    specific_stream(itype specific_seq)
+    explicit specific_stream(itype specific_seq)
         : inc_((specific_seq << 1) | itype(1U))
     {
         // Nothing (else) to do.
@@ -362,8 +362,8 @@ protected:
     using multiplier_mixin::multiplier;
 
 public:
-    typedef xtype result_type;
-    typedef itype state_type;
+    using result_type = xtype;
+    using state_type = itype;
 
     static constexpr size_t period_pow2()
     {
@@ -455,7 +455,7 @@ public:
         }
     }
 
-    engine(itype state = itype(0xcafef00dd15ea5e5ULL))
+    explicit engine(itype state = itype(0xcafef00dd15ea5e5ULL))
         : state_(this->is_mcg ? state|state_type(3U)
                               : bump(state + this->increment()))
     {
@@ -1006,14 +1006,14 @@ struct xsl_rr_mixin {
  */
 
 template <typename T> struct halfsize_trait {};
-template <> struct halfsize_trait<pcg128_t>  { typedef uint64_t type; };
-template <> struct halfsize_trait<uint64_t>  { typedef uint32_t type; };
-template <> struct halfsize_trait<uint32_t>  { typedef uint16_t type; };
-template <> struct halfsize_trait<uint16_t>  { typedef uint8_t type;  };
+template <> struct halfsize_trait<pcg128_t>  { using type = uint64_t; };
+template <> struct halfsize_trait<uint64_t>  { using type = uint32_t; };
+template <> struct halfsize_trait<uint32_t>  { using type = uint16_t; };
+template <> struct halfsize_trait<uint16_t>  { using type = uint8_t;  };
 
 template <typename xtype, typename itype>
 struct xsl_rr_rr_mixin {
-    typedef typename halfsize_trait<itype>::type htype;
+    using htype = typename halfsize_trait<itype>::type;
 
     static itype output(itype internal)
     {
@@ -1100,8 +1100,8 @@ template <typename baseclass>
 struct inside_out : private baseclass {
     inside_out() = delete;
 
-    typedef typename baseclass::result_type result_type;
-    typedef typename baseclass::state_type  state_type;
+    using result_type = typename baseclass::result_type;
+    using state_type = typename baseclass::state_type;
     static_assert(sizeof(result_type) == sizeof(state_type),
                   "Require a RNG whose output function is a permutation");
 
@@ -1141,9 +1141,9 @@ struct inside_out : private baseclass {
 template <bitcount_t table_pow2, bitcount_t advance_pow2, typename baseclass, typename extvalclass, bool kdd = true>
 class extended : public baseclass {
 public:
-    typedef typename baseclass::state_type  state_type;
-    typedef typename baseclass::result_type result_type;
-    typedef inside_out<extvalclass> insideout;
+    using state_type = typename baseclass::state_type;
+    using result_type = typename baseclass::result_type;
+    using insideout = inside_out<extvalclass>;
 
 private:
     static constexpr bitcount_t rtypebits = sizeof(result_type)*8;
@@ -1229,7 +1229,7 @@ public:
         advance(distance, false);
     }
 
-    extended(const result_type* data)
+    explicit extended(const result_type* data)
         : baseclass()
     {
         datainit(data);
@@ -1258,7 +1258,7 @@ public:
         selfinit();
     }
 
-    extended(state_type seed)
+    explicit extended(state_type seed)
         : baseclass(seed)
     {
         selfinit();
@@ -1283,7 +1283,7 @@ public:
     template<typename SeedSeq, typename = typename std::enable_if<
            !std::is_convertible<SeedSeq, result_type>::value
         && !std::is_convertible<SeedSeq, extended>::value>::type>
-    extended(SeedSeq&& seedSeq)
+    explicit extended(SeedSeq&& seedSeq)
         : baseclass(seedSeq)
     {
         generate_to<table_size>(seedSeq, data_);
@@ -1450,8 +1450,8 @@ void
 extended<table_pow2,advance_pow2,baseclass,extvalclass,kdd>::advance_table(
         state_type delta, bool isForwards)
 {
-    typedef typename baseclass::state_type   base_state_t;
-    typedef typename extvalclass::state_type ext_state_t;
+    using base_state_t = typename baseclass::state_type;
+    using ext_state_t = typename extvalclass::state_type;
     constexpr bitcount_t basebits = sizeof(base_state_t)*8;
     constexpr bitcount_t extbits  = sizeof(ext_state_t)*8;
     static_assert(basebits <= extbits || advance_pow2 > 0,
@@ -1667,27 +1667,27 @@ using ext_setseq_xsl_rr_128_64 =
 
 } // namespace pcg_engines
 
-typedef pcg_engines::setseq_xsh_rr_64_32        pcg32;
-typedef pcg_engines::oneseq_xsh_rr_64_32        pcg32_oneseq;
-typedef pcg_engines::unique_xsh_rr_64_32        pcg32_unique;
-typedef pcg_engines::mcg_xsh_rs_64_32           pcg32_fast;
+using pcg32 = pcg_engines::setseq_xsh_rr_64_32;
+using pcg32_oneseq = pcg_engines::oneseq_xsh_rr_64_32;
+using pcg32_unique = pcg_engines::unique_xsh_rr_64_32;
+using pcg32_fast = pcg_engines::mcg_xsh_rs_64_32;
 
-typedef pcg_engines::setseq_xsl_rr_128_64       pcg64;
-typedef pcg_engines::oneseq_xsl_rr_128_64       pcg64_oneseq;
-typedef pcg_engines::unique_xsl_rr_128_64       pcg64_unique;
-typedef pcg_engines::mcg_xsl_rr_128_64          pcg64_fast;
+using pcg64 = pcg_engines::setseq_xsl_rr_128_64;
+using pcg64_oneseq = pcg_engines::oneseq_xsl_rr_128_64;
+using pcg64_unique = pcg_engines::unique_xsl_rr_128_64;
+using pcg64_fast = pcg_engines::mcg_xsl_rr_128_64;
 
-typedef pcg_engines::setseq_rxs_m_xs_8_8        pcg8_once_insecure;
-typedef pcg_engines::setseq_rxs_m_xs_16_16      pcg16_once_insecure;
-typedef pcg_engines::setseq_rxs_m_xs_32_32      pcg32_once_insecure;
-typedef pcg_engines::setseq_rxs_m_xs_64_64      pcg64_once_insecure;
-typedef pcg_engines::setseq_xsl_rr_rr_128_128   pcg128_once_insecure;
+using pcg8_once_insecure = pcg_engines::setseq_rxs_m_xs_8_8;
+using pcg16_once_insecure = pcg_engines::setseq_rxs_m_xs_16_16;
+using pcg32_once_insecure = pcg_engines::setseq_rxs_m_xs_32_32;
+using pcg64_once_insecure = pcg_engines::setseq_rxs_m_xs_64_64;
+using pcg128_once_insecure = pcg_engines::setseq_xsl_rr_rr_128_128;
 
-typedef pcg_engines::oneseq_rxs_m_xs_8_8        pcg8_oneseq_once_insecure;
-typedef pcg_engines::oneseq_rxs_m_xs_16_16      pcg16_oneseq_once_insecure;
-typedef pcg_engines::oneseq_rxs_m_xs_32_32      pcg32_oneseq_once_insecure;
-typedef pcg_engines::oneseq_rxs_m_xs_64_64      pcg64_oneseq_once_insecure;
-typedef pcg_engines::oneseq_xsl_rr_rr_128_128   pcg128_oneseq_once_insecure;
+using pcg8_oneseq_once_insecure = pcg_engines::oneseq_rxs_m_xs_8_8;
+using pcg16_oneseq_once_insecure = pcg_engines::oneseq_rxs_m_xs_16_16;
+using pcg32_oneseq_once_insecure = pcg_engines::oneseq_rxs_m_xs_32_32;
+using pcg64_oneseq_once_insecure = pcg_engines::oneseq_rxs_m_xs_64_64;
+using pcg128_oneseq_once_insecure = pcg_engines::oneseq_xsl_rr_rr_128_128;
 
 
 // These two extended RNGs provide two-dimensionally equidistributed

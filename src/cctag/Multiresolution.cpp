@@ -175,7 +175,7 @@ void update(
 {
   bool flag = false;
 
-  BOOST_FOREACH(CCTag & currentMarker, markers)
+  for(CCTag & currentMarker : markers)
   {
     if ( ( currentMarker.getStatus() > 0 ) && ( markerToAdd.getStatus() > 0 ) && currentMarker.isEqual(markerToAdd) )
     {
@@ -259,7 +259,7 @@ static void cctagMultiresDetection_inner(
     outFilename2 << "viewLevel" << i;
     CCTagVisualDebug::instance().newSession(outFilename2.str());
 
-    BOOST_FOREACH(const CCTag & marker, pyramidMarkers)
+    for(const CCTag & marker : pyramidMarkers)
     {
         CCTagVisualDebug::instance().drawMarker(marker, false);
     }
@@ -269,7 +269,7 @@ void cctagMultiresDetection(
         CCTag::List& markers,
         const cv::Mat& imgGraySrc,
         const ImagePyramid& imagePyramid,
-        const std::size_t   frame,
+        std::size_t   frame,
         cctag::TagPipe*    cuda_pipe,
         const Parameters&   params,
         cctag::logtime::Mgmt* durations )
@@ -317,7 +317,7 @@ void cctagMultiresDetection(
   CCTagVisualDebug::instance().newSession("multiresolution");
 
   // Project markers from the top of the pyramid to the bottom (original image).
-  BOOST_FOREACH(CCTag & marker, markers)
+  for(CCTag & marker : markers)
   {
     int i = marker.pyramidLevel();
     // if the marker has to be rescaled into the original image
@@ -374,12 +374,11 @@ void cctagMultiresDetection(
         std::vector< DirectedPoint2d<Eigen::Vector3f> > rescaledOuterEllipsePointsDouble;
         std::size_t numCircles = params._nCrowns * 2;
 
-        BOOST_FOREACH(EdgePoint * e, rescaledOuterEllipsePoints)
+        for(EdgePoint * e : rescaledOuterEllipsePoints)
         {
-          rescaledOuterEllipsePointsDouble.push_back(
-                  DirectedPoint2d<Eigen::Vector3f>(e->x(), e->y(),
+          rescaledOuterEllipsePointsDouble.emplace_back(e->x(), e->y(),
                   e->dX(),
-                  e->dY())
+                  e->dY()
           );
           
           CCTagVisualDebug::instance().drawPoint(Point2d<Eigen::Vector3f>(e->x(), e->y()), cctag::color_red);
@@ -402,7 +401,7 @@ void cctagMultiresDetection(
   
   // Log
   CCTagFileDebug::instance().newSession("data.txt");
-  BOOST_FOREACH(const CCTag & marker, markers)
+  for(const CCTag & marker : markers)
   {
     CCTagFileDebug::instance().outputMarkerInfos(marker);
   }

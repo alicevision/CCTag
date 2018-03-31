@@ -35,7 +35,7 @@ public:
      * @param[in] matrix The 3x3 matrix representing the ellipse.
      * @note By default, the representation with the major axis aligned with the y-axis is chosen.
      */
-    explicit Ellipse(const Matrix &matrix);
+    explicit Ellipse(const Matrix& matrix);
 
     /**
      * @brief Build an ellipse from a set of parameters.
@@ -44,13 +44,8 @@ public:
      * @param[in] b The length of the semi-axis y.
      * @param[in] angle The orientation of the ellipse wrt the x-axis as a clock-wise angle in radians.
      */
-    Ellipse(const Point2d <Eigen::Vector3f> &center, float a, float b, float angle);
+    Ellipse(const Point2d <Eigen::Vector3f>& center, float a, float b, float angle);
 
-    /**
-     * @brief Return the matrix representation of the ellipse.
-     * @return 3x3 matrix representation of the ellipse.
-     */
-    inline const Matrix &matrix() const { return _matrix; }
 
     /**
      * @brief Return the matrix representation of the ellipse.
@@ -94,11 +89,6 @@ public:
      */
     void setA(float a);
 
-    /**
-     * @brief Set the length of the y-semi axis of the ellipse.
-     * @param[in] b the length of the y-semi axis.
-     */
-    void setB(float b);
 
     /**
      * @brief Set the orientation angle of the ellipse.
@@ -110,13 +100,13 @@ public:
      * @brief Set the center of the ellipse.
      * @param[in] center the new center of the ellipse.
      */
-    void setCenter(const Point2d <Eigen::Vector3f> &center);
+    void setCenter(const Point2d <Eigen::Vector3f>& center);
 
     /**
      * @brief Update the ellipse from a matrix representing a conic.
      * @param[in] matrix 3x3 matric representing the ellipse.
      */
-    void setMatrix(const Matrix &matrix);
+    void setMatrix(const Matrix& matrix);
 
     /**
      * @brief Update the ellipse from its parameters.
@@ -125,14 +115,14 @@ public:
      * @param[in] b The length of the semi-axis y.
      * @param[in] angle The orientation of the ellipse wrt the x-axis as a clock-wise angle in radians.
      */
-    void setParameters(const Point2d <Eigen::Vector3f> &center, float a, float b, float angle);
+    void setParameters(const Point2d <Eigen::Vector3f>& center, float a, float b, float angle);
 
     /**
      * @brief Return a new ellipse obtained by applying a transformation to the ellipse.
      * @param[in] mT a 3x3 matrix representing the transformation.
      * @return the transformed ellipse.
      */
-    Ellipse transform(const Matrix &mT) const;
+    Ellipse transform(const Matrix& mT) const;
 
     /**
      * @brief Compute the canonical form of the conic, along with its transformation.
@@ -140,7 +130,7 @@ public:
      * @param[out] mTprimal 3x3 transformation matrix such that C = mTprimal.transpose() * mCanonic * mTprimal
      * @param[out] mTdual 3x3 inverse transformation matrix (= mTprimal.inv())
      */
-    void getCanonicForm(Matrix &mCanonic, Matrix &mTprimal, Matrix &mTdual) const;
+    void getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual) const;
 
     /**
      * @brief Print the ellipse in matrix form in Matlab notation.
@@ -148,7 +138,7 @@ public:
      * @param[in] e the ellipse
      * @return the stream with appended the matrix representation of the ellipse.
      */
-    friend std::ostream &operator<<(std::ostream &os, const Ellipse &e);
+    friend std::ostream& operator<<(std::ostream& os, const Ellipse&e);
 
 private:
 
@@ -193,9 +183,9 @@ protected:
  * @param[in] requestedSize the number to ordered points to return, the points are uniformely sampled along the list.
  */
 void getSortedOuterPoints(
-        const Ellipse &ellipse,
-        const std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > &points,
-        std::vector<cctag::DirectedPoint2d<Eigen::Vector3f> > &resPoints,
+        const Ellipse& ellipse,
+        const std::vector<cctag::DirectedPoint2d<Eigen::Vector3f>>& points,
+        std::vector<cctag::DirectedPoint2d<Eigen::Vector3f>>& resPoints,
         std::size_t requestedSize);
 
 /**

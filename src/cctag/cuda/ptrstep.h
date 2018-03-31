@@ -14,24 +14,24 @@
 
 namespace cv {
     namespace cuda {
-        typedef PtrStepSz<int16_t>  PtrStepSz16s;
-        typedef PtrStepSz<uint32_t> PtrStepSz32u;
-        typedef PtrStepSz<int32_t>  PtrStepSz32s;
-        typedef PtrStepSz<uchar4>   PtrStepSzb4;
+        using PtrStepSz16s       = PtrStepSz<int16_t>;
+        using PtrStepSz32u       = PtrStepSz<uint32_t>;
+        using PtrStepSz32s       = PtrStepSz<int32_t>;
+        using PtrStepSzb4        = PtrStepSz<uchar4>;
 
-        typedef PtrStep<int16_t>    PtrStep16s;
-        typedef PtrStep<uint32_t>   PtrStep32u;
-        typedef PtrStep<int32_t>    PtrStep32s;
-        typedef PtrStep<uchar4>     PtrStepb4;
+        using PtrStep16s         = PtrStep<int16_t>;
+        using PtrStep32u         = PtrStep<uint32_t>;
+        using PtrStep32s         = PtrStep<int32_t>;
+        using PtrStepb4          = PtrStep<uchar4>;
 
 #ifdef DEBUG_LINKED_USE_INT4_BUFFER
-        typedef PtrStepSz<int4>     PtrStepSzInt2;
-        typedef PtrStep<int4>       PtrStepInt2;
-        typedef int4                PtrStepInt2_base_t;
+        using PtrStepSzInt2      = PtrStepSz<int4>;
+        using PtrStepInt2        = PtrStep<int4>;
+        using PtrStepInt2_base_t = int4;
 #else // DEBUG_LINKED_USE_INT4_BUFFER
-        typedef PtrStepSz<int2>     PtrStepSzInt2;
-        typedef PtrStep<int2>       PtrStepInt2;
-        typedef int2                PtrStepInt2_base_t;
+        using PtrStepSzInt2      = PtrStepSz<int2>;
+        using PtrStepInt2        = PtrStep<int2>;
+        using PtrStepInt2_base_t = int2;
 #endif // DEBUG_LINKED_USE_INT4_BUFFER
     }
 };

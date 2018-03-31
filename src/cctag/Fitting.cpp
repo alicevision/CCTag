@@ -222,32 +222,31 @@ template void fitEllipse(std::vector<cctag::Point2d<Eigen::Vector3f>>::const_ite
 
 } // geometry
 
-float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, float thrCosDiffMax, Point2d<Vector3s> & p1, Point2d<Vector3s> & p2) {
+float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildren, float thrCosDiffMax, Point2d<Vector3s> & p1, Point2d<Vector3s> & p2) {
             using namespace boost::numeric;
             //using namespace cctag::numerical;
 
-            EdgePoint* pAngle1 = NULL;
-            EdgePoint* pAngle2 = NULL;
+            EdgePoint* pAngle1 = nullptr;
+            EdgePoint* pAngle2 = nullptr;
 
             float min = 1.1;
 
-            float normGrad = -1;
-
             float distMax = 0.f;
 
-            EdgePoint* p0 = filteredChildrens.front();
+            EdgePoint* p0 = filteredChildren.front();
 
-            if (filteredChildrens.size()) {
+            if (!filteredChildren.empty())
+            {
 
-                normGrad = std::sqrt(p0->dX() * p0->dX() + p0->dY() * p0->dY());
+                float normGrad = std::sqrt(p0->dX() * p0->dX() + p0->dY() * p0->dY());
 
                 // Step 1
                 float gx0 = p0->dX() / normGrad;
                 float gy0 = p0->dY() / normGrad;
 
-                std::vector<cctag::EdgePoint*>::const_iterator it = ++filteredChildrens.begin();
+                std::vector<cctag::EdgePoint*>::const_iterator it = ++filteredChildren.begin();
 
-                for (; it != filteredChildrens.end(); ++it) {
+                for (; it != filteredChildren.end(); ++it) {
                     EdgePoint* pCurrent = *it;
 
                     normGrad = std::sqrt(pCurrent->dX() * pCurrent->dX() + pCurrent->dY() * pCurrent->dY());
@@ -280,11 +279,11 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildrens, floa
                 min = 1.f;
                 distMax = 0.f;
 
-                it = filteredChildrens.begin();
+                it = filteredChildren.begin();
 
                 //CCTAG_COUT(" 2- 2eme element" << **it);
 
-                for (; it != filteredChildrens.end(); ++it) {
+                for (; it != filteredChildren.end(); ++it) {
                     EdgePoint* pCurrent = *it;
 
                     normGrad = std::sqrt(pCurrent->dX() * pCurrent->dX() + pCurrent->dY() * pCurrent->dY());

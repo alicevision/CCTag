@@ -32,7 +32,7 @@ struct DetectedTag
   DetectedTag() = default;
   
   // NB: we DO want implicit conversion for easy conversion of containers of CCTags
-  DetectedTag(const cctag::CCTag& marker) :
+  explicit DetectedTag(const cctag::CCTag& marker) :
     id(marker.id()), status(marker.getStatus()),
     x(marker.x()), y(marker.y()), quality(marker.quality())
   { }

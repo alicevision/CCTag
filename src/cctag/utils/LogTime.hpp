@@ -27,7 +27,7 @@ struct Mgmt
     {
     public:
         Measurement( )
-            : _probe( 0 )
+            : _probe( nullptr )
         { }
 
         void log( const char* probename, const btime::time_duration& duration ) {
@@ -51,7 +51,7 @@ struct Mgmt
     int                      _reserved;
     int                      _idx;
 
-    Mgmt( int rsvp );
+    explicit Mgmt( int rsvp );
 
     void resetStartTime( );
 

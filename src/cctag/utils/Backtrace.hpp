@@ -20,10 +20,10 @@
 namespace boost {
 
     namespace stack_trace {
-        int trace(void **addresses,int size);
+        int trace(void **addresses, int size);
         void write_symbols(void *const *addresses,int size,std::ostream &);
         std::string get_symbol(void *address);
-        std::string get_symbols(void * const *address,int size);
+        std::string get_symbols(void * const *addresses,int size);
     } // stack_trace
 
     class backtrace {
@@ -31,18 +31,16 @@ namespace boost {
         
         static size_t const default_stack_size = 32;
 
-        backtrace(size_t frames_no = default_stack_size) 
+        explicit backtrace(size_t frames_no = default_stack_size)
         {
             if(frames_no == 0)
                 return;
-            frames_.resize(frames_no,0);
+            frames_.resize(frames_no, nullptr);
             int size = stack_trace::trace(&frames_.front(),frames_no);
             frames_.resize(size);
         }
 
-        virtual ~backtrace() throw()
-        {
-        }
+        virtual ~backtrace() throw() = default;
 
         size_t stack_size() const
         {
@@ -53,7 +51,7 @@ namespace boost {
         {
             if(frame_no < stack_size())
                 return frames_[frame_no];
-            return 0;
+            return nullptr;
         }
 
         void trace_line(unsigned frame_no,std::ostream &out) const
@@ -162,7 +160,7 @@ namespace boost {
     namespace details {
         class trace_manip {
         public:
-            trace_manip(backtrace const *tr) :
+            explicit trace_manip(backtrace const *tr) :
                 tr_(tr)
             {
             }

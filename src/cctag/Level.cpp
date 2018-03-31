@@ -15,19 +15,19 @@
 
 namespace cctag {
 
-Level::Level( std::size_t width, std::size_t height, int level, bool cuda_allocates )
-    : _level( level )
+Level::Level( std::size_t width, std::size_t height, int debug_info_level, bool cuda_allocates )
+    : _level( debug_info_level )
     , _cuda_allocates( cuda_allocates )
     , _mat_initialized_from_cuda( false )
     , _cols( width )
     , _rows( height )
 {
     if( _cuda_allocates ) {
-        _src   = 0;
-        _dx    = 0;
-        _dy    = 0;
-        _mag   = 0;
-        _edges = 0;
+        _src   = nullptr;
+        _dx    = nullptr;
+        _dy    = nullptr;
+        _mag   = nullptr;
+        _edges = nullptr;
     } else {
         // Allocation
         _src   = new cv::Mat(height, width, CV_8UC1);
@@ -54,8 +54,8 @@ Level::~Level( )
 }
 
 void Level::setLevel( const cv::Mat & src,
-                      const float thrLowCanny,
-                      const float thrHighCanny,
+                      float thrLowCanny,
+                      float thrHighCanny,
                       const cctag::Parameters* params )
 {
     if( _cuda_allocates ) {
