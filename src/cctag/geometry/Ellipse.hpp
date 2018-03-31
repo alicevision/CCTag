@@ -46,12 +46,17 @@ public:
      */
     Ellipse(const Point2d <Eigen::Vector3f>& center, float a, float b, float angle);
 
+    /**
+     * @brief Return the matrix representation of the ellipse.
+     * @return 3x3 matrix representation of the ellipse.
+     */
+    inline const Matrix &matrix() const { return _matrix; }
 
     /**
      * @brief Return the matrix representation of the ellipse.
      * @return 3x3 matrix representation of the ellipse.
      */
-    inline Matrix &matrix() { return _matrix; }
+    inline Matrix& matrix() { return _matrix; }
 
     /**
      * @brief Return the center of the ellipse.
@@ -89,6 +94,11 @@ public:
      */
     void setA(float a);
 
+    /**
+     * @brief Set the length of the y-semi axis of the ellipse.
+     * @param[in] b the length of the y-semi axis.
+     */
+    void setB(float b);
 
     /**
      * @brief Set the orientation angle of the ellipse.
