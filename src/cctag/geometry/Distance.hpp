@@ -19,7 +19,7 @@ template<class T, class U>
 inline float distancePoints2D( const T& p1, const U& p2 )
 {
 	return std::sqrt( (float)boost::math::pow<2>( p2.x() - p1.x() ) +
-	                  boost::math::pow<2>( p2.y() - p1.y() ) );
+	                  (float)boost::math::pow<2>( p2.y() - p1.y() ) );
 }
 
 float distancePointEllipseScalar(const Eigen::Vector3f& p, const Eigen::Matrix3f& Q);
