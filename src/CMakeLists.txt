@@ -250,4 +250,7 @@ install(EXPORT "${targets_export_name}"
         NAMESPACE "${namespace}"
         DESTINATION "${config_install_dir}")
 
-add_subdirectory(applications)
+if(BUILD_APPS)
+  add_subdirectory(applications)
+endif()
+
