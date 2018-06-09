@@ -9,6 +9,7 @@
 #include <cctag/ImageCut.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/geometry/2DTransform.hpp>
+#include <cctag/utils/Defines.hpp>
 
 #undef SUBPIX_EDGE_OPTIM
 #include <cctag/SubPixEdgeOptimizer.hpp>
@@ -301,7 +302,7 @@ void blurImageCut(float sigma, std::vector<float> & signal)
     float tmp = 0;
     for ( std::size_t j=0 ; j<sizeKernel; ++j)
     {
-      if ( ssize_t(i-halfSize+j) < 0 )
+      if ( (i - static_cast<std::ssize_t>(halfSize) + j) < 0 )
         tmp += signal[0]*kernel[j];
       else if( (i-halfSize+j) >=  sizeCut)
         tmp += signal[sizeCut-1]*kernel[j];
@@ -676,7 +677,7 @@ std::pair<float,float> convImageCut(const std::vector<float> & kernel, ImageCut 
     float tmp = 0;
     for ( std::size_t j=0 ; j<sizeKernel; ++j)
     {
-      if ( ssize_t(i-halfSize+j) < 0 )
+      if ( i - static_cast<std::ssize_t>(halfSize)+j < 0 )
         tmp += cut.imgSignal()[0]*kernel[j];
       else if( (i-halfSize+j) >=  sizeCut)
         tmp += cut.imgSignal()[sizeCut-1]*kernel[j];

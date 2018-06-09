@@ -602,12 +602,13 @@ void cvRecodedCanny(
     it = max_element( mag_collect.begin(), mag_collect.end() );
     float maxval = *it;
 #endif // USE_INTEGER_REP
-    unsigned char write_mag[size.width * size.height];
+    unsigned char* write_mag = new unsigned char[size.width * size.height];
     int idx=0;
     for( it = mag_collect.begin(); it!=mag_collect.end(); ++it ) {
       write_mag[idx++] = uint8_t( ( *it - minval ) * 256 / ( maxval - minval ) );
     }
     mag_img_file->write( (const char*)write_mag, size.width*size.height );
+	delete[] write_mag;
   }
 #endif // DEBUG_MAGMAP_BY_GRIFF
   t.restart();

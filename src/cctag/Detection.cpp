@@ -876,7 +876,7 @@ void cctagDetection(
     {
       CCTagVisualDebug::instance().resetMarkerIndex();
 
-        const int numTags  = markers.size();
+        const std::size_t numTags  = markers.size();
 
 #ifdef WITH_CUDA
         if( pipe1 && numTags > 0 ) {
@@ -885,7 +885,7 @@ void cctagDetection(
 #endif // WITH_CUDA
 
         std::vector<std::vector<cctag::ImageCut> > vSelectedCuts( numTags );
-        int                          detected[ numTags ];
+		std::vector<int> detected(numTags, -1);
         int                          tagIndex = 0;
 
         for( const CCTag& cctag : markers ) {
