@@ -173,7 +173,7 @@ void to_ellipse(const Conic& conic, Ellipse& ellipse)
 
   Vector2f center = c + std::get<1>(conic);
   Vector2f radius = Vector2f(std::sqrt(1.f/vals(0)), std::sqrt(1.f/vals(1)));
-  float angle = M_PI - std::atan2(mat_u(0,1), mat_u(1,1));
+  float angle = boost::math::constants::pi<float>() - std::atan2(mat_u(0,1), mat_u(1,1));
   
   if (radius(0) <= 0 || radius(1) <= 0)
     CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after fitEllipse => line or point."));

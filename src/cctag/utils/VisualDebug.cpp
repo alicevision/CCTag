@@ -239,7 +239,7 @@ void CCTagVisualDebug::drawMarker(const cctag::CCTag& marker, bool drawScaledMar
   
   cv::ellipse(_backImage , cv::Point(center.x(),center.y()),
       cv::Size(rescaledOuterEllipse.a(), rescaledOuterEllipse.b()),
-      rescaledOuterEllipse.angle()*180/M_PI, 0, 360, color);
+      rescaledOuterEllipse.angle()*180/boost::math::constants::pi<double>(), 0, 360, color);
 #endif
 }
 
