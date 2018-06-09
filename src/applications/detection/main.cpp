@@ -221,7 +221,7 @@ int main(int argc, char** argv)
 #endif
 
   // Check the (optional) parameters path
-  const std::size_t nCrowns = std::atoi(cmdline._nCrowns.c_str());
+  const std::size_t nCrowns = cmdline._nRings;
   cctag::Parameters params(nCrowns);
 
   if(!cmdline._paramsFilename.empty())

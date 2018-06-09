@@ -8,6 +8,7 @@
 #pragma once
 
 #include <string>
+#include <boost/program_options.hpp>
 
 namespace cctag {
 
@@ -17,7 +18,7 @@ public:
     std::string _filename;
     std::string _cctagBankFilename;
     std::string _paramsFilename;
-    std::string _nCrowns;
+    std::size_t _nRings;
     std::string _outputFolderName;
 #ifdef WITH_CUDA
     bool        _switchSync;
@@ -32,6 +33,9 @@ public:
     void print( const char* const argv0 );
 
     void usage( const char* const argv0 );
+
+private:
+	boost::program_options::options_description _allParams;
 };
 
 }
