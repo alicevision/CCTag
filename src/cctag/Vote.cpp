@@ -551,7 +551,7 @@ void vote(EdgePointCollection& edgeCollection,
 
             for(EdgePoint * e : children) {
 
-                float distFinal = 1e300;
+                float distFinal = std::numeric_limits<float>::max();
 
                 if (weightedType == NO_WEIGHT) {
                   distFinal = numerical::distancePointEllipse(*e, qm);
