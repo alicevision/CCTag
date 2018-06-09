@@ -11,7 +11,7 @@
 #include <opencv2/core/core.hpp>
 
 namespace cctag {
-    class Parameters;
+struct Parameters;
 };
 
 void cvRecodedCanny(
