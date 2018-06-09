@@ -85,6 +85,8 @@ std::size_t CCTagVisualDebug::getMarkerIndex() const
 {
 #ifdef CCTAG_SERIALIZE
   return _markerIndex;
+#else
+	return 0;
 #endif
 }
 
