@@ -36,8 +36,7 @@ void Ellipse::init( const Point2d<Eigen::Vector3f>& center, float a, float b, fl
 {
 	if( a < 0.f || b < 0.f )
 	{
-		CCTAG_THROW( exception::Bug()
-			<< exception::dev( "Semi axes must be real positive!" ) );
+		throw std::invalid_argument("Semi axes must be real positive!");
 	}
 
 	_center = center;
@@ -58,8 +57,7 @@ void Ellipse::setParameters( const Point2d<Eigen::Vector3f>& center, float a, fl
 {
 	if( a < 0.f || b < 0.f )
 	{
-		CCTAG_THROW( exception::Bug()
-			<< exception::dev( "Semi axes must be real positive!" ) );
+		throw std::invalid_argument("Semi axes must be real positive!");
 	}
 	_center = center;
 	_a      = a;
@@ -78,8 +76,7 @@ void Ellipse::setA( float a )
 {
 	if( a < 0.f )
 	{
-		CCTAG_THROW( exception::Bug()
-			<< exception::dev( "Semi axes must be real positive!" ) );
+		throw std::invalid_argument("Semi axes must be real positive!");
 	}
 	_a = a;
 	computeMatrix();
@@ -89,8 +86,7 @@ void Ellipse::setB( float b )
 {
 	if( b < 0.f )
 	{
-		CCTAG_THROW( exception::Bug()
-			<< exception::dev( "Semi axes must be real positive!" ) );
+		throw std::invalid_argument("Semi axes must be real positive!");
 	}
 	_b = b;
 	computeMatrix();
@@ -157,8 +153,7 @@ void Ellipse::computeParameters()
 
 		if( aAux < 0.f || bAux < 0.f )
 		{
-			CCTAG_THROW( exception::Bug()
-				<< exception::dev( "Semi axes must be real positive!" ) );
+			throw std::invalid_argument("Semi axes must be real positive!");
 		}
 
 		_a     = aAux;
@@ -248,8 +243,7 @@ void Ellipse::computeMatrix()
   }
   else
   {
-          CCTAG_THROW( exception::Bug()
-                          << exception::dev( "Singular matrix!" ) );
+		  throw std::domain_error("Singular matrix!");
   }
 }
 

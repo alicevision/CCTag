@@ -15,6 +15,7 @@
 #include <cmath>
 #include <fstream>
 #include <vector>
+#include <ios>
 
 namespace cctag
 {
@@ -62,8 +63,7 @@ void CCTagMarkersBank::read( const std::string & file )
   std::ifstream input( file.c_str() );
   if ( !input.good() )
   {
-    BOOST_THROW_EXCEPTION( exception::Value()
-                           << exception::dev() + "Unable to open the bank file: " + file );
+	throw std::ios_base::failure("Unable to open the bank file: " + file);
   }
   std::string str;
   while ( std::getline( input, str ) )
@@ -108,9 +108,9 @@ std::size_t CCTagMarkersBank::identify( const std::vector<float> & marker ) cons
     ++i;
   }
 
-  if ( normMin > 0.6 )
+  if ( normMin > 0.6f )
   {
-    BOOST_THROW_EXCEPTION( cctag::exception::Bug() << cctag::exception::dev() + "Unable to identify marker" );
+	  throw std::runtime_error("Unable to identify marker");
   }
   else
   {
