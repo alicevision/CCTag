@@ -16,7 +16,6 @@
 #include <newmat.h>
 #endif
 
-#include <boost/numeric/ublas/vector.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/pow.hpp>
 
