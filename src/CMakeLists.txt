@@ -144,6 +144,10 @@ else(WITH_CUDA)
 
 endif(WITH_CUDA)
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+  target_compile_definitions(CCTag PUBLIC "-DNOMINMAX")
+endif()
+
 # enable serialization
 if(CCTAG_SERIALIZE)
   target_compile_definitions(CCTag PUBLIC "-DCCTAG_SERIALIZE")
