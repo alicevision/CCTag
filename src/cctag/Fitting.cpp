@@ -201,7 +201,7 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildren, float
             EdgePoint* pAngle1 = nullptr;
             EdgePoint* pAngle2 = nullptr;
 
-            float min = 1.1;
+            float min = 1.1f;
 
             float distMax = 0.f;
 

@@ -497,7 +497,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
       resSquare /= outerEllipsePoints.size();
 
       numerical::geometry::Ellipse qIn, qOut;
-      computeHull(outerEllipse, 3.6, qIn, qOut);
+      computeHull(outerEllipse, 3.6f, qIn, qOut);
 
       bool isValid = true;
 

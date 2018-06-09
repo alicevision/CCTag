@@ -115,10 +115,10 @@ void Ellipse::computeParameters()
 {
         Eigen::VectorXf par(6);
 	par( 0 ) = _matrix( 0, 0 );
-	par( 1 ) = 2.0 * _matrix( 0, 1 );
+	par( 1 ) = 2.f * _matrix( 0, 1 );
 	par( 2 ) = _matrix( 1, 1 );
-	par( 3 ) = 2 * _matrix( 0, 2 );
-	par( 4 ) = 2 * _matrix( 1, 2 );
+	par( 3 ) = 2.f * _matrix( 0, 2 );
+	par( 4 ) = 2.f * _matrix( 1, 2 );
 	par( 5 ) = _matrix( 2, 2 );
 
 	const float thetarad    = 0.5f * std::atan2( par( 1 ), par( 0 ) - par( 2 ) );
@@ -143,8 +143,8 @@ void Ellipse::computeParameters()
 	}
 	else
 	{
-		const float tuCentre = -Au / ( 2.0 * Auu );
-		const float tvCentre = -Av / ( 2.0 * Avv );
+		const float tuCentre = -Au / ( 2.0f * Auu );
+		const float tvCentre = -Av / ( 2.0f * Avv );
 		const float wCentre  = Ao - Auu * tuCentre * tuCentre - Avv * tvCentre * tvCentre;
 
 		_center = Point2d<Eigen::Vector3f>( tuCentre * cost - tvCentre * sint, tuCentre * sint + tvCentre * cost );

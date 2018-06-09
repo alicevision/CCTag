@@ -480,10 +480,10 @@ void vote(EdgePointCollection& edgeCollection,
 
                 for (std::size_t i = 0; i < 5; ++i) {
                     A(i, 0) = pts[perm[i]](0) * pts[perm[i]](0);
-                    A(i, 1) = 2.0 * pts[perm[i]](0) * pts[perm[i]](1);
+                    A(i, 1) = 2.0f * pts[perm[i]](0) * pts[perm[i]](1);
                     A(i, 2) = pts[perm[i]](1) * pts[perm[i]](1);
-                    A(i, 3) = 2.0 * f * pts[perm[i]](0);
-                    A(i, 4) = 2.0 * f * pts[perm[i]](1);
+                    A(i, 3) = 2.0f * f * pts[perm[i]](0);
+                    A(i, 4) = 2.0f * f * pts[perm[i]](1);
 
                     b(i) = -f * f;
                 }
@@ -510,7 +510,7 @@ void vote(EdgePointCollection& edgeCollection,
                             // Degenerate case ?
                             float ratioSemiAxes = q.a() / q.b();
 
-                            if ((ratioSemiAxes < 0.04) || (ratioSemiAxes > 25)) {
+                            if ((ratioSemiAxes < 0.04f) || (ratioSemiAxes > 25)) {
                                 ++counter;
                                 continue;
                             }

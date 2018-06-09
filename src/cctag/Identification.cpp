@@ -279,8 +279,8 @@ void extractSignalUsingHomography(
 
 void blurImageCut(float sigma, std::vector<float> & signal)
 {
-  //const std::vector<float> kernel = { 0.0044, 0.0540, 0.2420, 0.3991, 0.2420, 0.0540, 0.0044 };
-  const std::vector<float> kernel = { 0.0276, 0.0663, 0.1238, 0.1802, 0.2042, 0.1802, 0.1238, 0.0663, 0.0276 };
+  //const std::vector<float> kernel = { 0.0044f, 0.0540f, 0.2420f, 0.3991f, 0.2420f, 0.0540f, 0.0044f };
+  const std::vector<float> kernel = { 0.0276f, 0.0663f, 0.1238f, 0.1802f, 0.2042f, 0.1802f, 0.1238f, 0.0663f, 0.0276f };
   
   std::vector<float> output;
   std::size_t sizeCut = signal.size();
@@ -624,9 +624,9 @@ bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, float scale, std::
       return false;
     
     
-    std::vector<float> kernelA = { -0.0000, -0.0003, -0.1065, -0.7863, 0, 0.7863, 0.1065, 0.0003, 0.0000 }; // size = 9, sigma = 0.5
-    std::vector<float> kernelB = { -0.0044, -0.0540, -0.2376, -0.3450, 0, 0.3450, 0.2376, 0.0540, 0.0044 }; // size = 9, sigma = 1
-    std::vector<float> kernelC = { -0.0366, -0.1113, -0.1801, -0.1594, 0, 0.1594, 0.1801, 0.1113, 0.0366 }; // size = 9, sigma = 1.5
+    std::vector<float> kernelA = { -0.0000f, -0.0003f, -0.1065f, -0.7863f, .0f, 0.7863f, 0.1065f, 0.0003f, 0.0000f }; // size = 9, sigma = 0.5
+    std::vector<float> kernelB = { -0.0044f, -0.0540f, -0.2376f, -0.3450f, .0f, 0.3450f, 0.2376f, 0.0540f, 0.0044f }; // size = 9, sigma = 1
+    std::vector<float> kernelC = { -0.0366f, -0.1113f, -0.1801f, -0.1594f, .0f, 0.1594f, 0.1801f, 0.1113f, 0.0366f }; // size = 9, sigma = 1.5
 
     std::vector<std::vector<float>> vKernels;
     vKernels.push_back(kernelA);
@@ -1203,7 +1203,7 @@ int identify_step_1(
   assert ( outerPoints.size() >= 5 );
  
   // todo: next line deprec, associated to SUBPIX_EDGE_OPTIM, do not remove.
-  const float cutLengthOuterPointRefine = std::min( ellipse.a(), ellipse.b() ) * 0.12;
+  const float cutLengthOuterPointRefine = std::min( ellipse.a(), ellipse.b() ) * 0.12f;
 
   // Visual debug
   for(const cctag::DirectedPoint2d<Eigen::Vector3f> & point : outerPoints)
@@ -1219,11 +1219,11 @@ int identify_step_1(
   {
     // Signal begin at 25% of the unit radius (for 3 black rings markers).
     // startOffset
-    startSig = 1 - (2*params._nCrowns-1)*0.15;
+    startSig = 1 - (2*params._nCrowns-1)*0.15f;
   }
   else if (params._nCrowns == 4)
   {
-    startSig = 0.26; // todo@Lilian
+    startSig = 0.26f; // todo@Lilian
   }
   else
   {
