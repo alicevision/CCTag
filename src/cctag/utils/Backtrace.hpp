@@ -36,7 +36,7 @@ namespace boost {
             if(frames_no == 0)
                 return;
             frames_.resize(frames_no, nullptr);
-            int size = stack_trace::trace(&frames_.front(),frames_no);
+            const auto size = stack_trace::trace(&frames_.front(),frames_no);
             frames_.resize(size);
         }
 
