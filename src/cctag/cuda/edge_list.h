@@ -352,7 +352,7 @@ public:
     void debug_out( int maxSize, std::vector<T>& out, EdgeListFilter f = EdgeListFilterAny )
     {
         bool success = get_debug_mem( maxSize );
-        if( not success ) return;
+        if( ! success ) return;
 
         const int size = min( maxSize, host.size );
         writeArray( out, host.ptr, size, f );
@@ -366,7 +366,7 @@ public:
         if( indexlist == 0 ) return;
 
         bool success = get_debug_mem( maxSize );
-        if( not success ) return;
+        if( ! success ) return;
 
         const int size = min( maxSize, host.size );
         writeArray( outFilename, host.ptr, size, indexlist, indexsize );
@@ -380,7 +380,7 @@ public:
         if( indexlist == 0 ) return;
 
         bool success = get_debug_mem( maxSize );
-        if( not success ) return;
+        if( ! success ) return;
 
         const int size = min( maxSize, host.size );
         writeArray( out, host.ptr, size, indexlist, indexsize );
