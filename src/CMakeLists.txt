@@ -105,6 +105,10 @@ if(WITH_CUDA)
                        ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES}
                        ${TBB_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
 
+  if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+   target_link_libraries(CCTag pthread dl)
+  endif()
+
   target_compile_definitions(CCTag
                          PUBLIC ${Boost_DEFINITIONS}
                          PUBLIC -DWITH_CUDA -DSM_ARCH=${CCTAG_SM_ARCH} -DSM=${CCTAG_SM} -DCUB_CDP
@@ -142,11 +146,11 @@ else(WITH_CUDA)
                         PUBLIC ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES}
                         PRIVATE ${TBB_LIBRARIES})
 
-endif(WITH_CUDA)
+  if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    target_link_libraries(CCTag PRIVATE pthread dl)
+  endif()
 
-if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  target_link_libraries(CCTag PRIVATE pthread dl)
-endif()
+endif(WITH_CUDA)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
   target_compile_definitions(CCTag PUBLIC "-DNOMINMAX")
