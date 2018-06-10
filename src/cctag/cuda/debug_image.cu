@@ -12,7 +12,7 @@
 #include <fstream>
 #include <string.h>
 #include <cuda_runtime.h>
-#include <sys/stat.h>
+//#include <sys/stat.h>
 #include <map>
 // #include "debug_macros.hpp"
 
