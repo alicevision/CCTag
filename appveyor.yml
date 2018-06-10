@@ -19,7 +19,7 @@ before_build:
     - md build
     - cd build
 #    - cmake -G "Visual Studio 14 2015" -A x64 -T v140,host=x64 -DPopSift_BUILD_EXAMPLES:BOOL=OFF -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
-    - cmake -G "Visual Studio 14 2015" -A x64 -T v140,host=x64 -DCMAKE_BUILD_TYPE=%configuration% -DBOOST_ROOT:PATH=C:\Libraries\boost_1_66_0 -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_APPS:BOOL=OFF -DWITH_CUDA:BOOL=OFF -DCCTAG_SERIALIZE:BOOL=ON -DVISUAL_DEBUG:BOOL=ON ..
+    - cmake -G "Visual Studio 14 2015" -A x64 -T v140,host=x64 -DCMAKE_BUILD_TYPE=%configuration% -DBOOST_ROOT:PATH=C:\Libraries\boost_1_66_0 -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_APPS:BOOL=ON -DWITH_CUDA:BOOL=OFF -DCCTAG_SERIALIZE:BOOL=ON -DVISUAL_DEBUG:BOOL=ON ..
     - ls -l
 
 build:
