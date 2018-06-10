@@ -72,6 +72,7 @@ bool CmdLine::parse( int argc, char* argv[] )
 		std::cout << e.what() << std::endl;
 		return false;
 	}
+    return true;
 }
 
 void CmdLine::print( const char* const argv0 )
