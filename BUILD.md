@@ -22,12 +22,13 @@ $ git clone https://github.com/alicevision/CCTag.git
 Most of the dependencies can be installed from the common repositories (apt, yum etc):
 
 - Eigen3 (libeigen3-dev)
-- Boost >= 1.53 ([core, thread, system, filesystem, serialization, thread, exception, chrono, date-time, program-options, timer]-dev)
+- Boost >= 1.53 ([accumulators, atomic, chrono, core, date-time, exception, filesystem, math, program-options, ptr-container, system, serialization, timer, thread]-dev)
 - OpenCV >= 3.1
+- tbb >= 4.0
 
 On a recent Ubuntu-like distribution (e.g. 14.04), you may want to try to run:
 ```shell
-$ sudo apt-get install g++ git-all libpng12-dev libjpeg-dev libeigen3-dev libboost-atomic-dev libboost-chrono-dev libboost-date-time-dev libboost-dev libboost-program-options-dev libboost-exception-dev libboost-filesystem-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev libboost-timer-dev
+$ sudo apt-get install g++ git-all libpng12-dev libjpeg-dev libeigen3-dev libboost-atomic-dev libboost-chrono-dev libboost-date-time-dev libboost-dev libboost-program-options-dev libboost-exception-dev libboost-filesystem-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev libboost-timer-dev libtbb-dev
 ```
 
 OpenCV need to be compiled separately and installed in some `OPENCV_INSTALL` path. Then, when running cmake you need to provide the path to the location where `OpenCVConfig.cmake` is installed, usually `${OPENCV_INSTALL}/share/share/OpenCV/` (see below).
@@ -43,7 +44,7 @@ You now just need to be in the CCTag folder and run cmake:
 $ mkdir build && cd build
 $ cmake .. -DOpenCV_DIR=${OPENCV_INSTALL}/share/share/OpenCV/
 $ make -j `nproc`
-``` 
+```
 
 If you want to install the library to, say, a CCTAG_INSTALL path, just add `-DCMAKE_INSTALL_PREFIX=$CCTAG_INSTALL` at cmake command line.
 If you want to build CCTag as a shared library: `-DBUILD_SHARED_LIBS=ON`.
@@ -56,7 +57,7 @@ When you install CCTag a file `CCTagConfig.cmake` is installed in `$CCTAG_INSTAL
 In your `CMakeLists.txt` file you can add the dependency in this way:
 
 ```cmake
-# Find the package from the CCTagConfig.cmake 
+# Find the package from the CCTagConfig.cmake
 # in <prefix>/lib/cmake/CCTag/. Under the namespace CCTag::
 # it exposes the target CCTag that allows you to compile
 # and link with the library
@@ -80,4 +81,3 @@ Note 1: CCTag uses NVidia CUB (CCTag includes a copy of CUB from CUDA 7.0).
 Several CUB functions are known to fail with a few NVidia cards including our reference card,
 the GTX 980 Ti.
 The CUB that is included with CUDA 7.5 does not solve this problem.
-
