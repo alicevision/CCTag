@@ -302,9 +302,10 @@ void blurImageCut(float sigma, std::vector<float> & signal)
     float tmp = 0;
     for ( std::size_t j=0 ; j<sizeKernel; ++j)
     {
-      if ( (i - static_cast<std::ssize_t>(halfSize) + j) < 0 )
+      const std::ssize_t res = i - halfSize + j;
+      if ( res < 0 )
         tmp += signal[0]*kernel[j];
-      else if( (i-halfSize+j) >=  sizeCut)
+      else if( res >=  sizeCut)
         tmp += signal[sizeCut-1]*kernel[j];
       else
         tmp += signal[i-halfSize+j]*kernel[j];
@@ -677,9 +678,10 @@ std::pair<float,float> convImageCut(const std::vector<float> & kernel, ImageCut 
     float tmp = 0;
     for ( std::size_t j=0 ; j<sizeKernel; ++j)
     {
-      if ( i - static_cast<std::ssize_t>(halfSize)+j < 0 )
+      const std::ssize_t res = i - halfSize + j;
+      if (res < 0 )
         tmp += cut.imgSignal()[0]*kernel[j];
-      else if( (i-halfSize+j) >=  sizeCut)
+      else if(res >=  sizeCut)
         tmp += cut.imgSignal()[sizeCut-1]*kernel[j];
       else
         tmp += cut.imgSignal()[i-halfSize+j]*kernel[j];
