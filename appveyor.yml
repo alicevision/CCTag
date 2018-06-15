@@ -11,15 +11,42 @@ configuration:
 install:
     # - cmd: >-
     #       call cudaInstallAppveyor.cmd
-#    - vcpkg update
-#    - vcpkg install --featurepackages boost-system:x64-windows boost-program-options:x64-windows boost-thread:x64-windows boost-filesystem:x64-windows
-    - vcpkg install --featurepackages opencv:x64-windows tbb:x64-windows eigen3:x64-windows
+
+    - vcpkg upgrade --no-dry-run
+    - vcpkg list
+    - vcpkg install
+          boost-accumulators
+          boost-algorithm
+          boost-container
+          boost-date-time
+          boost-exception
+          boost-filesystem
+          boost-iterator
+          boost-lexical-cast
+          boost-math
+          boost-mpl
+          boost-multi-array
+          boost-ptr-container
+          boost-program-options
+          boost-serialization
+          boost-spirit
+          boost-static-assert
+          boost-test
+          boost-thread
+          boost-throw-exception
+          boost-timer
+          boost-type-traits
+          boost-unordered
+          opencv
+          tbb
+          eigen3
+          --triplet %PLATFORM%-windows
+    - vcpkg list
 
 before_build:
     - md build
     - cd build
-#    - cmake -G "Visual Studio 14 2015" -A x64 -T v140,host=x64 -DPopSift_BUILD_EXAMPLES:BOOL=OFF -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
-    - cmake -G "Visual Studio 14 2015" -A x64 -T v140,host=x64 -DCMAKE_BUILD_TYPE=%configuration% -DBOOST_ROOT:PATH=C:\Libraries\boost_1_66_0 -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_APPS:BOOL=ON -DWITH_CUDA:BOOL=OFF -DCCTAG_SERIALIZE:BOOL=ON -DVISUAL_DEBUG:BOOL=ON ..
+    - cmake -G "Visual Studio 14 2015" -A x64 -T v140,host=x64 -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_APPS:BOOL=ON -DWITH_CUDA:BOOL=OFF -DCCTAG_SERIALIZE:BOOL=ON -DVISUAL_DEBUG:BOOL=ON ..
     - ls -l
 
 build:
