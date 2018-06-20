@@ -73,6 +73,8 @@ public:
 		_value._v << value;
 	}
 
+    	error_info_base * clone() const {}
+    
 	virtual ~error_info() throw( )  = default;
 
 	template<typename V>
