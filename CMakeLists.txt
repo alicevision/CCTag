@@ -14,6 +14,7 @@ option(WITH_CUDA "Compile the library with CUDA support" ON)
 
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
+option(BUILD_TESTS "Build the unity tests" ON)
 
 if(CCTAG_ENABLE_SIMD_AVX2)
   if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
@@ -69,8 +70,14 @@ endif(APPLE)
 
 # FIND BOOST
 # TODO: determine minimal version and minimal components
-find_package(Boost 1.53.0 REQUIRED
-    COMPONENTS date_time chrono thread serialization system filesystem atomic program_options timer)
+set(BOOST_REQUIRED_COMPONENTS "date_time;chrono;thread;serialization;system;filesystem;atomic;program_options;timer")
+if(BUILD_TESTS)
+  set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};unit_test_framework")
+  enable_testing()
+  include(BoostTestHelper)
+endif()
+
+find_package(Boost 1.53.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 if(WITH_CUDA)
   message( STATUS "Try finding CUDA" )

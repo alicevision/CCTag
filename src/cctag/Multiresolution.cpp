@@ -340,6 +340,10 @@ void cctagMultiresDetection(
         boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
       #endif
       
+
+      if(pointsInHull.size() < 5)
+          continue;
+
       std::vector<EdgePoint*> rescaledOuterEllipsePoints;
 
       float SmFinal = 1e+10;
@@ -359,7 +363,10 @@ void cctagMultiresDetection(
         CCTAG_COUT_OPTIM("Time in selectEdgePointInEllipticHull: " << d1.total_milliseconds() << " ms");
         CCTAG_COUT_OPTIM("Time in outlierRemoval: " << d2.total_milliseconds() << " ms");
       #endif
-      
+
+      if(rescaledOuterEllipsePoints.size() < 5)
+        continue;
+
       try
       {
         numerical::ellipseFitting(rescaledOuterEllipse, rescaledOuterEllipsePoints);
