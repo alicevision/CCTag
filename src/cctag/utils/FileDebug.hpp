@@ -39,7 +39,7 @@ namespace cctag {
             MAKE_SINGLETON_WITHCONSTRUCTORS(CCTagFileDebug)
 
         public:
-            typedef boost::ptr_map<std::string, std::stringstream> Sessions;
+            using Sessions = boost::ptr_map<std::string, std::stringstream>;
         public:
 
             void setPath(const std::string& folderName);

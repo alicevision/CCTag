@@ -25,8 +25,8 @@ struct ImageCut;
 class SubPixEdgeOptimizer : public OPTPP::FDNLF1
 {
 public:
-	typedef SubPixEdgeOptimizer This;
-	typedef OPTPP::FDNLF1 Parent;
+	using This = SubPixEdgeOptimizer;
+	using Parent =OPTPP::FDNLF1;
 
 public:
 	SubPixEdgeOptimizer( const cctag::ImageCut & line );
