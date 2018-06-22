@@ -153,9 +153,9 @@ if(CCTAG_NO_COUT)
   target_compile_definitions(CCTag PUBLIC "-DCCTAG_NO_COUT")
 endif(CCTAG_NO_COUT)
 # Enable visual debug
-if(VISUAL_DEBUG)
-  target_compile_definitions(CCTag PRIVATE "-DVISUAL_DEBUG")
-endif(VISUAL_DEBUG)
+if(CCTAG_VISUAL_DEBUG)
+  target_compile_definitions(CCTag PRIVATE "-DCCTAG_VISUAL_DEBUG")
+endif(CCTAG_VISUAL_DEBUG)
 
 
 # EXPORTING THE LIBRARY

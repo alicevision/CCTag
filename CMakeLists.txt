@@ -8,7 +8,7 @@ project(CCTag VERSION 1.0.0 LANGUAGES C CXX)
 
 #CMakeDependentOption
 option(CCTAG_SERIALIZE "Store all the output" OFF)
-option(VISUAL_DEBUG "Enable visual debug" OFF)
+option(CCTAG_VISUAL_DEBUG "Enable visual debug" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
 option(CCTAG_WITH_CUDA "Compile the library with CUDA support" ON)
 

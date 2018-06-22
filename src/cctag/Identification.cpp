@@ -1383,7 +1383,7 @@ int identify_step_2(
   // D. Read the rectified 1D signals and retrieve the nearest ID(s) ///////////
   identSuccessful = orazioDistanceRobust( vScore, radiusRatios, vSelectedCuts, params._minIdentProba);
     
-#ifdef VISUAL_DEBUG // todo: write a proper function in visual debug
+#ifdef CCTAG_VISUAL_DEBUG // todo: write a proper function in visual debug
   cv::Mat output;
   createRectifiedCutImage(vSelectedCuts, output);
   CCTagVisualDebug::instance().initBackgroundImage(output);
@@ -1392,8 +1392,8 @@ int identify_step_2(
   CCTagVisualDebug::instance().incrementMarkerIndex();
   // Back to session refineConicPts
   CCTagVisualDebug::instance().newSession( "refineConicPts" );
-#endif // OPTIM_CENTER_VISUAL_DEBUG
-    
+#endif // CCTAG_VISUAL_DEBUG
+
 #ifdef GRIFF_DEBUG
 #error here
     // todo: clean and mode this block into a function.
