@@ -107,7 +107,7 @@ if(CCTAG_WITH_CUDA)
 
   target_compile_definitions(CCTag 
                          PUBLIC ${Boost_DEFINITIONS} 
-                         PUBLIC -DCCTAG_WITH_CUDA -DSM_ARCH=${CCTAG_SM_ARCH} -DSM=${CCTAG_SM} -DCUB_CDP
+                         PUBLIC -DCCTAG_WITH_CUDA -DCUB_CDP
                          PRIVATE ${TBB_DEFINITIONS}) 
 
   # This is nececessary for the CCTagConfig.cmake to correctly export the

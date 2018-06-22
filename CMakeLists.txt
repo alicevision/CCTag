@@ -27,10 +27,6 @@ if(CCTAG_ENABLE_SIMD_AVX2)
   message(STATUS "CCTAG: AVX2 optimizations enabled.")
 endif()
 
-# Cuda architecture values
-set(CCTAG_SM_ARCH 100)
-set(CCTAG_SM 100)
-
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
 
