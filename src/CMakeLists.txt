@@ -86,7 +86,7 @@ if(CCTAG_WITH_CUDA)
   # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
   # set(BUILD_SHARED_LIBS ON)
 
-  set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DSM_ARCH=${CCTAG_SM_ARCH};-DSM=${CCTAG_SM};-DCUB_CDP")
+  set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DCUB_CDP")
  
   # this must go before CUDA_ADD_LIBRARY otherwise we won't be able to add it
   # after

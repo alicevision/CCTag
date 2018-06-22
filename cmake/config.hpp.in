@@ -28,8 +28,4 @@
 
   #define CUB_CDP
 
-  #define SM_ARCH @CCTAG_SM_ARCH@
-
-  #define SM @CCTAG_SM@
-
 #endif
