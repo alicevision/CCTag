@@ -41,7 +41,7 @@
 namespace cctag
 {
 
-typedef std::vector< std::pair< MarkerID, float > > IdSet;
+using IdSet = std::vector< std::pair< MarkerID, float >>;
 
 class CCTag : public ICCTag
 {

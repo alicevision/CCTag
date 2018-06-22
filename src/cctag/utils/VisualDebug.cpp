@@ -71,22 +71,20 @@ void CCTagVisualDebug::resetMarkerIndex()
 {
 #ifdef CCTAG_SERIALIZE
   _markerIndex = 0;;
-#endif
+#endif // CCTAG_SERIALIZE
 }
 
+#ifdef CCTAG_SERIALIZE
 void CCTagVisualDebug::incrementMarkerIndex() 
 {
-#ifdef CCTAG_SERIALIZE
   ++_markerIndex;
-#endif
 }
 
 std::size_t CCTagVisualDebug::getMarkerIndex() const
 {
-#ifdef CCTAG_SERIALIZE
   return _markerIndex;
-#endif
 }
+#endif // CCTAG_SERIALIZE
 
 std::string CCTagVisualDebug::getPath() const {
   return _path;

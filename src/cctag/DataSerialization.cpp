@@ -22,7 +22,7 @@ void serializeIdSet(boost::archive::text_oarchive & ar, const IdSet & idSet) {
     const int sizeIdSet = idSet.size();
     ar & BOOST_SERIALIZATION_NVP(sizeIdSet);
 
-    typedef std::pair< MarkerID, float > IdPair;
+    using IdPair = std::pair< MarkerID, float >;
 
     for(const IdPair & idPair : idSet) {
         ar & BOOST_SERIALIZATION_NVP(idPair.first);

@@ -113,7 +113,7 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
 
         bool breaknow = ( xyRes.x < 1.0f && xyRes.x > src.cols-1 && xyRes.y < 1.0f && xyRes.y > src.rows-1 );
 
-        if( __any( breaknow ) )
+        if( ::__any( breaknow ) )
         {
             if( threadIdx.x == 0 ) signals.outOfBounds = 1;
             return;

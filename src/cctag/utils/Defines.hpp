@@ -64,10 +64,10 @@
 #include <cstddef>
 namespace std {
 #ifdef _MSC_VER
-	typedef SSIZE_T ssize_t;
+	using ssize_t = SSIZE_T;
 #else
 	//#ifdef __ssize_t_defined
-	//typedef __ssize_t ssize_t;
+	//using ssize_t = __ssize_t;
 	//#else
 	using ::ssize_t;
 	//#endif

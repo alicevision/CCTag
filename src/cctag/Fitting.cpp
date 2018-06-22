@@ -16,6 +16,7 @@
 #include <cctag/Fitting.hpp>
 #include <cctag/utils/Defines.hpp>
 #include <Eigen/SVD>
+#include <Eigen/LU>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/geometry/EllipseFromPoints.hpp>
@@ -111,6 +112,13 @@ static Conic fit_solver(It begin, It end)
   const auto& S1 = std::get<0>(St);
   const auto& S2 = std::get<1>(St);
   const auto& S3 = std::get<2>(St);
+  bool invertible;
+  Matrix3f S3Inv;
+  S3.computeInverseWithCheck(S3Inv, invertible);
+  if(!invertible)
+  {
+      throw std::domain_error("fit_solver: the input points appear to be linearly dependent");
+  }
   const auto T = -S3.inverse() * S2.transpose();
   const auto M = C1.inverse * (S1 + S2*T);
   
@@ -121,21 +129,28 @@ static Conic fit_solver(It begin, It end)
     cond = 4*evr.row(0)*evr.row(2) - evr.row(1)*evr.row(1);
   }
 
-  float min = FLT_MAX;
+  const auto eps = std::numeric_limits<float>::epsilon();
+  float minValue = std::numeric_limits<float>::max();
   int imin = -1;
   for (int i = 0; i < 3; ++i)
-  if (cond(i) > 0 && cond(i) < min) {
-    imin = i; min = cond(i);
+  {
+      if (cond(i) > eps && cond(i) < minValue)
+      {
+          imin = i;
+          minValue = cond(i);
+      }
   }
   
   Vector6f ret = Matrix<float, 6, 1>::Zero();
-  if (imin >= 0) {
-    Vector3f a1 = M_ev.eigenvectors().real().col(imin);
-    Vector3f a2 = T*a1;
-    ret.block<3,1>(0,0) = a1;
-    ret.block<3,1>(3,0) = a2;
+  if (imin == -1)
+  {
+      throw std::domain_error("fit_solver: degeneracy");
   }
-  return std::make_tuple(ret, offset);
+    Vector3f a1 = M_ev.eigenvectors().real().col(imin);
+    Vector3f a2 = T * a1;
+    ret.block<3, 1>(0, 0) = a1;
+    ret.block<3, 1>(3, 0) = a2;
+    return std::make_tuple(ret, offset);
 }
 
 // Adapted from OpenCV old code; see
@@ -143,14 +158,18 @@ static Conic fit_solver(It begin, It end)
 void to_ellipse(const Conic& conic, Ellipse& ellipse)
 {
   using namespace Eigen;
+  const auto eps = std::numeric_limits<float>::epsilon();
+
   auto coef = std::get<0>(conic);
 
   float idet = coef(0)*coef(2) - coef(1)*coef(1)/4; // ac-b^2/4
-  idet = idet > FLT_EPSILON ? 1.f/idet : 0;
+  idet = idet > eps ? 1.f/idet : 0;
   
   float scale = std::sqrt(idet/4);
-  if (scale < FLT_EPSILON)
-    throw std::domain_error("to_ellipse_2: singularity 1");
+  if (scale < eps)
+  {
+      throw std::domain_error("to_ellipse_2: singularity 1");
+  }
   
   coef *= scale;
   float aa = coef(0), bb = coef(1), cc = coef(2), dd = coef(3), ee = coef(4), ff = coef(5);
@@ -159,9 +178,11 @@ void to_ellipse(const Conic& conic, Ellipse& ellipse)
   
   // offset ellipse to (x0,y0)
   ff += aa*c(0)*c(0) + bb*c(0)*c(1) + cc*c(1)*c(1) + dd*c(0) + ee*c(1);
-  if (std::fabs(ff) < FLT_EPSILON)
-   throw std::domain_error("to_ellipse_2: singularity 2");
-  
+  if (std::fabs(ff) < eps)
+  {
+      throw std::domain_error("to_ellipse_2: singularity 2");
+  }
+
   Matrix2f S;
   S << aa, bb/2, bb/2, cc;
   S /= -ff;
@@ -173,19 +194,26 @@ void to_ellipse(const Conic& conic, Ellipse& ellipse)
 
   Vector2f center = c + std::get<1>(conic);
   Vector2f radius = Vector2f(std::sqrt(1.f/vals(0)), std::sqrt(1.f/vals(1)));
-  float angle = M_PI - std::atan2(mat_u(0,1), mat_u(1,1));
+  float angle = boost::math::constants::pi<float>() - std::atan2(mat_u(0,1), mat_u(1,1));
   
   if (radius(0) <= 0 || radius(1) <= 0)
-    CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate ellipse after fitEllipse => line or point."));
-  
+      throw std::domain_error("Degenerate ellipse after fitEllipse => line or point.");
   ellipse.setParameters(Point2d<Eigen::Vector3f>(center(0), center(1)), radius(0), radius(1), angle);
 }
 
 template<typename It>
 void fitEllipse(It begin, It end, Ellipse& e)
 {
-  auto conic = fit_solver(begin, end);
-  geometry::to_ellipse(conic, e);
+    const auto numPts = std::distance(begin, end);
+    if(numPts < 5)
+    {
+        std::cout << "fitEllipse it: " + std::to_string(numPts) + " provided, at least 5 are needed to estimate an ellipse" << std::endl;
+        throw std::domain_error(
+                "fitEllipse: " + std::to_string(numPts) + " provided, at least 5 are needed to estimate an ellipse");
+    }
+
+    auto conic = fit_solver(begin, end);
+    geometry::to_ellipse(conic, e);
 }
 
 // explicit instantiations
@@ -292,8 +320,15 @@ void ellipseFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<Po
 
 void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points )
 {
-  using indirect_iterator = boost::indirect_iterator<std::vector<cctag::EdgePoint*>::const_iterator>;
-  geometry::fitEllipse(indirect_iterator(points.begin()), indirect_iterator(points.end()), e);
+    const auto numPts = points.size();
+    if(numPts < 5)
+    {
+        std::cout << "fitEllipse: " + std::to_string(numPts) + " provided, at least 5 are needed to estimate an ellipse" << std::endl;
+        throw std::domain_error(
+                "fitEllipse: " + std::to_string(numPts) + " provided, at least 5 are needed to estimate an ellipse");
+    }
+    using indirect_iterator = boost::indirect_iterator<std::vector<cctag::EdgePoint*>::const_iterator>;
+    geometry::fitEllipse(indirect_iterator(points.begin()), indirect_iterator(points.end()), e);
 }
 
 void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points) {

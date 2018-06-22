@@ -56,7 +56,7 @@ bool orazioDistanceRobust(
   using namespace cctag::numerical;
   using namespace boost::accumulators;
 
-  typedef std::map<float, MarkerID> MapT;
+  using MapT = std::map<float, MarkerID>;
 
   if ( cuts.size() == 0 )
   {
