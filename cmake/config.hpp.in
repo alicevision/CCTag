@@ -20,11 +20,11 @@
 #cmakedefine CCTAG_NO_COUT
 #endif
 
-#ifndef WITH_CUDA
-#cmakedefine WITH_CUDA
+#ifndef CCTAG_WITH_CUDA
+#cmakedefine CCTAG_WITH_CUDA
 #endif
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 
   #define CUB_CDP
 

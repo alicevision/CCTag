@@ -16,7 +16,7 @@
 #include <cctag/geometry/Circle.hpp>
 #include <cctag/utils/Talk.hpp>
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 #include "cctag/cuda/tag.h"
 #endif
 
@@ -829,7 +829,7 @@ bool refineConicFamilyGlob(
     CCTagVisualDebug::instance().newSession( "centerOpt" );
     CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_green );
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     if( cudaPipe ) {
         bool success = cudaPipe->imageCenterRetrieve(
             tagIndex,      // in
@@ -843,7 +843,7 @@ bool refineConicFamilyGlob(
             return false;
         }
     } else { // not CUDA
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
         boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
@@ -886,9 +886,9 @@ bool refineConicFamilyGlob(
   const float spendTime = d.total_milliseconds();
   DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     } // not CUDA
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
     CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
   
     // B. Get the signal associated to the optimal homography/imaged center //////
@@ -1342,7 +1342,7 @@ int identify_step_2(
                         cudaPipe,
                         ellipse,
                         params,
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
                         cctag.getNearbyPointBuffer(),
 #else
                         nullptr,

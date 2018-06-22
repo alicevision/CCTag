@@ -26,7 +26,7 @@
 
 #include <limits>
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 #include <cuda_runtime.h> // only for debugging!!!
 #include "cctag/cuda/tag.h"
 #endif
@@ -210,7 +210,7 @@ static void cctagMultiresDetection_inner(
 
     boost::posix_time::time_duration d;
 
-#if defined(WITH_CUDA)
+#if defined(CCTAG_WITH_CUDA)
     // there is no point in measuring time in compare mode
     if( cuda_pipe ) {
       cuda_pipe->convertToHost(i, edgeCollection, seeds, cctag::EdgePointCollection::MAX_POINTS );
@@ -221,7 +221,7 @@ static void cctagMultiresDetection_inner(
 
       CCTagVisualDebug::instance().setPyramidLevel(i);
     } else { // not cuda_pipe
-#endif // defined(WITH_CUDA)
+#endif // defined(CCTAG_WITH_CUDA)
     edgesPointsFromCanny( edgeCollection,
                           level->getEdges(),
                           level->getDx(),
@@ -241,9 +241,9 @@ static void cctagMultiresDetection_inner(
         std::sort(seeds.begin(), seeds.end(), receivedMoreVoteThan);
     }
 
-#if defined(WITH_CUDA)
+#if defined(CCTAG_WITH_CUDA)
     } // not cuda_pipe
-#endif // defined(WITH_CUDA)
+#endif // defined(CCTAG_WITH_CUDA)
 
 
     cctagDetectionFromEdges(

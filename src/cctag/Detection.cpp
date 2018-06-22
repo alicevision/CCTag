@@ -24,7 +24,7 @@
 #include <cctag/Canny.hpp>
 #include <cctag/utils/Defines.hpp>
 #include <cctag/utils/Talk.hpp> // for DO_TALK macro
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 #include "cctag/cuda/tag.h"
 #endif
 
@@ -44,9 +44,9 @@
 #include <list>
 #include <utility>
 #include <memory>
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 #include <cuda_runtime.h> // only for debugging
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
 #include <tbb/tbb.h>
 
@@ -729,7 +729,7 @@ void createImageForVoteResultDebug(
 #endif
 }
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 cctag::TagPipe* initCuda( int      pipeId,
                            uint32_t width,
                            uint32_t height, 
@@ -755,7 +755,7 @@ cctag::TagPipe* initCuda( int      pipeId,
     }
     return pipe1;
 }
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
 /**
  * @brief Perform the CCTag detection on a gray scale image
@@ -787,7 +787,7 @@ void cctagDetection(
   
     std::srand(1);
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     bool cuda_allocates = params._useCuda;
 #else
     bool cuda_allocates = false;
@@ -799,7 +799,7 @@ void cctagDetection(
                                cuda_allocates );
 
     cctag::TagPipe* pipe1 = nullptr;
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     if( params._useCuda ) {
         pipe1 = initCuda( pipeId,
                           imgGraySrc.size().width,
@@ -830,16 +830,16 @@ void cctagDetection(
         if( durations ) durations->log( "after CUDA debug" );
 #endif // not NDEBUG
     } else { // not params.useCuda
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
         imagePyramid.build( imgGraySrc,
                             params._cannyThrLow,
                             params._cannyThrHigh,
                             &params );
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     } // not params.useCuda
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
   
     if( durations ) durations->log( "before cctagMultiresDetection" );
 
@@ -853,7 +853,7 @@ void cctagDetection(
 
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     if( pipe1 ) {
         /* identification in CUDA requires a host-side nearby point struct
          * in pinned memory for safe, non-blocking memcpy.
@@ -867,7 +867,7 @@ void cctagDetection(
             tag.acquireNearbyPointMemory( pipe1->getId() );
         }
     }
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
   
     CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
 
@@ -878,11 +878,11 @@ void cctagDetection(
 
         const int numTags  = markers.size();
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
         if( pipe1 && numTags > 0 ) {
             pipe1->checkTagAllocations( numTags, params );
         }
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
         std::vector<std::vector<cctag::ImageCut> > vSelectedCuts( numTags );
         int                          detected[ numTags ];
@@ -903,7 +903,7 @@ void cctagDetection(
             cerr << __FILE__ << ":" << __LINE__ << " Number of markers has changed in identify_step_1" << endl;
         }
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
         if( pipe1 && numTags > 0 ) {
             pipe1->uploadCuts( numTags, &vSelectedCuts[0], params );
 
@@ -938,7 +938,7 @@ void cctagDetection(
             }
             cudaDeviceSynchronize();
         }
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
         tagIndex = 0;
 
@@ -966,7 +966,7 @@ void cctagDetection(
         if( durations ) durations->log( "after cctag::identification::identify" );
     }
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     if( pipe1 ) {
         /* Releasing all points in all threads in the process.
          */

@@ -29,7 +29,7 @@
 #include <boost/throw_exception.hpp>
 #include <boost/archive/text_oarchive.hpp>
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 #include "cctag/cuda/pinned_counters.h"
 #endif
 
@@ -55,7 +55,7 @@ public:
     : _id(0)
     , _quality(0)
     , _status(0)
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     , _cuda_result( nullptr )
 #endif
   {
@@ -78,7 +78,7 @@ public:
     , _quality(quality)
     , _pyramidLevel(pyramidLevel)
     , _scale(scale)
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     , _cuda_result( nullptr )
 #endif
   {
@@ -103,7 +103,7 @@ public:
     , _scale(cctag._scale)
     , _rescaledOuterEllipse(cctag._rescaledOuterEllipse)
     , _status(cctag._status)
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     , _cuda_result( nullptr )
 #endif
 #ifdef CCTAG_SERIALIZE
@@ -344,7 +344,7 @@ public:
   }
 #endif
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
   /** Get a pointer to pinned memory for this tag.
    *  It cannot be released for this tag.
    *  Instead, releaseNearbyPointMemory() invalidates all such
@@ -392,7 +392,7 @@ protected:
   int    _pyramidLevel;
   float _scale;
   int    _status;
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
   /** Pointer into pinned memory page.
    *  Valid from the construction of the CCTag until identify()
    *  is complete.
