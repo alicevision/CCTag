@@ -118,7 +118,7 @@ install:
          -DCMAKE_C_COMPILER=$C_COMPILER \
          -DCMAKE_BUILD_TYPE=Release \
          -DCMAKE_INSTALL_PREFIX=$OPENCV_INSTALL \
-         -DCCTAG_WITH_CUDA=OFF \
+         -DWITH_CUDA=OFF \
          -DBUILD_opencv_ts=0 \
          $OPENCV_SOURCE;
        make -j 2 > null;
