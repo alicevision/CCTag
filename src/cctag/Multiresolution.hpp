@@ -13,7 +13,7 @@
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/geometry/Circle.hpp>
 #include <cctag/ImagePyramid.hpp>
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 #include "cctag/cuda/tag.h"
 #endif
 #include "cctag/utils/LogTime.hpp"

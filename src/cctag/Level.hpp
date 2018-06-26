@@ -30,10 +30,10 @@ public:
                  float thrLowCanny,
                  float thrHighCanny,
                  const cctag::Parameters* params );
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
   void setLevel( cctag::TagPipe* cuda_pipe,
                  const cctag::Parameters& params );
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
   const cv::Mat & getSrc() const;
   const cv::Mat & getDx() const;

@@ -38,7 +38,7 @@ set( CCTag_cpp
         ./cctag/utils/Talk.cpp
         ./cctag/utils/VisualDebug.cpp)
 
-if(WITH_CUDA)
+if(CCTAG_WITH_CUDA)
 
   set(CUDA_cpp 
         ./cctag/cuda/debug_macros.cpp
@@ -86,7 +86,7 @@ if(WITH_CUDA)
   # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
   # set(BUILD_SHARED_LIBS ON)
 
-  set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DSM_ARCH=${CCTAG_SM_ARCH};-DSM=${CCTAG_SM};-DCUB_CDP")
+  set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DCUB_CDP")
  
   # this must go before CUDA_ADD_LIBRARY otherwise we won't be able to add it
   # after
@@ -107,7 +107,7 @@ if(WITH_CUDA)
 
   target_compile_definitions(CCTag 
                          PUBLIC ${Boost_DEFINITIONS} 
-                         PUBLIC -DWITH_CUDA -DSM_ARCH=${CCTAG_SM_ARCH} -DSM=${CCTAG_SM} -DCUB_CDP
+                         PUBLIC -DCCTAG_WITH_CUDA -DCUB_CDP
                          PRIVATE ${TBB_DEFINITIONS}) 
 
   # This is nececessary for the CCTagConfig.cmake to correctly export the
@@ -117,7 +117,7 @@ if(WITH_CUDA)
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
-else(WITH_CUDA)
+else(CCTAG_WITH_CUDA)
 
   set(CUDA_cpp "")
 
@@ -142,7 +142,7 @@ else(WITH_CUDA)
                         PUBLIC ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} 
                         PRIVATE ${TBB_LIBRARIES} pthread dl)
 
-endif(WITH_CUDA)
+endif(CCTAG_WITH_CUDA)
 
 # enable serialization
 if(CCTAG_SERIALIZE)
@@ -153,9 +153,9 @@ if(CCTAG_NO_COUT)
   target_compile_definitions(CCTag PUBLIC "-DCCTAG_NO_COUT")
 endif(CCTAG_NO_COUT)
 # Enable visual debug
-if(VISUAL_DEBUG)
-  target_compile_definitions(CCTag PRIVATE "-DVISUAL_DEBUG")
-endif(VISUAL_DEBUG)
+if(CCTAG_VISUAL_DEBUG)
+  target_compile_definitions(CCTag PRIVATE "-DCCTAG_VISUAL_DEBUG")
+endif(CCTAG_VISUAL_DEBUG)
 
 
 # EXPORTING THE LIBRARY
@@ -215,7 +215,7 @@ install(TARGETS CCTag
 # Headers:
 
 
-if(WITH_CUDA)
+if(CCTAG_WITH_CUDA)
   install(DIRECTORY "cctag"
           DESTINATION "${include_install_dir}"
           FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")

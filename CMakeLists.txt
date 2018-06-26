@@ -8,9 +8,9 @@ project(CCTag VERSION 1.0.0 LANGUAGES C CXX)
 
 #CMakeDependentOption
 option(CCTAG_SERIALIZE "Store all the output" OFF)
-option(VISUAL_DEBUG "Enable visual debug" OFF)
+option(CCTAG_VISUAL_DEBUG "Enable visual debug" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
-option(WITH_CUDA "Compile the library with CUDA support" ON)
+option(CCTAG_WITH_CUDA "Compile the library with CUDA support" ON)
 
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
@@ -26,10 +26,6 @@ if(CCTAG_ENABLE_SIMD_AVX2)
   endif()
   message(STATUS "CCTAG: AVX2 optimizations enabled.")
 endif()
-
-# Cuda architecture values
-set(CCTAG_SM_ARCH 100)
-set(CCTAG_SM 100)
 
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
@@ -79,7 +75,7 @@ endif()
 
 find_package(Boost 1.53.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
-if(WITH_CUDA)
+if(CCTAG_WITH_CUDA)
   message( STATUS "Try finding CUDA" )
   find_package(CUDA 7.0 REQUIRED)
   set(CUDA_SEPARABLE_COMPILATION ON)
@@ -125,9 +121,9 @@ if(WITH_CUDA)
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
-else(WITH_CUDA)
+else(CCTAG_WITH_CUDA)
   message( STATUS "Building without CUDA" )
-endif(WITH_CUDA)
+endif(CCTAG_WITH_CUDA)
 
 # FIND OPENCV
 find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
