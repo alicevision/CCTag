@@ -75,6 +75,13 @@ public:
 
 	virtual ~error_info() throw( )  = default;
 
+	error_info_base * clone() const
+	{
+		error_info* p = new error_info();
+		*p = *this;
+		return p;
+	}
+
 	template<typename V>
 	This& operator+( const V& v )
 	{
