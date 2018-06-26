@@ -81,7 +81,21 @@ find_package(Boost 1.53.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 if(WITH_CUDA)
   message( STATUS "Try finding CUDA" )
+  if(BUILD_SHARED_LIBS)
+    message(STATUS "BUILD_SHARED_LIBS ON")
+    # Need to declare CUDA_USE_STATIC_CUDA_RUNTIME as an option to ensure that it is not overwritten in FindCUDA.
+    option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" OFF)
+    set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
+    # Workaround to force deactivation of cuda static runtime for cmake < 3.10
+    set(CUDA_cudart_static_LIBRARY 0)
+  else()
+    message(STATUS "BUILD_SHARED_LIBS OFF")
+    option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" ON)
+    set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
+  endif()
+
   find_package(CUDA 7.0 REQUIRED)
+
   set(CUDA_SEPARABLE_COMPILATION ON)
 
   # The following if should not be necessary, but apparently there is a bug in FindCUDA.cmake that
