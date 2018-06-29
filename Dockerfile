@@ -1,3 +1,5 @@
+ARG CUDA_TAG=9.2-devel
+FROM nvidia/cuda:$CUDA_TAG
 # use CUDA_TAG to select the image version to use
 # see https://hub.docker.com/r/nvidia/cuda/
 #
@@ -6,9 +8,6 @@
 #
 # then execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
 # docker run -it --runtime=nvidia cctag
-
-ARG CUDA_TAG=9.2-devel
-FROM nvidia/cuda:$CUDA_TAG
 
 # OS/Version (FILE): cat /etc/issue.net
 # Cuda version (ENV): $CUDA_VERSION
