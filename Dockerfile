@@ -4,7 +4,7 @@
 # For example to create a ubuntu 16.04 with cuda 8.0 for development, use
 # docker build --build-arg CUDA_TAG=8.0-devel --tag cctag .
 #
-# then execute wiht nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
+# then execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
 # docker run -it --runtime=nvidia cctag
 
 ARG CUDA_TAG=9.2-devel
