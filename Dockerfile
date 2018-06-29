@@ -35,7 +35,8 @@ RUN apt-get clean && apt-get update && apt-get install -y \
 				libswscale-dev \
 				libeigen3-dev \
 				libavresample-dev \
-				libtbb-dev
+				libtbb-dev \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /
 ENV OPENCV_VERSION="3.4.1"
