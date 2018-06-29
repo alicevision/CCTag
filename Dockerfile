@@ -61,7 +61,7 @@ RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
 && rm -r /opencv-${OPENCV_VERSION}
 
 
-ADD . /opt/cctag
 RUN cd /opt/cctag && mkdir build && cd build && cmake .. -DWITH_CUDA:BOOL=ON \
+COPY . /opt/cctag
        -DCMAKE_BUILD_TYPE=Release \
        -DOpenCV_DIR:PATH=/usr/local/share/OpenCV&& make install -j
