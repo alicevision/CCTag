@@ -1,5 +1,7 @@
 ARG CUDA_TAG=9.2-devel
 FROM nvidia/cuda:$CUDA_TAG
+LABEL maintainer="AliceVision Team alicevision@googlegroups.com"
+
 # use CUDA_TAG to select the image version to use
 # see https://hub.docker.com/r/nvidia/cuda/
 #
