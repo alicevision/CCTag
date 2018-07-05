@@ -1199,8 +1199,8 @@ int identify_step_1(
   )
 #endif
   
-
-  assert ( outerPoints.size() >= 5 );
+  if(outerPoints.size() < 5)
+      return status::too_few_outer_points;
  
   // todo: next line deprec, associated to SUBPIX_EDGE_OPTIM, do not remove.
   const float cutLengthOuterPointRefine = std::min( ellipse.a(), ellipse.b() ) * 0.12;
