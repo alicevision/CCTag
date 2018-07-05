@@ -22,7 +22,7 @@ static const struct option longopts[] =
     {"input",      required_argument, 0, 'i'},
     {"nbrings",    required_argument, 0, 'n'},    
     {"bank",       required_argument, 0, 'b'},
-    {"parameters", required_argument, 0, 'p'},
+    {"params",     required_argument, 0, 'p'},
     {"output",     optional_argument, 0, 'o'},   
 #ifdef CCTAG_WITH_CUDA
     {"sync",       no_argument,       0, 0xd0 },
