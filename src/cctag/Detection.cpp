@@ -824,11 +824,6 @@ void cctagDetection(
         pipe1->tagframe( );
 
         if( durations ) durations->log( "after CUDA stages" );
-
-#ifndef NDEBUG
-        pipe1->debug( pix, params );
-        if( durations ) durations->log( "after CUDA debug" );
-#endif // not NDEBUG
     } else { // not params.useCuda
 #endif // CCTAG_WITH_CUDA
 
