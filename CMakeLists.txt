@@ -111,13 +111,10 @@ if(CCTAG_WITH_CUDA)
   endif()
 
   if(NOT CUDA_VERSION_MAJOR LESS 9)
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
-    set(CCTAG_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62)
-  elseif(CUDA_VERSION_MAJOR GREATER 7)
-    set(CCTAG_CUDA_CC_LIST_BASIC 30 35 50 52 60 61 62)
-  else()
-    set(CCTAG_CUDA_CC_LIST_BASIC 30 35 50 52 )
-  endif()           endif()
+    set(CCTAG_CUDA_CC_LIST_BASIC 30 32 35 37 50 52 53)
+  else
+    set(CCTAG_CUDA_CC_LIST_BASIC 30 32 35 37 50 52 53 60 61 62 70 71 72)
+  endif()
   set(CCTAG_CUDA_CC_LIST ${CCTAG_CUDA_CC_LIST_BASIC} CACHE STRING "CUDA CC versions to compile")
 
   # Add all requested CUDA CCs to the command line for offline compilation
