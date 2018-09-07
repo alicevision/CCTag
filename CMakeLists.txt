@@ -13,6 +13,7 @@ option(CCTAG_VISUAL_DEBUG "Enable visual debug" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
 option(CCTAG_WITH_CUDA "Compile the library with CUDA support" ON)
 option(BUILD_APPS "Build the sample applications" ON)
+option(CCTAG_NVCC_WARNINGS "Switch on several additional warnings for CUDA nvcc." OFF)
 
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
@@ -125,18 +126,24 @@ if(CCTAG_WITH_CUDA)
     message(STATUS "Building in release mode")
   endif()
 
-  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
-  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_35,code=sm_35")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_50,code=sm_50")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_52,code=sm_52")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=compute_52")
-
-  if(NOT CUDA_VERSION VERSION_LESS 8.0) # cuda >= 8.0
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_60,code=sm_60")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_61,code=sm_61")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_62,code=sm_62")
+  if(NOT CUDA_VERSION_MAJOR LESS 9)
+    set(CCTAG_CUDA_CC_LIST_BASIC 30 32 35 37 50 52 53)
+  else
+    set(CCTAG_CUDA_CC_LIST_BASIC 30 32 35 37 50 52 53 60 61 62 70 71 72)
   endif()
+  set(CCTAG_CUDA_CC_LIST ${CCTAG_CUDA_CC_LIST_BASIC} CACHE STRING "CUDA CC versions to compile")
+
+  # Add all requested CUDA CCs to the command line for offline compilation
+  list(SORT CCTAG_CUDA_CC_LIST)
+  foreach(CCTAG_CC_VERSION ${CCTAG_CUDA_CC_LIST})
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${CCTAG_CC_VERSION},code=sm_${CCTAG_CC_VERSION}")
+  endforeach()
+
+  # Use the highest request CUDA CC for CUDA JIT compilation
+  list(LENGTH CCTAG_CUDA_CC_LIST CCTAG_CC_LIST_LEN)
+  MATH(EXPR CCTAG_CC_LIST_LEN "${CCTAG_CC_LIST_LEN}-1")
+  list(GET CCTAG_CUDA_CC_LIST ${CCTAG_CC_LIST_LEN} CCTAG_CUDA_CC_LIST_LAST)
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${CCTAG_CUDA_CC_LIST_LAST},code=compute_${CCTAG_CUDA_CC_LIST_LAST}")
 
   if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
@@ -158,10 +165,15 @@ if(CCTAG_WITH_CUDA)
     endif()
   endif()
 
-  # MORE NOISE:
-  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;-v")
-  # DOES NOT WORK UNTIL CUDA 7.5:
-  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
+  if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
+    if(CCTAG_NVCC_WARNINGS)
+      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-lmem-usage")
+      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;-warn-spills")
+      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-local-memory-usage")
+      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS_RELEASE};-Xptxas;--warn-on-spills")
+    endif()
+  endif()
+
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
 else(CCTAG_WITH_CUDA)
