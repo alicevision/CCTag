@@ -17,27 +17,27 @@ LABEL maintainer="AliceVision Team alicevision@googlegroups.com"
 
 # System update
 RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends \
-				build-essential \
-				cmake \
-				git \
-				wget \
-				unzip \
-				yasm \
-				pkg-config \
-				libtool \
-				nasm \
-				automake \
-				libpng12-dev \
-				libjpeg-turbo8-dev \
-        libboost-all-dev \
-				ffmpeg \
-				libavcodec-dev \
-				libavformat-dev \
-				libswscale-dev \
-				libeigen3-dev \
-				libavresample-dev \
-				libtbb-dev \
- && rm -rf /var/lib/apt/lists/*
+                build-essential \
+                cmake \
+                git \
+                wget \
+                unzip \
+                yasm \
+                pkg-config \
+                libtool \
+                nasm \
+                automake \
+                libpng12-dev \
+                libjpeg-turbo8-dev \
+                libboost-all-dev \
+                ffmpeg \
+                libavcodec-dev \
+                libavformat-dev \
+                libswscale-dev \
+                libeigen3-dev \
+                libavresample-dev \
+                libtbb-dev \
+        && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /
 ENV OPENCV_VERSION="3.4.1"
