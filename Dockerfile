@@ -39,31 +39,31 @@ RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommend
                 libtbb-dev \
         && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /
+WORKDIR /opt
 ENV OPENCV_VERSION="3.4.1"
 RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
-&& unzip ${OPENCV_VERSION}.zip \
-&& mkdir /opencv-${OPENCV_VERSION}/cmake_binary \
-&& cd /opencv-${OPENCV_VERSION}/cmake_binary \
-&& cmake -j -DBUILD_TIFF=ON \
-  -DBUILD_opencv_java=OFF \
-  -DWITH_CUDA=OFF \
-  -DENABLE_AVX=ON \
-  -DWITH_OPENGL=ON \
-  -DWITH_IPP=ON \
-  -DWITH_TBB=ON \
-  -DWITH_EIGEN=ON \
-  -DWITH_V4L=ON \
-  -DBUILD_TESTS=OFF \
-  -DBUILD_PERF_TESTS=OFF \
-  -DCMAKE_BUILD_TYPE=RELEASE  .. \
-&& make -j install \
-&& rm /${OPENCV_VERSION}.zip \
-&& rm -r /opencv-${OPENCV_VERSION}
+&& unzip ${OPENCV_VERSION}.zip 
+
+WORKDIR /opt/opencv-${OPENCV_VERSION}/cmake_binary \
+RUN cmake -j -DBUILD_TIFF=ON \
+      -DBUILD_opencv_java=OFF \
+      -DWITH_CUDA=OFF \
+      -DENABLE_AVX=ON \
+      -DWITH_OPENGL=ON \
+      -DWITH_IPP=ON \
+      -DWITH_TBB=ON \
+      -DWITH_EIGEN=ON \
+      -DWITH_V4L=ON \
+      -DBUILD_TESTS=OFF \
+      -DBUILD_PERF_TESTS=OFF \
+      -DCMAKE_BUILD_TYPE=RELEASE  .. \
+    && make -j install \
+    && rm /opt/${OPENCV_VERSION}.zip \
+    && rm -r /opt/opencv-${OPENCV_VERSION}
 
 
 COPY . /opt/cctag
-WORKDIR /opt/cctag
-RUN mkdir build && cd build && cmake .. -DWITH_CUDA:BOOL=ON \
+WORKDIR /opt/cctag/build
+RUN cmake .. -DWITH_CUDA:BOOL=ON \
        -DCMAKE_BUILD_TYPE=Release \
-       -DOpenCV_DIR:PATH=/usr/local/share/OpenCV&& make install -j
+       -DOpenCV_DIR:PATH=/usr/local/share/OpenCV && make install -j
