@@ -1,9 +1,7 @@
-CCTag library
-===================
+# CCTag library
 
-----------------------
-Building instructions
-----------------------
+## Building instructions
+
 
 Required tools:
 * CMake >= 3.4 to build the code
@@ -81,3 +79,22 @@ Several CUB functions are known to fail with a few NVidia cards including our re
 the GTX 980 Ti.
 The CUB that is included with CUDA 7.5 does not solve this problem.
 
+----------
+
+## Docker Image
+
+A docker image can be built using the Ubuntu based [Dockerfile](Dockerfile),which is based on nvidia/cuda image (https://hub.docker.com/r/nvidia/cuda/)
+
+A parameter `CUDA_TAG` can be passed when building the image to select the ubuntu and cuda version. 
+For example to create a ubuntu 16.04 with cuda 8.0 for development, use
+```
+docker build --build-arg CUDA_TAG=8.0-devel --tag cctag .
+```
+
+The complete list of available tags can be found on the nvidia [dockerhub page](https://hub.docker.com/r/nvidia/cuda/)
+In order to run the image nvidia docker is needed: see the installation instruction here https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0)
+Once installed, the docker can be run, e.g., in interactive mode with
+
+```
+docker run -it --runtime=nvidia cctag
+```
