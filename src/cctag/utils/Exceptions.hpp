@@ -77,9 +77,7 @@ public:
 
 	error_info_base * clone() const
 	{
-		error_info* p = new error_info();
-		*p = *this;
-		return p;
+		return new error_info(*this);
 	}
 
 	template<typename V>
