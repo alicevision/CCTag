@@ -41,7 +41,7 @@ RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommend
 
 WORKDIR /opt
 ENV OPENCV_VERSION="3.4.1"
-RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
+RUN wget https://github.com/opencv/opencv/archive/"${OPENCV_VERSION}".zip \
 && unzip ${OPENCV_VERSION}.zip 
 
 WORKDIR /opt/opencv-${OPENCV_VERSION}/cmake_binary \
