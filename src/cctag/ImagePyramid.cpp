@@ -34,13 +34,13 @@ ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, std::size_t n
 
 void ImagePyramid::build( const cv::Mat & src, float thrLowCanny, float thrHighCanny, const cctag::Parameters* params )
 {
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     if( params->_useCuda ) {
         std::cerr << __FILE__ << ":" << __LINE__ << std::endl
                   << "    must not call " << __FUNCTION__ << " with CUDA enables" << std::endl;
         exit( -1 );
     }
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
     /* The pyramid building function is never called if CUDA is used.
      */

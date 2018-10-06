@@ -94,12 +94,12 @@ void Parameters::setDebugDir( const std::string& debugDir )
 
 void Parameters::setUseCuda( bool val )
 {
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     _useCuda = val;
 #else
     if(val)
         std::cerr << "Warning: CCTag library is built without CUDA support, so we can't enable CUDA." << std::endl;
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 }
 
 } // namespace cctag

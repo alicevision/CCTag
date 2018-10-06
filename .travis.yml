@@ -23,24 +23,25 @@ addons:
       - libboost-program-options1.55-dev
       - libboost-serialization1.55-dev
       - libboost-system1.55-dev
+      - libboost-test1.55-dev
       - libboost-thread1.55-dev
       - libboost-timer1.55-dev
 
 matrix:
   include:
     - compiler: gcc
-      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc WITH_CUDA=ON CUDA_VERSION_MAJOR="7" CUDA_VERSION_MINOR="0" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}-28" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc CCTAG_WITH_CUDA=ON CUDA_VERSION_MAJOR="7" CUDA_VERSION_MINOR="0" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}-28" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
     - compiler: gcc
-      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc WITH_CUDA=ON CUDA_VERSION_MAJOR="7" CUDA_VERSION_MINOR="5" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}-18" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc CCTAG_WITH_CUDA=ON CUDA_VERSION_MAJOR="7" CUDA_VERSION_MINOR="5" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}-18" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
     - compiler: gcc
-      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc WITH_CUDA=ON CUDA_VERSION_MAJOR="8" CUDA_VERSION_MINOR="0" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}.61-1" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc CCTAG_WITH_CUDA=ON CUDA_VERSION_MAJOR="8" CUDA_VERSION_MINOR="0" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}.61-1" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
     - compiler: gcc
-      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc WITH_CUDA=OFF
+      env: CXX_COMPILER=g++-4.8 C_COMPILER=gcc-4.8 TOOLSET=gcc CCTAG_WITH_CUDA=OFF
     - compiler: clang
       # clang 3.8 is  supported in cuda >= 8.0
-      env: CXX_COMPILER=clang++-3.8 C_COMPILER=clang-3.8 TOOLSET=clang WITH_CUDA=ON CUDA_VERSION_MAJOR="8" CUDA_VERSION_MINOR="0" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}.61-1" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
+      env: CXX_COMPILER=clang++-3.8 C_COMPILER=clang-3.8 TOOLSET=clang CCTAG_WITH_CUDA=ON CUDA_VERSION_MAJOR="8" CUDA_VERSION_MINOR="0" CUDA_PKG_LONGVERSION="${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}.61-1" CUDA_PKG_VERSION="${CUDA_VERSION_MAJOR}-${CUDA_VERSION_MINOR}"
     - compiler: clang
-      env: CXX_COMPILER=clang++-3.8 C_COMPILER=clang-3.8 TOOLSET=clang WITH_CUDA=OFF
+      env: CXX_COMPILER=clang++-3.8 C_COMPILER=clang-3.8 TOOLSET=clang CCTAG_WITH_CUDA=OFF
 
 
 env:
@@ -99,7 +100,7 @@ before_install:
 install:
   # CUDA (only if needed)
   - >
-     if [ "${WITH_CUDA}" = "ON" ]; then
+     if [ "${CCTAG_WITH_CUDA}" = "ON" ]; then
        CUDA_REPO_PKG=cuda-repo-ubuntu1404_${CUDA_PKG_LONGVERSION}_amd64.deb
        wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/$CUDA_REPO_PKG
        sudo dpkg -i $CUDA_REPO_PKG
@@ -137,7 +138,7 @@ before_script:
        -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
        -DCMAKE_C_COMPILER=$C_COMPILER \
        -DCMAKE_INSTALL_PREFIX:PATH=$CCTAG_INSTALL \
-       -DWITH_CUDA:BOOL=$WITH_CUDA \
+       -DCCTAG_WITH_CUDA:BOOL=$CCTAG_WITH_CUDA \
        -DCMAKE_BUILD_TYPE:BOOL=$BUILD_TYPE \
        -DOpenCV_DIR:PATH=$OPENCV_INSTALL/share/OpenCV \
        . $CCTAG_SOURCE
@@ -145,6 +146,7 @@ before_script:
 script:
   # classic make install
   - make install -j 2 VERBOSE=1
+  - make test
 
   # Test if it compiles as third party
   - cd $CCTAG_SOURCE_APP
@@ -160,22 +162,23 @@ script:
   - make install -j 2 VERBOSE=1
 
   # For builds without cuda test also another variant with
-  # VISUAL_DEBUG and CCTAG_SERIALIZE
+  # CCTAG_VISUAL_DEBUG and CCTAG_SERIALIZE
   - >
-     if [ "${WITH_CUDA}" = "OFF" ]; then
+     if [ "${CCTAG_WITH_CUDA}" = "OFF" ]; then
         mkdir --parent $CCTAG_BUILD_VARIANT
         cd $CCTAG_BUILD_VARIANT
         cmake \
          -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
          -DCMAKE_C_COMPILER=$C_COMPILER \
          -DCMAKE_INSTALL_PREFIX:PATH=$CCTAG_INSTALL_VARIANT \
-         -DWITH_CUDA:BOOL=$WITH_CUDA \
+         -DCCTAG_WITH_CUDA:BOOL=$CCTAG_WITH_CUDA \
          -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-         -DVISUAL_DEBUG:BOOL=ON \
+         -DCCTAG_VISUAL_DEBUG:BOOL=ON \
          -DCCTAG_SERIALIZE:BOOL=ON \
          -DOpenCV_DIR:PATH=$OPENCV_INSTALL/share/OpenCV \
          . $CCTAG_SOURCE
         make install -j 2 VERBOSE=1
+        make test
      fi
 
 after_success:

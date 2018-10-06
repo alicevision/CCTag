@@ -75,6 +75,11 @@ public:
 
 	virtual ~error_info() throw( )  = default;
 
+	error_info_base * clone() const
+	{
+		return new error_info(*this);
+	}
+
 	template<typename V>
 	This& operator+( const V& v )
 	{
@@ -176,32 +181,32 @@ namespace exception {
  * @brief If you catch an error at the top level, you can print this information to the user.
  * @remark User information.
  */
-typedef ::boost::error_info<struct tag_userMessage, ::boost::error_info_sstream> user;
+using user = ::boost::error_info<struct tag_userMessage, ::boost::error_info_sstream>;
 
 /**
  * @brief This is detailed informations for developpers.
  * Not always a real human readable message :)
  * @remark Dev information.
  */
-//typedef ::boost::error_info<struct tag_message,std::string> dev;
-typedef ::boost::error_info<struct tag_devMessage, ::boost::error_info_sstream> dev;
-//typedef ::boost::error_info_sstream<struct tag_message> dev;
+//using dev = ::boost::error_info<struct tag_message,std::string>;
+using dev = ::boost::error_info<struct tag_devMessage, ::boost::error_info_sstream>;
+//using dev = ::boost::error_info_sstream<struct tag_message>;
 
 /**
  * @brief The algorithm
  * @remark Dev information.
  */
-typedef ::boost::error_info<struct tag_algorithm, ::std::string> algorithm;
+using algorithm = ::boost::error_info<struct tag_algorithm, ::std::string>;
 /**
  * @brief Time.
  * @remark Dev or user information.
  */
-typedef ::boost::error_info<struct tag_time, float> time;
+using time = ::boost::error_info<struct tag_time, float>;
 /**
  * @brief Frame number.
  * @remark Dev or user information.
  */
-typedef ::boost::error_info<struct tag_frame, long int> frame;
+using frame = ::boost::error_info<struct tag_frame, long int>;
 /**
  * @brief Problem with a file.
  * @remark User information.

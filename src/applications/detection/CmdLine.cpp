@@ -21,7 +21,7 @@ CmdLine::CmdLine( )
     , _cctagBankFilename( "" )
     , _paramsFilename( "" )
     , _outputFolderName( "" )
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     , _switchSync( false )
     , _debugDir( "" )
     , _useCuda( false )
@@ -41,7 +41,7 @@ CmdLine::CmdLine( )
 		("bank,b", value<std::string>(&_cctagBankFilename)->default_value(_cctagBankFilename), "Path to a bank parameter file, e.g. 4Crowns/ids.txt")
 		("params,p", value<std::string>(&_paramsFilename)->default_value(_paramsFilename), "Path to configuration XML file")
 		("output,o", value<std::string>(&_outputFolderName)->default_value(_outputFolderName), "Output folder name")
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 		("sync", bool_switch(&_switchSync), "CUDA debug option, run all CUDA ops synchronously")
 		("use-cuda", bool_switch(&_useCuda), "Select GPU code instead of CPU code")
 		("debug-dir", value<std::string>(&_debugDir)->default_value(_debugDir), "Path storing image to debug intermediate GPU results")
@@ -83,7 +83,7 @@ void CmdLine::print( const char* const argv0 )
          << "    --bank      " << _cctagBankFilename << std::endl
          << "    --params    " << _paramsFilename << std::endl
          << "    --output    " << _outputFolderName << std::endl;
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 	std::cout << "    --parallel " << _parallel << std::endl;
     if( _switchSync )
         std::cout << "    --sync " << std::endl;

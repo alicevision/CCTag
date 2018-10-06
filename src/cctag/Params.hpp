@@ -58,7 +58,7 @@ static const bool kDefaultSearchForAnotherSegment = true;
 static const bool kDefaultWriteOutput = false;
 static const bool kDefaultDoIdentification = true;
 static const uint32_t kDefaultMaxEdges = 20000;
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 static const bool kDefaultUseCuda = true;
 #else
 static const bool kDefaultUseCuda = false;
@@ -151,7 +151,7 @@ struct Parameters
   bool _writeOutput;
   bool _doIdentification; // perform the identification step
   uint32_t _maxEdges; // max number of edge point, determines memory allocation
-  bool        _useCuda; // if compiled WITH_CUDA, allow CLI selection, ignore if not
+  bool        _useCuda; // if compiled CCTAG_WITH_CUDA, allow CLI selection, ignore if not
   std::string _debugDir; // prefix for debug output !!!! ONLY ON COMMAND LINE
 
   template<class Archive>

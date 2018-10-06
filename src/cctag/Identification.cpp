@@ -17,7 +17,7 @@
 #include <cctag/geometry/Circle.hpp>
 #include <cctag/utils/Talk.hpp>
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 #include "cctag/cuda/tag.h"
 #endif
 
@@ -57,7 +57,7 @@ bool orazioDistanceRobust(
   using namespace cctag::numerical;
   using namespace boost::accumulators;
 
-  typedef std::map<float, MarkerID> MapT;
+  using MapT = std::map<float, MarkerID>;
 
   if ( cuts.size() == 0 )
   {
@@ -832,7 +832,7 @@ bool refineConicFamilyGlob(
     CCTagVisualDebug::instance().newSession( "centerOpt" );
     CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_green );
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     if( cudaPipe ) {
         bool success = cudaPipe->imageCenterRetrieve(
             tagIndex,      // in
@@ -846,7 +846,7 @@ bool refineConicFamilyGlob(
             return false;
         }
     } else { // not CUDA
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
         boost::posix_time::ptime tstart( boost::posix_time::microsec_clock::local_time() );
 
@@ -889,9 +889,9 @@ bool refineConicFamilyGlob(
   const float spendTime = d.total_milliseconds();
   DO_TALK( CCTAG_COUT_DEBUG( "Optimization result: " << optimalPoint << ", duration: " << spendTime ); )
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
     } // not CUDA
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
     CCTagVisualDebug::instance().drawPoint( optimalPoint, cctag::color_red );
   
     // B. Get the signal associated to the optimal homography/imaged center //////
@@ -1202,8 +1202,8 @@ int identify_step_1(
   )
 #endif
   
-
-  assert ( outerPoints.size() >= 5 );
+  if(outerPoints.size() < 5)
+      return status::too_few_outer_points;
  
   // todo: next line deprec, associated to SUBPIX_EDGE_OPTIM, do not remove.
   const float cutLengthOuterPointRefine = std::min( ellipse.a(), ellipse.b() ) * 0.12f;
@@ -1345,7 +1345,7 @@ int identify_step_2(
                         cudaPipe,
                         ellipse,
                         params,
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
                         cctag.getNearbyPointBuffer(),
 #else
                         nullptr,
@@ -1386,7 +1386,7 @@ int identify_step_2(
   // D. Read the rectified 1D signals and retrieve the nearest ID(s) ///////////
   identSuccessful = orazioDistanceRobust( vScore, radiusRatios, vSelectedCuts, params._minIdentProba);
     
-#ifdef VISUAL_DEBUG // todo: write a proper function in visual debug
+#ifdef CCTAG_VISUAL_DEBUG // todo: write a proper function in visual debug
   cv::Mat output;
   createRectifiedCutImage(vSelectedCuts, output);
   CCTagVisualDebug::instance().initBackgroundImage(output);
@@ -1395,8 +1395,8 @@ int identify_step_2(
   CCTagVisualDebug::instance().incrementMarkerIndex();
   // Back to session refineConicPts
   CCTagVisualDebug::instance().newSession( "refineConicPts" );
-#endif // OPTIM_CENTER_VISUAL_DEBUG
-    
+#endif // CCTAG_VISUAL_DEBUG
+
 #ifdef GRIFF_DEBUG
 #error here
     // todo: clean and mode this block into a function.

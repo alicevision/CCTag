@@ -109,7 +109,7 @@ void CCTag::scale(float s)
   _outerEllipse.setB(_outerEllipse.b() * s);
 }
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 void CCTag::acquireNearbyPointMemory( int tagId )
 {
     _cuda_result = cctag::PinnedCounters::getPointPtr( tagId, __FILE__, __LINE__ );

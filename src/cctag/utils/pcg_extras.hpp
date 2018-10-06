@@ -83,7 +83,7 @@
 #else
     #include "pcg_uint128.hpp"
     namespace pcg_extras {
-        typedef pcg_extras::uint_x4<uint32_t,uint64_t> pcg128_t;
+        using pcg128_t = pcg_extras::uint_x4<uint32_t,uint64_t>;
     }
     #define PCG_128BIT_CONSTANT(high,low) \
             pcg128_t(high,low)
@@ -104,7 +104,7 @@ namespace pcg_extras {
 #ifndef PCG_BITCOUNT_T
     typedef uint8_t bitcount_t;
 #else
-    typedef PCG_BITCOUNT_T bitcount_t;
+    using bitcount_t = PCG_BITCOUNT_T;
 #endif
 
 /*

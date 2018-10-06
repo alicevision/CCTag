@@ -9,7 +9,7 @@
 #include <cctag/filter/cvRecode.hpp>
 #include <cctag/filter/thinning.hpp>
 #include "cctag/utils/Talk.hpp"
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 #include "cctag/cuda/tag.h"
 #endif
 
@@ -79,7 +79,7 @@ void Level::setLevel( const cv::Mat & src,
     thin(*_edges,_temp);
 }
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 void Level::setLevel( cctag::TagPipe*         cuda_pipe,
                       const cctag::Parameters& params )
 {
@@ -94,7 +94,7 @@ void Level::setLevel( cctag::TagPipe*         cuda_pipe,
     _mag   = cuda_pipe->getMag( _level );
     _edges = cuda_pipe->getEdges( _level );
 }
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
 const cv::Mat & Level::getSrc() const
 {

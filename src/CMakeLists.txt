@@ -38,7 +38,7 @@ set( CCTag_cpp
         ./cctag/utils/Talk.cpp
         ./cctag/utils/VisualDebug.cpp)
 
-if(WITH_CUDA)
+if(CCTAG_WITH_CUDA)
 
   set(CUDA_cpp
         ./cctag/cuda/debug_macros.cpp
@@ -86,7 +86,7 @@ if(WITH_CUDA)
   # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
   # set(BUILD_SHARED_LIBS ON)
 
-  set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DSM_ARCH=${CCTAG_SM_ARCH};-DSM=${CCTAG_SM};-DCUB_CDP")
+  set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DCUB_CDP")
 
   # this must go before CUDA_ADD_LIBRARY otherwise we won't be able to add it
   # after
@@ -111,7 +111,7 @@ if(WITH_CUDA)
 
   target_compile_definitions(CCTag
                          PUBLIC ${Boost_DEFINITIONS}
-                         PUBLIC -DWITH_CUDA -DSM_ARCH=${CCTAG_SM_ARCH} -DSM=${CCTAG_SM} -DCUB_CDP
+                         PUBLIC -DCCTAG_WITH_CUDA -DCUB_CDP
                          PRIVATE ${TBB_DEFINITIONS})
 
   # This is nececessary for the CCTagConfig.cmake to correctly export the
@@ -121,7 +121,7 @@ if(WITH_CUDA)
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
-else(WITH_CUDA)
+else() # without CUDA
 
   set(CUDA_cpp "")
 
@@ -150,7 +150,7 @@ else(WITH_CUDA)
     target_link_libraries(CCTag PRIVATE pthread dl)
   endif()
 
-endif(WITH_CUDA)
+endif()
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
   target_compile_definitions(CCTag PUBLIC "-DNOMINMAX")
@@ -165,9 +165,9 @@ if(CCTAG_NO_COUT)
   target_compile_definitions(CCTag PUBLIC "-DCCTAG_NO_COUT")
 endif(CCTAG_NO_COUT)
 # Enable visual debug
-if(VISUAL_DEBUG)
-  target_compile_definitions(CCTag PRIVATE "-DVISUAL_DEBUG")
-endif(VISUAL_DEBUG)
+if(CCTAG_VISUAL_DEBUG)
+  target_compile_definitions(CCTag PRIVATE "-DCCTAG_VISUAL_DEBUG")
+endif(CCTAG_VISUAL_DEBUG)
 
 
 # EXPORTING THE LIBRARY
@@ -227,7 +227,7 @@ install(TARGETS CCTag
 # Headers:
 
 
-if(WITH_CUDA)
+if(CCTAG_WITH_CUDA)
   install(DIRECTORY "cctag"
           DESTINATION "${include_install_dir}"
           FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
@@ -260,4 +260,9 @@ install(EXPORT "${targets_export_name}"
 
 if(BUILD_APPS)
   add_subdirectory(applications)
+endif()
+
+if(BUILD_TESTS)
+    add_subdirectory(cctag/test)
+    add_subdirectory(cctag/geometry/test)
 endif()

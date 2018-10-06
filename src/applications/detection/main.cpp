@@ -11,10 +11,10 @@
 #include "cctag/Detection.hpp"
 #include "CmdLine.hpp"
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
 #include "cctag/cuda/device_prop.hpp"
 #include "cctag/cuda/debug_macros.hpp"
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem.hpp>
@@ -216,7 +216,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
   cctag::pop_cuda_only_sync_calls(cmdline._switchSync);
 #endif
 
@@ -264,7 +264,7 @@ int main(int argc, char** argv)
     bank = CCTagMarkersBank(cmdline._cctagBankFilename);
   }
 
-#ifdef WITH_CUDA
+#ifdef CCTAG_WITH_CUDA
   if(cmdline._useCuda)
   {
     params.setUseCuda(true);
@@ -280,7 +280,7 @@ int main(int argc, char** argv)
   }
 
   cctag::device_prop_t deviceInfo(false);
-#endif // WITH_CUDA
+#endif // CCTAG_WITH_CUDA
 
   bfs::path myPath(bfs::absolute(cmdline._filename));
   std::string ext(myPath.extension().string());

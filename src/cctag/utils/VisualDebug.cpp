@@ -71,24 +71,20 @@ void CCTagVisualDebug::resetMarkerIndex()
 {
 #ifdef CCTAG_SERIALIZE
   _markerIndex = 0;;
-#endif
+#endif // CCTAG_SERIALIZE
 }
 
+#ifdef CCTAG_SERIALIZE
 void CCTagVisualDebug::incrementMarkerIndex() 
 {
-#ifdef CCTAG_SERIALIZE
   ++_markerIndex;
-#endif
 }
 
 std::size_t CCTagVisualDebug::getMarkerIndex() const
 {
-#ifdef CCTAG_SERIALIZE
   return _markerIndex;
-#else
-	return 0;
-#endif
 }
+#endif // CCTAG_SERIALIZE
 
 std::string CCTagVisualDebug::getPath() const {
   return _path;
@@ -274,13 +270,13 @@ std::string CCTagVisualDebug::getImageFileName() const {
 }
 
 void CCTagVisualDebug::out(const std::string & filename) const {
-#if defined(CCTAG_SERIALIZE) && defined(VISUAL_DEBUG)
+#if defined(CCTAG_SERIALIZE) && defined(CCTAG_VISUAL_DEBUG)
   cv::imwrite(filename, _backImage);
 #endif
 }
 
 void CCTagVisualDebug::outPutAllSessions() const {
-#if defined(CCTAG_SERIALIZE) && defined(VISUAL_DEBUG)
+#if defined(CCTAG_SERIALIZE) && defined(CCTAG_VISUAL_DEBUG)
     for(const Sessions::const_iterator::value_type & v : _sessions) {
         const std::string filename = _path + "/" + v.first + ".png";
         cv::imwrite(filename, v.second);

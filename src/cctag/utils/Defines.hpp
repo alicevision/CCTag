@@ -64,16 +64,10 @@
 #include <cstddef>
 namespace std {
 #ifdef _MSC_VER
-#if defined(_WIN64)
-	 typedef __int64 LONG_PTR;
-#else
-	 typedef long LONG_PTR;
-#endif
-    typedef LONG_PTR SSIZE_T;
-	typedef SSIZE_T ssize_t;
+	using ssize_t = SSIZE_T;
 #else
 	//#ifdef __ssize_t_defined
-	//typedef __ssize_t ssize_t;
+	//using ssize_t = __ssize_t;
 	//#else
 	using ::ssize_t;
 	//#endif

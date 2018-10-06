@@ -24,7 +24,7 @@ Check your graphic card CUDA compatibility [here](https://github.com/tpruvot/ccm
 Building
 --------
 
-See [BUILD](BUILD.md) text file.
+See [INSTALL](INSTALL.md) text file.
 
 Continuous integration:
  - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=master)](https://travis-ci.org/alicevision/CCTag) master branch.

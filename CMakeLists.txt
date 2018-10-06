@@ -8,13 +8,14 @@ project(CCTag VERSION 1.0.0 LANGUAGES C CXX)
 
 #CMakeDependentOption
 option(CCTAG_SERIALIZE "Store all the output" OFF)
-option(VISUAL_DEBUG "Enable visual debug" OFF)
+option(CCTAG_VISUAL_DEBUG "Enable visual debug" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
-option(WITH_CUDA "Compile the library with CUDA support" ON)
+option(CCTAG_WITH_CUDA "Compile the library with CUDA support" ON)
 option(BUILD_APPS "Build the sample applications" ON)
 
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
+option(BUILD_TESTS "Build the unity tests" ON)
 
 if(CCTAG_ENABLE_SIMD_AVX2)
   if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
@@ -27,10 +28,6 @@ if(CCTAG_ENABLE_SIMD_AVX2)
   message(STATUS "CCTAG: AVX2 optimizations enabled.")
 endif()
 
-# Cuda architecture values
-set(CCTAG_SM_ARCH 100)
-set(CCTAG_SM 100)
-
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
 
@@ -42,6 +39,9 @@ endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ${CCTAG_USE_POSITION_INDEPENDENT_CODE})
+
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall ")
 
@@ -70,12 +70,32 @@ endif(APPLE)
 
 # FIND BOOST
 # TODO: determine minimal version and minimal components
-find_package(Boost 1.53.0 REQUIRED
-    COMPONENTS date_time chrono thread serialization system filesystem atomic program_options timer)
+set(BOOST_REQUIRED_COMPONENTS "date_time;chrono;thread;serialization;system;filesystem;atomic;program_options;timer")
+if(BUILD_TESTS)
+  set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};unit_test_framework")
+  enable_testing()
+  include(BoostTestHelper)
+endif()
 
-if(WITH_CUDA)
+find_package(Boost 1.53.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+
+if(CCTAG_WITH_CUDA)
   message( STATUS "Try finding CUDA" )
+  if(BUILD_SHARED_LIBS)
+    message(STATUS "BUILD_SHARED_LIBS ON")
+    # Need to declare CUDA_USE_STATIC_CUDA_RUNTIME as an option to ensure that it is not overwritten in FindCUDA.
+    option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" OFF)
+    set(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
+    # Workaround to force deactivation of cuda static runtime for cmake < 3.10
+    set(CUDA_cudart_static_LIBRARY 0)
+  else()
+    message(STATUS "BUILD_SHARED_LIBS OFF")
+    option(CUDA_USE_STATIC_CUDA_RUNTIME "Use the static version of the CUDA runtime library if available" ON)
+    set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
+  endif()
+
   find_package(CUDA 7.0 REQUIRED)
+
   set(CUDA_SEPARABLE_COMPILATION ON)
 
   # The following if should not be necessary, but apparently there is a bug in FindCUDA.cmake that
@@ -119,9 +139,9 @@ if(WITH_CUDA)
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
-else(WITH_CUDA)
+else(CCTAG_WITH_CUDA)
   message( STATUS "Building without CUDA" )
-endif(WITH_CUDA)
+endif(CCTAG_WITH_CUDA)
 
 # FIND OPENCV
 find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
