@@ -59,6 +59,16 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
     std::sort( _all_edgecoords.host.ptr,
                _all_edgecoords.host.ptr+all_sz,
                v_comp );
+
+    for(int i = 1; i < min(all_sz,max_edge_pt); ++i) {
+          const short2& pt1 = _all_edgecoords.host.ptr[i-1];
+          const short2& pt2 = _all_edgecoords.host.ptr[i];
+          if( pt1.x == pt2.x && pt1.y == pt2.y )
+          {
+            cerr << __FILE__ << ":" << __LINE__ << ": "
+                 << "edge coordinates appear twice in all_edgecoords, but should be unique" << endl;
+          }
+    }
 #endif // SORT_ALL_EDGECOORDS_IN_EXPORT
 
     for(int i = 0; i < min(all_sz,max_edge_pt); ++i) {

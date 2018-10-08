@@ -44,7 +44,10 @@ void EdgePointCollection::add_point(int vx, int vy, float vdx, float vdy)
 
   size_t imap = map_index(vx, vy);
   if (_edgeMap[imap] != -1)
-    throw std::logic_error("EdgePointCollection::add_point: point already exists");
+  {
+    std::cerr << "EdgePointCollection::add_point: point (" << vx << ", " << vy << " ) already exists");
+    return;
+  }
 
   // XXX@stian: new() below is technically UB, but the class has no defined dtors
   // so it's safe to re-new it in place w/o calling the dtor firs.
