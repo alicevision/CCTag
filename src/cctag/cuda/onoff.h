@@ -41,15 +41,20 @@
  * others. That avoids complexity on the host side when,
  * e.g., GPU-side counters need to be checked before starting
  * a new kernel.
+ *
+ * Enable only when you know what you are doing.
+ * The separable compilation can only work if you compile for a
+ * CUDA compute capability of 3.5 or above.
+ * The benefits of separable compilation are not so obvious that
+ * we have written a runtime check for it.
  */
 // #undef USE_SEPARABLE_COMPILATION
-#define USE_SEPARABLE_COMPILATION_FOR_HYST
-#define USE_SEPARABLE_COMPILATION_FOR_GRADDESC
-#define USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
-#define USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
-#define USE_SEPARABLE_COMPILATION_FOR_EVAL
-#define USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
-
+#undef USE_SEPARABLE_COMPILATION_FOR_HYST
+#undef USE_SEPARABLE_COMPILATION_FOR_GRADDESC
+#undef USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
+#undef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
+#undef USE_SEPARABLE_COMPILATION_FOR_EVAL
+#undef USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
 
 /* CUB functions always take a last parameters true or false.
  * If it is true, they run synchronously and print some debug
