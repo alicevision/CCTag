@@ -155,7 +155,7 @@ else(CCTAG_WITH_CUDA)
 endif(CCTAG_WITH_CUDA)
 
 # FIND OPENCV
-find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
+find_package(OpenCV REQUIRED core videoio imgproc imgcodecs highgui)
 
 # FIND Eigen
 find_package(Eigen REQUIRED)
