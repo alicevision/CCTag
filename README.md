@@ -4,8 +4,24 @@ CCTag library
 
 Detection of CCTag markers made up of concentric circles. Implementations in both CPU and GPU.
 
-See paper: "Detection and Accurate Localization of Circular Fiducials under Highly Challenging Conditions." Lilian Calvet, Pierre Gurdjos, Carsten Griwodz and Simone Gasparini. CVPR 2016.
+The library is the implementation of the paper: 
 
+* Lilian Calvet, Pierre Gurdjos, Carsten Griwodz, Simone Gasparini. **Detection and Accurate Localization of Circular Fiducials Under Highly Challenging Conditions.** In: *Proceedings of the International Conference on Computer Vision and Pattern Recognition (CVPR 2016)*, Las Vegas, E.-U., IEEE Computer Society, p. 562-570, June 2016.  https://doi.org/10.1109/CVPR.2016.67 
+
+If you want to cite this work in your publication, please use the following 
+
+```latex
+@inproceedings{calvet2016Detection,
+  TITLE = {{Detection and Accurate Localization of Circular Fiducials under Highly Challenging Conditions}},
+  AUTHOR = {Calvet, Lilian and Gurdjos, Pierre and Griwodz, Carsten and Gasparini, Simone},
+  BOOKTITLE = {{Proceedings of the 2016 IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}},
+  ADDRESS = {Las Vegas, United States},
+  PAGES = {562 - 570},
+  YEAR = {2016},
+  MONTH = Jun,
+  DOI = {10.1109/CVPR.2016.67}
+}
+```
 
 Marker library
 ---------
