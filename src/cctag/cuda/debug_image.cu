@@ -225,7 +225,7 @@ void DebugImage::writeASCII( const string& filename,
 
 void DebugImage::normalizeImage( cv::cuda::PtrStepSzb img, bool normalize )
 {
-    if( not normalize ) return;
+    if( ! normalize ) return;
 
     /* All images points that are non-null are normalized to 1.
      */
@@ -285,7 +285,7 @@ void DebugImage::plotOneLine( int2 from, int2 to, cv::cuda::PtrStepSzb img, int 
         } else {
             for( int xko=from.x; xko<=to.x; xko++ ) {
                 int yko = from.y + (int)roundf( ( to.y - from.y ) * (float)(xko-from.x) / (float)absx ); 
-                if( not outOfBounds( xko, yko, img ) ) {
+                if( ! outOfBounds( xko, yko, img ) ) {
                     img.ptr(yko)[xko] = color;
                 }
             }
@@ -296,7 +296,7 @@ void DebugImage::plotOneLine( int2 from, int2 to, cv::cuda::PtrStepSzb img, int 
         } else {
             for( int yko=from.y; yko<=to.y; yko++ ) {
                 int xko = from.x + (int)roundf( ( to.x - from.x ) * (float)(yko-from.y) / (float)absy ); 
-                if( not outOfBounds( xko, yko, img ) ) {
+                if( ! outOfBounds( xko, yko, img ) ) {
                     img.ptr(yko)[xko] = color;
                 }
             }
