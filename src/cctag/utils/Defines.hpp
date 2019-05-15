@@ -64,7 +64,7 @@
 #include <cstddef>
 namespace std {
 #ifdef _MSC_VER
-	using ssize_t = SSIZE_T;
+	using ssize_t = intptr_t;
 #else
 	//#ifdef __ssize_t_defined
 	//using ssize_t = __ssize_t;
