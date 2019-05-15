@@ -110,8 +110,8 @@ if(CCTAG_WITH_CUDA)
     # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-G;-g;-DNDEBUG")
   endif()
 
-  #set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
-  #set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30")
+  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
+  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30")
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_35,code=sm_35")
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_50,code=sm_50")
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_52,code=sm_52")
@@ -138,6 +138,18 @@ if(CCTAG_WITH_CUDA)
   # DOES NOT WORK UNTIL CUDA 7.5:
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
+
+  # Boost >= 1.60.0 and CUDA != 7.5 failed when used with C++11
+  # seen with boost 1.60.0 - 1.62.0 (atm latest) and CUDA 7.0, 8.0 (atm latest)
+  # CUDA 7.5 works without a workaround
+  # from https://github.com/ComputationalRadiationPhysics/picongpu/pull/1603
+  if( (Boost_VERSION GREATER 105999) AND
+      (NOT CUDA_VERSION VERSION_EQUAL 7.5) AND
+      (NOT CMAKE_CXX_STANDARD EQUAL 98) )
+      # Boost Bug https://svn.boost.org/trac/boost/ticket/11897
+      message(STATUS "Boost: Disable template aliases")
+      add_definitions(-DBOOST_NO_CXX11_TEMPLATE_ALIASES)
+  endif()
 
 else(CCTAG_WITH_CUDA)
   message( STATUS "Building without CUDA" )
