@@ -7,8 +7,9 @@
  */
 #pragma once
 
-#include <boost/thread/mutex.hpp>
 #include "cctag/cuda/nearby_point.h"
+
+#include <mutex>
 
 namespace cctag {
 
@@ -56,7 +57,7 @@ private:
     NearbyPoint* _nearby_points;
     int          _nearby_point_counter;
 
-    boost::mutex _lock;
+    std::mutex _lock;
 
     static const int _max_counters;
     static const int _max_points;

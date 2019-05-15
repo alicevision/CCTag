@@ -16,10 +16,6 @@
 #include <opencv2/core.hpp>
 #include <cuda_runtime.h>
 
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition.hpp>
-
 #include "cctag/cuda/tag_threads.h"
 #include "cctag/cuda/tag_cut.h"
 #include "cctag/cuda/geom_ellipse.h"
