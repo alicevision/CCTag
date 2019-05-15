@@ -240,7 +240,7 @@ int DebugImage::getColor( BaseColor b )
 {
     if( b < LAST ) return b;
 
-    return ( LAST + random() % ( 255 - LAST ) );
+    return ( LAST + std::rand() % ( 255 - LAST ) );
 }
 
 void DebugImage::plotPoints( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb img, bool normalize, BaseColor b )
