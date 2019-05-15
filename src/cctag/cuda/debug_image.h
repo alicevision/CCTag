@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include <cuda_runtime.h>
+
 #include "frame.h"
 #include "triple_point.h"
 

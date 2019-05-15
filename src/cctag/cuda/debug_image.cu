@@ -5,20 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+#include "debug_image.h"
+
+#include "frame.h"
+#include "assist.h"
+
 #include <iostream>
 #include <algorithm>
 #include <limits>
 #include <assert.h>
 #include <fstream>
 #include <string.h>
-#include <cuda_runtime.h>
-//#include <sys/stat.h>
 #include <map>
-// #include "debug_macros.hpp"
-
-#include "frame.h"
-#include "debug_image.h"
-#include "assist.h"
 
 namespace cctag {
 
