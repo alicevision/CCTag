@@ -32,7 +32,6 @@ set( CCTag_cpp
         ./cctag/geometry/Distance.cpp
         ./cctag/geometry/Ellipse.cpp
         ./cctag/geometry/EllipseFromPoints.cpp
-        ./cctag/utils/Backtrace.cpp
         ./cctag/utils/FileDebug.cpp
         ./cctag/utils/LogTime.cpp
         ./cctag/utils/Talk.cpp

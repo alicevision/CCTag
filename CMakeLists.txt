@@ -1,6 +1,7 @@
-# Version 3,4 is the first that supports separable compilation on Linux.
+# Version 3,. is the first that supports separable compilation on Linux.
 # Windows requires more work, and Mac is probably still hopeless.
-cmake_minimum_required(VERSION 3.4)
+# Version 3.14 is needed for boost-stacktrace
+cmake_minimum_required(VERSION 3.14)
 
 include(ExternalProject)
 
@@ -71,13 +72,19 @@ endif(APPLE)
 # FIND BOOST
 # TODO: determine minimal version and minimal components
 set(BOOST_REQUIRED_COMPONENTS "date_time;chrono;thread;serialization;system;filesystem;atomic;program_options;timer")
+if(WIN32)
+  set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_windbg")
+else()
+  set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_basic;stacktrace_backtrace")
+endif()
+
 if(BUILD_TESTS)
   set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};unit_test_framework")
   enable_testing()
   include(BoostTestHelper)
 endif()
 
-find_package(Boost 1.53.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+find_package(Boost 1.66.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 if(CCTAG_WITH_CUDA)
   message( STATUS "Try finding CUDA" )

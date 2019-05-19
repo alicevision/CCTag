@@ -8,8 +8,6 @@
 #ifndef _CCTAG_EXCEPTIONS_HPP_
 #define _CCTAG_EXCEPTIONS_HPP_
 
-#include "Backtrace.hpp"
-
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/exception/errinfo_file_name.hpp>
 #include <boost/exception/exception.hpp>
@@ -17,6 +15,7 @@
 #include <boost/exception/get_error_info.hpp>
 #include <boost/exception/info.hpp>
 #include <boost/exception/info.hpp>
+#include <boost/stacktrace.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/version.hpp>
 #include <boost/version.hpp>
@@ -109,17 +108,26 @@ private:
 }
 #endif
 
+
+typedef boost::error_info<struct tag_stacktrace, boost::stacktrace::stacktrace> traced;
+
 #ifdef CCTAG_NO_EXCEPTIONS
 #define CCTAG_NO_TRY_CATCH
 #define CCTAG_THROW(...)
 #else
-#define CCTAG_THROW BOOST_THROW_EXCEPTION
+#define CCTAG_THROW(...) BOOST_THROW_EXCEPTION(__VA_ARGS__) << traced(boost::stacktrace::stacktrace());
 #endif
 
 #define CCTAG_FORCE_COUT_BOOST_EXCEPTION( e )  \
-    ::std::cerr << "Exception:" << \
-    ::std::endl << CCTAG_INFOS << \
-    ::std::endl << "\t" << ::boost::diagnostic_information( e )
+    { \
+        ::std::cerr << "Exception:" << \
+        ::std::endl << CCTAG_INFOS << \
+        ::std::endl << "\t" << ::boost::diagnostic_information( e ); \
+        const boost::stacktrace::stacktrace* st = boost::get_error_info<traced>(e); \
+        if (st) { \
+            std::cerr << *st << '\n'; \
+        } \
+    }
 
 #define CCTAG_FORCE_COUT_CURRENT_EXCEPTION  \
     ::std::cerr << "Exception:" << \
@@ -219,7 +227,6 @@ using filename = ::boost::errinfo_file_name;
 struct Common
 	: virtual public ::std::exception
 	, virtual public ::boost::exception
-	, virtual public ::boost::backtrace
 {};
 
 /// @brief All typed exceptions
