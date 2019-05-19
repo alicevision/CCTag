@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(test_ellipse_representation)
     {
         const float angleGT = i*step;
         using namespace cctag::numerical::geometry;
-        Ellipse el = Ellipse(Point3f(cxGT, cyGT), aGT, bGT, angleGT);
+        cctag::numerical::geometry::Ellipse el(Point3f(cxGT, cyGT), aGT, bGT, angleGT); // avoid conflict with wingdi.h on windows
 
         // checking getters
         BOOST_CHECK(std::fabs(aGT - el.a()) < 0.00001);
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(test_ellipse_representation)
         }
 
         // Test building the ellipse form a matrix
-        Ellipse fromMatrix = Ellipse(conic);
+        cctag::numerical::geometry::Ellipse fromMatrix(conic);
 
         // major axis aligned with y-axis choice, so a and b are swapped and the angle is 90deg away
         BOOST_CHECK(std::fabs(fromMatrix.b() - aGT) < 0.001);
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(test_ellipse_representation)
         }
 
         // test building from canonical form
-        Ellipse fromCanonic{canonic};
+        cctag::numerical::geometry::Ellipse fromCanonic{canonic};
         BOOST_CHECK(std::fabs(fromCanonic.b() - aGT) < 0.001);
         BOOST_CHECK(std::fabs(fromCanonic.a() - bGT) < 0.001);
         BOOST_CHECK(std::fabs(fromCanonic.angle()) < 0.0001);
