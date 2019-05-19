@@ -64,7 +64,7 @@ env:
     - OPENCV_BUILD=${OPENCV_ROOT}/build
     - OPENCV_INSTALL=${OPENCV_ROOT}/install
     # CMAKE
-    - CMAKE_URL="https://cmake.org/files/v3.6/cmake-3.6.1-Linux-x86_64.tar.gz"
+    - CMAKE_URL="https://cmake.org/files/v3.14/cmake-3.14.4-Linux-x86_64.tar.gz"
     - CMAKE_ROOT=${HOME}/cmake
     - CMAKE_SOURCE=${CMAKE_ROOT}/source
     - CMAKE_INSTALL=${CMAKE_ROOT}/install
