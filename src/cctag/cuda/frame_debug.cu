@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <fstream>
 #include <string.h>
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <sys/stat.h>
 #include <map>
 #include "debug_macros.hpp"

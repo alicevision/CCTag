@@ -45,7 +45,7 @@
 #include <utility>
 #include <memory>
 #ifdef CCTAG_WITH_CUDA
-#include <cuda_runtime.h> // only for debugging
+#include <cctag/cuda/cctag_cuda_runtime.h> // only for debugging
 #endif // CCTAG_WITH_CUDA
 
 #include <tbb/tbb.h>

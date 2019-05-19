@@ -9,7 +9,7 @@
 #include "debug_macros.hpp"
 #include "onoff.h"
 
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <iostream>
 
 namespace cctag {

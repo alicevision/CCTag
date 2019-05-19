@@ -15,7 +15,7 @@
 
 #include "onoff.h"
 
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <limits>
 #include <cub/cub.cuh>
 #include "debug_macros.hpp"

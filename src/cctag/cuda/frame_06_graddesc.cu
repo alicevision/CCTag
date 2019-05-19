@@ -8,7 +8,7 @@
 #include <iostream>
 #include <algorithm>
 #include <limits>
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <cub/cub.cuh>
 #include <stdio.h>
 #include "debug_macros.hpp"

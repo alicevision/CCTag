@@ -13,7 +13,7 @@
 
 #if CUDA_VERSION >= 8000
 
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <limits>
 #include <thrust/sort.h>
 #include <thrust/unique.h>

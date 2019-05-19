@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <fstream>
 #include <string.h>
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <sys/mman.h>
 #include "debug_macros.hpp"
 #include "pinned_counters.h"
