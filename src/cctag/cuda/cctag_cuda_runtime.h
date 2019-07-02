@@ -16,9 +16,8 @@
 #  define BOOST_NO_CXX14_DIGIT_SEPARATORS
 #  define BOOST_NO_CXX11_UNICODE_LITERALS
 #  define BOOST_PP_VARIADICS 0
-#else
-#  define BOOST_NO_CXX11_DEFAULTED_FUNCTIONS
 #endif
+#  define BOOST_NO_CXX11_DEFAULTED_FUNCTIONS
 #endif
 
 #include <cuda_runtime.h>
