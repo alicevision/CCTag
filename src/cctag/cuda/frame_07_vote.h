@@ -9,7 +9,7 @@
 
 #include <cuda.h>
 
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <opencv2/core/cuda_types.hpp>
 
 #if CUDA_VERSION >= 8000

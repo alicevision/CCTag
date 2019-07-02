@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <iostream>
 #include "cctag/cuda/triple_point.h"
 #include "cctag/cuda/edge_list.h"

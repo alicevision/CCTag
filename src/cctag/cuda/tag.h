@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <opencv2/core.hpp>
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 
 #include "cctag/cuda/tag_threads.h"
 #include "cctag/cuda/tag_cut.h"

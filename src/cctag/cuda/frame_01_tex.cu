@@ -8,8 +8,6 @@
 #include "frame.h"
 #include "debug_macros.hpp"
 
-#include <cctag/cuda/cctag_cuda_runtime.h>
-
 namespace cctag {
 
 using namespace std;
