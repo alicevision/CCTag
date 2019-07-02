@@ -75,7 +75,7 @@ set(BOOST_REQUIRED_COMPONENTS "date_time;chrono;thread;serialization;system;file
 if(WIN32)
   set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_windbg")
 else()
-  set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_basic;stacktrace_backtrace")
+  set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_basic")
 endif()
 
 if(BUILD_TESTS)
