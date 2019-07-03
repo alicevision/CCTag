@@ -10,7 +10,7 @@
 
 #include <opencv/cv.h>
 #include <opencv2/core/types_c.h>
-#include <boost/progress.hpp>
+#include <boost/timer/timer.hpp>
 #include <iostream>
 
 
