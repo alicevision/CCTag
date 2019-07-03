@@ -6,7 +6,7 @@ project(CCTagApplications LANGUAGES C CXX)
 
 set(CMAKE_BUILD_TYPE Release)
 
-#Find needed dependencies 
+#Find needed dependencies
 # CCTAG
 if(TARGET CCTag)
   add_library(CCTag::CCTag ALIAS CCTag)
@@ -21,10 +21,16 @@ endif()
 
 # BOOST
 if(NOT Boost_FOUND)
-find_package(Boost 1.53.0 REQUIRED
-    COMPONENTS date_time chrono thread serialization system filesystem atomic program_options timer QUIET)
+  set(BOOST_REQUIRED_COMPONENTS "date_time;chrono;thread;serialization;system;filesystem;atomic;program_options;timer")
+  if(WIN32)
+    set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_windbg")
+  else()
+    set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_basic")
+  endif()
+
+  find_package(Boost 1.66.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS} QUIET)
 else()
-message(STATUS "BOOST already there")
+  message(STATUS "BOOST already there")
 endif()
 
 # OPENCV
@@ -50,7 +56,7 @@ set(CCTagRegression_cpp
 set(CCTagSimulation_cpp
   ./simulation/main.cpp)
 
-get_target_property(testprop CCTag::CCTag INTERFACE_INCLUDE_DIRECTORIES )
+get_target_property(testprop CCTag::CCTag INTERFACE_INCLUDE_DIRECTORIES)
 
 set(CCTagDetect_cpp ./detection/main.cpp ./detection/CmdLine.cpp)
 add_executable(detection ${CCTagDetect_cpp})
@@ -70,7 +76,7 @@ endif()
 
 add_executable(regression ${CCTagRegression_cpp})
 target_include_directories(regression PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(regression PUBLIC CCTag::CCTag ${OpenCV_LIBS} ${Boost_LIBRARIES} ) 
+target_link_libraries(regression PUBLIC CCTag::CCTag ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 
 add_executable(simulation ${CCTagSimulation_cpp})
 target_include_directories(simulation PUBLIC ${OpenCV_INCLUDE_DIRS})
