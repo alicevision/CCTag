@@ -58,7 +58,7 @@ void Frame::applyVote( )
         /* would it be better to remove unused voters from the chaincoords ? */
     }
 
-    if( not success ) {
+    if( ! success ) {
         _inner_points.host.size = 0;
         _voters.host.size       = 0;
         return;

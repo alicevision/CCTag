@@ -82,7 +82,7 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
         const TriplePoint& pt = _voters.host.ptr[i];
         if( pt.coord.x == 0 && pt.coord.y == 0 ) {
             static bool reported_error_once = false;
-            if( not reported_error_once ) {
+            if( ! reported_error_once ) {
                 cerr << __FILE__ << ":" << __LINE__ << ": "
                      << "Error: vote winners contain (0,0), which is forbidden (skip)." << endl;
                 reported_error_once = true;

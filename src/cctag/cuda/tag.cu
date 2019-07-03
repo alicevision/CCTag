@@ -81,7 +81,7 @@ void TagPipe::initialize( const uint32_t pix_w,
     PinnedCounters::init( getId() );
 
     static bool tables_initialized = false;
-    if( not tables_initialized ) {
+    if( ! tables_initialized ) {
         tables_initialized = true;
         Frame::initGaussTable( );
         Frame::initThinningTable( );

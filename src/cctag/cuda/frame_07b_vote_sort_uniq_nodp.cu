@@ -184,7 +184,7 @@ void Frame::applyVoteUniqNoDP( )
 bool Frame::applyVoteSortUniq( )
 {
     bool success = applyVoteSortNoDP( );
-    if( not success ) return false;
+    if( ! success ) return false;
     applyVoteUniqNoDP( );
     return true;
 }

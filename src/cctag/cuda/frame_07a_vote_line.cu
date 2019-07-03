@@ -151,7 +151,7 @@ const TriplePoint* cl_inner(
 
     TriplePoint* current = vote::find_befor( meta, p, edgepoint_index_table, voters );
     // Here current contains the edge point lying on the 2nd ellipse (from outer to inner)
-    if( not current ) {
+    if( ! current ) {
         return 0;
     }
 #ifndef NDEBUG
@@ -195,7 +195,7 @@ const TriplePoint* cl_inner(
                                                 edgepoint_index_table,
                                                 voters );
         // No edge point was found in that direction
-        if( not target ) {
+        if( ! target ) {
             return 0;
         }
 #ifndef NDEBUG
@@ -222,7 +222,7 @@ const TriplePoint* cl_inner(
             }
         }
 
-        if( not flagDist ) {
+        if( ! flagDist ) {
             return 0;
         }
 
@@ -234,7 +234,7 @@ const TriplePoint* cl_inner(
                                    current,
                                    edgepoint_index_table,
                                    voters );
-        if( not target ) {
+        if( ! target ) {
             return 0;
         }
 
@@ -254,7 +254,7 @@ const TriplePoint* cl_inner(
             }
         }
 
-        if( not flagDist ) {
+        if( ! flagDist ) {
             return 0;
         }
 

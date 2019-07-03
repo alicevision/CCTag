@@ -742,7 +742,7 @@ cctag::TagPipe* initCuda( int      pipeId,
 
     cctag::TagPipe* pipe1 = cudaPipelines[pipeId];
 
-    if( not pipe1 ) {
+    if( ! pipe1 ) {
         pipe1 = new cctag::TagPipe( params );
         pipe1->initialize( width, height, durations );
         cudaPipelines[pipeId] = pipe1;

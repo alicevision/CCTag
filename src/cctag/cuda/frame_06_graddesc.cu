@@ -87,7 +87,7 @@ bool gradient_descent_inner( const int                    idx,
     out_edge_info.y = idy;
 #endif
 
-    assert( not outOfBounds( idx, idy, edge_image ) );
+    assert( ! outOfBounds( idx, idy, edge_image ) );
     if( outOfBounds( idx, idy, edge_image ) ) {
         return false; // should never happen
     }
@@ -223,7 +223,7 @@ void gradient_descent( FrameMetaPtr                 meta,
 
     __syncthreads();
 
-    assert( not keep || not outOfBounds( out_edge_info.z, out_edge_info.w, edge_image ) );
+    assert( ! keep || ! outOfBounds( out_edge_info.z, out_edge_info.w, edge_image ) );
 
     __shared__ int2 merge_directions[2][32];
     merge_directions[threadIdx.y][threadIdx.x].x = keep ? out_edge_info.z : 0;
@@ -254,8 +254,8 @@ void gradient_descent( FrameMetaPtr                 meta,
     out_edge._winnerSize        = 0;
     out_edge._flowLength        = 0.0f;
 
-    assert( not outOfBounds( out_edge.descending.befor.x, out_edge.descending.befor.y, edgepoint_index_table ) );
-    assert( not outOfBounds( out_edge.descending.after.x, out_edge.descending.after.y, edgepoint_index_table ) );
+    assert( ! outOfBounds( out_edge.descending.befor.x, out_edge.descending.befor.y, edgepoint_index_table ) );
+    assert( ! outOfBounds( out_edge.descending.after.x, out_edge.descending.after.y, edgepoint_index_table ) );
 
     uint32_t mask = __ballot( keep );  // bitfield of warps with results
 

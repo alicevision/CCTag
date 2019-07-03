@@ -185,7 +185,7 @@ void initAllNearbyPoints(
     const float  halfWidth   = gridWidth/2.0f;
     const float  stepSize    = gridWidth * __frcp_rn( float(STRICT_SAMPLE(gridNSample)-1) );
 
-    if( not first_iteration ) {
+    if( ! first_iteration ) {
         // the best center is located in point_buffer[0]
         // center = point_buffer[0].point;
         center = d_nearbyPointGrid->getGrid(0,0).point;
@@ -254,8 +254,8 @@ void idComputeResult( NearbyPointGrid*     d_NearbyPointGrid,
         const CutSignals& l_signals = sig_buffer->getGrid( left_cut,  grid_i, grid_j );
         const CutSignals& r_signals = sig_buffer->getGrid( right_cut, grid_i, grid_j );
         comp  = ( threadIdx.x < tagParam.sampleCutLength ) &&
-                  not l_signals.outOfBounds &&
-                  not r_signals.outOfBounds;
+                  ! l_signals.outOfBounds &&
+                  ! r_signals.outOfBounds;
         if( comp ) {
             const int limit = STRICT_SIGSIZE(cut_buffer->getGrid(left_cut).sigSize); // we could also use right_cut
             for( int offset = threadIdx.x; offset < STRICT_SIGSIZE(limit); offset += 32 ) {
@@ -450,7 +450,7 @@ bool TagPipe::idCostFunction(
     cctag::geometry::matrix3x3 mInvT;
     bool success;
     success = mT.invert( mInvT ); // note: returns false if it fails
-    if( not success ) {
+    if( ! success ) {
         cerr << __FILE__ << ":" << __LINE__ << endl
              << "    Conditioner matrix extracted from ellipse is not invertable" << endl
              << "    Program logic error. Requires analysis before fixing." << endl

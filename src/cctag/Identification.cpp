@@ -842,7 +842,7 @@ bool refineConicFamilyGlob(
             params,
             cctag_pointer_buffer );
 
-        if( not success ) {
+        if( ! success ) {
             return false;
         }
     } else { // not CUDA

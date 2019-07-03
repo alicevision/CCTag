@@ -61,10 +61,10 @@ NearbyPoint* PinnedCounters::getPointPtr( int tagPipe, const char* file, int lin
 void PinnedCounters::obj_init( )
 {
     _lock.lock();
-    if( not _counters ) {
+    if( ! _counters ) {
         POP_CUDA_MALLOC_HOST( &_counters, _max_counters*sizeof(int) );
     }
-    if( not _nearby_points ) {
+    if( ! _nearby_points ) {
         POP_CUDA_MALLOC_HOST( &_nearby_points, _max_points*sizeof(NearbyPoint) );
     }
     _lock.unlock();
