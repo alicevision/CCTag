@@ -11,7 +11,11 @@
 #include <fstream>
 #include <string.h>
 #include <cctag/cuda/cctag_cuda_runtime.h>
+#ifdef _MSC_VER
+#include <windows.h>
+#else
 #include <sys/mman.h>
+#endif
 #include "debug_macros.hpp"
 #include "pinned_counters.h"
 
@@ -115,7 +119,11 @@ void Frame::upload( const unsigned char* image )
     // pin the image to memory
     _image_to_upload = image;
 
+#ifdef _MSC_VER
+    VirtualLock(LPVOID(_image_to_upload), (getWidth() * getHeight()));
+#else
     mlock( _image_to_upload, getWidth() * getHeight() );
+#endif
 
     POP_CUDA_MEMCPY_2D_ASYNC( _d_plane.data,
                               getPitch(),
@@ -131,7 +139,11 @@ void Frame::uploadComplete( )
 {
     // unpin the image
     if( _image_to_upload != 0 ) {
+#ifdef _MSC_VER
+        VirtualUnlock(LPVOID(_image_to_upload), (getWidth() * getHeight()));
+#else
         munlock( _image_to_upload, getWidth() * getHeight() );
+#endif
         _image_to_upload = 0;
     }
 }
