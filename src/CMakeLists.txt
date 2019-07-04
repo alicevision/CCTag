@@ -92,7 +92,7 @@ if(CCTAG_WITH_CUDA)
   # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA.cmake#L147
   # INCLUDE_DIRECTORIES -- "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
   include_directories(${CMAKE_CURRENT_LIST_DIR}
-                      ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
+                      ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
 		      ${TBB_INCLUDE_DIRS}
                       "${CMAKE_SOURCE_DIR}/src"
                       "${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
@@ -111,7 +111,6 @@ if(CCTAG_WITH_CUDA)
   endif()
 
   target_compile_definitions(CCTag
-                         PUBLIC ${Boost_DEFINITIONS}
                          PUBLIC -DCCTAG_WITH_CUDA -DCUB_CDP
                          PRIVATE ${TBB_DEFINITIONS})
 
@@ -140,7 +139,6 @@ else() # without CUDA
   message(STATUS "testprop: ${testprop}")
 
   target_compile_definitions(CCTag
-                             PUBLIC ${Boost_DEFINITIONS}
                              PRIVATE ${TBB_DEFINITIONS})
 
   target_link_libraries(CCTag

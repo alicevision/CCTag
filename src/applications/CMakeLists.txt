@@ -20,7 +20,7 @@ else()
 endif()
 
 # BOOST
-if(NOT Boost_FOUND)
+if(NOT TARGET Boost::boost)
   set(BOOST_REQUIRED_COMPONENTS "date_time;chrono;thread;serialization;system;filesystem;atomic;program_options;timer")
   if(WIN32)
     set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_windbg")
