@@ -78,6 +78,7 @@ install:
 before_script:
   - . ./ci/env.sh
   - export CMAKE_PREFIX_PATH="${DEPS_INSTALL_PATH}"
+  - export CTEST_OUTPUT_ON_FAILURE=1
   # patch tbb
   # https://software.intel.com/en-us/forums/intel-threading-building-blocks/topic/431422
   - sudo sed -i '345s/.*/\#if \(__GNUC__==4 \&\& __GNUC_MINOR__>=4 \&\& __GXX_EXPERIMENTAL_CXX0X__\) || __clang_major__ >= 3/' /usr/include/tbb/pipeline.h
