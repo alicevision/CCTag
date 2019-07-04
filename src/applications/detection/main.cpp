@@ -18,7 +18,7 @@
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
+#include <boost/timer/timer.hpp>
 #include <boost/exception/all.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/archive/xml_oarchive.hpp>

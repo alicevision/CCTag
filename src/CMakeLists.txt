@@ -101,7 +101,9 @@ if(CCTAG_WITH_CUDA)
 
   # since we used CUDA_ADD_LIBRARY we cannot use PUBLIC or PRIVATE here
   target_link_libraries(CCTag
-                       ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES}
+                       ${OpenCV_LIBS}
+                       Boost::date_time Boost::chrono Boost::thread Boost::serialization Boost::system Boost::filesystem Boost::atomic Boost::program_options Boost::timer
+                       ${Eigen_LIBRARIES}
                        ${TBB_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
 
   if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -142,8 +144,12 @@ else() # without CUDA
                              PRIVATE ${TBB_DEFINITIONS})
 
   target_link_libraries(CCTag
-                        PUBLIC ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES}
-                        PRIVATE ${TBB_LIBRARIES})
+                        PUBLIC
+                          ${OpenCV_LIBS}
+                          ${Eigen_LIBRARIES}
+                          Boost::algorithm Boost::atomic Boost::chrono Boost::date_time Boost::filesystem Boost::math Boost::ptr_container Boost::serialization Boost::stacktrace Boost::system Boost::thread Boost::timer
+                        PRIVATE
+                          ${TBB_LIBRARIES})
 
   if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     target_link_libraries(CCTag PRIVATE pthread dl)

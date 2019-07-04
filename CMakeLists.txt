@@ -70,8 +70,7 @@ if(APPLE)
 endif(APPLE)
 
 # FIND BOOST
-# TODO: determine minimal version and minimal components
-set(BOOST_REQUIRED_COMPONENTS "date_time;chrono;thread;serialization;system;filesystem;atomic;program_options;timer")
+set(BOOST_REQUIRED_COMPONENTS "atomic;chrono;date_time;filesystem;program_options;serialization;system;thread;timer")
 if(WIN32)
   set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_windbg")
 else()
@@ -85,25 +84,6 @@ if(BUILD_TESTS)
 endif()
 
 find_package(Boost 1.66.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
-
-# Boost 1.70 use cmake targets and do not set the Boost_LIBRARIES variable, so we have to do a workaround:
-if(TARGET Boost::boost AND NOT Boost_LIBRARIES)
-  set(Boost_LIBRARIES "")
-  foreach(boost_component ${BOOST_REQUIRED_COMPONENTS})
-    message(WARNING "-- boost_component: ${boost_component}")
-    if(TARGET Boost::${boost_component})
-      message(WARNING "-- boost_component: Boost::${boost_component}")
-      string(TOUPPER ${boost_component} boost_component_upper)
-      set("Boost_${boost_component_upper}_LIBRARY" Boost::${boost_component})
-      list(APPEND Boost_LIBRARIES Boost::${boost_component})
-    endif()
-  endforeach()
-endif()
-
-message(WARNING "Boost_UNIT_TEST_FRAMEWORK_LIBRARY: ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}")
-message(WARNING "Boost_LIBRARIES: ${Boost_LIBRARIES}")
-message(WARNING "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
-message(WARNING "Boost_DEFINITIONS: ${Boost_DEFINITIONS}")
 
 
 if(CCTAG_WITH_CUDA)

@@ -63,20 +63,38 @@ add_executable(detection ${CCTagDetect_cpp})
 
 find_package(DevIL COMPONENTS IL ILU) # yields IL_FOUND, IL_LIBRARIES, IL_INCLUDE_DIR
 
+target_compile_options(detection PRIVATE -DUSE_DEVIL)
+target_include_directories(detection PUBLIC
+  ${OpenCV_INCLUDE_DIRS}
+  ${TBB_INCLUDE_DIRS}
+  )
+target_link_libraries(detection PUBLIC
+  CCTag::CCTag
+  ${TBB_tbb_LIBRARY_RELEASE}
+  ${OpenCV_LIBS}
+  Boost::filesystem Boost::timer Boost::exception Boost::ptr_container Boost::archive Boost::algorithm
+  )
+
 if(IL_FOUND OR DevIL_FOUND)
   message(STATUS "DevIL found")
-  target_compile_options(detection PRIVATE -DUSE_DEVIL)
-  target_include_directories(detection PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${IL_INCLUDE_DIR})
-  target_link_libraries(detection PUBLIC CCTag::CCTag ${TBB_tbb_LIBRARY_RELEASE} ${OpenCV_LIBS} ${Boost_LIBRARIES}  ${IL_LIBRARIES} ${ILU_LIBRARIES})
+  target_include_directories(detection PUBLIC
+    ${IL_INCLUDE_DIR}
+    )
+  target_link_libraries(detection PUBLIC
+    ${IL_LIBRARIES}
+    ${ILU_LIBRARIES}
+    )
 else()
   message(STATUS "DevIL not found")
-  target_include_directories(detection PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS})
-  target_link_libraries(detection PUBLIC CCTag::CCTag ${TBB_tbb_LIBRARY_RELEASE} ${OpenCV_LIBS} ${Boost_LIBRARIES})
 endif()
 
 add_executable(regression ${CCTagRegression_cpp})
-target_include_directories(regression PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(regression PUBLIC CCTag::CCTag ${OpenCV_LIBS} ${Boost_LIBRARIES} )
+target_include_directories(regression PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(regression PUBLIC
+  CCTag::CCTag
+  ${OpenCV_LIBS}
+  Boost::accumulators Boost::archive Boost::program_options Boost::serialization
+  )
 
 add_executable(simulation ${CCTagSimulation_cpp})
 target_include_directories(simulation PUBLIC ${OpenCV_INCLUDE_DIRS})
