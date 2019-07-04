@@ -145,7 +145,7 @@ else() # without CUDA
                         PUBLIC
                           ${OpenCV_LIBS}
                           ${Eigen_LIBRARIES}
-                          Boost::algorithm Boost::atomic Boost::chrono Boost::date_time Boost::filesystem Boost::math Boost::ptr_container Boost::serialization Boost::stacktrace Boost::system Boost::thread Boost::timer
+                          Boost::atomic Boost::chrono Boost::date_time Boost::filesystem Boost::serialization Boost::system Boost::thread Boost::timer
                         PRIVATE
                           ${TBB_LIBRARIES})
 

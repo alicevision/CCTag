@@ -72,7 +72,7 @@ target_link_libraries(detection PUBLIC
   CCTag::CCTag
   ${TBB_tbb_LIBRARY_RELEASE}
   ${OpenCV_LIBS}
-  Boost::filesystem Boost::timer Boost::exception Boost::ptr_container Boost::archive Boost::algorithm
+  Boost::filesystem Boost::timer Boost::exception
   )
 
 if(IL_FOUND OR DevIL_FOUND)
