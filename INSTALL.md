@@ -79,8 +79,6 @@ Note 1: CCTag uses NVidia CUB (CCTag includes a copy of CUB from CUDA 7.0).
 Several CUB functions are known to fail with a few NVidia cards including our reference card,
 the GTX 980 Ti.
 The CUB that is included with CUDA 7.5 does not solve this problem.
-<<<<<<< HEAD:BUILD.md
-=======
 
 ----------
 
@@ -101,4 +99,3 @@ Once installed, the docker can be run, e.g., in interactive mode with
 ```
 docker run -it --runtime=nvidia cctag
 ```
->>>>>>> develop:INSTALL.md
