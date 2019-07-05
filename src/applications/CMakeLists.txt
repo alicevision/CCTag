@@ -63,7 +63,6 @@ add_executable(detection ${CCTagDetect_cpp})
 
 find_package(DevIL COMPONENTS IL ILU) # yields IL_FOUND, IL_LIBRARIES, IL_INCLUDE_DIR
 
-target_compile_options(detection PRIVATE -DUSE_DEVIL)
 target_include_directories(detection PUBLIC
   ${OpenCV_INCLUDE_DIRS}
   ${TBB_INCLUDE_DIRS}
@@ -77,6 +76,7 @@ target_link_libraries(detection PUBLIC
 
 if(IL_FOUND OR DevIL_FOUND)
   message(STATUS "DevIL found")
+  target_compile_options(detection PRIVATE -DUSE_DEVIL)
   target_include_directories(detection PUBLIC
     ${IL_INCLUDE_DIR}
     )
