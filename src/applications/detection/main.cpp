@@ -45,7 +45,6 @@
 #define PRINT_TO_CERR
 
 using namespace cctag;
-using boost::timer;
 
 namespace bfs = boost::filesystem;
 
@@ -120,7 +119,7 @@ void detection(std::size_t frameId,
   }
 
   // Process markers detection
-  boost::timer t;
+  boost::timer::cpu_timer t;
 
   CCTagVisualDebug::instance().initBackgroundImage(src);
   CCTagVisualDebug::instance().setImageFileName(debugFileName);
@@ -141,7 +140,7 @@ void detection(std::size_t frameId,
   CCTagVisualDebug::instance().outPutAllSessions();
   CCTagVisualDebug::instance().clearSessions();
 
-  std::cout << "Total time: " << t.elapsed() << std::endl;
+  std::cout << "Total time: " << t.format() << std::endl;
   CCTAG_COUT_NOENDL("Id : ");
 
   std::size_t counter = 0;
