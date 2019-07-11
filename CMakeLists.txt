@@ -29,6 +29,10 @@ if(CCTAG_ENABLE_SIMD_AVX2)
   message(STATUS "CCTAG: AVX2 optimizations enabled.")
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  add_definitions(/EHsc)  # Enable Exception Handling
+endif()
+
 # load local machine config <hostname>.cmake
 site_name(MACHINE_NAME)
 
