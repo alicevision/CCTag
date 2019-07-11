@@ -11,9 +11,7 @@
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/exception/errinfo_file_name.hpp>
 #include <boost/exception/exception.hpp>
-#include <boost/exception/exception.hpp>
 #include <boost/exception/get_error_info.hpp>
-#include <boost/exception/info.hpp>
 #include <boost/exception/info.hpp>
 #include <boost/stacktrace.hpp>
 #include <boost/lexical_cast.hpp>
@@ -108,55 +106,7 @@ private:
 }
 #endif
 
-
 typedef boost::error_info<struct tag_stacktrace, boost::stacktrace::stacktrace> traced;
-
-#ifdef CCTAG_NO_EXCEPTIONS
-#define CCTAG_NO_TRY_CATCH
-#define CCTAG_THROW(...)
-#else
-#define CCTAG_THROW(...) BOOST_THROW_EXCEPTION(__VA_ARGS__) << traced(boost::stacktrace::stacktrace());
-#endif
-
-#define CCTAG_FORCE_COUT_BOOST_EXCEPTION( e )  \
-    { \
-        ::std::cerr << "Exception:" << \
-        ::std::endl << CCTAG_INFOS << \
-        ::std::endl << "\t" << ::boost::diagnostic_information( e ); \
-        const boost::stacktrace::stacktrace* st = boost::get_error_info<traced>(e); \
-        if (st) { \
-            std::cerr << *st << '\n'; \
-        } \
-    }
-
-#define CCTAG_FORCE_COUT_CURRENT_EXCEPTION  \
-    ::std::cerr << "Exception:" << \
-    ::std::endl << CCTAG_INFOS << \
-    ::std::endl << "\t" << ::boost::current_exception_diagnostic_information()
-
-#ifndef CCTAG_NO_TRY_CATCH
-#	define CCTAG_TRY try
-#	define CCTAG_CATCH(x) catch( x )
-#	define CCTAG_RETHROW throw
-
-#define CCTAG_COUT_BOOST_EXCEPTION(e) CCTAG_FORCE_COUT_BOOST_EXCEPTION(e)
-#define CCTAG_COUT_CURRENT_EXCEPTION CCTAG_FORCE_COUT_CURRENT_EXCEPTION
-
-#else
-#    if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564))
-#        define CCTAG_TRY if( "" )
-#        define CCTAG_CATCH(x) else if( !"" )
-#    else
-#        define CCTAG_TRY if( true )
-#        define CCTAG_CATCH(x) else if( false )
-#    endif
-#	define CCTAG_RETHROW
-#define CCTAG_COUT_BOOST_EXCEPTION(e)
-#define CCTAG_COUT_CURRENT_EXCEPTION
-#endif
-
-
-
 
 
 namespace cctag {

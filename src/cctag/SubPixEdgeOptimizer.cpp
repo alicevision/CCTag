@@ -39,7 +39,7 @@ void SubPixEdgeOptimizer::initSubPix( int ndim, NEWMAT::ColumnVector& x )
 {
 	if ( ndim != 4 )
 	{
-		BOOST_THROW_EXCEPTION( exception::Bug() << exception::dev() + "Unable to init minimizer!" );
+		throw exception::Bug("Unable to init minimizer!");
 	}
 
 	x(1) = _widthContour;
