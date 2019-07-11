@@ -5,12 +5,15 @@
 
 Required tools:
 * CMake >= 3.14 to build the code
-* git
+* Git
 * C/C++ compiler (gcc >= 4.6 or visual studio or clang)
-For CUDA
+
+Optional tool:
 * CUDA >= 7.0 (CUDA 7.5 is currently not recommended (see Note 1))
+Note: On Windows, there are compatibility issues to build the GPU part due to conflicts between msvc/nvcc/thrust/eigen/boost.
 
 ### Getting the sources:
+
 ```shell
 $ git clone https://github.com/alicevision/CCTag.git
 ```
@@ -22,7 +25,7 @@ Most of the dependencies can be installed from the common repositories (apt, yum
 - Eigen3 (libeigen3-dev)
 - Boost >= 1.66 ([accumulators, atomic, chrono, core, date-time, exception, filesystem, math, program-options, ptr-container, system, serialization, stacktrace, timer, thread]-dev)
 - OpenCV >= 3.1
-- tbb >= 4.0
+- TBB >= 4.0
 
 On a recent Ubuntu-like distribution (e.g. 14.04), you may want to try to run:
 ```shell
