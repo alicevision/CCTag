@@ -77,6 +77,7 @@ install:
 
 before_script:
   - . ./ci/env.sh
+  - git submodule update --init --recursive
   - export CMAKE_PREFIX_PATH="${DEPS_INSTALL_PATH}"
   - export CTEST_OUTPUT_ON_FAILURE=1
   # patch tbb

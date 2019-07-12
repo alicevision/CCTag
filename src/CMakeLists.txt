@@ -95,7 +95,7 @@ if(CCTAG_WITH_CUDA)
                       ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
 		      ${TBB_INCLUDE_DIRS}
                       "${CMAKE_SOURCE_DIR}/src"
-                      "${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
+                      "${CMAKE_SOURCE_DIR}/3rdparty/NVLabs-cub")
 
   CUDA_ADD_LIBRARY(CCTag ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
 

@@ -1,0 +1,3 @@
+[submodule "3rdparty/NVLabs-cub"]
+	path = 3rdparty/NVLabs-cub
+	url = https://github.com/NVlabs/cub.git
