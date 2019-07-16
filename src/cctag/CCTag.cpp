@@ -38,11 +38,11 @@ namespace optimization = cctag::numerical::optimization;
 
 const boost::array<float, 5> CCTag::_radiusRatiosInit =
 {
-  (29.0 / 9.0),
-  (29.0 / 13.0),
-  (29.0 / 17.0),
-  (29.0 / 21.0),
-  (29.0 / 25.0)
+  (29.0f / 9.0f),
+  (29.0f / 13.0f),
+  (29.0f / 17.0f),
+  (29.0f / 21.0f),
+  (29.0f / 25.0f)
 };
 
 bool CCTag::isEqual(const CCTag& marker) const
@@ -50,12 +50,12 @@ bool CCTag::isEqual(const CCTag& marker) const
   using namespace cctag::numerical::geometry;
   
   Ellipse centerEllipseA = _rescaledOuterEllipse;
-  centerEllipseA.setA( centerEllipseA.b()*0.5 );
-  centerEllipseA.setB( centerEllipseA.b()*0.5 );
+  centerEllipseA.setA( centerEllipseA.b()*0.5f );
+  centerEllipseA.setB( centerEllipseA.b()*0.5f );
   
   Ellipse centerEllipseB = marker.rescaledOuterEllipse();
-  centerEllipseB.setA( centerEllipseB.b()*0.5 );
-  centerEllipseB.setB( centerEllipseB.b()*0.5 );
+  centerEllipseB.setA( centerEllipseB.b()*0.5f );
+  centerEllipseB.setB( centerEllipseB.b()*0.5f );
   
   //bool sameSemiAxis =
   //          ( std::abs( _rescaledOuterEllipse.a()/marker.rescaledOuterEllipse().a() - 1 ) < 0.3 ) &&

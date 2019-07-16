@@ -39,7 +39,7 @@ void pop_sync_and_check_last_error( const char* file, size_t line )
 
 void pop_cuda_checkerror_ifsync( const char* file, size_t line )
 {
-    if( not cuda_only_sync_calls ) return;
+    if( ! cuda_only_sync_calls ) return;
 
     cudaDeviceSynchronize();
     pop_check_last_error( file, line );

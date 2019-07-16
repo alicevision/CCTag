@@ -31,7 +31,7 @@ struct Mgmt
         { }
 
         void log( const char* probename, const btime::time_duration& duration ) {
-            if( not _probe ) _probe = strdup( probename );
+            if( ! _probe ) _probe = strdup( probename );
             _ms_acc( duration.total_milliseconds() );
             _us_acc( duration.total_microseconds() );
         }

@@ -45,7 +45,7 @@
 #include <utility>
 #include <memory>
 #ifdef CCTAG_WITH_CUDA
-#include <cuda_runtime.h> // only for debugging
+#include <cctag/cuda/cctag_cuda_runtime.h> // only for debugging
 #endif // CCTAG_WITH_CUDA
 
 #include <tbb/tbb.h>
@@ -497,7 +497,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
       resSquare /= outerEllipsePoints.size();
 
       numerical::geometry::Ellipse qIn, qOut;
-      computeHull(outerEllipse, 3.6, qIn, qOut);
+      computeHull(outerEllipse, 3.6f, qIn, qOut);
 
       bool isValid = true;
 
@@ -742,7 +742,7 @@ cctag::TagPipe* initCuda( int      pipeId,
 
     cctag::TagPipe* pipe1 = cudaPipelines[pipeId];
 
-    if( not pipe1 ) {
+    if( ! pipe1 ) {
         pipe1 = new cctag::TagPipe( params );
         pipe1->initialize( width, height, durations );
         cudaPipelines[pipeId] = pipe1;
@@ -871,7 +871,7 @@ void cctagDetection(
     {
       CCTagVisualDebug::instance().resetMarkerIndex();
 
-        const int numTags  = markers.size();
+        const std::size_t numTags  = markers.size();
 
 #ifdef CCTAG_WITH_CUDA
         if( pipe1 && numTags > 0 ) {
@@ -880,7 +880,7 @@ void cctagDetection(
 #endif // CCTAG_WITH_CUDA
 
         std::vector<std::vector<cctag::ImageCut> > vSelectedCuts( numTags );
-        int                          detected[ numTags ];
+		std::vector<int> detected(numTags, -1);
         int                          tagIndex = 0;
 
         for( const CCTag& cctag : markers ) {

@@ -39,9 +39,9 @@ void TestRunner::generateReferenceResults(cctag::Parameters parameters)
   size_t i = 1, count = _inputFilePaths.size();
   for (const auto& inputFilePath: _inputFilePaths) {
     std::clog << "Processing file " << i++ << "/" << count << ": " << inputFilePath << std::endl;
-    FileLog fileLog = FileLog::detect(inputFilePath.native(), parameters);
-    auto outputPath = _outputDirPath / inputFilePath.filename().replace_extension(".xml");
-    fileLog.save(outputPath.native());
+    FileLog fileLog = FileLog::detect(inputFilePath.string(), parameters);
+    const auto outputPath = _outputDirPath / inputFilePath.filename().replace_extension(".xml");
+    fileLog.save(outputPath.string());
   }
 }
 
@@ -53,11 +53,11 @@ void TestRunner::generateTestResults()
   if (inputFilePath.extension() == ".xml") {
     std::clog << "Processing file " << i++ << "/" << count << ": " << inputFilePath << std::endl;
     FileLog fileLog;
-    fileLog.load(inputFilePath.native());
+    fileLog.load(inputFilePath.string());
     adjustParameters(fileLog.parameters);
     fileLog = FileLog::detect(fileLog.filename, fileLog.parameters);
     auto outputPath = _outputDirPath / inputFilePath.filename();
-    fileLog.save(outputPath.native());
+    fileLog.save(outputPath.string());
   }
 }
 
@@ -106,8 +106,8 @@ void TestChecker::check(const boost::filesystem::path& testFilePath)
     throw check_error("reference file not found");
 
   FileLog referenceLog, testLog;
-  referenceLog.load(referenceFilePath.native());
-  testLog.load(testFilePath.native());
+  referenceLog.load(referenceFilePath.string());
+  testLog.load(testFilePath.string());
   compare(referenceLog, testLog);
 }
 

@@ -7,11 +7,12 @@
  */
 #pragma once
 
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <assert.h>
 #include <string>
 #include <vector>
-#include <opencv2/core/core.hpp>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/core/cuda_types.hpp>
 
 #include "onoff.h"
 

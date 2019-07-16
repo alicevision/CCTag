@@ -27,7 +27,7 @@
 #include <limits>
 
 #ifdef CCTAG_WITH_CUDA
-#include <cuda_runtime.h> // only for debugging!!!
+#include <cctag/cuda/cctag_cuda_runtime.h> // only for debugging!!!
 #include "cctag/cuda/tag.h"
 #endif
 

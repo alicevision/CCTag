@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <boost/archive/xml_iarchive.hpp>
+#include <boost/filesystem.hpp>
 
 namespace cctag
 {
@@ -20,7 +21,7 @@ Parameters Parameters::Override;
 
 void Parameters::LoadOverride()
 {
-  const char* path = getenv("CCTAG_PARAMETERS_OVERRIDE");
+  const char* path = std::getenv("CCTAG_PARAMETERS_OVERRIDE");
   if (!path) path = "./CCTagParametersOverride.xml";
   std::ifstream ifs(path);
   if (!ifs)
@@ -77,19 +78,18 @@ Parameters::Parameters(std::size_t nCrowns)
 
 void Parameters::setDebugDir( const std::string& debugDir )
 {
-    struct stat st = {0};
 
-    std::string dir = debugDir;
-    char   dirtail = dir[ dir.size()-1 ];
-    if( dirtail != '/' ) {
-        _debugDir = debugDir + "/";
-    } else {
-        _debugDir = debugDir;
-    }
 
-    if (::stat( _debugDir.c_str(), &st) == -1) {
-        ::mkdir( _debugDir.c_str(), 0700);
-    }
+	namespace fs = boost::filesystem;
+	fs::path directory(debugDir);
+	if (fs::exists(directory))
+	{
+		std::cout << "Directory " << debugDir << " already exists.\n";
+	}
+	else
+	{
+		fs::create_directories(directory);
+	}
 }
 
 void Parameters::setUseCuda( bool val )

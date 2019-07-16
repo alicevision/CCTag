@@ -4,13 +4,16 @@
 
 
 Required tools:
-* CMake >= 3.4 to build the code
-* git
+* CMake >= 3.14 to build the code
+* Git
 * C/C++ compiler (gcc >= 4.6 or visual studio or clang)
-For CUDA
-* CUDA 7.0 (CUDA 7.5 is currently not recommended (see Note 1))
+
+Optional tool:
+* CUDA >= 7.0 (CUDA 7.5 is currently not recommended (see Note 1))
+Note: On Windows, there are compatibility issues to build the GPU part due to conflicts between msvc/nvcc/thrust/eigen/boost.
 
 ### Getting the sources:
+
 ```shell
 $ git clone https://github.com/alicevision/CCTag.git
 ```
@@ -20,12 +23,13 @@ $ git clone https://github.com/alicevision/CCTag.git
 Most of the dependencies can be installed from the common repositories (apt, yum etc):
 
 - Eigen3 (libeigen3-dev)
-- Boost >= 1.53 ([core, thread, system, filesystem, serialization, thread, exception, chrono, date-time, program-options, timer]-dev)
+- Boost >= 1.66 ([accumulators, atomic, chrono, core, date-time, exception, filesystem, math, program-options, ptr-container, system, serialization, stacktrace, timer, thread]-dev)
 - OpenCV >= 3.1
+- TBB >= 4.0
 
 On a recent Ubuntu-like distribution (e.g. 14.04), you may want to try to run:
 ```shell
-$ sudo apt-get install g++ git-all libpng12-dev libjpeg-dev libeigen3-dev libboost-atomic-dev libboost-chrono-dev libboost-date-time-dev libboost-dev libboost-program-options-dev libboost-exception-dev libboost-filesystem-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev libboost-timer-dev
+$ sudo apt-get install g++ git-all libpng12-dev libjpeg-dev libeigen3-dev libboost-atomic-dev libboost-chrono-dev libboost-date-time-dev libboost-dev libboost-program-options-dev libboost-exception-dev libboost-filesystem-dev libboost-serialization-dev libboost-system-dev libboost-thread-dev libboost-timer-dev libtbb-dev
 ```
 
 OpenCV need to be compiled separately and installed in some `OPENCV_INSTALL` path. Then, when running cmake you need to provide the path to the location where `OpenCVConfig.cmake` is installed, usually `${OPENCV_INSTALL}/share/share/OpenCV/` (see below).
@@ -41,7 +45,7 @@ You now just need to be in the CCTag folder and run cmake:
 $ mkdir build && cd build
 $ cmake .. -DOpenCV_DIR=${OPENCV_INSTALL}/share/share/OpenCV/
 $ make -j `nproc`
-``` 
+```
 
 If you want to install the library to, say, a CCTAG_INSTALL path, just add `-DCMAKE_INSTALL_PREFIX=$CCTAG_INSTALL` at cmake command line.
 If you want to build CCTag as a shared library: `-DBUILD_SHARED_LIBS=ON`.
@@ -54,7 +58,7 @@ When you install CCTag a file `CCTagConfig.cmake` is installed in `$CCTAG_INSTAL
 In your `CMakeLists.txt` file you can add the dependency in this way:
 
 ```cmake
-# Find the package from the CCTagConfig.cmake 
+# Find the package from the CCTagConfig.cmake
 # in <prefix>/lib/cmake/CCTag/. Under the namespace CCTag::
 # it exposes the target CCTag that allows you to compile
 # and link with the library

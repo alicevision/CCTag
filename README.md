@@ -67,7 +67,7 @@ Lilian Calvet (CPU, lilian.calvet@gmail.com)
 Carsten Griwodz (GPU, griff@simula.no)  
 Stian Vrba (CPU, vrba@mixedrealities.no)  
 Cyril Pichard (pih@mikrosimage.eu)
-
+Simone Gasparini (simone.gasparini@gmail.com)
 
 Acknowledgments
 ---------

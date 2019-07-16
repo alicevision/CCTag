@@ -18,13 +18,11 @@
 
 #include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
+#include <boost/timer/timer.hpp>
 #include <boost/exception/all.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <opencv/cv.h>
@@ -47,7 +45,6 @@
 #define PRINT_TO_CERR
 
 using namespace cctag;
-using boost::timer;
 
 namespace bfs = boost::filesystem;
 
@@ -122,7 +119,7 @@ void detection(std::size_t frameId,
   }
 
   // Process markers detection
-  boost::timer t;
+  boost::timer::cpu_timer t;
 
   CCTagVisualDebug::instance().initBackgroundImage(src);
   CCTagVisualDebug::instance().setImageFileName(debugFileName);
@@ -143,7 +140,7 @@ void detection(std::size_t frameId,
   CCTagVisualDebug::instance().outPutAllSessions();
   CCTagVisualDebug::instance().clearSessions();
 
-  std::cout << "Total time: " << t.elapsed() << std::endl;
+  std::cout << "Total time: " << t.format() << std::endl;
   CCTAG_COUT_NOENDL("Id : ");
 
   std::size_t counter = 0;
@@ -221,7 +218,7 @@ int main(int argc, char** argv)
 #endif
 
   // Check the (optional) parameters path
-  const std::size_t nCrowns = std::atoi(cmdline._nCrowns.c_str());
+  const std::size_t nCrowns = cmdline._nRings;
   cctag::Parameters params(nCrowns);
 
   if(!cmdline._paramsFilename.empty())

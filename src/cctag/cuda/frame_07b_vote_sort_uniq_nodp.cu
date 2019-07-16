@@ -15,7 +15,7 @@
 
 #include "onoff.h"
 
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <limits>
 #include <cub/cub.cuh>
 #include "debug_macros.hpp"
@@ -184,7 +184,7 @@ void Frame::applyVoteUniqNoDP( )
 bool Frame::applyVoteSortUniq( )
 {
     bool success = applyVoteSortNoDP( );
-    if( not success ) return false;
+    if( ! success ) return false;
     applyVoteUniqNoDP( );
     return true;
 }

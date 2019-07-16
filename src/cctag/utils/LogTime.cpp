@@ -17,7 +17,7 @@ bool Mgmt::Measurement::doPrint( ) const
 
 void Mgmt::Measurement::print( std::ostream& ostr ) const
 {
-    if( not _probe ) return;
+    if( ! _probe ) return;
     ostr << _probe << ": "
          << bacc::mean(_ms_acc) << "ms "
          // << bacc::mean(_us_acc) << "us"

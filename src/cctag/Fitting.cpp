@@ -197,7 +197,10 @@ void to_ellipse(const Conic& conic, Ellipse& ellipse)
   float angle = boost::math::constants::pi<float>() - std::atan2(mat_u(0,1), mat_u(1,1));
   
   if (radius(0) <= 0 || radius(1) <= 0)
-      throw std::domain_error("Degenerate ellipse after fitEllipse => line or point.");
+  {
+	  throw std::domain_error("Degenerate ellipse after fitEllipse => line or point.");
+  }
+  
   ellipse.setParameters(Point2d<Eigen::Vector3f>(center(0), center(1)), radius(0), radius(1), angle);
 }
 
@@ -229,7 +232,7 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildren, float
             EdgePoint* pAngle1 = nullptr;
             EdgePoint* pAngle2 = nullptr;
 
-            float min = 1.1;
+            float min = 1.1f;
 
             float distMax = 0.f;
 
@@ -352,8 +355,9 @@ void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cct
   float yC = -0.5f * V(1, 3) / V(3, 3);
   float radius = sqrt(xC*xC + yC*yC - V(2, 3) / V(3, 3));
 
-  if (radius <= 0) {
-      CCTAG_THROW(exception::BadHandle() << exception::dev("Degenerate circle in circleFitting."));
+  if (radius <= .0f) 
+  {
+	  throw std::domain_error("Degenerate circle in circleFitting, radius is negative: " + std::to_string(radius));
   }
 
   e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), radius, radius, 0);

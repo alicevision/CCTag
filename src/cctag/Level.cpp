@@ -83,7 +83,7 @@ void Level::setLevel( const cv::Mat & src,
 void Level::setLevel( cctag::TagPipe*         cuda_pipe,
                       const cctag::Parameters& params )
 {
-    if( not _cuda_allocates ) {
+    if( ! _cuda_allocates ) {
         std::cerr << "This function makes no sense without CUDA in " << __FUNCTION__ << ":" << __LINE__ << std::endl;
         exit( -__LINE__ );
     }

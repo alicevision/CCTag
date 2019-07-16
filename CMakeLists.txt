@@ -1,6 +1,7 @@
-# Version 3,4 is the first that supports separable compilation on Linux.
+# Version 3,. is the first that supports separable compilation on Linux.
 # Windows requires more work, and Mac is probably still hopeless.
-cmake_minimum_required(VERSION 3.4)
+# Version 3.14 is needed for boost-stacktrace
+cmake_minimum_required(VERSION 3.14)
 
 include(ExternalProject)
 
@@ -11,6 +12,7 @@ option(CCTAG_SERIALIZE "Store all the output" OFF)
 option(CCTAG_VISUAL_DEBUG "Enable visual debug" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
 option(CCTAG_WITH_CUDA "Compile the library with CUDA support" ON)
+option(BUILD_APPS "Build the sample applications" ON)
 
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
@@ -25,6 +27,10 @@ if(CCTAG_ENABLE_SIMD_AVX2)
     add_definitions(/arch:AVX2)
   endif()
   message(STATUS "CCTAG: AVX2 optimizations enabled.")
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  add_definitions(/EHsc)  # Enable Exception Handling
 endif()
 
 # load local machine config <hostname>.cmake
@@ -68,15 +74,21 @@ if(APPLE)
 endif(APPLE)
 
 # FIND BOOST
-# TODO: determine minimal version and minimal components
-set(BOOST_REQUIRED_COMPONENTS "date_time;chrono;thread;serialization;system;filesystem;atomic;program_options;timer")
+set(BOOST_REQUIRED_COMPONENTS "atomic;chrono;date_time;filesystem;program_options;serialization;system;thread;timer")
+if(WIN32)
+  set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_windbg")
+else()
+  set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_basic")
+endif()
+
 if(BUILD_TESTS)
   set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};unit_test_framework")
   enable_testing()
   include(BoostTestHelper)
 endif()
 
-find_package(Boost 1.53.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+find_package(Boost 1.66.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+
 
 if(CCTAG_WITH_CUDA)
   message( STATUS "Try finding CUDA" )
@@ -138,18 +150,6 @@ if(CCTAG_WITH_CUDA)
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
-  # Boost >= 1.60.0 and CUDA != 7.5 failed when used with C++11
-  # seen with boost 1.60.0 - 1.62.0 (atm latest) and CUDA 7.0, 8.0 (atm latest)
-  # CUDA 7.5 works without a workaround
-  # from https://github.com/ComputationalRadiationPhysics/picongpu/pull/1603
-  if( (Boost_VERSION GREATER 105999) AND
-      (NOT CUDA_VERSION VERSION_EQUAL 7.5) AND
-      (NOT CMAKE_CXX_STANDARD EQUAL 98) )
-      # Boost Bug https://svn.boost.org/trac/boost/ticket/11897
-      message(STATUS "Boost: Disable template aliases")
-      add_definitions(-DBOOST_NO_CXX11_TEMPLATE_ALIASES)
-  endif()
-
 else(CCTAG_WITH_CUDA)
   message( STATUS "Building without CUDA" )
 endif(CCTAG_WITH_CUDA)
@@ -161,6 +161,8 @@ find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
 find_package(Eigen REQUIRED)
 
 # FIND Intel TBB
+# With MVSC, CMAKE_BUILD_TYPE will always be None, so TBB_USE_DEBUG_BUILD will always be false.
+string(COMPARE EQUAL "${CMAKE_BUILD_TYPE}" Debug TBB_USE_DEBUG_BUILD)
 find_package(TBB 4 REQUIRED)
 
 add_subdirectory(src)

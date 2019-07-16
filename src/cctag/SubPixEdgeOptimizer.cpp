@@ -16,7 +16,6 @@
 #include <newmat.h>
 #endif
 
-#include <boost/numeric/ublas/vector.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/pow.hpp>
 
@@ -40,7 +39,7 @@ void SubPixEdgeOptimizer::initSubPix( int ndim, NEWMAT::ColumnVector& x )
 {
 	if ( ndim != 4 )
 	{
-		BOOST_THROW_EXCEPTION( exception::Bug() << exception::dev() + "Unable to init minimizer!" );
+		throw exception::Bug("Unable to init minimizer!");
 	}
 
 	x(1) = _widthContour;

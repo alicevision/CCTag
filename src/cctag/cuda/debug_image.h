@@ -7,8 +7,13 @@
  */
 #pragma once
 
+#include <cctag/cuda/cctag_cuda_runtime.h>
+
 #include "frame.h"
 #include "triple_point.h"
+
+#include <random>
+
 
 namespace cctag {
 
@@ -75,8 +80,8 @@ public:
             if( it == random_mapping.end() )
             {
                 RandomColor c( 255,
-                               random() % 255,
-                               random() % 255 );
+                               std::rand() % 255,
+                               std::rand() % 255 );
                 it = random_mapping.insert( pair_t( f, c ) ).first;
             }
             return it->second;

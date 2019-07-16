@@ -47,7 +47,7 @@ function(add_boost_test)
     endif()
 
     target_link_libraries(${TEST_EXECUTABLE_NAME}
-            ${param_LINK} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+            ${param_LINK} Boost::unit_test_framework)
 
     # test_case must be always contained in a test_suite
     file(READ "${param_SOURCE}" SOURCE_FILE_CONTENTS)

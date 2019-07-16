@@ -45,10 +45,10 @@ public:
 
 	Point2d& toNonHomogen()
 	{
+		// @TODO make it more robust using fabs < epsilon
 		if( w() == 0 )
 		{
-			BOOST_THROW_EXCEPTION( exception::Bug()
-				<< exception::dev() + "Normalization of an infinite point !" );
+			throw std::invalid_argument("Normalization of an infinite point !");
 		}
 		x() /= w();
 		y() /= w();

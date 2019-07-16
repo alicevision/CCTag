@@ -16,7 +16,7 @@
 #include "onoff.h"
 #ifdef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
 
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <iostream>
 #include <algorithm>
 #include <limits>

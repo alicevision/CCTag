@@ -13,9 +13,9 @@
 // #include <inttypes.h>
 // #include <opencv2/core.hpp>
 
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition.hpp>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 // #include "cctag/cuda/onoff.h"
 // #include "cctag/Params.hpp"
@@ -35,8 +35,8 @@ class TagThreads;
 class TagSemaphore
 {
     int              _sema_val;
-    boost::mutex     _sema_lock;
-    boost::condition _sema_cond;
+    std::unique_lock<std::mutex> _sema_lock;
+    std::condition_variable _sema_cond;
 public:
     TagSemaphore( int init )
         : _sema_val( init )
@@ -56,7 +56,7 @@ public:
     }
 };
 
-class TagThread : public boost::thread
+class TagThread : public std::thread
 {
     TagThreads* _creator;
     TagPipe*    _pipe;

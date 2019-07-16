@@ -50,13 +50,13 @@ Point2d<Eigen::Vector3f> pointOnEllipse( const Ellipse & ellipse, const Point2d<
 
 void points( const Ellipse & ellipse, std::size_t nb, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts )
 {
-	const float step = 2.0 * boost::math::constants::pi<float>() / nb;
+	const float step = 2.0f * boost::math::constants::pi<float>() / nb;
 	points( ellipse, nb, step, 2 * boost::math::constants::pi<float>(), pts );
 }
 
 void points( const Ellipse & ellipse, std::size_t nb, const float phi1, const float phi2, std::vector< cctag::Point2d<Eigen::Vector3f> > & pts )
 {
-	const float step = 2.0 * boost::math::constants::pi<float>() / nb;
+	const float step = 2.0f * boost::math::constants::pi<float>() / nb;
 	pts.reserve( std::size_t( ( phi2 - phi1 ) / step ) + 1 );
 	for( float theta = phi1; theta <= phi2; theta += step )
 	{
@@ -174,19 +174,20 @@ std::vector<float> intersectEllipseWithLine( const numerical::geometry::Ellipse&
 		c = eC(0,0) * pow<2>(y) + 2 * y * eC(0,2) + eC(2,2);
 	}
 
-	const float discriminant = pow<2>(b) / 4.0 - a * c;
+	const float discriminant = pow<2>(b) / 4.0f - a * c;
 
-	if( discriminant > 0 )
+	if( discriminant > 0.f )
 	{
 		// "General case" : 2 intersections x1, x2
 		const float sqrtDiscriminant = std::sqrt( discriminant );
-		res.push_back( ( -b / 2.0 - sqrtDiscriminant ) / a );
-		res.push_back( ( -b / 2.0 + sqrtDiscriminant ) / a );
+		res.push_back( ( -b / 2.0f - sqrtDiscriminant ) / a );
+		res.push_back( ( -b / 2.0f + sqrtDiscriminant ) / a );
 	}
-	else if( discriminant == 0 )
+	//@TODO make it more robust using fabs == epsilon
+	else if( discriminant == 0.f )
 	{
 		// 1 point intersection
-		res.push_back( -b / ( 2.0 * a ) );
+		res.push_back( -b / ( 2.0f * a ) );
 	}
 //	else if ( discriminant < 0 )
 //	{
@@ -264,7 +265,7 @@ std::size_t rasterizeEllipsePerimeter( const Ellipse & ellipse )
 		}
 	}
 
-	return ( diff1 + diff2 ) * 2.0;
+	return ( diff1 + diff2 ) * 2.f;
 }
 
 

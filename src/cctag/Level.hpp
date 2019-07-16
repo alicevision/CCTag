@@ -16,7 +16,7 @@ namespace cctag {
 
 namespace cctag {
 
-class Parameters;
+struct Parameters;
 
 class Level
 {

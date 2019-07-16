@@ -17,7 +17,7 @@
 #include <iostream>
 #include <algorithm>
 #include <limits>
-#include <cuda_runtime.h>
+#include <cctag/cuda/cctag_cuda_runtime.h>
 #include <stdio.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"

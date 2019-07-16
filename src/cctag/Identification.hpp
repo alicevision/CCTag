@@ -374,11 +374,11 @@ inline float dis( const float sig, const float val, const float mub, const float
 {
   if ( val == -1 )
   {
-          return boost::math::pow<2>( std::max( sig - mub, 0.f ) ) / ( 2.0 * varSubS );
+          return boost::math::pow<2>( std::max( sig - mub, 0.f ) ) / ( 2.0f * varSubS );
   }
   else
   {
-          return boost::math::pow<2>( std::min( sig - muw, 0.f ) ) / ( 2.0 * varSubS );
+          return boost::math::pow<2>( std::min( sig - muw, 0.f ) ) / ( 2.0f * varSubS );
   }
 }
 

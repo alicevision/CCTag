@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.14)
 
 include(ExternalProject)
 
@@ -6,7 +6,7 @@ project(CCTagApplications LANGUAGES C CXX)
 
 set(CMAKE_BUILD_TYPE Release)
 
-#Find needed dependencies 
+#Find needed dependencies
 # CCTAG
 if(TARGET CCTag)
   add_library(CCTag::CCTag ALIAS CCTag)
@@ -20,11 +20,17 @@ else()
 endif()
 
 # BOOST
-if(NOT Boost_FOUND)
-find_package(Boost 1.53.0 REQUIRED
-    COMPONENTS date_time chrono thread serialization system filesystem atomic program_options timer QUIET)
+if(NOT TARGET Boost::boost)
+  set(BOOST_REQUIRED_COMPONENTS "date_time;chrono;thread;serialization;system;filesystem;atomic;program_options;timer")
+  if(WIN32)
+    set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_windbg")
+  else()
+    set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_basic")
+  endif()
+
+  find_package(Boost 1.66.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS} QUIET)
 else()
-message(STATUS "BOOST already there")
+  message(STATUS "BOOST already there")
 endif()
 
 # OPENCV
@@ -50,27 +56,45 @@ set(CCTagRegression_cpp
 set(CCTagSimulation_cpp
   ./simulation/main.cpp)
 
-get_target_property(testprop CCTag::CCTag INTERFACE_INCLUDE_DIRECTORIES )
+get_target_property(testprop CCTag::CCTag INTERFACE_INCLUDE_DIRECTORIES)
 
 set(CCTagDetect_cpp ./detection/main.cpp ./detection/CmdLine.cpp)
 add_executable(detection ${CCTagDetect_cpp})
 
 find_package(DevIL COMPONENTS IL ILU) # yields IL_FOUND, IL_LIBRARIES, IL_INCLUDE_DIR
 
+target_include_directories(detection PUBLIC
+  ${OpenCV_INCLUDE_DIRS}
+  ${TBB_INCLUDE_DIRS}
+  )
+target_link_libraries(detection PUBLIC
+  CCTag::CCTag
+  ${TBB_tbb_LIBRARY_RELEASE}
+  ${OpenCV_LIBS}
+  Boost::filesystem Boost::program_options Boost::timer
+  )
+
 if(IL_FOUND OR DevIL_FOUND)
   message(STATUS "DevIL found")
   target_compile_options(detection PRIVATE -DUSE_DEVIL)
-  target_include_directories(detection PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${IL_INCLUDE_DIR})
-  target_link_libraries(detection PUBLIC CCTag::CCTag ${TBB_tbb_LIBRARY_RELEASE} ${OpenCV_LIBS} ${Boost_LIBRARIES}  ${IL_LIBRARIES} ${ILU_LIBRARIES})
+  target_include_directories(detection PUBLIC
+    ${IL_INCLUDE_DIR}
+    )
+  target_link_libraries(detection PUBLIC
+    ${IL_LIBRARIES}
+    ${ILU_LIBRARIES}
+    )
 else()
   message(STATUS "DevIL not found")
-  target_include_directories(detection PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS})
-  target_link_libraries(detection PUBLIC CCTag::CCTag ${TBB_tbb_LIBRARY_RELEASE} ${OpenCV_LIBS} ${Boost_LIBRARIES})
 endif()
 
 add_executable(regression ${CCTagRegression_cpp})
-target_include_directories(regression PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(regression PUBLIC CCTag::CCTag ${OpenCV_LIBS} ${Boost_LIBRARIES} ) 
+target_include_directories(regression PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_link_libraries(regression PUBLIC
+  CCTag::CCTag
+  ${OpenCV_LIBS}
+  Boost::program_options Boost::serialization
+  )
 
 add_executable(simulation ${CCTagSimulation_cpp})
 target_include_directories(simulation PUBLIC ${OpenCV_INCLUDE_DIRS})

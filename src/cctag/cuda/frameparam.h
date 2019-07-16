@@ -6,9 +6,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #pragma once
- 
+
+#include <cctag/cuda/cctag_cuda_runtime.h>
+
 #include "cctag/Params.hpp"
-#include <cuda_runtime.h>
 
 namespace cctag {
 

@@ -17,7 +17,7 @@ namespace cctag
 using namespace std;
 
 TagThread::TagThread( TagThreads* creator, TagPipe* pipe, int layer )
-    : boost::thread( &TagThread::call, this )
+    : std::thread( &TagThread::call, this )
     , _creator( creator )
     , _pipe( pipe )
     , _my_layer( layer )

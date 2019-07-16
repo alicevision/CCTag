@@ -16,16 +16,6 @@ addons:
       - libtiff4-dev
       - libtbb-dev
       - libatlas-base-dev
-      - libboost-atomic1.55-dev
-      - libboost-chrono1.55-dev
-      - libboost-filesystem1.55-dev
-      - libboost-date-time1.55-dev
-      - libboost-program-options1.55-dev
-      - libboost-serialization1.55-dev
-      - libboost-system1.55-dev
-      - libboost-test1.55-dev
-      - libboost-thread1.55-dev
-      - libboost-timer1.55-dev
 
 matrix:
   include:
@@ -50,6 +40,7 @@ env:
     - BUILD_TYPE="RELEASE"
     - BUILD_SYSTEM="`uname -s`"
     - BUILD_PROCESSOR="`uname -p`"
+    - DEPS_INSTALL_PATH=${TRAVIS_BUILD_DIR}/../AliceVisionDependencies/install-deps
     - CCTAG_SOURCE=${TRAVIS_BUILD_DIR}
     - CCTAG_BUILD=${TRAVIS_BUILD_DIR}/build
     - CCTAG_INSTALL=${CCTAG_BUILD}/install
@@ -57,45 +48,17 @@ env:
     - CCTAG_INSTALL_VARIANT=${CCTAG_BUILD_VARIANT}/install
     - CCTAG_SOURCE_APP=$CCTAG_SOURCE/src/applications
     - CCTAG_BUILD_APP=${CCTAG_SOURCE_APP}/build
-    # OPENCV
-    - OPENCV_ROOT=${HOME}/opencv3
-    - OPENCV_SOURCE=${OPENCV_ROOT}/source
-    - OPENCV_CONTRIB=${OPENCV_ROOT}/contrib
-    - OPENCV_BUILD=${OPENCV_ROOT}/build
-    - OPENCV_INSTALL=${OPENCV_ROOT}/install
-    # CMAKE
-    - CMAKE_URL="https://cmake.org/files/v3.6/cmake-3.6.1-Linux-x86_64.tar.gz"
-    - CMAKE_ROOT=${HOME}/cmake
-    - CMAKE_SOURCE=${CMAKE_ROOT}/source
-    - CMAKE_INSTALL=${CMAKE_ROOT}/install
 
 before_install:
+ - date -u
+ - uname -a
+ - if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then
+     lsb_release -a;
+   elif [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
+     sw_vers -productVersion;
+   fi
+ - ccache -s
  - gem install coveralls-lcov
- # OPENCV
- - >
-    if [ "$(ls -A $OPENCV_INSTALL)" ]; then
-      echo "OpenCV found in cache.";
-    else
-      mkdir --parent $OPENCV_SOURCE
-      mkdir --parent $OPENCV_BUILD
-      mkdir --parent $OPENCV_INSTALL
-      git clone --recursive --branch 3.0.0 --depth 1 https://github.com/Itseez/opencv.git $OPENCV_SOURCE;
-    fi
- # CMAKE most recent version
- - >
-    if [ "$(ls -A ${CMAKE_INSTALL})" ]; then
-      echo "CMake found in cache.";
-      ls -A ${CMAKE_INSTALL}
-      export PATH=${CMAKE_INSTALL}/bin:${PATH};
-      cmake --version
-    else
-      mkdir --parent ${CMAKE_SOURCE}
-      mkdir --parent ${CMAKE_INSTALL}
-      ls -A ${CMAKE_INSTALL}
-      travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${CMAKE_INSTALL}
-      export PATH=${CMAKE_INSTALL}/bin:${PATH};
-      cmake --version
-    fi
 
 install:
   # CUDA (only if needed)
@@ -109,23 +72,13 @@ install:
        sudo apt-get install -y --no-install-recommends  cuda-core-$CUDA_PKG_VERSION  cuda-cudart-dev-$CUDA_PKG_VERSION  cuda-cublas-dev-$CUDA_PKG_VERSION cuda-curand-dev-$CUDA_PKG_VERSION
        sudo ln -s /usr/local/cuda-${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} /usr/local/cuda
      fi
-  # OPENCV
-  - >
-     if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then
-       cd $OPENCV_BUILD
-       cmake \
-         -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
-         -DCMAKE_C_COMPILER=$C_COMPILER \
-         -DCMAKE_BUILD_TYPE=Release \
-         -DCMAKE_INSTALL_PREFIX=$OPENCV_INSTALL \
-         -DWITH_CUDA=OFF \
-         -DBUILD_opencv_ts=0 \
-         $OPENCV_SOURCE;
-       make -j 2 > null;
-       make install;
-     fi
+  - ./ci/install-cmake.sh
+  - ./ci/install-dependencies.sh
 
 before_script:
+  - . ./ci/env.sh
+  - export CMAKE_PREFIX_PATH="${DEPS_INSTALL_PATH}"
+  - export CTEST_OUTPUT_ON_FAILURE=1
   # patch tbb
   # https://software.intel.com/en-us/forums/intel-threading-building-blocks/topic/431422
   - sudo sed -i '345s/.*/\#if \(__GNUC__==4 \&\& __GNUC_MINOR__>=4 \&\& __GXX_EXPERIMENTAL_CXX0X__\) || __clang_major__ >= 3/' /usr/include/tbb/pipeline.h
@@ -140,7 +93,9 @@ before_script:
        -DCMAKE_INSTALL_PREFIX:PATH=$CCTAG_INSTALL \
        -DCCTAG_WITH_CUDA:BOOL=$CCTAG_WITH_CUDA \
        -DCMAKE_BUILD_TYPE:BOOL=$BUILD_TYPE \
-       -DOpenCV_DIR:PATH=$OPENCV_INSTALL/share/OpenCV \
+       -DBUILD_SHARED_LIBS:BOOL=ON \
+       -DOpenCV_DIR:PATH="${DEPS_INSTALL_PATH}/share/OpenCV" \
+       -DEIGEN_INCLUDE_DIR_HINTS="${DEPS_INSTALL_PATH}" \
        . $CCTAG_SOURCE
 
 script:
@@ -155,6 +110,7 @@ script:
   - >
      cmake -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
        -DCMAKE_C_COMPILER=$C_COMPILER \
+       -DBUILD_SHARED_LIBS:BOOL=ON \
        -DCCTag_DIR:PATH=/$CCTAG_INSTALL/lib/cmake/CCTag/ \
        -DOpenCV_DIR:PATH=$OPENCV_INSTALL/share/OpenCV \
        -DCMAKE_INSTALL_PREFIX:PATH=`pwd`/install \
@@ -170,6 +126,7 @@ script:
         cmake \
          -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
          -DCMAKE_C_COMPILER=$C_COMPILER \
+         -DBUILD_SHARED_LIBS:BOOL=ON \
          -DCMAKE_INSTALL_PREFIX:PATH=$CCTAG_INSTALL_VARIANT \
          -DCCTAG_WITH_CUDA:BOOL=$CCTAG_WITH_CUDA \
          -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
@@ -190,7 +147,3 @@ before_cache:
 
 cache:
   ccache: true
-
-  directories:
-    - $OPENCV_INSTALL
-    - $CMAKE_INSTALL

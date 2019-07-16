@@ -18,7 +18,7 @@
 
 namespace cctag {
 
-class Parameters; // forward declaration
+struct Parameters; // forward declaration
 
 class ImagePyramid
 {

@@ -1,24 +1,22 @@
 /*
  * PCG Random Number Generation for C++
  *
- * Copyright 2014 Melissa O'Neill <oneill@pcg-random.org>
+ * Copyright 2014-2017 Melissa O'Neill <oneill@pcg-random.org>,
+ *                     and the PCG Project contributors.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * SPDX-License-Identifier: (Apache-2.0 OR MIT)
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (provided in
+ * LICENSE-APACHE.txt and at http://www.apache.org/licenses/LICENSE-2.0)
+ * or under the MIT license (provided in LICENSE-MIT.txt and at
+ * http://opensource.org/licenses/MIT), at your option. This file may not
+ * be copied, modified, or distributed except according to those terms.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Distributed on an "AS IS" BASIS, WITHOUT WARRANTY OF ANY KIND, either
+ * express or implied.  See your chosen license for details.
  *
  * For additional information about the PCG random number generation scheme,
- * including its license and other licensing options, visit
- *
- *     http://www.pcg-random.org
+ * visit http://www.pcg-random.org/.
  */
 
 /*
@@ -46,6 +44,10 @@
 #include <initializer_list>
 #include <type_traits>
 
+#if defined(_MSC_VER)  // Use MSVC++ intrinsics
+#include <intrin.h>
+#endif
+
 /*
  * We want to lay the type out the same way that a native type would be laid
  * out, which means we must know the machine's endian, at compile time.
@@ -65,7 +67,7 @@
         #define PCG_LITTLE_ENDIAN 1
     #elif __BIG_ENDIAN__ || _BIG_ENDIAN
         #define PCG_LITTLE_ENDIAN 0
-    #elif __x86_64 || __x86_64__ || __i386 || __i386__
+    #elif __x86_64 || __x86_64__ || _M_X64 || __i386 || __i386__ || _M_IX86
         #define PCG_LITTLE_ENDIAN 1
     #elif __powerpc__ || __POWERPC__ || __ppc__ || __PPC__ \
           || __m68k__ || __mc68000__
@@ -94,7 +96,7 @@ namespace pcg_extras {
  *      * trailingzeros         number of trailing zero bits
  */
 
-#ifdef __GNUC__         // Any GNU-compatible compiler supporting C++11 has
+#if defined(__GNUC__)   // Any GNU-compatible compiler supporting C++11 has
                         // some useful intrinsics we can use.
 
 inline bitcount_t flog2(uint32_t v)
@@ -126,6 +128,55 @@ inline bitcount_t trailingzeros(uint64_t v)
     return __builtin_ctzll(v);
 #else
     #error Cannot find a function for uint64_t
+#endif
+}
+
+#elif defined(_MSC_VER)  // Use MSVC++ intrinsics
+
+#pragma intrinsic(_BitScanReverse, _BitScanForward)
+#if defined(_M_X64) || defined(_M_ARM) || defined(_M_ARM64)
+#pragma intrinsic(_BitScanReverse64, _BitScanForward64)
+#endif
+
+inline bitcount_t flog2(uint32_t v)
+{
+    unsigned long i;
+    _BitScanReverse(&i, v);
+    return i;
+}
+
+inline bitcount_t trailingzeros(uint32_t v)
+{
+    unsigned long i;
+    _BitScanForward(&i, v);
+    return i;
+}
+
+inline bitcount_t flog2(uint64_t v)
+{
+#if defined(_M_X64) || defined(_M_ARM) || defined(_M_ARM64)
+    unsigned long i;
+    _BitScanReverse64(&i, v);
+    return i;
+#else
+    // 32-bit x86
+    uint32_t high = v >> 32;
+    uint32_t low  = uint32_t(v);
+    return high ? 32+flog2(high) : flog2(low);
+#endif
+}
+
+inline bitcount_t trailingzeros(uint64_t v)
+{
+#if defined(_M_X64) || defined(_M_ARM) || defined(_M_ARM64)
+    unsigned long i;
+    _BitScanForward64(&i, v);
+    return i;
+#else
+    // 32-bit x86
+    uint32_t high = v >> 32;
+    uint32_t low  = uint32_t(v);
+    return low ? trailingzeros(low) : trailingzeros(high)+32;
 #endif
 }
 
@@ -257,7 +308,7 @@ public:
              typename std::enable_if<(std::is_integral<Integral>::value
                                       && sizeof(Integral) <= sizeof(UIntX2))
                                     >::type* = nullptr>
-    explicit constexpr uint_x4(Integral v01)
+    constexpr uint_x4(Integral v01)
 #if PCG_LITTLE_ENDIAN
        : d{UIntX2(v01),0UL}
 #else

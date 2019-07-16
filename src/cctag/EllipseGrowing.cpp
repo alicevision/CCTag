@@ -26,8 +26,6 @@
 #include <boost/foreach.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/mpl/bool.hpp>
-#include <boost/multi_array.hpp>
-#include <boost/multi_array/subarray.hpp>
 #include <boost/assert.hpp>
 
 #include <cstdio>
@@ -241,10 +239,10 @@ numerical::geometry::Circle computeCircleFromOuterEllipsePoints(const std::vecto
   // find i such as d(filteredChildren[i], l) is maximum.
   Eigen::Matrix2f mL;
 
-  mL(0, 0) = p1.x();
-  mL(0, 1) = p1.y();
-  mL(1, 0) = p2.x();
-  mL(1, 1) = p2.y();
+  mL(0, 0) = static_cast<float>(p1.x());
+  mL(0, 1) = static_cast<float>(p1.y());
+  mL(1, 0) = static_cast<float>(p2.x());
+  mL(1, 1) = static_cast<float>(p2.y());
 
   Eigen::Vector2f minones(2);
   minones(0) = -1;

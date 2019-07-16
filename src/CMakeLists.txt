@@ -32,7 +32,6 @@ set( CCTag_cpp
         ./cctag/geometry/Distance.cpp
         ./cctag/geometry/Ellipse.cpp
         ./cctag/geometry/EllipseFromPoints.cpp
-        ./cctag/utils/Backtrace.cpp
         ./cctag/utils/FileDebug.cpp
         ./cctag/utils/LogTime.cpp
         ./cctag/utils/Talk.cpp
@@ -40,7 +39,7 @@ set( CCTag_cpp
 
 if(CCTAG_WITH_CUDA)
 
-  set(CUDA_cpp 
+  set(CUDA_cpp
         ./cctag/cuda/debug_macros.cpp
         ./cctag/cuda/device_prop.cpp)
 
@@ -87,37 +86,42 @@ if(CCTAG_WITH_CUDA)
   # set(BUILD_SHARED_LIBS ON)
 
   set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DCUB_CDP")
- 
+
   # this must go before CUDA_ADD_LIBRARY otherwise we won't be able to add it
   # after
   # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA.cmake#L147
-  # INCLUDE_DIRECTORIES -- "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>" 
+  # INCLUDE_DIRECTORIES -- "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
   include_directories(${CMAKE_CURRENT_LIST_DIR}
-                      ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
+                      ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
 		      ${TBB_INCLUDE_DIRS}
                       "${CMAKE_SOURCE_DIR}/src"
                       "${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
- 
+
   CUDA_ADD_LIBRARY(CCTag ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
 
   # since we used CUDA_ADD_LIBRARY we cannot use PUBLIC or PRIVATE here
-  target_link_libraries(CCTag 
-                       ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} 
-                       ${TBB_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY} pthread dl)
+  target_link_libraries(CCTag
+                       ${OpenCV_LIBS}
+                       Boost::date_time Boost::chrono Boost::thread Boost::serialization Boost::system Boost::filesystem Boost::atomic Boost::program_options Boost::timer
+                       ${Eigen_LIBRARIES}
+                       ${TBB_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
 
-  target_compile_definitions(CCTag 
-                         PUBLIC ${Boost_DEFINITIONS} 
+  if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+   target_link_libraries(CCTag pthread dl)
+  endif()
+
+  target_compile_definitions(CCTag
                          PUBLIC -DCCTAG_WITH_CUDA -DCUB_CDP
-                         PRIVATE ${TBB_DEFINITIONS}) 
+                         PRIVATE ${TBB_DEFINITIONS})
 
   # This is nececessary for the CCTagConfig.cmake to correctly export the
   # includes, always because we used CUDA_ADD_LIBRARY
-  set_target_properties(CCTag PROPERTIES INTERFACE_INCLUDE_DIRECTORIES 
+  set_target_properties(CCTag PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
        "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>;${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${Eigen_INCLUDE_DIR};${OpenCV_INCLUDE_DIRS}")
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
-else(CCTAG_WITH_CUDA)
+else() # without CUDA
 
   set(CUDA_cpp "")
 
@@ -125,24 +129,35 @@ else(CCTAG_WITH_CUDA)
   add_library(CCTag ${CCTag_cpp})
   set_target_properties(CCTag PROPERTIES VERSION ${PROJECT_VERSION})
 
-  target_include_directories(CCTag 
+  target_include_directories(CCTag
                            PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
                                   "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>"
                            PUBLIC ${Boost_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS}
-                           PRIVATE ${TBB_INCLUDE_DIRS}) 
+                           PRIVATE ${TBB_INCLUDE_DIRS})
 
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
-  target_compile_definitions(CCTag 
-                             PUBLIC ${Boost_DEFINITIONS} 
-                             PRIVATE ${TBB_DEFINITIONS}) 
-    
-  target_link_libraries(CCTag 
-                        PUBLIC ${OpenCV_LIBS} ${Boost_LIBRARIES} ${Eigen_LIBRARIES} 
-                        PRIVATE ${TBB_LIBRARIES} pthread dl)
+  target_compile_definitions(CCTag
+                             PRIVATE ${TBB_DEFINITIONS})
 
-endif(CCTAG_WITH_CUDA)
+  target_link_libraries(CCTag
+                        PUBLIC
+                          ${OpenCV_LIBS}
+                          ${Eigen_LIBRARIES}
+                          Boost::atomic Boost::chrono Boost::date_time Boost::filesystem Boost::serialization Boost::system Boost::thread Boost::timer
+                        PRIVATE
+                          ${TBB_LIBRARIES})
+
+  if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    target_link_libraries(CCTag PRIVATE pthread dl)
+  endif()
+
+endif()
+
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+  target_compile_definitions(CCTag PUBLIC "-DNOMINMAX")
+endif()
 
 # enable serialization
 if(CCTAG_SERIALIZE)
@@ -246,7 +261,9 @@ install(EXPORT "${targets_export_name}"
         NAMESPACE "${namespace}"
         DESTINATION "${config_install_dir}")
 
-add_subdirectory(applications)
+if(BUILD_APPS)
+  add_subdirectory(applications)
+endif()
 
 if(BUILD_TESTS)
     add_subdirectory(cctag/test)
