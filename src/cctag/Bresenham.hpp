@@ -10,9 +10,9 @@
 
 #include <cctag/geometry/Point.hpp>
 
-#include <cstddef>
+#include <opencv2/core/mat.hpp>
 
-#include <opencv/cv.h>
+#include <cstddef>
 
 #include "Types.hpp"
 

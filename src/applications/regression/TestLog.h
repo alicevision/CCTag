@@ -8,7 +8,7 @@
 #pragma once
 
 #include <vector>
-#include <opencv/cv.h>
+#include <opencv2/core/mat.hpp>
 #include <boost/serialization/nvp.hpp>
 #include "cctag/Detection.hpp"
 #include "cctag/Params.hpp"

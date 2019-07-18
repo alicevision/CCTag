@@ -12,6 +12,7 @@
 #ifdef CCTAG_WITH_CUDA
 #include "cctag/cuda/tag.h"
 #endif
+#include <opencv2/imgproc/types_c.h>
 
 namespace cctag {
 
