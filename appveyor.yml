@@ -31,6 +31,7 @@ install:
           boost-serialization
           boost-spirit
           boost-static-assert
+          boost-stacktrace
           boost-test
           boost-thread
           boost-throw-exception
