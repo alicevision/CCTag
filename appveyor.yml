@@ -47,7 +47,7 @@ install:
 before_build:
     - md build
     - cd build
-    - cmake -G "Visual Studio 14 2015" -A x64 -T v140,host=x64 -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_APPS:BOOL=ON -DWITH_CUDA:BOOL=OFF -DCCTAG_SERIALIZE:BOOL=ON -DVISUAL_DEBUG:BOOL=ON ..
+    - cmake -G "Visual Studio 14 2015" -A x64 -T v140,host=x64 -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DBUILD_APPS:BOOL=ON -DCCTAG_WITH_CUDA:BOOL=OFF -DCCTAG_SERIALIZE:BOOL=ON -DCCTAG_VISUAL_DEBUG:BOOL=ON ..
     - ls -l
 
 build:
