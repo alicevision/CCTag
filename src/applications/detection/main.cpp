@@ -25,10 +25,10 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
-#include <opencv/cv.h>
 #include <opencv2/videoio.hpp>
 #include <opencv2/core/core.hpp>
-#include "opencv2/opencv.hpp"
+#include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/types_c.h>
 
 #ifdef USE_DEVIL
 #include <devil_cpp_wrapper.hpp>

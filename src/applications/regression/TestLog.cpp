@@ -14,7 +14,9 @@
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 #include <opencv2/videoio.hpp>
+#include <opencv2/videoio/videoio_c.h>
 #include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/types_c.h>
 #include "TestLog.h"
 
 using namespace cctag;

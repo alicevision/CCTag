@@ -1,7 +1,7 @@
 # Version 3,. is the first that supports separable compilation on Linux.
 # Windows requires more work, and Mac is probably still hopeless.
-# Version 3.14 is needed for boost-stacktrace
-cmake_minimum_required(VERSION 3.14)
+# Version 3.13 is needed for boost-stacktrace
+cmake_minimum_required(VERSION 3.13)
 
 include(ExternalProject)
 

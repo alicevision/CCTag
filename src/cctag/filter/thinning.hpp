@@ -8,8 +8,7 @@
 #ifndef VISION_MARKER_THINNING_HPP_
 #define VISION_MARKER_THINNING_HPP_
 
-#include <opencv/cv.h>
-#include <opencv2/core/types_c.h>
+#include <opencv2/core.hpp>
 #include <boost/timer/timer.hpp>
 #include <iostream>
 
