@@ -19,11 +19,11 @@ using namespace std;
 __global__
 void debug_point_is_on_edge( FrameMetaPtr         meta,
                              cv::cuda::PtrStepSzb edge_img,
-                             DevEdgeList<int2>    all_edgecoords )
+                             DevEdgeList<short2>  all_edgecoords )
 {
     int offset = blockIdx.x * 32 + threadIdx.x;
     if( offset >= meta.list_size_all_edgecoords() ) return;
-    int2& coord = all_edgecoords.ptr[offset];
+    short2& coord = all_edgecoords.ptr[offset];
     assert( coord.x > 0 );
     assert( coord.y > 0 );
     assert( coord.x < edge_img.cols );
@@ -34,7 +34,7 @@ void debug_point_is_on_edge( FrameMetaPtr         meta,
 __host__
 void debugPointIsOnEdge( FrameMetaPtr&               meta,
                          const cv::cuda::PtrStepSzb& edge_img,
-                         const EdgeList<int2>&       all_edgecoords,
+                         const EdgeList<short2>&     all_edgecoords,
                          cudaStream_t                stream )
 {
     // cerr << "  Enter " << __FUNCTION__ << endl;
