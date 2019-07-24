@@ -32,6 +32,7 @@ namespace cctag
 __host__
 bool Frame::applyVoteSortUniq( )
 {
+#if 0
     _inner_points.copySizeFromDevice( _stream, EdgeListWait );
 
     POP_CUDA_SYNC( _stream );
@@ -56,6 +57,35 @@ bool Frame::applyVoteSortUniq( )
     _meta.toDevice( List_size_interm_inner_points, sz, _stream );
 
     POP_CHK_CALL_IFSYNC;
+#else
+    _inner_points.copySizeFromDevice( _stream, EdgeListWait );
+
+    POP_CUDA_SYNC( _stream );
+
+    if( _inner_points.host.size <= 0 ) {
+        return false;
+    }
+
+    int sz = _inner_points.host.size;
+
+    thrust::device_ptr<int> input_begin = thrust::device_pointer_cast( _inner_points.dev.ptr );
+    thrust::device_ptr<int> input_end   = input_begin + sz;
+    thrust::device_ptr<int> output_begin = thrust::device_pointer_cast( _interm_inner_points.dev.ptr );
+    thrust::device_ptr<int> output_end;
+
+    thrust::host_vector<int> list_on_host(sz);
+    thrust::copy( input_begin, input_end, list_on_host.begin() );
+    thrust::sort( list_on_host.begin(), list_on_host.end() );
+    thrust::copy( list_on_host.begin(), list_on_host.end(), input_begin );
+
+    output_end = thrust::unique_copy( input_begin, input_end, output_begin );
+
+    sz = output_end - output_begin;
+
+    _meta.toDevice( List_size_interm_inner_points, sz, _stream );
+
+    POP_CHK_CALL_IFSYNC;
+#endif
 
     return true;
 }
