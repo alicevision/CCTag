@@ -67,19 +67,19 @@ void count_winners( FrameMetaPtr&                   meta,
     for( int point=0; point<CONC_POINTS; point++ ) {
         if( inner_point[point] == 0 ) continue;
 
-        winner_size[point] += __shfl_down( winner_size[point], 16 );
-        winner_size[point] += __shfl_down( winner_size[point],  8 );
-        winner_size[point] += __shfl_down( winner_size[point],  4 );
-        winner_size[point] += __shfl_down( winner_size[point],  2 );
-        winner_size[point] += __shfl_down( winner_size[point],  1 );
-        winner_size[point]  = __shfl     ( winner_size[point],  0 );
+        winner_size[point] += cctag::shuffle_down( winner_size[point], 16 );
+        winner_size[point] += cctag::shuffle_down( winner_size[point],  8 );
+        winner_size[point] += cctag::shuffle_down( winner_size[point],  4 );
+        winner_size[point] += cctag::shuffle_down( winner_size[point],  2 );
+        winner_size[point] += cctag::shuffle_down( winner_size[point],  1 );
+        winner_size[point]  = cctag::shuffle     ( winner_size[point],  0 );
 
-        flow_length[point] += __shfl_down( flow_length[point], 16 );
-        flow_length[point] += __shfl_down( flow_length[point],  8 );
-        flow_length[point] += __shfl_down( flow_length[point],  4 );
-        flow_length[point] += __shfl_down( flow_length[point],  2 );
-        flow_length[point] += __shfl_down( flow_length[point],  1 );
-        flow_length[point]  = __shfl     ( flow_length[point],  0 );
+        flow_length[point] += cctag::shuffle_down( flow_length[point], 16 );
+        flow_length[point] += cctag::shuffle_down( flow_length[point],  8 );
+        flow_length[point] += cctag::shuffle_down( flow_length[point],  4 );
+        flow_length[point] += cctag::shuffle_down( flow_length[point],  2 );
+        flow_length[point] += cctag::shuffle_down( flow_length[point],  1 );
+        flow_length[point]  = cctag::shuffle     ( flow_length[point],  0 );
     }
 
     __shared__ int   winner_array[CONC_POINTS][32];
@@ -102,17 +102,17 @@ void count_winners( FrameMetaPtr&                   meta,
         winner_size[point] = winner_array[point][threadIdx.x];
         flow_length[point] = length_array[point][threadIdx.x];
 
-        winner_size[point] += __shfl_down( winner_size[point], 16 );
-        winner_size[point] += __shfl_down( winner_size[point],  8 );
-        winner_size[point] += __shfl_down( winner_size[point],  4 );
-        winner_size[point] += __shfl_down( winner_size[point],  2 );
-        winner_size[point] += __shfl_down( winner_size[point],  1 );
+        winner_size[point] += cctag::shuffle_down( winner_size[point], 16 );
+        winner_size[point] += cctag::shuffle_down( winner_size[point],  8 );
+        winner_size[point] += cctag::shuffle_down( winner_size[point],  4 );
+        winner_size[point] += cctag::shuffle_down( winner_size[point],  2 );
+        winner_size[point] += cctag::shuffle_down( winner_size[point],  1 );
 
-        flow_length[point] += __shfl_down( flow_length[point], 16 );
-        flow_length[point] += __shfl_down( flow_length[point],  8 );
-        flow_length[point] += __shfl_down( flow_length[point],  4 );
-        flow_length[point] += __shfl_down( flow_length[point],  2 );
-        flow_length[point] += __shfl_down( flow_length[point],  1 );
+        flow_length[point] += cctag::shuffle_down( flow_length[point], 16 );
+        flow_length[point] += cctag::shuffle_down( flow_length[point],  8 );
+        flow_length[point] += cctag::shuffle_down( flow_length[point],  4 );
+        flow_length[point] += cctag::shuffle_down( flow_length[point],  2 );
+        flow_length[point] += cctag::shuffle_down( flow_length[point],  1 );
 
         if( threadIdx.x == 0 ) {
             inner_point[point]->_winnerSize = winner_size[point];
