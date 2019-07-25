@@ -111,6 +111,8 @@ if(CCTAG_WITH_CUDA)
 
   find_package(CUDA 7.0 REQUIRED)
 
+  include(CheckNvccCompilerFlag)
+
   set(CUDA_SEPARABLE_COMPILATION ON)
 
   # The following if should not be necessary, but apparently there is a bug in FindCUDA.cmake that
@@ -144,6 +146,16 @@ if(CCTAG_WITH_CUDA)
 
   if(CCTAG_USE_POSITION_INDEPENDENT_CODE)
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xcompiler;-fPIC")
+  endif()
+
+  CCTAG_CHECK_NVCC_COMPILER_FLAG("--relaxed-constexpr" HAS_NVCC_RELAXED_CONSTEXPR)
+  if(HAS_NVCC_RELAXED_CONSTEXPR)
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--relaxed-constexpr")
+  else()
+    CCTAG_CHECK_NVCC_COMPILER_FLAG("--expt-relaxed-constexpr" HAS_NVCC_EXPT_RELAXED_CONSTEXPR)
+    if(HAS_NVCC_EXPT_RELAXED_CONSTEXPR)
+      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--expt-relaxed-constexpr")
+    endif()
   endif()
 
   # MORE NOISE:

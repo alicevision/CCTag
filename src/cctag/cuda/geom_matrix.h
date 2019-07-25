@@ -19,7 +19,9 @@ class matrix3x3
     float val[3][3];
 
 public:
-    __host__ __device__
+    // Since CUDA 9.0, specifying __host__ and __device__ leads to
+    // warnings. If you want defaults, you get them on both sides.
+    // __host__ __device__
     matrix3x3( ) = default;
 
     // Note: default copy contructor and
