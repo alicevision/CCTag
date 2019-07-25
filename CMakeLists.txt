@@ -18,6 +18,10 @@ option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code."
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
 option(BUILD_TESTS "Build the unity tests" ON)
 
+if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
+
 if(CCTAG_ENABLE_SIMD_AVX2)
   if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
     add_definitions(-mavx2)
@@ -117,8 +121,6 @@ if(CCTAG_WITH_CUDA)
     set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
   else()
     message(STATUS "Building in release mode")
-    # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3;-DNDEBUG")
-    # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-G;-g;-DNDEBUG")
   endif()
 
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")

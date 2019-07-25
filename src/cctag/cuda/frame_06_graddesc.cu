@@ -399,7 +399,7 @@ bool Frame::applyDesc( )
     dim3 grid( grid_divide( listsize, 32 ), 1, 1 );
 
 #ifndef NDEBUG
-    debugPointIsOnEdge( _d_edges, _all_edgecoords, _stream );
+    debugPointIsOnEdge( _meta, _d_edges, _all_edgecoords, _stream );
 #endif
 
     descent::gradient_descent
