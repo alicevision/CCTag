@@ -57,8 +57,6 @@ if(CCTAG_WITH_CUDA)
         ./cctag/cuda/frame_06_graddesc.cu
         ./cctag/cuda/frame_07_vote.cu
         ./cctag/cuda/frame_07a_vote_line.cu
-        ./cctag/cuda/frame_07b_vote_sort_uniq_dp.cu
-        ./cctag/cuda/frame_07b_vote_sort_uniq_nodp.cu
         ./cctag/cuda/frame_07b_vote_sort_uniq_thrust.cu
         ./cctag/cuda/frame_07c_eval.cu
         ./cctag/cuda/frame_07d_vote_if.cu

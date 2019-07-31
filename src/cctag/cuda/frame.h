@@ -182,15 +182,6 @@ public:
     // implemented in frame_07b_vote_sort_uniq_nodp.cu
     bool applyVoteSortUniq( );
 
-#ifndef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
-private:
-    // implemented in frame_07b_vote_sort_nodp.cu
-    // called by applyVoteSortUniqNoDP
-    bool applyVoteSortNoDP( );
-    void applyVoteUniqNoDP( );
-public:
-#endif // not USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
-
     // implemented in frame_07c_eval.cu
     bool applyVoteEval( );
 
