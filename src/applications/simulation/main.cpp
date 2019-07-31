@@ -5,10 +5,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <opencv/cv.h>
 #include <opencv2/videoio.hpp>
 #include <opencv2/core/core.hpp>
-#include "opencv2/opencv.hpp"
+#include <opencv2/opencv.hpp>
+#include <opencv2/imgproc/types_c.h>
 
 #include <sstream>
 #include <iostream>

@@ -32,28 +32,21 @@ namespace cctag
 class TagPipe;
 class TagThreads;
 
+/*************************************************************
+ * TagSemaphore
+ *************************************************************/
 class TagSemaphore
 {
-    int              _sema_val;
-    std::unique_lock<std::mutex> _sema_lock;
-    std::condition_variable _sema_cond;
+    int                          _sema_val;
+    std::mutex                   _sema_mx;
+    std::condition_variable      _sema_cond;
 public:
     TagSemaphore( int init )
         : _sema_val( init )
     { }
 
-    inline void wait( int n = 1 ) {
-        _sema_lock.lock();
-        while( _sema_val - n < 0 ) _sema_cond.wait( _sema_lock );
-        _sema_val -= n;
-        _sema_lock.unlock();
-    }
-    inline void post( int n = 1 ) {
-        _sema_lock.lock();
-        _sema_val += n;
-        _sema_cond.notify_all();
-        _sema_lock.unlock();
-    }
+    void wait( int n = 1 );
+    void post( int n = 1 );
 };
 
 class TagThread : public std::thread

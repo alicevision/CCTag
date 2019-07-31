@@ -1,5 +1,6 @@
 # build folder
 build
+build_*/
 # NetBeans project folder
 nbproject
 # Result of the sample code

@@ -67,5 +67,28 @@ void TagThreads::frameReadyPost( ) { _frameReady.post( _layers ); }
 void TagThreads::frameDoneWait( )  { _frameDone.wait( _layers );  }
 void TagThreads::frameDonePost( )  { _frameDone.post( 1 ); }
 
+/*************************************************************
+ * TagSemaphore
+ *************************************************************/
+
+void TagSemaphore::wait( int n )
+{
+    std::unique_lock<std::mutex> sema_lock( _sema_mx );
+    while( _sema_val - n < 0 )
+    {
+        _sema_cond.wait( sema_lock );
+    }
+    _sema_val -= n;
+    sema_lock.unlock();
+}
+
+void TagSemaphore::post( int n )
+{
+    std::unique_lock<std::mutex> sema_lock( _sema_mx );
+    _sema_val += n;
+    _sema_cond.notify_all();
+    sema_lock.unlock();
+}
+
 }; // namespace cctag
 

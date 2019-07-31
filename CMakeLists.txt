@@ -18,6 +18,10 @@ option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code."
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
 option(BUILD_TESTS "Build the unity tests" ON)
 
+if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
+
 if(CCTAG_ENABLE_SIMD_AVX2)
   if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
     add_definitions(-mavx2)
@@ -107,6 +111,8 @@ if(CCTAG_WITH_CUDA)
 
   find_package(CUDA 7.0 REQUIRED)
 
+  include(CheckNvccCompilerFlag)
+
   set(CUDA_SEPARABLE_COMPILATION ON)
 
   # The following if should not be necessary, but apparently there is a bug in FindCUDA.cmake that
@@ -117,8 +123,6 @@ if(CCTAG_WITH_CUDA)
     set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
   else()
     message(STATUS "Building in release mode")
-    # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3;-DNDEBUG")
-    # set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-G;-g;-DNDEBUG")
   endif()
 
   # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
@@ -142,6 +146,16 @@ if(CCTAG_WITH_CUDA)
 
   if(CCTAG_USE_POSITION_INDEPENDENT_CODE)
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xcompiler;-fPIC")
+  endif()
+
+  CCTAG_CHECK_NVCC_COMPILER_FLAG("--relaxed-constexpr" HAS_NVCC_RELAXED_CONSTEXPR)
+  if(HAS_NVCC_RELAXED_CONSTEXPR)
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--relaxed-constexpr")
+  else()
+    CCTAG_CHECK_NVCC_COMPILER_FLAG("--expt-relaxed-constexpr" HAS_NVCC_EXPT_RELAXED_CONSTEXPR)
+    if(HAS_NVCC_EXPT_RELAXED_CONSTEXPR)
+      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--expt-relaxed-constexpr")
+    endif()
   endif()
 
   # MORE NOISE:
