@@ -73,9 +73,7 @@ void TagThreads::frameDonePost( )  { _frameDone.post( 1 ); }
 
 void TagSemaphore::wait( int n )
 {
-    std::unique_lock<std::mutex> sema_lock( _sema_mx, std::defer_lock );
-
-    sema_lock.lock();
+    std::unique_lock<std::mutex> sema_lock( _sema_mx );
     while( _sema_val - n < 0 )
     {
         _sema_cond.wait( sema_lock );
@@ -86,9 +84,7 @@ void TagSemaphore::wait( int n )
 
 void TagSemaphore::post( int n )
 {
-    std::unique_lock<std::mutex> sema_lock( _sema_mx, std::defer_lock );
-
-    sema_lock.lock();
+    std::unique_lock<std::mutex> sema_lock( _sema_mx );
     _sema_val += n;
     _sema_cond.notify_all();
     sema_lock.unlock();
