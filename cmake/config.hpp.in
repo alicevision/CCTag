@@ -28,4 +28,8 @@
 
   #define CUB_CDP
 
+  #ifndef CCTAG_HAVE_SHFL_DOWN_SYNC
+  #cmakedefine CCTAG_HAVE_SHFL_DOWN_SYNC
+  #endif
+
 #endif
