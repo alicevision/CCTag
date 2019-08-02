@@ -25,42 +25,16 @@ using namespace std;
 namespace cctag
 {
 
-#if 1
-__host__
-bool Frame::applyVoteSortUniq( )
+class intLE_t
 {
-    _inner_points.copySizeFromDevice( _stream, EdgeListWait );
-
-    POP_CUDA_SYNC( _stream );
-
-    if( _inner_points.host.size <= 0 ) {
-        return false;
+public:
+    __host__ __device__
+    inline bool operator()( const int& l, const int& r )
+    {
+        return ( l < r );
     }
+};
 
-    int sz = _inner_points.host.size;
-
-    thrust::device_ptr<int> input_begin = thrust::device_pointer_cast( _inner_points.dev.ptr );
-    thrust::device_ptr<int> input_end   = input_begin + sz;
-    thrust::device_ptr<int> output_begin = thrust::device_pointer_cast( _interm_inner_points.dev.ptr );
-    thrust::device_ptr<int> output_end;
-
-    thrust::host_vector<int> list_on_host(sz);
-    thrust::copy( input_begin, input_end, list_on_host.begin() );
-    thrust::sort( list_on_host.begin(), list_on_host.end() );
-    thrust::copy( list_on_host.begin(), list_on_host.end(), input_begin );
-
-    output_end = thrust::unique_copy( input_begin, input_end, output_begin );
-
-    sz = output_end - output_begin;
-
-    _meta.toDevice( List_size_interm_inner_points, sz, _stream );
-
-    POP_CHK_CALL_IFSYNC;
-
-    return true;
-}
-
-#else
 
 __host__
 bool Frame::applyVoteSortUniq( )
@@ -80,7 +54,9 @@ bool Frame::applyVoteSortUniq( )
     thrust::device_ptr<int> output_begin = thrust::device_pointer_cast( _interm_inner_points.dev.ptr );
     thrust::device_ptr<int> output_end;
 
-    thrust::sort( input_begin, input_end );
+    /* Without the self-made comparator class, Thrust generates bad code for CC 5.X */
+    intLE_t comparator;
+    thrust::sort( input_begin, input_end, comparator );
 
     output_end = thrust::unique_copy( input_begin, input_end, output_begin );
 
@@ -92,7 +68,6 @@ bool Frame::applyVoteSortUniq( )
 
     return true;
 }
-#endif
 
 } // namespace cctag
 
