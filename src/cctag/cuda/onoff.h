@@ -53,20 +53,6 @@
 #undef USE_SEPARABLE_COMPILATION_FOR_GRADDESC
 #undef USE_SEPARABLE_COMPILATION_FOR_VOTE_LINE
 #undef USE_SEPARABLE_COMPILATION_FOR_EVAL
-#undef USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
-
-/* CUB functions always take a last parameters true or false.
- * If it is true, they run synchronously and print some debug
- * info.
- */
-#define DEBUG_CUB_FUNCTIONS false
-
-/* CUB RadixSort requires the DoubleBuffer structure and annoying
- * host-side sync in the CUB version that comes with CUDA 7.0.
- * CUDA 7.5 or standalone CUB 1.4.1 allow an output buffer.
- * However, so far they don't work.
- */
-#undef RADIX_WITHOUT_DOUBLEBUFFER
 
 /* Affects tag.cu.
 .* A Frame used two CUDA streams, one for upload and kernels, another
