@@ -13,6 +13,7 @@ option(CCTAG_VISUAL_DEBUG "Enable visual debug" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
 option(CCTAG_WITH_CUDA "Compile the library with CUDA support" ON)
 option(BUILD_APPS "Build the sample applications" ON)
+option(CCTAG_CUDA_CC_CURRENT_ONLY "Set to on to build only for the current machine's CC" OFF)
 option(CCTAG_NVCC_WARNINGS "Switch on several additional warnings for CUDA nvcc." OFF)
 
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
@@ -126,24 +127,22 @@ if(CCTAG_WITH_CUDA)
     message(STATUS "Building in release mode")
   endif()
 
-  if(NOT CUDA_VERSION_MAJOR LESS 9)
-    set(CCTAG_CUDA_CC_LIST_BASIC 30 32 35 37 50 52 53)
-  else
-    set(CCTAG_CUDA_CC_LIST_BASIC 30 32 35 37 50 52 53 60 61 62 70 71 72)
+  set(CCTAG_CUDA_CC_LIST_INIT0 3.5 3.7 5.0 5.2 5.3)
+  if(CUDA_VERSION VERSION_EQUAL 9.0 OR CUDA_VERSION VERSION_GREATER 9.0)
+    list(APPEND CCTAG_CUDA_CC_LIST_INIT0 6.0 6.1 6.2 7.0 7.2)
   endif()
-  set(CCTAG_CUDA_CC_LIST ${CCTAG_CUDA_CC_LIST_BASIC} CACHE STRING "CUDA CC versions to compile")
+  if(CUDA_VERSION VERSION_EQUAL 10.0 OR CUDA_VERSION VERSION_GREATER 10.0)
+    list(APPEND CCTAG_CUDA_CC_LIST_INIT0 7.5)
+  endif()
+  set(CCTAG_CUDA_CC_LIST_INIT ${CCTAG_CUDA_CC_LIST_INIT0} CACHE STRING "CUDA CCs as compile targets")
 
-  # Add all requested CUDA CCs to the command line for offline compilation
-  list(SORT CCTAG_CUDA_CC_LIST)
-  foreach(CCTAG_CC_VERSION ${CCTAG_CUDA_CC_LIST})
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${CCTAG_CC_VERSION},code=sm_${CCTAG_CC_VERSION}")
-  endforeach()
-
-  # Use the highest request CUDA CC for CUDA JIT compilation
-  list(LENGTH CCTAG_CUDA_CC_LIST CCTAG_CC_LIST_LEN)
-  MATH(EXPR CCTAG_CC_LIST_LEN "${CCTAG_CC_LIST_LEN}-1")
-  list(GET CCTAG_CUDA_CC_LIST ${CCTAG_CC_LIST_LEN} CCTAG_CUDA_CC_LIST_LAST)
-  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode;arch=compute_${CCTAG_CUDA_CC_LIST_LAST},code=compute_${CCTAG_CUDA_CC_LIST_LAST}")
+  if(CCTAG_CUDA_CC_CURRENT_ONLY)
+    set(CCTAG_CUDA_CC_LIST_BASIC Auto)
+  else()
+    set(CCTAG_CUDA_CC_LIST_BASIC ${CCTAG_CUDA_CC_LIST_INIT})
+  endif()
+  CUDA_SELECT_NVCC_ARCH_FLAGS(ARCH_FLAGS ${CCTAG_CUDA_CC_LIST_BASIC})
+  LIST(APPEND CUDA_NVCC_FLAGS ${ARCH_FLAGS})
 
   if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
