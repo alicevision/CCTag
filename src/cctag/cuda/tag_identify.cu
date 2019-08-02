@@ -113,7 +113,7 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
 
         bool breaknow = ( xyRes.x < 1.0f && xyRes.x > src.cols-1 && xyRes.y < 1.0f && xyRes.y > src.rows-1 );
 
-        if( ::__any( breaknow ) )
+        if( cctag::any( breaknow ) )
         {
             if( threadIdx.x == 0 ) signals.outOfBounds = 1;
             return;
@@ -266,11 +266,11 @@ void idComputeResult( NearbyPointGrid*     d_NearbyPointGrid,
         }
     }
 
-    val += __shfl_down( val, 16 );
-    val += __shfl_down( val,  8 );
-    val += __shfl_down( val,  4 );
-    val += __shfl_down( val,  2 );
-    val += __shfl_down( val,  1 );
+    val += cctag::shuffle_down( val, 16 );
+    val += cctag::shuffle_down( val,  8 );
+    val += cctag::shuffle_down( val,  4 );
+    val += cctag::shuffle_down( val,  2 );
+    val += cctag::shuffle_down( val,  1 );
 
     __shared__ float signal_sum[32];
     __shared__ int   count_sum[32];
@@ -284,17 +284,17 @@ void idComputeResult( NearbyPointGrid*     d_NearbyPointGrid,
 
     if( threadIdx.y == 0 ) {
         val = signal_sum[threadIdx.x];
-        val += __shfl_down( val, 16 );
-        val += __shfl_down( val,  8 );
-        val += __shfl_down( val,  4 );
-        val += __shfl_down( val,  2 );
-        val += __shfl_down( val,  1 );
+        val += cctag::shuffle_down( val, 16 );
+        val += cctag::shuffle_down( val,  8 );
+        val += cctag::shuffle_down( val,  4 );
+        val += cctag::shuffle_down( val,  2 );
+        val += cctag::shuffle_down( val,  1 );
         ct  = count_sum[threadIdx.x];
-        ct  += __shfl_down( ct, 16 );
-        ct  += __shfl_down( ct,  8 );
-        ct  += __shfl_down( ct,  4 );
-        ct  += __shfl_down( ct,  2 );
-        ct  += __shfl_down( ct,  1 );
+        ct  += cctag::shuffle_down( ct, 16 );
+        ct  += cctag::shuffle_down( ct,  8 );
+        ct  += cctag::shuffle_down( ct,  4 );
+        ct  += cctag::shuffle_down( ct,  2 );
+        ct  += cctag::shuffle_down( ct,  1 );
 
         if( threadIdx.x == 0 ) {
             atomicAdd( &nPoint.result,  val );
@@ -340,8 +340,8 @@ void idBestNearbyPoint32plus( NearbyPointGrid* d_NearbyPointGrid,
     // phase 2: reduce to let thread 0 know the best point
     #pragma unroll
     for( int shft=4; shft>=0; shft-- ) {
-        int otherRes = __shfl_down( bestRes, (1 << shft) );
-        int otherIdx = __shfl_down( bestIdx, (1 << shft) );
+        int otherRes = cctag::shuffle_down( bestRes, (1 << shft) );
+        int otherIdx = cctag::shuffle_down( bestIdx, (1 << shft) );
         if( otherRes < bestRes ) {
             bestRes = otherRes;
             bestIdx = otherIdx;
@@ -385,8 +385,8 @@ void idBestNearbyPoint31max( NearbyPointGrid* d_NearbyPointGrid,
     // phase 2: reduce to let thread 0 know the best point
     #pragma unroll
     for( int shft=4; shft>=0; shft-- ) {
-        int otherRes = __shfl_down( bestRes, (1 << shft) );
-        int otherIdx = __shfl_down( bestIdx, (1 << shft) );
+        int otherRes = cctag::shuffle_down( bestRes, (1 << shft) );
+        int otherIdx = cctag::shuffle_down( bestIdx, (1 << shft) );
         if( otherRes < bestRes ) {
             bestRes = otherRes;
             bestIdx = otherIdx;

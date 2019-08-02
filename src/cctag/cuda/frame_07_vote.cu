@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <limits>
 #include <cctag/cuda/cctag_cuda_runtime.h>
-#include <cub/cub.cuh>
 #include <stdio.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"

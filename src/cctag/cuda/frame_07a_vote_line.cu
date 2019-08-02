@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <limits>
 #include <cctag/cuda/cctag_cuda_runtime.h>
-#include <cub/cub.cuh>
 #include <stdio.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"
@@ -307,7 +306,7 @@ void construct_line( FrameMetaPtr                 meta,
     if( chosen && chosen->coord.x == 0 && chosen->coord.y == 0 ) chosen = 0;
 
     int idx = 0;
-    uint32_t mask   = __ballot( chosen != 0 );
+    uint32_t mask   = cctag::ballot( chosen != 0 );
     uint32_t ct     = __popc( mask );
     if( ct == 0 ) return;
 
@@ -315,7 +314,7 @@ void construct_line( FrameMetaPtr                 meta,
     if( threadIdx.x == 0 ) {
         write_index = atomicAdd( &meta.list_size_inner_points(), (int)ct );
     }
-    write_index = __shfl( write_index, 0 );
+    write_index = cctag::shuffle( write_index, 0 );
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) );
 
     if( chosen ) {
