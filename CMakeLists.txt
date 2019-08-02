@@ -144,10 +144,7 @@ if(CCTAG_WITH_CUDA)
   CUDA_SELECT_NVCC_ARCH_FLAGS(ARCH_FLAGS ${CCTAG_CUDA_CC_LIST_BASIC})
   LIST(APPEND CUDA_NVCC_FLAGS ${ARCH_FLAGS})
 
-  if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
-  endif()
-
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
 
   if(CCTAG_USE_POSITION_INDEPENDENT_CODE)
@@ -164,13 +161,11 @@ if(CCTAG_WITH_CUDA)
     endif()
   endif()
 
-  if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
-    if(CCTAG_NVCC_WARNINGS)
-      list(APPEND CUDA_NVCC_FLAGS -Xptxas -warn-lmem-usage)
-      list(APPEND CUDA_NVCC_FLAGS -Xptxas -warn-spills)
-      list(APPEND CUDA_NVCC_FLAGS -Xptxas --warn-on-local-memory-usage)
-      list(APPEND CUDA_NVCC_FLAGS -Xptxas --warn-on-spills)
-    endif()
+  if(CCTAG_NVCC_WARNINGS)
+    list(APPEND CUDA_NVCC_FLAGS -Xptxas -warn-lmem-usage)
+    list(APPEND CUDA_NVCC_FLAGS -Xptxas -warn-spills)
+    list(APPEND CUDA_NVCC_FLAGS -Xptxas --warn-on-local-memory-usage)
+    list(APPEND CUDA_NVCC_FLAGS -Xptxas --warn-on-spills)
   endif()
 
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
