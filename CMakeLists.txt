@@ -14,6 +14,7 @@ option(CCTAG_NO_COUT "Disable output stream" ON)
 option(CCTAG_WITH_CUDA "Compile the library with CUDA support" ON)
 option(BUILD_APPS "Build the sample applications" ON)
 option(CCTAG_CUDA_CC_CURRENT_ONLY "Set to on to build only for the current machine's CC" OFF)
+option(CCTAG_NVCC_WARNINGS "Switch on several additional warnings for CUDA nvcc." OFF)
 
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
@@ -163,10 +164,15 @@ if(CCTAG_WITH_CUDA)
     endif()
   endif()
 
-  # MORE NOISE:
-  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;-v")
-  # DOES NOT WORK UNTIL CUDA 7.5:
-  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=sm_52;-gencode=arch=compute_52,code=compute_52;--default-stream;per-thread;-Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills")
+  if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
+    if(CCTAG_NVCC_WARNINGS)
+      list(APPEND CUDA_NVCC_FLAGS -Xptxas -warn-lmem-usage)
+      list(APPEND CUDA_NVCC_FLAGS -Xptxas -warn-spills)
+      list(APPEND CUDA_NVCC_FLAGS -Xptxas --warn-on-local-memory-usage)
+      list(APPEND CUDA_NVCC_FLAGS -Xptxas --warn-on-spills)
+    endif()
+  endif()
+
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
 else(CCTAG_WITH_CUDA)
