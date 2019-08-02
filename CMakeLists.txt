@@ -170,6 +170,11 @@ if(CCTAG_WITH_CUDA)
 
   cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
 
+  if( ( CUDA_VERSION VERSION_EQUAL "9.0" ) OR ( CUDA_VERSION VERSION_GREATER "9.0") )
+    set(CCTAG_HAVE_SHFL_DOWN_SYNC   1)
+  else()
+    set(CCTAG_HAVE_SHFL_DOWN_SYNC   0)
+  endif()
 else(CCTAG_WITH_CUDA)
   message( STATUS "Building without CUDA" )
 endif(CCTAG_WITH_CUDA)

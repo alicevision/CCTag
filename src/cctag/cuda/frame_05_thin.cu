@@ -119,7 +119,7 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
         atomicAdd( &meta.num_edges_thinned(), 1 );
     }
 #endif
-    uint32_t mask = __ballot( keep );  // bitfield of warps with results
+    uint32_t mask = cctag::ballot( keep );  // bitfield of warps with results
     uint32_t ct   = __popc( mask );    // horizontal reduce
     uint32_t leader = __ffs(mask) - 1; // the highest thread id with indicator==true
     uint32_t write_index;
@@ -127,7 +127,7 @@ void second_round( cv::cuda::PtrStepSzb src,          // input
         // leader gets warp's offset from global value and increases it
         write_index = atomicAdd( &meta.list_size_all_edgecoords(), int(ct) );
     }
-    write_index = __shfl( write_index, leader ); // broadcast warp write index to all
+    write_index = cctag::shuffle( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
     if( keep ) {

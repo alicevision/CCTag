@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <limits>
 #include <cctag/cuda/cctag_cuda_runtime.h>
-#include <cub/cub.cuh>
 #include <stdio.h>
 #include "debug_macros.hpp"
 #include "debug_is_on_edge.h"
@@ -257,7 +256,7 @@ void gradient_descent( FrameMetaPtr                 meta,
     assert( ! outOfBounds( out_edge.descending.befor.x, out_edge.descending.befor.y, edgepoint_index_table ) );
     assert( ! outOfBounds( out_edge.descending.after.x, out_edge.descending.after.y, edgepoint_index_table ) );
 
-    uint32_t mask = __ballot( keep );  // bitfield of warps with results
+    uint32_t mask = cctag::ballot( keep );  // bitfield of warps with results
 
     // keep is false for all 32 threads
     if( mask == 0 ) return;
@@ -290,7 +289,7 @@ void gradient_descent( FrameMetaPtr                 meta,
     }
     // assert( *chained_edgecoord_list_sz >= 2*all_edgecoord_list_sz );
 
-    write_index = __shfl( write_index, leader ); // broadcast warp write index to all
+    write_index = cctag::shuffle( write_index, leader ); // broadcast warp write index to all
     write_index += __popc( mask & ((1 << threadIdx.x) - 1) ); // find own write index
 
     assert( write_index >= 0 );

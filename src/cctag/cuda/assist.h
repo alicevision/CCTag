@@ -52,19 +52,47 @@ inline int d_sign( T value )
     return ( ( value < 0 ) ? -1 : 1 );
 }
 
+#ifdef CCTAG_HAVE_SHFL_DOWN_SYNC
+template<typename T> __device__ inline T shuffle     ( T variable, int src   ) { return __shfl_sync     ( 0xffffffff, variable, src   ); }
+template<typename T> __device__ inline T shuffle_up  ( T variable, int delta ) { return __shfl_up_sync  ( 0xffffffff, variable, delta ); }
+template<typename T> __device__ inline T shuffle_down( T variable, int delta ) { return __shfl_down_sync( 0xffffffff, variable, delta ); }
+template<typename T> __device__ inline T shuffle_xor ( T variable, int delta ) { return __shfl_xor_sync ( 0xffffffff, variable, delta ); }
+__device__ inline unsigned int ballot( unsigned int pred ) { return __ballot_sync   ( 0xffffffff, pred ); }
+__device__ inline int any            ( unsigned int pred ) { return __any_sync      ( 0xffffffff, pred ); }
+__device__ inline int all            ( unsigned int pred ) { return __all_sync      ( 0xffffffff, pred ); }
+
+template<typename T> __device__ inline T shuffle     ( T variable, int src  , int ws ) { return __shfl_sync     ( 0xffffffff, variable, src  , ws ); }
+template<typename T> __device__ inline T shuffle_up  ( T variable, int delta, int ws ) { return __shfl_up_sync  ( 0xffffffff, variable, delta, ws ); }
+template<typename T> __device__ inline T shuffle_down( T variable, int delta, int ws ) { return __shfl_down_sync( 0xffffffff, variable, delta, ws ); }
+template<typename T> __device__ inline T shuffle_xor ( T variable, int delta, int ws ) { return __shfl_xor_sync ( 0xffffffff, variable, delta, ws ); }
+#else
+template<typename T> __device__ inline T shuffle     ( T variable, int src   ) { return __shfl     ( variable, src   ); }
+template<typename T> __device__ inline T shuffle_up  ( T variable, int delta ) { return __shfl_up  ( variable, delta ); }
+template<typename T> __device__ inline T shuffle_down( T variable, int delta ) { return __shfl_down( variable, delta ); }
+template<typename T> __device__ inline T shuffle_xor ( T variable, int delta ) { return __shfl_xor ( variable, delta ); }
+__device__ inline unsigned int ballot( unsigned int pred ) { return __ballot   ( pred ); }
+__device__ inline int any            ( unsigned int pred ) { return __any      ( pred ); }
+__device__ inline int all            ( unsigned int pred ) { return __all      ( pred ); }
+
+template<typename T> __device__ inline T shuffle     ( T variable, int src  , int ws ) { return __shfl     ( variable, src  , ws ); }
+template<typename T> __device__ inline T shuffle_up  ( T variable, int delta, int ws ) { return __shfl_up  ( variable, delta, ws ); }
+template<typename T> __device__ inline T shuffle_down( T variable, int delta, int ws ) { return __shfl_down( variable, delta, ws ); }
+template<typename T> __device__ inline T shuffle_xor ( T variable, int delta, int ws ) { return __shfl_xor ( variable, delta, ws ); }
+#endif
+
 __device__
 inline
 bool reduce_OR_32x32( bool cnt )
 {
     __shared__ int reduce_array[32];
 
-    int cnt_row = ::__any( cnt );
+    int cnt_row = cctag::any( cnt );
     if( threadIdx.x == 0 ) {
         reduce_array[threadIdx.y] = cnt_row;
     }
     __syncthreads();
     if( threadIdx.y == 0 ) {
-        int cnt_col = ::__any( reduce_array[threadIdx.x] );
+        int cnt_col = cctag::any( reduce_array[threadIdx.x] );
         if( threadIdx.x == 0 ) {
             reduce_array[0] = cnt_col;
         }
