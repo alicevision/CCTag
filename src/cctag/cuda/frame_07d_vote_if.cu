@@ -7,12 +7,8 @@
  */
 #include <cuda.h>
 
-#if CUDA_VERSION >= 8000
 #include <thrust/copy.h>
 #include <thrust/device_ptr.h>
-#else
-#include <cub/cub.cuh>
-#endif
 
 #include <iostream>
 #include <algorithm>
@@ -48,7 +44,6 @@ struct NumVotersIsGreaterEqual
     }
 };
 
-#if CUDA_VERSION >= 8000
 __host__
 bool Frame::applyVoteIf( )
 {
@@ -64,9 +59,28 @@ bool Frame::applyVoteIf( )
 
     NumVotersIsGreaterEqual select_op( _voters.dev );
 
+#if 0
+    #
+    # There are reports that the Thrust::copy_if fails when you generated code with CUDA 7.0 and run it only
+    # a 2nd gen Maxwell card (e.g. GTX 980 and GTX 980 Ti). Also, the GTX 1080 seems to be quite similar to
+    # the GTX 980 and may be affected as well.
+    # The following code moves everything to host before copy_if, which circumvents the problem but is much
+    # slower. Make sure that the condition for activating it is very strict.
+    #
+    thrust::host_vector<int> input_host(sz);
+    thrust::host_vector<int> output_host(sz);
+    thrust::host_vector<int>::iterator output_host_end;
+
+    thrust::copy( input_begin, input_end, input_host.begin() );
+    output_host_end = thrust::copy_if( input_host.begin(), input_host.end(), output_host.begin(), select_op );
+    thrust::copy( output_host.begin(), output_host_end, output_begin );
+    sz = output_host_end = output_host.begin();
+    output_end = output_begin + sz;
+#else
     output_end = thrust::copy_if( input_begin, input_end, output_begin, select_op );
 
     sz = output_end - output_begin;
+#endif
 
     POP_CUDA_SYNC( _stream );
     _meta.toDevice( List_size_inner_points, sz, _stream );
@@ -74,130 +88,6 @@ bool Frame::applyVoteIf( )
 
     return true;
 }
-#else // not CUDA_VERSION >= 8000
-
-#ifdef USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
-
-__global__
-void dp_call_vote_if(
-    FrameMetaPtr             meta,
-    DevEdgeList<TriplePoint> voters,        // input
-    DevEdgeList<int>         inner_points,   // output
-    DevEdgeList<int>         interm_inner_points,  // input
-    cv::cuda::PtrStepSzb     intermediate ) // buffer
-{
-    /* Filter all chosen inner points that have fewer
-     * voters than required by Parameters.
-     */
-
-    cudaError_t err;
-
-    if( meta.list_size_interm_inner_points() == 0 ) {
-        meta.list_size_inner_points() = 0;
-        return;
-    }
-
-    NumVotersIsGreaterEqual select_op( voters );
-
-    size_t assist_buffer_sz = 0;
-    err = cub::DeviceSelect::If( 0,
-                                 assist_buffer_sz,
-                                 interm_inner_points.ptr,
-                                 inner_points.ptr,
-                                 &meta.list_size_inner_points(),
-                                 meta.list_size_interm_inner_points(),
-                                 select_op,
-                                 0,     // use stream 0
-                                 DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
-    if( err != cudaSuccess ) {
-        return;
-    }
-    if( assist_buffer_sz > intermediate.step * intermediate.rows ) {
-        meta.list_size_inner_points() = 0;
-        return;
-    }
-    void*  assist_buffer = (void*)intermediate.data;
-
-    cub::DeviceSelect::If( assist_buffer,
-                           assist_buffer_sz,
-                           interm_inner_points.ptr,
-                           inner_points.ptr,
-                           &meta.list_size_inner_points(),
-                           meta.list_size_interm_inner_points(),
-                           select_op,
-                           0,     // use stream 0
-                           DEBUG_CUB_FUNCTIONS ); // synchronous for debugging
-}
-
-__host__
-bool Frame::applyVoteIf( )
-{
-    dp_call_vote_if
-        <<<1,1,0,_stream>>>
-        ( _meta,
-          _voters.dev,  // input
-          _inner_points.dev,        // output
-          _interm_inner_points.dev,      // input
-          cv::cuda::PtrStepSzb(_d_intermediate) ); // buffer
-    POP_CHK_CALL_IFSYNC;
-
-    _inner_points.copySizeFromDevice( _stream, EdgeListCont );
-
-    return true;
-}
-#else // not USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
-__host__
-bool Frame::applyVoteIf( )
-{
-    if( _interm_inner_points.host.size == 0 ) {
-        return false;
-    }
-
-    cudaError_t err;
-
-    void*  assist_buffer = (void*)_d_intermediate.data;
-    size_t assist_buffer_sz;
-
-    NumVotersIsGreaterEqual select_op( _voters.dev );
-    assist_buffer_sz  = 0;
-    err = cub::DeviceSelect::If( 0,
-                                 assist_buffer_sz,
-                                 _interm_inner_points.dev.ptr,
-                                 _inner_points.dev.ptr,
-                                 _d_interm_int,
-                                 _interm_inner_points.host.size,
-                                 select_op,
-                                 _stream,
-                                 DEBUG_CUB_FUNCTIONS );
-
-    POP_CUDA_FATAL_TEST( err, "CUB DeviceSelect::If failed in init test" );
-
-    if( assist_buffer_sz >= _d_intermediate.step * _d_intermediate.rows ) {
-        std::cerr << "cub::DeviceSelect::If requires too much intermediate memory. Crashing." << std::endl;
-        exit( -1 );
-    }
-
-    /* Filter all chosen inner points that have fewer
-     * voters than required by Parameters.
-     */
-    err = cub::DeviceSelect::If( assist_buffer,
-                                 assist_buffer_sz,
-                                 _interm_inner_points.dev.ptr,
-                                 _inner_points.dev.ptr,
-                                 _d_interm_int,
-                                 _interm_inner_points.host.size,
-                                 select_op,
-                                 _stream,
-                                 DEBUG_CUB_FUNCTIONS );
-    POP_CHK_CALL_IFSYNC;
-    POP_CUDA_FATAL_TEST( err, "CUB DeviceSelect::If failed" );
-
-    _meta.toDevice_D2S( List_size_inner_points, _d_interm_int, _stream );
-    _inner_points.copySizeFromDevice( _stream, EdgeListCont );
-    return true;
-}
-#endif // not USE_SEPARABLE_COMPILATION_FOR_VOTE_IF
-#endif // not CUDA_VERSION >= 8000
 
 } // namespace cctag
 

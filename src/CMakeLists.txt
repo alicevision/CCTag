@@ -57,8 +57,6 @@ if(CCTAG_WITH_CUDA)
         ./cctag/cuda/frame_06_graddesc.cu
         ./cctag/cuda/frame_07_vote.cu
         ./cctag/cuda/frame_07a_vote_line.cu
-        ./cctag/cuda/frame_07b_vote_sort_uniq_dp.cu
-        ./cctag/cuda/frame_07b_vote_sort_uniq_nodp.cu
         ./cctag/cuda/frame_07b_vote_sort_uniq_thrust.cu
         ./cctag/cuda/frame_07c_eval.cu
         ./cctag/cuda/frame_07d_vote_if.cu
@@ -94,8 +92,7 @@ if(CCTAG_WITH_CUDA)
   include_directories(${CMAKE_CURRENT_LIST_DIR}
                       ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
 		      ${TBB_INCLUDE_DIRS}
-                      "${CMAKE_SOURCE_DIR}/src"
-                      "${CMAKE_SOURCE_DIR}/3rdparty/Cuda-7.0-cub")
+                      "${CMAKE_SOURCE_DIR}/src")
 
   CUDA_ADD_LIBRARY(CCTag ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
 
