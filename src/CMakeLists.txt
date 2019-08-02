@@ -112,6 +112,10 @@ if(CCTAG_WITH_CUDA)
                          PUBLIC -DCCTAG_WITH_CUDA -DCUB_CDP
                          PRIVATE ${TBB_DEFINITIONS})
 
+  if(CCTAG_HAVE_SHFL_DOWN_SYNC)
+    target_compile_definitions(CCTag PRIVATE "-DCCTAG_HAVE_SHFL_DOWN_SYNC")
+  endif(CCTAG_HAVE_SHFL_DOWN_SYNC)
+
   # This is nececessary for the CCTagConfig.cmake to correctly export the
   # includes, always because we used CUDA_ADD_LIBRARY
   set_target_properties(CCTag PROPERTIES INTERFACE_INCLUDE_DIRECTORIES

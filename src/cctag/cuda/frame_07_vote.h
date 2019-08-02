@@ -12,11 +12,6 @@
 #include <cctag/cuda/cctag_cuda_runtime.h>
 #include <opencv2/core/cuda_types.hpp>
 
-#if CUDA_VERSION >= 8000
-#else
-#include <cub/cub.cuh>
-#endif
-
 #include "onoff.h"
 
 #include "framemeta.h"
