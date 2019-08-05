@@ -135,7 +135,6 @@ if(CCTAG_WITH_CUDA)
   if(NOT CUDA_VERSION VERSION_LESS 8.0) # cuda >= 8.0
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_60,code=sm_60")
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_61,code=sm_61")
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_62,code=sm_62")
   endif()
 
   if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
