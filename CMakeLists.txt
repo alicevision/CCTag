@@ -39,22 +39,11 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   add_definitions(/EHsc)  # Enable Exception Handling
 endif()
 
-# load local machine config <hostname>.cmake
-site_name(MACHINE_NAME)
-
-if(EXISTS "${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake")
-  include("${MACHINE_NAME}.cmake")
-else()
-  message(WARNING "Compiling without ${CMAKE_SOURCE_DIR}/${MACHINE_NAME}.cmake" )
-endif()
-
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ${CCTAG_USE_POSITION_INDEPENDENT_CODE})
 
-
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall ")
 
 # set the path where we can find the findXXX.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
