@@ -23,7 +23,8 @@ struct Parameters; // forward declaration
 class ImagePyramid
 {
 public:
-  ImagePyramid();
+  ImagePyramid() = delete;
+  ImagePyramid( const ImagePyramid& ) = delete;
   
   ImagePyramid( std::size_t width, std::size_t height, std::size_t nLevels, bool cuda_allocates );
   

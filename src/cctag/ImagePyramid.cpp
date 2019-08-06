@@ -16,10 +16,6 @@
 
 namespace cctag {
 
-ImagePyramid::ImagePyramid()
-{
-}
-
 ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, std::size_t nLevels, bool cuda_allocates )
 {
   _levels.clear();
