@@ -72,13 +72,16 @@ void ImagePyramid::build( const Plane<uint8_t>& src, float thrLowCanny, float th
     CCTagVisualDebug::instance().initBackgroundImage(_levels[i]->getCannyNotThin());
     CCTagVisualDebug::instance().newSession(outFilenameCanny.str());
     
-    CCTAG_COUT("src_");
-    CCTagVisualDebug::instance().coutImage<uchar>(_levels[i]->getSrc());
-    
-    CCTAG_COUT("dx_");
-    CCTagVisualDebug::instance().coutImage<short>(_levels[i]->getDx());
-    CCTAG_COUT("dy_");
-    CCTagVisualDebug::instance().coutImage<short>(_levels[i]->getDy());
+    writePlanePGM( "src_", _levels[i]->getSrc(), UNSCALED_WRITING );
+    writePlanePGM( "dx_",  _levels[i]->getDx(),  SCALED_WRITING );
+    writePlanePGM( "dy_",  _levels[i]->getDy(),  SCALED_WRITING );
+
+    // CCTAG_COUT("src_");
+    // CCTagVisualDebug::instance().coutImage<uchar>(_levels[i]->getSrc());
+    // CCTAG_COUT("dx_");
+    // CCTagVisualDebug::instance().coutImage<short>(_levels[i]->getDx());
+    // CCTAG_COUT("dy_");
+    // CCTagVisualDebug::instance().coutImage<short>(_levels[i]->getDy());
 #endif
   }
 #endif
