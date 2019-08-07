@@ -28,7 +28,7 @@ ImagePyramid::ImagePyramid( std::size_t width, std::size_t height, std::size_t n
   }
 }
 
-void ImagePyramid::build( const cv::Mat & src, float thrLowCanny, float thrHighCanny, const cctag::Parameters* params )
+void ImagePyramid::build( const Plane<uint8_t>& src, float thrLowCanny, float thrHighCanny, const cctag::Parameters* params )
 {
 #ifdef CCTAG_WITH_CUDA
     if( params->_useCuda ) {

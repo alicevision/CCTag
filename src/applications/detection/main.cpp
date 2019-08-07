@@ -8,6 +8,7 @@
 #include "cctag/utils/FileDebug.hpp"
 #include "cctag/utils/VisualDebug.hpp"
 #include "cctag/utils/Exceptions.hpp"
+#include "cctag/Plane.hpp"
 #include "cctag/Detection.hpp"
 #include "CmdLine.hpp"
 
@@ -105,7 +106,7 @@ void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image)
  */
 void detection(std::size_t frameId,
                int pipeId,
-               const cv::Mat & src,
+               Plane<uint8_t>& src,
                const cctag::Parameters & params,
                const cctag::CCTagMarkersBank & bank,
                boost::ptr_list<CCTag> &markers,
@@ -327,9 +328,9 @@ int main(int argc, char** argv)
     int h = img.Height();
     std::cout << "Loading " << w << " x " << h << " image " << cmdline._filename << std::endl;
     unsigned char* image_data = img.GetData();
-    cv::Mat graySrc = cv::Mat( h, w, CV_8U, image_data );
+    Plane<uint8_t>graySrc( image_data, h, w );
 
-    imwrite( "ballo.jpg", graySrc );
+    imwrite( "ballo.jpg", graySrc.getMat() );
 
     const int pipeId = 0;
     boost::ptr_list<CCTag> markers;
@@ -349,8 +350,8 @@ int main(int argc, char** argv)
 
     // Gray scale conversion
     cv::Mat src = cv::imread(cmdline._filename);
-    cv::Mat graySrc;
-    cv::cvtColor(src, graySrc, CV_BGR2GRAY);
+    Plane<uint8_t> graySrc;
+    cv::cvtColor(src, graySrc.getMat(), CV_BGR2GRAY);
 
     const int pipeId = 0;
     boost::ptr_list<CCTag> markers;
@@ -396,12 +397,12 @@ int main(int argc, char** argv)
       if(frame.empty())
         break;
       
-      cv::Mat imgGray;
+      Plane<uint8_t> imgGray;
 
       if(frame.channels() == 3 || frame.channels() == 4)
-        cv::cvtColor(frame, imgGray, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(frame, imgGray.getMat(), cv::COLOR_BGR2GRAY);
       else
-        frame.copyTo(imgGray);
+        frame.copyTo(imgGray.getMat());
 
       // Set the output folder
       std::stringstream outFileName;
@@ -423,7 +424,7 @@ int main(int argc, char** argv)
       
       // if the original image is b/w convert it to BGRA so we can draw colors
       if(frame.channels() == 1)
-        cv::cvtColor(imgGray, frame, cv::COLOR_GRAY2BGRA);
+        cv::cvtColor(imgGray.getMat(), frame, cv::COLOR_GRAY2BGRA);
       
       drawMarkers(markers, frame);
       cv::imshow(windowName, frame);
@@ -474,8 +475,8 @@ int main(int argc, char** argv)
           cv::Mat src;
           src = cv::imread(fileInFolder.second.string());
 
-          cv::Mat imgGray;
-          cv::cvtColor(src, imgGray, CV_BGR2GRAY);
+          Plane<uint8_t> imgGray;
+          cv::cvtColor(src, imgGray.getMat(), CV_BGR2GRAY);
 
           // Call the CCTag detection
           int pipeId = (fileInFolder.first & 1);

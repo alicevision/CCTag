@@ -12,6 +12,7 @@
 #include <boost/serialization/nvp.hpp>
 #include "cctag/Detection.hpp"
 #include "cctag/Params.hpp"
+#include "cctag/Plane.hpp"
 
 // Contains cctag info that is compared during regression testing.
 struct DetectedTag
@@ -58,7 +59,7 @@ struct FrameLog
     frame(frame), elapsedTime(elapsedTime), tags(markers.begin(), markers.end())
   { }
 
-  static FrameLog detect(size_t frame, const cv::Mat& src, const cctag::Parameters& parameters,
+  static FrameLog detect(size_t frame, cctag::Plane<uint8_t>& src, const cctag::Parameters& parameters,
     const cctag::CCTagMarkersBank& bank);
 };
 

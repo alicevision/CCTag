@@ -13,6 +13,7 @@
 #include <cctag/geometry/Point.hpp>
 #include <cctag/Colors.hpp>
 #include <cctag/CCTag.hpp>
+#include <cctag/Plane.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -41,6 +42,12 @@ public:
     std::string getPath() const;
 
     void setImageFileName(const std::string& imageFileName);
+
+    template<typename Type>
+    void initBackgroundImage(const Plane<Type>& back)
+    {
+        initBackgroundImage( back.getMat() );
+    }
 
     void initBackgroundImage(const cv::Mat & back);
     

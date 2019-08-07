@@ -12,6 +12,7 @@
 #include <cctag/CCTagMarkersBank.hpp>
 #include <cctag/Types.hpp>
 #include <cctag/Params.hpp>
+#include <cctag/Plane.hpp>
 #include <cctag/utils/LogTime.hpp>
 
 #include <opencv2/opencv.hpp>
@@ -37,19 +38,19 @@ class EdgePointImage;
  * @param[in] bDisplayEllipses No longer used.
  */
 void cctagDetection(
-        CCTag::List& markers,
-        int          pipeId,
-        std::size_t frame,
-        const cv::Mat & imgGraySrc,
-        const Parameters & providedParams,
+        CCTag::List&      markers,
+        int               pipeId,
+        std::size_t       frame,
+        Plane<uint8_t>&   imgGraySrc,
+        const Parameters& providedParams,
         const cctag::CCTagMarkersBank & bank,
-        bool bDisplayEllipses = true,
-        logtime::Mgmt* durations = nullptr );
+        bool              bDisplayEllipses = true,
+        logtime::Mgmt*    durations = nullptr );
 
 void cctagDetectionFromEdges(
-        CCTag::List&            markers,
+        CCTag::List&         markers,
         EdgePointCollection& edgeCollection,
-        const cv::Mat&          src,
+        Plane<uint8_t>       src,
         const std::vector<EdgePoint*>& seeds,
         std::size_t       frame,
         int pyramidLevel,
@@ -58,8 +59,8 @@ void cctagDetectionFromEdges(
         logtime::Mgmt* durations );
 
 void createImageForVoteResultDebug(
-        const cv::Mat & src,
-        std::size_t nLevel);
+        Plane<uint8_t>& src,
+        std::size_t     nLevel);
 
 } // namespace cctag
 

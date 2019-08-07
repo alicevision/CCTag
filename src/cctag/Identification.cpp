@@ -214,7 +214,7 @@ void createRectifiedCutImage(const std::vector<ImageCut> & vCuts, cv::Mat & outp
  */
 void extractSignalUsingHomography(
         cctag::ImageCut & cut,
-        const cv::Mat & src,
+        const Plane<uint8_t>& src,
         const Eigen::Matrix3f & mHomography,
         const Eigen::Matrix3f & mInvHomography)
 {
@@ -260,8 +260,8 @@ void extractSignalUsingHomography(
   {
     applyHomography(xRes, yRes, mHomography, x, y);
 
-    if ( xRes >= 1.f && xRes <= src.cols-1 &&
-         yRes >= 1.f && yRes <= src.rows-1 )
+    if ( xRes >= 1.f && xRes <= src.getCols()-1 &&
+         yRes >= 1.f && yRes <= src.getRows()-1 )
     {
       // Bilinear interpolation
       cut.imgSignal()[i] = getPixelBilinear( src, xRes, yRes);
@@ -326,7 +326,7 @@ void blurImageCut(float sigma, std::vector<float> & signal)
 /* depreciated */
 void extractSignalUsingHomographyDeprec(
         cctag::ImageCut & rectifiedCut,
-        const cv::Mat & src,
+        const Plane<uint8_t>& src,
         Eigen::Matrix3f & mHomography,
         std::size_t nSamples,
         float begin,
@@ -354,8 +354,8 @@ void extractSignalUsingHomographyDeprec(
     const float xi = i * stepXi + begin;
     const cctag::Point2d<Eigen::Vector3f> hp = getHPoint( xi, 0.f, mHomography );
 
-    if ( hp.x() >= 1.f && hp.x() <= src.cols-1 &&
-         hp.y() >= 1.f && hp.y() <= src.rows-1 )
+    if ( hp.x() >= 1.f && hp.x() <= src.getCols()-1 &&
+         hp.y() >= 1.f && hp.y() <= src.getRows()-1 )
     {
       // Bilinear interpolation
       rectifiedCut.imgSignal()[i] = getPixelBilinear( src, hp.x(), hp.y());
@@ -394,7 +394,7 @@ void extractSignalUsingHomographyDeprec(
  */
 void cutInterpolated(
         cctag::ImageCut & cut,
-        const cv::Mat & src)
+        const Plane<uint8_t>& src)
 {
   float xStart, yStart, xStop, yStop;
   const float diffX = cut.stop().x() - cut.start().x();
@@ -435,8 +435,8 @@ void cutInterpolated(
   
   for( std::size_t i = 0; i < nSamples; ++i )
   {
-    if ( x >= 1.f && x < src.cols-1 &&
-         y >= 1.f && y < src.rows-1 )
+    if ( x >= 1.f && x < src.getCols()-1 &&
+         y >= 1.f && y < src.getRows()-1 )
     {
       //CCTAG_COUT_VAR2(x,y);
       // put pixel value to rectified signal
@@ -469,7 +469,7 @@ void cutInterpolated(
  */
 void collectCuts(
         std::vector<cctag::ImageCut> & cuts,
-        const cv::Mat & src,
+        const Plane<uint8_t> & src,
         const cctag::Point2d<Eigen::Vector3f> & center,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
         std::size_t nSamplesInCut,
@@ -542,11 +542,11 @@ float costSelectCutFun(
  * @param[in] collectedCuts all the collected cuts
  * @param[in] src source gray scale image (uchar)
  */
-void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
+static void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
         std::size_t selectSize,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         std::vector<cctag::ImageCut> & collectedCuts,
-        const cv::Mat & src,
+        const Plane<uint8_t>& src,
         const float scale,
         const size_t numSamplesOuterEdgePointsRefinement)
 {
@@ -600,7 +600,7 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
 }
 
 /* Ugly -> perform an iterative optimization*/
-bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, float scale, std::size_t numSamplesOuterEdgePointsRefinement)
+bool outerEdgeRefinement(ImageCut & cut, const Plane<uint8_t>& src, float scale, std::size_t numSamplesOuterEdgePointsRefinement)
 {
     // Subpixellic refinement of the outer edge points ///////////////////////////
     const float cutLengthOuterPointRefine = 3.f * sqrt(2.f) * scale; // with scale=2^i, i=0..nLevel
@@ -717,7 +717,7 @@ std::pair<float,float> convImageCut(const std::vector<float> & kernel, ImageCut 
 void getSignals(
         std::vector< cctag::ImageCut > & vCuts,
         const Eigen::Matrix3f & mHomography,
-        const cv::Mat & src)
+        const Plane<uint8_t>& src)
 {
   Eigen::Matrix3f mInvHomography = mHomography.inverse();
   for( cctag::ImageCut & cut : vCuts )
@@ -814,7 +814,7 @@ bool refineConicFamilyGlob(
         Eigen::Matrix3f & mHomography,
         Point2d<Eigen::Vector3f> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
-        const cv::Mat & src,
+        const Plane<uint8_t>& src,
         cctag::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters & params,
@@ -982,7 +982,7 @@ bool imageCenterOptimizationGlob(
         cctag::Point2d<Eigen::Vector3f> & center,
         float & minRes,
         float neighbourSize,
-        const cv::Mat & src, 
+        const Plane<uint8_t>& src, 
         const cctag::numerical::geometry::Ellipse& outerEllipse,
         const cctag::Parameters & params )
 {
@@ -1121,7 +1121,7 @@ void getNearbyPoints(
 float costFunctionGlob(
         const Eigen::Matrix3f & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
-        const cv::Mat & src,
+        const Plane<uint8_t>& src,
         bool & flag)
 {
   flag = true;
@@ -1172,7 +1172,7 @@ int identify_step_1(
   int tagIndex,
   const CCTag & cctag,
   std::vector<cctag::ImageCut>& vSelectedCuts,
-  const cv::Mat &  src,
+  const Plane<uint8_t>&  src,
   const cctag::Parameters & params)
 {
   // Get the outer ellipse in its original scale, i.e. in src.
@@ -1319,7 +1319,7 @@ int identify_step_2(
   CCTag & cctag,
   std::vector<cctag::ImageCut>& vSelectedCuts,
   const std::vector< std::vector<float> > & radiusRatios, // todo: directly use the CCTagBank
-  const cv::Mat &  src,
+  const Plane<uint8_t>& src,
   cctag::TagPipe* cudaPipe,
   const cctag::Parameters & params)
 {

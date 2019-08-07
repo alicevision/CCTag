@@ -32,7 +32,6 @@ using namespace std;
 
 Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t download_stream, int pipe_id )
     : _layer( my_layer )
-    , _h_debug_hyst_edges( 0 )
     , _texture( 0 )
     , _wait_for_upload( 0 )
     , _meta( pipe_id, my_layer )
@@ -41,7 +40,6 @@ Frame::Frame( uint32_t width, uint32_t height, int my_layer, cudaStream_t downlo
     , _v_chosen_idx( pipe_id, _meta, List_size_chosen_idx )
     , _inner_points( pipe_id, _meta, List_size_inner_points )
     , _interm_inner_points( pipe_id, _meta, List_size_interm_inner_points )
-    , _image_to_upload( 0 )
 {
     DO_TALK( cerr << "Allocating frame: " << width << "x" << height << endl; )
 
@@ -85,9 +83,6 @@ Frame::~Frame( )
 
     releaseRequiredMem( );
 
-    // host-side plane for debugging
-    delete [] _h_debug_hyst_edges;
-
     // required host-side planes
     delete _texture;
 
@@ -107,7 +102,7 @@ Frame::~Frame( )
     POP_CUDA_STREAM_DESTROY( _stream );
 }
 
-void Frame::upload( const unsigned char* image )
+void Frame::upload( Plane<uint8_t>& image )
 {
     DO_TALK(
       cerr << "source w=" << _d_plane.cols
@@ -120,14 +115,14 @@ void Frame::upload( const unsigned char* image )
     _image_to_upload = image;
 
 #ifdef _MSC_VER
-    VirtualLock(LPVOID(_image_to_upload), (getWidth() * getHeight()));
+    VirtualLock(LPVOID(_image_to_upload.getBuffer()), (getWidth() * getHeight()));
 #else
-    mlock( _image_to_upload, getWidth() * getHeight() );
+    mlock( _image_to_upload.getBuffer(), getWidth() * getHeight() );
 #endif
 
     POP_CUDA_MEMCPY_2D_ASYNC( _d_plane.data,
                               getPitch(),
-                              _image_to_upload,
+                              _image_to_upload.getBuffer(),
                               getWidth(),
                               getWidth(),
                               getHeight(),
@@ -138,13 +133,13 @@ void Frame::upload( const unsigned char* image )
 void Frame::uploadComplete( )
 {
     // unpin the image
-    if( _image_to_upload != 0 ) {
+    if( _image_to_upload.getBuffer() != 0 ) {
 #ifdef _MSC_VER
-        VirtualUnlock(LPVOID(_image_to_upload), (getWidth() * getHeight()));
+        VirtualUnlock(LPVOID(_image_to_upload.getBuffer()), (getWidth() * getHeight()));
 #else
-        munlock( _image_to_upload, getWidth() * getHeight() );
+        munlock( _image_to_upload.getBuffer(), getWidth() * getHeight() );
 #endif
-        _image_to_upload = 0;
+        _image_to_upload.release();
     }
 }
 

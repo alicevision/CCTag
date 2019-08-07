@@ -195,7 +195,6 @@ void update(
 static void cctagMultiresDetection_inner(
         size_t                  i,
         CCTag::List&            pyramidMarkers,
-        const cv::Mat&          imgGraySrc,
         Level*                  level,
         const std::size_t       frame,
         EdgePointCollection&    edgeCollection,
@@ -223,17 +222,17 @@ static void cctagMultiresDetection_inner(
     } else { // not cuda_pipe
 #endif // defined(CCTAG_WITH_CUDA)
     edgesPointsFromCanny( edgeCollection,
-                          level->getEdges(),
-                          level->getDx(),
-                          level->getDy());
+                          level->getEdges().getMat(),
+                          level->getDx().getMat(),
+                          level->getDy().getMat());
 
     CCTagVisualDebug::instance().setPyramidLevel(i);
 
     // Voting procedure applied on every edge points.
     vote( edgeCollection,
           seeds,        // output
-          level->getDx(),
-          level->getDy(),
+          level->getDx().getMat(),
+          level->getDy().getMat(),
           params );
     
     if( seeds.size() > 1 ) {
@@ -267,7 +266,7 @@ static void cctagMultiresDetection_inner(
 
 void cctagMultiresDetection(
         CCTag::List& markers,
-        const cv::Mat& imgGraySrc,
+        const Plane<uint8_t>&  imgGraySrc,
         const ImagePyramid& imagePyramid,
         std::size_t   frame,
         cctag::TagPipe*    cuda_pipe,
@@ -285,11 +284,10 @@ void cctagMultiresDetection(
   for( int i = params._numberOfProcessedMultiresLayers-1; i >= 0; i-- )
   {
     pyramidMarkers.insert( std::pair<std::size_t, CCTag::List>( i, CCTag::List() ) );
-    vEdgePointCollections.emplace_back(imgGraySrc.cols, imgGraySrc.rows);
+    vEdgePointCollections.emplace_back(imgGraySrc.getCols(), imgGraySrc.getRows());
     
     cctagMultiresDetection_inner( i,
                                   pyramidMarkers[i],
-                                  imgGraySrc,
                                   imagePyramid.getLevel(i),
                                   frame,
                                   vEdgePointCollections.back(),

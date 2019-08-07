@@ -7,24 +7,9 @@
  */
 #pragma once
 
-// #include <string>
-// #include <vector>
-// #include <stdlib.h>
-// #include <inttypes.h>
-// #include <opencv2/core.hpp>
-
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-
-// #include "cctag/cuda/onoff.h"
-// #include "cctag/Params.hpp"
-// #include "cctag/Types.hpp"
-// #include "cctag/ImageCut.hpp"
-// #include "cctag/geometry/Ellipse.hpp"
-// #include "cctag/geometry/Point.hpp"
-// #include "cctag/algebra/matrix/Matrix.hpp"
-// #include "cctag/utils/LogTime.hpp"
 
 namespace cctag
 {

@@ -60,7 +60,7 @@ int identify_step_1(
 	const CCTag & cctag,
     std::vector<cctag::ImageCut>& vSelectedCuts,
 	// const std::vector< std::vector<float> > & radiusRatios,
-	const cv::Mat & src,
+	const Plane<uint8_t>& src,
     // cctag::TagPipe* pipe,
 	const cctag::Parameters & params);
 
@@ -83,7 +83,7 @@ int identify_step_2(
 	CCTag & cctag,
     std::vector<cctag::ImageCut>& vSelectedCuts,
 	const std::vector< std::vector<float> > & radiusRatios,
-	const cv::Mat & src,
+    const Plane<uint8_t>& src,
     cctag::TagPipe* cudaPipe,
 	const cctag::Parameters & params);
 
@@ -145,7 +145,7 @@ void extractSignalUsingHomography(
 /* deprecated */
 void extractSignalUsingHomographyDeprec(
         cctag::ImageCut & rectifiedCut,
-        const cv::Mat & src,
+        const Plane<uint8_t>& src,
         Eigen::Matrix3f & mHomography,
         std::size_t nSamples = 100,
         float begin = 0.f,
@@ -160,13 +160,13 @@ void extractSignalUsingHomographyDeprec(
  */
 void cutInterpolated(
         cctag::ImageCut & cut,
-        const cv::Mat & src);
+        const Plane<uint8_t>& src);
 
 std::pair<float,float> convImageCut(const std::vector<float> & kernel, ImageCut & cut);
 
 void blurImageCut(float sigma, cctag::ImageCut & cut);
 
-bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, float scale, size_t numSamplesOuterEdgePointsRefinement);
+bool outerEdgeRefinement(ImageCut & cut, const Plane<uint8_t>& src, float scale, size_t numSamplesOuterEdgePointsRefinement);
 
 /**
  * @brief Collect signals (image cuts) from center to outer ellipse points
@@ -180,7 +180,7 @@ bool outerEdgeRefinement(ImageCut & cut, const cv::Mat & src, float scale, size_
  */
 void collectCuts(
         std::vector<cctag::ImageCut> & cuts, 
-        const cv::Mat & src,
+        const Plane<uint8_t>& src,
         const cctag::Point2d<Eigen::Vector3f> & center,
         const std::vector< cctag::DirectedPoint2d<Eigen::Vector3f> > & outerPoints,
         std::size_t sampleCutLength,
@@ -194,17 +194,17 @@ void collectCuts(
  * @param[in] y y coordinate
  * @return computed pixel value
  */
-inline float getPixelBilinear(const cv::Mat & src, float x, float y)
+inline float getPixelBilinear(const Plane<uint8_t>& src, float x, float y)
 {
   int px = (int)x; // floor of x
   int py = (int)y; // floor of y
-  const uchar* p0 = src.data + px + py * src.step; // pointer to first pixel
+  // const uchar* p0 = src.data + px + py * src.step; // pointer to first pixel
   
   // load the four neighboring pixels
-  const uchar & p1 = p0[0 + 0 * src.step];
-  const uchar & p2 = p0[1 + 0 * src.step];
-  const uchar & p3 = p0[0 + 1 * src.step];
-  const uchar & p4 = p0[1 + 1 * src.step];
+  const uchar & p1 = src.at( px+0, py+0 ); //  p0[0 + 0 * src.step];
+  const uchar & p2 = src.at( px+1, py+0 ); //  p0[1 + 0 * src.step];
+  const uchar & p3 = src.at( px+0, py+1 ); //  p0[0 + 1 * src.step];
+  const uchar & p4 = src.at( px+1, py+1 ); //  p0[1 + 1 * src.step];
 
   // Calculate the weights for each pixel
   float fx = x - px;
@@ -231,7 +231,7 @@ inline float getPixelBilinear(const cv::Mat & src, float x, float y)
 void getSignals(
         std::vector< cctag::ImageCut > & vCuts,
         const Eigen::Matrix3f & mHomography,
-        const cv::Mat & src);
+        const Plane<uint8_t>& src);
 
 /**
  * @brief Compute the optimal homography/imaged center based on the 
@@ -252,7 +252,7 @@ bool refineConicFamilyGlob(
         Eigen::Matrix3f & mHomography,
         Point2d<Eigen::Vector3f> & optimalPoint,
         std::vector< cctag::ImageCut > & vCuts, 
-        const cv::Mat & src,
+        const Plane<uint8_t>& src,
         cctag::TagPipe* cudaPipe,
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters & params,
@@ -279,7 +279,7 @@ bool imageCenterOptimizationGlob(
         cctag::Point2d<Eigen::Vector3f> & center,
         float & minRes,
         float neighbourSize,
-        const cv::Mat & src, 
+        const Plane<uint8_t>& src, 
         const cctag::numerical::geometry::Ellipse & outerEllipse,
         const cctag::Parameters & params );
 
@@ -330,7 +330,7 @@ void computeHomographyFromEllipseAndImagedCenter(
 float costFunctionGlob(
         const Eigen::Matrix3f & mHomography,
         std::vector< cctag::ImageCut > & vCuts,
-        const cv::Mat & src,
+        const Plane<uint8_t>& src,
         bool & flag);
 
 

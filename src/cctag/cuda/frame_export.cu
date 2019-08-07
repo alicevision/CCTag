@@ -164,43 +164,43 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
     return true;
 }
 
-cv::Mat* Frame::getPlane( ) const
+Plane<uint8_t>* Frame::getPlane( ) const
 {
-    cv::Mat* ptr = new cv::Mat( _h_plane.rows, _h_plane.cols,
-                                CV_8UC1,
-                                _h_plane.data, _h_plane.step);
+    Plane<uint8_t>* ptr = new Plane<uint8_t>( _h_plane.data,
+                                              _h_plane.rows,
+                                              _h_plane.cols );
     return ptr;
 }
 
-cv::Mat* Frame::getDx( ) const
+Plane<int16_t>* Frame::getDx( ) const
 {
-    cv::Mat* ptr = new cv::Mat( _h_dx.rows, _h_dx.cols,
-                                CV_16SC1,
-                                _h_dx.data, _h_dx.step);
+    Plane<int16_t>* ptr = new Plane<int16_t>( _h_dx.data,
+                                              _h_dx.rows,
+                                              _h_dx.cols );
     return ptr;
 }
 
-cv::Mat* Frame::getDy( ) const
+Plane<int16_t>* Frame::getDy( ) const
 {
-    cv::Mat* ptr = new cv::Mat( _h_dy.rows, _h_dy.cols,
-                                CV_16SC1,
-                                _h_dy.data, _h_dy.step);
+    Plane<int16_t>* ptr = new Plane<int16_t>( _h_dy.data,
+                                              _h_dy.rows,
+                                              _h_dy.cols );
     return ptr;
 }
 
-cv::Mat* Frame::getMag( ) const
+Plane<int16_t>* Frame::getMag( ) const
 {
-    cv::Mat* ptr = new cv::Mat( _h_mag.rows, _h_mag.cols,
-                                CV_32SC1,
-                                _h_mag.data, _h_mag.step);
+    Plane<int16_t>* ptr = new Plane<int16_t>( _h_mag.data,
+                                              _h_mag.rows,
+                                              _h_mag.cols );
     return ptr;
 }
 
-cv::Mat* Frame::getEdges( ) const
+Plane<uint8_t>* Frame::getEdges( ) const
 {
-    cv::Mat* ptr = new cv::Mat( _h_edges.rows, _h_edges.cols,
-                                CV_8UC1,
-                                _h_edges.data, _h_edges.step);
+    Plane<uint8_t>* ptr = new Plane<uint8_t>( _h_edges.data,
+                                              _h_edges.rows,
+                                              _h_edges.cols );
     return ptr;
 }
 

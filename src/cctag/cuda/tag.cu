@@ -151,10 +151,11 @@ uint32_t TagPipe::getHeight( size_t layer ) const
 }
 
 __host__
-void TagPipe::load( int frameId, unsigned char* pix )
+void TagPipe::load( int frameId, Plane<uint8_t>& frame )
 {
     cerr << "Loading image " << frameId << " into TagPipe " << _tag_id << endl;
-    _frame[0]->upload( pix ); // async
+
+    _frame[0]->upload( frame ); // async
     _frame[0]->addUploadEvent( ); // async
 }
 
@@ -201,6 +202,10 @@ void TagPipe::handleframe( int i )
 
     cudaStreamSynchronize( _frame[i]->_stream );
     cudaStreamSynchronize( _frame[i]->_download_stream );
+
+    ostringstream ostr;
+    ostr << "layer-" << i;
+    _frame[i]->writeHostDebugPlane( ostr.str(), _params );
 }
 
 __host__
@@ -216,35 +221,35 @@ void TagPipe::convertToHost( size_t                          layer,
 }
 
 __host__
-cv::Mat* TagPipe::getPlane( size_t layer ) const
+Plane<uint8_t>* TagPipe::getPlane( size_t layer ) const
 {
     assert( layer < getNumOctaves() );
     return _frame[layer]->getPlane();
 }
 
 __host__
-cv::Mat* TagPipe::getDx( size_t layer ) const
+Plane<int16_t>* TagPipe::getDx( size_t layer ) const
 {
     assert( layer < getNumOctaves() );
     return _frame[layer]->getDx();
 }
 
 __host__
-cv::Mat* TagPipe::getDy( size_t layer ) const
+Plane<int16_t>* TagPipe::getDy( size_t layer ) const
 {
     assert( layer < getNumOctaves() );
     return _frame[layer]->getDy();
 }
 
 __host__
-cv::Mat* TagPipe::getMag( size_t layer ) const
+Plane<int16_t>* TagPipe::getMag( size_t layer ) const
 {
     assert( layer < getNumOctaves() );
     return _frame[layer]->getMag();
 }
 
 __host__
-cv::Mat* TagPipe::getEdges( size_t layer ) const
+Plane<uint8_t>* TagPipe::getEdges( size_t layer ) const
 {
     assert( layer < getNumOctaves() );
     return _frame[layer]->getEdges();

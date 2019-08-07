@@ -36,7 +36,7 @@ public:
   
     /* The pyramid building function is never called if CUDA is used.
      */
-  void build(const cv::Mat & src, float thrLowCanny, float thrHighCanny, const cctag::Parameters* params );
+  void build(const Plane<uint8_t>& src, float thrLowCanny, float thrHighCanny, const cctag::Parameters* params );
 
 private:
   std::vector<Level*> _levels;

@@ -23,6 +23,7 @@ set( CCTag_cpp
         ./cctag/Statistic.cpp
         ./cctag/SubPixEdgeOptimizer.cpp
         ./cctag/Types.cpp
+        ./cctag/Plane.cpp
         ./cctag/Vote.cpp
         ./cctag/algebra/matrix/Operation.cpp
         ./cctag/filter/cvRecode.cpp

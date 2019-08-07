@@ -22,7 +22,7 @@ using namespace std;
 __global__
 void compute_mag_l1( cv::cuda::PtrStepSz16s src_dx,
                      cv::cuda::PtrStepSz16s src_dy,
-                     cv::cuda::PtrStepSz32u dst )
+                     cv::cuda::PtrStepSz16s dst )
 {
     int block_x = blockIdx.x * 32;
     int idx     = block_x + threadIdx.x;
@@ -40,7 +40,7 @@ void compute_mag_l1( cv::cuda::PtrStepSz16s src_dx,
 __global__
 void compute_mag_l2( cv::cuda::PtrStepSz16s src_dx,
                      cv::cuda::PtrStepSz16s src_dy,
-                     cv::cuda::PtrStepSz32u dst )
+                     cv::cuda::PtrStepSz16s dst )
 {
     int block_x = blockIdx.x * 32;
     int idx     = block_x + threadIdx.x;
@@ -59,7 +59,7 @@ void compute_mag_l2( cv::cuda::PtrStepSz16s src_dx,
 __global__
 void compute_map( const cv::cuda::PtrStepSz16s dx,
                   const cv::cuda::PtrStepSz16s dy,
-                  const cv::cuda::PtrStepSz32u mag,
+                  const cv::cuda::PtrStepSz16s mag,
                   cv::cuda::PtrStepSzb         map )
 {
     const int CANNY_SHIFT = 15;
@@ -141,7 +141,7 @@ void Frame::applyMagDownload( )
 
     cudaMemcpy2DAsync( _h_mag.data, _h_mag.step,
                        _d_mag.data, _d_mag.step,
-                       _d_mag.cols * sizeof(uint32_t),
+                       _d_mag.cols * sizeof(int16_t),
                        _d_mag.rows,
                        cudaMemcpyDeviceToHost, _download_stream );
 

@@ -568,8 +568,8 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
 
 void cctagDetectionFromEdges(
         CCTag::List&            markers,
-        EdgePointCollection& edgeCollection,
-        const cv::Mat&          src,
+        EdgePointCollection&    edgeCollection,
+        Plane<uint8_t>          src,
         const std::vector<EdgePoint*>& seeds,
         std::size_t frame,
         int pyramidLevel,
@@ -601,7 +601,7 @@ void cctagDetectionFromEdges(
     return;
   }
 
-  const std::size_t nMaximumNbSeeds = std::max(src.rows/2, (int) params._maximumNbSeeds);
+  const std::size_t nMaximumNbSeeds = std::max(src.getRows()/2, params._maximumNbSeeds);
   
   const std::size_t nSeedsToProcess = std::min(seeds.size(), nMaximumNbSeeds);
 
@@ -695,14 +695,14 @@ void cctagDetectionFromEdges(
 
 
 void createImageForVoteResultDebug(
-        const cv::Mat & src,
+        Plane<uint8_t>& src,
         std::size_t nLevel)
 {
 #if defined(CCTAG_SERIALIZE) && 0 // todo@lilian: fixme
   {
     std::size_t mx = 0;
     
-    cv::Mat imgVote(src.rows, src.cols, CV_8UC1, cv::Scalar(0,0,0));
+    cv::Mat imgVote(src.getRows(), src.getCols(), CV_8UC1, cv::Scalar(0,0,0));
 
     for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
     {
@@ -771,7 +771,7 @@ void cctagDetection(
         CCTag::List& markers,
         int          pipeId,
         std::size_t frame,
-        const cv::Mat & imgGraySrc,
+        Plane<uint8_t>& imgGraySrc,
         const Parameters & providedParams,
         const cctag::CCTagMarkersBank & bank,
         bool bDisplayEllipses,
@@ -793,8 +793,8 @@ void cctagDetection(
     bool cuda_allocates = false;
 #endif
   
-    ImagePyramid imagePyramid( imgGraySrc.cols,
-                               imgGraySrc.rows,
+    ImagePyramid imagePyramid( imgGraySrc.getCols(),
+                               imgGraySrc.getRows(),
                                params._numberOfProcessedMultiresLayers,
                                cuda_allocates );
 
@@ -802,19 +802,19 @@ void cctagDetection(
 #ifdef CCTAG_WITH_CUDA
     if( params._useCuda ) {
         pipe1 = initCuda( pipeId,
-                          imgGraySrc.size().width,
-	                      imgGraySrc.size().height,
+                          imgGraySrc.getCols(),
+	                      imgGraySrc.getRows(),
 	                      params,
 	                      durations );
 
         if( durations ) durations->log( "after initCuda" );
 
-        assert( imgGraySrc.elemSize() == 1 );
-        assert( imgGraySrc.isContinuous() );
-        assert( imgGraySrc.type() == CV_8U );
-        unsigned char* pix = imgGraySrc.data;
+        // assert( imgGraySrc.elemSize() == 1 );
+        // assert( imgGraySrc.isContinuous() );
+        // assert( imgGraySrc.type() == CV_8U );
+        // unsigned char* pix = imgGraySrc.data;
 
-        pipe1->load( frame, pix );
+        pipe1->load( frame, imgGraySrc );
 
         if( durations ) {
             cudaDeviceSynchronize();

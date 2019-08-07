@@ -21,7 +21,7 @@
 
 using namespace cctag;
 
-FrameLog FrameLog::detect(size_t frame, const cv::Mat& src, const Parameters& parameters,
+FrameLog FrameLog::detect(size_t frame, Plane<uint8_t>& src, const Parameters& parameters,
   const cctag::CCTagMarkersBank& bank)
 {
   using namespace std::chrono;
@@ -86,11 +86,12 @@ FileLog FileLog::detectImage(const std::string& filename, const cctag::Parameter
   FileLog fileLog(filename, parameters);
   CCTagMarkersBank bank(parameters._nCrowns);
 
-  cv::Mat src, gray;
+  cv::Mat src;
+  Plane<uint8_t> gray;
   src = cv::imread(filename);
   if (src.empty())
     throw std::runtime_error(std::string("FileLog: unable to read image file: ") + filename);
-  cv::cvtColor(src, gray, CV_BGR2GRAY);
+  cv::cvtColor(src, gray.getMat(), CV_BGR2GRAY);
   
   auto frameLog = FrameLog::detect(0, gray, parameters, bank);
   fileLog.frameLogs.push_back(frameLog);
@@ -107,11 +108,12 @@ FileLog FileLog::detectVideo(const std::string& filename, const cctag::Parameter
     throw std::runtime_error("FileLog: unable to open video file: " + filename);
   
   const size_t lastFrame = video.get(CV_CAP_PROP_FRAME_COUNT);
-  cv::Mat src, gray;
+  cv::Mat src;
   
   for (size_t i = 0; i < lastFrame; ++i) {
     video >> src;
-    cv::cvtColor(src, gray, CV_BGR2GRAY);
+    Plane<uint8_t> gray;
+    cv::cvtColor(src, gray.getMat(), CV_BGR2GRAY);
     auto frameLog = FrameLog::detect(i, gray, parameters, bank);
     fileLog.frameLogs.push_back(frameLog);
   }

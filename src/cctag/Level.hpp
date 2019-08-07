@@ -9,6 +9,7 @@
 #define	_CCTAG_LEVEL_HPP
 
 #include <opencv2/opencv.hpp>
+#include "cctag/Plane.hpp"
 
 namespace cctag {
     class TagPipe;
@@ -26,7 +27,7 @@ public:
   
   ~Level( );
 
-  void setLevel( const cv::Mat & src,
+  void setLevel( const Plane<uint8_t>& src,
                  float thrLowCanny,
                  float thrHighCanny,
                  const cctag::Parameters* params );
@@ -35,14 +36,14 @@ public:
                  const cctag::Parameters& params );
 #endif // CCTAG_WITH_CUDA
 
-  const cv::Mat & getSrc() const;
-  const cv::Mat & getDx() const;
-  const cv::Mat & getDy() const;
-  const cv::Mat & getMag() const; 
-  const cv::Mat & getEdges() const;
+  Plane<uint8_t>&       getSrc();
+  const Plane<int16_t>& getDx() const;
+  const Plane<int16_t>& getDy() const;
+  const Plane<int16_t>& getMag() const; 
+  const Plane<uint8_t>& getEdges() const;
   
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
-  const cv::Mat & getCannyNotThin() const;
+  const Plane<uint8_t>& getCannyNotThin() const;
 #endif
   
   inline std::size_t width() const
@@ -63,15 +64,15 @@ private:
   std::size_t _cols;
   std::size_t _rows;
   
-  cv::Mat* _dx;
-  cv::Mat* _dy;
-  cv::Mat* _mag;
-  cv::Mat* _src;
-  cv::Mat* _edges;
-  cv::Mat  _temp;
+  Plane<int16_t>* _dx;
+  Plane<int16_t>* _dy;
+  Plane<int16_t>* _mag;
+  Plane<uint8_t>* _src;
+  Plane<uint8_t>* _edges;
+  Plane<uint8_t>  _temp;
   
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
-  cv::Mat _edgesNotThin;
+  Plane<uint8_t> _edgesNotThin;
 #endif
 };
 

@@ -36,7 +36,7 @@ void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       int                       pipeId,
       std::size_t frame,
-      const cv::Mat & graySrc,
+      Plane<uint8_t>& graySrc,
       std::size_t nRings,
       logtime::Mgmt* durations,
       const std::string & parameterFilename,
@@ -72,7 +72,7 @@ void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       int                       pipeId,
       std::size_t frame,
-      const cv::Mat & graySrc,
+      Plane<uint8_t>& graySrc,
       const cctag::Parameters & params,
       logtime::Mgmt* durations,
       const CCTagMarkersBank * pBank)

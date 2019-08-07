@@ -22,6 +22,10 @@ Level::Level( std::size_t width, std::size_t height, int debug_info_level, bool 
     , _mat_initialized_from_cuda( false )
     , _cols( width )
     , _rows( height )
+    , _temp( height, width )
+#ifdef CCTAG_EXTRA_LAYER_DEBUG
+    , _edgesNotThin( height, width )
+#endif
 {
     if( _cuda_allocates ) {
         _src   = nullptr;
@@ -31,18 +35,12 @@ Level::Level( std::size_t width, std::size_t height, int debug_info_level, bool 
         _edges = nullptr;
     } else {
         // Allocation
-        _src   = new cv::Mat(height, width, CV_8UC1);
-        _dx    = new cv::Mat(height, width, CV_16SC1 );
-        _dy    = new cv::Mat(height, width, CV_16SC1 );
-        _mag   = new cv::Mat(height, width, CV_16SC1 );
-        _edges = new cv::Mat(height, width, CV_8UC1);
+        _src   = new Plane<uint8_t>( height, width );
+        _dx    = new Plane<int16_t>( height, width );
+        _dy    = new Plane<int16_t>( height, width );
+        _mag   = new Plane<int16_t>( height, width );
+        _edges = new Plane<uint8_t>( height, width );
     }
-    _temp = cv::Mat(height, width, CV_8UC1);
-  
-#ifdef CCTAG_EXTRA_LAYER_DEBUG
-  _edgesNotThin = cv::Mat(height, width, CV_8UC1);
-#endif
-  
 }
 
 Level::~Level( )
@@ -54,7 +52,7 @@ Level::~Level( )
     delete _edges;
 }
 
-void Level::setLevel( const cv::Mat & src,
+void Level::setLevel( const Plane<uint8_t>& src,
                       float thrLowCanny,
                       float thrHighCanny,
                       const cctag::Parameters* params )
@@ -64,10 +62,14 @@ void Level::setLevel( const cv::Mat & src,
         exit( -__LINE__ );
     }
 
-    cv::resize( src, *_src, cv::Size(_src->cols,_src->rows) );
+    cv::resize( src.getMat(), _src->getMat(), cv::Size( _src->getCols(),_src->getRows() ) );
     // ASSERT TODO : check that the data are allocated here
     // Compute derivative and canny edge extraction.
-    cvRecodedCanny( *_src, *_edges, *_dx, *_dy,
+    cv::Mat edges = _edges->getMat();
+    cv::Mat dx    = _dx->getMat();
+    cv::Mat dy    = _dy->getMat();
+    cv::Mat temp  = _temp.getMat();
+    cvRecodedCanny( _src->getMat(), edges, dx, dy,
                     thrLowCanny * 256, thrHighCanny * 256,
                     3 | CV_CANNY_L2_GRADIENT,
                     _level, params );
@@ -77,7 +79,7 @@ void Level::setLevel( const cv::Mat & src,
     _edgesNotThin = _edges->clone();
 #endif
   
-    thin(*_edges,_temp);
+    thin(edges,temp);
 }
 
 #ifdef CCTAG_WITH_CUDA
@@ -97,34 +99,34 @@ void Level::setLevel( cctag::TagPipe*         cuda_pipe,
 }
 #endif // CCTAG_WITH_CUDA
 
-const cv::Mat & Level::getSrc() const
+Plane<uint8_t>& Level::getSrc()
 {
     return *_src;
 }
 
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
-const cv::Mat & Level::getCannyNotThin() const
+const Plane<uint8_t>& Level::getCannyNotThin() const
 {
     return _edgesNotThin;
 }
 #endif
 
-const cv::Mat & Level::getDx() const
+const Plane<int16_t>& Level::getDx() const
 {
     return *_dx;
 }
 
-const cv::Mat & Level::getDy() const
+const Plane<int16_t>& Level::getDy() const
 {
     return *_dy;
 }
 
-const cv::Mat & Level::getMag() const
+const Plane<int16_t>& Level::getMag() const
 {
     return *_mag;
 }
 
-const cv::Mat & Level::getEdges() const
+const Plane<uint8_t>& Level::getEdges() const
 {
     return *_edges;
 }

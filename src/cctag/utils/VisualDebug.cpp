@@ -7,6 +7,7 @@
  */
 #include <cctag/utils/VisualDebug.hpp>
 #include <cctag/utils/FileDebug.hpp>
+#include <cctag/Plane.hpp>
 
 #include <boost/filesystem.hpp>
 #include <opencv2/opencv.hpp>

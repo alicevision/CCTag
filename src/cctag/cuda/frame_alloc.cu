@@ -53,9 +53,9 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _d_intermediate.cols = w;
     _d_intermediate.rows = h;
 
-    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(uint32_t), h );
+    POP_CUDA_MALLOC_PITCH( &ptr, &p, w*sizeof(int16_t), h );
     assert( p % _d_mag.elemSize() == 0 );
-    _d_mag.data = (uint32_t*)ptr;
+    _d_mag.data = (int16_t*)ptr;
     _d_mag.step = p;
     _d_mag.cols = w;
     _d_mag.rows = h;
@@ -106,9 +106,9 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _h_dy.cols = w;
     _h_dy.rows = h;
 
-    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int32_t) );
-    _h_mag.data = (uint32_t*)ptr;
-    _h_mag.step = w * sizeof(uint32_t);
+    POP_CUDA_MALLOC_HOST( &ptr, w * h * sizeof(int16_t) );
+    _h_mag.data = (int16_t*)ptr;
+    _h_mag.step = w * sizeof(int16_t);
     _h_mag.cols = w;
     _h_mag.rows = h;
 

@@ -39,7 +39,7 @@ struct CCTagParams
 
 void cctagMultiresDetection(
         CCTag::List& markers,
-        const cv::Mat& imgGraySrc,
+        const Plane<uint8_t>& imgGraySrc,
         const ImagePyramid& imagePyramid,
         std::size_t   frame,
         cctag::TagPipe*    cuda_pipe,

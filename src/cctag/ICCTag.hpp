@@ -9,6 +9,7 @@
 #define	PONCTUALCCTAG_HPP
 
 #include <cctag/Params.hpp>
+#include <cctag/Plane.hpp>
 #include <cctag/CCTagMarkersBank.hpp>
 
 #include <boost/ptr_container/ptr_list.hpp>
@@ -72,7 +73,7 @@ void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       int                       pipeId,
       std::size_t frame,
-      const cv::Mat & graySrc,
+      Plane<uint8_t>& graySrc,
       std::size_t nRings = 3,
       logtime::Mgmt* durations = nullptr,
       const std::string & parameterFile = "",
@@ -82,7 +83,7 @@ void cctagDetection(
       boost::ptr_list<ICCTag> & markers,
       int                       pipeId,
       std::size_t frame,
-      const cv::Mat & graySrc,
+      Plane<uint8_t>& graySrc,
       const cctag::Parameters & params,
       logtime::Mgmt* durations = nullptr,
       const CCTagMarkersBank * pBank = nullptr);

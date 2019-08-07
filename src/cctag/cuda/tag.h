@@ -8,6 +8,7 @@
 #pragma once
 
 #include "cctag/cuda/onoff.h"
+#include "cctag/Plane.hpp"
 
 #include <string>
 #include <vector>
@@ -58,7 +59,7 @@ public:
                      const uint32_t pix_h,
                      cctag::logtime::Mgmt* durations );
     void release( );
-    void load( int frameId, unsigned char* pix );
+    void load( int frameId, Plane<uint8_t>& plane );
     void tagframe( );
     void handleframe( int layer );
 
@@ -74,11 +75,11 @@ public:
     uint32_t getWidth(  size_t layer ) const;
     uint32_t getHeight( size_t layer ) const;
 
-    cv::Mat* getPlane( size_t layer ) const;
-    cv::Mat* getDx( size_t layer ) const;
-    cv::Mat* getDy( size_t layer ) const;
-    cv::Mat* getMag( size_t layer ) const;
-    cv::Mat* getEdges( size_t layer ) const;
+    Plane<uint8_t>* getPlane( size_t layer ) const;
+    Plane<int16_t>* getDx( size_t layer ) const;
+    Plane<int16_t>* getDy( size_t layer ) const;
+    Plane<int16_t>* getMag( size_t layer ) const;
+    Plane<uint8_t>* getEdges( size_t layer ) const;
 
 public:
     __host__

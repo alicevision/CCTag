@@ -13,6 +13,7 @@
 #include <string.h>
 #include <cctag/cuda/cctag_cuda_runtime.h>
 #include <map>
+#include <mutex>
 #include "debug_macros.hpp"
 
 #include "frame.h"
@@ -31,8 +32,14 @@ using namespace std;
  * Frame
  *************************************************************/
 
+static std::mutex mx;
+
 void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& params )
 {
+    std::lock_guard<std::mutex> lock(mx);
+
+    if( params._debugDir == "" ) return;
+
     filename = params._debugDir + filename;
 
     string s;
@@ -69,8 +76,8 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 
 
 #ifdef DEBUG_WRITE_MAG_AS_PGM
-    const cv::cuda::PtrStepSz32u& mag = _h_mag;
-    DebugImage::writePGMscaled( filename + "-03-mag.pgm", mag );
+    const Plane<int16_t> mag( _h_mag.data, _h_mag.rows, _h_mag.cols ); // = _h_mag;
+    writePlanePGM( filename + "-03-mag.pgm", mag, SCALED_WRITING );
 #ifdef DEBUG_WRITE_MAG_AS_ASCII
     DebugImage::writeASCII( filename + "-03-mag-ascii.txt", mag );
 #endif // DEBUG_WRITE_MAG_AS_ASCII
@@ -86,14 +93,6 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     DebugImage::writeASCII( filename + "-03-map-ascii.txt", map );
 #endif // DEBUG_WRITE_MAP_AS_ASCII
 #endif // DEBUG_WRITE_MAP_AS_PGM
-
-#ifdef DEBUG_WRITE_HYSTEDGES_AS_PGM
-    cv::cuda::PtrStepSzb   hystedges( getHeight(),
-                                      getWidth(),
-                                      _h_debug_hyst_edges,
-                                      getWidth()*sizeof(uint8_t) );
-    DebugImage::writePGMscaled( filename + "-04-hystedges.pgm", hystedges );
-#endif // DEBUG_WRITE_HYSTEDGES_AS_PGM
 
 #ifndef NDEBUG
     const cv::cuda::PtrStepSzb&  edges = _h_edges;

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cctag/cuda/cctag_cuda_runtime.h>
+#include <cctag/Plane.hpp>
 #include <assert.h>
 #include <string>
 #include <vector>
@@ -105,7 +106,7 @@ public:
     static void initThinningTable( );
 
     // copy the upper layer from the host to the device
-    void upload( const unsigned char* image ); // implicitly assumed that w/h are the same as above
+    void upload( Plane<uint8_t>& image ); // implicitly assumed that w/h are the same as above
 
     // called by every thread, unpins uploaded image in frame 0
     void uploadComplete( );
@@ -202,11 +203,11 @@ public:
                       std::vector<cctag::EdgePoint*>& out_seedlist,
                       const int max_edge_pt );
 
-    cv::Mat* getPlane( ) const;
-    cv::Mat* getDx( ) const;
-    cv::Mat* getDy( ) const;
-    cv::Mat* getMag( ) const;
-    cv::Mat* getEdges( ) const;
+    Plane<uint8_t>* getPlane( ) const;
+    Plane<int16_t>* getDx( ) const;
+    Plane<int16_t>* getDy( ) const;
+    Plane<int16_t>* getMag( ) const;
+    Plane<uint8_t>* getEdges( ) const;
 
     friend class TagPipe;
 
@@ -231,7 +232,7 @@ private:
     cv::cuda::PtrStepSzf    _d_smooth;
     cv::cuda::PtrStepSz16s  _d_dx; // cv::cuda::PtrStepSzf _d_dx;
     cv::cuda::PtrStepSz16s  _d_dy; // cv::cuda::PtrStepSzf _d_dy;
-    cv::cuda::PtrStepSz32u  _d_mag;
+    cv::cuda::PtrStepSz16s  _d_mag;
     cv::cuda::PtrStepSzb    _d_map;
     cv::cuda::PtrStepSzb    _d_hyst_edges;
     cv::cuda::PtrStepSzb    _d_edges;
@@ -240,12 +241,12 @@ private:
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_map;
 #endif // DEBUG_WRITE_MAP_AS_PGM
-    unsigned char*          _h_debug_hyst_edges;
+
 public: // HACK FOR DEBUGGING
     cv::cuda::PtrStepSzb    _h_plane;
     cv::cuda::PtrStepSz16s  _h_dx;
     cv::cuda::PtrStepSz16s  _h_dy;
-    cv::cuda::PtrStepSz32u  _h_mag;
+    cv::cuda::PtrStepSz16s  _h_mag;
     cv::cuda::PtrStepSzb    _h_edges;
 
     cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
@@ -266,7 +267,7 @@ private:
 
     FrameTexture*        _texture;
     cudaEvent_t          _wait_for_upload;
-    const unsigned char* _image_to_upload;
+    Plane<uint8_t>       _image_to_upload;
 
 public:
     // if we run out of streams (there are 32), we may have to share

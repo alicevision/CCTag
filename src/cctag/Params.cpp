@@ -78,8 +78,6 @@ Parameters::Parameters(std::size_t nCrowns)
 
 void Parameters::setDebugDir( const std::string& debugDir )
 {
-
-
 	namespace fs = boost::filesystem;
 	fs::path directory(debugDir);
 	if (fs::exists(directory))
@@ -90,6 +88,11 @@ void Parameters::setDebugDir( const std::string& debugDir )
 	{
 		fs::create_directories(directory);
 	}
+
+    if( debugDir.back() != '/' )
+        _debugDir = debugDir + "/";
+    else
+        _debugDir = debugDir;
 }
 
 void Parameters::setUseCuda( bool val )
