@@ -34,14 +34,14 @@ EdgePoint* gradientDirectionDescent(
         const EdgePoint& p,
         int dir,
         std::size_t nmax,
-        const cv::Mat & imgDx, 
-        const cv::Mat & imgDy, 
+        Plane<int16_t> imgDx, 
+        Plane<int16_t> imgDy, 
         int thrGradient)
 {
     EdgePoint* ret = nullptr;
     float e        = 0.0f;
-    float dx       = dir * imgDx.at<short>(p.y(),p.x());
-    float dy       = dir * imgDy.at<short>(p.y(),p.x());
+    float dx       = dir * imgDx.at(p.x(),p.y());
+    float dy       = dir * imgDy.at(p.x(),p.y());
 
     float dx2 = 0;
     float dy2 = 0;
@@ -72,8 +72,8 @@ EdgePoint* gradientDirectionDescent(
 
         if ( dx*dx+dy*dy > thrGradient )
         {
-            dx2 = imgDx.at<short>(p.y(),p.x());
-            dy2 = imgDy.at<short>(p.y(),p.x());
+            dx2 = imgDx.at(p.x(),p.y());
+            dy2 = imgDy.at(p.x(),p.y());
             dir = boost::math::sign<float>( dx2*dxRef+dy2*dyRef );
             dx = dir*dx2;
             dy = dir*dy2;
@@ -142,8 +142,8 @@ EdgePoint* gradientDirectionDescent(
 
         if ( dx*dx+dy*dy > thrGradient )
         {
-            dx2 = imgDx.at<short>(p.y(),p.x());
-            dy2 = imgDy.at<short>(p.y(),p.x());
+            dx2 = imgDx.at(p.x(),p.y());
+            dy2 = imgDy.at(p.x(),p.y());
             dir = boost::math::sign<float>( dx2*dxRef+dy2*dyRef );
             dx = dir*dx2;
             dy = dir*dy2;

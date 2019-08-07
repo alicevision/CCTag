@@ -14,20 +14,20 @@ namespace cctag
 
 void edgesPointsFromCanny(
         EdgePointCollection& edgeCollection,
-        const cv::Mat & edges,
-        const cv::Mat & dx,
-        const cv::Mat & dy )
+        Plane<uint8_t>& edges,
+        Plane<int16_t>& dx,
+        Plane<int16_t>& dy )
 {
-  std::size_t width = edges.cols;
-  std::size_t height = edges.rows;
+  std::size_t width  = edges.getCols();
+  std::size_t height = edges.getRows();
   
   for( int y = 0 ; y < height ; ++y )
   {
     for( int x = 0 ; x < width ; ++x )
     {
-      if ( edges.at<uchar>(y,x) == 255 )
+      if ( edges.at(x,y) == 255 )
       {
-        edgeCollection.add_point(x, y, dx.at<short>(y,x), dy.at<short>(y,x));
+        edgeCollection.add_point(x, y, dx.at(x,y), dy.at(x,y));
       }
     }
   }

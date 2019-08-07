@@ -10,11 +10,12 @@
 
 #include <cctag/geometry/Point.hpp>
 
-#include <opencv2/core/mat.hpp>
+// #include <opencv2/core/mat.hpp>
 
 #include <cstddef>
 
-#include "Types.hpp"
+#include "cctag/Types.hpp"
+#include "cctag/Plane.hpp"
 
 namespace cctag {
 
@@ -29,8 +30,8 @@ EdgePoint* gradientDirectionDescent(
   const EdgePoint& p,
   int dir,
   std::size_t nmax,
-  const cv::Mat & imgDx,
-  const cv::Mat & imgDy,
+  Plane<int16_t> imgDx,
+  Plane<int16_t> imgDy,
   int thrGradient);
 
 } // namespace cctag

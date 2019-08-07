@@ -37,10 +37,10 @@ public:
 #endif // CCTAG_WITH_CUDA
 
   Plane<uint8_t>&       getSrc();
-  const Plane<int16_t>& getDx() const;
-  const Plane<int16_t>& getDy() const;
-  const Plane<int16_t>& getMag() const; 
-  const Plane<uint8_t>& getEdges() const;
+  Plane<int16_t>& getDx() const;
+  Plane<int16_t>& getDy() const;
+  Plane<int16_t>& getMag() const; 
+  Plane<uint8_t>& getEdges() const;
   
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
   const Plane<uint8_t>& getCannyNotThin() const;

@@ -193,13 +193,15 @@ bool orazioDistanceRobust(
 
 void createRectifiedCutImage(const std::vector<ImageCut> & vCuts, cv::Mat & output)
 {
+  // Plane<uint8_t> output( vCuts.size(), vCuts.front().imgSignal().size() );
   output = cv::Mat(vCuts.size(), vCuts.front().imgSignal().size(), CV_8UC1);
-  for(int i=0 ; i<vCuts.size() ; ++i)
+  for(int y=0 ; y<vCuts.size() ; ++y)
   {
-    const ImageCut & cut = vCuts[i];
-    for(int j=0 ; j < cut.imgSignal().size() ; ++j)
+    const ImageCut & cut = vCuts[y];
+    for(int x=0 ; x < cut.imgSignal().size() ; ++x)
     {
-      output.at<uchar>(i,j) = (uchar) cut.imgSignal()[j];
+      output.at<uchar>(y,x) = (uchar) cut.imgSignal()[x];
+      // output.at(x,y) = (uchar) cut.imgSignal()[x];
     }
   }
 }

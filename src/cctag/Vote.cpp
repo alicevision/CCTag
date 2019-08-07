@@ -58,8 +58,8 @@ namespace cctag {
  */
 void vote(EdgePointCollection& edgeCollection,
         std::vector<EdgePoint*> & seeds,
-        const cv::Mat & dx,
-        const cv::Mat & dy,
+        Plane<int16_t>& dx,
+        Plane<int16_t>& dy,
         const Parameters & params)
 {
 #ifdef CCTAG_VOTE_DEBUG
@@ -247,14 +247,18 @@ void vote(EdgePointCollection& edgeCollection,
     CCTAG_COUT_LILIAN("Elapsed time for vote: " << t.elapsed());
 }
 
-    static inline unsigned packxy(int x, int y)
-    {
+static inline unsigned packxy(int x, int y)
+{
       unsigned ux = x, uy = y;
       return (ux << 16) | (uy & 0xFFFF);
-    }
+}
 
-    void edgeLinking(EdgePointCollection& edgeCollection, std::list<EdgePoint*>& convexEdgeSegment, EdgePoint* pmax,
-            std::size_t windowSizeOnInnerEllipticSegment, float averageVoteMin) {
+void edgeLinking( EdgePointCollection& edgeCollection,
+                  std::list<EdgePoint*>& convexEdgeSegment,
+                  EdgePoint* pmax,
+                  std::size_t windowSizeOnInnerEllipticSegment,
+                  float averageVoteMin)
+{
         
         boost::container::flat_set<unsigned int> processed; // (x,y) packed in 32 bits
         if (pmax) {

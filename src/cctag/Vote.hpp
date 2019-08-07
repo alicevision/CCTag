@@ -37,8 +37,8 @@ namespace cctag {
  * cannyGradY: Y derivative of the gray image
  */
 void vote(EdgePointCollection& edgeCollection, std::vector<EdgePoint*> & seeds,
-        const cv::Mat & dx,
-        const cv::Mat & dy,
+        Plane<int16_t>& dx,
+        Plane<int16_t>& dy,
         const Parameters & params);
  
 /** @brief Retrieve all connected edges.

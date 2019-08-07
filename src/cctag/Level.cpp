@@ -111,22 +111,22 @@ const Plane<uint8_t>& Level::getCannyNotThin() const
 }
 #endif
 
-const Plane<int16_t>& Level::getDx() const
+Plane<int16_t>& Level::getDx() const
 {
     return *_dx;
 }
 
-const Plane<int16_t>& Level::getDy() const
+Plane<int16_t>& Level::getDy() const
 {
     return *_dy;
 }
 
-const Plane<int16_t>& Level::getMag() const
+Plane<int16_t>& Level::getMag() const
 {
     return *_mag;
 }
 
-const Plane<uint8_t>& Level::getEdges() const
+Plane<uint8_t>& Level::getEdges() const
 {
     return *_edges;
 }

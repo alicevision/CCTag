@@ -8,9 +8,10 @@
 #ifndef VISION_CCTAG_CANNY_HPP_
 #define VISION_CCTAG_CANNY_HPP_
 
-#include <cctag/Types.hpp>
+#include "cctag/Types.hpp"
+#include "cctag/Plane.hpp"
 
-#include <opencv2/core/core.hpp>
+// #include <opencv2/core/core.hpp>
 
 #include <vector>
 
@@ -21,9 +22,9 @@ class EdgePoint;
 
 void edgesPointsFromCanny(
         EdgePointCollection& edgeCollection,
-        const cv::Mat & edges,
-        const cv::Mat & dx,
-        const cv::Mat & dy );
+        Plane<uint8_t>& edges,
+        Plane<int16_t>& dx,
+        Plane<int16_t>& dy );
 
 } // namespace cctag
 

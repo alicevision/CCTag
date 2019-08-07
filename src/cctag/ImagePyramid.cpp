@@ -47,7 +47,8 @@ void ImagePyramid::build( const Plane<uint8_t>& src, float thrLowCanny, float th
     _levels[i]->setLevel( _levels[i-1]->getSrc(), thrLowCanny, thrHighCanny, params );
   }
   
-#ifdef CCTAG_SERIALIZE
+  if( params->_debugDir == "" ) return;
+
   for(int i = 0; i < _levels.size() ; ++i)
   {
     std::stringstream outFilenameCanny;
@@ -56,35 +57,31 @@ void ImagePyramid::build( const Plane<uint8_t>& src, float thrLowCanny, float th
     CCTagVisualDebug::instance().newSession(outFilenameCanny.str());
     
 #ifdef CCTAG_EXTRA_LAYER_DEBUG
-    std::stringstream dX, dY;
-    cv::Mat imgDX, imgDY;
-    
-    dX << "dX" << i;
-    sIntToUchar(_levels[i]->getDx(), imgDX);
-    CCTagVisualDebug::instance().initBackgroundImage(imgDX);
-    CCTagVisualDebug::instance().newSession(dX.str());   
-    dY << "dY" << i;
-    sIntToUchar(_levels[i]->getDy(), imgDY);
-    CCTagVisualDebug::instance().initBackgroundImage(imgDY);
-    CCTagVisualDebug::instance().newSession(dY.str()); 
-    
-    outFilenameCanny << "_wt";
-    CCTagVisualDebug::instance().initBackgroundImage(_levels[i]->getCannyNotThin());
-    CCTagVisualDebug::instance().newSession(outFilenameCanny.str());
-    
-    writePlanePGM( "src_", _levels[i]->getSrc(), UNSCALED_WRITING );
-    writePlanePGM( "dx_",  _levels[i]->getDx(),  SCALED_WRITING );
-    writePlanePGM( "dy_",  _levels[i]->getDy(),  SCALED_WRITING );
+    {
+        std::ostringstream o;
+        o << params->_debugDir << "cannyLevel" << i << "_wt" << ".pgm";
+        writePlanePGM( o.str(), _levels[i]->getCannyNotThin(), SCALED_WRITING );
+    }
+#endif
 
-    // CCTAG_COUT("src_");
-    // CCTagVisualDebug::instance().coutImage<uchar>(_levels[i]->getSrc());
-    // CCTAG_COUT("dx_");
-    // CCTagVisualDebug::instance().coutImage<short>(_levels[i]->getDx());
-    // CCTAG_COUT("dy_");
-    // CCTagVisualDebug::instance().coutImage<short>(_levels[i]->getDy());
-#endif
+    {
+        std::ostringstream o;
+        o << params->_debugDir << "src_" << i << ".pgm";
+        writePlanePGM( o.str(), _levels[i]->getSrc(), SCALED_WRITING );
+    }
+
+    {
+        std::ostringstream o;
+        o << params->_debugDir << "dx_" << i << ".pgm";
+        writePlanePGM( o.str(), _levels[i]->getDx(), SCALED_WRITING );
+    }
+
+    {
+        std::ostringstream o;
+        o << params->_debugDir << "dy_" << i << ".pgm";
+        writePlanePGM( o.str(), _levels[i]->getDy(), SCALED_WRITING );
+    }
   }
-#endif
 }
 
 ImagePyramid::~ImagePyramid()
@@ -105,30 +102,30 @@ Level* ImagePyramid::getLevel( std::size_t level ) const
         return _levels[level];
 }
 
-void toUchar(const cv::Mat & src, cv::Mat & dst)
-{
-  std::size_t width = src.cols;
-  std::size_t height = src.rows;
-  dst = cv::Mat(height, width, CV_8UC1);
-  
-  double min = 0;
-  double max = 0;
-  
-  cv::minMaxLoc(src, &min, &max);
-  
-  CCTAG_COUT_VAR(min);
-  CCTAG_COUT_VAR(max);
-  
-  float scale = 255/(max-min);
-  
-  for ( int i=0 ; i < width ; ++i)
-  {
-    for ( int j=0 ; j < height ; ++j)
-    {
-      dst.at<uchar>(j,i) = (uchar) ((src.at<short>(j,i)+min)*scale);
-    }
-  }
-}
+// void sInttoUchar(const cv::Mat & src, cv::Mat & dst)
+// {
+//   std::size_t width = src.cols;
+//   std::size_t height = src.rows;
+//   dst = cv::Mat(height, width, CV_8UC1);
+//   
+//   double min = 0;
+//   double max = 0;
+//   
+//   cv::minMaxLoc(src, &min, &max);
+//   
+//   CCTAG_COUT_VAR(min);
+//   CCTAG_COUT_VAR(max);
+//   
+//   float scale = 255/(max-min);
+//   
+//   for ( int i=0 ; i < width ; ++i)
+//   {
+//     for ( int j=0 ; j < height ; ++j)
+//     {
+//       dst.at<uchar>(j,i) = (uchar) ((src.at<short>(j,i)+min)*scale);
+//     }
+//   }
+// }
 
 }
 

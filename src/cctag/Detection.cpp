@@ -571,14 +571,15 @@ void cctagDetectionFromEdges(
         EdgePointCollection&    edgeCollection,
         Plane<uint8_t>          src,
         const std::vector<EdgePoint*>& seeds,
-        std::size_t frame,
-        int pyramidLevel,
-        float scale,
-        const Parameters & providedParams,
-        cctag::logtime::Mgmt* durations )
+        std::size_t             frame,
+        int                     pyramidLevel,
+        float                   scale,
+        const Parameters&       providedParams,
+        cctag::logtime::Mgmt*   durations )
 {
-  const Parameters& params = Parameters::OverrideLoaded ?
-    Parameters::Override : providedParams;
+  const Parameters& params = Parameters::OverrideLoaded
+                           ? Parameters::Override
+                           : providedParams;
 
   // Call for debug only. Write the vote result as an image.
   createImageForVoteResultDebug(src, pyramidLevel);
@@ -698,33 +699,36 @@ void createImageForVoteResultDebug(
         Plane<uint8_t>& src,
         std::size_t nLevel)
 {
-#if defined(CCTAG_SERIALIZE) && 0 // todo@lilian: fixme
+#ifdef CCTAG_SERIALIZE
   {
+#if 0
+// griff: I do not understand how the CPU code maintains its winners in the current version
     std::size_t mx = 0;
+
+    Plane<uint8_t> imgVote( src.getRows(), src.getCols() );
+    memset( imgVote.getBuffer(), 0, src.getRows()*src.getCols() );
     
-    cv::Mat imgVote(src.getRows(), src.getCols(), CV_8UC1, cv::Scalar(0,0,0));
+//     for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
+//     {
+//       EdgePoint* winner = itr->first;
+//       const std::vector<EdgePoint*>& v = itr->second;
+//       if (mx < v.size())
+//       {
+//         mx = v.size();
+//       }
+//     }
 
     for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
     {
       EdgePoint* winner = itr->first;
       const std::vector<EdgePoint*>& v = itr->second;
-      if (mx < v.size())
-      {
-        mx = v.size();
-      }
+      imgVote.at(winner->x(),winner->y()) = (uint8_t) (v.size();
     }
 
-    for (WinnerMap::const_iterator itr = winners.begin(); itr != winners.end(); ++itr)
-    {
-      EdgePoint* winner = itr->first;
-      const std::vector<EdgePoint*>& v = itr->second;
-      imgVote.at<uchar>(winner->y(),winner->x()) = (unsigned char) ((v.size() * 10.0));
-    }
-    
-    std::stringstream outFilenameVote;
-    outFilenameVote << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
-    CCTagVisualDebug::instance().initBackgroundImage(imgVote);
-    CCTagVisualDebug::instance().newSession(outFilenameVote.str());
+    std::ostringsteam o;
+    o << "voteLevel" << CCTagVisualDebug::instance().getPyramidLevel();
+    writePlanePGM( o.str(), imgVote, SCALED_WRITING );
+#endif
   }
 #endif
 }

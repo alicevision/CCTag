@@ -222,17 +222,17 @@ static void cctagMultiresDetection_inner(
     } else { // not cuda_pipe
 #endif // defined(CCTAG_WITH_CUDA)
     edgesPointsFromCanny( edgeCollection,
-                          level->getEdges().getMat(),
-                          level->getDx().getMat(),
-                          level->getDy().getMat());
+                          level->getEdges(),
+                          level->getDx(),
+                          level->getDy() );
 
     CCTagVisualDebug::instance().setPyramidLevel(i);
 
     // Voting procedure applied on every edge points.
     vote( edgeCollection,
           seeds,        // output
-          level->getDx().getMat(),
-          level->getDy().getMat(),
+          level->getDx(),
+          level->getDy(),
           params );
     
     if( seeds.size() > 1 ) {
