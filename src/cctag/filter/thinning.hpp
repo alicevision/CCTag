@@ -8,16 +8,15 @@
 #ifndef VISION_MARKER_THINNING_HPP_
 #define VISION_MARKER_THINNING_HPP_
 
-#include <opencv2/core.hpp>
-#include <boost/timer/timer.hpp>
-#include <iostream>
+// #include <opencv2/core.hpp>
+// #include <boost/timer/timer.hpp>
+// #include <iostream>
 
+#include "cctag/Plane.hpp"
 
 namespace cctag {
 
-void thin( cv::Mat & inout, cv::Mat & temp );
-
-void imageIter( cv::Mat & in, cv::Mat & out, int* lut );
+void thin( Plane<uint8_t>& inout, Plane<uint8_t>& temp );
 
 }
 

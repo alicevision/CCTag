@@ -79,7 +79,7 @@ void Level::setLevel( const Plane<uint8_t>& src,
     _edgesNotThin = _edges->clone();
 #endif
   
-    thin(edges,temp);
+    thin( *_edges, _temp );
 }
 
 #ifdef CCTAG_WITH_CUDA
