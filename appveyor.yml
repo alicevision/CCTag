@@ -61,5 +61,5 @@ build:
   parallel: true
 
 cache:
-  c:\tools\vcpkg\installed\ -> appveyor.yml
+  c:\tools\vcpkg\installed\
 
