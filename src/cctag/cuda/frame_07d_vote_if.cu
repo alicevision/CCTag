@@ -59,7 +59,7 @@ bool Frame::applyVoteIf( )
 
     NumVotersIsGreaterEqual select_op( _voters.dev );
 
-#if 0
+#ifdef CCTAG_NO_THRUST_COPY_IF
     #
     # There are reports that the Thrust::copy_if fails when you generated code with CUDA 7.0 and run it only
     # a 2nd gen Maxwell card (e.g. GTX 980 and GTX 980 Ti). Also, the GTX 1080 seems to be quite similar to

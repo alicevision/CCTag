@@ -32,4 +32,8 @@
   #cmakedefine CCTAG_HAVE_SHFL_DOWN_SYNC
   #endif
 
+  #ifndef CCTAG_NO_THRUST_COPY_IF
+  #cmakedefine CCTAG_NO_THRUST_COPY_IF
+  #endif
+
 #endif
