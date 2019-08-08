@@ -18,6 +18,8 @@ install:
     #       .\bootstrap-vcpkg.bat
     #       cd %APPVEYOR_BUILD_FOLDER%
 
+    - cmd: |
+          echo %APPVEYOR_BUILD_FOLDER%
     - vcpkg upgrade --no-dry-run
     - vcpkg list
     - vcpkg install
