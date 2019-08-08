@@ -20,9 +20,9 @@ install:
 
     - cmd: |
           echo %APPVEYOR_BUILD_FOLDER%
-	  cd C:\Tools\vcpkg
-	  dir
-	  cd %APPVEYOR_BUILD_FOLDER%
+          cd C:\Tools\vcpkg
+	  dir /w
+          cd %APPVEYOR_BUILD_FOLDER%
     - vcpkg upgrade --no-dry-run
     - vcpkg list
     - vcpkg install
