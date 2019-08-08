@@ -65,11 +65,7 @@ void Level::setLevel( const Plane<uint8_t>& src,
     cv::resize( src.getMat(), _src->getMat(), cv::Size( _src->getCols(),_src->getRows() ) );
     // ASSERT TODO : check that the data are allocated here
     // Compute derivative and canny edge extraction.
-    cv::Mat edges = _edges->getMat();
-    cv::Mat dx    = _dx->getMat();
-    cv::Mat dy    = _dy->getMat();
-    cv::Mat temp  = _temp.getMat();
-    cvRecodedCanny( _src->getMat(), edges, dx, dy,
+    cvRecodedCanny( *_src, *_edges, *_dx, *_dy,
                     thrLowCanny * 256, thrHighCanny * 256,
                     3 | CV_CANNY_L2_GRADIENT,
                     _level, params );

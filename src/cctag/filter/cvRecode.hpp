@@ -8,17 +8,17 @@
 #ifndef _CCTAG_CVRECODE_HPP_
 #define _CCTAG_CVRECODE_HPP_
 
-#include <opencv2/core/core.hpp>
+#include "cctag/Plane.hpp"
 
 namespace cctag {
 struct Parameters;
 };
 
 void cvRecodedCanny(
-  const cv::Mat & imgGraySrc,
-  cv::Mat& imgCanny,
-  cv::Mat& imgDX,
-  cv::Mat& imgDY,
+  cctag::Plane<uint8_t>& imgGraySrc,
+  cctag::Plane<uint8_t>& imgCanny,
+  cctag::Plane<int16_t>& imgDX,
+  cctag::Plane<int16_t>& imgDY,
   float low_thresh,
   float high_thresh,
   int aperture_size,

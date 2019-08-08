@@ -5,7 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <cctag/utils/Defines.hpp>
+#include "cctag/utils/Defines.hpp"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/core_c.h>
@@ -30,31 +30,32 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <exception>
 
 #define DEBUG_MAGMAP_BY_GRIFF
 #define USE_INTEGER_REP
 
 void cvRecodedCanny(
-    const cv::Mat & imgGraySrc,
-    cv::Mat& imgCanny,
-    cv::Mat& imgDX,
-    cv::Mat& imgDY,
+    cctag::Plane<uint8_t>& imgGraySrc,
+    cctag::Plane<uint8_t>& imgCanny,
+    cctag::Plane<int16_t>& imgDX,
+    cctag::Plane<int16_t>& imgDY,
     float low_thresh,
     float high_thresh,
     int aperture_size,
     int debug_info_level,
     const cctag::Parameters* params )
 {
-    CvMat srcCvMat = imgGraySrc;
+    CvMat srcCvMat = imgGraySrc.getMat();
     CvMat *src = &srcCvMat;
   
-    CvMat dstCvMat = imgCanny;
+    CvMat dstCvMat = imgCanny.getMat();
     CvMat *dst = &dstCvMat;
   
-    CvMat dxCvMat = imgDX;
+    CvMat dxCvMat = imgDX.getMat();
     CvMat *dx = &dxCvMat;
   
-    CvMat dyCvMat = imgDY;
+    CvMat dyCvMat = imgDY.getMat();
     CvMat *dy = &dyCvMat;
   
     boost::timer t;  
