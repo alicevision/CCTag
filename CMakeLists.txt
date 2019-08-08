@@ -93,6 +93,12 @@ endif()
 
 find_package(Boost 1.66.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
+if(BUILD_SHARED_LIBS)
+  if(WIN32)
+    # Export all symbols from the dynamic libraries by default (avoid dllexport markup)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
+endif()
 
 if(CCTAG_WITH_CUDA)
   message( STATUS "Try finding CUDA" )
