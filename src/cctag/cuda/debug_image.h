@@ -89,7 +89,7 @@ public:
     };
 
     static void writePGM( const std::string& filename,
-                          const PtrStepSzb& plane );
+                          const HstPlane2Db& plane );
 
     template<class T>
     static void writePGMscaled_T( const std::string&            filename,
@@ -104,7 +104,7 @@ public:
                                 const Plane2D<uint32_t>& plane );
 
     static void writePPM( const std::string& filename,
-                          const PtrStepSzb& plane );
+                          const HstPlane2Db& plane );
 
     template<class T>
     static void writeASCII_T( const std::string&            filename,
@@ -135,17 +135,17 @@ public:
 #ifndef NDEBUG
     static void plotLines( EdgeList<TriplePoint>& points,
                            int                    maxSize,
-                           PtrStepSzb   img,
+                           HstPlane2Db            img,
                            bool                   normalize = true,
                            BaseColor              b = WHITE,
                            int                    skip = 0 );
 #endif // NDEBUG
     static void plotPoints( const std::vector<TriplePoint>& v,
-                            PtrStepSzb            img,
+                            HstPlane2Db                     img,
                             bool                            normalize = true,
                             enum BaseColor                  b = WHITE );
     static void plotPoints( const std::vector<int2>& v,
-                            PtrStepSzb     img,
+                            HstPlane2Db              img,
                             bool                     normalize = true,
                             enum BaseColor           b = WHITE );
 
@@ -159,12 +159,12 @@ private:
      * in the image to 1 (GREY1).
      * else do nothing
      */
-    static void normalizeImage( PtrStepSzb img,
+    static void normalizeImage( HstPlane2Db img,
                                 bool                 normalize );
 
     static int getColor( BaseColor b );
 
-    static void plotOneLine( int2 from, int2 to, PtrStepSzb img, int color );
+    static void plotOneLine( int2 from, int2 to, HstPlane2Db img, int color );
 };
 
 inline

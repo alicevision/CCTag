@@ -326,11 +326,11 @@ __global__
 void dp_call_01_gradient_descent(
     FrameMetaPtr                 meta,
     const DevEdgeList<short2>    all_edgecoords, // input
-    const PtrStepSzb   edge_image, // input
-    const PtrStepSz16s dx, // input
-    const PtrStepSz16s dy, // input
+    const DevPlane2Db   edge_image, // input
+    const DevPlane2D16s dx, // input
+    const DevPlane2D16s dy, // input
     DevEdgeList<TriplePoint>     chainedEdgeCoords, // output
-    PtrStepSz32s       edgepointIndexTable ) // output
+    DevPlane2D32s       edgepointIndexTable ) // output
 {
     initChainedEdgeCoords_2( meta, chainedEdgeCoords );
 

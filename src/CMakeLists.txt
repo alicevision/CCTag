@@ -72,7 +72,6 @@ if(CCTAG_WITH_CUDA)
         ./cctag/cuda/keep_time.cu
         ./cctag/cuda/pinned_counters.cu
         ./cctag/cuda/ptrstep.cu
-        ./cctag/cuda/recursive_sweep.cu
         ./cctag/cuda/tag.cu
         ./cctag/cuda/tag_identify.cu
         ./cctag/cuda/tag_threads.cu

@@ -228,8 +228,8 @@ private:
     DevPlane2Db    _d_plane;
     DevPlane2Df    _d_intermediate;
     DevPlane2Df    _d_smooth;
-    DevPlane2D16s  _d_dx; // PtrStepSzf _d_dx;
-    DevPlane2D16s  _d_dy; // PtrStepSzf _d_dy;
+    DevPlane2D16s  _d_dx;
+    DevPlane2D16s  _d_dy;
     DevPlane2D16s  _d_mag;
     DevPlane2Db    _d_map;
     DevPlane2Db    _d_hyst_edges;
@@ -241,13 +241,13 @@ private:
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
 public: // HACK FOR DEBUGGING
-    PtrStepSzb    _h_plane;
-    PtrStepSz16s  _h_dx;
-    PtrStepSz16s  _h_dy;
-    PtrStepSz16s  _h_mag;
-    PtrStepSzb    _h_edges;
+    HstPlane2Db    _h_plane;
+    HstPlane2D16s  _h_dx;
+    HstPlane2D16s  _h_dy;
+    HstPlane2D16s  _h_mag;
+    HstPlane2Db    _h_edges;
 
-    PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
+    HstPlane2Df    _h_intermediate; // copies layout of _d_intermediate
 private:
     // Stores coordinates of all edges. Valid after thinning.
     EdgeList<short2>        _all_edgecoords;

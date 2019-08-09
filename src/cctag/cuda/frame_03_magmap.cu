@@ -20,9 +20,9 @@ namespace cctag
 using namespace std;
 
 __global__
-void compute_mag_l1( PtrStepSz16s src_dx,
-                     PtrStepSz16s src_dy,
-                     PtrStepSz16s dst )
+void compute_mag_l1( DevPlane2D16s src_dx,
+                     DevPlane2D16s src_dy,
+                     DevPlane2D16s dst )
 {
     int block_x = blockIdx.x * 32;
     int idx     = block_x + threadIdx.x;
@@ -38,9 +38,9 @@ void compute_mag_l1( PtrStepSz16s src_dx,
 }
 
 __global__
-void compute_mag_l2( PtrStepSz16s src_dx,
-                     PtrStepSz16s src_dy,
-                     PtrStepSz16s dst )
+void compute_mag_l2( DevPlane2D16s src_dx,
+                     DevPlane2D16s src_dy,
+                     DevPlane2D16s dst )
 {
     int block_x = blockIdx.x * 32;
     int idx     = block_x + threadIdx.x;
@@ -57,10 +57,10 @@ void compute_mag_l2( PtrStepSz16s src_dx,
 }
 
 __global__
-void compute_map( const PtrStepSz16s dx,
-                  const PtrStepSz16s dy,
-                  const PtrStepSz16s mag,
-                  PtrStepSzb         map )
+void compute_map( const DevPlane2D16s dx,
+                  const DevPlane2D16s dy,
+                  const DevPlane2D16s mag,
+                  DevPlane2Db         map )
 {
     const int CANNY_SHIFT = 15;
     const int TG22 = (int32_t)(0.4142135623730950488016887242097*(1<<CANNY_SHIFT) + 0.5);

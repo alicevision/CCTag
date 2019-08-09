@@ -282,8 +282,6 @@ void TagPipe::imageCenterOptLoop(
                                  ellipse.angle() );
     float2 f = make_float2( center.x(), center.y() );
 
-    cctag::geometry::matrix3x3 bestHomography;
-
     imageCenterOptLoop( tagIndex,
                         debug_numTags,
                         _tag_streams[tagIndex%NUM_ID_STREAMS],

@@ -29,7 +29,7 @@ using namespace std;
 DebugImage::RandomColorMap DebugImage::randomColorMap;
 
 __host__
-void DebugImage::writePGM( const string& filename, const PtrStepSzb& plane )
+void DebugImage::writePGM( const string& filename, const HstPlane2Db& plane )
 {
     assert( plane.data );
 
@@ -114,7 +114,7 @@ void DebugImage::writePGMscaled( const std::string& filename,
 }
 
 __host__
-void DebugImage::writePPM( const string& filename, const PtrStepSzb& plane )
+void DebugImage::writePPM( const string& filename, const HstPlane2Db& plane )
 {
     ofstream of( filename.c_str() );
     of << "P6" << endl
@@ -221,7 +221,7 @@ void DebugImage::writeASCII( const string& filename,
 }
 #endif // NDEBUG
 
-void DebugImage::normalizeImage( PtrStepSzb img, bool normalize )
+void DebugImage::normalizeImage( HstPlane2Db img, bool normalize )
 {
     if( ! normalize ) return;
 
@@ -241,7 +241,7 @@ int DebugImage::getColor( BaseColor b )
     return ( LAST + std::rand() % ( 255 - LAST ) );
 }
 
-void DebugImage::plotPoints( const vector<TriplePoint>& v, PtrStepSzb img, bool normalize, BaseColor b )
+void DebugImage::plotPoints( const vector<TriplePoint>& v, HstPlane2Db img, bool normalize, BaseColor b )
 {
     normalizeImage( img, normalize );
 
@@ -257,7 +257,7 @@ void DebugImage::plotPoints( const vector<TriplePoint>& v, PtrStepSzb img, bool 
     }
 }
 
-void DebugImage::plotPoints( const vector<int2>& v, PtrStepSzb img, bool normalize, BaseColor b )
+void DebugImage::plotPoints( const vector<int2>& v, HstPlane2Db img, bool normalize, BaseColor b )
 {
     normalizeImage( img, normalize );
 
@@ -273,7 +273,7 @@ void DebugImage::plotPoints( const vector<int2>& v, PtrStepSzb img, bool normali
     }
 }
 
-void DebugImage::plotOneLine( int2 from, int2 to, PtrStepSzb img, int color )
+void DebugImage::plotOneLine( int2 from, int2 to, HstPlane2Db img, int color )
 {
     int  absx = abs(from.x-to.x);
     int  absy = abs(from.y-to.y);
@@ -305,7 +305,7 @@ void DebugImage::plotOneLine( int2 from, int2 to, PtrStepSzb img, int color )
 #ifndef NDEBUG
 void DebugImage::plotLines( EdgeList<TriplePoint>& points,
                             int                    maxSize,
-                            PtrStepSzb   img,
+                            HstPlane2Db   img,
                             bool                   normalize,
                             BaseColor              b,
                             int                    skip )

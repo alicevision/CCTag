@@ -11,6 +11,7 @@
 #include "cctag/cuda/frame.h"
 #include "cctag/cuda/clamp.h"
 #include "cctag/cuda/assist.h"
+#include "cctag/cuda/recursive_sweep.h"
 
 using namespace std;
 

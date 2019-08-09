@@ -291,7 +291,7 @@ void verify_map_valid( DevPlane2Db img, DevPlane2Db ver, int w, int h )
 
 #ifdef USE_SEPARABLE_COMPILATION_FOR_HYST
 __global__
-void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, PtrStepSzb img, PtrStepSzb src, int depth )
+void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, DevPlane2Db img, DevPlane2Db src, int depth )
 {
     if( meta.hysteresis_block_counter() == 0 ) return;
 
@@ -313,7 +313,7 @@ void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, PtrStepS
 }
 
 __global__
-void hyst_outer_loop( int width, int height, FrameMetaPtr meta, PtrStepSzb img, PtrStepSzb src )
+void hyst_outer_loop( int width, int height, FrameMetaPtr meta, DevPlane2Db img, DevPlane2Db src )
 {
     dim3 block;
     dim3 grid;

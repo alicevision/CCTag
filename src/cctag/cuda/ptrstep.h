@@ -15,6 +15,11 @@
 
 namespace cctag {
 
+void* allocate_hst( size_t rows, size_t cols, size_t& step );
+void* allocate_dev( size_t rows, size_t cols, size_t& step );
+void release_hst( void* ptr );
+void release_dev( void* ptr );
+
 struct Hst { };
 struct Dev { };
 
@@ -92,58 +97,80 @@ public:
         return sizeof(T);
     }
 
+    __host__
+    void allocate( size_t height, size_t width )
+    {
+        rows = height;
+        cols = width;
+        if( std::is_same<Ctx,Hst>::value )
+            data = (T*)allocate_hst( rows, cols*sizeof(T), step );
+        else
+            data = (T*)allocate_dev( rows, cols*sizeof(T), step );
+    }
+
+    __host__
+    void release( )
+    {
+        if( std::is_same<Ctx,Hst>::value )
+            release_hst( data );
+        else
+            release_dev( data );
+        data = 0;
+        rows = cols = step = 0;
+    }
+
     T*     data;
     size_t step;
     size_t cols;
     size_t rows;
 };
 
-using PtrStepSzb         = Plane2D<uint8_t,  Hst>;
-using PtrStepSz16s       = Plane2D<int16_t,  Hst>;
-using PtrStepSz32u       = Plane2D<uint32_t, Hst>;
-using PtrStepSz32s       = Plane2D<int32_t,  Hst>;
-using PtrStepSzb4        = Plane2D<uchar4,   Hst>;
-using PtrStepSzInt2      = Plane2D<int2,     Hst>;
-using PtrStepSzf         = Plane2D<float,    Hst>;
+using HstPlane2Db    = Plane2D<uint8_t,  Hst>;
+using HstPlane2D16s  = Plane2D<int16_t,  Hst>;
+using HstPlane2D32u  = Plane2D<uint32_t, Hst>;
+using HstPlane2D32s  = Plane2D<int32_t,  Hst>;
+using HstPlane2Db4   = Plane2D<uchar4,   Hst>;
+using HstPlane2DInt2 = Plane2D<int2,     Hst>;
+using HstPlane2Df    = Plane2D<float,    Hst>;
 
-using DevPlane2Db         = Plane2D<uint8_t,  Dev>;
-using DevPlane2D16s       = Plane2D<int16_t,  Dev>;
-using DevPlane2D32u       = Plane2D<uint32_t, Dev>;
-using DevPlane2D32s       = Plane2D<int32_t,  Dev>;
-using DevPlane2Db4        = Plane2D<uchar4,   Dev>;
-using DevPlane2DInt2      = Plane2D<int2,     Dev>;
-using DevPlane2Df         = Plane2D<float,    Dev>;
+using DevPlane2Db    = Plane2D<uint8_t,  Dev>;
+using DevPlane2D16s  = Plane2D<int16_t,  Dev>;
+using DevPlane2D32u  = Plane2D<uint32_t, Dev>;
+using DevPlane2D32s  = Plane2D<int32_t,  Dev>;
+using DevPlane2Db4   = Plane2D<uchar4,   Dev>;
+using DevPlane2DInt2 = Plane2D<int2,     Dev>;
+using DevPlane2Df    = Plane2D<float,    Dev>;
 
-struct PtrStepSzbClone
+struct HstPlane2DbClone
 {
-    PtrStepSzb e;
+    HstPlane2Db e;
 
     __host__
-    PtrStepSzbClone( const PtrStepSzb& orig );
+    HstPlane2DbClone( const HstPlane2Db& orig );
 
     __host__
-    ~PtrStepSzbClone( );
+    ~HstPlane2DbClone( );
 
 private:
-    PtrStepSzbClone( );
-    PtrStepSzbClone( const PtrStepSzbClone& );
-    PtrStepSzbClone& operator=( const PtrStepSzbClone& );
+    HstPlane2DbClone( );
+    HstPlane2DbClone( const HstPlane2DbClone& );
+    HstPlane2DbClone& operator=( const HstPlane2DbClone& );
 };
 
-struct PtrStepSzbNull
+struct HstPlane2DbNull
 {
-    PtrStepSzb e;
+    HstPlane2Db e;
 
     __host__
-    PtrStepSzbNull( const int width, const int height );
+    HstPlane2DbNull( const int width, const int height );
 
     __host__
-    ~PtrStepSzbNull( );
+    ~HstPlane2DbNull( );
 
 private:
-    PtrStepSzbNull( );
-    PtrStepSzbNull( const PtrStepSzbNull& );
-    PtrStepSzbNull& operator=( const PtrStepSzbNull& );
+    HstPlane2DbNull( );
+    HstPlane2DbNull( const HstPlane2DbNull& );
+    HstPlane2DbNull& operator=( const HstPlane2DbNull& );
 };
 
 } // namespace cctag

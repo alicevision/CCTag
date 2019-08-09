@@ -20,10 +20,10 @@ namespace cctag
 // wrong?
 
 __host__
-void debugPointIsOnEdge( FrameMetaPtr&               meta,
-                         const PtrStepSzb& edge_img,
-                         const EdgeList<short2>&     all_edgecoords,
-                         cudaStream_t                stream );
+void debugPointIsOnEdge( FrameMetaPtr&           meta,
+                         const DevPlane2Db&      edge_img,
+                         const EdgeList<short2>& all_edgecoords,
+                         cudaStream_t            stream );
 
 #endif // NDEBUG
 
