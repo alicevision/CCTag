@@ -64,14 +64,14 @@ void initChainedEdgeCoords( FrameMetaPtr meta, DevEdgeList<TriplePoint> voters )
 }
 
 __device__
-bool gradient_descent_inner( const int                    idx,
-                             const int                    idy,
-                             int                          direction,
-                             int4&                        out_edge_info,
-                             short2&                      out_edge_d,
-                             const PtrStepSzb   edge_image,
-                             const PtrStepSz16s d_dx,
-                             const PtrStepSz16s d_dy )
+bool gradient_descent_inner( const int            idx,
+                             const int            idy,
+                             int                  direction,
+                             int4&                out_edge_info,
+                             short2&              out_edge_d,
+                             const DevPlane2Db&   edge_image,
+                             const DevPlane2D16s& d_dx,
+                             const DevPlane2D16s& d_dy )
 {
     // const int offset = blockIdx.x * 32 + threadIdx.x;
     // int direction    = threadIdx.y == 0 ? -1 : 1;
@@ -188,11 +188,11 @@ bool gradient_descent_inner( const int                    idx,
 __global__
 void gradient_descent( FrameMetaPtr                 meta,
                        const DevEdgeList<short2>    all_edgecoords, // input
-                       const PtrStepSzb   edge_image,
-                       const PtrStepSz16s d_dx,
-                       const PtrStepSz16s d_dy,
+                       const DevPlane2Db   edge_image,
+                       const DevPlane2D16s d_dx,
+                       const DevPlane2D16s d_dy,
                        DevEdgeList<TriplePoint>     voters,    // output
-                       PtrStepSz32s       edgepoint_index_table ) // output
+                       DevPlane2D32s       edgepoint_index_table ) // output
 {
     assert( blockDim.x * gridDim.x < meta.list_size_all_edgecoords() + 32 );
     assert( meta.list_size_voters() <= 2*meta.list_size_all_edgecoords() );

@@ -5,12 +5,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <cctag/cuda/cctag_cuda_runtime.h>
-#include "debug_macros.hpp"
+#include "cctag/cuda/cctag_cuda_runtime.h"
+#include "cctag/cuda/debug_macros.hpp"
 
-#include "frame.h"
-#include "clamp.h"
-#include "assist.h"
+#include "cctag/cuda/frame.h"
+#include "cctag/cuda/clamp.h"
+#include "cctag/cuda/assist.h"
 
 using namespace std;
 
@@ -23,7 +23,7 @@ namespace recursive_sweep
 template<typename T>
 __device__
 inline
-T get( const PtrStepSz<T> img, const int idx, const int idy )
+T get( const Plane2D<T,Dev>& img, const int idx, const int idy )
 {
     return img.ptr( clamp( idy, img.rows ) )[ clamp( idx, img.cols ) ];
 }
@@ -33,7 +33,7 @@ class EdgeExpanderProcessor
 public:
     __device__
     inline
-    bool check( PtrStepSzb img, const int idx, const int idy )
+    bool check( DevPlane2Db& img, const int idx, const int idy )
     {
         if( idx == 0 || idy == 0 || idx >= img.cols-1 || idy >= img.rows-1 ) return false;
 
@@ -64,7 +64,7 @@ class ConnectedComponentProcessor
 public:
     __device__
     inline
-    bool check( PtrStepSz32s img, const int idx, const int idy )
+    bool check( DevPlane2D32s& img, const int idx, const int idy )
     {
         if( outOfBounds( idx, idy, img ) ) return false;
 
@@ -105,7 +105,7 @@ public:
 
 template<typename T, class Processor>
 __device__
-bool single_block_loop( PtrStepSz<T> img )
+bool single_block_loop( Plane2D<T,Dev>& img )
 {
     __shared__ bool continuation[HYST_H];
     const int       idx  = blockIdx.x * HYST_W + threadIdx.x;
@@ -130,7 +130,7 @@ bool single_block_loop( PtrStepSz<T> img )
 
 template<typename T, class Processor>
 __global__
-void single_sweep( PtrStepSz<T> img, int* counter )
+void single_sweep( Plane2D<T,Dev> img, int* counter )
 {
     bool nothing_changed = single_block_loop<T,Processor>( img );
     if( threadIdx.x == 0 && threadIdx.y == 0 ) {
@@ -150,9 +150,9 @@ void single_sweep( PtrStepSz<T> img, int* counter )
 
 template<typename T, class Processor>
 __host__
-void sweep_no_dynamic_parallelism( PtrStepSz<T>& img,
-                                   int*                    dev_counter,
-                                   cudaStream_t            stream )
+void sweep_no_dynamic_parallelism( Plane2D<T,Dev>& img,
+                                   int*              dev_counter,
+                                   cudaStream_t      stream )
 {
     cerr << "Enter " << __FUNCTION__ << endl;
 
@@ -188,7 +188,7 @@ void sweep_no_dynamic_parallelism( PtrStepSz<T>& img,
 }
 
 __host__
-void expandEdges( PtrStepSzb& img, int* dev_counter, cudaStream_t stream )
+void expandEdges( DevPlane2Db& img, int* dev_counter, cudaStream_t stream )
 {
     recursive_sweep::sweep_no_dynamic_parallelism
         <uint8_t,EdgeExpanderProcessor>
@@ -196,7 +196,7 @@ void expandEdges( PtrStepSzb& img, int* dev_counter, cudaStream_t stream )
 }
 
 __host__
-void connectComponents( PtrStepSz32s& img, int* dev_counter, cudaStream_t stream )
+void connectComponents( DevPlane2D32s& img, int* dev_counter, cudaStream_t stream )
 {
     recursive_sweep::sweep_no_dynamic_parallelism
         <int,ConnectedComponentProcessor>

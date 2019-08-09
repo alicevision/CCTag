@@ -9,31 +9,19 @@
 
 #include <cuda.h>
 
-#include <cctag/cuda/cctag_cuda_runtime.h>
-
-#include "onoff.h"
-
-#include "framemeta.h"
-#include "triple_point.h"
-#include "edge_list.h"
-#include "assist.h"
-
-namespace cv {
-    namespace cuda {
-        using PtrStepSz16s = PtrStepSz<int16_t>;
-        using PtrStepSz32u = PtrStepSz<uint32_t>;
-        using PtrStepSz32s = PtrStepSz<int32_t>;
-        using PtrStep16s = PtrStep<int16_t>;
-        using PtrStep32u = PtrStep<uint32_t>;
-        using PtrStep32s = PtrStep<int32_t>;
-    }
-};
+#include "cctag/cuda/cctag_cuda_runtime.h"
+#include "cctag/cuda/onoff.h"
+#include "cctag/cuda/ptrstep.h"
+#include "cctag/cuda/assist.h"
+#include "cctag/cuda/framemeta.h"
+#include "cctag/cuda/triple_point.h"
+#include "cctag/cuda/edge_list.h"
 
 namespace cctag {
 
 struct Voting
 {
-    PtrStepSz32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
+    DevPlane2D32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
 
     void debug_download( const cctag::Parameters& params );
 };
@@ -44,7 +32,7 @@ void debug_inner_test_consistency( FrameMetaPtr&                  meta,
                                    const char*                    origin,
                                    int                            p_idx,
                                    const TriplePoint*             p,
-                                   PtrStepSz32s         edgepoint_index_table,
+                                   DevPlane2D32s         edgepoint_index_table,
                                    const DevEdgeList<TriplePoint> voters );
 #endif // NDEBUG
 

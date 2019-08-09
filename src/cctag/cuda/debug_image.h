@@ -93,31 +93,31 @@ public:
 
     template<class T>
     static void writePGMscaled_T( const std::string&            filename,
-                                  const PtrStepSz<T>& plane );
+                                  const Plane2D<T>& plane );
     static void writePGMscaled( const std::string& filename,
-                                const PtrStepSz<float>& plane );
+                                const Plane2D<float>& plane );
     static void writePGMscaled( const std::string& filename,
-                                const PtrStepSz<uint8_t>& plane );
+                                const Plane2D<uint8_t>& plane );
     static void writePGMscaled( const std::string& filename,
-                                const PtrStepSz<int16_t>& plane );
+                                const Plane2D<int16_t>& plane );
     static void writePGMscaled( const std::string& filename,
-                                const PtrStepSz<uint32_t>& plane );
+                                const Plane2D<uint32_t>& plane );
 
     static void writePPM( const std::string& filename,
                           const PtrStepSzb& plane );
 
     template<class T>
     static void writeASCII_T( const std::string&            filename,
-                              const PtrStepSz<T>& plane,
+                              const Plane2D<T>& plane,
                               int                           width = 0 );
     static void writeASCII( const std::string& filename,
-                            const PtrStepSz<float>& plane );
+                            const Plane2D<float>& plane );
     static void writeASCII( const std::string& filename,
-                            const PtrStepSz<uint8_t>& plane );
+                            const Plane2D<uint8_t>& plane );
     static void writeASCII( const std::string& filename,
-                            const PtrStepSz<int16_t>& plane );
+                            const Plane2D<int16_t>& plane );
     static void writeASCII( const std::string& filename,
-                            const PtrStepSz<uint32_t>& plane );
+                            const Plane2D<uint32_t>& plane );
     static void writeASCII( const std::string&      filename,
                             const std::vector<int>& list );
     static void writeASCII( const std::string&       filename,

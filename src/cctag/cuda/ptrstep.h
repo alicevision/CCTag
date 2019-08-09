@@ -1,5 +1,6 @@
 /*
  * Copyright 2016, Simula Research Laboratory
+ *           2019, University of Oslo
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10,21 +11,24 @@
 #include <type_traits>
 #include <cstdint>
 
-#include "cctag/cuda/cctag_cuda_runtime.h"
+// #include "cctag/cuda/cctag_cuda_runtime.h"
 
 namespace cctag {
 
-template<typename T>
-class PtrStepSz
+struct Hst { };
+struct Dev { };
+
+template<typename T, typename Ctx = Hst>
+class Plane2D
 {
 public:
     __host__ __device__
-    PtrStepSz( )
+    Plane2D( )
     { }
 
     template<typename S>
     __host__ __device__
-    PtrStepSz( const PtrStepSz<S>& orig )
+    Plane2D( const Plane2D<S, Ctx>& orig )
     {
         data = (T*)orig.data;
         step = orig.step;
@@ -36,7 +40,7 @@ public:
 
     template<typename S>
     __host__ __device__
-    PtrStepSz( size_t height, size_t width, const PtrStepSz<S>& orig, size_t pitch )
+    Plane2D( size_t height, size_t width, const Plane2D<S, Ctx>& orig, size_t pitch )
         : data( (T*)orig.data )
         , step(pitch)
         , cols(width)
@@ -44,7 +48,7 @@ public:
     { }
 
     __host__ __device__
-    PtrStepSz( size_t height, size_t width, T* buf, size_t pitch )
+    Plane2D( size_t height, size_t width, T* buf, size_t pitch )
         : data(buf)
         , step(pitch)
         , cols(width)
@@ -52,7 +56,7 @@ public:
     { }
 
     __host__ __device__
-    ~PtrStepSz( )
+    ~Plane2D( )
     {
         data = 0;
         step = 0;
@@ -61,7 +65,7 @@ public:
     }
 
     __host__ __device__
-    PtrStepSz& operator=( const PtrStepSz& orig )
+    Plane2D& operator=( const Plane2D& orig )
     {
         data = orig.data;
         step = orig.step;
@@ -94,13 +98,21 @@ public:
     size_t rows;
 };
 
-using PtrStepSzb         = PtrStepSz<uint8_t>;
-using PtrStepSz16s       = PtrStepSz<int16_t>;
-using PtrStepSz32u       = PtrStepSz<uint32_t>;
-using PtrStepSz32s       = PtrStepSz<int32_t>;
-using PtrStepSzb4        = PtrStepSz<uchar4>;
-using PtrStepSzInt2      = PtrStepSz<int2>;
-using PtrStepSzf         = PtrStepSz<float>;
+using PtrStepSzb         = Plane2D<uint8_t,  Hst>;
+using PtrStepSz16s       = Plane2D<int16_t,  Hst>;
+using PtrStepSz32u       = Plane2D<uint32_t, Hst>;
+using PtrStepSz32s       = Plane2D<int32_t,  Hst>;
+using PtrStepSzb4        = Plane2D<uchar4,   Hst>;
+using PtrStepSzInt2      = Plane2D<int2,     Hst>;
+using PtrStepSzf         = Plane2D<float,    Hst>;
+
+using DevPlane2Db         = Plane2D<uint8_t,  Dev>;
+using DevPlane2D16s       = Plane2D<int16_t,  Dev>;
+using DevPlane2D32u       = Plane2D<uint32_t, Dev>;
+using DevPlane2D32s       = Plane2D<int32_t,  Dev>;
+using DevPlane2Db4        = Plane2D<uchar4,   Dev>;
+using DevPlane2DInt2      = Plane2D<int2,     Dev>;
+using DevPlane2Df         = Plane2D<float,    Dev>;
 
 struct PtrStepSzbClone
 {

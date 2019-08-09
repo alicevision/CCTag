@@ -24,16 +24,16 @@ inline int grid_divide( int size, int divider )
     return size / divider + ( size % divider != 0 ? 1 : 0 );
 }
 
-template <typename T>
+template <typename T, typename Ctx>
 __device__ __host__
-inline bool outOfBounds( int x, int y, const PtrStepSz<T>& edges )
+inline bool outOfBounds( int x, int y, const Plane2D<T,Ctx>& edges )
 {
     return ( x < 0 || x >= edges.cols || y < 0 || y >= edges.rows );
 }
 
-template <typename T>
+template <typename T, typename Ctx>
 __device__ __host__
-inline bool outOfBounds( int2 coord, const PtrStepSz<T>& edges )
+inline bool outOfBounds( int2 coord, const Plane2D<T,Ctx>& edges )
 {
     return ( coord.x < 0 || coord.x >= edges.cols || coord.y < 0 || coord.y >= edges.rows );
 }

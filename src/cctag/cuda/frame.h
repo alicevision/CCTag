@@ -65,7 +65,7 @@ public:
         normalized_uchar_to_float
     };
 public:
-    FrameTexture( const PtrStepSzb& plane );
+    FrameTexture( const DevPlane2Db& plane );
     ~FrameTexture( );
 
     inline cudaTextureObject_t getTex( ) {
@@ -73,7 +73,7 @@ public:
     }
 
 private:
-    void makeTex_Normalized_uchar_to_float( const PtrStepSzb& plane );
+    void makeTex_Normalized_uchar_to_float( const DevPlane2Db& plane );
 
 private:
     Kind                _kind;
@@ -139,7 +139,7 @@ public:
     uint32_t getHeight( ) const { return _d_plane.rows; }
     uint32_t getPitch( ) const  { return _d_plane.step; }
 
-    PtrStepSzb& getPlaneDev( ) { return _d_plane; }
+    DevPlane2Db& getPlaneDev( ) { return _d_plane; }
 
     // implemented in frame_alloc.cu
     void allocRequiredMem( const cctag::Parameters& param );
@@ -225,16 +225,16 @@ private:
 
     FrameMetaPtr            _meta; // lots of small variables
 
-    PtrStepSzb    _d_plane;
-    PtrStepSzf    _d_intermediate;
-    PtrStepSzf    _d_smooth;
-    PtrStepSz16s  _d_dx; // PtrStepSzf _d_dx;
-    PtrStepSz16s  _d_dy; // PtrStepSzf _d_dy;
-    PtrStepSz16s  _d_mag;
-    PtrStepSzb    _d_map;
-    PtrStepSzb    _d_hyst_edges;
-    PtrStepSzb    _d_edges;
-    PtrStepSzInt2 _d_ring_output;
+    DevPlane2Db    _d_plane;
+    DevPlane2Df    _d_intermediate;
+    DevPlane2Df    _d_smooth;
+    DevPlane2D16s  _d_dx; // PtrStepSzf _d_dx;
+    DevPlane2D16s  _d_dy; // PtrStepSzf _d_dy;
+    DevPlane2D16s  _d_mag;
+    DevPlane2Db    _d_map;
+    DevPlane2Db    _d_hyst_edges;
+    DevPlane2Db    _d_edges;
+    DevPlane2DInt2 _d_ring_output;
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_map;

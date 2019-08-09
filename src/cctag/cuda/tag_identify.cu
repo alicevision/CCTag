@@ -51,7 +51,7 @@ namespace identification {
 
 __device__
 inline
-float getPixelBilinear( const PtrStepSzb src, float2 xy )
+float getPixelBilinear( const DevPlane2Db& src, float2 xy )
 {
     const int px = clamp( (int)xy.x, src.cols ); // floor of x
     const int py = clamp( (int)xy.y, src.rows ); // floor of y
@@ -79,11 +79,11 @@ float getPixelBilinear( const PtrStepSzb src, float2 xy )
 
 __device__
 inline
-void extractSignalUsingHomography( const CutStruct&                   cut,
-                                   CutSignals&                        signals,
-                                   const PtrStepSzb         src,
-                                   const cctag::geometry::matrix3x3& mHomography,
-                                   const cctag::geometry::matrix3x3& mInvHomography )
+void extractSignalUsingHomography( const CutStruct&           cut,
+                                   CutSignals&                signals,
+                                   const DevPlane2Db&         src,
+                                   const geometry::matrix3x3& mHomography,
+                                   const geometry::matrix3x3& mInvHomography )
 {
     float2 backProjStop;
 
@@ -136,7 +136,7 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
  * once for every
  */
 __global__
-void idGetSignals( PtrStepSzb   src,
+void idGetSignals( DevPlane2Db            src,
                    const int              vCutSize,
                    const NearbyPointGrid* point_buffer,
                    const CutStructGrid*   cut_buffer,
@@ -169,12 +169,12 @@ void idGetSignals( PtrStepSzb   src,
 
 __global__
 void initAllNearbyPoints(
-    bool                               first_iteration,
-    const cctag::geometry::ellipse    ellipse,
-    const cctag::geometry::matrix3x3  mT,
-    float2                             center,
-    const float                        neighbourSize,
-    NearbyPointGrid*                   d_nearbyPointGrid )
+    bool                       first_iteration,
+    const geometry::ellipse    ellipse,
+    const geometry::matrix3x3  mT,
+    float2                     center,
+    const float                neighbourSize,
+    NearbyPointGrid*           d_nearbyPointGrid )
 {
     const size_t gridNSample = STRICT_SAMPLE(tagParam.gridNSample);
 
@@ -424,15 +424,15 @@ void idBestNearbyPoint31max( NearbyPointGrid* d_NearbyPointGrid,
  */
 __host__
 bool TagPipe::idCostFunction(
-    const int                           tagIndex,
-    const int                           debug_numTags,
-    cudaStream_t                        tagStream,
-    int                                 iterations,
-    const cctag::geometry::ellipse&    ellipse,
-    const float2                        center,
-    const int                           vCutSize,
-    float                               currentNeighbourSize,
-    const cctag::Parameters&            params )
+    const int                tagIndex,
+    const int                debug_numTags,
+    cudaStream_t             tagStream,
+    int                      iterations,
+    const geometry::ellipse& ellipse,
+    const float2             center,
+    const int                vCutSize,
+    float                    currentNeighbourSize,
+    const Parameters&        params )
 {
     if( vCutSize < 2 ) return false;
 

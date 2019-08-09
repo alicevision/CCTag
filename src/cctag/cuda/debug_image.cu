@@ -52,7 +52,7 @@ void DebugImage::writePGM( const string& filename, const PtrStepSzb& plane )
 template<class T>
 __host__
 void DebugImage::writePGMscaled_T( const string&                 filename,
-                                   const PtrStepSz<T>& plane )
+                                   const Plane2D<T>& plane )
 {
     uint32_t ct = 0;
     for( int x=0; x<plane.cols; x++ ) {
@@ -90,25 +90,25 @@ void DebugImage::writePGMscaled_T( const string&                 filename,
 }
 __host__
 void DebugImage::writePGMscaled( const std::string& filename,
-                                 const PtrStepSz<float>& plane )
+                                 const Plane2D<float>& plane )
 {
     writePGMscaled_T( filename, plane );
 }
 __host__
 void DebugImage::writePGMscaled( const std::string& filename,
-                                 const PtrStepSz<uint8_t>& plane )
+                                 const Plane2D<uint8_t>& plane )
 {
     writePGMscaled_T( filename, plane );
 }
 __host__
 void DebugImage::writePGMscaled( const std::string& filename,
-                                 const PtrStepSz<int16_t>& plane )
+                                 const Plane2D<int16_t>& plane )
 {
     writePGMscaled_T( filename, plane );
 }
 __host__
 void DebugImage::writePGMscaled( const std::string& filename,
-                                 const PtrStepSz<uint32_t>& plane )
+                                 const Plane2D<uint32_t>& plane )
 {
     writePGMscaled_T( filename, plane );
 }
@@ -130,7 +130,7 @@ void DebugImage::writePPM( const string& filename, const PtrStepSzb& plane )
 
 template<class T>
 __host__
-void DebugImage::writeASCII_T( const string& filename, const PtrStepSz<T>& plane, int width )
+void DebugImage::writeASCII_T( const string& filename, const Plane2D<T>& plane, int width )
 {
     ofstream of( filename.c_str() );
     // for( int y=0; y<getHeight(); y++ ) for( int x=0; x<getWidth(); x++ )
@@ -149,25 +149,25 @@ void DebugImage::writeASCII_T( const string& filename, const PtrStepSz<T>& plane
 
 __host__
 void DebugImage::writeASCII( const string& filename,
-                             const PtrStepSz<float>& plane )
+                             const Plane2D<float>& plane )
 {
     writeASCII_T( filename, plane );
 }
 __host__
 void DebugImage::writeASCII( const string& filename,
-                             const PtrStepSz<uint8_t>& plane )
+                             const Plane2D<uint8_t>& plane )
 {
     writeASCII_T( filename, plane, 3 );
 }
 __host__
 void DebugImage::writeASCII( const string& filename,
-                             const PtrStepSz<int16_t>& plane )
+                             const Plane2D<int16_t>& plane )
 {
     writeASCII_T( filename, plane, 3 );
 }
 __host__
 void DebugImage::writeASCII( const string& filename,
-                             const PtrStepSz<uint32_t>& plane )
+                             const Plane2D<uint32_t>& plane )
 {
     writeASCII_T( filename, plane );
 }

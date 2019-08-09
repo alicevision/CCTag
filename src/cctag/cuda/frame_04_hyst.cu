@@ -30,7 +30,7 @@ __shared__ volatile uint8_t array[HYST_H+2][4*(HYST_W+2)];
 
 __device__
 inline
-uint32_t get( PtrStepSz32u img, const int idx, const int idy )
+uint32_t get( DevPlane2D32u& img, const int idx, const int idy )
 {
     if( idx < 0 || idy < 0 || idx >= img.cols || idy >= img.rows ) {
         return 0;
@@ -39,7 +39,7 @@ uint32_t get( PtrStepSz32u img, const int idx, const int idy )
 }
 
 __device__
-void load( PtrStepSz32u img )
+void load( DevPlane2D32u& img )
 {
     const int srcidx = blockIdx.x * HYST_W + threadIdx.x;
     const int srcidy = blockIdx.y * HYST_H + threadIdx.y;
@@ -72,7 +72,7 @@ void load( PtrStepSz32u img )
 }
 
 __device__
-void store( PtrStepSz32u img )
+void store( DevPlane2D32u& img )
 {
     const int dstidx  = blockIdx.x * HYST_W + threadIdx.x;
     const int dstidy  = blockIdx.y * HYST_H + threadIdx.y;
@@ -217,7 +217,7 @@ bool edge( FrameMetaPtr& meta )
 }
 
 __global__
-void edge_first( PtrStepSzb img, FrameMetaPtr meta, PtrStepSzb src )
+void edge_first( DevPlane2Db img, FrameMetaPtr meta, DevPlane2Db src )
 {
     meta.hysteresis_block_counter() = 0;
 
@@ -226,7 +226,7 @@ void edge_first( PtrStepSzb img, FrameMetaPtr meta, PtrStepSzb src )
     // if( outOfBounds( idx, idy, img ) ) return;
     // uint8_t val = src.ptr(idy)[idx];
     // img.ptr(idy)[idx] = val;
-    PtrStepSz32u input;
+    DevPlane2D32u input;
     input.data = reinterpret_cast<uint32_t*>(src.data);
     input.step = src.step;
     input.rows = src.rows;
@@ -237,7 +237,7 @@ void edge_first( PtrStepSzb img, FrameMetaPtr meta, PtrStepSzb src )
 
     __syncthreads();
 
-    PtrStepSz32u output;
+    DevPlane2D32u output;
     output.data = reinterpret_cast<uint32_t*>(img.data);
     output.step = img.step;
     output.rows = img.rows;
@@ -246,11 +246,11 @@ void edge_first( PtrStepSzb img, FrameMetaPtr meta, PtrStepSzb src )
 }
 
 __global__
-void edge_second( PtrStepSzb img, FrameMetaPtr meta )
+void edge_second( DevPlane2Db img, FrameMetaPtr meta )
 {
     meta.hysteresis_block_counter() = 0;
 
-    PtrStepSz32u input;
+    DevPlane2D32u input;
     input.data = reinterpret_cast<uint32_t*>(img.data);
 
     input.step = img.step;
@@ -269,7 +269,7 @@ void edge_second( PtrStepSzb img, FrameMetaPtr meta )
 
 #ifndef NDEBUG
 __global__
-void verify_map_valid( PtrStepSzb img, PtrStepSzb ver, int w, int h )
+void verify_map_valid( DevPlane2Db img, DevPlane2Db ver, int w, int h )
 {
     assert( img.cols == w );
     assert( img.rows == h );
