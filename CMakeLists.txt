@@ -151,8 +151,6 @@ if(CCTAG_WITH_CUDA)
   endif()
 
   if(CCTAG_NVCC_WARNINGS)
-    list(APPEND CUDA_NVCC_FLAGS -Xptxas -warn-lmem-usage)
-    list(APPEND CUDA_NVCC_FLAGS -Xptxas -warn-spills)
     list(APPEND CUDA_NVCC_FLAGS -Xptxas --warn-on-local-memory-usage)
     list(APPEND CUDA_NVCC_FLAGS -Xptxas --warn-on-spills)
   endif()
