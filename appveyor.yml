@@ -12,11 +12,6 @@ install:
     # - cmd: >-
     #       call cudaInstallAppveyor.cmd
 
-    # - cmd: |
-    #       cd C:\Tools\vcpkg
-    #       git pull
-    #       .\bootstrap-vcpkg.bat
-    #       cd %APPVEYOR_BUILD_FOLDER%
     - vcpkg upgrade --no-dry-run
     - vcpkg list
     - vcpkg install
@@ -62,4 +57,3 @@ build:
 
 cache:
   c:\tools\vcpkg\installed\
-
