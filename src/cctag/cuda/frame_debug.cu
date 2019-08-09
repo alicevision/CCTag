@@ -45,7 +45,7 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
     string s;
 
 #ifdef DEBUG_WRITE_ORIGINAL_AS_PGM
-    const cv::cuda::PtrStepSzb& b = _h_plane;
+    const PtrStepSzb& b = _h_plane;
     DebugImage::writePGM( filename + "-01.pgm", b );
 #ifdef DEBUG_WRITE_ORIGINAL_AS_ASCII
     DebugImage::writeASCII( filename + "-01-img-ascii.txt", b );
@@ -53,10 +53,10 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // WRITE_ORIGINAL_AS_PGM
 
 #ifdef DEBUG_WRITE_DX_AS_PGM
-    cv::cuda::PtrStepSz16s dx( getHeight(),
-                               getWidth(),
-                               _h_dx,
-                               getWidth()*sizeof(int16_t) );
+    PtrStepSz16s dx( getHeight(),
+                     getWidth(),
+                     _h_dx,
+                     getWidth()*sizeof(int16_t) );
     DebugImage::writePGMscaled( filename + "-02-dx.pgm", dx );
 #ifdef DEBUG_WRITE_DX_AS_ASCII
     DebugImage::writeASCII( filename + "-02-dx-ascii.txt", dx );
@@ -64,10 +64,10 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // DEBUG_WRITE_DX_AS_PGM
 
 #ifdef DEBUG_WRITE_DY_AS_PGM
-    cv::cuda::PtrStepSz16s dy( getHeight(),
-                               getWidth(),
-                               _h_dy,
-                               getWidth()*sizeof(int16_t) );
+    PtrStepSz16s dy( getHeight(),
+                     getWidth(),
+                     _h_dy,
+                     getWidth()*sizeof(int16_t) );
     DebugImage::writePGMscaled( filename + "-02-dy.pgm", dy );
 #ifdef DEBUG_WRITE_DY_AS_ASCII
     DebugImage::writeASCII( filename + "-02-dy-ascii.txt", dy );
@@ -84,19 +84,17 @@ void Frame::writeHostDebugPlane( string filename, const cctag::Parameters& param
 #endif // DEBUG_WRITE_MAG_AS_PGM
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
-    cv::cuda::PtrStepSzb   map( getHeight(),
-                                getWidth(),
-                                _h_debug_map,
-                                getWidth()*sizeof(uint8_t) );
+    PtrStepSzb   map( getHeight(),
+                      getWidth(),
+                      _h_debug_map,
+                      getWidth()*sizeof(uint8_t) );
     DebugImage::writePGMscaled( filename + "-03-map.pgm", map );
 #ifdef DEBUG_WRITE_MAP_AS_ASCII
     DebugImage::writeASCII( filename + "-03-map-ascii.txt", map );
 #endif // DEBUG_WRITE_MAP_AS_ASCII
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
-#ifndef NDEBUG
-    const cv::cuda::PtrStepSzb&  edges = _h_edges;
-#endif // NDEBUG
+    const PtrStepSzb&  edges = _h_edges;
 
 #ifdef DEBUG_WRITE_EDGES_AS_PGM
     DebugImage::writePGMscaled( filename + "-05-edges.pgm", edges );

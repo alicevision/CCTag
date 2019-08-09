@@ -65,7 +65,7 @@ __device__ __constant__ unsigned char d_lut[256];
 __device__ __constant__ unsigned char d_lut_t[256];
 
 __device__
-bool update_pixel( const int idx, const int idy, cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst, bool first_run )
+bool update_pixel( const int idx, const int idy, PtrStepSzb src, PtrStepSzb dst, bool first_run )
 {
     unsigned char result = 0;
     if( src.ptr(idy)[idx] == 2 &&
@@ -93,7 +93,7 @@ bool update_pixel( const int idx, const int idy, cv::cuda::PtrStepSzb src, cv::c
 }
 
 __global__
-void first_round( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
+void first_round( PtrStepSzb src, PtrStepSzb dst )
 {
     const int block_x = blockIdx.x * 32;
     const int idx     = block_x + threadIdx.x;
@@ -103,8 +103,8 @@ void first_round( cv::cuda::PtrStepSzb src, cv::cuda::PtrStepSzb dst )
 }
 
 __global__
-void second_round( cv::cuda::PtrStepSzb src,          // input
-                   cv::cuda::PtrStepSzb dst,          // output
+void second_round( PtrStepSzb src,          // input
+                   PtrStepSzb dst,          // output
                    DevEdgeList<short2>  all_edgecoords,   // output
                    FrameMetaPtr         meta )
 {
@@ -168,7 +168,7 @@ void Frame::applyThinning( )
 
     thinning::first_round
         <<<grid,block,0,_stream>>>
-        ( _d_hyst_edges, cv::cuda::PtrStepSzb(_d_intermediate) );
+        ( _d_hyst_edges, PtrStepSzb(_d_intermediate) );
     POP_CHK_CALL_IFSYNC;
 
 #ifndef NDEBUG
@@ -177,7 +177,7 @@ void Frame::applyThinning( )
 
     thinning::second_round
         <<<grid,block,0,_stream>>>
-        ( cv::cuda::PtrStepSzb(_d_intermediate), // input
+        ( PtrStepSzb(_d_intermediate), // input
           _d_edges,                              // output
           _all_edgecoords.dev,             // output
           _meta );
@@ -196,7 +196,7 @@ void Frame::applyThinning( )
 
     thinning::second_round
         <<<grid,block,0,_stream>>>
-        ( cv::cuda::PtrStepSzb(_d_intermediate), // input
+        ( PtrStepSzb(_d_intermediate), // input
           _d_edges,                              // output
           _all_edgecoords.dev,             // output
           _meta );

@@ -89,35 +89,35 @@ public:
     };
 
     static void writePGM( const std::string& filename,
-                          const cv::cuda::PtrStepSzb& plane );
+                          const PtrStepSzb& plane );
 
     template<class T>
     static void writePGMscaled_T( const std::string&            filename,
-                                  const cv::cuda::PtrStepSz<T>& plane );
+                                  const PtrStepSz<T>& plane );
     static void writePGMscaled( const std::string& filename,
-                                const cv::cuda::PtrStepSz<float>& plane );
+                                const PtrStepSz<float>& plane );
     static void writePGMscaled( const std::string& filename,
-                                const cv::cuda::PtrStepSz<uint8_t>& plane );
+                                const PtrStepSz<uint8_t>& plane );
     static void writePGMscaled( const std::string& filename,
-                                const cv::cuda::PtrStepSz<int16_t>& plane );
+                                const PtrStepSz<int16_t>& plane );
     static void writePGMscaled( const std::string& filename,
-                                const cv::cuda::PtrStepSz<uint32_t>& plane );
+                                const PtrStepSz<uint32_t>& plane );
 
     static void writePPM( const std::string& filename,
-                          const cv::cuda::PtrStepSzb& plane );
+                          const PtrStepSzb& plane );
 
     template<class T>
     static void writeASCII_T( const std::string&            filename,
-                              const cv::cuda::PtrStepSz<T>& plane,
+                              const PtrStepSz<T>& plane,
                               int                           width = 0 );
     static void writeASCII( const std::string& filename,
-                            const cv::cuda::PtrStepSz<float>& plane );
+                            const PtrStepSz<float>& plane );
     static void writeASCII( const std::string& filename,
-                            const cv::cuda::PtrStepSz<uint8_t>& plane );
+                            const PtrStepSz<uint8_t>& plane );
     static void writeASCII( const std::string& filename,
-                            const cv::cuda::PtrStepSz<int16_t>& plane );
+                            const PtrStepSz<int16_t>& plane );
     static void writeASCII( const std::string& filename,
-                            const cv::cuda::PtrStepSz<uint32_t>& plane );
+                            const PtrStepSz<uint32_t>& plane );
     static void writeASCII( const std::string&      filename,
                             const std::vector<int>& list );
     static void writeASCII( const std::string&       filename,
@@ -135,17 +135,17 @@ public:
 #ifndef NDEBUG
     static void plotLines( EdgeList<TriplePoint>& points,
                            int                    maxSize,
-                           cv::cuda::PtrStepSzb   img,
+                           PtrStepSzb   img,
                            bool                   normalize = true,
                            BaseColor              b = WHITE,
                            int                    skip = 0 );
 #endif // NDEBUG
     static void plotPoints( const std::vector<TriplePoint>& v,
-                            cv::cuda::PtrStepSzb            img,
+                            PtrStepSzb            img,
                             bool                            normalize = true,
                             enum BaseColor                  b = WHITE );
     static void plotPoints( const std::vector<int2>& v,
-                            cv::cuda::PtrStepSzb     img,
+                            PtrStepSzb     img,
                             bool                     normalize = true,
                             enum BaseColor           b = WHITE );
 
@@ -159,12 +159,12 @@ private:
      * in the image to 1 (GREY1).
      * else do nothing
      */
-    static void normalizeImage( cv::cuda::PtrStepSzb img,
+    static void normalizeImage( PtrStepSzb img,
                                 bool                 normalize );
 
     static int getColor( BaseColor b );
 
-    static void plotOneLine( int2 from, int2 to, cv::cuda::PtrStepSzb img, int color );
+    static void plotOneLine( int2 from, int2 to, PtrStepSzb img, int color );
 };
 
 inline

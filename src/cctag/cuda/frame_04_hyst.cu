@@ -30,7 +30,7 @@ __shared__ volatile uint8_t array[HYST_H+2][4*(HYST_W+2)];
 
 __device__
 inline
-uint32_t get( cv::cuda::PtrStepSz32u img, const int idx, const int idy )
+uint32_t get( PtrStepSz32u img, const int idx, const int idy )
 {
     if( idx < 0 || idy < 0 || idx >= img.cols || idy >= img.rows ) {
         return 0;
@@ -39,7 +39,7 @@ uint32_t get( cv::cuda::PtrStepSz32u img, const int idx, const int idy )
 }
 
 __device__
-void load( cv::cuda::PtrStepSz32u img )
+void load( PtrStepSz32u img )
 {
     const int srcidx = blockIdx.x * HYST_W + threadIdx.x;
     const int srcidy = blockIdx.y * HYST_H + threadIdx.y;
@@ -72,7 +72,7 @@ void load( cv::cuda::PtrStepSz32u img )
 }
 
 __device__
-void store( cv::cuda::PtrStepSz32u img )
+void store( PtrStepSz32u img )
 {
     const int dstidx  = blockIdx.x * HYST_W + threadIdx.x;
     const int dstidy  = blockIdx.y * HYST_H + threadIdx.y;
@@ -217,7 +217,7 @@ bool edge( FrameMetaPtr& meta )
 }
 
 __global__
-void edge_first( cv::cuda::PtrStepSzb img, FrameMetaPtr meta, cv::cuda::PtrStepSzb src )
+void edge_first( PtrStepSzb img, FrameMetaPtr meta, PtrStepSzb src )
 {
     meta.hysteresis_block_counter() = 0;
 
@@ -226,7 +226,7 @@ void edge_first( cv::cuda::PtrStepSzb img, FrameMetaPtr meta, cv::cuda::PtrStepS
     // if( outOfBounds( idx, idy, img ) ) return;
     // uint8_t val = src.ptr(idy)[idx];
     // img.ptr(idy)[idx] = val;
-    cv::cuda::PtrStepSz32u input;
+    PtrStepSz32u input;
     input.data = reinterpret_cast<uint32_t*>(src.data);
     input.step = src.step;
     input.rows = src.rows;
@@ -237,7 +237,7 @@ void edge_first( cv::cuda::PtrStepSzb img, FrameMetaPtr meta, cv::cuda::PtrStepS
 
     __syncthreads();
 
-    cv::cuda::PtrStepSz32u output;
+    PtrStepSz32u output;
     output.data = reinterpret_cast<uint32_t*>(img.data);
     output.step = img.step;
     output.rows = img.rows;
@@ -246,11 +246,11 @@ void edge_first( cv::cuda::PtrStepSzb img, FrameMetaPtr meta, cv::cuda::PtrStepS
 }
 
 __global__
-void edge_second( cv::cuda::PtrStepSzb img, FrameMetaPtr meta )
+void edge_second( PtrStepSzb img, FrameMetaPtr meta )
 {
     meta.hysteresis_block_counter() = 0;
 
-    cv::cuda::PtrStepSz32u input;
+    PtrStepSz32u input;
     input.data = reinterpret_cast<uint32_t*>(img.data);
 
     input.step = img.step;
@@ -269,7 +269,7 @@ void edge_second( cv::cuda::PtrStepSzb img, FrameMetaPtr meta )
 
 #ifndef NDEBUG
 __global__
-void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w, int h )
+void verify_map_valid( PtrStepSzb img, PtrStepSzb ver, int w, int h )
 {
     assert( img.cols == w );
     assert( img.rows == h );
@@ -291,7 +291,7 @@ void verify_map_valid( cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb ver, int w
 
 #ifdef USE_SEPARABLE_COMPILATION_FOR_HYST
 __global__
-void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src, int depth )
+void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, PtrStepSzb img, PtrStepSzb src, int depth )
 {
     if( meta.hysteresis_block_counter() == 0 ) return;
 
@@ -313,7 +313,7 @@ void hyst_outer_loop_recurse( int width, int height, FrameMetaPtr meta, cv::cuda
 }
 
 __global__
-void hyst_outer_loop( int width, int height, FrameMetaPtr meta, cv::cuda::PtrStepSzb img, cv::cuda::PtrStepSzb src )
+void hyst_outer_loop( int width, int height, FrameMetaPtr meta, PtrStepSzb img, PtrStepSzb src )
 {
     dim3 block;
     dim3 grid;

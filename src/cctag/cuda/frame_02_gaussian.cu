@@ -83,8 +83,8 @@ __device__ __constant__ float d_gauss_filter[32];
 
 template <class SrcType, class DestType>
 __global__
-void filter_gauss_horiz( cv::cuda::PtrStepSz<SrcType>  src,
-                         cv::cuda::PtrStepSz<DestType> dst,
+void filter_gauss_horiz( PtrStepSz<SrcType>  src,
+                         PtrStepSz<DestType> dst,
                          int                           filter,
                          float                         scale )
 {
@@ -110,8 +110,8 @@ void filter_gauss_horiz( cv::cuda::PtrStepSz<SrcType>  src,
 
 template <class SrcType, class DestType>
 __global__
-void filter_gauss_vert( cv::cuda::PtrStepSz<SrcType>  src,
-                        cv::cuda::PtrStepSz<DestType> dst,
+void filter_gauss_vert( PtrStepSz<SrcType>  src,
+                        PtrStepSz<DestType> dst,
                         int                           filter,
                         float                         scale )
 {

@@ -34,8 +34,6 @@
 #define DEBUG_WRITE_LINKED_AS_ASCII
 #define DEBUG_WRITE_LINKED_AS_ASCII_INTENSE
 
-//#define DEBUG_LINKED_USE_INT4_BUFFER
-
 /* Separable compilation allows one kernel to instantiate
  * others. That avoids complexity on the host side when,
  * e.g., GPU-side counters need to be checked before starting

@@ -27,7 +27,7 @@ namespace vote {
 __device__ inline
 TriplePoint* find_neigh( FrameMetaPtr&            meta,
                          const int2&              neigh,
-                         cv::cuda::PtrStepSz32s   edgepoint_index_table,
+                         PtrStepSz32s   edgepoint_index_table,
                          DevEdgeList<TriplePoint> voters )
 {
     if( neigh.x != 0 || neigh.y != 0 ) {
@@ -55,7 +55,7 @@ TriplePoint* find_neigh( FrameMetaPtr&            meta,
 __device__ inline
 TriplePoint* find_befor( FrameMetaPtr&            meta,
                          const TriplePoint*       p,
-                         cv::cuda::PtrStepSz32s   edgepoint_index_table,
+                         PtrStepSz32s   edgepoint_index_table,
                          DevEdgeList<TriplePoint> voters )
 {
     assert( p );
@@ -69,7 +69,7 @@ TriplePoint* find_befor( FrameMetaPtr&            meta,
 __device__ inline
 TriplePoint* find_after( FrameMetaPtr&            meta,
                          const TriplePoint*       p,
-                         cv::cuda::PtrStepSz32s   edgepoint_index_table,
+                         PtrStepSz32s   edgepoint_index_table,
                          DevEdgeList<TriplePoint> voters )
 {
     assert( p );
@@ -125,7 +125,7 @@ const TriplePoint* cl_inner(
     DevEdgeList<TriplePoint>       voters,
     float*                         chosen_flow_length,
     DevEdgeList<int>               chosen_idx,
-    const cv::cuda::PtrStepSz32s   edgepoint_index_table )
+    const PtrStepSz32s   edgepoint_index_table )
 {
     const int offset = threadIdx.x + blockIdx.x * 32;
     if( offset >= meta.list_size_voters() ) {
@@ -294,7 +294,7 @@ void construct_line( FrameMetaPtr                 meta,
                      DevEdgeList<TriplePoint>     voters, // input/output
                      float*                       chosen_flow_length, // output
                      DevEdgeList<int>             chosen_idx,         // output
-                     const cv::cuda::PtrStepSz32s edgepoint_index_table ) // input
+                     const PtrStepSz32s edgepoint_index_table ) // input
 {
     const TriplePoint* chosen =
         cl_inner( meta,
@@ -335,7 +335,7 @@ void dp_call_construct_line(
     DevEdgeList<TriplePoint> voters,               // ?
     float*                   chosen_flow_length,   // output
     DevEdgeList<int>         chosen_idx,           // output
-    cv::cuda::PtrStepSz32s   edgepointIndexTable ) // ?
+    PtrStepSz32s   edgepointIndexTable ) // ?
 {
     meta.list_size_inner_points() = 0;
 

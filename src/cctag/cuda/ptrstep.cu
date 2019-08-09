@@ -9,7 +9,7 @@
 
 namespace cctag {
 
-PtrStepSzbClone::PtrStepSzbClone( const cv::cuda::PtrStepSzb& orig )
+PtrStepSzbClone::PtrStepSzbClone( const PtrStepSzb& orig )
     : e ( orig )
 {
     e.data = new uint8_t[ orig.rows * orig.step ];

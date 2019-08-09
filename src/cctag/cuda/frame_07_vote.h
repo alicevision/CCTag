@@ -10,7 +10,6 @@
 #include <cuda.h>
 
 #include <cctag/cuda/cctag_cuda_runtime.h>
-#include <opencv2/core/cuda_types.hpp>
 
 #include "onoff.h"
 
@@ -34,7 +33,7 @@ namespace cctag {
 
 struct Voting
 {
-    cv::cuda::PtrStepSz32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
+    PtrStepSz32s _d_edgepoint_index_table; // 2D plane for chaining TriplePoint coord
 
     void debug_download( const cctag::Parameters& params );
 };
@@ -45,7 +44,7 @@ void debug_inner_test_consistency( FrameMetaPtr&                  meta,
                                    const char*                    origin,
                                    int                            p_idx,
                                    const TriplePoint*             p,
-                                   cv::cuda::PtrStepSz32s         edgepoint_index_table,
+                                   PtrStepSz32s         edgepoint_index_table,
                                    const DevEdgeList<TriplePoint> voters );
 #endif // NDEBUG
 

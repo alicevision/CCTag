@@ -19,10 +19,10 @@ namespace recursive_sweep
 {
 
 __host__
-void expandEdges( cv::cuda::PtrStepSz32s& img, int* dev_counter, cudaStream_t stream );
+void expandEdges( PtrStepSz32s& img, int* dev_counter, cudaStream_t stream );
 
 __host__
-void connectComponents( cv::cuda::PtrStepSz32s& img, int* dev_counter, cudaStream_t stream );
+void connectComponents( PtrStepSz32s& img, int* dev_counter, cudaStream_t stream );
 
 }; // namespace recursive_sweep
 }; // namespace cctag

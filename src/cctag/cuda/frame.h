@@ -12,8 +12,6 @@
 #include <assert.h>
 #include <string>
 #include <vector>
-#include <opencv2/core/mat.hpp>
-#include <opencv2/core/cuda_types.hpp>
 
 #include "onoff.h"
 
@@ -67,7 +65,7 @@ public:
         normalized_uchar_to_float
     };
 public:
-    FrameTexture( const cv::cuda::PtrStepSzb& plane );
+    FrameTexture( const PtrStepSzb& plane );
     ~FrameTexture( );
 
     inline cudaTextureObject_t getTex( ) {
@@ -75,7 +73,7 @@ public:
     }
 
 private:
-    void makeTex_Normalized_uchar_to_float( const cv::cuda::PtrStepSzb& plane );
+    void makeTex_Normalized_uchar_to_float( const PtrStepSzb& plane );
 
 private:
     Kind                _kind;
@@ -141,7 +139,7 @@ public:
     uint32_t getHeight( ) const { return _d_plane.rows; }
     uint32_t getPitch( ) const  { return _d_plane.step; }
 
-    cv::cuda::PtrStepSzb& getPlaneDev( ) { return _d_plane; }
+    PtrStepSzb& getPlaneDev( ) { return _d_plane; }
 
     // implemented in frame_alloc.cu
     void allocRequiredMem( const cctag::Parameters& param );
@@ -227,29 +225,29 @@ private:
 
     FrameMetaPtr            _meta; // lots of small variables
 
-    cv::cuda::PtrStepSzb    _d_plane;
-    cv::cuda::PtrStepSzf    _d_intermediate;
-    cv::cuda::PtrStepSzf    _d_smooth;
-    cv::cuda::PtrStepSz16s  _d_dx; // cv::cuda::PtrStepSzf _d_dx;
-    cv::cuda::PtrStepSz16s  _d_dy; // cv::cuda::PtrStepSzf _d_dy;
-    cv::cuda::PtrStepSz16s  _d_mag;
-    cv::cuda::PtrStepSzb    _d_map;
-    cv::cuda::PtrStepSzb    _d_hyst_edges;
-    cv::cuda::PtrStepSzb    _d_edges;
-    cv::cuda::PtrStepSzInt2 _d_ring_output;
+    PtrStepSzb    _d_plane;
+    PtrStepSzf    _d_intermediate;
+    PtrStepSzf    _d_smooth;
+    PtrStepSz16s  _d_dx; // PtrStepSzf _d_dx;
+    PtrStepSz16s  _d_dy; // PtrStepSzf _d_dy;
+    PtrStepSz16s  _d_mag;
+    PtrStepSzb    _d_map;
+    PtrStepSzb    _d_hyst_edges;
+    PtrStepSzb    _d_edges;
+    PtrStepSzInt2 _d_ring_output;
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
     unsigned char*          _h_debug_map;
 #endif // DEBUG_WRITE_MAP_AS_PGM
 
 public: // HACK FOR DEBUGGING
-    cv::cuda::PtrStepSzb    _h_plane;
-    cv::cuda::PtrStepSz16s  _h_dx;
-    cv::cuda::PtrStepSz16s  _h_dy;
-    cv::cuda::PtrStepSz16s  _h_mag;
-    cv::cuda::PtrStepSzb    _h_edges;
+    PtrStepSzb    _h_plane;
+    PtrStepSz16s  _h_dx;
+    PtrStepSz16s  _h_dy;
+    PtrStepSz16s  _h_mag;
+    PtrStepSzb    _h_edges;
 
-    cv::cuda::PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
+    PtrStepSzf    _h_intermediate; // copies layout of _d_intermediate
 private:
     // Stores coordinates of all edges. Valid after thinning.
     EdgeList<short2>        _all_edgecoords;

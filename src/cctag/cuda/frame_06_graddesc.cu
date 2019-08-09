@@ -69,9 +69,9 @@ bool gradient_descent_inner( const int                    idx,
                              int                          direction,
                              int4&                        out_edge_info,
                              short2&                      out_edge_d,
-                             const cv::cuda::PtrStepSzb   edge_image,
-                             const cv::cuda::PtrStepSz16s d_dx,
-                             const cv::cuda::PtrStepSz16s d_dy )
+                             const PtrStepSzb   edge_image,
+                             const PtrStepSz16s d_dx,
+                             const PtrStepSz16s d_dy )
 {
     // const int offset = blockIdx.x * 32 + threadIdx.x;
     // int direction    = threadIdx.y == 0 ? -1 : 1;
@@ -188,11 +188,11 @@ bool gradient_descent_inner( const int                    idx,
 __global__
 void gradient_descent( FrameMetaPtr                 meta,
                        const DevEdgeList<short2>    all_edgecoords, // input
-                       const cv::cuda::PtrStepSzb   edge_image,
-                       const cv::cuda::PtrStepSz16s d_dx,
-                       const cv::cuda::PtrStepSz16s d_dy,
+                       const PtrStepSzb   edge_image,
+                       const PtrStepSz16s d_dx,
+                       const PtrStepSz16s d_dy,
                        DevEdgeList<TriplePoint>     voters,    // output
-                       cv::cuda::PtrStepSz32s       edgepoint_index_table ) // output
+                       PtrStepSz32s       edgepoint_index_table ) // output
 {
     assert( blockDim.x * gridDim.x < meta.list_size_all_edgecoords() + 32 );
     assert( meta.list_size_voters() <= 2*meta.list_size_all_edgecoords() );
@@ -326,11 +326,11 @@ __global__
 void dp_call_01_gradient_descent(
     FrameMetaPtr                 meta,
     const DevEdgeList<short2>    all_edgecoords, // input
-    const cv::cuda::PtrStepSzb   edge_image, // input
-    const cv::cuda::PtrStepSz16s dx, // input
-    const cv::cuda::PtrStepSz16s dy, // input
+    const PtrStepSzb   edge_image, // input
+    const PtrStepSz16s dx, // input
+    const PtrStepSz16s dy, // input
     DevEdgeList<TriplePoint>     chainedEdgeCoords, // output
-    cv::cuda::PtrStepSz32s       edgepointIndexTable ) // output
+    PtrStepSz32s       edgepointIndexTable ) // output
 {
     initChainedEdgeCoords_2( meta, chainedEdgeCoords );
 

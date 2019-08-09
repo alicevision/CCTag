@@ -29,7 +29,7 @@ using namespace std;
 DebugImage::RandomColorMap DebugImage::randomColorMap;
 
 __host__
-void DebugImage::writePGM( const string& filename, const cv::cuda::PtrStepSzb& plane )
+void DebugImage::writePGM( const string& filename, const PtrStepSzb& plane )
 {
     assert( plane.data );
 
@@ -52,7 +52,7 @@ void DebugImage::writePGM( const string& filename, const cv::cuda::PtrStepSzb& p
 template<class T>
 __host__
 void DebugImage::writePGMscaled_T( const string&                 filename,
-                                   const cv::cuda::PtrStepSz<T>& plane )
+                                   const PtrStepSz<T>& plane )
 {
     uint32_t ct = 0;
     for( int x=0; x<plane.cols; x++ ) {
@@ -90,31 +90,31 @@ void DebugImage::writePGMscaled_T( const string&                 filename,
 }
 __host__
 void DebugImage::writePGMscaled( const std::string& filename,
-                                 const cv::cuda::PtrStepSz<float>& plane )
+                                 const PtrStepSz<float>& plane )
 {
     writePGMscaled_T( filename, plane );
 }
 __host__
 void DebugImage::writePGMscaled( const std::string& filename,
-                                 const cv::cuda::PtrStepSz<uint8_t>& plane )
+                                 const PtrStepSz<uint8_t>& plane )
 {
     writePGMscaled_T( filename, plane );
 }
 __host__
 void DebugImage::writePGMscaled( const std::string& filename,
-                                 const cv::cuda::PtrStepSz<int16_t>& plane )
+                                 const PtrStepSz<int16_t>& plane )
 {
     writePGMscaled_T( filename, plane );
 }
 __host__
 void DebugImage::writePGMscaled( const std::string& filename,
-                                 const cv::cuda::PtrStepSz<uint32_t>& plane )
+                                 const PtrStepSz<uint32_t>& plane )
 {
     writePGMscaled_T( filename, plane );
 }
 
 __host__
-void DebugImage::writePPM( const string& filename, const cv::cuda::PtrStepSzb& plane )
+void DebugImage::writePPM( const string& filename, const PtrStepSzb& plane )
 {
     ofstream of( filename.c_str() );
     of << "P6" << endl
@@ -130,7 +130,7 @@ void DebugImage::writePPM( const string& filename, const cv::cuda::PtrStepSzb& p
 
 template<class T>
 __host__
-void DebugImage::writeASCII_T( const string& filename, const cv::cuda::PtrStepSz<T>& plane, int width )
+void DebugImage::writeASCII_T( const string& filename, const PtrStepSz<T>& plane, int width )
 {
     ofstream of( filename.c_str() );
     // for( int y=0; y<getHeight(); y++ ) for( int x=0; x<getWidth(); x++ )
@@ -149,25 +149,25 @@ void DebugImage::writeASCII_T( const string& filename, const cv::cuda::PtrStepSz
 
 __host__
 void DebugImage::writeASCII( const string& filename,
-                             const cv::cuda::PtrStepSz<float>& plane )
+                             const PtrStepSz<float>& plane )
 {
     writeASCII_T( filename, plane );
 }
 __host__
 void DebugImage::writeASCII( const string& filename,
-                             const cv::cuda::PtrStepSz<uint8_t>& plane )
+                             const PtrStepSz<uint8_t>& plane )
 {
     writeASCII_T( filename, plane, 3 );
 }
 __host__
 void DebugImage::writeASCII( const string& filename,
-                             const cv::cuda::PtrStepSz<int16_t>& plane )
+                             const PtrStepSz<int16_t>& plane )
 {
     writeASCII_T( filename, plane, 3 );
 }
 __host__
 void DebugImage::writeASCII( const string& filename,
-                             const cv::cuda::PtrStepSz<uint32_t>& plane )
+                             const PtrStepSz<uint32_t>& plane )
 {
     writeASCII_T( filename, plane );
 }
@@ -221,7 +221,7 @@ void DebugImage::writeASCII( const string& filename,
 }
 #endif // NDEBUG
 
-void DebugImage::normalizeImage( cv::cuda::PtrStepSzb img, bool normalize )
+void DebugImage::normalizeImage( PtrStepSzb img, bool normalize )
 {
     if( ! normalize ) return;
 
@@ -241,7 +241,7 @@ int DebugImage::getColor( BaseColor b )
     return ( LAST + std::rand() % ( 255 - LAST ) );
 }
 
-void DebugImage::plotPoints( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb img, bool normalize, BaseColor b )
+void DebugImage::plotPoints( const vector<TriplePoint>& v, PtrStepSzb img, bool normalize, BaseColor b )
 {
     normalizeImage( img, normalize );
 
@@ -257,7 +257,7 @@ void DebugImage::plotPoints( const vector<TriplePoint>& v, cv::cuda::PtrStepSzb 
     }
 }
 
-void DebugImage::plotPoints( const vector<int2>& v, cv::cuda::PtrStepSzb img, bool normalize, BaseColor b )
+void DebugImage::plotPoints( const vector<int2>& v, PtrStepSzb img, bool normalize, BaseColor b )
 {
     normalizeImage( img, normalize );
 
@@ -273,7 +273,7 @@ void DebugImage::plotPoints( const vector<int2>& v, cv::cuda::PtrStepSzb img, bo
     }
 }
 
-void DebugImage::plotOneLine( int2 from, int2 to, cv::cuda::PtrStepSzb img, int color )
+void DebugImage::plotOneLine( int2 from, int2 to, PtrStepSzb img, int color )
 {
     int  absx = abs(from.x-to.x);
     int  absy = abs(from.y-to.y);
@@ -305,7 +305,7 @@ void DebugImage::plotOneLine( int2 from, int2 to, cv::cuda::PtrStepSzb img, int 
 #ifndef NDEBUG
 void DebugImage::plotLines( EdgeList<TriplePoint>& points,
                             int                    maxSize,
-                            cv::cuda::PtrStepSzb   img,
+                            PtrStepSzb   img,
                             bool                   normalize,
                             BaseColor              b,
                             int                    skip )

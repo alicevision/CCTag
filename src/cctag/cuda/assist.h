@@ -8,8 +8,8 @@
 #pragma once
 
 #include <iostream>
-#include <cctag/cuda/cctag_cuda_runtime.h>
-#include <opencv2/core/cuda_types.hpp>
+#include "cctag/cuda/cctag_cuda_runtime.h"
+#include "cctag/cuda/ptrstep.h"
 
 namespace cctag {
 
@@ -26,14 +26,14 @@ inline int grid_divide( int size, int divider )
 
 template <typename T>
 __device__ __host__
-inline bool outOfBounds( int x, int y, const cv::cuda::PtrStepSz<T>& edges )
+inline bool outOfBounds( int x, int y, const PtrStepSz<T>& edges )
 {
     return ( x < 0 || x >= edges.cols || y < 0 || y >= edges.rows );
 }
 
 template <typename T>
 __device__ __host__
-inline bool outOfBounds( int2 coord, const cv::cuda::PtrStepSz<T>& edges )
+inline bool outOfBounds( int2 coord, const PtrStepSz<T>& edges )
 {
     return ( coord.x < 0 || coord.x >= edges.cols || coord.y < 0 || coord.y >= edges.rows );
 }

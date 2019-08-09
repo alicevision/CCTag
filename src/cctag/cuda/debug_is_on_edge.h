@@ -21,7 +21,7 @@ namespace cctag
 
 __host__
 void debugPointIsOnEdge( FrameMetaPtr&               meta,
-                         const cv::cuda::PtrStepSzb& edge_img,
+                         const PtrStepSzb& edge_img,
                          const EdgeList<short2>&     all_edgecoords,
                          cudaStream_t                stream );
 

@@ -227,7 +227,7 @@ void Frame::streamSync( cudaEvent_t ev )
  * FrameTexture
  *************************************************************/
 
-void FrameTexture::makeTex_Normalized_uchar_to_float( const cv::cuda::PtrStepSzb& plane )
+void FrameTexture::makeTex_Normalized_uchar_to_float( const PtrStepSzb& plane )
 {
     memset( &_texDesc, 0, sizeof(cudaTextureDesc) );
 
@@ -256,7 +256,7 @@ void FrameTexture::makeTex_Normalized_uchar_to_float( const cv::cuda::PtrStepSzb
     POP_CUDA_FATAL_TEST( err, "Could not create texture object: " );
 }
 
-FrameTexture::FrameTexture( const cv::cuda::PtrStepSzb& plane )
+FrameTexture::FrameTexture( const PtrStepSzb& plane )
     : _kind( normalized_uchar_to_float )
 {
     makeTex_Normalized_uchar_to_float( plane );

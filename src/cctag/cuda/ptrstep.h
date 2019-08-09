@@ -7,43 +7,107 @@
  */
 #pragma once
 
-#include <cctag/cuda/cctag_cuda_runtime.h>
-#include <opencv2/core/cuda.hpp>
+#include <type_traits>
+#include <cstdint>
 
-#include "onoff.h"
-
-namespace cv {
-    namespace cuda {
-        using PtrStepSz16s       = PtrStepSz<int16_t>;
-        using PtrStepSz32u       = PtrStepSz<uint32_t>;
-        using PtrStepSz32s       = PtrStepSz<int32_t>;
-        using PtrStepSzb4        = PtrStepSz<uchar4>;
-
-        using PtrStep16s         = PtrStep<int16_t>;
-        using PtrStep32u         = PtrStep<uint32_t>;
-        using PtrStep32s         = PtrStep<int32_t>;
-        using PtrStepb4          = PtrStep<uchar4>;
-
-#ifdef DEBUG_LINKED_USE_INT4_BUFFER
-        using PtrStepSzInt2      = PtrStepSz<int4>;
-        using PtrStepInt2        = PtrStep<int4>;
-        using PtrStepInt2_base_t = int4;
-#else // DEBUG_LINKED_USE_INT4_BUFFER
-        using PtrStepSzInt2      = PtrStepSz<int2>;
-        using PtrStepInt2        = PtrStep<int2>;
-        using PtrStepInt2_base_t = int2;
-#endif // DEBUG_LINKED_USE_INT4_BUFFER
-    }
-};
+#include "cctag/cuda/cctag_cuda_runtime.h"
 
 namespace cctag {
 
+template<typename T>
+class PtrStepSz
+{
+public:
+    __host__ __device__
+    PtrStepSz( )
+    { }
+
+    template<typename S>
+    __host__ __device__
+    PtrStepSz( const PtrStepSz<S>& orig )
+    {
+        data = (T*)orig.data;
+        step = orig.step;
+        cols = std::is_same<T,S>::value
+             ? orig.cols
+             : orig.step / sizeof(T);
+        rows = orig.rows;
+    }
+
+    template<typename S>
+    __host__ __device__
+    PtrStepSz( size_t height, size_t width, const PtrStepSz<S>& orig, size_t pitch )
+        : data( (T*)orig.data )
+        , step(pitch)
+        , cols(width)
+        , rows(height)
+    { }
+
+    __host__ __device__
+    PtrStepSz( size_t height, size_t width, T* buf, size_t pitch )
+        : data(buf)
+        , step(pitch)
+        , cols(width)
+        , rows(height)
+    { }
+
+    __host__ __device__
+    ~PtrStepSz( )
+    {
+        data = 0;
+        step = 0;
+        cols = 0;
+        rows = 0;
+    }
+
+    __host__ __device__
+    PtrStepSz& operator=( const PtrStepSz& orig )
+    {
+        data = orig.data;
+        step = orig.step;
+        cols = orig.cols;
+        rows = orig.rows;
+        return *this;
+    }
+
+    __host__ __device__
+    T* ptr( size_t row )
+    {
+        return (T*)(((uint8_t*)data) + row * step);
+    }
+
+    __host__ __device__
+    const T* ptr( size_t row ) const
+    {
+        return (T*)(((uint8_t*)data) + row * step);
+    }
+
+    __host__ __device__
+    size_t elemSize() const
+    {
+        return sizeof(T);
+    }
+
+    T*     data;
+    size_t step;
+    size_t cols;
+    size_t rows;
+};
+
+using PtrStepSzb         = PtrStepSz<uint8_t>;
+using PtrStepSz16s       = PtrStepSz<int16_t>;
+using PtrStepSz32u       = PtrStepSz<uint32_t>;
+using PtrStepSz32s       = PtrStepSz<int32_t>;
+using PtrStepSzb4        = PtrStepSz<uchar4>;
+using PtrStepSzInt2      = PtrStepSz<int2>;
+using PtrStepSzf         = PtrStepSz<float>;
+
 struct PtrStepSzbClone
 {
-    cv::cuda::PtrStepSzb e;
+    PtrStepSzb e;
 
     __host__
-    PtrStepSzbClone( const cv::cuda::PtrStepSzb& orig );
+    PtrStepSzbClone( const PtrStepSzb& orig );
 
     __host__
     ~PtrStepSzbClone( );
@@ -56,7 +120,7 @@ private:
 
 struct PtrStepSzbNull
 {
-    cv::cuda::PtrStepSzb e;
+    PtrStepSzb e;
 
     __host__
     PtrStepSzbNull( const int width, const int height );

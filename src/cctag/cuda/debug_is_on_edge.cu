@@ -18,7 +18,7 @@ using namespace std;
 #ifndef NDEBUG
 __global__
 void debug_point_is_on_edge( FrameMetaPtr         meta,
-                             cv::cuda::PtrStepSzb edge_img,
+                             PtrStepSzb edge_img,
                              DevEdgeList<short2>  all_edgecoords )
 {
     int offset = blockIdx.x * 32 + threadIdx.x;
@@ -33,7 +33,7 @@ void debug_point_is_on_edge( FrameMetaPtr         meta,
 
 __host__
 void debugPointIsOnEdge( FrameMetaPtr&               meta,
-                         const cv::cuda::PtrStepSzb& edge_img,
+                         const PtrStepSzb& edge_img,
                          const EdgeList<short2>&     all_edgecoords,
                          cudaStream_t                stream )
 {

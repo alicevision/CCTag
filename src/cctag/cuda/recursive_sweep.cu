@@ -23,7 +23,7 @@ namespace recursive_sweep
 template<typename T>
 __device__
 inline
-T get( const cv::cuda::PtrStepSz<T> img, const int idx, const int idy )
+T get( const PtrStepSz<T> img, const int idx, const int idy )
 {
     return img.ptr( clamp( idy, img.rows ) )[ clamp( idx, img.cols ) ];
 }
@@ -33,7 +33,7 @@ class EdgeExpanderProcessor
 public:
     __device__
     inline
-    bool check( cv::cuda::PtrStepSzb img, const int idx, const int idy )
+    bool check( PtrStepSzb img, const int idx, const int idy )
     {
         if( idx == 0 || idy == 0 || idx >= img.cols-1 || idy >= img.rows-1 ) return false;
 
@@ -64,7 +64,7 @@ class ConnectedComponentProcessor
 public:
     __device__
     inline
-    bool check( cv::cuda::PtrStepSz32s img, const int idx, const int idy )
+    bool check( PtrStepSz32s img, const int idx, const int idy )
     {
         if( outOfBounds( idx, idy, img ) ) return false;
 
@@ -105,7 +105,7 @@ public:
 
 template<typename T, class Processor>
 __device__
-bool single_block_loop( cv::cuda::PtrStepSz<T> img )
+bool single_block_loop( PtrStepSz<T> img )
 {
     __shared__ bool continuation[HYST_H];
     const int       idx  = blockIdx.x * HYST_W + threadIdx.x;
@@ -130,7 +130,7 @@ bool single_block_loop( cv::cuda::PtrStepSz<T> img )
 
 template<typename T, class Processor>
 __global__
-void single_sweep( cv::cuda::PtrStepSz<T> img, int* counter )
+void single_sweep( PtrStepSz<T> img, int* counter )
 {
     bool nothing_changed = single_block_loop<T,Processor>( img );
     if( threadIdx.x == 0 && threadIdx.y == 0 ) {
@@ -150,7 +150,7 @@ void single_sweep( cv::cuda::PtrStepSz<T> img, int* counter )
 
 template<typename T, class Processor>
 __host__
-void sweep_no_dynamic_parallelism( cv::cuda::PtrStepSz<T>& img,
+void sweep_no_dynamic_parallelism( PtrStepSz<T>& img,
                                    int*                    dev_counter,
                                    cudaStream_t            stream )
 {
@@ -188,7 +188,7 @@ void sweep_no_dynamic_parallelism( cv::cuda::PtrStepSz<T>& img,
 }
 
 __host__
-void expandEdges( cv::cuda::PtrStepSzb& img, int* dev_counter, cudaStream_t stream )
+void expandEdges( PtrStepSzb& img, int* dev_counter, cudaStream_t stream )
 {
     recursive_sweep::sweep_no_dynamic_parallelism
         <uint8_t,EdgeExpanderProcessor>
@@ -196,7 +196,7 @@ void expandEdges( cv::cuda::PtrStepSzb& img, int* dev_counter, cudaStream_t stre
 }
 
 __host__
-void connectComponents( cv::cuda::PtrStepSz32s& img, int* dev_counter, cudaStream_t stream )
+void connectComponents( PtrStepSz32s& img, int* dev_counter, cudaStream_t stream )
 {
     recursive_sweep::sweep_no_dynamic_parallelism
         <int,ConnectedComponentProcessor>

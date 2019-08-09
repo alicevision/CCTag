@@ -13,7 +13,7 @@ namespace cctag {
 using namespace std;
 
 __global__
-void cu_fill_from_texture( cv::cuda::PtrStepSzb dst, cudaTextureObject_t tex )
+void cu_fill_from_texture( PtrStepSzb dst, cudaTextureObject_t tex )
 {
     uint32_t idy = blockIdx.y;
     uint32_t idx = blockIdx.x * 32 + threadIdx.x;

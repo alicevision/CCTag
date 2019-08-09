@@ -74,7 +74,7 @@ void debug_inner_test_consistency( FrameMetaPtr&                  meta,
                                    const char*                    origin,
                                    int                            p_idx,
                                    const TriplePoint*             p,
-                                   cv::cuda::PtrStepSz32s         edgepoint_index_table,
+                                   PtrStepSz32s         edgepoint_index_table,
                                    const DevEdgeList<TriplePoint> voters )
 {
     if( p == 0 ) {

@@ -51,7 +51,7 @@ namespace identification {
 
 __device__
 inline
-float getPixelBilinear( const cv::cuda::PtrStepSzb src, float2 xy )
+float getPixelBilinear( const PtrStepSzb src, float2 xy )
 {
     const int px = clamp( (int)xy.x, src.cols ); // floor of x
     const int py = clamp( (int)xy.y, src.rows ); // floor of y
@@ -81,7 +81,7 @@ __device__
 inline
 void extractSignalUsingHomography( const CutStruct&                   cut,
                                    CutSignals&                        signals,
-                                   const cv::cuda::PtrStepSzb         src,
+                                   const PtrStepSzb         src,
                                    const cctag::geometry::matrix3x3& mHomography,
                                    const cctag::geometry::matrix3x3& mInvHomography )
 {
@@ -136,7 +136,7 @@ void extractSignalUsingHomography( const CutStruct&                   cut,
  * once for every
  */
 __global__
-void idGetSignals( cv::cuda::PtrStepSzb   src,
+void idGetSignals( PtrStepSzb   src,
                    const int              vCutSize,
                    const NearbyPointGrid* point_buffer,
                    const CutStructGrid*   cut_buffer,
