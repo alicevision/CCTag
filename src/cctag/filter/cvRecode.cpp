@@ -16,6 +16,7 @@
 
 #include "cctag/filter/cvRecode.hpp"
 #include "cctag/Params.hpp"
+#include "cctag/PlaneCV.hpp"
 #include "cctag/utils/Talk.hpp" // do DO_TALK macro
 
 #include <boost/timer.hpp>
@@ -46,16 +47,16 @@ void cvRecodedCanny(
     int debug_info_level,
     const cctag::Parameters* params )
 {
-    CvMat srcCvMat = imgGraySrc.getMat();
+    CvMat srcCvMat = planeToMat( imgGraySrc );
     CvMat *src = &srcCvMat;
   
-    CvMat dstCvMat = imgCanny.getMat();
+    CvMat dstCvMat = planeToMat( imgCanny );
     CvMat *dst = &dstCvMat;
   
-    CvMat dxCvMat = imgDX.getMat();
+    CvMat dxCvMat = planeToMat( imgDX );
     CvMat *dx = &dxCvMat;
   
-    CvMat dyCvMat = imgDY.getMat();
+    CvMat dyCvMat = planeToMat( imgDY );
     CvMat *dy = &dyCvMat;
   
     boost::timer t;  

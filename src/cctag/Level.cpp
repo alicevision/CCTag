@@ -13,6 +13,7 @@
 #include "cctag/cuda/tag.h"
 #endif
 #include <opencv2/imgproc/types_c.h>
+#include "cctag/PlaneCV.hpp"
 
 namespace cctag {
 
@@ -62,7 +63,7 @@ void Level::setLevel( const Plane<uint8_t>& src,
         exit( -__LINE__ );
     }
 
-    cv::resize( src.getMat(), _src->getMat(), cv::Size( _src->getCols(),_src->getRows() ) );
+    cv::resize( planeToMat( src ), planeToMat( *_src ), cv::Size( _src->getCols(),_src->getRows() ) );
     // ASSERT TODO : check that the data are allocated here
     // Compute derivative and canny edge extraction.
     cvRecodedCanny( *_src, *_edges, *_dx, *_dy,

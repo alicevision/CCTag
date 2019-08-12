@@ -9,6 +9,7 @@
 #include "cctag/utils/VisualDebug.hpp"
 #include "cctag/utils/Exceptions.hpp"
 #include "cctag/Plane.hpp"
+#include "cctag/PlaneCV.hpp" // for planeToMat()
 #include "cctag/Detection.hpp"
 #include "CmdLine.hpp"
 
@@ -330,7 +331,7 @@ int main(int argc, char** argv)
     unsigned char* image_data = img.GetData();
     Plane<uint8_t>graySrc( image_data, h, w );
 
-    imwrite( "ballo.jpg", graySrc.getMat() );
+    imwrite( "ballo.jpg", planeToMat( graySrc ) );
 
     const int pipeId = 0;
     boost::ptr_list<CCTag> markers;
@@ -351,7 +352,7 @@ int main(int argc, char** argv)
     // Gray scale conversion
     cv::Mat src = cv::imread(cmdline._filename);
     Plane<uint8_t> graySrc;
-    cv::cvtColor(src, graySrc.getMat(), CV_BGR2GRAY);
+    cv::cvtColor(src, planeToMat( graySrc ), CV_BGR2GRAY);
 
     const int pipeId = 0;
     boost::ptr_list<CCTag> markers;
@@ -400,9 +401,9 @@ int main(int argc, char** argv)
       Plane<uint8_t> imgGray;
 
       if(frame.channels() == 3 || frame.channels() == 4)
-        cv::cvtColor(frame, imgGray.getMat(), cv::COLOR_BGR2GRAY);
+        cv::cvtColor(frame, planeToMat( imgGray ), cv::COLOR_BGR2GRAY);
       else
-        frame.copyTo(imgGray.getMat());
+        frame.copyTo( planeToMat( imgGray ));
 
       // Set the output folder
       std::stringstream outFileName;
@@ -424,7 +425,7 @@ int main(int argc, char** argv)
       
       // if the original image is b/w convert it to BGRA so we can draw colors
       if(frame.channels() == 1)
-        cv::cvtColor(imgGray.getMat(), frame, cv::COLOR_GRAY2BGRA);
+        cv::cvtColor( planeToMat( imgGray ), frame, cv::COLOR_GRAY2BGRA);
       
       drawMarkers(markers, frame);
       cv::imshow(windowName, frame);
@@ -476,7 +477,7 @@ int main(int argc, char** argv)
           src = cv::imread(fileInFolder.second.string());
 
           Plane<uint8_t> imgGray;
-          cv::cvtColor(src, imgGray.getMat(), CV_BGR2GRAY);
+          cv::cvtColor(src, planeToMat( imgGray ), CV_BGR2GRAY);
 
           // Call the CCTag detection
           int pipeId = (fileInFolder.first & 1);

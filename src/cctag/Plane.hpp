@@ -8,33 +8,10 @@
 #ifndef _CCTAG_PLANE_HPP_
 #define _CCTAG_PLANE_HPP_
 
-#include <opencv2/opencv.hpp>
+#include <cstdint>
+#include <string>
 
 namespace cctag {
-
-/*************************************************************
- * PlaneType
- *************************************************************/
-
-template<typename SubType> struct PlaneType
-{
-    int cvType() { return CV_8UC1; }
-};
-
-template<> struct PlaneType<uint8_t>
-{
-    int cvType() { return CV_8UC1; }
-};
-
-template<> struct PlaneType<int16_t>
-{
-    int cvType() { return CV_16SC1; }
-};
-
-template<> struct PlaneType<int32_t>
-{
-    int cvType() { return CV_32SC1; }
-};
 
 /*************************************************************
  * Plane
@@ -42,8 +19,6 @@ template<> struct PlaneType<int32_t>
 
 template<typename Type> class Plane
 {
-    typedef PlaneType<Type> T;
-
     Type*  _buffer;
     size_t _height;
     size_t _width;
@@ -58,8 +33,6 @@ public:
 
     Plane& operator=( Plane& plane );
 
-    cv::Mat     getMat( );
-    cv::Mat     getMat( )  const;
     size_t      getCols( ) const;
     size_t      getRows( ) const;
     Type*       getBuffer( );
@@ -166,22 +139,6 @@ template<typename Type>
 const Type& Plane<Type>::at( int x, int y ) const
 {
     return _buffer[ y * _width + x ];
-}
-
-template<typename Type>
-cv::Mat Plane<Type>::getMat( )
-{
-    T t;
-    cv::Mat mat( _height, _width, t.cvType(), (void*)_buffer );
-    return mat;
-}
-
-template<typename Type>
-cv::Mat Plane<Type>::getMat( ) const
-{
-    T t;
-    cv::Mat mat( _height, _width, t.cvType(), (void*)_buffer );
-    return mat;
 }
 
 template<typename Type>

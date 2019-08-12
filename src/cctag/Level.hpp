@@ -8,7 +8,6 @@
 #ifndef _CCTAG_LEVEL_HPP
 #define	_CCTAG_LEVEL_HPP
 
-#include <opencv2/opencv.hpp>
 #include "cctag/Plane.hpp"
 
 namespace cctag {

@@ -18,6 +18,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/types_c.h>
 #include "TestLog.h"
+#include "cctag/PlaneCV.hpp"
 
 using namespace cctag;
 
@@ -91,7 +92,7 @@ FileLog FileLog::detectImage(const std::string& filename, const cctag::Parameter
   src = cv::imread(filename);
   if (src.empty())
     throw std::runtime_error(std::string("FileLog: unable to read image file: ") + filename);
-  cv::cvtColor(src, gray.getMat(), CV_BGR2GRAY);
+  cv::cvtColor(src, planeToMat( gray ), CV_BGR2GRAY);
   
   auto frameLog = FrameLog::detect(0, gray, parameters, bank);
   fileLog.frameLogs.push_back(frameLog);
@@ -113,7 +114,7 @@ FileLog FileLog::detectVideo(const std::string& filename, const cctag::Parameter
   for (size_t i = 0; i < lastFrame; ++i) {
     video >> src;
     Plane<uint8_t> gray;
-    cv::cvtColor(src, gray.getMat(), CV_BGR2GRAY);
+    cv::cvtColor(src, planeToMat( gray ), CV_BGR2GRAY);
     auto frameLog = FrameLog::detect(i, gray, parameters, bank);
     fileLog.frameLogs.push_back(frameLog);
   }

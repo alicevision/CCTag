@@ -17,10 +17,13 @@
 
 #include <boost/filesystem.hpp>
 
+#include <opencv2/opencv.hpp>
+
 namespace cctag
 {
 
-class CCTagVisualDebug : public Singleton<CCTagVisualDebug> {
+class CCTagVisualDebug : public Singleton<CCTagVisualDebug>
+{
     MAKE_SINGLETON_WITHCONSTRUCTORS(CCTagVisualDebug)
 
 public:
@@ -43,13 +46,7 @@ public:
 
     void setImageFileName(const std::string& imageFileName);
 
-    template<typename Type>
-    void initBackgroundImage(const Plane<Type>& back)
-    {
-        initBackgroundImage( back.getMat() );
-    }
-
-    void initBackgroundImage(const cv::Mat & back);
+    void initBackgroundImage(const Plane<uint8_t>& back);
     
     void initializeFolders(const boost::filesystem::path & rootPath, const std::string & outputFolder, std::size_t nCrowns = 4);
 
@@ -78,21 +75,6 @@ public:
 
     std::string getImageFileName() const;
     
-#ifdef CCTAG_EXTRA_LAYER_DEBUG
-    template<typename T>
-    void coutImage(cv::Mat src) const
-    {
-      for (int i=0 ; i < src.rows ; ++i)
-      {
-        for (int j=0 ; j < src.cols ; ++j)
-        {
-          std::cout << (int) src.at<T>(i,j) << " ";
-        }
-        std::cout << std::endl;
-      }
-    }
-#endif
-
     void clearSessions();
 
 private:

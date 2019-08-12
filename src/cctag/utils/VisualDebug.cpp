@@ -11,6 +11,7 @@
 
 #include <boost/filesystem.hpp>
 #include <opencv2/opencv.hpp>
+#include "cctag/PlaneCV.hpp"
 
 namespace bfs = boost::filesystem;
 
@@ -105,9 +106,10 @@ void CCTagVisualDebug::setImageFileName(const std::string& imageFileName) {
 #endif   
 }
 
-void CCTagVisualDebug::initBackgroundImage(const cv::Mat & back)
+void CCTagVisualDebug::initBackgroundImage(const Plane<uint8_t>& b)
 {
 #ifdef CCTAG_SERIALIZE
+  cv::Mat back = planeToMat( b );
   cv::Mat temp;
   cvtColor(back, temp, cv::COLOR_GRAY2RGB);
   _backImage = temp.clone();

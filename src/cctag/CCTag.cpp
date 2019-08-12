@@ -20,8 +20,6 @@
 #include <cminpack.h>
 #endif
 
-#include <opencv2/core/core_c.h>
-
 #include <boost/foreach.hpp>
 #include <boost/timer.hpp>
 #include <boost/array.hpp>

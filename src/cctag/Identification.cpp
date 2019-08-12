@@ -191,16 +191,16 @@ bool orazioDistanceRobust(
   return true;
 }
 
-void createRectifiedCutImage(const std::vector<ImageCut> & vCuts, cv::Mat & output)
+void createRectifiedCutImage(const std::vector<ImageCut> & vCuts, Plane<uint8_t> & output)
 {
-  // Plane<uint8_t> output( vCuts.size(), vCuts.front().imgSignal().size() );
-  output = cv::Mat(vCuts.size(), vCuts.front().imgSignal().size(), CV_8UC1);
+  Plane<uint8_t> buf( vCuts.size(), vCuts.front().imgSignal().size() );
+  output = buf; // cv::Mat(vCuts.size(), vCuts.front().imgSignal().size(), CV_8UC1);
   for(int y=0 ; y<vCuts.size() ; ++y)
   {
     const ImageCut & cut = vCuts[y];
     for(int x=0 ; x < cut.imgSignal().size() ; ++x)
     {
-      output.at<uchar>(y,x) = (uchar) cut.imgSignal()[x];
+      output.at(x,y) = (uint8_t) cut.imgSignal()[x];
       // output.at(x,y) = (uchar) cut.imgSignal()[x];
     }
   }
@@ -1389,7 +1389,7 @@ int identify_step_2(
   identSuccessful = orazioDistanceRobust( vScore, radiusRatios, vSelectedCuts, params._minIdentProba);
     
 #ifdef CCTAG_VISUAL_DEBUG // todo: write a proper function in visual debug
-  cv::Mat output;
+  Plane<uint8_t> output;
   createRectifiedCutImage(vSelectedCuts, output);
   CCTagVisualDebug::instance().initBackgroundImage(output);
   CCTagVisualDebug::instance().newSession( "rectifiedSignal" + 

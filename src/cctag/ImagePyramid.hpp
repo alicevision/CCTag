@@ -10,8 +10,6 @@
 
 #include "cctag/Level.hpp"
 
-#include <opencv2/opencv.hpp>
-
 #include <cstdint>
 #include <cstddef>
 #include <vector>
@@ -41,8 +39,6 @@ public:
 private:
   std::vector<Level*> _levels;
 };
-
-void sIntToUchar(const cv::Mat & src, cv::Mat & dst);
 
 }
 
