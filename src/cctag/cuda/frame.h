@@ -182,15 +182,6 @@ public:
     // implemented in frame_07b_vote_sort_uniq_nodp.cu
     bool applyVoteSortUniq( );
 
-#ifndef USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
-private:
-    // implemented in frame_07b_vote_sort_nodp.cu
-    // called by applyVoteSortUniqNoDP
-    bool applyVoteSortNoDP( );
-    void applyVoteUniqNoDP( );
-public:
-#endif // not USE_SEPARABLE_COMPILATION_FOR_SORT_UNIQ
-
     // implemented in frame_07c_eval.cu
     bool applyVoteEval( );
 
@@ -270,12 +261,6 @@ private:
 
     EdgeList<int>          _inner_points;
     EdgeList<int>          _interm_inner_points;
-
-    /* A single int allocated on the device as an intermediate
-     * value. Some CUB calls needs such a thing. Waste of space
-     * but necessary.
-     */
-    int*                   _d_interm_int;
 
     Voting _vote;
 

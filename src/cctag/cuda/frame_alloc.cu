@@ -144,8 +144,6 @@ void Frame::allocRequiredMem( const cctag::Parameters& params )
     _vote._d_edgepoint_index_table.step = p;
     _vote._d_edgepoint_index_table.cols = w;
     _vote._d_edgepoint_index_table.rows = h;
-
-    POP_CUDA_MALLOC_HOST( &_d_interm_int, sizeof(int) );
 }
 
 __host__
@@ -236,7 +234,6 @@ void Frame::releaseRequiredMem( )
     _interm_inner_points.release();
     POP_CUDA_FREE( _v_chosen_flow_length );
     POP_CUDA_FREE( _vote._d_edgepoint_index_table.data );
-    POP_CUDA_FREE( _d_interm_int );
 }
 
 }; // namespace cctag
