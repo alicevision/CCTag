@@ -11,8 +11,6 @@
 #include "cctag/Types.hpp"
 #include "cctag/Plane.hpp"
 
-// #include <opencv2/core/core.hpp>
-
 #include <vector>
 
 

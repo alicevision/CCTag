@@ -15,8 +15,6 @@
 #include <cctag/Plane.hpp>
 #include <cctag/utils/LogTime.hpp>
 
-#include <opencv2/opencv.hpp>
-
 #include <cstddef>
 #include <string>
 #include <vector>

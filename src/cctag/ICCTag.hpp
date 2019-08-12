@@ -14,8 +14,6 @@
 
 #include <boost/ptr_container/ptr_list.hpp>
 
-#include <opencv2/core/core.hpp>
-
 namespace cctag {
 
 namespace logtime {

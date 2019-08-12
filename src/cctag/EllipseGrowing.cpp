@@ -16,11 +16,7 @@
 #include <cctag/geometry/Point.hpp>
 #include <cctag/utils/Defines.hpp>
 #include <cctag/utils/Talk.hpp> // for DO_TALK macro
-// #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
-
-#include <opencv2/core/core_c.h>
-#include <opencv2/core/types_c.h>
 
 #include <boost/math/special_functions/pow.hpp>
 #include <boost/foreach.hpp>

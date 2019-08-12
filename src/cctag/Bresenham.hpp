@@ -10,8 +10,6 @@
 
 #include <cctag/geometry/Point.hpp>
 
-// #include <opencv2/core/mat.hpp>
-
 #include <cstddef>
 
 #include "cctag/Types.hpp"
