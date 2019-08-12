@@ -218,17 +218,8 @@ void Frame::applyGaussDownload( )
     // After these linking operations, dx and dy are created for
     // all edge points and we can copy them to the host
 
-    cudaMemcpy2DAsync( _h_dx.data, _h_dx.step,
-                       _d_dx.data, _d_dx.step,
-                       _d_dx.cols * sizeof(int16_t),
-                       _d_dx.rows,
-                       cudaMemcpyDeviceToHost, _download_stream );
-
-    cudaMemcpy2DAsync( _h_dy.data, _h_dy.step,
-                       _d_dy.data, _d_dy.step,
-                       _d_dy.cols * sizeof(int16_t),
-                       _d_dy.rows,
-                       cudaMemcpyDeviceToHost, _download_stream );
+    _h_dx.copyFrom( _d_dx, _download_stream );
+    _h_dy.copyFrom( _d_dy, _download_stream );
 }
 
 }; // namespace cctag

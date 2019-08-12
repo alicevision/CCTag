@@ -46,11 +46,7 @@ void Frame::applyPlaneDownload( )
     cudaStreamWaitEvent( _download_stream, _download_ready_event.plane, 0 );
 
     // download - layer 0 is mandatory, other layers for debugging
-    cudaMemcpy2DAsync( _h_plane.data, _h_plane.step,
-                       _d_plane.data, _d_plane.step,
-                       _d_plane.cols,
-                       _d_plane.rows,
-                       cudaMemcpyDeviceToHost, _download_stream );
+    _h_plane.copyFrom( _d_plane, _download_stream );
 }
 
 }; // namespace cctag

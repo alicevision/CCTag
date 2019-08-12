@@ -120,14 +120,11 @@ void Frame::upload( Plane<uint8_t>& image )
     mlock( _image_to_upload.getBuffer(), getWidth() * getHeight() );
 #endif
 
-    POP_CUDA_MEMCPY_2D_ASYNC( _d_plane.data,
-                              getPitch(),
-                              _image_to_upload.getBuffer(),
-                              getWidth(),
-                              getWidth(),
-                              getHeight(),
-                              cudaMemcpyHostToDevice,
-                              _stream );
+    Plane2D<uint8_t> image_to_upload( _image_to_upload.getRows(),
+                                      _image_to_upload.getCols(),
+                                      _image_to_upload.getBuffer(),
+                                      _image_to_upload.getCols() * sizeof(uint8_t) );
+    _d_plane.copyFrom( image_to_upload, _stream );
 }
 
 void Frame::uploadComplete( )

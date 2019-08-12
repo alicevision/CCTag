@@ -15,14 +15,59 @@
 
 namespace cctag {
 
+/*************************************************************
+ * allocation functions
+ *************************************************************/
 void* allocate_hst( size_t rows, size_t cols, size_t& step );
 void* allocate_dev( size_t rows, size_t cols, size_t& step );
 void release_hst( void* ptr );
 void release_dev( void* ptr );
 
+/*************************************************************
+ * memset functions
+ *************************************************************/
+void memset_hst( void* ptr, uint8_t value, size_t bytes );
+void memset_dev( void* ptr, uint8_t value, size_t bytes );
+void memset_hst( void* ptr, uint8_t value, size_t bytes, cudaStream_t stream );
+void memset_dev( void* ptr, uint8_t value, size_t bytes, cudaStream_t stream );
+
+/*************************************************************
+ * memcpy functions
+ *************************************************************/
+bool copy_hst_from_hst( void* dst, size_t dst_pitch,
+                        void* src, size_t src_pitch,
+                        size_t w_bytes, size_t h );
+bool copy_hst_from_dev( void* dst, size_t dst_pitch,
+                        void* src, size_t src_pitch,
+                        size_t w_bytes, size_t h );
+bool copy_dev_from_hst( void* dst, size_t dst_pitch,
+                        void* src, size_t src_pitch,
+                        size_t w_bytes, size_t h );
+bool copy_dev_from_dev( void* dst, size_t dst_pitch,
+                        void* src, size_t src_pitch,
+                        size_t w_bytes, size_t h );
+bool copy_hst_from_hst( void* dst, size_t dst_pitch,
+                        void* src, size_t src_pitch,
+                        size_t w_bytes, size_t h, cudaStream_t stream );
+bool copy_hst_from_dev( void* dst, size_t dst_pitch,
+                        void* src, size_t src_pitch,
+                        size_t w_bytes, size_t h, cudaStream_t stream );
+bool copy_dev_from_hst( void* dst, size_t dst_pitch,
+                        void* src, size_t src_pitch,
+                        size_t w_bytes, size_t h, cudaStream_t stream );
+bool copy_dev_from_dev( void* dst, size_t dst_pitch,
+                        void* src, size_t src_pitch,
+                        size_t w_bytes, size_t h, cudaStream_t stream );
+
+/*************************************************************
+ * Context-indicating dummy types
+ *************************************************************/
 struct Hst { };
 struct Dev { };
 
+/*************************************************************
+ * Plane2D - base template for 2D arrays on host and device
+ *************************************************************/
 template<typename T, typename Ctx = Hst>
 class Plane2D
 {
@@ -117,6 +162,64 @@ public:
             release_dev( data );
         data = 0;
         rows = cols = step = 0;
+    }
+
+    __host__
+    void memset( uint8_t val )
+    {
+        if( std::is_same<Ctx,Hst>::value )
+            memset_hst( data, val, rows*step );
+        else
+            memset_dev( data, val, rows*step );
+    }
+
+    __host__
+    void memset( uint8_t val, cudaStream_t stream )
+    {
+        if( std::is_same<Ctx,Hst>::value )
+            memset_hst( data, val, rows*step, stream );
+        else
+            memset_dev( data, val, rows*step, stream );
+    }
+
+    template<typename SrcT, typename SrcCtx>
+    __host__
+    bool copyFrom( const Plane2D<SrcT,SrcCtx>& src )
+    {
+        if( std::is_same<Ctx,Hst>::value )
+        {
+            if( std::is_same<Ctx,SrcCtx>::value )
+                return copy_hst_from_hst( data, step, src.data, src.step, cols*sizeof(T), rows );
+            else
+                return copy_hst_from_dev( data, step, src.data, src.step, cols*sizeof(T), rows );
+        }
+        else
+        {
+            if( std::is_same<Ctx,SrcCtx>::value )
+                return copy_dev_from_dev( data, step, src.data, src.step, cols*sizeof(T), rows );
+            else
+                return copy_dev_from_hst( data, step, src.data, src.step, cols*sizeof(T), rows );
+        }
+    }
+
+    template<typename SrcT, typename SrcCtx>
+    __host__
+    bool copyFrom( const Plane2D<SrcT,SrcCtx>& src, cudaStream_t stream )
+    {
+        if( std::is_same<Ctx,Hst>::value )
+        {
+            if( std::is_same<Ctx,SrcCtx>::value )
+                return copy_hst_from_hst( data, step, src.data, src.step, cols*sizeof(T), rows, stream );
+            else
+                return copy_hst_from_dev( data, step, src.data, src.step, cols*sizeof(T), rows, stream );
+        }
+        else
+        {
+            if( std::is_same<Ctx,SrcCtx>::value )
+                return copy_dev_from_dev( data, step, src.data, src.step, cols*sizeof(T), rows, stream );
+            else
+                return copy_dev_from_hst( data, step, src.data, src.step, cols*sizeof(T), rows, stream );
+        }
     }
 
     T*     data;

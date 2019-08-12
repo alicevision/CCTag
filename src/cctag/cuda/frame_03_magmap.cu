@@ -139,18 +139,10 @@ void Frame::applyMagDownload( )
 {
     cudaStreamWaitEvent( _download_stream, _download_ready_event.magmap, 0 );
 
-    cudaMemcpy2DAsync( _h_mag.data, _h_mag.step,
-                       _d_mag.data, _d_mag.step,
-                       _d_mag.cols * sizeof(int16_t),
-                       _d_mag.rows,
-                       cudaMemcpyDeviceToHost, _download_stream );
+    _h_mag.copyFrom( _d_mag, _download_stream );
 
 #ifdef DEBUG_WRITE_MAP_AS_PGM
-    cudaMemcpy2DAsync( _h_debug_map, getWidth() * sizeof(uint8_t),
-                       _d_map.data, _d_map.step,
-                       _d_map.cols * sizeof(uint8_t),
-                       _d_map.rows,
-                       cudaMemcpyDeviceToHost, _download_stream );
+    _h_debug_map.copyFrom( _d_map, _download_stream );
 #endif // DEBUG_WRITE_MAP_AS_PGM
 }
 

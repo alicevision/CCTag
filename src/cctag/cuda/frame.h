@@ -236,10 +236,6 @@ private:
     DevPlane2Db    _d_edges;
     DevPlane2DInt2 _d_ring_output;
 
-#ifdef DEBUG_WRITE_MAP_AS_PGM
-    unsigned char*          _h_debug_map;
-#endif // DEBUG_WRITE_MAP_AS_PGM
-
 public: // HACK FOR DEBUGGING
     HstPlane2Db    _h_plane;
     HstPlane2D16s  _h_dx;
@@ -248,6 +244,12 @@ public: // HACK FOR DEBUGGING
     HstPlane2Db    _h_edges;
 
     HstPlane2Df    _h_intermediate; // copies layout of _d_intermediate
+
+#ifdef DEBUG_WRITE_MAP_AS_PGM
+private:
+    HstPlane2Db    _h_debug_map;
+#endif // DEBUG_WRITE_MAP_AS_PGM
+
 private:
     // Stores coordinates of all edges. Valid after thinning.
     EdgeList<short2>        _all_edgecoords;
