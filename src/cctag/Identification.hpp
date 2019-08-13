@@ -14,8 +14,6 @@
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/Statistic.hpp>
 
-#include <opencv2/opencv.hpp>
-
 #include <boost/foreach.hpp>
 #include <boost/accumulators/statistics/median.hpp>
 #include <boost/foreach.hpp>
@@ -138,7 +136,7 @@ bool orazioDistanceRobust(
  */
 void extractSignalUsingHomography(
         cctag::ImageCut & cut,
-        const cv::Mat & src,
+        const Plane<uint8_t>& src,
         const Eigen::Matrix3f & mHomography,
         const Eigen::Matrix3f & mInvHomography);
 
@@ -383,14 +381,14 @@ inline float dis( const float sig, const float val, const float mub, const float
 }
 
 /* depreciated */
-bool refineConicFamily(
-        CCTag & cctag,
-        std::vector< cctag::ImageCut > & fsig,
-        std::size_t lengthSig,
-        const cv::Mat & src,
-        const cctag::numerical::geometry::Ellipse & ellipse,
-        const std::vector< cctag::Point2d<Eigen::Vector3f> > & pr,
-        bool useLmDif );
+// bool refineConicFamily(
+//         CCTag & cctag,
+//         std::vector< cctag::ImageCut > & fsig,
+//         std::size_t lengthSig,
+//         const cv::Mat & src,
+//         const cctag::numerical::geometry::Ellipse & ellipse,
+//         const std::vector< cctag::Point2d<Eigen::Vector3f> > & pr,
+//         bool useLmDif );
 
 /* depreciated */
 /**

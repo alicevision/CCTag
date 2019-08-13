@@ -9,8 +9,6 @@
 #include <cctag/ImagePyramid.hpp>
 #include <cctag/utils/VisualDebug.hpp>
 
-#include <opencv2/imgproc/imgproc.hpp>
-
 #include <iostream>
 #include <string>
 
