@@ -5,6 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+#include <sstream>
+
 #include <cctag/Level.hpp>
 #include <cctag/filter/cvRecode.hpp>
 #include <cctag/filter/thinning.hpp>
@@ -14,6 +16,7 @@
 #endif
 #include <opencv2/imgproc/types_c.h>
 #include "cctag/PlaneCV.hpp"
+#include "cctag/nocuda/resize.hpp"
 
 namespace cctag {
 
@@ -63,6 +66,7 @@ void Level::setLevel( const Plane<uint8_t>& src,
         exit( -__LINE__ );
     }
 
+#if 0
     cv::resize( planeToMat( src ), planeToMat( *_src ), cv::Size( _src->getCols(),_src->getRows() ) );
     // ASSERT TODO : check that the data are allocated here
     // Compute derivative and canny edge extraction.
@@ -70,6 +74,13 @@ void Level::setLevel( const Plane<uint8_t>& src,
                     thrLowCanny * 256, thrHighCanny * 256,
                     3 | CV_CANNY_L2_GRADIENT,
                     _level, params );
+#else
+    cctag::resize( src, *_src );
+    cvRecodedCanny( *_src, *_edges, *_dx, *_dy,
+                    thrLowCanny * 256, thrHighCanny * 256,
+                    3 | CV_CANNY_L2_GRADIENT,
+                    _level, params );
+#endif
     // Perform the thinning.
 
 #ifdef CCTAG_EXTRA_LAYER_DEBUG

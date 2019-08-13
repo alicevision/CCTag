@@ -18,6 +18,7 @@ set( CCTag_cpp
         ./cctag/Identification.cpp
         ./cctag/ImagePyramid.cpp
         ./cctag/Level.cpp
+	./cctag/nocuda/resize.cpp
         ./cctag/Multiresolution.cpp
         ./cctag/Params.cpp
         ./cctag/Statistic.cpp
