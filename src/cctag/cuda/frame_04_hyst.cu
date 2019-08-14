@@ -103,7 +103,7 @@ bool update_edge_pixel( int y, int x )
     val[1].i = make_uint3( reinterpret_cast<volatile uint32_t*>( &array[y+1][x] )[0],
                            reinterpret_cast<volatile uint32_t*>( &array[y+1][x] )[1],
                            reinterpret_cast<volatile uint32_t*>( &array[y+1][x] )[2] );
-    val[2].i = make_uint3( reinterpret_cast<volatile uint32_t*>( &array[y+1][x] )[0],
+    val[2].i = make_uint3( reinterpret_cast<volatile uint32_t*>( &array[y+2][x] )[0],
                            reinterpret_cast<volatile uint32_t*>( &array[y+2][x] )[1],
                            reinterpret_cast<volatile uint32_t*>( &array[y+2][x] )[2] );
 
