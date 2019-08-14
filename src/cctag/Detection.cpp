@@ -255,10 +255,6 @@ static void completeFlowComponent(
 #endif
 
   }
-  catch (cv::Exception& e)
-  {
-    DO_TALK( CCTAG_COUT_DEBUG( "OpenCV exception: " +  e.what() ); )
-  }
   catch (...)
   {
     DO_TALK( CCTAG_COUT_DEBUG( "Exception raised in the second main loop." ); )

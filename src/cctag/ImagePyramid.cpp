@@ -100,31 +100,6 @@ Level* ImagePyramid::getLevel( std::size_t level ) const
         return _levels[level];
 }
 
-// void sInttoUchar(const cv::Mat & src, cv::Mat & dst)
-// {
-//   std::size_t width = src.cols;
-//   std::size_t height = src.rows;
-//   dst = cv::Mat(height, width, CV_8UC1);
-//   
-//   double min = 0;
-//   double max = 0;
-//   
-//   cv::minMaxLoc(src, &min, &max);
-//   
-//   CCTAG_COUT_VAR(min);
-//   CCTAG_COUT_VAR(max);
-//   
-//   float scale = 255/(max-min);
-//   
-//   for ( int i=0 ; i < width ; ++i)
-//   {
-//     for ( int j=0 ; j < height ; ++j)
-//     {
-//       dst.at<uchar>(j,i) = (uchar) ((src.at<short>(j,i)+min)*scale);
-//     }
-//   }
-// }
-
 }
 
 
