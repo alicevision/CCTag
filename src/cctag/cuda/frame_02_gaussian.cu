@@ -112,8 +112,8 @@ template <class SrcType, class DestType>
 __global__
 void filter_gauss_vert( Plane2D<SrcType,Dev>  src,
                         Plane2D<DestType,Dev> dst,
-                        int                           filter,
-                        float                         scale )
+                        int                   filter,
+                        float                 scale )
 {
     const int idx     = blockIdx.x * 32 + threadIdx.x;
     const int idy     = blockIdx.y;

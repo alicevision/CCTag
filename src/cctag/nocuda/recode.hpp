@@ -11,18 +11,18 @@
 #include "cctag/Plane.hpp"
 
 namespace cctag {
+
 struct Parameters;
+
+void recodedCanny( Plane<uint8_t>& imgGraySrc,
+                   Plane<uint8_t>& imgCanny,
+                   Plane<int16_t>& imgDX,
+                   Plane<int16_t>& imgDY,
+                   float low_thresh,
+                   float high_thresh,
+                   const int level,
+                   const cctag::Parameters* params );
 };
 
-void recodedCanny(
-  cctag::Plane<uint8_t>& imgGraySrc,
-  cctag::Plane<uint8_t>& imgCanny,
-  cctag::Plane<int16_t>& imgDX,
-  cctag::Plane<int16_t>& imgDY,
-  float low_thresh,
-  float high_thresh,
-  int aperture_size,
-  int debug_info_level,
-  const cctag::Parameters* params );
 #endif
 

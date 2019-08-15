@@ -16,6 +16,7 @@
 #endif
 #include "cctag/PlaneCV.hpp"
 #include "cctag/nocuda/resize.hpp"
+#include "cctag/nocuda/recode.hpp"
 
 namespace cctag {
 
@@ -66,6 +67,7 @@ void Level::setLevel( const Plane<uint8_t>& src,
     }
 
 #if 0
+#if 0
     cv::resize( planeToMat( src ), planeToMat( *_src ), cv::Size( _src->getCols(),_src->getRows() ) );
     // ASSERT TODO : check that the data are allocated here
     // Compute derivative and canny edge extraction.
@@ -79,6 +81,35 @@ void Level::setLevel( const Plane<uint8_t>& src,
                     thrLowCanny * 256, thrHighCanny * 256,
                     3 | CV_CANNY_L2_GRADIENT,
                     _level, params );
+#endif
+#else
+    cctag::resize( src, *_src );
+    cctag::recodedCanny( *_src, *_edges, *_dx, *_dy,
+                         thrLowCanny * 256, thrHighCanny * 256,
+                         _level,
+                         params );
+
+#if 1
+    Plane<uint8_t> testEdges( _edges->getRows(), _edges->getCols() );
+    Plane<int16_t> diffEdges( _edges->getRows(), _edges->getCols() );
+    cvRecodedCanny( *_src, testEdges, *_dx, *_dy,
+                    thrLowCanny * 256, thrHighCanny * 256,
+                    3 | CV_CANNY_L2_GRADIENT,
+                    _level, params );
+    for( int y=0; y<diffEdges.getRows(); y++ )
+        for( int x=0; x<diffEdges.getCols(); x++ )
+        {
+            diffEdges.at(x,y) = (int16_t)_edges->at(x,y) - (int16_t)testEdges.at(x,y);
+        }
+    std::ostringstream o1, o2, o3;
+    o1 << "canny-" << _level << "-cv.pgm";
+    o2 << "canny-" << _level << "-nocv.pgm";
+    o3 << "canny-" << _level << "-diff-cv-nocv.pgm";
+    writePlanePGM( o1.str(), testEdges, SCALED_WRITING );
+    writePlanePGM( o2.str(), *_edges, SCALED_WRITING );
+    writePlanePGM( o3.str(), diffEdges, SCALED_WRITING );
+#endif
+
 #endif
     // Perform the thinning.
 

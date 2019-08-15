@@ -20,6 +20,7 @@ void resize( const Plane<uint8_t>& src, Plane<uint8_t>& dst )
         return;
     }
 
+#if 0
     if( src.getRows() == 2 * dst.getRows() &&
         src.getCols() == 2 * dst.getCols() )
     {
@@ -38,6 +39,23 @@ void resize( const Plane<uint8_t>& src, Plane<uint8_t>& dst )
         }
         return;
     }
+#else
+    if( src.getRows() == 2 * dst.getRows() &&
+        src.getCols() == 2 * dst.getCols() )
+    {
+        for( int y=0; y<dst.getRows(); y++ )
+        {
+            const float yko = y << 1;
+            for( int x=0; x<dst.getCols(); x++ )
+            {
+                const float    xko = x << 1;
+                const uint8_t& val = src.at( xko, yko );
+                dst.at(x,y) = val;
+            }
+        }
+        return;
+    }
+#endif
 
     const float row_ratio = (float)src.getRows() / (float)dst.getRows();
     const float col_ratio = (float)src.getCols() / (float)dst.getCols();

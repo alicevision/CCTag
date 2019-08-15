@@ -5,13 +5,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <cctag/cuda/cctag_cuda_runtime.h>
-#include "debug_macros.hpp"
+#include "cctag/cuda/cctag_cuda_runtime.h"
+#include "cctag/cuda/debug_macros.hpp"
+#include "cctag/cuda/debug_image.h"
 
-#include "frame.h"
-#include "frameparam.h"
-#include "clamp.h"
-#include "assist.h"
+#include "cctag/cuda/frame.h"
+#include "cctag/cuda/frameparam.h"
+#include "cctag/cuda/clamp.h"
+#include "cctag/cuda/assist.h"
 
 
 namespace cctag
@@ -132,6 +133,23 @@ void Frame::applyMag( )
 
     /* block download until MAG and MAP are ready */
     cudaEventRecord( _download_ready_event.magmap, _stream );
+
+#if 1
+    cudaDeviceSynchronize();
+    _h_dx.copyFrom( _d_dx );
+    _h_dy.copyFrom( _d_dy );
+    _h_mag.copyFrom( _d_mag );
+    _h_debug_map.copyFrom( _d_map );
+    std::ostringstream o1,o2,o3,o4;
+    o1 << "dx-" << _layer << "-cuda.pgm";
+    o2 << "dy-" << _layer << "-cuda.pgm";
+    o3 << "mag-" << _layer << "-cuda.pgm";
+    o4 << "map-" << _layer << "-cuda.pgm";
+    DebugImage::writePGMscaled( o1.str(), _h_dx );
+    DebugImage::writePGMscaled( o2.str(), _h_dy );
+    DebugImage::writePGMscaled( o3.str(), _h_mag );
+    DebugImage::writePGMscaled( o4.str(), _h_debug_map );
+#endif
 }
 
 __host__
