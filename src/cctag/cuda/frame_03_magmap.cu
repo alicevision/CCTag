@@ -136,15 +136,18 @@ void Frame::applyMag( )
 
 #if 1
     cudaDeviceSynchronize();
+    _h_plane.copyFrom( _d_plane );
     _h_dx.copyFrom( _d_dx );
     _h_dy.copyFrom( _d_dy );
     _h_mag.copyFrom( _d_mag );
     _h_debug_map.copyFrom( _d_map );
-    std::ostringstream o1,o2,o3,o4;
+    std::ostringstream o0,o1,o2,o3,o4;
+    o0 << "plane-" << _layer << "-cuda.pgm";
     o1 << "dx-" << _layer << "-cuda.pgm";
     o2 << "dy-" << _layer << "-cuda.pgm";
     o3 << "mag-" << _layer << "-cuda.pgm";
     o4 << "map-" << _layer << "-cuda.pgm";
+    DebugImage::writePGM( o0.str(), _h_plane );
     DebugImage::writePGMscaled( o1.str(), _h_dx );
     DebugImage::writePGMscaled( o2.str(), _h_dy );
     DebugImage::writePGMscaled( o3.str(), _h_mag );

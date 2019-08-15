@@ -29,8 +29,6 @@
 #include <fstream>
 #include <exception>
 
-#define USE_INTEGER_REP
-
 namespace cctag
 {
 
@@ -60,37 +58,11 @@ static const float gauss_deriv[9] =
     0.002683701023220f,
 };
 
-static void filter_gauss_vert( int                   grid_x,
-                               int                   grid_y,
-                               const Plane<uint8_t>& src,
-                               Plane<int16_t>&       dst,
-                               const float*          filter,
-                               float                 scale )
-{
-    for( int y=0; y<grid_y; y++ )
-    {
-        for( int x=0; x<grid_x; x++ )
-        {
-            float out = 0.0f;
-            for( int offset = 0; offset<9; offset++ )
-            {
-                float g  = filter[offset];
-        
-                int lookup = clamp( y + offset - 4, src.getRows() );
-                float val = src.at( x, lookup );
-                out += ( val * g );
-            }
-
-            out *= scale;
-            dst.at(x,y) = (int16_t)out;
-        }
-    }
-}
-
+template <class SrcType, class DestType>
 static void filter_gauss_horiz( int                   grid_x,
                                 int                   grid_y,
-                                const Plane<int16_t>& src,
-                                Plane<int16_t>&       dst,
+                                const Plane<SrcType>& src,
+                                Plane<DestType>&      dst,
                                 const float*          filter,
                                 float                 scale )
 {
@@ -103,24 +75,53 @@ static void filter_gauss_horiz( int                   grid_x,
             {
                 float g  = filter[offset];
 
-                int lookup = clamp( x + offset - 4, src.getCols() );
+                int lookup = clamp( x + offset - 4, grid_x );
                 float val = src.at( lookup, y );
                 out += ( val * g );
             }
 
             out *= scale;
-            dst.at(x,y) = (int16_t)out;
+            dst.at(x,y) = (DestType)out;
         }
     }
 }
         
+template <class SrcType, class DestType>
+static void filter_gauss_vert( int                   grid_x,
+                               int                   grid_y,
+                               const Plane<SrcType>& src,
+                               Plane<DestType>&      dst,
+                               const float*          filter,
+                               float                 scale )
+{
+    for( int y=0; y<grid_y; y++ )
+    {
+        for( int x=0; x<grid_x; x++ )
+        {
+            float out = 0.0f;
+            for( int offset = 0; offset<9; offset++ )
+            {
+                float g  = filter[offset];
+        
+                int lookup = clamp( y + offset - 4, grid_y );
+                float val = src.at( x, lookup );
+                out += ( val * g );
+            }
+
+            out *= scale;
+            dst.at(x,y) = (DestType)out;
+        }
+    }
+}
+
 
 
 static void applyGauss( const Plane<uint8_t>& src,
                         Plane<int16_t>&       dx,
                         Plane<int16_t>&       dy )
 {
-    Plane<int16_t> interm( src.getRows(), src.getCols() );
+    // Plane<int16_t> interm( src.getRows(), src.getCols() );
+    Plane<float> interm( src.getRows(), src.getCols() );
 
     const int grid_x  = src.getCols();
     const int grid_y  = src.getRows();
@@ -153,28 +154,40 @@ static void applyGauss( const Plane<uint8_t>& src,
     filter_gauss_horiz( grid_x, grid_y, interm, dy, gauss_filter, normalize );
 }
 
-static void compute_mag_l1( int                          x,
-                            int                          y,
+static void compute_mag_l1( int                   grid_x,
+                            int                   grid_y,
                             const Plane<int16_t>& src_dx,
                             const Plane<int16_t>& src_dy,
                             Plane<int16_t>&       mag )
 {
-    int16_t dx = abs( src_dx.at(x,y) );
-    int16_t dy = abs( src_dy.at(x,y) );
-    mag.at(x,y) = dx + dy;
+    for( int y=0; y<grid_y; y++ )
+    {
+        for( int x=0; x<grid_x; x++ )
+        {
+            int16_t dx = abs( src_dx.at(x,y) );
+            int16_t dy = abs( src_dy.at(x,y) );
+            mag.at(x,y) = dx + dy;
+        }
+    }
 }
 
-static void compute_mag_l2( int                          x,
-                            int                          y,
+static void compute_mag_l2( int                   grid_x,
+                            int                   grid_y,
                             const Plane<int16_t>& src_dx,
                             const Plane<int16_t>& src_dy,
                             Plane<int16_t>&       mag )
 {
-    int16_t dx = src_dx.at(x,y);
-    int16_t dy = src_dy.at(x,y);
-    dx *= dx;
-    dy *= dy;
-    mag.at(x,y) = (int16_t)sqrtf( (float)( dx + dy ) );
+    for( int y=0; y<grid_y; y++ )
+    {
+        for( int x=0; x<grid_x; x++ )
+        {
+            int16_t dx = src_dx.at(x,y);
+            int16_t dy = src_dy.at(x,y);
+            dx *= dx;
+            dy *= dy;
+            mag.at(x,y) = (int16_t)sqrtf( (float)( dx + dy ) );
+        }
+    }
 }
 
 static void applyMag( const Plane<int16_t>& dx,
@@ -184,9 +197,7 @@ static void applyMag( const Plane<int16_t>& dx,
     const int grid_x  = dx.getCols();
     const int grid_y  = dx.getRows();
 
-    for( int y=0; y<grid_y; y++ )
-        for( int x=0; x<grid_x; x++ )
-            compute_mag_l2( x, y,  dx, dy, mag );
+    compute_mag_l2( grid_x, grid_y,  dx, dy, mag );
 }
 
 static void compute_map( const int             x,
@@ -382,11 +393,13 @@ void recodedCanny( Plane<uint8_t>& imgGraySrc,
     applyHyst( imgMap, imgHyst);
     applyFinal( imgHyst, imgCanny );
 #if 1
-    std::ostringstream o1,o2,o3,o4;
+    std::ostringstream o0,o1,o2,o3,o4;
+    o0 << "plane-" << level << "-cpu.pgm";
     o1 << "dx-" << level << "-cpu.pgm";
     o2 << "dy-" << level << "-cpu.pgm";
     o3 << "mag-" << level << "-cpu.pgm";
     o4 << "map-" << level << "-cpu.pgm";
+    writePlanePGM( o0.str(), imgGraySrc, UNSCALED_WRITING );
     writePlanePGM( o1.str(), imgDX, SCALED_WRITING );
     writePlanePGM( o2.str(), imgDY, SCALED_WRITING );
     writePlanePGM( o3.str(), imgMag, SCALED_WRITING );

@@ -42,7 +42,8 @@ void ImagePyramid::build( const Plane<uint8_t>& src, float thrLowCanny, float th
   
   for(int i = 1; i < _levels.size() ; ++i)
   {
-    _levels[i]->setLevel( _levels[i-1]->getSrc(), thrLowCanny, thrHighCanny, params );
+    // _levels[i]->setLevel( _levels[i-1]->getSrc(), thrLowCanny, thrHighCanny, params );
+    _levels[i]->setLevel( src, thrLowCanny, thrHighCanny, params );
   }
   
   if( params->_debugDir == "" ) return;

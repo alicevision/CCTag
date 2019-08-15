@@ -233,6 +233,7 @@ void FrameTexture::makeTex_Normalized_uchar_to_float( const DevPlane2Db& plane )
     _texDesc.addressMode[1]   = cudaAddressModeClamp;
     _texDesc.addressMode[2]   = cudaAddressModeClamp;
     _texDesc.readMode         = cudaReadModeNormalizedFloat; // automatic conversion from uchar to float
+    // _texDesc.filterMode       = cudaFilterModePoint;        // nearest point
     _texDesc.filterMode       = cudaFilterModeLinear;        // bilinear interpolation
 
     memset( &_resDesc, 0, sizeof(cudaResourceDesc) );

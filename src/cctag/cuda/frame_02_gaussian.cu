@@ -104,7 +104,7 @@ void filter_gauss_horiz( Plane2D<SrcType,Dev>  src,
     if( idx*sizeof(DestType) >= src.step ) return;
 
     bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
-    out /= scale;
+    out *= scale;
     dst.ptr(idy)[idx] = nix ? 0 : (DestType)out;
 }
 
@@ -132,7 +132,7 @@ void filter_gauss_vert( Plane2D<SrcType,Dev>  src,
     if( idy >= dst.rows ) return;
 
     bool nix = ( idx >= dst.cols ) || ( idy >= dst.rows );
-    out /= scale;
+    out *= scale;
     dst.ptr(idy)[idx] = nix ? 0 : (DestType)out;
 }
 
@@ -176,8 +176,8 @@ void Frame::applyGauss( const cctag::Parameters & params )
     assert( block.x > 0 && block.y > 0 && block.z > 0 );
 
 #ifdef NORMALIZE_GAUSS_VALUES
-    const float normalize   = sum_of_gauss_values;
-    const float normalize_d = normalize_derived;
+    const float normalize   = 1.0f / sum_of_gauss_values;
+    const float normalize_d = 1.0f / normalize_derived;
 #else // NORMALIZE_GAUSS_VALUES
     const float normalize   = 1.0f;
     const float normalize_d = 1.0f;

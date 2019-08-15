@@ -67,7 +67,7 @@ static void writePlanePGM_unscaled( const std::string& filename, const Plane<T>&
 
     for( size_t y=0; y<plane.getRows(); y++ ) { 
         for( size_t x=0; x<plane.getCols(); x++ ) {
-            T f = std::min<T>( 0, std::max<T>( 255, plane.at(x,y) ) );
+            T f = std::max<T>( 0, std::min<T>( 255, plane.at(x,y) ) );
             dst.at(x,y) = (uint8_t)f;
         }
     }
