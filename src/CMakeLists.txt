@@ -28,7 +28,6 @@ set( CCTag_cpp
         ./cctag/Plane.cpp
         ./cctag/Vote.cpp
         ./cctag/algebra/matrix/Operation.cpp
-        ./cctag/filter/cvRecode.cpp
         ./cctag/filter/thinning.cpp
         ./cctag/geometry/2DTransform.cpp
         ./cctag/geometry/Circle.cpp

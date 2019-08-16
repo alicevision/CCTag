@@ -134,7 +134,7 @@ void Frame::applyMag( )
     /* block download until MAG and MAP are ready */
     cudaEventRecord( _download_ready_event.magmap, _stream );
 
-#if 1
+#ifdef CCTAG_VISUAL_DEBUG
     cudaDeviceSynchronize();
     _h_plane.copyFrom( _d_plane );
     _h_dx.copyFrom( _d_dx );
@@ -152,7 +152,7 @@ void Frame::applyMag( )
     DebugImage::writePGMscaled( o2.str(), _h_dy );
     DebugImage::writePGMscaled( o3.str(), _h_mag );
     DebugImage::writePGMscaled( o4.str(), _h_debug_map );
-#endif
+#endif // CCTAG_VISUAL_DEBUG
 }
 
 __host__

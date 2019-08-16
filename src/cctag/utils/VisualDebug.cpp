@@ -109,19 +109,18 @@ void CCTagVisualDebug::setImageFileName(const std::string& imageFileName) {
 void CCTagVisualDebug::initBackgroundImage(const Plane<uint8_t>& b)
 {
 #ifdef CCTAG_SERIALIZE
-  cv::Mat back = planeToMat( b );
-  cv::Mat temp;
-  cvtColor(back, temp, cv::COLOR_GRAY2RGB);
-  _backImage = temp.clone();
+  b.clone( _backImage );
 #endif
 }
 
 void CCTagVisualDebug::newSession(const std::string & sessionName) {
 #ifdef CCTAG_SERIALIZE
   // Don't erase old sessions
-  if (_sessions.find(sessionName) == _sessions.end()) {
+  if (_sessions.find(sessionName) == _sessions.end())
+  {
       _sessions[sessionName] = _backImage;
-  }else
+  }
+  else
   {
     _backImage = _sessions[sessionName];
   }
@@ -133,7 +132,7 @@ void CCTagVisualDebug::drawText(const cctag::Point2d<Eigen::Vector3f> & p, const
   CvFont font1;
   cvInitFont(&font1, CV_FONT_HERSHEY_SIMPLEX, 0.8, 0.8, 0, 2);
 
-  IplImage iplBack = _backImage;
+  IplImage iplBack = planeToMat(_backImage);
   cvPutText( &iplBack, text.c_str(),
           cvPoint((int) p.x(), (int) p.y()),
           &font1, CV_RGB(color[0] * 255, color[1] * 255, color[2] * 255));
@@ -142,23 +141,22 @@ void CCTagVisualDebug::drawText(const cctag::Point2d<Eigen::Vector3f> & p, const
 
 void CCTagVisualDebug::drawPoint(const cctag::Point2d<Eigen::Vector3f> & point, const cctag::Color & color) {
 #ifdef CCTAG_SERIALIZE
-  if (point.x() >= 1 && point.x() < _backImage.cols-1 &&
-          point.y() >= 1 && point.y() < _backImage.rows-1)
+  if (point.x() >= 1 && point.x() < _backImage.getCols()-1 &&
+          point.y() >= 1 && point.y() < _backImage.getRows()-1)
   {
     cv::Vec3b cvColor;
     cvColor.val[0] = 255*color[0];
     cvColor.val[1] = 255*color[1]; 
     cvColor.val[2] = 255*color[2]; 
-    _backImage.at<cv::Vec3b>(point.y(),point.x()) = cvColor;
-    //cv::rectangle(_backImage, cvPoint(point.x()-1.f,point.y()-1.f), cvPoint(point.x()+1.f,point.y()+1.f), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
+    _backImage.at(point.x(),point.y()) = cvColor.val[0];
   }
 #endif // CCTAG_SERIALIZE
 }
 
 void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<Eigen::Vector3f> & point, const cctag::Color & color) {
 #ifdef CCTAG_SERIALIZE
-  if (point.x() >= 1 && point.x() < _backImage.cols-1 &&
-          point.y() >= 1 && point.y() < _backImage.rows-1)
+  if (point.x() >= 1 && point.x() < _backImage.getCols()-1 &&
+          point.y() >= 1 && point.y() < _backImage.getRows()-1)
   {
     //cv::Vec3b cvColor;
     //cvColor.val[0] = 255*color[0];
@@ -167,7 +165,8 @@ void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<Eigen::Vector3f> &
     //_backImage.at<cv::Vec3b>(point.y(),point.x()) = cvColor;
     cv::Point p1(point.x(),point.y());
     cv::Point p2(point.x() + point.dX(),point.y() + point.dY());
-    cv::arrowedLine( _backImage, p1, p2, cv::Scalar(255*color[0], 255*color[1], 255*color[2]) );
+    cv::arrowedLine( planeToMat(_backImage),
+                     p1, p2, cv::Scalar(255*color[0], 255*color[1], 255*color[2]) );
     
     //cv::rectangle(_backImage, cvPoint(point.x()-1.f,point.y()-1.f), cvPoint(point.x()+1.f,point.y()+1.f), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
   }
@@ -238,9 +237,11 @@ void CCTagVisualDebug::drawMarker(const cctag::CCTag& marker, bool drawScaledMar
 
   //CCTAT_COUT_VAR(color);
   
-  cv::ellipse(_backImage , cv::Point(center.x(),center.y()),
-      cv::Size(rescaledOuterEllipse.a(), rescaledOuterEllipse.b()),
-      rescaledOuterEllipse.angle()*180/boost::math::constants::pi<double>(), 0, 360, color);
+  cv::ellipse( planeToMat(_backImage),
+               cv::Point(center.x(),center.y()),
+               cv::Size(rescaledOuterEllipse.a(), rescaledOuterEllipse.b()),
+               rescaledOuterEllipse.angle()*180/boost::math::constants::pi<double>(),
+               0, 360, color);
 #endif
 }
 
@@ -261,7 +262,7 @@ void CCTagVisualDebug::drawInfos(const cctag::CCTag& marker, bool drawScaledMark
       y = int (marker.outerEllipse().center().y());
   }
 
-  IplImage iplImg = _backImage;
+  IplImage iplImg = planeToMat( _backImage );
   cvPutText( &iplImg, sId.c_str(),
           cvPoint(x-10, y+10),
           &font1, CV_RGB(255, 140, 0));
@@ -272,9 +273,10 @@ std::string CCTagVisualDebug::getImageFileName() const {
     return _imageFileName;
 }
 
-void CCTagVisualDebug::out(const std::string & filename) const {
+void CCTagVisualDebug::out(const std::string & filename) const
+{
 #if defined(CCTAG_SERIALIZE) && defined(CCTAG_VISUAL_DEBUG)
-  cv::imwrite(filename, _backImage);
+    writePlanePGM( filename, _backImage, SCALED_WRITING );
 #endif
 }
 
@@ -282,7 +284,7 @@ void CCTagVisualDebug::outPutAllSessions() const {
 #if defined(CCTAG_SERIALIZE) && defined(CCTAG_VISUAL_DEBUG)
     for(const Sessions::const_iterator::value_type & v : _sessions) {
         const std::string filename = _path + "/" + v.first + ".png";
-        cv::imwrite(filename, v.second);
+        writePlanePGM( filename, v.second, SCALED_WRITING );
     }
 #endif
 }

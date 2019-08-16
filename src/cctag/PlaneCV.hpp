@@ -8,8 +8,11 @@
 #ifndef _CCTAG_PLANECV_HPP_
 #define _CCTAG_PLANECV_HPP_
 
-#include <opencv2/opencv.hpp>
+#include <cstring>
+
 #include "cctag/Plane.hpp"
+
+#include <opencv2/opencv.hpp>
 
 namespace cctag {
 

@@ -27,7 +27,7 @@ class CCTagVisualDebug : public Singleton<CCTagVisualDebug>
     MAKE_SINGLETON_WITHCONSTRUCTORS(CCTagVisualDebug)
 
 public:
-    using Sessions = std::map<std::string, cv::Mat>;
+    using Sessions = std::map<std::string, Plane<uint8_t>>;
 public:
 
     void setPyramidLevel(int level);
@@ -80,7 +80,7 @@ public:
 private:
     Sessions _sessions; ///< Sessions map
 
-    cv::Mat _backImage; // Background image
+    Plane<uint8_t> _backImage; // Background image
     int _pyramidLevel;
     std::string _imageFileName;
     std::string _pathRoot;

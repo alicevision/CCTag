@@ -33,6 +33,8 @@ public:
 
     Plane& operator=( Plane& plane );
 
+    void clone( Plane& dest ) const;
+
     size_t      getCols( ) const;
     size_t      getRows( ) const;
     Type*       getBuffer( );
@@ -127,6 +129,19 @@ Plane<Type>& Plane<Type>::operator=( Plane<Type>& plane )
         *_refCount += 1;
     }
     return *this;
+}
+
+template<typename Type>
+void Plane<Type>::clone( Plane<Type>& dest ) const
+{
+    int h = this->getRows();
+    int w = this->getCols();
+    dest.unref();
+    dest._buffer = new Type[h*w];
+    dest._height = h;
+    dest._width  = w;
+    dest._refCount = new int(1);
+    memcpy( dest._buffer, this->getBuffer(), h*w*sizeof(Type) );
 }
 
 template<typename Type>
