@@ -9,7 +9,7 @@
 
 #include "cctag/nocuda/recode.hpp"
 #include "cctag/Params.hpp"
-#include "cctag/PlaneCV.hpp"
+#include "cctag/Plane.hpp"
 #include "cctag/utils/Talk.hpp" // do DO_TALK macro
 
 #include "cctag/cuda/clamp.h" // clamp is in the cuda dir but useful here

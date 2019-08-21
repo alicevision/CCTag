@@ -16,7 +16,7 @@
 
 #include "cctag/filter/cvRecode.hpp"
 #include "cctag/Params.hpp"
-#include "cctag/PlaneCV.hpp"
+#include "cctag/Plane.hpp"
 #include "cctag/utils/Talk.hpp" // do DO_TALK macro
 
 #include <boost/timer.hpp>

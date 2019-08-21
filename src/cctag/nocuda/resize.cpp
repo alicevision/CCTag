@@ -7,7 +7,7 @@
  */
 #include <iostream>
 
-#include "cctag/PlaneCV.hpp"
+#include "cctag/nocuda/resize.hpp"
 
 namespace cctag {
 

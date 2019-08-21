@@ -8,7 +8,7 @@
 #ifndef _CCTAG_NOCUDA_RESIZE_HPP_
 #define _CCTAG_NOCUDA_RESIZE_HPP_
 
-#include "cctag/PlaneCV.hpp"
+#include "cctag/Plane.hpp"
 
 namespace cctag {
 

@@ -66,7 +66,7 @@ if(APPLE)
   SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) # when building, use the install RPATH already
                                            # probably not needed
   # SET(CMAKE_INSTALL_RPATH "") # the RPATH to be used when installing
-  SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) # LC_RPATH for CUDA and OpenCV etc written into executable
+  SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) # LC_RPATH for CUDA etc written into executable
 endif(APPLE)
 
 # FIND BOOST
@@ -166,9 +166,6 @@ if(CCTAG_WITH_CUDA)
 else(CCTAG_WITH_CUDA)
   message( STATUS "Building without CUDA" )
 endif(CCTAG_WITH_CUDA)
-
-# FIND OPENCV
-find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
 
 # FIND Eigen
 find_package(Eigen REQUIRED)

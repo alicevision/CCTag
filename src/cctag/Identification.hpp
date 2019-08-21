@@ -22,6 +22,7 @@
 
 #include <cmath>
 #include <vector>
+#include <cstdint>
 
 //#define NAIVE_SELECTCUT
 
@@ -49,7 +50,7 @@ enum NeighborType {
  * @param[in] cctag whose center is to be optimized in conjunction with its associated homography.
  * @param[out] vSelectedCuts step 1 does nothing else than create cuts for this tag
  * @param[in] radiusRatios bank of radius ratios along with their associated IDs.
- * @param[in] src original gray scale image (original scale, uchar)
+ * @param[in] src original gray scale image (original scale, uint8_t)
  * @param[in] params set of parameters
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
@@ -72,7 +73,7 @@ int identify_step_1(
  * @param[in] cctag whose center is to be optimized in conjunction with its associated homography.
  * @param[in] vSelectedCuts pre-generated cuts
  * @param[in] radiusRatios bank of radius ratios along with their associated IDs.
- * @param[in] src original gray scale image (original scale, uchar)
+ * @param[in] src original gray scale image (original scale, uint8_t)
  * @param[in] params set of parameters
  * @return status of the markers (c.f. all the possible status are located in CCTag.hpp) 
  */
@@ -130,7 +131,7 @@ bool orazioDistanceRobust(
  * @brief Extract a rectified 1D signal along an image cut based on an homography.
  * 
  * @param[out] cut image cut holding the rectified image signal
- * @param[in] src source grayscale image (uchar)
+ * @param[in] src source grayscale image (uint8_t)
  * @param[in] mHomography image->cctag homography
  * @param[in] mInvHomography cctag>image homography
  */
@@ -154,7 +155,7 @@ void extractSignalUsingHomographyDeprec(
  * 
  * @param[out] cut image cut that will hold the 1D image signal regularly 
  *             collected from cut.beginSig() to cut.endSig()
- * @param[in] src source gray scale image (uchar)
+ * @param[in] src source gray scale image (uint8_t)
  */
 void cutInterpolated(
         cctag::ImageCut & cut,
@@ -170,7 +171,7 @@ bool outerEdgeRefinement(ImageCut & cut, const Plane<uint8_t>& src, float scale,
  * @brief Collect signals (image cuts) from center to outer ellipse points
  * 
  * @param[out] cuts collected cuts
- * @param[in] src source gray scale image (uchar)
+ * @param[in] src source gray scale image (uint8_t)
  * @param[in] center outer ellipse center
  * @param[in] outerPoints outer ellipse points
  * @param[in] nSamplesInCut number of samples collected in an image cut
@@ -187,7 +188,7 @@ void collectCuts(
 /*
  * @brief Bilinear interpolation for a point whose coordinates are (x,y)
  * 
- * @param[in] src source gray scale image (uchar)
+ * @param[in] src source gray scale image (uint8_t)
  * @param[in] x x coordinate
  * @param[in] y y coordinate
  * @return computed pixel value
@@ -196,13 +197,13 @@ inline float getPixelBilinear(const Plane<uint8_t>& src, float x, float y)
 {
   int px = (int)x; // floor of x
   int py = (int)y; // floor of y
-  // const uchar* p0 = src.data + px + py * src.step; // pointer to first pixel
+  // const uint8_t* p0 = src.data + px + py * src.step; // pointer to first pixel
   
   // load the four neighboring pixels
-  const uchar & p1 = src.at( px+0, py+0 ); //  p0[0 + 0 * src.step];
-  const uchar & p2 = src.at( px+1, py+0 ); //  p0[1 + 0 * src.step];
-  const uchar & p3 = src.at( px+0, py+1 ); //  p0[0 + 1 * src.step];
-  const uchar & p4 = src.at( px+1, py+1 ); //  p0[1 + 1 * src.step];
+  const uint8_t & p1 = src.at( px+0, py+0 ); //  p0[0 + 0 * src.step];
+  const uint8_t & p2 = src.at( px+1, py+0 ); //  p0[1 + 0 * src.step];
+  const uint8_t & p3 = src.at( px+0, py+1 ); //  p0[0 + 1 * src.step];
+  const uint8_t & p4 = src.at( px+1, py+1 ); //  p0[1 + 1 * src.step];
 
   // Calculate the weights for each pixel
   float fx = x - px;
@@ -224,7 +225,7 @@ inline float getPixelBilinear(const Plane<uint8_t>& src, float x, float y)
  * 
  * @param[out] vCuts set of the image cuts whose the rectified signal is to be to computed
  * @param[in] mHomography transformation image->cctag used to rectified the 1D signal
- * @param[in] src source gray scale image (uchar)
+ * @param[in] src source gray scale image (uint8_t)
  */
 void getSignals(
         std::vector< cctag::ImageCut > & vCuts,
@@ -266,7 +267,7 @@ bool refineConicFamilyGlob(
  * @param[out] minRes residual after optimization
  * @param[in] neighbourSize size of the neighbourhood to consider relatively to the outer ellipse dimensions
  * @param[in] gridNSample number of sample points along one dimension of the neighbourhood (e.g. grid)
- * @param[in] src source gray (uchar) image
+ * @param[in] src source gray (uint8_t) image
  * @param[inout] cudaPipe CUDA object handle, changing
  * @param[in] outerEllipse outer ellipse
  * @param[in] params Parameters read from config file
@@ -321,7 +322,7 @@ void computeHomographyFromEllipseAndImagedCenter(
  * 
  * @param[in] mHomography transformation used to rectified the 1D signal from the pixel plane to the cctag plane.
  * @param[out] vCuts vector of the image cuts holding the rectified signal according to mHomography
- * @param[in] src source gray scale image (uchar)
+ * @param[in] src source gray scale image (uint8_t)
  * @param[out] flag: true if at least one image cut has been readable (within the image bounds), false otherwise.
  * @return residual
  */

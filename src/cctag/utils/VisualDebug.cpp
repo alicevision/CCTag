@@ -10,8 +10,7 @@
 #include <cctag/Plane.hpp>
 
 #include <boost/filesystem.hpp>
-#include <opencv2/opencv.hpp>
-#include "cctag/PlaneCV.hpp"
+#include "cctag/Plane.hpp"
 
 namespace bfs = boost::filesystem;
 
@@ -116,7 +115,7 @@ void CCTagVisualDebug::initBackgroundImage(const Plane<uint8_t>& b)
     {
         for( int x=0; x<w; x++ )
         {
-            uint8_t val = b.at(x,y);
+            float val = b.at(x,y) / 255.0f;
             _backImage.at(x,y) = Color( val, val, val, 0 );
         }
     }
@@ -137,6 +136,7 @@ void CCTagVisualDebug::newSession(const std::string & sessionName) {
 #endif
 }
 
+#if 0
 void CCTagVisualDebug::drawText(const cctag::Point2d<Eigen::Vector3f> & p, const std::string & text, const cctag::Color & color) {
 #ifdef CCTAG_SERIALIZE
   CvFont font1;
@@ -148,18 +148,23 @@ void CCTagVisualDebug::drawText(const cctag::Point2d<Eigen::Vector3f> & p, const
           &font1, CV_RGB(color[0] * 255, color[1] * 255, color[2] * 255));
 #endif
 }
+#endif
 
-void CCTagVisualDebug::drawPoint(const cctag::Point2d<Eigen::Vector3f> & point, const cctag::Color & color) {
+void CCTagVisualDebug::drawPoint(const float x, const float y, const cctag::Color & color )
+{
 #ifdef CCTAG_SERIALIZE
-  if (point.x() >= 1 && point.x() < _backImage.getCols()-1 &&
-          point.y() >= 1 && point.y() < _backImage.getRows()-1)
-  {
-    // cv::Vec3b cvColor;
-    // cvColor.val[0] = 255*color[0];
-    // cvColor.val[1] = 255*color[1]; 
-    // cvColor.val[2] = 255*color[2]; 
-    _backImage.at(point.x(),point.y()) = color;
-  }
+    if( x >= 1.0f && x < _backImage.getCols()-1.0f &&
+        y >= 1.0f && y < _backImage.getRows()-1.0f )
+    {
+        _backImage.at( (int)roundf(x), (int)roundf(y) ) = color;
+    }
+#endif // CCTAG_SERIALIZE
+}
+
+void CCTagVisualDebug::drawPoint(const cctag::Point2d<Eigen::Vector3f> & point, const cctag::Color & color)
+{
+#ifdef CCTAG_SERIALIZE
+    drawPoint( point.x(), point.y(), color );
 #endif // CCTAG_SERIALIZE
 }
 
@@ -168,17 +173,26 @@ void CCTagVisualDebug::drawPoint(const cctag::DirectedPoint2d<Eigen::Vector3f> &
   if (point.x() >= 1 && point.x() < _backImage.getCols()-1 &&
           point.y() >= 1 && point.y() < _backImage.getRows()-1)
   {
-    //cv::Vec3b cvColor;
-    //cvColor.val[0] = 255*color[0];
-    //cvColor.val[1] = 255*color[1]; 
-    //cvColor.val[2] = 255*color[2]; 
-    //_backImage.at<cv::Vec3b>(point.y(),point.x()) = cvColor;
-    cv::Point p1(point.x(),point.y());
-    cv::Point p2(point.x() + point.dX(),point.y() + point.dY());
-    cv::arrowedLine( planeToMat(_backImage),
-                     p1, p2, cv::Scalar(255*color[0], 255*color[1], 255*color[2]) );
-    
-    //cv::rectangle(_backImage, cvPoint(point.x()-1.f,point.y()-1.f), cvPoint(point.x()+1.f,point.y()+1.f), cv::Scalar(255*color[0], 255*color[1], 255*color[2]),0);
+    const float xlenf = point.dX();
+    const float ylenf = point.dY();
+    if( fabsf(xlenf) >= fabsf(ylenf) )
+    {
+        int   xlen  = xlenf;
+        float ystep = ylenf / xlenf;
+        for( int x=0; x<xlen; x++ )
+        {
+            _backImage.at(point.x()+x,point.y()+x*ystep) = color;
+        }
+    }
+    else
+    {
+        int   ylen  = ylenf;
+        float xstep = xlenf / ylenf;
+        for( int y=0; y<ylen; y++ )
+        {
+            _backImage.at(point.x()+y*xstep,point.y()+y) = color;
+        }
+    }
   }
 #endif // CCTAG_SERIALIZE
 }
@@ -220,43 +234,56 @@ void CCTagVisualDebug::drawMarker(const cctag::CCTag& marker, bool drawScaledMar
       rescaledOuterEllipse = marker.outerEllipse();
   }
 
-  cv::Scalar color;
+  Color color;
   // Set the color
   if (marker.getStatus() == status::no_collected_cuts) {
     // Magenta
-    color = cv::Scalar(255,0,255);
+    color = Color(1,0,1);
   }else if (marker.getStatus() == status::no_selected_cuts) {
     // Cyan
-    color = cv::Scalar(0,255,255);
+    color = Color(0,1,1);
   }else if(marker.getStatus() == status::opti_has_diverged){
     // Red
-    color = cv::Scalar(255,0,0);
+    color = Color(1,0,0);
   }else if(marker.getStatus() == status::id_not_reliable){
     // Cyan
-    color = cv::Scalar(0,255,255);
+    color = Color(0,1,1);
   }else if(marker.getStatus() == status::id_reliable){
     // Green
-    color = cv::Scalar(0,255,0);
+    color = Color(0,1,0);
   }else if(marker.getStatus() == status::degenerate){
     // Yellow 1
-    color = cv::Scalar(255,255,0);
+    color = Color(1,1,0);
   }else if(marker.getStatus() == 0 ){
     // Green
-    color = cv::Scalar(0,255,0);
+    color = Color(0,1,0);
   }
 
-  //CCTAT_COUT_VAR(color);
+    float xc = center.x();
+    float yc = center.y();
+    float a  = rescaledOuterEllipse.a();
+    float b  = rescaledOuterEllipse.b();
+    float t  = boost::math::constants::pi<double>() / 180.0;
+    float alpha = rescaledOuterEllipse.angle();
   
-  cv::ellipse( planeToMat(_backImage),
-               cv::Point(center.x(),center.y()),
-               cv::Size(rescaledOuterEllipse.a(), rescaledOuterEllipse.b()),
-               rescaledOuterEllipse.angle()*180/boost::math::constants::pi<double>(),
-               0, 360, color);
+    // Filling each pixel corresponding 
+    // to every angle from 0 to 360 
+    for (int theta = 0; theta < 360; theta += 1)
+    { 
+        int x = a * cos(t * theta) * cos(alpha) 
+                + b * sin(t * theta) * sin(alpha); 
+  
+        int y = b * sin(t * theta) * cos(alpha) 
+                - a * cos(t * theta) * sin(alpha); 
+  
+        drawPoint(xc + x, yc - y, color); 
+    } 
 #endif
 }
 
 void CCTagVisualDebug::drawInfos(const cctag::CCTag& marker, bool drawScaledMarker)
 {
+#if 0
 #ifdef CCTAG_SERIALIZE
     CvFont font1;
   cvInitFont(&font1, CV_FONT_HERSHEY_SIMPLEX, 0.8, 0.8, 0, 2);
@@ -277,6 +304,7 @@ void CCTagVisualDebug::drawInfos(const cctag::CCTag& marker, bool drawScaledMark
           cvPoint(x-10, y+10),
           &font1, CV_RGB(255, 140, 0));
 #endif
+#endif
 }
 
 std::string CCTagVisualDebug::getImageFileName() const {
@@ -293,7 +321,7 @@ void CCTagVisualDebug::out(const std::string & filename) const
 void CCTagVisualDebug::outPutAllSessions() const {
 #if defined(CCTAG_SERIALIZE) && defined(CCTAG_VISUAL_DEBUG)
     for(const Sessions::const_iterator::value_type & v : _sessions) {
-        const std::string filename = _path + "/" + v.first + ".png";
+        const std::string filename = _path + "/" + v.first + ".ppm";
         writePlanePPM( filename, v.second, SCALED_WRITING );
     }
 #endif

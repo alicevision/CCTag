@@ -157,7 +157,7 @@ static void writePlanePPM_scaled( const std::string& filename, const Plane<Color
         }
     }
 
-    writePlaneP6( filename, data, dst.getCols(), dst.getRows() );
+    writePlaneP6( filename, data, plane.getCols(), plane.getRows() );
 }
 
 static void writePlanePPM_unscaled( const std::string& filename, const Plane<Color>& plane )
@@ -170,16 +170,16 @@ static void writePlanePPM_unscaled( const std::string& filename, const Plane<Col
     for( size_t y=0; y<plane.getRows(); y++ ) { 
         for( size_t x=0; x<plane.getCols(); x++ ) {
             const Color& val = plane.at(x,y);
-            uint8_t r = std::max( (uint8_t)0, std::min( (uint8_t)255, (uint8_t)val.r() ) );
-            uint8_t g = std::max( (uint8_t)0, std::min( (uint8_t)255, (uint8_t)val.g() ) );
-            uint8_t b = std::max( (uint8_t)0, std::min( (uint8_t)255, (uint8_t)val.b() ) );
+            uint8_t r = std::max( (uint8_t)0, std::min( (uint8_t)255, (uint8_t)(255*val.r()) ) );
+            uint8_t g = std::max( (uint8_t)0, std::min( (uint8_t)255, (uint8_t)(255*val.g()) ) );
+            uint8_t b = std::max( (uint8_t)0, std::min( (uint8_t)255, (uint8_t)(255*val.b()) ) );
             dst.at(3*x+0,y) = r;
             dst.at(3*x+1,y) = g;
             dst.at(3*x+2,y) = b;
         }
     }
 
-    writePlaneP6( filename, data, dst.getCols(), dst.getRows() );
+    writePlaneP6( filename, data, plane.getCols(), plane.getRows() );
 }
 
 void writePlanePPM( const std::string&     filename,

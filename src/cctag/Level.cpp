@@ -14,7 +14,7 @@
 #ifdef CCTAG_WITH_CUDA
 #include "cctag/cuda/tag.h"
 #endif
-#include "cctag/PlaneCV.hpp"
+#include "cctag/Plane.hpp"
 #include "cctag/nocuda/resize.hpp"
 #include "cctag/nocuda/recode.hpp"
 

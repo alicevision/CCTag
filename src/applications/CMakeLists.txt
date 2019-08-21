@@ -4,7 +4,12 @@ include(ExternalProject)
 
 project(CCTagApplications LANGUAGES C CXX)
 
+# FIND OPENCV
+find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
+
 set(CMAKE_BUILD_TYPE Release)
+
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) # LC_RPATH for OpenCV etc written into executable
 
 #Find needed dependencies
 # CCTAG

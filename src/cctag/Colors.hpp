@@ -23,7 +23,7 @@ struct Color : public boost::array<float, 4>
 		(*this)[2] = 0.f;
 		(*this)[3] = 0.f;
 	}
-	Color( const float r, const float g, const float b, const float alpha )
+	Color( const float r, const float g, const float b, const float alpha = 0.0f )
 	{
 		(*this)[0] = r;
 		(*this)[1] = g;
