@@ -16,6 +16,10 @@
 namespace cctag
 {
 
+/*************************************************************
+ * functions writing PGM (1-layer uncompressed grayscale maps)
+ *************************************************************/
+
 static void writePlaneP5( const std::string& filename, const uint8_t* data, int cols, int rows )
 {
     std::ofstream of( filename.c_str() );
@@ -105,6 +109,87 @@ void writePlanePGM( const std::string& filename, const Plane<int16_t>& plane, bo
         writePlanePGM_scaled<int16_t>( filename, plane );
     else
         writePlanePGM_unscaled<int16_t>( filename, plane );
+}
+
+/*************************************************************
+ * functions writing PPM (3-layered uncompressed pixel maps)
+ *************************************************************/
+
+static void writePlaneP6( const std::string& filename, const uint8_t* data, int cols, int rows )
+{
+    std::ofstream of( filename.c_str() );
+    of << "P6" << std::endl
+       << cols << " " << rows << std::endl
+       << "255" << std::endl;
+
+    of.write( (char*)data, 3 * cols * rows );
+}
+
+static void writePlanePPM_scaled( const std::string& filename, const Plane<Color>& plane )
+{
+    std::cerr << "Writing scaled ppm file " << filename << std::endl;
+
+    float fminval = std::numeric_limits<float>::max();
+    float fmaxval = std::numeric_limits<float>::min();
+    for( size_t y=0; y<plane.getRows(); y++ ) { 
+        for( size_t x=0; x<plane.getCols(); x++ ) {
+            const Color& f = plane.at(x,y);
+            fminval = std::min<float>( std::min<float>( fminval, f.r() ),
+                                       std::min<float>( f.g(),   f.b() ) );
+            fmaxval = std::max<float>( std::max<float>( fmaxval, f.r() ),
+                                       std::max<float>( f.g(),   f.b() ) );
+        }
+    }
+    fmaxval = 255.0 / ( fmaxval - fminval );
+
+    uint8_t data[ 3 * plane.getCols() * plane.getRows() ];
+    Plane<uint8_t> dst( data, plane.getRows(), 3 * plane.getCols() );
+
+    for( size_t y=0; y<plane.getRows(); y++ ) { 
+        for( size_t x=0; x<plane.getCols(); x++ ) {
+            const Color& f = plane.at(x,y);
+            float r = ( (float)f.r() - fminval ) * fmaxval;
+            float g = ( (float)f.g() - fminval ) * fmaxval;
+            float b = ( (float)f.b() - fminval ) * fmaxval;
+            dst.at(3*x+0,y) = (uint8_t)r;
+            dst.at(3*x+1,y) = (uint8_t)g;
+            dst.at(3*x+2,y) = (uint8_t)b;
+        }
+    }
+
+    writePlaneP6( filename, data, dst.getCols(), dst.getRows() );
+}
+
+static void writePlanePPM_unscaled( const std::string& filename, const Plane<Color>& plane )
+{
+    std::cerr << "Writing unscaled ppm file " << filename << std::endl;
+
+    uint8_t data[ 3 * plane.getCols() * plane.getRows() ];
+    Plane<uint8_t> dst( data, plane.getRows(), 3 * plane.getCols() );
+
+    for( size_t y=0; y<plane.getRows(); y++ ) { 
+        for( size_t x=0; x<plane.getCols(); x++ ) {
+            const Color& val = plane.at(x,y);
+            uint8_t r = std::max( (uint8_t)0, std::min( (uint8_t)255, (uint8_t)val.r() ) );
+            uint8_t g = std::max( (uint8_t)0, std::min( (uint8_t)255, (uint8_t)val.g() ) );
+            uint8_t b = std::max( (uint8_t)0, std::min( (uint8_t)255, (uint8_t)val.b() ) );
+            dst.at(3*x+0,y) = r;
+            dst.at(3*x+1,y) = g;
+            dst.at(3*x+2,y) = b;
+        }
+    }
+
+    writePlaneP6( filename, data, dst.getCols(), dst.getRows() );
+}
+
+void writePlanePPM( const std::string&     filename,
+                    const Plane<Color>&    plane,
+                    bool                   scaled )
+{
+    if( scaled )
+        writePlanePPM_scaled( filename, plane );
+    else
+        writePlanePPM_unscaled( filename, plane );
 }
 
 }; // namespace cctag

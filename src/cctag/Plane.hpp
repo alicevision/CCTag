@@ -10,8 +10,28 @@
 
 #include <cstdint>
 #include <string>
+#include <memory>
+#include <vector>
+
+#include "cctag/Colors.hpp"
 
 namespace cctag {
+
+/*************************************************************
+ * A set of PlaneDesctructor types
+ *************************************************************/
+
+template<typename Type>
+struct HstDestructorNotMine
+{
+    void operator()( Type* ) { }
+};
+
+template<typename Type>
+struct HstDestructorMine
+{
+    void operator()( Type* ptr) { delete [] ptr; }
+};
 
 /*************************************************************
  * Plane
@@ -19,21 +39,27 @@ namespace cctag {
 
 template<typename Type> class Plane
 {
-    Type*  _buffer;
-    size_t _height;
-    size_t _width;
-    int*   _refCount;
+    std::shared_ptr<Type> _buffer;
+    size_t                _height;
+    size_t                _width;
 
 public:
     Plane( );
-    Plane( Plane& plane );
+    Plane( const Plane& plane );
     Plane( size_t h, size_t w );
     Plane( Type* buffer, size_t h, size_t w );
     ~Plane( );
 
-    Plane& operator=( Plane& plane );
+    Plane& operator=( const Plane& plane );
 
-    void clone( Plane& dest ) const;
+    Plane clone( ) const;
+
+    void reset( )
+    {
+        _buffer.reset();
+        _height = 0;
+        _width  = 0;
+    }
 
     size_t      getCols( ) const;
     size_t      getRows( ) const;
@@ -42,118 +68,72 @@ public:
 
     Type&       at( int x, int y );
     const Type& at( int x, int y ) const;
-
-    void release();
-
-private:
-    void unref();
 };
 
 template<typename Type>
 Plane<Type>::Plane( )
-    : _buffer( 0 )
+    : _buffer( 0, HstDestructorNotMine<Type>() )
     , _height( 0 )
     , _width( 0 )
-    , _refCount( 0 )
 { }
 
 template<typename Type>
-Plane<Type>::Plane( Plane& plane )
+Plane<Type>::Plane( const Plane& plane )
     : _buffer( plane._buffer )
     , _height( plane._height )
     , _width(  plane._width  )
-    , _refCount( plane._refCount )
-{
-    if( _refCount ) *_refCount += 1;
-}
+{ }
 
 template<typename Type>
 Plane<Type>::Plane( Type* buffer, size_t h, size_t w )
-    : _buffer( buffer )
+    : _buffer( buffer, HstDestructorNotMine<Type>() )
     , _height( h )
     , _width( w )
-    , _refCount( 0 )
 { }
 
 template<typename Type>
 Plane<Type>::Plane( size_t h, size_t w )
-    : _buffer( new Type[h*w] )
+    : _buffer( new Type[h*w], HstDestructorMine<Type>() )
     , _height( h )
     , _width( w )
-    , _refCount( new int )
 {
-    *_refCount = 1;
-}
-
-template<typename Type>
-void Plane<Type>::release( )
-{
-    unref();
-}
-
-template<typename Type>
-void Plane<Type>::unref( )
-{
-    if( _refCount && ( *_refCount > 0 ) )
-    {
-        *_refCount -= 1;
-        if( *_refCount == 0 )
-        {
-            delete _refCount;
-            delete [] _buffer;
-        }
-    }
-    _buffer   = 0;
-    _height   = 0;
-    _width    = 0;
-    _refCount = 0;
 }
 
 template<typename Type>
 Plane<Type>::~Plane( )
-{
-    unref();
-}
+{ }
 
 template<typename Type>
-Plane<Type>& Plane<Type>::operator=( Plane<Type>& plane )
+Plane<Type>& Plane<Type>::operator=( const Plane<Type>& plane )
 {
-    unref();
-
     _buffer   = plane._buffer;
     _height   = plane._height;
     _width    = plane._width;
-    _refCount = plane._refCount;
-    if( _refCount )
-    {
-        *_refCount += 1;
-    }
     return *this;
 }
 
 template<typename Type>
-void Plane<Type>::clone( Plane<Type>& dest ) const
+Plane<Type> Plane<Type>::clone( ) const
 {
     int h = this->getRows();
     int w = this->getCols();
-    dest.unref();
-    dest._buffer = new Type[h*w];
-    dest._height = h;
-    dest._width  = w;
-    dest._refCount = new int(1);
-    memcpy( dest._buffer, this->getBuffer(), h*w*sizeof(Type) );
+    Plane<Type> dest( h, w );
+    memcpy( dest.getBuffer(), this->getBuffer(), h*w*sizeof(Type) );
+    return dest;
 }
 
 template<typename Type>
 Type& Plane<Type>::at( int x, int y )
 {
-    return _buffer[ y * _width + x ];
+    Type* p = _buffer.get();
+    return p[ y * _width + x ];
 }
 
 template<typename Type>
 const Type& Plane<Type>::at( int x, int y ) const
 {
-    return _buffer[ y * _width + x ];
+    const Type* p = _buffer.get();
+    return p[ y * _width + x ];
 }
 
 template<typename Type>
@@ -171,13 +151,13 @@ size_t Plane<Type>::getRows( ) const
 template<typename Type>
 Type*   Plane<Type>::getBuffer( )
 {
-    return _buffer;
+    return _buffer.get();
 }
 
 template<typename Type>
 const Type* Plane<Type>::getBuffer( ) const
 {
-    return _buffer;
+    return _buffer.get();
 }
 
 /*************************************************************
@@ -203,6 +183,9 @@ void writePlanePGM( const std::string&     filename,
                     bool                   scaled );
 void writePlanePGM( const std::string&     filename,
                     const Plane<uint16_t>& plane,
+                    bool                   scaled );
+void writePlanePPM( const std::string&     filename,
+                    const Plane<Color>&    plane,
                     bool                   scaled );
 
 } // namespace cctag

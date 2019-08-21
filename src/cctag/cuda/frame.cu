@@ -136,7 +136,7 @@ void Frame::uploadComplete( )
 #else
         munlock( _image_to_upload.getBuffer(), getWidth() * getHeight() );
 #endif
-        _image_to_upload.release();
+        _image_to_upload.reset();
     }
 }
 

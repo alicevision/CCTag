@@ -109,7 +109,17 @@ void CCTagVisualDebug::setImageFileName(const std::string& imageFileName) {
 void CCTagVisualDebug::initBackgroundImage(const Plane<uint8_t>& b)
 {
 #ifdef CCTAG_SERIALIZE
-  b.clone( _backImage );
+    int h = b.getRows();
+    int w = b.getCols();
+    _backImage = Plane<Color>( h, w );
+    for( int y=0; y<h; y++ )
+    {
+        for( int x=0; x<w; x++ )
+        {
+            uint8_t val = b.at(x,y);
+            _backImage.at(x,y) = Color( val, val, val, 0 );
+        }
+    }
 #endif
 }
 
@@ -144,11 +154,11 @@ void CCTagVisualDebug::drawPoint(const cctag::Point2d<Eigen::Vector3f> & point, 
   if (point.x() >= 1 && point.x() < _backImage.getCols()-1 &&
           point.y() >= 1 && point.y() < _backImage.getRows()-1)
   {
-    cv::Vec3b cvColor;
-    cvColor.val[0] = 255*color[0];
-    cvColor.val[1] = 255*color[1]; 
-    cvColor.val[2] = 255*color[2]; 
-    _backImage.at(point.x(),point.y()) = cvColor.val[0];
+    // cv::Vec3b cvColor;
+    // cvColor.val[0] = 255*color[0];
+    // cvColor.val[1] = 255*color[1]; 
+    // cvColor.val[2] = 255*color[2]; 
+    _backImage.at(point.x(),point.y()) = color;
   }
 #endif // CCTAG_SERIALIZE
 }
@@ -276,7 +286,7 @@ std::string CCTagVisualDebug::getImageFileName() const {
 void CCTagVisualDebug::out(const std::string & filename) const
 {
 #if defined(CCTAG_SERIALIZE) && defined(CCTAG_VISUAL_DEBUG)
-    writePlanePGM( filename, _backImage, SCALED_WRITING );
+    writePlanePPM( filename, _backImage, SCALED_WRITING );
 #endif
 }
 
@@ -284,7 +294,7 @@ void CCTagVisualDebug::outPutAllSessions() const {
 #if defined(CCTAG_SERIALIZE) && defined(CCTAG_VISUAL_DEBUG)
     for(const Sessions::const_iterator::value_type & v : _sessions) {
         const std::string filename = _path + "/" + v.first + ".png";
-        writePlanePGM( filename, v.second, SCALED_WRITING );
+        writePlanePPM( filename, v.second, SCALED_WRITING );
     }
 #endif
 }
