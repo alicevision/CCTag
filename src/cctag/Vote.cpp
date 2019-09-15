@@ -567,6 +567,11 @@ void vote(EdgePointCollection& edgeCollection,
                     vDistFinal.push_back(distFinal);
                 }
             }
+            if (vDistFinal.empty())
+            {
+                SmFinal = 0.0;
+                return;
+            }
             SmFinal = numerical::medianRef(vDistFinal);
         }
     }
