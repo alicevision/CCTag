@@ -296,16 +296,16 @@ inline static void compute_hyst_recurse( int d, const int x, const int y, Plane<
     hyst.at(x,y) = 2;
     if( d > 100 ) return; // d limits stack depth. We loop outside anyway.
 
-    if( hyst.at(x-1,y-1) == 1 ) compute_hyst_recurse(d+1,x-1,y-1,hyst);
-    if( hyst.at(x  ,y-1) == 1 ) compute_hyst_recurse(d+1,x  ,y-1,hyst);
-    if( hyst.at(x+1,y-1) == 1 ) compute_hyst_recurse(d+1,x+1,y-1,hyst);
+    if(x>0 && y>0) if( hyst.at(x-1,y-1) == 1 ) compute_hyst_recurse(d+1,x-1,y-1,hyst);
+    if(       y>0) if( hyst.at(x  ,y-1) == 1 ) compute_hyst_recurse(d+1,x  ,y-1,hyst);
+    if(       y>0) if( hyst.at(x+1,y-1) == 1 ) compute_hyst_recurse(d+1,x+1,y-1,hyst);
 
-    if( hyst.at(x-1,y  ) == 1 ) compute_hyst_recurse(d+1,x-1,y  ,hyst);
-    if( hyst.at(x+1,y  ) == 1 ) compute_hyst_recurse(d+1,x+1,y  ,hyst);
+    if(x>0       ) if( hyst.at(x-1,y  ) == 1 ) compute_hyst_recurse(d+1,x-1,y  ,hyst);
+                   if( hyst.at(x+1,y  ) == 1 ) compute_hyst_recurse(d+1,x+1,y  ,hyst);
 
-    if( hyst.at(x-1,y+1) == 1 ) compute_hyst_recurse(d+1,x-1,y+1,hyst);
-    if( hyst.at(x  ,y+1) == 1 ) compute_hyst_recurse(d+1,x  ,y+1,hyst);
-    if( hyst.at(x+1,y+1) == 1 ) compute_hyst_recurse(d+1,x+1,y+1,hyst);
+    if(x>0       ) if( hyst.at(x-1,y+1) == 1 ) compute_hyst_recurse(d+1,x-1,y+1,hyst);
+                   if( hyst.at(x  ,y+1) == 1 ) compute_hyst_recurse(d+1,x  ,y+1,hyst);
+                   if( hyst.at(x+1,y+1) == 1 ) compute_hyst_recurse(d+1,x+1,y+1,hyst);
 }
 
 static bool compute_hyst( const int x, const int y, Plane<uint8_t>& hyst )

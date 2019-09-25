@@ -1177,6 +1177,8 @@ int identify_step_1(
   const Plane<uint8_t>&  src,
   const cctag::Parameters & params)
 {
+  std::cerr << "Entering " << __FUNCTION__ << " for CCTag (" << cctag.x() << "," << cctag.y() << ")" << std::endl;
+
   // Get the outer ellipse in its original scale, i.e. in src.
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
   // Get the outer points in their original scale, i.e. in src.
@@ -1329,6 +1331,8 @@ int identify_step_2(
   const cctag::numerical::geometry::Ellipse & ellipse = cctag.rescaledOuterEllipse();
 
   float residual = std::numeric_limits<float>::max();
+
+  std::cerr << "Entering " << __FUNCTION__ << " for CCTag (" << cctag.x() << "," << cctag.y() << ")" << std::endl;
     
   // C. Imaged center optimization /////////////////////////////////////////////
   // Expensive (GPU) Time bottleneck, the only function (including its sub functions) to be implemented on GPU

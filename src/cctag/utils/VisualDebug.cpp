@@ -318,8 +318,11 @@ void CCTagVisualDebug::out(const std::string & filename) const
 #endif
 }
 
-void CCTagVisualDebug::outPutAllSessions() const {
+void CCTagVisualDebug::outPutAllSessions() const
+{
 #if defined(CCTAG_SERIALIZE) && defined(CCTAG_VISUAL_DEBUG)
+    std::cerr << "Called outPutAllSessions" << std::endl;
+
     for(const Sessions::const_iterator::value_type & v : _sessions) {
         const std::string filename = _path + "/" + v.first + ".ppm";
         writePlanePPM( filename, v.second, SCALED_WRITING );

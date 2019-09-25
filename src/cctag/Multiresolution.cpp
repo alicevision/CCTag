@@ -244,6 +244,12 @@ static void cctagMultiresDetection_inner(
     } // not cuda_pipe
 #endif // defined(CCTAG_WITH_CUDA)
 
+    std::cerr << "In " << __FUNCTION__ << " for param " << i << " printing seeds:" << std::endl;
+    for( auto x : seeds )
+    {
+        std::cerr << "(" << x->x()*(1<<i) << "," << x->y()*(1<<i) << ")" << std::endl;
+    }
+
 
     cctagDetectionFromEdges(
         pyramidMarkers,
@@ -258,10 +264,19 @@ static void cctagMultiresDetection_inner(
     outFilename2 << "viewLevel" << i;
     CCTagVisualDebug::instance().newSession(outFilename2.str());
 
+    std::cerr << "In " << __FUNCTION__ << " for param " << i << " after cctagDetectionFromEdges:" << std::endl;
+    for( auto x : pyramidMarkers )
+    {
+        std::cerr << "(" << x.x() << "," << x.y() << ")" << std::endl;
+    }
+
+
     for(const CCTag & marker : pyramidMarkers)
     {
         CCTagVisualDebug::instance().drawMarker(marker, false);
     }
+
+    CCTagVisualDebug::instance().outPutAllSessions();
 }
 
 void cctagMultiresDetection(

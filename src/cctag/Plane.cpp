@@ -47,7 +47,7 @@ static void writePlanePGM_scaled( const std::string& filename, const Plane<T>& p
     float fminval = (float)minval;
     float fmaxval = 255.0 / ( (float)maxval - fminval );
 
-    uint8_t data[ plane.getCols() * plane.getRows() ];
+    uint8_t* data = new uint8_t[ plane.getCols() * plane.getRows() ];
     Plane<uint8_t> dst( data, plane.getRows(), plane.getCols() );
 
     for( size_t y=0; y<plane.getRows(); y++ ) { 
@@ -59,6 +59,7 @@ static void writePlanePGM_scaled( const std::string& filename, const Plane<T>& p
     }
 
     writePlaneP5( filename, data, dst.getCols(), dst.getRows() );
+    delete [] data;
 }
 
 template<typename T>
@@ -66,7 +67,7 @@ static void writePlanePGM_unscaled( const std::string& filename, const Plane<T>&
 {
     std::cerr << "Writing unscaled pgm file " << filename << std::endl;
 
-    uint8_t data[ plane.getCols() * plane.getRows() ];
+    uint8_t* data = new uint8_t[ plane.getCols() * plane.getRows() ];
     Plane<uint8_t> dst( data, plane.getRows(), plane.getCols() );
 
     for( size_t y=0; y<plane.getRows(); y++ ) { 
@@ -77,6 +78,7 @@ static void writePlanePGM_unscaled( const std::string& filename, const Plane<T>&
     }
 
     writePlaneP5( filename, data, dst.getCols(), dst.getRows() );
+    delete [] data;
 }
 
 void writePlanePGM( const std::string& filename, const Plane<uint8_t>& plane, bool scaled )
@@ -142,7 +144,7 @@ static void writePlanePPM_scaled( const std::string& filename, const Plane<Color
     }
     fmaxval = 255.0 / ( fmaxval - fminval );
 
-    uint8_t data[ 3 * plane.getCols() * plane.getRows() ];
+    uint8_t* data = new uint8_t[ 3 * plane.getCols() * plane.getRows() ];
     Plane<uint8_t> dst( data, plane.getRows(), 3 * plane.getCols() );
 
     for( size_t y=0; y<plane.getRows(); y++ ) { 
@@ -158,13 +160,14 @@ static void writePlanePPM_scaled( const std::string& filename, const Plane<Color
     }
 
     writePlaneP6( filename, data, plane.getCols(), plane.getRows() );
+    delete [] data;
 }
 
 static void writePlanePPM_unscaled( const std::string& filename, const Plane<Color>& plane )
 {
     std::cerr << "Writing unscaled ppm file " << filename << std::endl;
 
-    uint8_t data[ 3 * plane.getCols() * plane.getRows() ];
+    uint8_t* data = new uint8_t[ 3 * plane.getCols() * plane.getRows() ];
     Plane<uint8_t> dst( data, plane.getRows(), 3 * plane.getCols() );
 
     for( size_t y=0; y<plane.getRows(); y++ ) { 
@@ -180,6 +183,7 @@ static void writePlanePPM_unscaled( const std::string& filename, const Plane<Col
     }
 
     writePlaneP6( filename, data, plane.getCols(), plane.getRows() );
+    delete [] data;
 }
 
 void writePlanePPM( const std::string&     filename,
