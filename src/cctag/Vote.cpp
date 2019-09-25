@@ -569,7 +569,7 @@ void vote(EdgePointCollection& edgeCollection,
             }
             if (vDistFinal.empty())
             {
-                SmFinal = 0.0;
+		// Return without modification of the output SmFinal
                 return;
             }
             SmFinal = numerical::medianRef(vDistFinal);
