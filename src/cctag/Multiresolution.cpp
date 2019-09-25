@@ -277,38 +277,37 @@ void cctagMultiresDetection(
   //	* For each pyramid level:
   //	** launch CCTag detection based on the canny edge detection output.
 
-  std::map<std::size_t, CCTag::List> pyramidMarkers;
-  std::list<EdgePointCollection> vEdgePointCollections;
+  // std::map<std::size_t, CCTag::List> pyramidMarkers;
+  const int numProcLayers = params._numberOfProcessedMultiresLayers;
 
-  BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
-  // for ( std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers; ++i )
-  for( int i = params._numberOfProcessedMultiresLayers-1; i >= 0; i-- )
+  std::vector<std::unique_ptr<EdgePointCollection> > vEdgePointCollections( numProcLayers );
+  for( int i = 0; i<numProcLayers; i++ )
   {
-    pyramidMarkers.insert( std::pair<std::size_t, CCTag::List>( i, CCTag::List() ) );
-    vEdgePointCollections.emplace_back(imgGraySrc.cols, imgGraySrc.rows);
+    vEdgePointCollections[i].reset(new EdgePointCollection(imgGraySrc.cols, imgGraySrc.rows));
+  }
+
+  BOOST_ASSERT( params._numberOfMultiresLayers - numProcLayers >= 0 );
+  for( int i = numProcLayers-1; i >= 0; i-- )
+  {
+    CCTag::List pyramidMarkers;
     
     cctagMultiresDetection_inner( i,
-                                  pyramidMarkers[i],
+                                  pyramidMarkers,
                                   imgGraySrc,
                                   imagePyramid.getLevel(i),
                                   frame,
-                                  vEdgePointCollections.back(),
+                                  *vEdgePointCollections[i],
                                   cuda_pipe,
                                   params,
                                   durations );
+
+    // Gather the detected markers in the entire image pyramid
+    for(const CCTag & marker : pyramidMarkers)
+    {
+      markers.push_back( new CCTag(marker) );
+    }
   }
   if( durations ) durations->log( "after cctagMultiresDetection_inner" );
-  
-  // Gather the detected markers in the entire image pyramid
-  BOOST_ASSERT( params._numberOfMultiresLayers - params._numberOfProcessedMultiresLayers >= 0 );
-  for (std::size_t i = 0 ; i < params._numberOfProcessedMultiresLayers ; ++i)
-  {
-    CCTag::List & markersList = pyramidMarkers[i];
-    for(const CCTag & marker : markersList)
-      markers.push_back(new CCTag(marker));
-  }
-  
-  if( durations ) durations->log( "after update markers" );
   
   CCTagVisualDebug::instance().initBackgroundImage(imagePyramid.getLevel(0)->getSrc());
   CCTagVisualDebug::instance().writeLocalizationView(markers);
@@ -334,7 +333,10 @@ void cctagMultiresDetection(
       
       
       std::list<EdgePoint*> pointsInHull;
-      selectEdgePointInEllipticHull(vEdgePointCollections.front(), rescaledOuterEllipse, scale, pointsInHull);
+      selectEdgePointInEllipticHull( *vEdgePointCollections[0],
+                                     rescaledOuterEllipse,
+                                     scale,
+                                     pointsInHull );
 
       #ifdef CCTAG_OPTIM
         boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
@@ -398,7 +400,7 @@ void cctagMultiresDetection(
     }
   }
   if( durations ) durations->log( "after marker projection" );
-  
+
   // Log
   CCTagFileDebug::instance().newSession("data.txt");
   for(const CCTag & marker : markers)
