@@ -11,6 +11,10 @@
 #include <boost/filesystem.hpp>
 #include <opencv2/opencv.hpp>
 
+#ifdef CCTAG_SERIALIZE
+#include <opencv2/imgproc/imgproc_c.h>
+#endif
+
 namespace bfs = boost::filesystem;
 
 namespace cctag
