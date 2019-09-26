@@ -340,7 +340,7 @@ int main(int argc, char** argv)
 #endif // PRINT_TO_CERR
   }
 #else // USE_DEVIL
-  if((ext == ".png") || (ext == ".jpg"))
+  if((ext == ".png") || (ext == ".jpg") || (ext == ".tif") || (ext == ".tiff"))
   {
 
     std::cout << "******************* Image mode **********************" << std::endl;
