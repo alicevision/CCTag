@@ -571,6 +571,11 @@ void edgeLinking( EdgePointCollection& edgeCollection,
                     vDistFinal.push_back(distFinal);
                 }
             }
+            if (vDistFinal.empty())
+            {
+		// Return without modification of the output SmFinal
+                return;
+            }
             SmFinal = numerical::medianRef(vDistFinal);
         }
     }
