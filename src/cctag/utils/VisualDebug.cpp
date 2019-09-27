@@ -5,12 +5,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <cctag/utils/VisualDebug.hpp>
-#include <cctag/utils/FileDebug.hpp>
-#include <cctag/Plane.hpp>
+#include "cctag/utils/VisualDebug.hpp"
+#include "cctag/utils/FileDebug.hpp"
+#include "cctag/utils/FTText.hpp"
+#include "cctag/Plane.hpp"
 
 #include <boost/filesystem.hpp>
-#include "cctag/Plane.hpp"
 
 namespace bfs = boost::filesystem;
 
@@ -135,20 +135,6 @@ void CCTagVisualDebug::newSession(const std::string & sessionName) {
   }
 #endif
 }
-
-#if 0
-void CCTagVisualDebug::drawText(const cctag::Point2d<Eigen::Vector3f> & p, const std::string & text, const cctag::Color & color) {
-#ifdef CCTAG_SERIALIZE
-  CvFont font1;
-  cvInitFont(&font1, CV_FONT_HERSHEY_SIMPLEX, 0.8, 0.8, 0, 2);
-
-  IplImage iplBack = planeToMat(_backImage);
-  cvPutText( &iplBack, text.c_str(),
-          cvPoint((int) p.x(), (int) p.y()),
-          &font1, CV_RGB(color[0] * 255, color[1] * 255, color[2] * 255));
-#endif
-}
-#endif
 
 void CCTagVisualDebug::drawPoint(const float x, const float y, const cctag::Color & color )
 {
@@ -283,10 +269,8 @@ void CCTagVisualDebug::drawMarker(const cctag::CCTag& marker, bool drawScaledMar
 
 void CCTagVisualDebug::drawInfos(const cctag::CCTag& marker, bool drawScaledMarker)
 {
-#if 0
 #ifdef CCTAG_SERIALIZE
-    CvFont font1;
-  cvInitFont(&font1, CV_FONT_HERSHEY_SIMPLEX, 0.8, 0.8, 0, 2);
+  if( marker.id() == -1 ) return;
 
   std::string sId = boost::lexical_cast<std::string>(marker.id() + 1);
 
@@ -299,11 +283,8 @@ void CCTagVisualDebug::drawInfos(const cctag::CCTag& marker, bool drawScaledMark
       y = int (marker.outerEllipse().center().y());
   }
 
-  IplImage iplImg = planeToMat( _backImage );
-  cvPutText( &iplImg, sId.c_str(),
-          cvPoint(x-10, y+10),
-          &font1, CV_RGB(255, 140, 0));
-#endif
+  std::cerr << "Writing marker id " << marker.id() << std::endl;
+  FT2::write_text( _backImage, x-10, y+10, sId.c_str() );
 #endif
 }
 

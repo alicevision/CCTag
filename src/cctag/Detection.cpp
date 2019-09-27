@@ -846,12 +846,6 @@ void cctagDetection(
                             params,
                             durations );
 
-    std::cerr << "In " << __FUNCTION__ << " after cctagMultiresDetection:" << std::endl;
-    for( auto x : markers )
-    {
-        std::cerr << "(" << x.x() << "," << x.y() << ")" << std::endl;
-    }
-
     if( durations ) durations->log( "after cctagMultiresDetection" );
 
 #ifdef CCTAG_WITH_CUDA

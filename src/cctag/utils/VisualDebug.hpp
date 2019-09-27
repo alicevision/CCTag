@@ -50,10 +50,6 @@ public:
 
     void newSession(const std::string & sessionName);
 
-#if 0
-    void drawText(const cctag::Point2d<Eigen::Vector3f> & p, const std::string & text, const cctag::Color & color);
-#endif
-
     void drawPoint(const float x, const float y, const cctag::Color & color );
     void drawPoint(const cctag::Point2d<Eigen::Vector3f> & point, const cctag::Color & color);
     void drawPoint(const cctag::DirectedPoint2d<Eigen::Vector3f> & point, const cctag::Color & color);

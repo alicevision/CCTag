@@ -37,7 +37,8 @@ set( CCTag_cpp
         ./cctag/utils/FileDebug.cpp
         ./cctag/utils/LogTime.cpp
         ./cctag/utils/Talk.cpp
-        ./cctag/utils/VisualDebug.cpp)
+        ./cctag/utils/VisualDebug.cpp
+        ./cctag/utils/FTText.cpp)
 
 if(CCTAG_WITH_CUDA)
 
@@ -93,6 +94,7 @@ if(CCTAG_WITH_CUDA)
   include_directories(${CMAKE_CURRENT_LIST_DIR}
                       ${Eigen_INCLUDE_DIR}
 		      ${TBB_INCLUDE_DIRS}
+		      ${FREETYPE_INCLUDE_DIRS}
                       "${CMAKE_SOURCE_DIR}/src")
 
   CUDA_ADD_LIBRARY(CCTag ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
@@ -101,7 +103,8 @@ if(CCTAG_WITH_CUDA)
   target_link_libraries(CCTag
                        Boost::date_time Boost::chrono Boost::thread Boost::serialization Boost::system Boost::filesystem Boost::atomic Boost::program_options Boost::timer
                        ${Eigen_LIBRARIES}
-                       ${TBB_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
+                       ${TBB_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY}
+		       Freetype::Freetype)
 
   if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
    target_link_libraries(CCTag pthread dl)
@@ -131,7 +134,8 @@ else() # without CUDA
   set(CUDA_cpp "")
 
   message( STATUS "Declare CCTag library" )
-  add_library(CCTag ${CCTag_cpp})
+  add_library(CCTag ${CCTag_cpp}
+              IMPORTED Freetype::Freetype)
   set_target_properties(CCTag PROPERTIES VERSION ${PROJECT_VERSION})
 
   target_include_directories(CCTag
@@ -175,6 +179,9 @@ endif(CCTAG_NO_COUT)
 if(CCTAG_VISUAL_DEBUG)
   target_compile_definitions(CCTag PRIVATE "-DCCTAG_VISUAL_DEBUG")
 endif(CCTAG_VISUAL_DEBUG)
+if(CCTAG_USE_FREETYPE)
+  target_compile_definitions(CCTag PRIVATE "-DCCTAG_USE_FREETYPE")
+endif()
 
 
 # EXPORTING THE LIBRARY

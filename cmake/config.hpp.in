@@ -24,6 +24,10 @@
 #cmakedefine CCTAG_WITH_CUDA
 #endif
 
+#ifndef CCTAG_USE_FREETYPE
+#cmakedefine CCTAG_USE_FREETYPE
+#endif
+
 #ifdef CCTAG_WITH_CUDA
 
   #define CUB_CDP

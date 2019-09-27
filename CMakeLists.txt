@@ -176,6 +176,16 @@ endif(CCTAG_WITH_CUDA)
 # FIND Eigen
 find_package(Eigen REQUIRED)
 
+# FIND FreeType
+find_package(Freetype)
+if(FREETYPE_FOUND)
+  set(CCTAG_USE_FREETYPE true)
+  message( STATUS "Freetype found" )
+else()
+  set(CCTAG_USE_FREETYPE false)
+  message( STATUS "Freetype not found, no text drawing in VisualDebug" )
+endif()
+
 # FIND Intel TBB
 # With MVSC, CMAKE_BUILD_TYPE will always be None, so TBB_USE_DEBUG_BUILD will always be false.
 string(COMPARE EQUAL "${CMAKE_BUILD_TYPE}" Debug TBB_USE_DEBUG_BUILD)
