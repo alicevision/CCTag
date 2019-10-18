@@ -260,8 +260,8 @@ void extractSignalUsingHomography(
   {
     applyHomography(xRes, yRes, mHomography, x, y);
 
-    if ( xRes >= 1.f && xRes <= src.cols-1 &&
-         yRes >= 1.f && yRes <= src.rows-1 )
+    if ( xRes >= 0.f && xRes < src.cols-1 &&
+         yRes >= 0.f && yRes < src.rows-1 )
     {
       // Bilinear interpolation
       cut.imgSignal()[i] = getPixelBilinear( src, xRes, yRes);
