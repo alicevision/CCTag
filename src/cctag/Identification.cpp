@@ -1226,7 +1226,7 @@ int identify_step_1(
   }
   else if (params._nCrowns == 4)
   {
-    startSig = 0.26f; // todo@Lilian
+    startSig = 1 - (2*params._nCrowns-1)*0.12f;
   }
   else
   {
