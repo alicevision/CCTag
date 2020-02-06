@@ -10,6 +10,7 @@
 
 #include <cctag/Params.hpp>
 #include <cctag/CCTagMarkersBank.hpp>
+#include <cctag/geometry/Ellipse.hpp>
 
 #include <boost/ptr_container/ptr_list.hpp>
 
@@ -37,6 +38,7 @@ public:
 	virtual float y() const = 0;
 	virtual MarkerID id() const = 0;
 	virtual int getStatus() const = 0;
+    virtual const numerical::geometry::Ellipse & outerEllipse() const = 0;
 
     virtual ~ICCTag() = default;
 

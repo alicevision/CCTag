@@ -158,7 +158,7 @@ public:
     _mHomography = homography;
   }
 
-  const cctag::numerical::geometry::Ellipse & outerEllipse() const
+  const cctag::numerical::geometry::Ellipse & outerEllipse() const override
   {
     return _outerEllipse;
   }
