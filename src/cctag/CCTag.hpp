@@ -118,7 +118,7 @@ public:
   void printTag( std::ostream& ostr ) const;
 #endif
 
-  void scale(float s);
+  void applyScale(float s);
 
   float x() const override {
     return _centerImg.x();
