@@ -87,7 +87,7 @@ void CCTag::condition(const Eigen::Matrix3f & mT, const Eigen::Matrix3f & mInvT)
   cctag::numerical::optimization::condition(_centerImg, mT);
 }
 
-void CCTag::scale(float s)
+void CCTag::applyScale(float s)
 {
 
   for(std::vector< DirectedPoint2d<Eigen::Vector3f> > &vp : _points)
