@@ -45,49 +45,42 @@ void cvRecodedCanny(
   int debug_info_level,
   const cctag::Parameters* params )
 {
-  CvMat srcCvMat = imgGraySrc;
-  CvMat *src = &srcCvMat;
-  
-  CvMat dstCvMat = imgCanny;
-  CvMat *dst = &dstCvMat;
-  
-  CvMat dxCvMat = imgDX;
-  CvMat *dx = &dxCvMat;
-  
-  CvMat dyCvMat = imgDY;
-  CvMat *dy = &dyCvMat;
-  
+  const cv::Mat& src = imgGraySrc;
+  cv::Mat& dst = imgCanny;
+  cv::Mat& dx = imgDX;
+  cv::Mat& dy = imgDY;
+
   boost::timer t;  
   std::vector<uchar*> stack;
   uchar** stack_top = nullptr, ** stack_bottom = nullptr;
   
-  CvSize size;
+  cv::Size size;
   int flags = aperture_size;
   int low, high;
   uchar* map;
   ptrdiff_t mapstep;
   int maxsize;
   int i, j;
-  CvMat mag_row;
+  cv::Mat mag_row;
 
-  if( CV_MAT_TYPE( src->type ) != CV_8UC1 ||
-      CV_MAT_TYPE( dst->type ) != CV_8UC1 )
+  if( src.type() != CV_8UC1 ||
+      dst.type() != CV_8UC1 )
       CV_Error( CV_StsUnsupportedFormat, "" );
 
-  if( !CV_ARE_SIZES_EQ( src, dst ) )
+  if( !CV_ARE_SIZES_EQ( &src, &dst ) )
        CV_Error( CV_StsUnmatchedSizes, "" );
 
   if( low_thresh > high_thresh )
   {
-    float t;
-    CV_SWAP( low_thresh, high_thresh, t );
+    float temp;
+    CV_SWAP( low_thresh, high_thresh, temp );
   }
 
   aperture_size &= INT_MAX;
   if( ( aperture_size & 1 ) == 0 || aperture_size < 3 || aperture_size > 7 )
     CV_Error( CV_StsBadFlag, "" );
 
-  size = CvSize(src->width,src->height);
+  size = src.size();
 
   // TODO: no allocation here:
   //dx = cvCreateMat( size.height, size.width, CV_16SC1 );
@@ -170,68 +163,65 @@ void cvRecodedCanny(
       // - Second option using 2D kernels:
       //     2D convolution, kernel size 9x9 (2 times)
       
-      CvMat* kernelGau1D = cvCreateMat( 9, 1, CV_32FC1 );
-      CvMat* kernelDGau1D = cvCreateMat( 9, 1, CV_32FC1 );
-
-      CV_MAT_ELEM( *kernelGau1D, float, 0, 0 ) = 0.000053390535453f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 1, 0 ) = 0.001768051711852f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 2, 0 ) = 0.021539279301849f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 3, 0 ) = 0.096532352630054f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 4, 0 ) = 0.159154943091895f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 5, 0 ) = 0.096532352630054f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 6, 0 ) = 0.021539279301849f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 7, 0 ) = 0.001768051711852f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 8, 0 ) = 0.000053390535453f  ;
-      
-      CV_MAT_ELEM( *kernelDGau1D, float, 0, 0 ) = -0.002683701023220f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 1, 0 ) = -0.066653979229454f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 2, 0 ) = -0.541341132946452f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 3, 0 ) = -1.213061319425269f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 4, 0 ) = 0.f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 5, 0 ) = 1.213061319425269f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 6, 0 ) = 0.541341132946452f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 7, 0 ) = 0.066653979229454f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 8, 0 ) = 0.002683701023220f  ;
+      cv::Mat kernelGau1D = (cv::Mat_<float>(9,1) << 
+        0.000053390535453f,
+        0.001768051711852f,
+        0.021539279301849f,
+        0.096532352630054f,
+        0.159154943091895f,
+        0.096532352630054f,
+        0.021539279301849f,
+        0.001768051711852f,
+        0.000053390535453f);
+      cv::Mat kernelDGau1D = (cv::Mat_<float>(9,1) << 
+        -0.002683701023220f,
+        -0.066653979229454f,
+        -0.541341132946452f,
+        -1.213061319425269f,
+        0.f,
+        1.213061319425269f,
+        0.541341132946452f,
+        0.066653979229454f,
+        0.002683701023220f);
 
       // Transpose guassian filter 
-      CvMat* kernelGau1DT = cvCreateMat( 1, 9, CV_32FC1 );
-      cvTranspose( kernelGau1D, kernelGau1DT );
+      cv::Mat kernelGau1DT;
+      cv::transpose(kernelGau1D, kernelGau1DT);
       
       // Transpose derivate of gaussian filter
-      CvMat* kernelDGau1DT = cvCreateMat( 1, 9, CV_32FC1 );
-      cvTranspose( kernelDGau1D, kernelDGau1DT );
+      cv::Mat kernelDGau1DT;
+      cv::transpose(kernelDGau1D, kernelDGau1DT);
       
-      CvMat* imgSmooth = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
-      CvMat* imgTmp    = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
-      
-      CvMat* dx_debug = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
-      CvMat* dy_debug = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
+      cv::Mat imgSmooth(dx.size(), CV_32FC1);
+      cv::Mat imgTmp(dx.size(), CV_32FC1);
+      cv::Mat dx_debug(dx.size(), CV_32FC1);
+      cv::Mat dy_debug(dx.size(), CV_32FC1);
       
       CCTAG_COUT("before cvFilter2D 1");
-      cvFilter2D( src, imgTmp, kernelGau1D );
+      cv::filter2D(src, imgTmp, CV_32FC1, kernelGau1D);
       CCTAG_COUT("before cvFilter2D 2");
-      cvFilter2D( imgTmp, imgSmooth, kernelGau1DT );
+      cv::filter2D(imgTmp, imgSmooth, CV_32FC1, kernelGau1DT);
       
       CCTAG_COUT("before cvFilter2D 3");
-      cvFilter2D( imgSmooth, imgTmp, kernelGau1D );
+      cv::filter2D(imgSmooth, imgTmp, CV_32FC1, kernelGau1D );
       
       CCTAG_COUT("before cvFilter2D 4");
-      cvFilter2D( imgTmp, dx_debug, kernelDGau1DT);
+      cv::filter2D( imgTmp, dx_debug, CV_32FC1, kernelDGau1DT);
       
       CCTAG_COUT("before cvFilter2D 5");
-      cvFilter2D( imgSmooth, imgTmp, kernelGau1DT);
+      cv::filter2D( imgSmooth, imgTmp, CV_32FC1, kernelGau1DT);
       CCTAG_COUT("before cvFilter2D 6");
-      cvFilter2D( imgTmp, dy_debug, kernelDGau1D );  
+      cv::filter2D( imgTmp, dy_debug, CV_32FC1, kernelDGau1D );  
       CCTAG_COUT("end");
       
       
       CCTAG_COUT("1D version : DX_DEBUG values");
-      //CCTAG_COUT(dx_debug->rows);
-      for (int i=0; i< dx_debug->rows ; ++i)
+      //CCTAG_COUT(dx_debug.rows);
+      for (int i=0; i< dx_debug.rows ; ++i)
       {
-        for (int j=0; j< dx_debug->cols ; ++j)
+        for (int j=0; j< dx_debug.cols ; ++j)
         {
-          std::cout << std::fixed << std::setprecision(1) << dx_debug->data.fl[ i*dx_debug->step + j] << " ";
+          std::cout << std::fixed << std::setprecision(1) << dx_debug.ptr<float>(i)[j] << " ";
         }
         std::cout << std::endl;
       }
@@ -241,113 +231,24 @@ void cvRecodedCanny(
       
     }else
     {  
-    // The second option is to apply the (9x9) 2D following kernel
+      // The second option is to apply the (9x9) 2D following kernel
+      cv::Mat kerneldX = (cv::Mat_<float>(9,9) << 
+        0.000000143284235f, 0.000003558691641f, 0.000028902492951f, 0.000064765993382f, 0.f, -0.000064765993382f, -0.000028902492951f, -0.000003558691641f, -0.000000143284235f,
+        0.000004744922188f, 0.000117847682078f, 0.000957119116802f, 0.002144755142391f, 0.f, -0.002144755142391f, -0.000957119116802f, -0.000117847682078f, -0.000004744922188f,
+        0.000057804985902f, 0.001435678675203f, 0.011660097860113f, 0.026128466569370f, 0.f, -0.026128466569370f, -0.011660097860113f, -0.001435678675203f, -0.000057804985902f,
+        0.000259063973527f, 0.006434265427174f, 0.052256933138740f, 0.117099663048638f, 0.f, -0.117099663048638f, -0.052256933138740f, -0.006434265427174f, -0.000259063973527f,
+        0.000427124283626f, 0.010608310271112f, 0.086157117207395f, 0.193064705260108f, 0.f, -0.193064705260108f, -0.086157117207395f, -0.010608310271112f, -0.000427124283626f,
+        0.000259063973527f, 0.006434265427174f, 0.052256933138740f, 0.117099663048638f, 0.f, -0.117099663048638f, -0.052256933138740f, -0.006434265427174f, -0.000259063973527f,
+        0.000057804985902f, 0.001435678675203f, 0.011660097860113f, 0.026128466569370f, 0.f, -0.026128466569370f, -0.011660097860113f, -0.001435678675203f, -0.000057804985902f,
+        0.000004744922188f, 0.000117847682078f, 0.000957119116802f, 0.002144755142391f, 0.f, -0.002144755142391f, -0.000957119116802f, -0.000117847682078f, -0.000004744922188f,
+        0.000000143284235f, 0.000003558691641f, 0.000028902492951f, 0.000064765993382f, 0.f, -0.000064765993382f, -0.000028902492951f, -0.000003558691641f, -0.000000143284235f);
 
-      CvMat* kerneldX = cvCreateMat( 9, 9, CV_32FC1 );
-      CvMat* kerneldY = cvCreateMat( 9, 9, CV_32FC1 );
+      kerneldX.convertTo(kerneldX, CV_32FC1, -1.f);
+      cv::Mat kerneldY;
+      cv::transpose( kerneldX, kerneldY );
 
-      CV_MAT_ELEM( *kerneldX, float, 0, 0 ) = 0.000000143284235f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 1 ) = 0.000003558691641f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 2 ) = 0.000028902492951f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 3 ) = 0.000064765993382f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 5 ) = -0.000064765993382f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 6 ) = -0.000028902492951f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 7 ) = -0.000003558691641f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 8 ) = -0.000000143284235f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 0 ) = 0.000004744922188f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 1 ) = 0.000117847682078f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 2 ) = 0.000957119116802f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 3 ) = 0.002144755142391f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 5 ) = -0.002144755142391f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 6 ) = -0.000957119116802f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 7 ) = -0.000117847682078f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 8 ) = -0.000004744922188f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 0 ) = 0.000057804985902f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 1 ) = 0.001435678675203f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 2 ) = 0.011660097860113f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 3 ) = 0.026128466569370f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 5 ) = -0.026128466569370f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 6 ) = -0.011660097860113f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 7 ) = -0.001435678675203f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 8 ) = -0.000057804985902f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 0 ) = 0.000259063973527f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 1 ) = 0.006434265427174f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 2 ) = 0.052256933138740f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 3 ) = 0.117099663048638f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 5 ) = -0.117099663048638f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 6 ) = -0.052256933138740f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 7 ) = -0.006434265427174f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 8 ) = -0.000259063973527f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 0 ) = 0.000427124283626f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 1 ) = 0.010608310271112f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 2 ) = 0.086157117207395f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 3 ) = 0.193064705260108f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 5 ) = -0.193064705260108f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 6 ) = -0.086157117207395f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 7 ) = -0.010608310271112f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 8 ) = -0.000427124283626f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 0 ) = 0.000259063973527f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 1 ) = 0.006434265427174f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 2 ) = 0.052256933138740f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 3 ) = 0.117099663048638f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 5 ) = -0.117099663048638f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 6 ) = -0.052256933138740f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 7 ) = -0.006434265427174f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 8 ) = -0.000259063973527f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 0 ) = 0.000057804985902f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 1 ) = 0.001435678675203f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 2 ) = 0.011660097860113f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 3 ) = 0.026128466569370f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 5 ) = -0.026128466569370f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 6 ) = -0.011660097860113f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 7 ) = -0.001435678675203f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 8 ) = -0.000057804985902f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 0 ) = 0.000004744922188f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 1 ) = 0.000117847682078f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 2 ) = 0.000957119116802f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 3 ) = 0.002144755142391f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 5 ) = -0.002144755142391f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 6 ) = -0.000957119116802f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 7 ) = -0.000117847682078f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 8 ) = -0.000004744922188f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 0 ) = 0.000000143284235f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 1 ) = 0.000003558691641f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 2 ) = 0.000028902492951f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 3 ) = 0.000064765993382f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 5 ) = -0.000064765993382f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 6 ) = -0.000028902492951f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 7 ) = -0.000003558691641f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 8 ) = -0.000000143284235f  ;
-
-      cvConvertScale( kerneldX, kerneldX, -1.f );
-      cvTranspose( kerneldX, kerneldY );
-
-      cvFilter2D( src, dx, kerneldX );
-      cvFilter2D( src, dy, kerneldY );
-
-//      CCTAG_COUT("DX_DEBUG values");
-//      CCTAG_COUT(dx_debug->rows);
-//      for (int i=0; i< dx->rows ; ++i)
-//      {
-//        for (int j=0; j< dx->cols ; ++j)
-//        {
-//          std::cout << dx->data.s[ i*dx->step + j] << " ";
-//        }
-//        std::cout << std::endl;
-//      }
-//      CCTAG_COUT("END DX_DEBUG values");
-      
-      cvReleaseMat( &kerneldX );
-      cvReleaseMat( &kerneldY );
+      cv::filter2D( src, dx, CV_16SC1, kerneldX );
+      cv::filter2D( src, dy, CV_16SC1, kerneldY );    
     }
   }
 
@@ -423,7 +324,7 @@ void cvRecodedCanny(
 #define CANNY_PUSH( d )    *( d ) = (uchar)2, *stack_top++ = ( d )
 #define CANNY_POP( d )     ( d )  = *--stack_top
 
-  mag_row = cvMat( 1, size.width, CV_32F );
+  mag_row = cv::Mat( 1, size.width, CV_32F );
 
   DO_TALK( CCTAG_COUT_DEBUG( "Canny 1 took: " << t.elapsed() ); );
   t.restart();
@@ -436,8 +337,8 @@ void cvRecodedCanny(
   for( i = 0; i <= size.height; i++ )
   {
     int* _mag    = mag_buf[( i > 0 ) + 1] + 1;
-    const short* _dx = (short*)( dx->data.ptr + dx->step * i );
-    const short* _dy = (short*)( dy->data.ptr + dy->step * i );
+    const short* _dx = dx.ptr<short>(i);
+    const short* _dy = dy.ptr<short>(i);
     uchar* _map;
     int x, y;
     ptrdiff_t magstep1, magstep2;
@@ -453,6 +354,7 @@ void cvRecodedCanny(
           _mag[j] = abs( _dx[j] ) + abs( _dy[j] );
       } else {
         // Using Euclidian distance
+
         for( j = 0; j < size.width; j++ )
         {
           float* _magf = (float*)_mag;
@@ -463,10 +365,11 @@ void cvRecodedCanny(
 #else
           _magf[j] = (float)std::sqrt( (float)x * x + (float)y * y );
 #endif
-          if (_dx[j] > 200){
-      std::cout << _dx[j] << ", ";
-      std::cout << _dy[j] << ", ";
-          }
+          CCTAG_IF_DEBUG(
+            if (_dx[j] > 200){
+              CCTAG_COUT_NOENDL(_dx[j] << ", " << _dy[j] << ", ");
+            }
+          )
         }
       }
     }
@@ -496,8 +399,8 @@ void cvRecodedCanny(
     _map[-1] = _map[size.width] = 1;
 
     _mag = mag_buf[1] + 1; // take the central row
-    _dx = (short*)( dx->data.ptr + dx->step * ( i - 1 ) );
-    _dy = (short*)( dy->data.ptr + dy->step * ( i - 1 ) );
+    _dx = dx.ptr<short>(i - 1);
+    _dy = dy.ptr<short>(i - 1);
 
     magstep1 = mag_buf[2] - mag_buf[1];
     magstep2 = mag_buf[0] - mag_buf[1];
@@ -654,7 +557,7 @@ void cvRecodedCanny(
   for( i = 0; i < size.height; i++ )
   {
     const uchar* _map = map + mapstep * ( i + 1 ) + 1;
-    uchar* _dst       = dst->data.ptr + dst->step * i;
+    uchar* _dst       = dst.ptr<uchar>(i);
 
     for( j = 0; j < size.width; j++ )
     {
