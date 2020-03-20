@@ -198,20 +198,20 @@ void cvRecodedCanny(
       cv::Mat dy_debug(dx.size(), CV_32FC1);
       
       CCTAG_COUT("before cvFilter2D 1");
-      cv::filter2D(src, imgTmp, CV_32FC1, kernelGau1D);
+      cv::filter2D(src, imgTmp, CV_32FC1, kernelGau1D, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
       CCTAG_COUT("before cvFilter2D 2");
-      cv::filter2D(imgTmp, imgSmooth, CV_32FC1, kernelGau1DT);
+      cv::filter2D(imgTmp, imgSmooth, CV_32FC1, kernelGau1DT, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
       
       CCTAG_COUT("before cvFilter2D 3");
-      cv::filter2D(imgSmooth, imgTmp, CV_32FC1, kernelGau1D );
+      cv::filter2D(imgSmooth, imgTmp, CV_32FC1, kernelGau1D, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
       
       CCTAG_COUT("before cvFilter2D 4");
-      cv::filter2D( imgTmp, dx_debug, CV_32FC1, kernelDGau1DT);
+      cv::filter2D(imgTmp, dx_debug, CV_32FC1, kernelDGau1DT, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
       
       CCTAG_COUT("before cvFilter2D 5");
-      cv::filter2D( imgSmooth, imgTmp, CV_32FC1, kernelGau1DT);
+      cv::filter2D(imgSmooth, imgTmp, CV_32FC1, kernelGau1DT, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
       CCTAG_COUT("before cvFilter2D 6");
-      cv::filter2D( imgTmp, dy_debug, CV_32FC1, kernelDGau1D );  
+      cv::filter2D(imgTmp, dy_debug, CV_32FC1, kernelDGau1D, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);  
       CCTAG_COUT("end");
       
       
@@ -247,8 +247,8 @@ void cvRecodedCanny(
       cv::Mat kerneldY;
       cv::transpose( kerneldX, kerneldY );
 
-      cv::filter2D( src, dx, CV_16SC1, kerneldX );
-      cv::filter2D( src, dy, CV_16SC1, kerneldY );    
+      cv::filter2D(src, dx, CV_16SC1, kerneldX, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
+      cv::filter2D(src, dy, CV_16SC1, kerneldY, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);    
     }
   }
 
