@@ -30,6 +30,8 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <algorithm>
+#include <tuple>
 
 #define DEBUG_MAGMAP_BY_GRIFF
 #define USE_INTEGER_REP
@@ -45,42 +47,30 @@ void cvRecodedCanny(
   int debug_info_level,
   const cctag::Parameters* params )
 {
-  const cv::Mat& src = imgGraySrc;
-  cv::Mat& dst = imgCanny;
-  cv::Mat& dx = imgDX;
-  cv::Mat& dy = imgDY;
-
   boost::timer t;  
   std::vector<uchar*> stack;
   uchar** stack_top = nullptr, ** stack_bottom = nullptr;
   
-  cv::Size size;
+  const cv::Size size = imgGraySrc.size();
   int flags = aperture_size;
   int low, high;
   uchar* map;
   ptrdiff_t mapstep;
   int maxsize;
   int i, j;
-  cv::Mat mag_row;
 
-  if( src.type() != CV_8UC1 ||
-      dst.type() != CV_8UC1 )
+  if( imgGraySrc.type() != CV_8UC1 ||
+      imgCanny.type() != CV_8UC1 )
       CV_Error( CV_StsUnsupportedFormat, "" );
 
-  if( !CV_ARE_SIZES_EQ( &src, &dst ) )
+  if( !CV_ARE_SIZES_EQ( &imgGraySrc, &imgCanny ) )
        CV_Error( CV_StsUnmatchedSizes, "" );
 
-  if( low_thresh > high_thresh )
-  {
-    float temp;
-    CV_SWAP( low_thresh, high_thresh, temp );
-  }
+  std::tie(low_thresh, high_thresh) = std::minmax(low_thresh, high_thresh);
 
   aperture_size &= INT_MAX;
   if( ( aperture_size & 1 ) == 0 || aperture_size < 3 || aperture_size > 7 )
     CV_Error( CV_StsBadFlag, "" );
-
-  size = src.size();
 
   // TODO: no allocation here:
   //dx = cvCreateMat( size.height, size.width, CV_16SC1 );
@@ -102,6 +92,10 @@ void cvRecodedCanny(
 
   //cvSobel( src, dx, 1, 0, aperture_size );
   //cvSobel( src, dy, 0, 1, aperture_size );
+
+  // defaults for cv::filter2D
+  const cv::Point anchor{-1,-1};
+  const double delta{0};
 
   {
     
@@ -163,7 +157,7 @@ void cvRecodedCanny(
       // - Second option using 2D kernels:
       //     2D convolution, kernel size 9x9 (2 times)
       
-      cv::Mat kernelGau1D = (cv::Mat_<float>(9,1) << 
+      const cv::Mat kernelGau1D = (cv::Mat_<float>(9,1) << 
         0.000053390535453f,
         0.001768051711852f,
         0.021539279301849f,
@@ -173,7 +167,7 @@ void cvRecodedCanny(
         0.021539279301849f,
         0.001768051711852f,
         0.000053390535453f);
-      cv::Mat kernelDGau1D = (cv::Mat_<float>(9,1) << 
+      const cv::Mat kernelDGau1D = (cv::Mat_<float>(9,1) << 
         -0.002683701023220f,
         -0.066653979229454f,
         -0.541341132946452f,
@@ -185,33 +179,31 @@ void cvRecodedCanny(
         0.002683701023220f);
 
       // Transpose guassian filter 
-      cv::Mat kernelGau1DT;
-      cv::transpose(kernelGau1D, kernelGau1DT);
+      const cv::Mat kernelGau1DT = kernelGau1D.t();
       
       // Transpose derivate of gaussian filter
-      cv::Mat kernelDGau1DT;
-      cv::transpose(kernelDGau1D, kernelDGau1DT);
+      const cv::Mat kernelDGau1DT = kernelDGau1D.t();
       
-      cv::Mat imgSmooth(dx.size(), CV_32FC1);
-      cv::Mat imgTmp(dx.size(), CV_32FC1);
-      cv::Mat dx_debug(dx.size(), CV_32FC1);
-      cv::Mat dy_debug(dx.size(), CV_32FC1);
+      cv::Mat imgSmooth(imgDX.size(), CV_32FC1);
+      cv::Mat imgTmp(imgDX.size(), CV_32FC1);
+      cv::Mat dx_debug(imgDX.size(), CV_32FC1);
+      cv::Mat dy_debug(imgDY.size(), CV_32FC1);
       
       CCTAG_COUT("before cvFilter2D 1");
-      cv::filter2D(src, imgTmp, CV_32FC1, kernelGau1D, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
+      cv::filter2D(imgGraySrc, imgTmp, CV_32FC1, kernelGau1D, anchor, delta, cv::BORDER_REPLICATE);
       CCTAG_COUT("before cvFilter2D 2");
-      cv::filter2D(imgTmp, imgSmooth, CV_32FC1, kernelGau1DT, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
+      cv::filter2D(imgTmp, imgSmooth, CV_32FC1, kernelGau1DT, anchor, delta, cv::BORDER_REPLICATE);
       
       CCTAG_COUT("before cvFilter2D 3");
-      cv::filter2D(imgSmooth, imgTmp, CV_32FC1, kernelGau1D, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
+      cv::filter2D(imgSmooth, imgTmp, CV_32FC1, kernelGau1D, anchor, delta, cv::BORDER_REPLICATE);
       
       CCTAG_COUT("before cvFilter2D 4");
-      cv::filter2D(imgTmp, dx_debug, CV_32FC1, kernelDGau1DT, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
+      cv::filter2D(imgTmp, dx_debug, CV_32FC1, kernelDGau1DT, anchor, delta, cv::BORDER_REPLICATE);
       
       CCTAG_COUT("before cvFilter2D 5");
-      cv::filter2D(imgSmooth, imgTmp, CV_32FC1, kernelGau1DT, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
+      cv::filter2D(imgSmooth, imgTmp, CV_32FC1, kernelGau1DT, anchor, delta, cv::BORDER_REPLICATE);
       CCTAG_COUT("before cvFilter2D 6");
-      cv::filter2D(imgTmp, dy_debug, CV_32FC1, kernelDGau1D, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);  
+      cv::filter2D(imgTmp, dy_debug, CV_32FC1, kernelDGau1D, anchor, delta, cv::BORDER_REPLICATE);  
       CCTAG_COUT("end");
       
       
@@ -230,9 +222,9 @@ void cvRecodedCanny(
       //cvFilter2D( src, dy, kernelGau1D );
       
     }else
-    {  
+    {
       // The second option is to apply the (9x9) 2D following kernel
-      cv::Mat kerneldX = (cv::Mat_<float>(9,9) << 
+      const cv::Mat kerneldX = -1.f * (cv::Mat_<float>(9,9) << 
         0.000000143284235f, 0.000003558691641f, 0.000028902492951f, 0.000064765993382f, 0.f, -0.000064765993382f, -0.000028902492951f, -0.000003558691641f, -0.000000143284235f,
         0.000004744922188f, 0.000117847682078f, 0.000957119116802f, 0.002144755142391f, 0.f, -0.002144755142391f, -0.000957119116802f, -0.000117847682078f, -0.000004744922188f,
         0.000057804985902f, 0.001435678675203f, 0.011660097860113f, 0.026128466569370f, 0.f, -0.026128466569370f, -0.011660097860113f, -0.001435678675203f, -0.000057804985902f,
@@ -243,12 +235,10 @@ void cvRecodedCanny(
         0.000004744922188f, 0.000117847682078f, 0.000957119116802f, 0.002144755142391f, 0.f, -0.002144755142391f, -0.000957119116802f, -0.000117847682078f, -0.000004744922188f,
         0.000000143284235f, 0.000003558691641f, 0.000028902492951f, 0.000064765993382f, 0.f, -0.000064765993382f, -0.000028902492951f, -0.000003558691641f, -0.000000143284235f);
 
-      kerneldX.convertTo(kerneldX, CV_32FC1, -1.f);
-      cv::Mat kerneldY;
-      cv::transpose( kerneldX, kerneldY );
+      const cv::Mat kerneldY = kerneldX.t();
 
-      cv::filter2D(src, dx, CV_16SC1, kerneldX, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);
-      cv::filter2D(src, dy, CV_16SC1, kerneldY, cv::Point(-1, -1), 0.0, cv::BORDER_REPLICATE);    
+      cv::filter2D(imgGraySrc, imgDX, CV_16SC1, kerneldX, anchor, delta, cv::BORDER_REPLICATE);
+      cv::filter2D(imgGraySrc, imgDY, CV_16SC1, kerneldY, anchor, delta, cv::BORDER_REPLICATE);    
     }
   }
 
@@ -304,7 +294,8 @@ void cvRecodedCanny(
 #endif // DEBUG_MAGMAP_BY_GRIFF
 
   cv::AutoBuffer<char> buffer;
-  buffer.allocate( ( size.width + 2 ) * ( size.height + 2 ) + ( size.width + 2 ) * 3 * sizeof( int ) );
+  //               (             mag_buf                )   (                 map                  )
+  buffer.allocate( ( size.width + 2 ) * 3 * sizeof( int ) + ( size.width + 2 ) * ( size.height + 2 ) );
 
   int* mag_buf[3];
   mag_buf[0] = (int*)(char*)buffer;
@@ -324,8 +315,6 @@ void cvRecodedCanny(
 #define CANNY_PUSH( d )    *( d ) = (uchar)2, *stack_top++ = ( d )
 #define CANNY_POP( d )     ( d )  = *--stack_top
 
-  mag_row = cv::Mat( 1, size.width, CV_32F );
-
   DO_TALK( CCTAG_COUT_DEBUG( "Canny 1 took: " << t.elapsed() ); );
   t.restart();
 
@@ -337,8 +326,8 @@ void cvRecodedCanny(
   for( i = 0; i <= size.height; i++ )
   {
     int* _mag    = mag_buf[( i > 0 ) + 1] + 1;
-    const short* _dx = dx.ptr<short>(i);
-    const short* _dy = dy.ptr<short>(i);
+    const short* _imgDX = imgDX.ptr<short>(i);
+    const short* _imgDY = imgDY.ptr<short>(i);
     uchar* _map;
     int x, y;
     ptrdiff_t magstep1, magstep2;
@@ -351,23 +340,23 @@ void cvRecodedCanny(
       if( !( flags & CV_CANNY_L2_GRADIENT ) ) {
         // Using Manhattan distance
         for( j = 0; j < size.width; j++ )
-          _mag[j] = abs( _dx[j] ) + abs( _dy[j] );
+          _mag[j] = abs( _imgDX[j] ) + abs( _imgDY[j] );
       } else {
         // Using Euclidian distance
 
         for( j = 0; j < size.width; j++ )
         {
           float* _magf = (float*)_mag;
-          x = _dx[j];
-          y = _dy[j];
+          x = _imgDX[j];
+          y = _imgDY[j];
 #ifdef USE_INTEGER_REP
           _mag[j] = (int)rintf( (float)std::sqrt( (float)x * x + (float)y * y ) );
 #else
           _magf[j] = (float)std::sqrt( (float)x * x + (float)y * y );
 #endif
           CCTAG_IF_DEBUG(
-            if (_dx[j] > 200){
-              CCTAG_COUT_NOENDL(_dx[j] << ", " << _dy[j] << ", ");
+            if (_imgDX[j] > 200){
+              CCTAG_COUT_NOENDL(_imgDX[j] << ", " << _imgDY[j] << ", ");
             }
           )
         }
@@ -399,8 +388,8 @@ void cvRecodedCanny(
     _map[-1] = _map[size.width] = 1;
 
     _mag = mag_buf[1] + 1; // take the central row
-    _dx = dx.ptr<short>(i - 1);
-    _dy = dy.ptr<short>(i - 1);
+    _imgDX = imgDX.ptr<short>(i - 1);
+    _imgDY = imgDY.ptr<short>(i - 1);
 
     magstep1 = mag_buf[2] - mag_buf[1];
     magstep2 = mag_buf[0] - mag_buf[1];
@@ -419,8 +408,8 @@ void cvRecodedCanny(
 #define CANNY_SHIFT 15
 #define TG22  (int)( 0.4142135623730950488016887242097 * ( 1 << CANNY_SHIFT ) + 0.5 )
 
-      x = _dx[j];
-      y = _dy[j];
+      x = _imgDX[j];
+      y = _imgDY[j];
       int s = x ^ y;
       int m = _mag[j];
 
@@ -557,15 +546,15 @@ void cvRecodedCanny(
   for( i = 0; i < size.height; i++ )
   {
     const uchar* _map = map + mapstep * ( i + 1 ) + 1;
-    uchar* _dst       = dst.ptr<uchar>(i);
+    uchar* _imgCanny = imgCanny.ptr<uchar>(i);
 
     for( j = 0; j < size.width; j++ )
     {
-      _dst[j] = ( uchar ) - ( _map[j] >> 1 );
+      _imgCanny[j] = ( uchar ) - ( _map[j] >> 1 );
     }
 #ifdef DEBUG_MAGMAP_BY_GRIFF
     if( hyst_img_file )
-        hyst_img_file->write( (const char*)_dst, size.width );
+        hyst_img_file->write( (const char*)_imgCanny, size.width );
 #endif // DEBUG_MAGMAP_BY_GRIFF
   }
 
