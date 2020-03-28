@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <tuple>
 
-#define DEBUG_MAGMAP_BY_GRIFF
+// #define DEBUG_MAGMAP_BY_GRIFF
 #define USE_INTEGER_REP
 
 void cvRecodedCanny(
@@ -72,175 +72,26 @@ void cvRecodedCanny(
   if( ( aperture_size & 1 ) == 0 || aperture_size < 3 || aperture_size > 7 )
     CV_Error( CV_StsBadFlag, "" );
 
-  // TODO: no allocation here:
-  //dx = cvCreateMat( size.height, size.width, CV_16SC1 );
-  //dy = cvCreateMat( size.height, size.width, CV_16SC1 );
-  
-  // cvSobel is the function called by default in OpenCV, with a 3x3 kernel
-  // to compute the derivative in x and y.
-  // The kernel used to compute the derivative is changed here by a 9x9 one, to stick
-  // with the results obtained with the canny implementation in the Matlab image
-  // processing toolbox (2012)
+  // Apply the (9x9) 2D following kernel for the derivatives in x and y direction
+  const cv::Mat kerneldX = (cv::Mat_<float>(9,9) << 
+    -0.000000143284235f, -0.000003558691641f, -0.000028902492951f, -0.000064765993382f, 0.f, 0.000064765993382f, 0.000028902492951f, 0.000003558691641f, 0.000000143284235f,
+    -0.000004744922188f, -0.000117847682078f, -0.000957119116802f, -0.002144755142391f, 0.f, 0.002144755142391f, 0.000957119116802f, 0.000117847682078f, 0.000004744922188f,
+    -0.000057804985902f, -0.001435678675203f, -0.011660097860113f, -0.026128466569370f, 0.f, 0.026128466569370f, 0.011660097860113f, 0.001435678675203f, 0.000057804985902f,
+    -0.000259063973527f, -0.006434265427174f, -0.052256933138740f, -0.117099663048638f, 0.f, 0.117099663048638f, 0.052256933138740f, 0.006434265427174f, 0.000259063973527f,
+    -0.000427124283626f, -0.010608310271112f, -0.086157117207395f, -0.193064705260108f, 0.f, 0.193064705260108f, 0.086157117207395f, 0.010608310271112f, 0.000427124283626f,
+    -0.000259063973527f, -0.006434265427174f, -0.052256933138740f, -0.117099663048638f, 0.f, 0.117099663048638f, 0.052256933138740f, 0.006434265427174f, 0.000259063973527f,
+    -0.000057804985902f, -0.001435678675203f, -0.011660097860113f, -0.026128466569370f, 0.f, 0.026128466569370f, 0.011660097860113f, 0.001435678675203f, 0.000057804985902f,
+    -0.000004744922188f, -0.000117847682078f, -0.000957119116802f, -0.002144755142391f, 0.f, 0.002144755142391f, 0.000957119116802f, 0.000117847682078f, 0.000004744922188f,
+    -0.000000143284235f, -0.000003558691641f, -0.000028902492951f, -0.000064765993382f, 0.f, 0.000064765993382f, 0.000028902492951f, 0.000003558691641f, 0.000000143284235f);
 
-//	{
-//		dx = cvCreateMat( size.height, size.width, CV_32FC1 );
-//		dy = cvCreateMat( size.height, size.width, CV_32FC1 );
-//	}
-
-  CCTAG_COUT_LILIAN( "Sobel allocation : " << t.elapsed() );
-  t.restart();
-
-  //cvSobel( src, dx, 1, 0, aperture_size );
-  //cvSobel( src, dy, 0, 1, aperture_size );
+  const cv::Mat kerneldY = kerneldX.t();
 
   // defaults for cv::filter2D
   const cv::Point anchor{-1,-1};
   const double delta{0};
 
-  {
-    
-    bool use1Dkernel = false;
-    
-    if(use1Dkernel)
-    {
-      // ** Matlab code to generate the gaussian 1D kernel, filter size and standard deviation sigma**
-      //    width = 4;
-      //    sigma = 1;
-      //    ssq = sigma^2;
-      //    t = (-width:width);
-      //    gaussian1D = exp(-(t.*t)/(2*ssq))/(2*pi*ssq)     % the gaussian 1D filter
-      
-//       float gaussian1D[9] = { 0.000053390535453, 
-//                      0.001768051711852,
-//                      0.021539279301849,
-//                      0.096532352630054,
-//                      0.159154943091895,
-//                      0.096532352630054,
-//                      0.021539279301849,
-//                      0.001768051711852,
-//                      0.000053390535453
-//       };
-       
-      // ** Matlab code to generate the derivative of gaussian 1D kernel **
-      //    t = -width:width;
-      //    dgaussian1D = -t.*exp(-(t.*t)/(2*ssq))/(pi*ssq)/0.159154943091895 % the derivative of gaussian 1D filter
-       
-//      float dgaussian1D[9] = { 0.002683701023220,
-//               0.066653979229454,
-//               0.541341132946452,
-//               1.213061319425269,
-//               0,
-//               -1.213061319425269,
-//               -0.541341132946452,
-//               -0.066653979229454,
-//               -0.002683701023220 //1D gaussian derivative with sigma=1 divided by / 0.159154943091895
-//       };
-       
-      // The first option is to apply successively the (above) 1D kernels (delivered the same result as the second option used below with a 9x9 2D kernel )
-      // ** Matlab code on how to use the 1D kernels **   
-
-      //    srcSmooth = imfilter(src, gaussian1D, 'conv','replicate');                  % srcSmooth = src X gaussian1D ; with dimensions(src)==dimensions(srcSmooth) (refered by 'replicate')
-      //    srcSmooth = imfilter(srcSmooth, transpose(gaussian1D), 'conv','replicate'); % srcSmooth = srcSmooth x transpose(gaussian1D)
-      //
-      //    % Compute dx
-      //    dx = imfilter(srcSmooth, transpose(gaussian1D), 'conv','replicate');        % dx = srcSmooth X transpose(gaussian1D)
-      //    dx = imfilter(dx, dgaussian1D, 'conv','replicate');                         % dx = dx X dgaussian1D
-      //
-      //    % Compute dy
-      //    dy = imfilter(srcSmooth, gaussian1D, 'conv','replicate');                   % dy = srcSmooth X gaussian1D
-      //    dy = imfilter(dy, transpose(dgaussian1D), 'conv','replicate');              % dy = dy X transpose(dgaussian1D)
-       
-      // Summary of the two options
-      // - First option using 1D kernels:
-      //     1D convolution, kernel size 9 (6 times)
-
-      // - Second option using 2D kernels:
-      //     2D convolution, kernel size 9x9 (2 times)
-      
-      const cv::Mat kernelGau1D = (cv::Mat_<float>(9,1) << 
-        0.000053390535453f,
-        0.001768051711852f,
-        0.021539279301849f,
-        0.096532352630054f,
-        0.159154943091895f,
-        0.096532352630054f,
-        0.021539279301849f,
-        0.001768051711852f,
-        0.000053390535453f);
-      const cv::Mat kernelDGau1D = (cv::Mat_<float>(9,1) << 
-        -0.002683701023220f,
-        -0.066653979229454f,
-        -0.541341132946452f,
-        -1.213061319425269f,
-        0.f,
-        1.213061319425269f,
-        0.541341132946452f,
-        0.066653979229454f,
-        0.002683701023220f);
-
-      // Transpose guassian filter 
-      const cv::Mat kernelGau1DT = kernelGau1D.t();
-      
-      // Transpose derivate of gaussian filter
-      const cv::Mat kernelDGau1DT = kernelDGau1D.t();
-      
-      cv::Mat imgSmooth(imgDX.size(), CV_32FC1);
-      cv::Mat imgTmp(imgDX.size(), CV_32FC1);
-      cv::Mat dx_debug(imgDX.size(), CV_32FC1);
-      cv::Mat dy_debug(imgDY.size(), CV_32FC1);
-      
-      CCTAG_COUT("before cvFilter2D 1");
-      cv::filter2D(imgGraySrc, imgTmp, CV_32FC1, kernelGau1D, anchor, delta, cv::BORDER_REPLICATE);
-      CCTAG_COUT("before cvFilter2D 2");
-      cv::filter2D(imgTmp, imgSmooth, CV_32FC1, kernelGau1DT, anchor, delta, cv::BORDER_REPLICATE);
-      
-      CCTAG_COUT("before cvFilter2D 3");
-      cv::filter2D(imgSmooth, imgTmp, CV_32FC1, kernelGau1D, anchor, delta, cv::BORDER_REPLICATE);
-      
-      CCTAG_COUT("before cvFilter2D 4");
-      cv::filter2D(imgTmp, dx_debug, CV_32FC1, kernelDGau1DT, anchor, delta, cv::BORDER_REPLICATE);
-      
-      CCTAG_COUT("before cvFilter2D 5");
-      cv::filter2D(imgSmooth, imgTmp, CV_32FC1, kernelGau1DT, anchor, delta, cv::BORDER_REPLICATE);
-      CCTAG_COUT("before cvFilter2D 6");
-      cv::filter2D(imgTmp, dy_debug, CV_32FC1, kernelDGau1D, anchor, delta, cv::BORDER_REPLICATE);  
-      CCTAG_COUT("end");
-      
-      
-      CCTAG_COUT("1D version : DX_DEBUG values");
-      //CCTAG_COUT(dx_debug.rows);
-      for (int i=0; i< dx_debug.rows ; ++i)
-      {
-        for (int j=0; j< dx_debug.cols ; ++j)
-        {
-          std::cout << std::fixed << std::setprecision(1) << dx_debug.ptr<float>(i)[j] << " ";
-        }
-        std::cout << std::endl;
-      }
-      CCTAG_COUT("1D version : END DX_DEBUG values");
-      //cvTranspose( kerneldX, kerneldY );
-      //cvFilter2D( src, dy, kernelGau1D );
-      
-    }else
-    {
-      // The second option is to apply the (9x9) 2D following kernel
-      const cv::Mat kerneldX = -1.f * (cv::Mat_<float>(9,9) << 
-        0.000000143284235f, 0.000003558691641f, 0.000028902492951f, 0.000064765993382f, 0.f, -0.000064765993382f, -0.000028902492951f, -0.000003558691641f, -0.000000143284235f,
-        0.000004744922188f, 0.000117847682078f, 0.000957119116802f, 0.002144755142391f, 0.f, -0.002144755142391f, -0.000957119116802f, -0.000117847682078f, -0.000004744922188f,
-        0.000057804985902f, 0.001435678675203f, 0.011660097860113f, 0.026128466569370f, 0.f, -0.026128466569370f, -0.011660097860113f, -0.001435678675203f, -0.000057804985902f,
-        0.000259063973527f, 0.006434265427174f, 0.052256933138740f, 0.117099663048638f, 0.f, -0.117099663048638f, -0.052256933138740f, -0.006434265427174f, -0.000259063973527f,
-        0.000427124283626f, 0.010608310271112f, 0.086157117207395f, 0.193064705260108f, 0.f, -0.193064705260108f, -0.086157117207395f, -0.010608310271112f, -0.000427124283626f,
-        0.000259063973527f, 0.006434265427174f, 0.052256933138740f, 0.117099663048638f, 0.f, -0.117099663048638f, -0.052256933138740f, -0.006434265427174f, -0.000259063973527f,
-        0.000057804985902f, 0.001435678675203f, 0.011660097860113f, 0.026128466569370f, 0.f, -0.026128466569370f, -0.011660097860113f, -0.001435678675203f, -0.000057804985902f,
-        0.000004744922188f, 0.000117847682078f, 0.000957119116802f, 0.002144755142391f, 0.f, -0.002144755142391f, -0.000957119116802f, -0.000117847682078f, -0.000004744922188f,
-        0.000000143284235f, 0.000003558691641f, 0.000028902492951f, 0.000064765993382f, 0.f, -0.000064765993382f, -0.000028902492951f, -0.000003558691641f, -0.000000143284235f);
-
-      const cv::Mat kerneldY = kerneldX.t();
-
-      cv::filter2D(imgGraySrc, imgDX, CV_16SC1, kerneldX, anchor, delta, cv::BORDER_REPLICATE);
-      cv::filter2D(imgGraySrc, imgDY, CV_16SC1, kerneldY, anchor, delta, cv::BORDER_REPLICATE);    
-    }
-  }
+  cv::filter2D(imgGraySrc, imgDX, CV_16SC1, kerneldX, anchor, delta, cv::BORDER_REPLICATE);
+  cv::filter2D(imgGraySrc, imgDY, CV_16SC1, kerneldY, anchor, delta, cv::BORDER_REPLICATE);
 
 #ifndef USE_INTEGER_REP
   if( flags & CV_CANNY_L2_GRADIENT )
