@@ -119,7 +119,7 @@ void cvRecodedCanny(
   std::ofstream* mag_img_file  = nullptr;
   std::ofstream* hyst_img_file = nullptr;
 
-#ifdef WITH_CUDE
+#ifdef CCTAG_WITH_CUDA
   if( params->_debugDir == "" ) {
     std::cerr << __FUNCTION__ << ":" << __LINE__
               << ": debugDir not set, not writing debug output" << std::endl;
@@ -141,7 +141,7 @@ void cvRecodedCanny(
                    << size.width << " " << size.height << std::endl
                    << "255" << std::endl;
   }
-#endif // WITH_CUDE
+#endif // CCTAG_WITH_CUDA
 #endif // DEBUG_MAGMAP_BY_GRIFF
 
   cv::AutoBuffer<char> buffer;
