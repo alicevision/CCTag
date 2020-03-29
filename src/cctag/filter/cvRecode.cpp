@@ -30,8 +30,10 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <algorithm>
+#include <tuple>
 
-#define DEBUG_MAGMAP_BY_GRIFF
+// #define DEBUG_MAGMAP_BY_GRIFF
 #define USE_INTEGER_REP
 
 void cvRecodedCanny(
@@ -45,311 +47,51 @@ void cvRecodedCanny(
   int debug_info_level,
   const cctag::Parameters* params )
 {
-  CvMat srcCvMat = imgGraySrc;
-  CvMat *src = &srcCvMat;
-  
-  CvMat dstCvMat = imgCanny;
-  CvMat *dst = &dstCvMat;
-  
-  CvMat dxCvMat = imgDX;
-  CvMat *dx = &dxCvMat;
-  
-  CvMat dyCvMat = imgDY;
-  CvMat *dy = &dyCvMat;
-  
   boost::timer t;  
   std::vector<uchar*> stack;
   uchar** stack_top = nullptr, ** stack_bottom = nullptr;
   
-  CvSize size;
+  const cv::Size size = imgGraySrc.size();
   int flags = aperture_size;
   int low, high;
   uchar* map;
   ptrdiff_t mapstep;
   int maxsize;
   int i, j;
-  CvMat mag_row;
 
-  if( CV_MAT_TYPE( src->type ) != CV_8UC1 ||
-      CV_MAT_TYPE( dst->type ) != CV_8UC1 )
+  if( imgGraySrc.type() != CV_8UC1 ||
+      imgCanny.type() != CV_8UC1 )
       CV_Error( CV_StsUnsupportedFormat, "" );
 
-  if( !CV_ARE_SIZES_EQ( src, dst ) )
+  if( !CV_ARE_SIZES_EQ( &imgGraySrc, &imgCanny ) )
        CV_Error( CV_StsUnmatchedSizes, "" );
 
-  if( low_thresh > high_thresh )
-  {
-    float t;
-    CV_SWAP( low_thresh, high_thresh, t );
-  }
+  std::tie(low_thresh, high_thresh) = std::minmax(low_thresh, high_thresh);
 
   aperture_size &= INT_MAX;
   if( ( aperture_size & 1 ) == 0 || aperture_size < 3 || aperture_size > 7 )
     CV_Error( CV_StsBadFlag, "" );
 
-  size = CvSize(src->width,src->height);
+  // Apply the (9x9) 2D following kernel for the derivatives in x and y direction
+  const cv::Mat kerneldX = (cv::Mat_<float>(9,9) << 
+    -0.000000143284235f, -0.000003558691641f, -0.000028902492951f, -0.000064765993382f, 0.f, 0.000064765993382f, 0.000028902492951f, 0.000003558691641f, 0.000000143284235f,
+    -0.000004744922188f, -0.000117847682078f, -0.000957119116802f, -0.002144755142391f, 0.f, 0.002144755142391f, 0.000957119116802f, 0.000117847682078f, 0.000004744922188f,
+    -0.000057804985902f, -0.001435678675203f, -0.011660097860113f, -0.026128466569370f, 0.f, 0.026128466569370f, 0.011660097860113f, 0.001435678675203f, 0.000057804985902f,
+    -0.000259063973527f, -0.006434265427174f, -0.052256933138740f, -0.117099663048638f, 0.f, 0.117099663048638f, 0.052256933138740f, 0.006434265427174f, 0.000259063973527f,
+    -0.000427124283626f, -0.010608310271112f, -0.086157117207395f, -0.193064705260108f, 0.f, 0.193064705260108f, 0.086157117207395f, 0.010608310271112f, 0.000427124283626f,
+    -0.000259063973527f, -0.006434265427174f, -0.052256933138740f, -0.117099663048638f, 0.f, 0.117099663048638f, 0.052256933138740f, 0.006434265427174f, 0.000259063973527f,
+    -0.000057804985902f, -0.001435678675203f, -0.011660097860113f, -0.026128466569370f, 0.f, 0.026128466569370f, 0.011660097860113f, 0.001435678675203f, 0.000057804985902f,
+    -0.000004744922188f, -0.000117847682078f, -0.000957119116802f, -0.002144755142391f, 0.f, 0.002144755142391f, 0.000957119116802f, 0.000117847682078f, 0.000004744922188f,
+    -0.000000143284235f, -0.000003558691641f, -0.000028902492951f, -0.000064765993382f, 0.f, 0.000064765993382f, 0.000028902492951f, 0.000003558691641f, 0.000000143284235f);
 
-  // TODO: no allocation here:
-  //dx = cvCreateMat( size.height, size.width, CV_16SC1 );
-  //dy = cvCreateMat( size.height, size.width, CV_16SC1 );
-  
-  // cvSobel is the function called by default in OpenCV, with a 3x3 kernel
-  // to compute the derivative in x and y.
-  // The kernel used to compute the derivative is changed here by a 9x9 one, to stick
-  // with the results obtained with the canny implementation in the Matlab image
-  // processing toolbox (2012)
+  const cv::Mat kerneldY = kerneldX.t();
 
-//	{
-//		dx = cvCreateMat( size.height, size.width, CV_32FC1 );
-//		dy = cvCreateMat( size.height, size.width, CV_32FC1 );
-//	}
+  // defaults for cv::filter2D
+  const cv::Point anchor{-1,-1};
+  const double delta{0};
 
-  CCTAG_COUT_LILIAN( "Sobel allocation : " << t.elapsed() );
-  t.restart();
-
-  //cvSobel( src, dx, 1, 0, aperture_size );
-  //cvSobel( src, dy, 0, 1, aperture_size );
-
-  {
-    
-    bool use1Dkernel = false;
-    
-    if(use1Dkernel)
-    {
-      // ** Matlab code to generate the gaussian 1D kernel, filter size and standard deviation sigma**
-      //    width = 4;
-      //    sigma = 1;
-      //    ssq = sigma^2;
-      //    t = (-width:width);
-      //    gaussian1D = exp(-(t.*t)/(2*ssq))/(2*pi*ssq)     % the gaussian 1D filter
-      
-//       float gaussian1D[9] = { 0.000053390535453, 
-//                      0.001768051711852,
-//                      0.021539279301849,
-//                      0.096532352630054,
-//                      0.159154943091895,
-//                      0.096532352630054,
-//                      0.021539279301849,
-//                      0.001768051711852,
-//                      0.000053390535453
-//       };
-       
-      // ** Matlab code to generate the derivative of gaussian 1D kernel **
-      //    t = -width:width;
-      //    dgaussian1D = -t.*exp(-(t.*t)/(2*ssq))/(pi*ssq)/0.159154943091895 % the derivative of gaussian 1D filter
-       
-//      float dgaussian1D[9] = { 0.002683701023220,
-//               0.066653979229454,
-//               0.541341132946452,
-//               1.213061319425269,
-//               0,
-//               -1.213061319425269,
-//               -0.541341132946452,
-//               -0.066653979229454,
-//               -0.002683701023220 //1D gaussian derivative with sigma=1 divided by / 0.159154943091895
-//       };
-       
-      // The first option is to apply successively the (above) 1D kernels (delivered the same result as the second option used below with a 9x9 2D kernel )
-      // ** Matlab code on how to use the 1D kernels **   
-
-      //    srcSmooth = imfilter(src, gaussian1D, 'conv','replicate');                  % srcSmooth = src X gaussian1D ; with dimensions(src)==dimensions(srcSmooth) (refered by 'replicate')
-      //    srcSmooth = imfilter(srcSmooth, transpose(gaussian1D), 'conv','replicate'); % srcSmooth = srcSmooth x transpose(gaussian1D)
-      //
-      //    % Compute dx
-      //    dx = imfilter(srcSmooth, transpose(gaussian1D), 'conv','replicate');        % dx = srcSmooth X transpose(gaussian1D)
-      //    dx = imfilter(dx, dgaussian1D, 'conv','replicate');                         % dx = dx X dgaussian1D
-      //
-      //    % Compute dy
-      //    dy = imfilter(srcSmooth, gaussian1D, 'conv','replicate');                   % dy = srcSmooth X gaussian1D
-      //    dy = imfilter(dy, transpose(dgaussian1D), 'conv','replicate');              % dy = dy X transpose(dgaussian1D)
-       
-      // Summary of the two options
-      // - First option using 1D kernels:
-      //     1D convolution, kernel size 9 (6 times)
-
-      // - Second option using 2D kernels:
-      //     2D convolution, kernel size 9x9 (2 times)
-      
-      CvMat* kernelGau1D = cvCreateMat( 9, 1, CV_32FC1 );
-      CvMat* kernelDGau1D = cvCreateMat( 9, 1, CV_32FC1 );
-
-      CV_MAT_ELEM( *kernelGau1D, float, 0, 0 ) = 0.000053390535453f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 1, 0 ) = 0.001768051711852f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 2, 0 ) = 0.021539279301849f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 3, 0 ) = 0.096532352630054f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 4, 0 ) = 0.159154943091895f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 5, 0 ) = 0.096532352630054f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 6, 0 ) = 0.021539279301849f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 7, 0 ) = 0.001768051711852f  ;
-      CV_MAT_ELEM( *kernelGau1D, float, 8, 0 ) = 0.000053390535453f  ;
-      
-      CV_MAT_ELEM( *kernelDGau1D, float, 0, 0 ) = -0.002683701023220f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 1, 0 ) = -0.066653979229454f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 2, 0 ) = -0.541341132946452f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 3, 0 ) = -1.213061319425269f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 4, 0 ) = 0.f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 5, 0 ) = 1.213061319425269f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 6, 0 ) = 0.541341132946452f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 7, 0 ) = 0.066653979229454f  ;
-      CV_MAT_ELEM( *kernelDGau1D, float, 8, 0 ) = 0.002683701023220f  ;
-
-      // Transpose guassian filter 
-      CvMat* kernelGau1DT = cvCreateMat( 1, 9, CV_32FC1 );
-      cvTranspose( kernelGau1D, kernelGau1DT );
-      
-      // Transpose derivate of gaussian filter
-      CvMat* kernelDGau1DT = cvCreateMat( 1, 9, CV_32FC1 );
-      cvTranspose( kernelDGau1D, kernelDGau1DT );
-      
-      CvMat* imgSmooth = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
-      CvMat* imgTmp    = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
-      
-      CvMat* dx_debug = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
-      CvMat* dy_debug = cvCreateMat( imgDX.rows, imgDX.cols, CV_32FC1 );
-      
-      CCTAG_COUT("before cvFilter2D 1");
-      cvFilter2D( src, imgTmp, kernelGau1D );
-      CCTAG_COUT("before cvFilter2D 2");
-      cvFilter2D( imgTmp, imgSmooth, kernelGau1DT );
-      
-      CCTAG_COUT("before cvFilter2D 3");
-      cvFilter2D( imgSmooth, imgTmp, kernelGau1D );
-      
-      CCTAG_COUT("before cvFilter2D 4");
-      cvFilter2D( imgTmp, dx_debug, kernelDGau1DT);
-      
-      CCTAG_COUT("before cvFilter2D 5");
-      cvFilter2D( imgSmooth, imgTmp, kernelGau1DT);
-      CCTAG_COUT("before cvFilter2D 6");
-      cvFilter2D( imgTmp, dy_debug, kernelDGau1D );  
-      CCTAG_COUT("end");
-      
-      
-      CCTAG_COUT("1D version : DX_DEBUG values");
-      //CCTAG_COUT(dx_debug->rows);
-      for (int i=0; i< dx_debug->rows ; ++i)
-      {
-        for (int j=0; j< dx_debug->cols ; ++j)
-        {
-          std::cout << std::fixed << std::setprecision(1) << dx_debug->data.fl[ i*dx_debug->step + j] << " ";
-        }
-        std::cout << std::endl;
-      }
-      CCTAG_COUT("1D version : END DX_DEBUG values");
-      //cvTranspose( kerneldX, kerneldY );
-      //cvFilter2D( src, dy, kernelGau1D );
-      
-    }else
-    {  
-    // The second option is to apply the (9x9) 2D following kernel
-
-      CvMat* kerneldX = cvCreateMat( 9, 9, CV_32FC1 );
-      CvMat* kerneldY = cvCreateMat( 9, 9, CV_32FC1 );
-
-      CV_MAT_ELEM( *kerneldX, float, 0, 0 ) = 0.000000143284235f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 1 ) = 0.000003558691641f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 2 ) = 0.000028902492951f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 3 ) = 0.000064765993382f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 5 ) = -0.000064765993382f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 6 ) = -0.000028902492951f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 7 ) = -0.000003558691641f  ;
-      CV_MAT_ELEM( *kerneldX, float, 0, 8 ) = -0.000000143284235f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 0 ) = 0.000004744922188f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 1 ) = 0.000117847682078f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 2 ) = 0.000957119116802f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 3 ) = 0.002144755142391f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 5 ) = -0.002144755142391f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 6 ) = -0.000957119116802f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 7 ) = -0.000117847682078f  ;
-      CV_MAT_ELEM( *kerneldX, float, 1, 8 ) = -0.000004744922188f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 0 ) = 0.000057804985902f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 1 ) = 0.001435678675203f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 2 ) = 0.011660097860113f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 3 ) = 0.026128466569370f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 5 ) = -0.026128466569370f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 6 ) = -0.011660097860113f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 7 ) = -0.001435678675203f  ;
-      CV_MAT_ELEM( *kerneldX, float, 2, 8 ) = -0.000057804985902f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 0 ) = 0.000259063973527f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 1 ) = 0.006434265427174f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 2 ) = 0.052256933138740f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 3 ) = 0.117099663048638f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 5 ) = -0.117099663048638f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 6 ) = -0.052256933138740f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 7 ) = -0.006434265427174f  ;
-      CV_MAT_ELEM( *kerneldX, float, 3, 8 ) = -0.000259063973527f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 0 ) = 0.000427124283626f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 1 ) = 0.010608310271112f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 2 ) = 0.086157117207395f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 3 ) = 0.193064705260108f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 5 ) = -0.193064705260108f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 6 ) = -0.086157117207395f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 7 ) = -0.010608310271112f  ;
-      CV_MAT_ELEM( *kerneldX, float, 4, 8 ) = -0.000427124283626f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 0 ) = 0.000259063973527f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 1 ) = 0.006434265427174f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 2 ) = 0.052256933138740f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 3 ) = 0.117099663048638f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 5 ) = -0.117099663048638f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 6 ) = -0.052256933138740f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 7 ) = -0.006434265427174f  ;
-      CV_MAT_ELEM( *kerneldX, float, 5, 8 ) = -0.000259063973527f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 0 ) = 0.000057804985902f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 1 ) = 0.001435678675203f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 2 ) = 0.011660097860113f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 3 ) = 0.026128466569370f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 5 ) = -0.026128466569370f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 6 ) = -0.011660097860113f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 7 ) = -0.001435678675203f  ;
-      CV_MAT_ELEM( *kerneldX, float, 6, 8 ) = -0.000057804985902f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 0 ) = 0.000004744922188f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 1 ) = 0.000117847682078f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 2 ) = 0.000957119116802f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 3 ) = 0.002144755142391f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 5 ) = -0.002144755142391f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 6 ) = -0.000957119116802f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 7 ) = -0.000117847682078f  ;
-      CV_MAT_ELEM( *kerneldX, float, 7, 8 ) = -0.000004744922188f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 0 ) = 0.000000143284235f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 1 ) = 0.000003558691641f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 2 ) = 0.000028902492951f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 3 ) = 0.000064765993382f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 4 ) = 0.f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 5 ) = -0.000064765993382f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 6 ) = -0.000028902492951f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 7 ) = -0.000003558691641f  ;
-      CV_MAT_ELEM( *kerneldX, float, 8, 8 ) = -0.000000143284235f  ;
-
-      cvConvertScale( kerneldX, kerneldX, -1.f );
-      cvTranspose( kerneldX, kerneldY );
-
-      cvFilter2D( src, dx, kerneldX );
-      cvFilter2D( src, dy, kerneldY );
-
-//      CCTAG_COUT("DX_DEBUG values");
-//      CCTAG_COUT(dx_debug->rows);
-//      for (int i=0; i< dx->rows ; ++i)
-//      {
-//        for (int j=0; j< dx->cols ; ++j)
-//        {
-//          std::cout << dx->data.s[ i*dx->step + j] << " ";
-//        }
-//        std::cout << std::endl;
-//      }
-//      CCTAG_COUT("END DX_DEBUG values");
-      
-      cvReleaseMat( &kerneldX );
-      cvReleaseMat( &kerneldY );
-    }
-  }
+  cv::filter2D(imgGraySrc, imgDX, CV_16SC1, kerneldX, anchor, delta, cv::BORDER_REPLICATE);
+  cv::filter2D(imgGraySrc, imgDY, CV_16SC1, kerneldY, anchor, delta, cv::BORDER_REPLICATE);
 
 #ifndef USE_INTEGER_REP
   if( flags & CV_CANNY_L2_GRADIENT )
@@ -377,7 +119,7 @@ void cvRecodedCanny(
   std::ofstream* mag_img_file  = nullptr;
   std::ofstream* hyst_img_file = nullptr;
 
-#ifdef WITH_CUDE
+#ifdef CCTAG_WITH_CUDA
   if( params->_debugDir == "" ) {
     std::cerr << __FUNCTION__ << ":" << __LINE__
               << ": debugDir not set, not writing debug output" << std::endl;
@@ -399,11 +141,12 @@ void cvRecodedCanny(
                    << size.width << " " << size.height << std::endl
                    << "255" << std::endl;
   }
-#endif // WITH_CUDE
+#endif // CCTAG_WITH_CUDA
 #endif // DEBUG_MAGMAP_BY_GRIFF
 
   cv::AutoBuffer<char> buffer;
-  buffer.allocate( ( size.width + 2 ) * ( size.height + 2 ) + ( size.width + 2 ) * 3 * sizeof( int ) );
+  //               (             mag_buf                )   (                 map                  )
+  buffer.allocate( ( size.width + 2 ) * 3 * sizeof( int ) + ( size.width + 2 ) * ( size.height + 2 ) );
 
   int* mag_buf[3];
   mag_buf[0] = (int*)(char*)buffer;
@@ -423,8 +166,6 @@ void cvRecodedCanny(
 #define CANNY_PUSH( d )    *( d ) = (uchar)2, *stack_top++ = ( d )
 #define CANNY_POP( d )     ( d )  = *--stack_top
 
-  mag_row = cvMat( 1, size.width, CV_32F );
-
   DO_TALK( CCTAG_COUT_DEBUG( "Canny 1 took: " << t.elapsed() ); );
   t.restart();
 
@@ -436,8 +177,8 @@ void cvRecodedCanny(
   for( i = 0; i <= size.height; i++ )
   {
     int* _mag    = mag_buf[( i > 0 ) + 1] + 1;
-    const short* _dx = (short*)( dx->data.ptr + dx->step * i );
-    const short* _dy = (short*)( dy->data.ptr + dy->step * i );
+    const short* _imgDX = imgDX.ptr<short>(i);
+    const short* _imgDY = imgDY.ptr<short>(i);
     uchar* _map;
     int x, y;
     ptrdiff_t magstep1, magstep2;
@@ -450,23 +191,25 @@ void cvRecodedCanny(
       if( !( flags & CV_CANNY_L2_GRADIENT ) ) {
         // Using Manhattan distance
         for( j = 0; j < size.width; j++ )
-          _mag[j] = abs( _dx[j] ) + abs( _dy[j] );
+          _mag[j] = abs( _imgDX[j] ) + abs( _imgDY[j] );
       } else {
         // Using Euclidian distance
+
         for( j = 0; j < size.width; j++ )
         {
           float* _magf = (float*)_mag;
-          x = _dx[j];
-          y = _dy[j];
+          x = _imgDX[j];
+          y = _imgDY[j];
 #ifdef USE_INTEGER_REP
           _mag[j] = (int)rintf( (float)std::sqrt( (float)x * x + (float)y * y ) );
 #else
           _magf[j] = (float)std::sqrt( (float)x * x + (float)y * y );
 #endif
-          if (_dx[j] > 200){
-      std::cout << _dx[j] << ", ";
-      std::cout << _dy[j] << ", ";
-          }
+          CCTAG_IF_DEBUG(
+            if (_imgDX[j] > 200){
+              CCTAG_COUT_NOENDL(_imgDX[j] << ", " << _imgDY[j] << ", ");
+            }
+          )
         }
       }
     }
@@ -496,8 +239,8 @@ void cvRecodedCanny(
     _map[-1] = _map[size.width] = 1;
 
     _mag = mag_buf[1] + 1; // take the central row
-    _dx = (short*)( dx->data.ptr + dx->step * ( i - 1 ) );
-    _dy = (short*)( dy->data.ptr + dy->step * ( i - 1 ) );
+    _imgDX = imgDX.ptr<short>(i - 1);
+    _imgDY = imgDY.ptr<short>(i - 1);
 
     magstep1 = mag_buf[2] - mag_buf[1];
     magstep2 = mag_buf[0] - mag_buf[1];
@@ -516,8 +259,8 @@ void cvRecodedCanny(
 #define CANNY_SHIFT 15
 #define TG22  (int)( 0.4142135623730950488016887242097 * ( 1 << CANNY_SHIFT ) + 0.5 )
 
-      x = _dx[j];
-      y = _dy[j];
+      x = _imgDX[j];
+      y = _imgDY[j];
       int s = x ^ y;
       int m = _mag[j];
 
@@ -654,15 +397,15 @@ void cvRecodedCanny(
   for( i = 0; i < size.height; i++ )
   {
     const uchar* _map = map + mapstep * ( i + 1 ) + 1;
-    uchar* _dst       = dst->data.ptr + dst->step * i;
+    uchar* _imgCanny = imgCanny.ptr<uchar>(i);
 
     for( j = 0; j < size.width; j++ )
     {
-      _dst[j] = ( uchar ) - ( _map[j] >> 1 );
+      _imgCanny[j] = ( uchar ) - ( _map[j] >> 1 );
     }
 #ifdef DEBUG_MAGMAP_BY_GRIFF
     if( hyst_img_file )
-        hyst_img_file->write( (const char*)_dst, size.width );
+        hyst_img_file->write( (const char*)_imgCanny, size.width );
 #endif // DEBUG_MAGMAP_BY_GRIFF
   }
 
