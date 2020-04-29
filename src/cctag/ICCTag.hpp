@@ -38,7 +38,7 @@ public:
 	virtual float y() const = 0;
 	virtual MarkerID id() const = 0;
 	virtual int getStatus() const = 0;
-    virtual const numerical::geometry::Ellipse & outerEllipse() const = 0;
+    virtual const cctag::numerical::geometry::Ellipse & rescaledOuterEllipse() const = 0;
 
     virtual ~ICCTag() = default;
 
@@ -49,9 +49,9 @@ protected:
     float _x;
     float _y;
     MarkerID _id;
-        int _status; // WARNING: only markers with status == 1 are the valid ones. (status available via getStatus()) 
-                     // A marker correctly detected and identified has a status 1.
-                     // Otherwise, it can be detected but not correctly identified.
+    int _status; // WARNING: only markers with status == 1 are the valid ones. (status available via getStatus()) 
+                 // A marker correctly detected and identified has a status 1.
+                 // Otherwise, it can be detected but not correctly identified.
 };
 
 inline ICCTag* new_clone(const ICCTag& a)
