@@ -76,15 +76,6 @@ Then, in order to build just pass the location of `CCTagConfig.cmake` from the c
 cmake .. -DCCTag_DIR=$CCTAG_INSTALL/lib/cmake/CCTag/
 ```
 
-----------
-
-Note 1: CCTag uses NVidia CUB (CCTag includes a copy of CUB from CUDA 7.0).
-Several CUB functions are known to fail with a few NVidia cards including our reference card,
-the GTX 980 Ti.
-The CUB that is included with CUDA 7.5 does not solve this problem.
-
-----------
-
 ## Docker Image
 
 A docker image can be built using the Ubuntu based [Dockerfile](Dockerfile),which is based on nvidia/cuda image (https://hub.docker.com/r/nvidia/cuda/)
