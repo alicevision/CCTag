@@ -26,8 +26,6 @@
 
 #ifdef CCTAG_WITH_CUDA
 
-  #define CUB_CDP
-
   #ifndef CCTAG_HAVE_SHFL_DOWN_SYNC
   #cmakedefine CCTAG_HAVE_SHFL_DOWN_SYNC
   #endif
