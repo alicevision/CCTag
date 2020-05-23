@@ -45,7 +45,7 @@ endif()
 
 # this is to ensure that on MSVC the flags for the linker are properly propagate even to the intermediate
 # linking step. This seems not the case e.g. on vcpkg using ninja build.
-if(MSVC)
+if(MSVC AND CMAKE_GENERATOR MATCHES "Ninja")
   if(BUILD_SHARED_LIBS)
     set(CCTAG_MVSC_LINKER "/MD")
   else()
