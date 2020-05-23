@@ -57,6 +57,17 @@ if(MSVC)
   list(APPEND CUDA_NVCC_FLAGS   -Xcompiler ${CCTAG_MVSC_LINKER})
 endif()
 
+# for some reason this line is necessary to propagate the standard to nvcc
+# On MSVC this is not necessary / nvcc does not recognize the flag for MSVC
+if(NOT MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+
 if(CCTAG_ENABLE_SIMD_AVX2)
   if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
     add_definitions(-mavx2)
@@ -71,9 +82,6 @@ endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   add_definitions(/EHsc)  # Enable Exception Handling
 endif()
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ${CCTAG_USE_POSITION_INDEPENDENT_CODE})
 
