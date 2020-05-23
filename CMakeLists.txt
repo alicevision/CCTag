@@ -21,8 +21,40 @@ option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
 option(BUILD_TESTS "Build the unity tests" ON)
 option(CCTAG_NO_THRUST_COPY_IF "Do not use thrust::copy_if() on GPU. There may be a bug on CUDA 7 with GTX 980, 980Ti and 1080" OFF)
 
-if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
-  set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
+
+# set(CMAKE_BUILD_TYPE Debug)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release)
+  message(STATUS "Build type not set, building in Release configuration")
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+else()
+  message(STATUS "Building in ${CMAKE_BUILD_TYPE} configuration")
+endif()
+
+# ensure the proper linker flags when building the static version on MSVC
+if(MSVC AND NOT BUILD_SHARED_LIBS)
+  foreach(config "DEBUG" "RELEASE" "MINSIZEREL" "RELWITHDEBINFO")
+    string(REPLACE /MD /MT CMAKE_C_FLAGS_${config} "${CMAKE_C_FLAGS_${config}}")
+    string(REPLACE /MD /MT CMAKE_CXX_FLAGS_${config} "${CMAKE_CXX_FLAGS_${config}}")
+    message(STATUS "CMAKE_C_FLAGS_${config} ${CMAKE_C_FLAGS_${config}}")
+    message(STATUS "CMAKE_CXX_FLAGS_${config} ${CMAKE_CXX_FLAGS_${config}}")
+  endforeach()
+endif()
+
+# this is to ensure that on MSVC the flags for the linker are properly propagate even to the intermediate
+# linking step. This seems not the case e.g. on vcpkg using ninja build.
+if(MSVC)
+  if(BUILD_SHARED_LIBS)
+    set(CCTAG_MVSC_LINKER "/MD")
+  else()
+    set(CCTAG_MVSC_LINKER "/MT")
+  endif()
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+      set(CCTAG_MVSC_LINKER "${CCTAG_MVSC_LINKER}d")
+  endif()
+  list(APPEND CUDA_NVCC_FLAGS   -Xcompiler ${CCTAG_MVSC_LINKER})
 endif()
 
 if(CCTAG_ENABLE_SIMD_AVX2)
