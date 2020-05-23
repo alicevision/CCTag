@@ -83,7 +83,9 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   add_definitions(/EHsc)  # Enable Exception Handling
 endif()
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ${CCTAG_USE_POSITION_INDEPENDENT_CODE})
+if(NOT MSVC)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ${CCTAG_USE_POSITION_INDEPENDENT_CODE})
+endif()
 
 
 # set the path where we can find the findXXX.cmake
