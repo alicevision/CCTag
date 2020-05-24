@@ -7,6 +7,11 @@ include(ExternalProject)
 
 project(CCTag VERSION 1.0.0 LANGUAGES C CXX)
 
+# Set build path as a folder named as the platform (linux, windows, darwin...) plus the processor type
+set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(LIBRARY_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
+
 #CMakeDependentOption
 option(CCTAG_SERIALIZE "Store all the output" OFF)
 option(CCTAG_VISUAL_DEBUG "Enable visual debug" OFF)
