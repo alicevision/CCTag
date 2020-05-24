@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.13)
+project(CCTagApplications LANGUAGES CXX)
 
-include(ExternalProject)
+# if this is used as a stand-alone project we need to tell whether to use PIC
+if(NOT DEFINED BUILD_SHARED_LIBS)
+  option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
+endif()
 
-project(CCTagApplications LANGUAGES C CXX)
-
-set(CMAKE_BUILD_TYPE Release)
 
 #Find needed dependencies
 # CCTAG
