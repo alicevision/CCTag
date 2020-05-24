@@ -1,5 +1,8 @@
-cmake_minimum_required(VERSION 3.13)
-project(CCTagApplications LANGUAGES CXX)
+if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+  # I am top-level project, i.e. I am not being include by another project
+  cmake_minimum_required(VERSION 3.13)
+  project(CCTagApplications LANGUAGES CXX VERSION 1.0.0)
+endif()
 
 # if this is used as a stand-alone project we need to tell whether to use PIC
 if(NOT DEFINED BUILD_SHARED_LIBS)
