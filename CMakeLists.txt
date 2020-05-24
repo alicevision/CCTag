@@ -21,6 +21,7 @@ option(CCTAG_WITH_CUDA "Compile the library with CUDA support" ON)
 option(CCTAG_BUILD_APPS "Build the sample applications" ON)
 option(CCTAG_CUDA_CC_CURRENT_ONLY "Set to on to build only for the current machine's CC" OFF)
 option(CCTAG_NVCC_WARNINGS "Switch on several additional warnings for CUDA nvcc." OFF)
+option(CCTAG_EIGEN_NO_ALIGN "Disable eigen alignment" ON)
 
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
@@ -234,6 +235,9 @@ if(MSVC AND CCTAG_WITH_CUDA)
 endif()
 find_package(Eigen3 ${CCTAG_EIGEN_REQUIRED_VERSION} REQUIRED)
 message(STATUS "Found Eigen: version ${Eigen3_VERSION}")
+if(CCTAG_EIGEN_NO_ALIGN)
+  set(AV_EIGEN_DEFINITIONS -DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0)
+endif()
 
 # FIND Intel TBB
 # With MVSC, CMAKE_BUILD_TYPE will always be None, so TBB_USE_DEBUG_BUILD will always be false.
