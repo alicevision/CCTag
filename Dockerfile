@@ -54,7 +54,7 @@ RUN cmake -j -DBUILD_TIFF=ON \
       -DWITH_TBB=ON \
       -DWITH_EIGEN=ON \
       -DWITH_V4L=ON \
-      -DBUILD_TESTS=OFF \
+      -DCCTAG_BUILD_TESTS=OFF \
       -DBUILD_PERF_TESTS=OFF \
       -DCMAKE_BUILD_TYPE=RELEASE  .. \
     && make -j install \

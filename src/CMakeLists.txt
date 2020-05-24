@@ -272,11 +272,11 @@ install(EXPORT "${targets_export_name}"
 # Generate ${PROJECT_NAME}Targets.cmake in the build directory to use the library without installing it
 export(TARGETS CCTag FILE "${generated_dir}/${targets_export_name}.cmake")
 
-if(BUILD_APPS)
+if(CCTAG_BUILD_APPS)
   add_subdirectory(applications)
 endif()
 
-if(BUILD_TESTS)
+if(CCTAG_BUILD_TESTS)
     add_subdirectory(cctag/test)
     add_subdirectory(cctag/geometry/test)
 endif()
