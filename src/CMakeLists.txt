@@ -80,11 +80,6 @@ if(CCTAG_WITH_CUDA)
         ./cctag/cuda/tag_threads.cu
         ./cctag/cuda/triple_point.cu)
 
-  # add_definitions("-DSM_TARGETS=-gencode=arch=compute_52,code=\"sm_52,compute_52\"")
-
-  # set(CUDA_SEPARABLE_COMPILATION ON)
-  # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
-  # set(BUILD_SHARED_LIBS ON)
 
   set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DCUB_CDP")
 
@@ -125,7 +120,7 @@ if(CCTAG_WITH_CUDA)
   # This is nececessary for the CCTagConfig.cmake to correctly export the
   # includes, always because we used CUDA_ADD_LIBRARY
   set_target_properties(CCTag PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-       "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>;${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${OpenCV_INCLUDE_DIRS}")
+          "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>;$<BUILD_INTERFACE:${generated_dir}>;$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>;${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${OpenCV_INCLUDE_DIRS}")
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
@@ -139,7 +134,8 @@ else() # without CUDA
 
   target_include_directories(CCTag
                            PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
-                                  "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>"
+                                  "$<BUILD_INTERFACE:${generated_dir}>"
+                                  "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>"
                            PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS}
                            PRIVATE ${TBB_INCLUDE_DIRS})
 
@@ -253,10 +249,10 @@ else()
 endif()
 
 # install the config and version generated files
-install( FILES "${generated_dir}/${confighpp_name}"
+install( FILES "${cctag_config_header_name}"
     DESTINATION "${install_dir_generated}")
 
-install( FILES "${generated_dir}/${versionhpp_name}"
+install( FILES "${cctag_version_header_name}"
     DESTINATION "${install_dir_generated}")
 
 # install cmake config files
