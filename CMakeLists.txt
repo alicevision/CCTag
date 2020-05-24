@@ -227,7 +227,12 @@ endif(CCTAG_WITH_CUDA)
 find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
 
 # FIND Eigen
-find_package(Eigen3 REQUIRED)
+set(CCTAG_EIGEN_REQUIRED_VERSION 3.3.4)
+if(MSVC AND CCTAG_WITH_CUDA)
+  set(CCTAG_EIGEN_REQUIRED_VERSION 3.3.9)
+  message(WARNING "Building CCTag with Cuda support under windows requires Eigen >= ${CCTAG_EIGEN_REQUIRED_VERSION}")
+endif()
+find_package(Eigen3 ${CCTAG_EIGEN_REQUIRED_VERSION} REQUIRED)
 message(STATUS "Found Eigen: version ${Eigen3_VERSION}")
 
 # FIND Intel TBB
