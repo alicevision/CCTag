@@ -51,9 +51,9 @@ find_package(OpenCV REQUIRED core videoio imgproc imgcodecs highgui)
 # TBB
 if(NOT TBB_FOUND)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
-  find_package(TBB 4 REQUIRED)
+  find_package(TBB REQUIRED)
 else()
-message(STATUS "TBB already there")
+  message(STATUS "TBB already there")
 endif()
 
 set(CMAKE_CXX_STANDARD 11)
@@ -81,7 +81,7 @@ target_include_directories(detection PUBLIC
   )
 target_link_libraries(detection PUBLIC
   CCTag::CCTag
-  ${TBB_tbb_LIBRARY_RELEASE}
+  ${TBB_LIBRARIES}
   ${OpenCV_LIBS}
   Boost::filesystem Boost::program_options Boost::timer
   )
