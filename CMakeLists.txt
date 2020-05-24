@@ -196,7 +196,7 @@ if(CCTAG_WITH_CUDA)
   if(CCTAG_USE_POSITION_INDEPENDENT_CODE AND NOT MSVC)
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xcompiler;-fPIC")
   endif()
-    
+
   CCTAG_CHECK_NVCC_COMPILER_FLAG("--expt-relaxed-constexpr" HAS_NVCC_EXPT_RELAXED_CONSTEXPR)
   if(HAS_NVCC_EXPT_RELAXED_CONSTEXPR)
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--expt-relaxed-constexpr")
@@ -227,7 +227,8 @@ endif(CCTAG_WITH_CUDA)
 find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
 
 # FIND Eigen
-find_package(Eigen REQUIRED)
+find_package(Eigen3 REQUIRED)
+message(STATUS "Found Eigen: version ${Eigen3_VERSION}")
 
 # FIND Intel TBB
 # With MVSC, CMAKE_BUILD_TYPE will always be None, so TBB_USE_DEBUG_BUILD will always be false.
