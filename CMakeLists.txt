@@ -64,11 +64,6 @@ if(MSVC AND CMAKE_GENERATOR MATCHES "Ninja")
   list(APPEND CUDA_NVCC_FLAGS   -Xcompiler ${CCTAG_MVSC_LINKER})
 endif()
 
-# for some reason this line is necessary to propagate the standard to nvcc
-# On MSVC this is not necessary / nvcc does not recognize the flag for MSVC
-if(NOT MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 11)
