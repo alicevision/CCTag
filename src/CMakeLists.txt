@@ -177,6 +177,9 @@ if(CCTAG_VISUAL_DEBUG)
   target_compile_definitions(CCTag PRIVATE "-DCCTAG_VISUAL_DEBUG")
 endif(CCTAG_VISUAL_DEBUG)
 
+set_target_properties(CCTag PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(CCTag PROPERTIES DEBUG_POSTFIX "d")
+
 
 # EXPORTING THE LIBRARY
 #
