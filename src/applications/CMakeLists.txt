@@ -2,6 +2,7 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
   # I am top-level project, i.e. I am not being include by another project
   cmake_minimum_required(VERSION 3.13)
   project(CCTagApplications LANGUAGES CXX VERSION 1.0.0)
+  include(GNUInstallDirs)
 endif()
 
 # if this is used as a stand-alone project we need to tell whether to use PIC
@@ -120,4 +121,4 @@ foreach(_app detection regression simulation)
   set_target_properties(${_app} PROPERTIES DEBUG_POSTFIX "d")
 endforeach()
 
-install(TARGETS detection regression simulation DESTINATION bin)
+install(TARGETS detection regression simulation DESTINATION ${CMAKE_INSTALL_BINDIR})
