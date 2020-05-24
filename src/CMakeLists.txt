@@ -2,6 +2,9 @@
 cmake_policy(SET CMP0054 OLD) # behaviour keywords in CMake if tests
 # ENDIF(COMMAND cmake_policy)
 
+# build directory containing the generated files
+set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+
 set( CCTag_cpp
         ./cctag/Bresenham.cpp
         ./cctag/CCTag.cpp
@@ -191,14 +194,11 @@ set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 # include directory for install
 set(include_install_dir "${CMAKE_INSTALL_INCLUDEDIR}")
 # the name for the generated config.hpp
-set(confighpp_name "cctag_config.hpp")
+set(cctag_config_header_name "${generated_dir}/cctag/cctag_config.hpp")
 # the name for the generated header version file
-set(versionhpp_name "version.hpp")
+set(cctag_version_header_name "${generated_dir}/cctag/version.hpp")
 # where to install the generated files
 set(install_dir_generated "${include_install_dir}/cctag")
-
-# build directory containing the generated files
-set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 # Configuration
 set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
@@ -222,10 +222,10 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in"
                               INSTALL_DESTINATION "${config_install_dir}")
 
 # config file
-configure_file("${PROJECT_SOURCE_DIR}/cmake/config.hpp.in" ${generated_dir}/${confighpp_name} @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/cmake/config.hpp.in" ${cctag_config_header_name} @ONLY)
 
 # version file
-configure_file("${PROJECT_SOURCE_DIR}/cmake/version.hpp.in" ${generated_dir}/${versionhpp_name} @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/cmake/version.hpp.in" ${cctag_version_header_name} @ONLY)
 
 # Targets:
 #   * <prefix>/lib/libCCTag.a
