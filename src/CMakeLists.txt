@@ -37,6 +37,58 @@ set( CCTag_cpp
         ./cctag/utils/Talk.cpp
         ./cctag/utils/VisualDebug.cpp)
 
+set( CCTag_HEADERS
+        ./cctag/Bresenham.hpp
+        ./cctag/CCTag.hpp
+        ./cctag/CCTagFlowComponent.hpp
+        ./cctag/CCTagMarkersBank.hpp
+        ./cctag/Candidate.hpp
+        ./cctag/Canny.hpp
+        ./cctag/Colors.hpp
+        ./cctag/DataSerialization.hpp
+        ./cctag/Detection.hpp
+        ./cctag/EdgePoint.hpp
+        ./cctag/EllipseGrowing.hpp
+        ./cctag/Fitting.hpp
+        ./cctag/ICCTag.hpp
+        ./cctag/Identification.hpp
+        ./cctag/ImageCut.hpp
+        ./cctag/ImagePyramid.hpp
+        ./cctag/Level.hpp
+        ./cctag/Multiresolution.hpp
+        ./cctag/Params.hpp
+        ./cctag/Statistic.hpp
+        ./cctag/SubPixEdgeOptimizer.hpp
+        ./cctag/Types.hpp
+        ./cctag/Vote.hpp
+        ./cctag/algebra/matrix/Operation.hpp
+        ./cctag/filter/cvRecode.hpp
+        ./cctag/filter/thinning.hpp
+        ./cctag/geometry/2DTransform.hpp
+        ./cctag/geometry/Circle.hpp
+        ./cctag/geometry/Distance.hpp
+        ./cctag/geometry/Ellipse.hpp
+        ./cctag/geometry/EllipseFromPoints.hpp
+        ./cctag/geometry/Point.hpp
+        ./cctag/optimization/conditioner.hpp
+        ./cctag/utils/Debug.hpp
+        ./cctag/utils/Defines.hpp
+        ./cctag/utils/Exceptions.hpp
+        ./cctag/utils/FileDebug.hpp
+        ./cctag/utils/LogTime.hpp
+        ./cctag/utils/Release.hpp
+        ./cctag/utils/Singleton.hpp
+        ./cctag/utils/Talk.hpp
+        ./cctag/utils/VisualDebug.hpp
+        ./cctag/utils/pcg_extras.hpp
+        ./cctag/utils/pcg_random.hpp
+        ./cctag/utils/pcg_uint128.hpp
+        )
+
+set(CUDA_cpp "")
+set(CUDA_cu "")
+set(CUDA_HEADERS "")
+
 if(CCTAG_WITH_CUDA)
 
   set(CUDA_cpp
@@ -76,6 +128,34 @@ if(CCTAG_WITH_CUDA)
         ./cctag/cuda/tag_identify.cu
         ./cctag/cuda/tag_threads.cu
         ./cctag/cuda/triple_point.cu)
+
+  set(CUDA_HEADERS
+          ./cctag/cuda/assist.h
+          ./cctag/cuda/cctag_cuda_runtime.h
+          ./cctag/cuda/clamp.h
+          ./cctag/cuda/cmp_list.h
+          ./cctag/cuda/debug_image.h
+          ./cctag/cuda/debug_is_on_edge.h
+          ./cctag/cuda/debug_macros.hpp
+          ./cctag/cuda/device_prop.hpp
+          ./cctag/cuda/edge_list.h
+          ./cctag/cuda/frame.h
+          ./cctag/cuda/frame_07_vote.h
+          ./cctag/cuda/framemeta.h
+          ./cctag/cuda/frameparam.h
+          ./cctag/cuda/geom_ellipse.h
+          ./cctag/cuda/geom_matrix.h
+          ./cctag/cuda/keep_time.hpp
+          ./cctag/cuda/nearby_point.h
+          ./cctag/cuda/onoff.h
+          ./cctag/cuda/pinned_counters.h
+          ./cctag/cuda/ptrstep.h
+          ./cctag/cuda/recursive_sweep.h
+          ./cctag/cuda/tag.h
+          ./cctag/cuda/tag_cut.h
+          ./cctag/cuda/tag_threads.h
+          ./cctag/cuda/triple_point.h
+          )
 
 
   set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DCUB_CDP")
@@ -124,8 +204,6 @@ if(CCTAG_WITH_CUDA)
 #  message(STATUS "testprop: ${testprop}")
 
 else() # without CUDA
-
-  set(CUDA_cpp "")
 
   message( STATUS "Declare CCTag library" )
   add_library(CCTag ${CCTag_cpp})
@@ -235,18 +313,9 @@ install(TARGETS CCTag
         INCLUDES DESTINATION "${include_install_dir}")
 
 # Headers:
-
-
-if(CCTAG_WITH_CUDA)
-  install(DIRECTORY "cctag"
-          DESTINATION "${include_install_dir}"
-          FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
-else()
-  install(DIRECTORY "cctag"
-          DESTINATION "${include_install_dir}"
-          FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
-          PATTERN "cuda/*" EXCLUDE)
-endif()
+include(cctagHelper)
+cctag_install_headers(PUBLIC_HEADERS ${CCTag_HEADERS} ${CUDA_HEADERS}
+        INSTALL_FOLDER ${include_install_dir})
 
 # install the config and version generated files
 install( FILES "${cctag_config_header_name}"
