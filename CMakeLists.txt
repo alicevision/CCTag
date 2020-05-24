@@ -21,7 +21,7 @@ option(CCTAG_WITH_CUDA "Compile the library with CUDA support" ON)
 option(CCTAG_BUILD_APPS "Build the sample applications" ON)
 option(CCTAG_CUDA_CC_CURRENT_ONLY "Set to on to build only for the current machine's CC" OFF)
 option(CCTAG_NVCC_WARNINGS "Switch on several additional warnings for CUDA nvcc." OFF)
-option(CCTAG_EIGEN_NO_ALIGN "Disable eigen alignment" ON)
+option(CCTAG_EIGEN_NO_ALIGN "Disable Eigen alignment" ON)
 
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
@@ -248,3 +248,29 @@ configure_file(
   IMMEDIATE @ONLY)
 add_custom_target(cctag_uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake")
+
+
+######################################
+# SUMMARY
+######################################
+message("\n")
+message("******************************************")
+message("Building configuration:\n")
+message(STATUS "CCTag version: " ${PROJECT_VERSION})
+message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
+message(STATUS "Build Shared libs: " ${BUILD_SHARED_LIBS})
+message(STATUS "Build applications: " ${CCTAG_BUILD_APPS})
+message(STATUS "Build tests: " ${CCTAG_BUILD_TESTS})
+message(STATUS "Cuda support: " ${CCTAG_WITH_CUDA})
+if(CCTAG_WITH_CUDA)
+  message(STATUS "Compiling for CUDA CCs: ${ARCH_FLAGS}")
+endif()
+message(STATUS "Disable Eigen alignment: " ${CCTAG_EIGEN_NO_ALIGN})
+message(STATUS "Enable AVX2 optimizations: " ${CCTAG_ENABLE_SIMD_AVX2})
+message(STATUS "[debug] Serialize all the output: " ${CCTAG_SERIALIZE})
+message(STATUS "[debug] Enable visual debug: " ${CCTAG_VISUAL_DEBUG})
+message(STATUS "[debug] Disable output stream: " ${CCTAG_NO_COUT})
+message(STATUS "[debug] nvcc additional warnings: " ${CCTAG_NVCC_WARNINGS})
+message(STATUS "Install path: " ${CMAKE_INSTALL_PREFIX})
+message("\n******************************************")
+message("\n")
