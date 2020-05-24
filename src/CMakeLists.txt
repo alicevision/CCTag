@@ -269,6 +269,9 @@ install(EXPORT "${targets_export_name}"
         NAMESPACE "${namespace}"
         DESTINATION "${config_install_dir}")
 
+# Generate ${PROJECT_NAME}Targets.cmake in the build directory to use the library without installing it
+export(TARGETS CCTag FILE "${generated_dir}/${targets_export_name}.cmake")
+
 if(BUILD_APPS)
   add_subdirectory(applications)
 endif()
