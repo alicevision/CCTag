@@ -1,6 +1,3 @@
-# IF(COMMAND cmake_policy)
-cmake_policy(SET CMP0054 OLD) # behaviour keywords in CMake if tests
-# ENDIF(COMMAND cmake_policy)
 
 # build directory containing the generated files
 set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
@@ -83,16 +80,14 @@ if(CCTAG_WITH_CUDA)
 
   set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS};-DCUB_CDP")
 
-  # this must go before CUDA_ADD_LIBRARY otherwise we won't be able to add it
-  # after
-  # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA.cmake#L147
-  # INCLUDE_DIRECTORIES -- "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
-  include_directories(${CMAKE_CURRENT_LIST_DIR}
-                      ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
-                      ${TBB_INCLUDE_DIRS}
-                      "${CMAKE_SOURCE_DIR}/src")
-
   CUDA_ADD_LIBRARY(CCTag ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
+
+  target_include_directories(CCTag
+          PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
+          "$<BUILD_INTERFACE:${generated_dir}>"
+          "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>"
+          PUBLIC ${OpenCV_INCLUDE_DIRS}
+          PRIVATE ${TBB_INCLUDE_DIRS})
 
   # since we used CUDA_ADD_LIBRARY we cannot use PUBLIC or PRIVATE here
   target_link_libraries(CCTag
@@ -101,7 +96,7 @@ if(CCTAG_WITH_CUDA)
                        Eigen3::Eigen
                        ${TBB_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
 
-  if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+  if(NOT MSVC)
    target_link_libraries(CCTag pthread dl)
   endif()
 
@@ -111,18 +106,15 @@ if(CCTAG_WITH_CUDA)
 
   if(CCTAG_HAVE_SHFL_DOWN_SYNC)
     target_compile_definitions(CCTag PRIVATE "-DCCTAG_HAVE_SHFL_DOWN_SYNC")
-  endif(CCTAG_HAVE_SHFL_DOWN_SYNC)
+  endif()
 
   if(CCTAG_NO_THRUST_COPY_IF)
     target_compile_definitions(CCTag PRIVATE "-DCCTAG_NO_THRUST_COPY_IF")
   endif()
 
-  # This is nececessary for the CCTagConfig.cmake to correctly export the
-  # includes, always because we used CUDA_ADD_LIBRARY
-  set_target_properties(CCTag PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-          "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>;$<BUILD_INTERFACE:${generated_dir}>;$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>;${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${OpenCV_INCLUDE_DIRS}")
-  get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
-  message(STATUS "testprop: ${testprop}")
+  # Just for testing
+#  get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
+#  message(STATUS "testprop: ${testprop}")
 
 else() # without CUDA
 
@@ -139,8 +131,9 @@ else() # without CUDA
                            PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS}
                            PRIVATE ${TBB_INCLUDE_DIRS})
 
-  get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
-  message(STATUS "testprop: ${testprop}")
+  # just for testing
+#  get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
+#  message(STATUS "testprop: ${testprop}")
 
   target_compile_definitions(CCTag
                              PRIVATE ${TBB_DEFINITIONS})
