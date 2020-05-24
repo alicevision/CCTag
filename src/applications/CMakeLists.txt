@@ -7,6 +7,16 @@ if(NOT DEFINED BUILD_SHARED_LIBS)
   set(CMAKE_POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
 endif()
 
+# enable -fPIE for executables when -fpic
+# https://cmake.org/cmake/help/v3.17/policy/CMP0083.html
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.14)
+  cmake_policy(SET CMP0083 NEW)
+  include(CheckPIESupported)
+  check_pie_supported()
+elseif(CMAKE_POSITION_INDEPENDENT_CODE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  # manually add the link flag for gcc
+  list(APPEND CMAKE_EXE_LINKER_FLAGS "-pie")
+endif()
 
 #Find needed dependencies
 # CCTAG
