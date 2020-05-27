@@ -47,7 +47,7 @@ $ cmake .. -DOpenCV_DIR=${OPENCV_INSTALL}/share/share/OpenCV/
 $ make -j `nproc`
 ```
 
-For Windows you will need to add `-DCCTAG_WITH_CUDA:BOOL=OFF` as CUDA support is not yet working on Windows. You will most likely also need to generate build files for NMAKE or Visual Studio, and build with those tools.
+Use `-DCCTAG_WITH_CUDA:BOOL=ON` to enable (default) or disable the cuda support. On Windows, it must be set to `OFF` if the Eigen version is < 3.3.9
 
 If you want to install the library to, say, a CCTAG_INSTALL path, just add `-DCMAKE_INSTALL_PREFIX=$CCTAG_INSTALL` at cmake command line.
 If you want to build CCTag as a shared library: `-DBUILD_SHARED_LIBS=ON`.
