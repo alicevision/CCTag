@@ -43,8 +43,8 @@ Building
 See [INSTALL](INSTALL.md) text file.
 
 Continuous integration:
- - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=master)](https://travis-ci.org/alicevision/CCTag) master branch.
- - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=develop)](https://travis-ci.org/alicevision/CCTag) develop branch.
+ - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=master)](https://travis-ci.org/alicevision/CCTag) [![Build status](https://ci.appveyor.com/api/projects/status/909b01qlixwslvmf?svg=true)](https://ci.appveyor.com/project/AliceVision/cctag) master branch.
+ - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=develop)](https://travis-ci.org/alicevision/CCTag) [![Build status](https://ci.appveyor.com/api/projects/status/909b01qlixwslvmf/branch/develop?svg=true)](https://ci.appveyor.com/project/AliceVision/cctag/branch/develop)
 
 Running
 -------
