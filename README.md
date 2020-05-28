@@ -58,7 +58,7 @@ For the library interface, see [ICCTag.hpp](src/cctag/ICCTag.hpp).
 License
 -------
 
-CCTag is licensed under [MPL v2 license](LICENSE.md).
+CCTag is licensed under [MPL v2 license](COPYING.md).
 
 Authors
 -------
