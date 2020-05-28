@@ -22,7 +22,7 @@ $ git clone https://github.com/alicevision/CCTag.git
 
 Most of the dependencies can be installed from the common repositories (apt, yum etc):
 
-- Eigen3 (libeigen3-dev)
+- Eigen3 (libeigen3-dev) >= 3.3.4  (NOTE: in order to have Cuda support on Windows, at least version 3.3.9 is required)
 - Boost >= 1.66 ([accumulators, atomic, chrono, core, date-time, exception, filesystem, math, program-options, ptr-container, system, serialization, stacktrace, timer, thread]-dev)
 - OpenCV >= 3.1
 - TBB >= 4.0
@@ -46,6 +46,8 @@ $ mkdir build && cd build
 $ cmake .. -DOpenCV_DIR=${OPENCV_INSTALL}/share/share/OpenCV/
 $ make -j `nproc`
 ```
+
+Use `-DCCTAG_WITH_CUDA:BOOL=ON` to enable (default) or disable the cuda support. On Windows, it must be set to `OFF` if the Eigen version is < 3.3.9
 
 If you want to install the library to, say, a CCTAG_INSTALL path, just add `-DCMAKE_INSTALL_PREFIX=$CCTAG_INSTALL` at cmake command line.
 If you want to build CCTag as a shared library: `-DBUILD_SHARED_LIBS=ON`.
