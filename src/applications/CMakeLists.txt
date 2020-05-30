@@ -3,6 +3,8 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
   cmake_minimum_required(VERSION 3.13)
   project(CCTagApplications LANGUAGES CXX VERSION 1.0.0)
   include(GNUInstallDirs)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 endif()
 
 # if this is used as a stand-alone project we need to tell whether to use PIC
