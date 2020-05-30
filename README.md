@@ -43,6 +43,7 @@ Building
 See [INSTALL](INSTALL.md) text file.
 
 Continuous integration:
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a99505cea4bd4cd195b9b65b6114ee90)](https://app.codacy.com/manual/alicevision/CCTag?utm_source=github.com&utm_medium=referral&utm_content=alicevision/CCTag&utm_campaign=Badge_Grade_Dashboard)
  - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=master)](https://travis-ci.org/alicevision/CCTag) [![Build status](https://ci.appveyor.com/api/projects/status/909b01qlixwslvmf?svg=true)](https://ci.appveyor.com/project/AliceVision/cctag) master branch.
  - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=develop)](https://travis-ci.org/alicevision/CCTag) [![Build status](https://ci.appveyor.com/api/projects/status/909b01qlixwslvmf/branch/develop?svg=true)](https://ci.appveyor.com/project/AliceVision/cctag/branch/develop) develop branch.
 
