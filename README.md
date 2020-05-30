@@ -1,6 +1,6 @@
 CCTag library
 ===================
-
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3989/badge)](https://bestpractices.coreinfrastructure.org/projects/3989) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/a99505cea4bd4cd195b9b65b6114ee90)](https://www.codacy.com/manual/alicevision/CCTag?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=alicevision/CCTag&amp;utm_campaign=Badge_Grade)
 
 Detection of CCTag markers made up of concentric circles. Implementations in both CPU and GPU.
 
