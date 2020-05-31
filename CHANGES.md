@@ -17,8 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - YYYY-MM-DD
 
- - Support for cuda 9 and 10
- - Support for Windows
+ - Support for OpenCV 3.4.9 [PR](https://github.com/alicevision/CCTag/pull/121)
 
 
 ## 2019
