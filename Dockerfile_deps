@@ -1,0 +1,99 @@
+ARG CUDA_TAG=10.2
+ARG OS_TAG=18.04
+FROM nvidia/cuda:${CUDA_TAG}-devel-ubuntu${OS_TAG}
+LABEL maintainer="AliceVision Team alicevision@googlegroups.com"
+
+# use CUDA_TAG to select the image version to use
+# see https://hub.docker.com/r/nvidia/cuda/
+#
+# For example, to create a ubuntu 16.04 with cuda 8.0 for development, use
+# docker build --build-arg CUDA_TAG=8.0 --tag alicevision/cctag-deps:cuda${CUDA_TAG}-ubuntu${OS_TAG} -f Dockerfile_deps .
+#
+# then execute with nvidia docker (https://github.com/nvidia/nvidia-docker/wiki/Installation-(version-2.0))
+# docker run -it --runtime=nvidia cctag_deps
+
+
+# OS/Version (FILE): cat /etc/issue.net
+# Cuda version (ENV): $CUDA_VERSION
+
+# System update
+RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends \
+                build-essential \
+                wget \
+                unzip \
+                yasm \
+                libtool \
+                nasm \
+                automake \
+                libpng-dev \
+                libjpeg-dev \
+                ffmpeg \
+                libssl-dev \
+                libavcodec-dev \
+                libavformat-dev \
+                libswscale-dev \
+                libavresample-dev \
+                libtbb-dev \
+        && rm -rf /var/lib/apt/lists/*
+
+ENV DEPS_INSTALL_PATH="/opt"
+ 
+# Manually install cmake
+WORKDIR /tmp/cmake
+ENV CMAKE_VERSION=3.17
+ENV CMAKE_VERSION_FULL=${CMAKE_VERSION}.2
+RUN wget https://cmake.org/files/v3.17/cmake-${CMAKE_VERSION_FULL}.tar.gz && \
+    tar zxf cmake-${CMAKE_VERSION_FULL}.tar.gz && \
+    cd cmake-${CMAKE_VERSION_FULL} && \
+    ./bootstrap --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && \
+    make -j$(nproc) install && \
+    cd /tmp && \
+    rm -rf cmake
+
+
+ENV BOOST_VERSION="1.70.0"
+ENV BOOST_VERSION_FILENAME="1_70_0"
+WORKDIR /tmp/boost
+RUN wget https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_FILENAME}.tar.gz && \
+    tar -xzf boost_${BOOST_VERSION_FILENAME}.tar.gz && \
+    cd boost_${BOOST_VERSION_FILENAME} && \
+    ./bootstrap.sh --with-libraries=atomic,container,date_time,exception,filesystem,graph,log,math,program_options,regex,serialization,system,test,thread,stacktrace,timer --prefix="${DEPS_INSTALL_PATH}" && \
+    ./b2 link=shared install && \
+    cd /opt && \
+    rm -rf /tmp/boost
+
+WORKDIR /tmp/eigen
+ENV EIGEN_VERSION="3.3.7"
+RUN wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/${EIGEN_VERSION}.tar.gz && \
+    mkdir eigen-${EIGEN_VERSION} && tar xf ${EIGEN_VERSION}.tar.gz -C eigen-${EIGEN_VERSION} --strip-components 1 && \
+    cd eigen-${EIGEN_VERSION} && \
+    mkdir build && \
+    cd build && \
+    cmake .. -DCMAKE_INSTALL_PREFIX:PATH=${DEPS_INSTALL_PATH} && \
+    make install -j$(nproc) && \
+    cd /opt && \
+    rm -rf /tmp/eigen
+
+# install opencv
+ENV OPENCV_VERSION="3.4.10"
+WORKDIR /tmp/opencv
+RUN  wget https://github.com/opencv/opencv/archive/"${OPENCV_VERSION}".zip && \
+     unzip ${OPENCV_VERSION}.zip && \
+     mkdir -p ./opencv-${OPENCV_VERSION}/build && \
+     cd ./opencv-${OPENCV_VERSION}/build && \
+     cmake -DBUILD_TIFF:BOOL=ON \
+      -DBUILD_opencv_java:BOOL=OFF \
+      -DWITH_CUDA:BOOL=OFF \
+      -DENABLE_AVX:BOOL=ON \
+      -DWITH_OPENGL:BOOL=ON \
+      -DWITH_IPP:BOOL=ON \
+      -DWITH_TBB:BOOL=ON \
+      -DWITH_EIGEN:BOOL=ON \
+      -DWITH_V4L:BOOL=ON \
+      -DBUILD_TESTS:BOOL=OFF \
+      -DBUILD_PERF_TESTS:BOOL=OFF \
+      -DCMAKE_INSTALL_PREFIX:PATH=${DEPS_INSTALL_PATH} \
+      -DCMAKE_BUILD_TYPE=RELEASE  .. && \
+    make -j$(nproc) install && \
+    cd /opt && \
+    rm -r /tmp/opencv
