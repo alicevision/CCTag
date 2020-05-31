@@ -16,7 +16,7 @@ LABEL maintainer="AliceVision Team alicevision@googlegroups.com"
 
 COPY . /opt/cctag
 WORKDIR /opt/cctag/build
-RUN cmake .. -DWITH_CUDA:BOOL=ON \
+RUN cmake .. -DCCTAG_WITH_CUDA:BOOL=ON \
        -DCMAKE_BUILD_TYPE=Release \
        -DBUILD_SHARED_LIBS:BOOL=ON \
        -DCMAKE_PREFIX_PATH:PATH=/opt/ && make install -j$(nproc)
