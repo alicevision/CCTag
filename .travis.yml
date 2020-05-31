@@ -10,7 +10,6 @@ addons:
     packages:
       - g++-4.8
       - clang-3.8
-      - libeigen3-dev
       - libpng-dev
       - libjpeg8-dev
       - libtiff4-dev

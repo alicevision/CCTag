@@ -1,6 +1,6 @@
 CCTag library
 ===================
-
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3989/badge)](https://bestpractices.coreinfrastructure.org/projects/3989) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/a99505cea4bd4cd195b9b65b6114ee90)](https://www.codacy.com/manual/alicevision/CCTag?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=alicevision/CCTag&amp;utm_campaign=Badge_Grade)
 
 Detection of CCTag markers made up of concentric circles. Implementations in both CPU and GPU.
 
@@ -43,8 +43,8 @@ Building
 See [INSTALL](INSTALL.md) text file.
 
 Continuous integration:
- - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=master)](https://travis-ci.org/alicevision/CCTag) master branch.
- - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=develop)](https://travis-ci.org/alicevision/CCTag) develop branch.
+ - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=master)](https://travis-ci.org/alicevision/CCTag) [![Build status](https://ci.appveyor.com/api/projects/status/909b01qlixwslvmf?svg=true)](https://ci.appveyor.com/project/AliceVision/cctag) master branch.
+ - [![Build Status](https://travis-ci.org/alicevision/CCTag.svg?branch=develop)](https://travis-ci.org/alicevision/CCTag) [![Build status](https://ci.appveyor.com/api/projects/status/909b01qlixwslvmf/branch/develop?svg=true)](https://ci.appveyor.com/project/AliceVision/cctag/branch/develop) develop branch.
 
 Running
 -------
@@ -58,7 +58,7 @@ For the library interface, see [ICCTag.hpp](src/cctag/ICCTag.hpp).
 License
 -------
 
-CCTag is licensed under [MPL v2 license](LICENSE.md).
+CCTag is licensed under [MPL v2 license](COPYING.md).
 
 Authors
 -------

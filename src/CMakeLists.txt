@@ -1,6 +1,6 @@
-# IF(COMMAND cmake_policy)
-cmake_policy(SET CMP0054 OLD) # behaviour keywords in CMake if tests
-# ENDIF(COMMAND cmake_policy)
+
+# build directory containing the generated files
+set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 set( CCTag_cpp
         ./cctag/Bresenham.cpp
@@ -36,6 +36,58 @@ set( CCTag_cpp
         ./cctag/utils/LogTime.cpp
         ./cctag/utils/Talk.cpp
         ./cctag/utils/VisualDebug.cpp)
+
+set( CCTag_HEADERS
+        ./cctag/Bresenham.hpp
+        ./cctag/CCTag.hpp
+        ./cctag/CCTagFlowComponent.hpp
+        ./cctag/CCTagMarkersBank.hpp
+        ./cctag/Candidate.hpp
+        ./cctag/Canny.hpp
+        ./cctag/Colors.hpp
+        ./cctag/DataSerialization.hpp
+        ./cctag/Detection.hpp
+        ./cctag/EdgePoint.hpp
+        ./cctag/EllipseGrowing.hpp
+        ./cctag/Fitting.hpp
+        ./cctag/ICCTag.hpp
+        ./cctag/Identification.hpp
+        ./cctag/ImageCut.hpp
+        ./cctag/ImagePyramid.hpp
+        ./cctag/Level.hpp
+        ./cctag/Multiresolution.hpp
+        ./cctag/Params.hpp
+        ./cctag/Statistic.hpp
+        ./cctag/SubPixEdgeOptimizer.hpp
+        ./cctag/Types.hpp
+        ./cctag/Vote.hpp
+        ./cctag/algebra/matrix/Operation.hpp
+        ./cctag/filter/cvRecode.hpp
+        ./cctag/filter/thinning.hpp
+        ./cctag/geometry/2DTransform.hpp
+        ./cctag/geometry/Circle.hpp
+        ./cctag/geometry/Distance.hpp
+        ./cctag/geometry/Ellipse.hpp
+        ./cctag/geometry/EllipseFromPoints.hpp
+        ./cctag/geometry/Point.hpp
+        ./cctag/optimization/conditioner.hpp
+        ./cctag/utils/Debug.hpp
+        ./cctag/utils/Defines.hpp
+        ./cctag/utils/Exceptions.hpp
+        ./cctag/utils/FileDebug.hpp
+        ./cctag/utils/LogTime.hpp
+        ./cctag/utils/Release.hpp
+        ./cctag/utils/Singleton.hpp
+        ./cctag/utils/Talk.hpp
+        ./cctag/utils/VisualDebug.hpp
+        ./cctag/utils/pcg_extras.hpp
+        ./cctag/utils/pcg_random.hpp
+        ./cctag/utils/pcg_uint128.hpp
+        )
+
+set(CUDA_cpp "")
+set(CUDA_cu "")
+set(CUDA_HEADERS "")
 
 if(CCTAG_WITH_CUDA)
 
@@ -77,11 +129,34 @@ if(CCTAG_WITH_CUDA)
         ./cctag/cuda/tag_threads.cu
         ./cctag/cuda/triple_point.cu)
 
-  # add_definitions("-DSM_TARGETS=-gencode=arch=compute_52,code=\"sm_52,compute_52\"")
+  set(CUDA_HEADERS
+          ./cctag/cuda/assist.h
+          ./cctag/cuda/cctag_cuda_runtime.h
+          ./cctag/cuda/clamp.h
+          ./cctag/cuda/cmp_list.h
+          ./cctag/cuda/debug_image.h
+          ./cctag/cuda/debug_is_on_edge.h
+          ./cctag/cuda/debug_macros.hpp
+          ./cctag/cuda/device_prop.hpp
+          ./cctag/cuda/edge_list.h
+          ./cctag/cuda/frame.h
+          ./cctag/cuda/frame_07_vote.h
+          ./cctag/cuda/framemeta.h
+          ./cctag/cuda/frameparam.h
+          ./cctag/cuda/geom_ellipse.h
+          ./cctag/cuda/geom_matrix.h
+          ./cctag/cuda/keep_time.hpp
+          ./cctag/cuda/nearby_point.h
+          ./cctag/cuda/onoff.h
+          ./cctag/cuda/pinned_counters.h
+          ./cctag/cuda/ptrstep.h
+          ./cctag/cuda/recursive_sweep.h
+          ./cctag/cuda/tag.h
+          ./cctag/cuda/tag_cut.h
+          ./cctag/cuda/tag_threads.h
+          ./cctag/cuda/triple_point.h
+          )
 
-  # set(CUDA_SEPARABLE_COMPILATION ON)
-  # set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
-  # set(BUILD_SHARED_LIBS ON)
 
   set(CUDA_NVCC_FLAGS  "${CUDA_NVCC_FLAGS}")
 
@@ -90,9 +165,9 @@ if(CCTAG_WITH_CUDA)
   # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA.cmake#L147
   # INCLUDE_DIRECTORIES -- "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
   include_directories(${CMAKE_CURRENT_LIST_DIR}
-                      ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
-		      ${TBB_INCLUDE_DIRS}
-                      "${CMAKE_SOURCE_DIR}/src")
+          ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
+          ${TBB_INCLUDE_DIRS}
+          "${CMAKE_SOURCE_DIR}/src")
 
   CUDA_ADD_LIBRARY(CCTag ${CUDA_cpp} ${CUDA_cu} ${CCTag_cpp})
 
@@ -100,10 +175,10 @@ if(CCTAG_WITH_CUDA)
   target_link_libraries(CCTag
                        ${OpenCV_LIBS}
                        Boost::date_time Boost::chrono Boost::thread Boost::serialization Boost::system Boost::filesystem Boost::atomic Boost::program_options Boost::timer
-                       ${Eigen_LIBRARIES}
+                       Eigen3::Eigen
                        ${TBB_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
 
-  if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+  if(NOT MSVC)
    target_link_libraries(CCTag pthread dl)
   endif()
 
@@ -113,22 +188,22 @@ if(CCTAG_WITH_CUDA)
 
   if(CCTAG_HAVE_SHFL_DOWN_SYNC)
     target_compile_definitions(CCTag PRIVATE "-DCCTAG_HAVE_SHFL_DOWN_SYNC")
-  endif(CCTAG_HAVE_SHFL_DOWN_SYNC)
+  endif()
 
   if(CCTAG_NO_THRUST_COPY_IF)
     target_compile_definitions(CCTag PRIVATE "-DCCTAG_NO_THRUST_COPY_IF")
   endif()
 
+
   # This is nececessary for the CCTagConfig.cmake to correctly export the
   # includes, always because we used CUDA_ADD_LIBRARY
   set_target_properties(CCTag PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-       "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>;${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${Eigen_INCLUDE_DIR};${OpenCV_INCLUDE_DIRS}")
-  get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
-  message(STATUS "testprop: ${testprop}")
+          "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>;$<BUILD_INTERFACE:${generated_dir}>;$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>;${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${OpenCV_INCLUDE_DIRS}")
+  # Just for testing
+#  get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
+#  message(STATUS "testprop: ${testprop}")
 
 else() # without CUDA
-
-  set(CUDA_cpp "")
 
   message( STATUS "Declare CCTag library" )
   add_library(CCTag ${CCTag_cpp})
@@ -136,12 +211,14 @@ else() # without CUDA
 
   target_include_directories(CCTag
                            PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
-                                  "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>"
-                           PUBLIC ${Boost_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS}
+                                  "$<BUILD_INTERFACE:${generated_dir}>"
+                                  "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>"
+                           PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS}
                            PRIVATE ${TBB_INCLUDE_DIRS})
 
-  get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
-  message(STATUS "testprop: ${testprop}")
+  # just for testing
+#  get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
+#  message(STATUS "testprop: ${testprop}")
 
   target_compile_definitions(CCTag
                              PRIVATE ${TBB_DEFINITIONS})
@@ -149,7 +226,7 @@ else() # without CUDA
   target_link_libraries(CCTag
                         PUBLIC
                           ${OpenCV_LIBS}
-                          ${Eigen_LIBRARIES}
+                          Eigen3::Eigen
                           Boost::atomic Boost::chrono Boost::date_time Boost::filesystem Boost::serialization Boost::system Boost::thread Boost::timer
                         PRIVATE
                           ${TBB_LIBRARIES})
@@ -176,23 +253,26 @@ endif(CCTAG_NO_COUT)
 if(CCTAG_VISUAL_DEBUG)
   target_compile_definitions(CCTag PRIVATE "-DCCTAG_VISUAL_DEBUG")
 endif(CCTAG_VISUAL_DEBUG)
+if(CCTAG_EIGEN_NO_ALIGN)
+  target_compile_definitions(CCTag PUBLIC ${AV_EIGEN_DEFINITIONS})
+endif()
+
+set_target_properties(CCTag PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(CCTag PROPERTIES DEBUG_POSTFIX "d")
 
 
 # EXPORTING THE LIBRARY
 #
 # place to put the cmake-related files
-set(config_install_dir "lib/cmake/${PROJECT_NAME}")
+set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 # include directory for install
-set(include_install_dir "include")
+set(include_install_dir "${CMAKE_INSTALL_INCLUDEDIR}")
 # the name for the generated config.hpp
-set(confighpp_name "cctag_config.hpp")
+set(cctag_config_header_name "${generated_dir}/cctag/cctag_config.hpp")
 # the name for the generated header version file
-set(versionhpp_name "version.hpp")
+set(cctag_version_header_name "${generated_dir}/cctag/version.hpp")
 # where to install the generated files
 set(install_dir_generated "${include_install_dir}/cctag")
-
-# build directory containing the generated files
-set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 # Configuration
 set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
@@ -216,10 +296,10 @@ configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in"
                               INSTALL_DESTINATION "${config_install_dir}")
 
 # config file
-configure_file("${PROJECT_SOURCE_DIR}/cmake/config.hpp.in" ${generated_dir}/${confighpp_name} @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/cmake/config.hpp.in" ${cctag_config_header_name} @ONLY)
 
 # version file
-configure_file("${PROJECT_SOURCE_DIR}/cmake/version.hpp.in" ${generated_dir}/${versionhpp_name} @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/cmake/version.hpp.in" ${cctag_version_header_name} @ONLY)
 
 # Targets:
 #   * <prefix>/lib/libCCTag.a
@@ -227,30 +307,21 @@ configure_file("${PROJECT_SOURCE_DIR}/cmake/version.hpp.in" ${generated_dir}/${v
 #   * headers can be included by C++ code `#include <popsift/popsift.h>`
 install(TARGETS CCTag
         EXPORT "${targets_export_name}"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib"
-        RUNTIME DESTINATION "bin"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
         INCLUDES DESTINATION "${include_install_dir}")
 
 # Headers:
-
-
-if(CCTAG_WITH_CUDA)
-  install(DIRECTORY "cctag"
-          DESTINATION "${include_install_dir}"
-          FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
-else()
-  install(DIRECTORY "cctag"
-          DESTINATION "${include_install_dir}"
-          FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
-          PATTERN "cuda/*" EXCLUDE)
-endif()
+include(cctagHelper)
+cctag_install_headers(PUBLIC_HEADERS ${CCTag_HEADERS} ${CUDA_HEADERS}
+        INSTALL_FOLDER ${include_install_dir})
 
 # install the config and version generated files
-install( FILES "${generated_dir}/${confighpp_name}"
+install( FILES "${cctag_config_header_name}"
     DESTINATION "${install_dir_generated}")
 
-install( FILES "${generated_dir}/${versionhpp_name}"
+install( FILES "${cctag_version_header_name}"
     DESTINATION "${install_dir_generated}")
 
 # install cmake config files
@@ -266,11 +337,14 @@ install(EXPORT "${targets_export_name}"
         NAMESPACE "${namespace}"
         DESTINATION "${config_install_dir}")
 
-if(BUILD_APPS)
+# Generate ${PROJECT_NAME}Targets.cmake in the build directory to use the library without installing it
+export(TARGETS CCTag FILE "${generated_dir}/${targets_export_name}.cmake")
+
+if(CCTAG_BUILD_APPS)
   add_subdirectory(applications)
 endif()
 
-if(BUILD_TESTS)
+if(CCTAG_BUILD_TESTS)
     add_subdirectory(cctag/test)
     add_subdirectory(cctag/geometry/test)
 endif()
