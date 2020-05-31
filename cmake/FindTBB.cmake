@@ -170,7 +170,7 @@ if(NOT TBB_FOUND)
   ##################################
 
   # Find each component
-  foreach(_comp tbb_preview tbbmalloc tbb)
+  foreach(_comp tbb tbb_preview tbbmalloc)
     # Search for the libraries
     find_library(TBB_${_comp}_LIBRARY_RELEASE ${_comp}
         HINTS ${TBB_LIBRARY} ${TBB_SEARCH_DIR}

@@ -7,23 +7,68 @@ include(ExternalProject)
 
 project(CCTag VERSION 1.0.0 LANGUAGES C CXX)
 
+# Set build path as a folder named as the platform (linux, windows, darwin...) plus the processor type
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+
+include(GNUInstallDirs)
+
 #CMakeDependentOption
 option(CCTAG_SERIALIZE "Store all the output" OFF)
 option(CCTAG_VISUAL_DEBUG "Enable visual debug" OFF)
 option(CCTAG_NO_COUT "Disable output stream" ON)
 option(CCTAG_WITH_CUDA "Compile the library with CUDA support" ON)
-option(BUILD_APPS "Build the sample applications" ON)
+option(CCTAG_BUILD_APPS "Build the sample applications" ON)
 option(CCTAG_CUDA_CC_CURRENT_ONLY "Set to on to build only for the current machine's CC" OFF)
 option(CCTAG_NVCC_WARNINGS "Switch on several additional warnings for CUDA nvcc." OFF)
+option(CCTAG_EIGEN_NO_ALIGN "Disable Eigen alignment" ON)
 
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
-option(BUILD_TESTS "Build the unity tests" ON)
+option(CCTAG_BUILD_TESTS "Build the unity tests" ON)
 option(CCTAG_NO_THRUST_COPY_IF "Do not use thrust::copy_if() on GPU. There may be a bug on CUDA 7 with GTX 980, 980Ti and 1080" OFF)
 
-if(NOT CMAKE_BUILD_TYPE AND NOT MSVC)
-  set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
+
+# set(CMAKE_BUILD_TYPE Debug)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release)
+  message(STATUS "Build type not set, building in Release configuration")
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+else()
+  message(STATUS "Building in ${CMAKE_BUILD_TYPE} configuration")
 endif()
+
+# ensure the proper linker flags when building the static version on MSVC
+if(MSVC AND NOT BUILD_SHARED_LIBS)
+  foreach(config "DEBUG" "RELEASE" "MINSIZEREL" "RELWITHDEBINFO")
+    string(REPLACE /MD /MT CMAKE_C_FLAGS_${config} "${CMAKE_C_FLAGS_${config}}")
+    string(REPLACE /MD /MT CMAKE_CXX_FLAGS_${config} "${CMAKE_CXX_FLAGS_${config}}")
+    message(STATUS "CMAKE_C_FLAGS_${config} ${CMAKE_C_FLAGS_${config}}")
+    message(STATUS "CMAKE_CXX_FLAGS_${config} ${CMAKE_CXX_FLAGS_${config}}")
+  endforeach()
+endif()
+
+# this is to ensure that on MSVC the flags for the linker are properly propagate even to the intermediate
+# linking step. This seems not the case e.g. on vcpkg using ninja build.
+if(MSVC AND CMAKE_GENERATOR MATCHES "Ninja")
+  if(BUILD_SHARED_LIBS)
+    set(CCTAG_MVSC_LINKER "/MD")
+  else()
+    set(CCTAG_MVSC_LINKER "/MT")
+  endif()
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+      set(CCTAG_MVSC_LINKER "${CCTAG_MVSC_LINKER}d")
+  endif()
+  list(APPEND CUDA_NVCC_FLAGS   -Xcompiler ${CCTAG_MVSC_LINKER})
+endif()
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
 
 if(CCTAG_ENABLE_SIMD_AVX2)
   if(CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
@@ -36,14 +81,13 @@ if(CCTAG_ENABLE_SIMD_AVX2)
   message(STATUS "CCTAG: AVX2 optimizations enabled.")
 endif()
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+if(MSVC)
   add_definitions(/EHsc)  # Enable Exception Handling
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(CMAKE_POSITION_INDEPENDENT_CODE ${CCTAG_USE_POSITION_INDEPENDENT_CODE})
+if(NOT MSVC)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ${CCTAG_USE_POSITION_INDEPENDENT_CODE})
+endif()
 
 
 # set the path where we can find the findXXX.cmake
@@ -77,7 +121,7 @@ else()
   set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_basic")
 endif()
 
-if(BUILD_TESTS)
+if(CCTAG_BUILD_TESTS)
   set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};unit_test_framework")
   enable_testing()
   include(BoostTestHelper)
@@ -140,20 +184,22 @@ if(CCTAG_WITH_CUDA)
   CUDA_SELECT_NVCC_ARCH_FLAGS(ARCH_FLAGS ${CCTAG_CUDA_CC_LIST_BASIC})
   LIST(APPEND CUDA_NVCC_FLAGS ${ARCH_FLAGS})
 
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
+  if(NOT MSVC)
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
+  endif()
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
 
-  if(CCTAG_USE_POSITION_INDEPENDENT_CODE)
+  if(CCTAG_USE_POSITION_INDEPENDENT_CODE AND NOT MSVC)
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xcompiler;-fPIC")
   endif()
 
-  CCTAG_CHECK_NVCC_COMPILER_FLAG("--relaxed-constexpr" HAS_NVCC_RELAXED_CONSTEXPR)
-  if(HAS_NVCC_RELAXED_CONSTEXPR)
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--relaxed-constexpr")
+  CCTAG_CHECK_NVCC_COMPILER_FLAG("--expt-relaxed-constexpr" HAS_NVCC_EXPT_RELAXED_CONSTEXPR)
+  if(HAS_NVCC_EXPT_RELAXED_CONSTEXPR)
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--expt-relaxed-constexpr")
   else()
-    CCTAG_CHECK_NVCC_COMPILER_FLAG("--expt-relaxed-constexpr" HAS_NVCC_EXPT_RELAXED_CONSTEXPR)
-    if(HAS_NVCC_EXPT_RELAXED_CONSTEXPR)
-      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--expt-relaxed-constexpr")
+    CCTAG_CHECK_NVCC_COMPILER_FLAG("--relaxed-constexpr" HAS_NVCC_RELAXED_CONSTEXPR)
+    if(HAS_NVCC_RELAXED_CONSTEXPR)
+      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--relaxed-constexpr")
     endif()
   endif()
 
@@ -177,19 +223,54 @@ endif(CCTAG_WITH_CUDA)
 find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
 
 # FIND Eigen
-find_package(Eigen REQUIRED)
+set(CCTAG_EIGEN_REQUIRED_VERSION 3.3.4)
+if(MSVC AND CCTAG_WITH_CUDA)
+  set(CCTAG_EIGEN_REQUIRED_VERSION 3.3.9)
+  message(WARNING "Building CCTag with Cuda support under windows requires Eigen >= ${CCTAG_EIGEN_REQUIRED_VERSION}")
+endif()
+find_package(Eigen3 ${CCTAG_EIGEN_REQUIRED_VERSION} REQUIRED)
+message(STATUS "Found Eigen: version ${Eigen3_VERSION}")
+if(CCTAG_EIGEN_NO_ALIGN)
+  set(AV_EIGEN_DEFINITIONS -DEIGEN_MAX_ALIGN_BYTES=0 -DEIGEN_MAX_STATIC_ALIGN_BYTES=0)
+endif()
 
 # FIND Intel TBB
 # With MVSC, CMAKE_BUILD_TYPE will always be None, so TBB_USE_DEBUG_BUILD will always be false.
 string(COMPARE EQUAL "${CMAKE_BUILD_TYPE}" Debug TBB_USE_DEBUG_BUILD)
-find_package(TBB 4 REQUIRED)
+find_package(TBB REQUIRED)
 
 add_subdirectory(src)
 
 ########### Add uninstall target ###############
-CONFIGURE_FILE(
+configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake"
   IMMEDIATE @ONLY)
-ADD_CUSTOM_TARGET(uninstall
+add_custom_target(cctag_uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake")
+
+
+######################################
+# SUMMARY
+######################################
+message("\n")
+message("******************************************")
+message("Building configuration:\n")
+message(STATUS "CCTag version: " ${PROJECT_VERSION})
+message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
+message(STATUS "Build Shared libs: " ${BUILD_SHARED_LIBS})
+message(STATUS "Build applications: " ${CCTAG_BUILD_APPS})
+message(STATUS "Build tests: " ${CCTAG_BUILD_TESTS})
+message(STATUS "Cuda support: " ${CCTAG_WITH_CUDA})
+if(CCTAG_WITH_CUDA)
+  message(STATUS "Compiling for CUDA CCs: ${ARCH_FLAGS}")
+endif()
+message(STATUS "Disable Eigen alignment: " ${CCTAG_EIGEN_NO_ALIGN})
+message(STATUS "Enable AVX2 optimizations: " ${CCTAG_ENABLE_SIMD_AVX2})
+message(STATUS "[debug] Serialize all the output: " ${CCTAG_SERIALIZE})
+message(STATUS "[debug] Enable visual debug: " ${CCTAG_VISUAL_DEBUG})
+message(STATUS "[debug] Disable output stream: " ${CCTAG_NO_COUT})
+message(STATUS "[debug] nvcc additional warnings: " ${CCTAG_NVCC_WARNINGS})
+message(STATUS "Install path: " ${CMAKE_INSTALL_PREFIX})
+message("\n******************************************")
+message("\n")
