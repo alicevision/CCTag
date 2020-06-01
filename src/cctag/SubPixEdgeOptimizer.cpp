@@ -11,11 +11,6 @@
 #include <cctag/utils/Exceptions.hpp>
 #include <cctag/utils/Defines.hpp>
 
-#ifdef WITH_OPTPP
-#include <OptQNewton.h>
-#include <newmat.h>
-#endif
-
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/pow.hpp>
 

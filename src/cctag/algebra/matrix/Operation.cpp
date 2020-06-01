@@ -9,6 +9,8 @@
 
 #include <Eigen/LU>
 
+#include <cmath>
+
 namespace cctag {
 namespace numerical {
 

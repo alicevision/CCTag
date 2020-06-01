@@ -12,7 +12,7 @@
 
 namespace cctag {
     class TagPipe;
-};
+}
 
 namespace cctag {
 

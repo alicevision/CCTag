@@ -22,7 +22,7 @@ class Circle : public Ellipse
 {
 public:
 
-	Circle() : Ellipse() {}
+	Circle() = default;
 
 	explicit Circle( float r );
 

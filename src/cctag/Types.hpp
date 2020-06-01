@@ -40,7 +40,7 @@ private:
   // These are used only on the CPU.
   std::unique_ptr<unsigned[]> _processedIn;
   std::unique_ptr<unsigned[]> _processedAux;
-  size_t _edgeMapShape[2];
+  size_t _edgeMapShape[2]{};
   
   static_assert(sizeof(unsigned) == 4, "unsigned has wrong size");
   
