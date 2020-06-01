@@ -8,17 +8,12 @@
 #include <cctag/CCTag.hpp>
 #include <cctag/utils/Defines.hpp>
 #include <cctag/DataSerialization.hpp>
-// #include <cctag/algebra/Invert.hpp>
 #include <cctag/geometry/Ellipse.hpp>
 #include <cctag/Statistic.hpp>
 #include <cctag/algebra/matrix/Operation.hpp>
 #include <cctag/geometry/Distance.hpp>
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/geometry/2DTransform.hpp>
-
-#ifdef WITH_CMINPACK
-#include <cminpack.h>
-#endif
 
 #include <opencv2/core/core_c.h>
 
