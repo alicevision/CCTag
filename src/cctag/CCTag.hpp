@@ -112,7 +112,7 @@ public:
   {
   }
 
-  virtual ~CCTag() = default;
+  ~CCTag() override = default;
 
 #ifndef NDEBUG
   void printTag( std::ostream& ostr ) const;
