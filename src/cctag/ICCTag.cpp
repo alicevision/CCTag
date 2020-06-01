@@ -28,7 +28,8 @@ namespace cctag {
  * @param[in] frame A frame number. Can be anything (e.g. 0).
  * @param[in] graySrc Gray scale input image.
  * @param[in] nRings Number of CCTag rings.
- * @param[in] parameterFile Path to a parameter file. If not provided default parameters will be used.
+ * @param[in] durations Optional object to store execution times.
+ * @param[in] parameterFilename Path to a parameter file. If not provided default parameters will be used.
  * @param[in] cctagBankFilename Path to the cctag bank. If not provided, radii will be the ones associated to the CCTags contained in the
  * markersToPrint folder.
  */
