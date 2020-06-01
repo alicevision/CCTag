@@ -25,43 +25,43 @@
 namespace cctag
 {
 
-static const std::size_t kDefaultDistSearch = 30;
-static const std::size_t kDefaultNCrowns  = 3;//4;
-static const std::size_t kDefaultNCircles = 6;//8;
-static const int kDefaultThrGradientMagInVote = 2500;
-static const float kDefaultAngleVoting        = 0.0f;
-static const float kDefaultRatioVoting        = 4.f;
-static const float kDefaultAverageVoteMin        = 0.f;
-static const float kDefaultThrMedianDistanceEllipse = 3.0f;
-static const std::size_t kDefaultMaximumNbSeeds = 500;
-static const std::size_t kDefaultMaximumNbCandidatesLoopTwo = 40;//30;
-static const float kDefaultCannyThrLow      =  0.01f ;//0.002
-static const float kDefaultCannyThrHigh     =  0.04f ;// 0.04
-static const std::size_t kDefaultMinPointsSegmentCandidate =  10;
-static const std::size_t kDefaultMinVotesToSelectCandidate =  3;
-static const float kDefaultThreshRobustEstimationOfOuterEllipse =  30.0f;
-static const float kDefaultEllipseGrowingEllipticHullWidth =  2.3f;
-static const std::size_t kDefaultWindowSizeOnInnerEllipticSegment =  20;
-static const std::size_t kDefaultNumberOfMultiresLayers = 4;
-static const std::size_t kDefaultNumberOfProcessedMultiresLayers = 4;
-static const std::size_t kDefaultNSamplesOuterEllipse = 150;
-static const std::size_t kDefaultNumCutsInIdentStep = 22;//30;//100;//15;
-static const std::size_t kDefaultNumSamplesOuterEdgePointsRefinement = 20;
-static const std::size_t kDefaultCutsSelectionTrials = 500;//10000;
-static const std::size_t kDefaultSampleCutLength = 100;
-static const std::size_t kDefaultImagedCenterNGridSample = 5; // must be odd otherwise the ellipse center will not be included 
-                                                              // in the nearby points.
-static const float kDefaultImagedCenterNeighbourSize = 0.20f;
-static const float kDefaultMinIdentProba = 1e-6f;//1e-6
-static const bool kDefaultUseLMDif = true;
-static const bool kDefaultSearchForAnotherSegment = true;
-static const bool kDefaultWriteOutput = false;
-static const bool kDefaultDoIdentification = true;
-static const uint32_t kDefaultMaxEdges = 20000;
+static constexpr std::size_t kDefaultDistSearch = 30;
+static constexpr std::size_t kDefaultNCrowns = 3;  // 4;
+static constexpr std::size_t kDefaultNCircles = 6; // 8;
+static constexpr int kDefaultThrGradientMagInVote = 2500;
+static constexpr float kDefaultAngleVoting = 0.0f;
+static constexpr float kDefaultRatioVoting = 4.f;
+static constexpr float kDefaultAverageVoteMin = 0.f;
+static constexpr float kDefaultThrMedianDistanceEllipse = 3.0f;
+static constexpr std::size_t kDefaultMaximumNbSeeds = 500;
+static constexpr std::size_t kDefaultMaximumNbCandidatesLoopTwo = 40; // 30;
+static constexpr float kDefaultCannyThrLow = 0.01f;                   // 0.002
+static constexpr float kDefaultCannyThrHigh = 0.04f;                  // 0.04
+static constexpr std::size_t kDefaultMinPointsSegmentCandidate = 10;
+static constexpr std::size_t kDefaultMinVotesToSelectCandidate = 3;
+static constexpr float kDefaultThreshRobustEstimationOfOuterEllipse = 30.0f;
+static constexpr float kDefaultEllipseGrowingEllipticHullWidth = 2.3f;
+static constexpr std::size_t kDefaultWindowSizeOnInnerEllipticSegment = 20;
+static constexpr std::size_t kDefaultNumberOfMultiresLayers = 4;
+static constexpr std::size_t kDefaultNumberOfProcessedMultiresLayers = 4;
+static constexpr std::size_t kDefaultNSamplesOuterEllipse = 150;
+static constexpr std::size_t kDefaultNumCutsInIdentStep = 22; // 30;//100;//15;
+static constexpr std::size_t kDefaultNumSamplesOuterEdgePointsRefinement = 20;
+static constexpr std::size_t kDefaultCutsSelectionTrials = 500; // 10000;
+static constexpr std::size_t kDefaultSampleCutLength = 100;
+///  must be odd otherwise the ellipse center will not be included  in the nearby points.
+static constexpr std::size_t kDefaultImagedCenterNGridSample = 5;
+static constexpr float kDefaultImagedCenterNeighbourSize = 0.20f;
+static constexpr float kDefaultMinIdentProba = 1e-6f; // 1e-6
+static constexpr bool kDefaultUseLMDif = true;
+static constexpr bool kDefaultSearchForAnotherSegment = true;
+static constexpr bool kDefaultWriteOutput = false;
+static constexpr bool kDefaultDoIdentification = true;
+static constexpr uint32_t kDefaultMaxEdges = 20000;
 #ifdef CCTAG_WITH_CUDA
-static const bool kDefaultUseCuda = true;
+static constexpr bool kDefaultUseCuda = true;
 #else
-static const bool kDefaultUseCuda = false;
+static constexpr bool kDefaultUseCuda = false;
 #endif
 
 static const std::string kParamCannyThrLow( "kParamCannyThrLow" );
