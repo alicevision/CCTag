@@ -1,0 +1,19 @@
+API References
+==============
+
+
+Classes
+~~~~~~~
+
+.. doxygenstruct:: cctag::Parameters
+   :members: Parameters, setDebugDir, serialize, setUseCuda
+
+.. doxygenclass:: cctag::CCTag
+   :members:
+
+Functions
+~~~~~~~~~
+.. doxygenfunction:: cctag::cctagDetection(boost::ptr_list<ICCTag> &markers, int pipeId, std::size_t frame, const cv::Mat &graySrc, std::size_t nRings = 3, logtime::Mgmt *durations = nullptr, const std::string &parameterFile = "", const std::string &cctagBankFilename = "")
+
+.. doxygenfunction:: cctag::cctagDetection(boost::ptr_list<ICCTag> &markers, int pipeId, std::size_t frame, const cv::Mat &graySrc, const cctag::Parameters &params, logtime::Mgmt *durations = nullptr, const CCTagMarkersBank *pBank = nullptr)
+
