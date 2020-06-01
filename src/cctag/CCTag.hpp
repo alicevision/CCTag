@@ -43,6 +43,9 @@ namespace cctag
 
 using IdSet = std::vector< std::pair< MarkerID, float >>;
 
+/**
+ * @brief Class modeling the CCTag marker containing the position of the marker in the image, its ID and its status.
+ */
 class CCTag : public ICCTag
 {
 public:
