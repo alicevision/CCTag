@@ -128,7 +128,7 @@ public:
     return _centerImg.y();
   }
   
-  std::size_t nCircles()
+  std::size_t nCircles() const
   {
     return _nCircles;
   }
