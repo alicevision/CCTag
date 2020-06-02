@@ -26,7 +26,7 @@ option(CCTAG_EIGEN_NO_ALIGN "Disable Eigen alignment" ON)
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
 option(CCTAG_BUILD_TESTS "Build the unity tests" ON)
-option(CCTAG_BUILD_DOC "Build documentation" OFF)
+option(CCTAG_BUILD_DOC "Build documentation" ON)
 option(CCTAG_NO_THRUST_COPY_IF "Do not use thrust::copy_if() on GPU. There may be a bug on CUDA 7 with GTX 980, 980Ti and 1080" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
