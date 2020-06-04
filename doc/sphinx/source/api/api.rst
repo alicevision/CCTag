@@ -23,5 +23,8 @@ Functions
 Utility Classes
 ~~~~~~~~~~~~~~~
 
+.. doxygenclass:: cctag::numerical::geometry::Ellipse
+   :members:
+
 .. doxygenstruct:: cctag::logtime::Mgmt
    :members:

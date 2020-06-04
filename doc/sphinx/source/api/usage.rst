@@ -1,11 +1,13 @@
 Library usage
 =============
 
-Detecting the markers requires two main entities:
+Detecting the markers requires three main entities:
 
 * the class :cpp:class:`cctag::CCTag` modeling a single marker
 
 * and the functions :cpp:func:`cctag::cctagDetection()` to process the images and get the list of detected markers.
+
+* the struc :cpp:struct:`cctag::Parameters` that control the detection algorithm through the various parameters that it exposes.
 
 
 Detection
@@ -15,6 +17,7 @@ Here is a minimal sample of code that enable CCTag detection on an image:
 
 .. code-block:: c++
   :linenos:
+  :emphasize-lines: 3,19,20
 
   // set up the parameters
   const std::size_t nCrowns{3};
@@ -38,21 +41,22 @@ Here is a minimal sample of code that enable CCTag detection on an image:
   cctagDetection(markers, pipeId, frameId, graySrc, params);
 
 
+@TODO maybe explain what cuda pipe means
 
-
-:cpp:struct:`cctag::Parameters`
 
 
 Process detected markers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here is a simple example on how to process the detected markers.
+The function :code:`drawMarkers` takes the list of detected markers and it overlay their information on the original image.
 From the list of markers, if the detected marker is valid it draws the center of the marker, its ID and
-the outer ellipse, all in green.
+the outer ellipse :cpp:class:`cctag::numerical::geometry::Ellipse`, all in green.
 If the marker is not valid, draw the center and the ID in red.
 
 .. code-block:: c++
   :linenos:
+  :emphasize-lines: 13
 
   void drawMarkers(const boost::ptr_list<ICCTag>& markers, cv::Mat& image)
   {
