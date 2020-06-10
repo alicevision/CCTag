@@ -7,7 +7,7 @@ Print the markers
 ~~~~~~~~~~~~~~~~~
 
 You can find the pdf of the marker to use in the :code:`markersToPrint` of the project root directory.
-We recommend to print the markers on a hard and flat surface.
+We recommend to print the markers on a hard, flat and non reflective surface.
 
 
 Generate the markers
