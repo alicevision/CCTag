@@ -1,13 +1,36 @@
 Markers usage
 =============
 
+You can find the pdf of the marker to use in the :code:`markersToPrint` of the project root directory.
 
 
 Print the markers
 ~~~~~~~~~~~~~~~~~
 
-You can find the pdf of the marker to use in the :code:`markersToPrint` of the project root directory.
-We recommend to print the markers on a hard, flat and non reflective surface.
+We recommend to print the markers on a hard, flat and matt surface.
+
+The size of the marker can be chosen considering the minimum size of the marker image that can be detected.
+The image of the marker should be roughly no less than 30 pixel of radius for the external ring.
+The size of the actual marker to print can be computed considering the distance of the camera w.r.t the marker, the focal length and the resolution of the image.
+
+To **roughly** estimate the (minimum) radius :math:`R` of the marker to print you can use the formula:
+
+.. math::
+
+   R = \frac{m \, u}{f} d
+
+where:
+
+* :math:`m` is minimum size in pixel for the radius (e.g. 30 pixel)
+
+* :math:`u` is the pixel size in mm (that can be found on the specs of the camera)
+
+* :math:`f` is the focal length in mm
+
+* :math:`d` is the distance between the camera and the marker.
+
+For example, for the marker to have a :math:`m=75` pixels radius using a camera with a pixel size of :math:`u=0.00434` mm and a focal length of :math:`f=24` mm and seeing the marker from a distance of :math:`d=5` m, the estimated radius of the actual marker to print is  :math:`R = \frac{75 * 0.00434}{24} \; 5000 = 67.81` mm.
+
 
 
 Generate the markers
