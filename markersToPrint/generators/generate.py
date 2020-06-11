@@ -5,6 +5,9 @@ import os
 
 import svgwrite
 
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPDF, renderPM
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Generate the svg file for the markers.')
@@ -18,6 +21,12 @@ if __name__ == "__main__":
                         help='the radius of the outer circle (default: %(default)s)')
     parser.add_argument('--addId', action='store_true',
                         help='add the marker id on the top left corner')
+    parser.add_argument('--addCross', action='store_true',
+                        help='add a small cross in the center of the marker')
+    parser.add_argument('--generatePng', action='store_true',
+                        help='also generate a png file')
+    parser.add_argument('--generatePdf', action='store_true',
+                        help='also generate a pdf file')
     parser.add_argument('--whiteBackground', action='store_true',
                         help='set the background (outside the marker) to white instead of transparent')
 
@@ -28,17 +37,17 @@ if __name__ == "__main__":
     scale = args.radius / 100
 
     # size of the image, diameter + margin
-    width = size+args.margin
-    height = size+args.margin
+    width = size + args.margin
+    height = size + args.margin
 
     # id of the first marker
     markerId = 1
 
     # font size for the id
-    font_size = int(0.037*height)
+    font_size = int(0.037 * height)
 
     # center of the marker
-    center = (width/2, height/2)
+    center = (width / 2, height / 2)
 
     radius = args.radius
 
@@ -56,7 +65,8 @@ if __name__ == "__main__":
         for line in f:
 
             # name of the output file
-            out_filename = os.path.join(args.outdir, str(markerId).zfill(4)+'.svg')
+            base_filename = os.path.join(args.outdir, str(markerId).zfill(4))
+            out_filename = base_filename + '.svg'
 
             # create the svg
             dwg = svgwrite.Drawing(out_filename, profile='tiny', size=(width, height))
@@ -67,7 +77,7 @@ if __name__ == "__main__":
                 dwg.add(dwg.text(text=str(markerId), insert=(5, 50), font_size=font_size))
 
             # print the outer circle as black
-            dwg.add(dwg.circle(center=center, r=size/2, fill='black'))
+            dwg.add(dwg.circle(center=center, r=size / 2, fill='black'))
 
             fill_color = 'white'
             count = 0
@@ -76,7 +86,7 @@ if __name__ == "__main__":
             for r in line.split():
                 radius = int(r)
                 # print(r)
-                dwg.add(dwg.circle(center=center, r=scale*radius, fill=fill_color))
+                dwg.add(dwg.circle(center=center, r=scale * radius, fill=fill_color))
                 if fill_color == 'white':
                     fill_color = 'black'
                 else:
@@ -89,6 +99,18 @@ if __name__ == "__main__":
             else:
                 assert count == 7
 
+            if args.addCross:
+                # print a small cross in the center
+                dwg.add(dwg.line(start=(center[0] - 10, center[1]), end=(center[0] + 10, center[1]), stroke="gray"))
+                dwg.add(dwg.line(start=(center[0], center[1] - 10), end=(center[0], center[1] + 10), stroke="gray"))
+
             dwg.save(pretty=True)
+
+            if args.generatePng or args.generatePdf:
+                drawing = svg2rlg(out_filename)
+                if args.generatePdf:
+                    renderPDF.drawToFile(drawing, base_filename + ".pdf")
+                if args.generatePng:
+                    renderPM.drawToFile(drawing, base_filename + ".png", fmt="PNG")
 
             markerId = markerId + 1
