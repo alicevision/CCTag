@@ -8,7 +8,7 @@ The library can efficiently detect the position of the image of the (common) cir
 .. image:: img/cctags-example.png
 
 An example of three different CCTag markers with three crowns.
-Each marker can be uniquely identified thanks to the thickness of each crown, which encodes the information of the marker, typically a unique ID.gi
+Each marker can be uniquely identified thanks to the thickness of each crown, which encodes the information of the marker, typically a unique ID.
 
 The implementation is done in both CPU and GPU (Cuda-enabled cards).
 The GPU implementation can reach real-time performances on full HD images.
