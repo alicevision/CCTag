@@ -9,8 +9,6 @@
 #define	_CCTAG_NUMERICAL_ALGEBRA_OPERATION_HPP_
 
 #include <Eigen/Core>
-#include <cmath>
-#include "../../utils/Exceptions.hpp"
 
 namespace cctag {
 namespace numerical {

@@ -26,6 +26,7 @@ option(CCTAG_EIGEN_NO_ALIGN "Disable Eigen alignment" ON)
 option(CCTAG_USE_POSITION_INDEPENDENT_CODE "Generate position independent code." ON)
 option(CCTAG_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
 option(CCTAG_BUILD_TESTS "Build the unity tests" ON)
+option(CCTAG_BUILD_DOC "Build documentation" OFF)
 option(CCTAG_NO_THRUST_COPY_IF "Do not use thrust::copy_if() on GPU. There may be a bug on CUDA 7 with GTX 980, 980Ti and 1080" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
@@ -241,6 +242,10 @@ find_package(TBB REQUIRED)
 
 add_subdirectory(src)
 
+if(CCTAG_BUILD_DOC)
+ add_subdirectory(doc)
+endif()
+
 ########### Add uninstall target ###############
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
@@ -261,6 +266,7 @@ message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 message(STATUS "Build Shared libs: " ${BUILD_SHARED_LIBS})
 message(STATUS "Build applications: " ${CCTAG_BUILD_APPS})
 message(STATUS "Build tests: " ${CCTAG_BUILD_TESTS})
+message(STATUS "Build documentation: " ${CCTAG_BUILD_DOC})
 message(STATUS "Cuda support: " ${CCTAG_WITH_CUDA})
 if(CCTAG_WITH_CUDA)
   message(STATUS "Compiling for CUDA CCs: ${ARCH_FLAGS}")

@@ -43,6 +43,9 @@ namespace cctag
 
 using IdSet = std::vector< std::pair< MarkerID, float >>;
 
+/**
+ * @brief Class modeling the CCTag marker containing the position of the marker in the image, its ID and its status.
+ */
 class CCTag : public ICCTag
 {
 public:
@@ -112,7 +115,7 @@ public:
   {
   }
 
-  virtual ~CCTag() = default;
+  ~CCTag() override = default;
 
 #ifndef NDEBUG
   void printTag( std::ostream& ostr ) const;
@@ -128,7 +131,7 @@ public:
     return _centerImg.y();
   }
   
-  std::size_t nCircles()
+  std::size_t nCircles() const
   {
     return _nCircles;
   }
@@ -369,9 +372,9 @@ protected:
 
   void setInitRadius()
   {
-    _radiusRatios.resize(_radiusRatiosInit.size());
-    std::copy(_radiusRatiosInit.begin(), _radiusRatiosInit.end(), _radiusRatios.begin());
-    _nCircles = _radiusRatiosInit.size() + 1;
+    _radiusRatios.resize(CCTag::_radiusRatiosInit.size());
+    std::copy(CCTag::_radiusRatiosInit.begin(), CCTag::_radiusRatiosInit.end(), _radiusRatios.begin());
+    _nCircles = CCTag::_radiusRatiosInit.size() + 1;
   }
 
 protected:

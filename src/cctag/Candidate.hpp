@@ -18,7 +18,7 @@ namespace cctag
     
 class Candidate {
 public:
-        Candidate(){}
+        Candidate() = default;
     
 	Candidate( EdgePoint* seed, const std::list<EdgePoint*> & convexEdgeSegment,
 		const std::vector<EdgePoint*> & outerEllipsePoints, const cctag::numerical::geometry::Ellipse & outerEllipse,
@@ -34,14 +34,14 @@ public:
 
 	virtual ~Candidate() = default;
 
-	EdgePoint* _seed;
+	EdgePoint* _seed{};
 	std::list<EdgePoint*> _convexEdgeSegment;
 	std::vector<EdgePoint*> _outerEllipsePoints;
 	cctag::numerical::geometry::Ellipse _outerEllipse;
 	std::vector<EdgePoint*> _filteredChildren;
-	int _score;
-	std::size_t _nLabel;
-        float _averageReceivedVote;
+	int _score{};
+	std::size_t _nLabel{};
+        float _averageReceivedVote{};
         
         
 #ifdef CCTAG_SERIALIZE

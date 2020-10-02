@@ -27,39 +27,37 @@ class EdgePointImage;
 
 /**
  * @brief Perform the CCTag detection on a gray scale image. Cf. application/detection/main.cpp for example of usage.
- * 
- * @param[out] markers Detected markers. WARNING: only markers with status == 1 are valid ones. (status available via getStatus()) 
+ *
+ * @param[out] markers Detected markers. Only markers with status == 1 are valid ones. (status available via
+ * getStatus())
  * @param[in] pipeId Choose one of up to 3 parallel CUDA pipes
  * @param[in] frame A frame number. Can be anything (e.g. 0).
  * @param[in] imgGraySrc Gray scale input image.
  * @param[in] providedParams Contains all the parameters.
  * @param[in] bank CCTag bank.
- * @param[in] bDisplayEllipses No longer used.
+ * @param[in] bDisplayEllipses Optional object to store execution times.
+ * @param[in] durations No longer used.
  */
-void cctagDetection(
-        CCTag::List& markers,
-        int          pipeId,
-        std::size_t frame,
-        const cv::Mat & imgGraySrc,
-        const Parameters & providedParams,
-        const cctag::CCTagMarkersBank & bank,
-        bool bDisplayEllipses = true,
-        logtime::Mgmt* durations = nullptr );
+void cctagDetection(CCTag::List& markers,
+                    int pipeId,
+                    std::size_t frame,
+                    const cv::Mat& imgGraySrc,
+                    const Parameters& providedParams,
+                    const cctag::CCTagMarkersBank& bank,
+                    bool bDisplayEllipses = true,
+                    logtime::Mgmt* durations = nullptr);
 
-void cctagDetectionFromEdges(
-        CCTag::List&            markers,
-        EdgePointCollection& edgeCollection,
-        const cv::Mat&          src,
-        const std::vector<EdgePoint*>& seeds,
-        std::size_t       frame,
-        int pyramidLevel,
-        float scale,
-        const Parameters & providedParams,
-        logtime::Mgmt* durations );
+void cctagDetectionFromEdges(CCTag::List& markers,
+                             EdgePointCollection& edgeCollection,
+                             const cv::Mat& src,
+                             const std::vector<EdgePoint*>& seeds,
+                             std::size_t frame,
+                             int pyramidLevel,
+                             float scale,
+                             const Parameters& providedParams,
+                             logtime::Mgmt* durations);
 
-void createImageForVoteResultDebug(
-        const cv::Mat & src,
-        std::size_t nLevel);
+void createImageForVoteResultDebug(const cv::Mat& src, std::size_t nLevel);
 
 } // namespace cctag
 

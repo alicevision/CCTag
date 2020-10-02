@@ -17,8 +17,9 @@ namespace numerical {
 namespace geometry {
 
 /**
- * It models an ellipse with standard form  x^2/a^2 + y^2/b^2 = 1, centered in center and rotated clock-wise by angle wrt the x-axis.
- * Note that, arbitrarly, the representation with the major axis aligned with the y-axis is chosen.
+ * @brief It models an ellipse with standard form \f$ \frac{x^2 - x_c}{a^2} + \frac{y^2 - y_c}{b^2} = 1 \f$, centered in
+ * \p _center \f$(x_c, x_y)\f$ and rotated clock-wise by \p _angle wrt the x-axis. Note that, arbitrarly, the
+ * representation with the major axis aligned with the y-axis is chosen.
  */
 class Ellipse
 {
@@ -137,8 +138,8 @@ public:
     /**
      * @brief Compute the canonical form of the conic, along with its transformation.
      * @param[out] mCanonic 3x3 diagonal matrix representing the ellipse in canonical form.
-     * @param[out] mTprimal 3x3 transformation matrix such that C = mTprimal.transpose() * mCanonic * mTprimal
-     * @param[out] mTdual 3x3 inverse transformation matrix (= mTprimal.inv())
+     * @param[out] mTprimal 3x3 transformation matrix such that C = \p mTprimal.transpose() * \p mCanonic * \p mTprimal
+     * @param[out] mTdual 3x3 inverse transformation matrix (= \p mTprimal.inv())
      */
     void getCanonicForm(Matrix& mCanonic, Matrix& mTprimal, Matrix& mTdual) const;
 

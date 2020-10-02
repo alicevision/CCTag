@@ -382,7 +382,9 @@ inline float dis( const float sig, const float val, const float mub, const float
   }
 }
 
-/* depreciated */
+/**
+ * @deprecated
+ */
 bool refineConicFamily(
         CCTag & cctag,
         std::vector< cctag::ImageCut > & fsig,
@@ -392,12 +394,12 @@ bool refineConicFamily(
         const std::vector< cctag::Point2d<Eigen::Vector3f> > & pr,
         bool useLmDif );
 
-/* depreciated */
 /**
  * Get a point transformed by an homography
  * @param xi
  * @param yi
  * @param mH
+ * @deprecated
  */
 inline cctag::Point2d<Eigen::Vector3f> getHPoint(
         const float xi,
@@ -411,7 +413,9 @@ inline cctag::Point2d<Eigen::Vector3f> getHPoint(
   return cctag::Point2d<Eigen::Vector3f>(mH * vh);
 }
 
-/* depreciated */
+/**
+ * @deprecated
+ */
 bool orazioDistance(
         IdSet& idSet,
         const RadiusRatioBank & rrBank,
