@@ -9,6 +9,9 @@
 
 #include <thrust/copy.h>
 #include <thrust/device_ptr.h>
+#ifdef CCTAG_NO_THRUST_COPY_IF
+#include <thrust/host_vector.h>
+#endif
 
 #include <iostream>
 #include <algorithm>
@@ -60,13 +63,13 @@ bool Frame::applyVoteIf( )
     NumVotersIsGreaterEqual select_op( _voters.dev );
 
 #ifdef CCTAG_NO_THRUST_COPY_IF
-    #
-    # There are reports that the Thrust::copy_if fails when you generated code with CUDA 7.0 and run it only
-    # a 2nd gen Maxwell card (e.g. GTX 980 and GTX 980 Ti). Also, the GTX 1080 seems to be quite similar to
-    # the GTX 980 and may be affected as well.
-    # The following code moves everything to host before copy_if, which circumvents the problem but is much
-    # slower. Make sure that the condition for activating it is very strict.
-    #
+    //
+    // There are reports that the Thrust::copy_if fails when you generated code with CUDA 7.0 and run it only
+    // a 2nd gen Maxwell card (e.g. GTX 980 and GTX 980 Ti). Also, the GTX 1080 seems to be quite similar to
+    // the GTX 980 and may be affected as well.
+    // The following code moves everything to host before copy_if, which circumvents the problem but is much
+    // slower. Make sure that the condition for activating it is very strict.
+    //
     thrust::host_vector<int> input_host(sz);
     thrust::host_vector<int> output_host(sz);
     thrust::host_vector<int>::iterator output_host_end;
@@ -74,7 +77,7 @@ bool Frame::applyVoteIf( )
     thrust::copy( input_begin, input_end, input_host.begin() );
     output_host_end = thrust::copy_if( input_host.begin(), input_host.end(), output_host.begin(), select_op );
     thrust::copy( output_host.begin(), output_host_end, output_begin );
-    sz = output_host_end = output_host.begin();
+    sz = output_host_end - output_host.begin();
     output_end = output_begin + sz;
 #else
     output_end = thrust::copy_if( input_begin, input_end, output_begin, select_op );
