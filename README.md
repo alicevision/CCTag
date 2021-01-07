@@ -72,6 +72,6 @@ Simone Gasparini (simone.gasparini@gmail.com)
 Acknowledgments
 ---------
 
-This has been developed in the context of the European project POPART founded by European Union’s Horizon 2020 research and innovation programme under grant agreement No 644874.
+This has been developed in the context of the European project [POPART](https://alicevision.org/popart/) founded by European Union’s Horizon 2020 research and innovation programme under grant agreement No 644874.
 
 Additional contributions for performance optimizations have been funded by the Norwegian RCN FORNY2020 project FLEXCAM.
