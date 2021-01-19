@@ -20,7 +20,7 @@ else()
 endif()
 
 # BOOST
-if(NOT TARGET Boost::boost)
+if(NOT TARGET Boost::Boost)
   set(BOOST_REQUIRED_COMPONENTS "date_time;chrono;thread;serialization;system;filesystem;atomic;program_options;timer")
   if(WIN32)
     set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_windbg")
@@ -34,7 +34,7 @@ else()
 endif()
 
 # OPENCV
-find_package(OpenCV REQUIRED core videoio imgproc imgcodecs highgui)
+find_package(opencv REQUIRED core videoio imgproc imgcodecs highgui)
 
 # TBB
 if(NOT TBB_FOUND)
@@ -64,14 +64,14 @@ add_executable(detection ${CCTagDetect_cpp})
 find_package(DevIL COMPONENTS IL ILU) # yields IL_FOUND, IL_LIBRARIES, IL_INCLUDE_DIR
 
 target_include_directories(detection PUBLIC
-  ${OpenCV_INCLUDE_DIRS}
+  ${opencv_INCLUDE_DIRS}
   ${TBB_INCLUDE_DIRS}
   )
 target_link_libraries(detection PUBLIC
   CCTag::CCTag
   ${TBB_tbb_LIBRARY_RELEASE}
-  ${OpenCV_LIBS}
-  Boost::filesystem Boost::program_options Boost::timer
+  ${opencv_LIBS}
+  boost_filesystem boost_program_options boost_timer
   )
 
 if(IL_FOUND OR DevIL_FOUND)
@@ -89,15 +89,15 @@ else()
 endif()
 
 add_executable(regression ${CCTagRegression_cpp})
-target_include_directories(regression PUBLIC ${OpenCV_INCLUDE_DIRS})
+target_include_directories(regression PUBLIC ${opencv_INCLUDE_DIRS})
 target_link_libraries(regression PUBLIC
   CCTag::CCTag
-  ${OpenCV_LIBS}
-  Boost::program_options Boost::serialization
+  ${opencv_LIBS}
+  boost_program_options boost_serialization
   )
 
 add_executable(simulation ${CCTagSimulation_cpp})
-target_include_directories(simulation PUBLIC ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(simulation PUBLIC ${OpenCV_LIBS})
+target_include_directories(simulation PUBLIC ${opencv_INCLUDE_DIRS})
+target_link_libraries(simulation PUBLIC ${opencv_LIBS})
 
 install(TARGETS detection regression simulation DESTINATION bin)

@@ -7,6 +7,10 @@ include(ExternalProject)
 
 project(CCTag VERSION 1.0.0 LANGUAGES C CXX)
 
+if (EXISTS ${CMAKE_BINARY_DIR}/conan_paths.cmake)
+  include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
+endif()
+
 #CMakeDependentOption
 option(CCTAG_SERIALIZE "Store all the output" OFF)
 option(CCTAG_VISUAL_DEBUG "Enable visual debug" OFF)
@@ -174,10 +178,10 @@ else(CCTAG_WITH_CUDA)
 endif(CCTAG_WITH_CUDA)
 
 # FIND OPENCV
-find_package(OpenCV REQUIRED core videoio imgproc imgcodecs)
+find_package(opencv REQUIRED core videoio imgproc imgcodecs)
 
 # FIND Eigen
-find_package(Eigen REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # FIND Intel TBB
 # With MVSC, CMAKE_BUILD_TYPE will always be None, so TBB_USE_DEBUG_BUILD will always be false.

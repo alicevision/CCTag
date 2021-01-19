@@ -90,7 +90,7 @@ if(CCTAG_WITH_CUDA)
   # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA.cmake#L147
   # INCLUDE_DIRECTORIES -- "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
   include_directories(${CMAKE_CURRENT_LIST_DIR}
-                      ${OpenCV_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR}
+                      ${opencv_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIR}
 		      ${TBB_INCLUDE_DIRS}
                       "${CMAKE_SOURCE_DIR}/src")
 
@@ -98,9 +98,9 @@ if(CCTAG_WITH_CUDA)
 
   # since we used CUDA_ADD_LIBRARY we cannot use PUBLIC or PRIVATE here
   target_link_libraries(CCTag
-                       ${OpenCV_LIBS}
-                       Boost::date_time Boost::chrono Boost::thread Boost::serialization Boost::system Boost::filesystem Boost::atomic Boost::program_options Boost::timer
-                       ${Eigen_LIBRARIES}
+                       ${opencv_LIBS}
+                       boost_date_time boost_chrono boost_thread boost_serialization boost_system boost_filesystem boost_atomic boost_program_options boost_timer
+                       ${Eigen3_LIBRARIES}
                        ${TBB_LIBRARIES} ${CUDA_CUDADEVRT_LIBRARY})
 
   if(NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -122,7 +122,7 @@ if(CCTAG_WITH_CUDA)
   # This is nececessary for the CCTagConfig.cmake to correctly export the
   # includes, always because we used CUDA_ADD_LIBRARY
   set_target_properties(CCTag PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-       "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>;${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${Eigen_INCLUDE_DIR};${OpenCV_INCLUDE_DIRS}")
+       "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>;${CUDA_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${Eigen3_INCLUDE_DIR};${opencv_INCLUDE_DIRS}")
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
   message(STATUS "testprop: ${testprop}")
 
@@ -137,7 +137,7 @@ else() # without CUDA
   target_include_directories(CCTag
                            PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>"
                                   "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>"
-                           PUBLIC ${Boost_INCLUDE_DIRS} ${Eigen_INCLUDE_DIR} ${OpenCV_INCLUDE_DIRS}
+                           PUBLIC ${Boost_INCLUDE_DIRS} ${Eigen3_INCLUDE_DIR} ${opencv_INCLUDE_DIRS}
                            PRIVATE ${TBB_INCLUDE_DIRS})
 
   get_target_property(testprop CCTag INTERFACE_INCLUDE_DIRECTORIES )
@@ -148,9 +148,9 @@ else() # without CUDA
 
   target_link_libraries(CCTag
                         PUBLIC
-                          ${OpenCV_LIBS}
-                          ${Eigen_LIBRARIES}
-                          Boost::atomic Boost::chrono Boost::date_time Boost::filesystem Boost::serialization Boost::system Boost::thread Boost::timer
+                          ${opencv_LIBS}
+                          ${Eigen3_LIBRARIES}
+                          boost_atomic boost_chrono boost_date_time boost_filesystem boost_serialization boost_system boost_thread boost_timer
                         PRIVATE
                           ${TBB_LIBRARIES})
 
