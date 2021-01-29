@@ -185,7 +185,7 @@ if(CCTAG_WITH_CUDA)
   endif()
 
   target_compile_definitions(CCTag
-                         PUBLIC -DCCTAG_WITH_CUDA
+                         PUBLIC -DCCTAG_WITH_CUDA -DBOOST_NO_CXX11_CONSTEXPR
                          PRIVATE ${TBB_DEFINITIONS})
 
   if(CCTAG_HAVE_SHFL_DOWN_SYNC)
