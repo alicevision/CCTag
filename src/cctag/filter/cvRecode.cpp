@@ -18,7 +18,7 @@
 #include "cctag/Params.hpp"
 #include "cctag/utils/Talk.hpp" // do DO_TALK macro
 
-#include <boost/timer.hpp>
+#include <boost/timer/timer.hpp>
 
 #include <cstdlib> // for ::abs
 #include <climits>
@@ -47,7 +47,7 @@ void cvRecodedCanny(
   int debug_info_level,
   const cctag::Parameters* params )
 {
-  boost::timer t;  
+  boost::timer::cpu_timer t;  
   std::vector<uchar*> stack;
   uchar** stack_top = nullptr, ** stack_bottom = nullptr;
   
@@ -166,8 +166,9 @@ void cvRecodedCanny(
 #define CANNY_PUSH( d )    *( d ) = (uchar)2, *stack_top++ = ( d )
 #define CANNY_POP( d )     ( d )  = *--stack_top
 
+  t.stop();
   DO_TALK( CCTAG_COUT_DEBUG( "Canny 1 took: " << t.elapsed() ); );
-  t.restart();
+  t.resume();
 
   // calculate magnitude and angle of gradient, perform non-maxima supression.
   // fill the map with one of the following values:
@@ -328,6 +329,7 @@ void cvRecodedCanny(
     mag_buf[2] = _mag;
   }
 
+  t.stop();
   DO_TALK( CCTAG_COUT_DEBUG( "Canny 2 took : " << t.elapsed() ); )
 
 #ifdef DEBUG_MAGMAP_BY_GRIFF
@@ -354,7 +356,7 @@ void cvRecodedCanny(
 	delete[] write_mag;
   }
 #endif // DEBUG_MAGMAP_BY_GRIFF
-  t.restart();
+  t.resume();
 
   // now track the edges (hysteresis thresholding)
   while( stack_top > stack_bottom )
@@ -389,9 +391,9 @@ void cvRecodedCanny(
       CANNY_PUSH( m + mapstep + 1 );
   }
 
+  t.stop();
   DO_TALK( CCTAG_COUT_DEBUG( "Canny 3 took : " << t.elapsed() ); )
-
-  t.restart();
+  t.resume();
 
   // the final pass, form the final image
   for( i = 0; i < size.height; i++ )
