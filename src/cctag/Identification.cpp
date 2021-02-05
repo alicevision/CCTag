@@ -10,6 +10,7 @@
 #include <cctag/optimization/conditioner.hpp>
 #include <cctag/geometry/2DTransform.hpp>
 #include <cctag/utils/Defines.hpp>
+#include <cctag/utils/Accum.hpp>
 
 #undef SUBPIX_EDGE_OPTIM
 #include <cctag/SubPixEdgeOptimizer.hpp>
@@ -21,10 +22,6 @@
 #include "cctag/cuda/tag.h"
 #endif
 
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
-#include <boost/accumulators/statistics/median.hpp>
-#include <boost/accumulators/statistics/variance.hpp>
 #include <boost/assert.hpp>
 
 #include <cmath>
@@ -55,7 +52,6 @@ bool orazioDistanceRobust(
   BOOST_ASSERT( cuts.size() > 0 );
 
   using namespace cctag::numerical;
-  using namespace boost::accumulators;
 
   using MapT = std::map<float, MarkerID>;
 
@@ -87,20 +83,24 @@ bool orazioDistanceRobust(
       const std::vector<float> & imgSig = cut.imgSignal();
 
       // compute some statitics
-      accumulator_set< float, features< /*tag::median,*/ tag::variance > > acc;
+      VarianceAccumulator acc;
+      MeanAccumulator macc;
       // Put the image signal into the accumulator
-      acc = std::for_each( imgSig.begin()+30, imgSig.end(), acc ); // todo@Lilian +30
+      std::for_each( imgSig.begin()+30, imgSig.end(), [&]( float f ) {
+                                                          acc.insert(f);
+                                                          macc.insert(f);
+                                                      } ); // todo@Lilian +30
 
       // Mean
-      const float medianSig = boost::accumulators::mean( acc );
+      const float medianSig = macc.result();
       
       // or median
       //const float medianSig = computeMedian( imgSig );
 
-      const float varSig = boost::accumulators::variance( acc );
+      const float varSig = acc.result();
 
-      accumulator_set< float, features< tag::mean > > accInf;
-      accumulator_set< float, features< tag::mean > > accSup;
+      MeanAccumulator accInf;
+      MeanAccumulator accSup;
       
       bool doAccumulate = false;
       for(float i : imgSig)
@@ -111,13 +111,17 @@ bool orazioDistanceRobust(
         if (doAccumulate)
         {
           if ( i < medianSig )
-            accInf( i );
+          {
+            accInf.insert( i );
+          }
           else
-            accSup( i );
+          {
+            accSup.insert( i );
+          }
         }
       }
-      const float muw = boost::accumulators::mean( accSup );
-      const float mub = boost::accumulators::mean( accInf );
+      const float muw = accSup.result();
+      const float mub = accInf.result();
 
       // Find the nearest ID in rrBank
       const float stepX = (cut.endSig() - cut.beginSig()) / ( imgSig.size() - 1.f );
@@ -551,7 +555,6 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
         const size_t numSamplesOuterEdgePointsRefinement)
 {
   using namespace boost::numeric;
-  using namespace boost::accumulators;
   using namespace cctag::numerical;
 
   selectSize = std::min( selectSize, collectedCuts.size() );
@@ -560,9 +563,11 @@ void selectCutCheapUniform( std::vector< cctag::ImageCut > & vSelectedCuts,
   varCuts.reserve(collectedCuts.size());
   for( const cctag::ImageCut & cut : collectedCuts )
   {
-    accumulator_set< float, features< tag::variance > > acc;
-    acc = std::for_each( cut.imgSignal().begin(), cut.imgSignal().end(), acc );
-    varCuts.push_back( variance( acc ) );
+    VarianceAccumulator acc;
+    std::for_each( cut.imgSignal().begin(), cut.imgSignal().end(), [&](float f) {
+                                                                       acc.insert(f);
+                                                                   } );
+    varCuts.push_back( acc.result() );
   }
   
   const float varMax = *std::max_element(varCuts.begin(),varCuts.end());

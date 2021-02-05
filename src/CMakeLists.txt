@@ -32,6 +32,7 @@ set( CCTag_cpp
         ./cctag/geometry/Distance.cpp
         ./cctag/geometry/Ellipse.cpp
         ./cctag/geometry/EllipseFromPoints.cpp
+        ./cctag/utils/Accum.cpp
         ./cctag/utils/FileDebug.cpp
         ./cctag/utils/LogTime.cpp
         ./cctag/utils/Talk.cpp
@@ -71,6 +72,7 @@ set( CCTag_HEADERS
         ./cctag/geometry/EllipseFromPoints.hpp
         ./cctag/geometry/Point.hpp
         ./cctag/optimization/conditioner.hpp
+        ./cctag/utils/Accum.hpp
         ./cctag/utils/Debug.hpp
         ./cctag/utils/Defines.hpp
         ./cctag/utils/Exceptions.hpp

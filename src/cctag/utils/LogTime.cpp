@@ -19,7 +19,7 @@ void Mgmt::Measurement::print( std::ostream& ostr ) const
 {
     if( ! _probe ) return;
     ostr << _probe << ": "
-         << bacc::mean(_ms_acc) << "ms "
+         << _ms_acc.result() << "ms "
          // << bacc::mean(_us_acc) << "us"
          << std::endl;
 }

@@ -8,8 +8,8 @@
 #pragma once
 
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics.hpp>
+
+#include <cctag/utils/Accum.hpp>
 
 #include <cstddef>
 #include <string>
@@ -19,7 +19,6 @@ namespace cctag {
 namespace logtime {
 
 namespace btime = boost::posix_time;
-namespace bacc  = boost::accumulators;
 
 struct Mgmt
 {
@@ -32,8 +31,8 @@ struct Mgmt
 
         void log( const char* probename, const btime::time_duration& duration ) {
             if( ! _probe ) _probe = strdup( probename );
-            _ms_acc( duration.total_milliseconds() );
-            _us_acc( duration.total_microseconds() );
+            _ms_acc.insert( duration.total_milliseconds() );
+            _us_acc.insert( duration.total_microseconds() );
         }
 
         bool doPrint( ) const;
@@ -42,8 +41,8 @@ struct Mgmt
 
     private:
         const char* _probe;
-        bacc::accumulator_set<long, bacc::features<bacc::tag::mean> > _ms_acc;
-        bacc::accumulator_set<long, bacc::features<bacc::tag::mean> > _us_acc;
+        LMeanAccumulator _ms_acc;
+        LMeanAccumulator _us_acc;
     };
 
     btime::ptime             _previous_time;
