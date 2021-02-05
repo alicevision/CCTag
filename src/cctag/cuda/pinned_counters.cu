@@ -16,8 +16,9 @@ namespace cctag {
 
 using namespace std;
 
-const int PinnedCounters::_max_counters = 100;
-const int PinnedCounters::_max_points   = MAX_MARKER_FOR_IDENT;
+bool PinnedCounters::_max_values_set = false;
+int  PinnedCounters::_max_counters   = 100;
+int  PinnedCounters::_max_points     = MAX_MARKER_FOR_IDENT;
 
 /* This is system-wide unique allocation
  */
@@ -34,11 +35,27 @@ PinnedCounters::~PinnedCounters( )
 {
 }
 
-void PinnedCounters::init( int tagPipe ) {
+void PinnedCounters::setGlobalMax( int max_counters, int max_points )
+{
+    if( _max_values_set )
+    {
+        return;
+    }
+
+    _max_counters   = max_counters;
+    _max_points     = max_points;
+    _max_values_set = true;
+}
+
+void PinnedCounters::init( int tagPipe )
+{
+    _max_values_set = true;
+
     pinned_counters[tagPipe].obj_init( );
 }
 
-void PinnedCounters::release( int tagPipe ) {
+void PinnedCounters::release( int tagPipe )
+{
     POP_CUDA_FREE_HOST( pinned_counters[tagPipe]._counters );
     POP_CUDA_FREE_HOST( pinned_counters[tagPipe]._nearby_points );
 }
@@ -60,6 +77,8 @@ NearbyPoint* PinnedCounters::getPointPtr( int tagPipe, const char* file, int lin
 
 void PinnedCounters::obj_init( )
 {
+    _max_values_set = true;
+
     _lock.lock();
     if( ! _counters ) {
         POP_CUDA_MALLOC_HOST( &_counters, _max_counters*sizeof(int) );
@@ -97,7 +116,7 @@ NearbyPoint& PinnedCounters::obj_getPoint( const char* file, int line )
         _lock.unlock();
         cerr << __FILE__ << ":" << __LINE__
              << "    called from " << file << ":" << line
-             << "    Hard-coded number of Nearyby Points in pinned memory is too small." << endl
+             << "    Hard-coded number of Nearby Points in pinned memory is too small." << endl
              << "    Increase and recompile." << endl;
         exit( -1 );
     }

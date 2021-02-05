@@ -68,6 +68,8 @@ Parameters::Parameters(std::size_t nCrowns)
   , _doIdentification(kDefaultDoIdentification)
   , _maxEdges(kDefaultMaxEdges)
   , _useCuda(kDefaultUseCuda)
+  , _pinnedCounters( kDefaultPinnedCounters )
+  , _pinnedNearbyPoints( kDefaultPinnedNearbyPoints )
   , _debugDir("")
 {
     _nCircles = 2 * _nCrowns;

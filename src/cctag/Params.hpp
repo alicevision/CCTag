@@ -62,6 +62,8 @@ static constexpr bool kDefaultUseCuda = true;
 #else
 static constexpr bool kDefaultUseCuda = false;
 #endif
+static constexpr size_t kDefaultPinnedCounters     = 100;
+static constexpr size_t kDefaultPinnedNearbyPoints = 60;
 
 static const std::string kParamCannyThrLow("kParamCannyThrLow");
 static const std::string kParamCannyThrHigh("kParamCannyThrHigh");
@@ -95,6 +97,8 @@ static const std::string kParamWriteOutput("kParamWriteOutput");
 static const std::string kParamDoIdentification("kParamDoIdentification");
 static const std::string kParamMaxEdges("kParamMaxEdges");
 static const std::string kUseCuda("kUseCuda");
+static const std::string kPinnedCounters("kPinnedCounters");
+static const std::string kPinnedNearbyPoints("kPinnedNearbyPoints");
 
 static const std::size_t kWeight = INV_GRAD_WEIGHT;
 
@@ -180,6 +184,10 @@ struct Parameters
     uint32_t _maxEdges;
     ///  if compiled with CCTAG_WITH_CUDA, whether to use cuda algorithm or not, otherwise it is ignored
     bool _useCuda;
+    /// if _useCuda, physical memory reserved for internal counters, otherwise unused
+    size_t _pinnedCounters;
+    /// if _useCuda, physical memory reserved for point detection, otherwise unused
+    size_t _pinnedNearbyPoints;
     ///  prefix for debug output
     std::string _debugDir;
 
@@ -224,6 +232,8 @@ struct Parameters
         ar& BOOST_SERIALIZATION_NVP(_doIdentification);
         ar& BOOST_SERIALIZATION_NVP(_maxEdges);
         ar& BOOST_SERIALIZATION_NVP(_useCuda);
+        ar& BOOST_SERIALIZATION_NVP(_pinnedCounters);
+        ar& BOOST_SERIALIZATION_NVP(_pinnedNearbyPoints);
         _nCircles = 2 * _nCrowns;
     }
 

@@ -33,12 +33,14 @@ public:
     PinnedCounters( );
     ~PinnedCounters( );
 
+    static void setGlobalMax( int max_counters, int max_points );
+
     static void init( int tagPipe );
     static void release( int tagPipe );
 
     static int& getCounter( int tagPipe );
 
-    /** Returns a reference to a NearyPoint-sized section of host-side
+    /** Returns a reference to a NearbyPoint-sized section of host-side
      *  pinned memory.
      *  This function is only used by the constructors of the class
      *  CCTag in cctag before identification.
@@ -59,8 +61,9 @@ private:
 
     std::mutex _lock;
 
-    static const int _max_counters;
-    static const int _max_points;
+    static const bool _max_values_set;
+    static const int  _max_counters;
+    static const int  _max_points;
 
     void         obj_init( );
     int&         obj_getCounter( );
