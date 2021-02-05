@@ -14,7 +14,6 @@ public:
     VarianceAccumulator( ) { }
     void insert( float f );
     float result( ) const;
-
 };
 
 class MeanAccumulator
