@@ -731,12 +731,16 @@ void createImageForVoteResultDebug(
 
 #ifdef CCTAG_WITH_CUDA
 cctag::TagPipe* initCuda( int      pipeId,
-                           uint32_t width,
-                           uint32_t height, 
-                           const Parameters & params,
-                           cctag::logtime::Mgmt* durations )
+                          uint32_t width,
+                          uint32_t height, 
+                          const Parameters & params,
+                          cctag::logtime::Mgmt* durations )
 {
-    if( cudaPipelines.size() <= pipeId ) {
+    PinnedCounters::setGlobalMax( params._pinnedCounters,
+                                  params._pinnedNearbyPoints );
+
+    if( cudaPipelines.size() <= pipeId )
+    {
         cudaPipelines.resize( pipeId+1 );
     }
 
