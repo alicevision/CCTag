@@ -18,7 +18,6 @@
 #include <opencv2/core/core_c.h>
 
 #include <boost/foreach.hpp>
-#include <boost/timer.hpp>
 #include <boost/array.hpp>
 #include <boost/mpl/bool.hpp>
 

@@ -29,7 +29,6 @@
 #include <boost/multi_array/subarray.hpp>
 #include <boost/container/flat_set.hpp>
 
-#include <boost/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <deque>
