@@ -61,9 +61,9 @@ private:
 
     std::mutex _lock;
 
-    static const bool _max_values_set;
-    static const int  _max_counters;
-    static const int  _max_points;
+    static bool _max_values_set;
+    static int  _max_counters;
+    static int  _max_points;
 
     void         obj_init( );
     int&         obj_getCounter( );

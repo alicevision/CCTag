@@ -16,7 +16,7 @@
 #include <cctag/Detection.hpp>
 #include <cctag/utils/Talk.hpp> // for DO_TALK macro
 
-#include <boost/timer.hpp>
+#include <boost/timer/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <cmath>

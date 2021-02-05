@@ -34,7 +34,7 @@
 #include <boost/mpl/bool.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/unordered/unordered_set.hpp>
-#include <boost/timer.hpp>
+#include <boost/timer/timer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <cmath>
@@ -584,7 +584,7 @@ void cctagDetectionFromEdges(
   createImageForVoteResultDebug(src, pyramidLevel);
 
   // Set some timers
-  boost::timer t3;
+  boost::timer::cpu_timer t3;
   boost::posix_time::ptime tstart0(boost::posix_time::microsec_clock::local_time());
 
   std::size_t nSegmentOut = 0;
