@@ -95,12 +95,6 @@ endif()
 # set the path where we can find the findXXX.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  # -Wno-c++11-narrowing to solve "non-type template argument evaluates to -1" error in boost::gil
-  # -Wno-deprecated-register to avoid the noise of some older eigen versions
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-extensions -Wno-c++11-narrowing -Wno-deprecated-register")
-endif()
-
 if(APPLE)
 
   # avoid the cmake policy warning about @rpath in MacOSX
