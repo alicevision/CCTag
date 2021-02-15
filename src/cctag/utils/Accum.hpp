@@ -1,5 +1,4 @@
-#ifndef _CCTAG_ACCUMULATOR
-#define _CCTAG_ACCUMULATOR
+#pragma once
 
 #include <vector>
 
@@ -11,7 +10,7 @@ class VarianceAccumulator
     std::vector<float> acc;
 
 public:
-    VarianceAccumulator( ) { }
+    VarianceAccumulator() = default;
     void insert( float f );
     float result( ) const;
 };
@@ -21,7 +20,7 @@ class MeanAccumulator
     std::vector<float> acc;
 
 public:
-    MeanAccumulator( ) { }
+    MeanAccumulator() = default;
     void insert( float f );
     float result( ) const;
 };
@@ -31,12 +30,10 @@ class LMeanAccumulator
     std::vector<long> acc;
 
 public:
-    LMeanAccumulator( ) { }
+    LMeanAccumulator() = default;
     void insert( long f );
     long result( ) const;
 };
 
 }; // namespace cctag
-
-#endif
 
