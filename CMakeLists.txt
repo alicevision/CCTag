@@ -199,6 +199,12 @@ if(CCTAG_WITH_CUDA)
     endif()
   endif()
 
+  # This is needed on windows for the multi-threaded compilation, typically ninja and vcpkg
+  # it avoids the error C1041: cannot open program database, write to the same .PDB file because of concurrent access
+  if(MSVC)
+    list(APPEND CUDA_NVCC_FLAGS "-Xcompiler" "-FS")
+  endif()
+
   if(CCTAG_NVCC_WARNINGS)
     list(APPEND CUDA_NVCC_FLAGS -Xptxas --warn-on-local-memory-usage)
     list(APPEND CUDA_NVCC_FLAGS -Xptxas --warn-on-spills)
