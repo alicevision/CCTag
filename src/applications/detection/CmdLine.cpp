@@ -21,6 +21,8 @@ CmdLine::CmdLine( )
     , _cctagBankFilename( "" )
     , _paramsFilename( "" )
     , _outputFolderName( "" )
+    , _saveDetectedImage(false)
+    , _showUnreliableDetections(false)
 #ifdef CCTAG_WITH_CUDA
     , _switchSync( false )
     , _debugDir( "" )
@@ -41,6 +43,8 @@ CmdLine::CmdLine( )
 		("bank,b", value<std::string>(&_cctagBankFilename)->default_value(_cctagBankFilename), "Path to a bank parameter file, e.g. 4Crowns/ids.txt")
 		("params,p", value<std::string>(&_paramsFilename)->default_value(_paramsFilename), "Path to configuration XML file")
 		("output,o", value<std::string>(&_outputFolderName)->default_value(_outputFolderName), "Output folder name")
+                ("save-detected-image,s", bool_switch(&_saveDetectedImage), "Save an image with the graphical overlay of the detected tags")
+                ("show-unreliable,u", bool_switch(&_showUnreliableDetections), "Show the unreliable tags (marker id = -1)")
 #ifdef CCTAG_WITH_CUDA
 		("sync", bool_switch(&_switchSync), "CUDA debug option, run all CUDA ops synchronously")
 		("use-cuda", bool_switch(&_useCuda), "Select GPU code instead of CPU code")
@@ -83,6 +87,10 @@ void CmdLine::print( const char* const argv0 ) const
          << "    --bank      " << _cctagBankFilename << std::endl
          << "    --params    " << _paramsFilename << std::endl
          << "    --output    " << _outputFolderName << std::endl;
+    if(_saveDetectedImage)
+        std::cout << "    --save-detected-image" << std::endl;
+    if(_showUnreliableDetections)
+        std::cout << "    --show-unreliable" << std::endl;
 #ifdef CCTAG_WITH_CUDA
 	std::cout << "    --parallel " << _parallel << std::endl;
     if( _switchSync )

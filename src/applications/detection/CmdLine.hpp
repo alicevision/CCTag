@@ -20,6 +20,8 @@ public:
     std::string _paramsFilename;
     std::size_t _nRings;
     std::string _outputFolderName;
+    bool _saveDetectedImage;
+    bool _showUnreliableDetections;
 #ifdef CCTAG_WITH_CUDA
     bool        _switchSync;
     std::string _debugDir;
