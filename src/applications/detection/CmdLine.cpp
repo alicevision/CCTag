@@ -46,7 +46,11 @@ CmdLine::CmdLine( )
 		("bank,b", value<std::string>(&_cctagBankFilename)->default_value(_cctagBankFilename), "Path to a bank parameter file, e.g. 4Crowns/ids.txt")
 		("params,p", value<std::string>(&_paramsFilename)->default_value(_paramsFilename), "Path to configuration XML file")
 		("output,o", value<std::string>(&_outputFolderName)->default_value(_outputFolderName), "Output folder name")
-                ("save-detected-image,s", bool_switch(&_saveDetectedImage), "Save an image with the graphical overlay of the detected tags")
+                ("save-detected-image,s", bool_switch(&_saveDetectedImage), "Save an image with the graphical overlay of the detected tags. "
+                     "For single images the saved images will have a '_detected' suffix and it will be placed either in "
+                     "the current directory or in the directory given by --output. For videos a file named #####.png "
+                     "will be saved instead with the #s representing the zero-padded frame number, either in the current directory "
+                     "or in the directory given by --output.")
                 ("show-unreliable,u", bool_switch(&_showUnreliableDetections), "Show the unreliable tags (marker id = -1)")
 #ifdef CCTAG_WITH_CUDA
 		("sync", bool_switch(&_switchSync), "CUDA debug option, run all CUDA ops synchronously")
