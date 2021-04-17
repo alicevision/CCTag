@@ -355,6 +355,10 @@ int main(int argc, char** argv)
     cv::Mat graySrc;
     cv::cvtColor(src, graySrc, CV_BGR2GRAY);
 
+      const std::string windowName = "Detection result";
+      cv::namedWindow(windowName, cv::WINDOW_NORMAL);
+      const int delay = -1;
+
     const int pipeId = 0;
     boost::ptr_list<CCTag> markers;
 #ifdef PRINT_TO_CERR
@@ -362,6 +366,23 @@ int main(int argc, char** argv)
 #else // PRINT_TO_CERR
     detection(0, pipeId, graySrc, params, bank, markers, outputFile, myPath.stem().string());
 #endif // PRINT_TO_CERR
+
+      // if the original image is b/w convert it to BGRA so we can draw colors
+      if(src.channels() == 1)
+          cv::cvtColor(graySrc, src, cv::COLOR_GRAY2BGRA);
+
+      drawMarkers(markers, src, cmdline._showUnreliableDetections);
+      cv::imshow(windowName, src);
+      cv::waitKey(delay);
+      if(cmdline._saveDetectedImage)
+      {
+          auto saveFilename = bfs::path(myPath.filename().stem().string() + "_detected" + ext);
+          if(!cmdline._outputFolderName.empty())
+          {
+              saveFilename = bfs::path(cmdline._outputFolderName) / saveFilename;
+          }
+          cv::imwrite(saveFilename.string(), src);
+      }
   }
 #endif // USE_DEVIL
   else if(ext == ".avi" || ext == ".mov" || useCamera)
@@ -428,7 +449,7 @@ int main(int argc, char** argv)
       if(frame.channels() == 1)
         cv::cvtColor(imgGray, frame, cv::COLOR_GRAY2BGRA);
       
-      drawMarkers(markers, frame);
+      drawMarkers(markers, frame, cmdline._showUnreliableDetections);
       cv::imshow(windowName, frame);
       if( cv::waitKey(delay) == 27 ) break;
       char key = (char) cv::waitKey(delay);
