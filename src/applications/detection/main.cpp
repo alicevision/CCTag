@@ -67,7 +67,7 @@ bool isInteger(std::string &s)
  * @param[in] markers The list of markers to draw.
  * @param[out] image The image in which to draw the markers.
  */
-void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image)
+void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image, bool showUnreliable = true)
 {
   for(const cctag::CCTag & marker : markers)
   {
@@ -84,13 +84,12 @@ void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image)
         cv::ellipse(image , center,  cv::Size(rescaledOuterEllipse.a(), rescaledOuterEllipse.b()),
         rescaledOuterEllipse.angle()*180/boost::math::constants::pi<double>(), 0, 360, color, 3);
     }
-    else
+    else if(showUnreliable)
     {
       const cv::Scalar color = cv::Scalar(0, 0, 255 , 255);
       cv::circle(image, center, radius, color, 2);
       cv::putText(image, std::to_string(marker.id()), center, cv::FONT_HERSHEY_SIMPLEX, fontSize, color, 3);
     }
-
   }
 }
 
