@@ -52,6 +52,7 @@ jobs:
       - name: Unit Tests
         working-directory: ./build
         run: |
+          export LD_LIBRARY_PATH=${DEPS_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
           make test
 
       - name: Build As Third Party
