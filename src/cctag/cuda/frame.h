@@ -66,7 +66,7 @@ public:
         normalized_uchar_to_float
     };
 public:
-    FrameTexture( const cv::cuda::PtrStepSzb& plane );
+    explicit FrameTexture( const cv::cuda::PtrStepSzb& plane );
     ~FrameTexture( );
 
     inline cudaTextureObject_t getTex( ) {
