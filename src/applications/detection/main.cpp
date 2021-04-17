@@ -184,6 +184,8 @@ int main(int argc, char** argv)
 {
   CmdLine cmdline;
 
+  const std::string detectedSuffix{"_detected"};
+
   if(!cmdline.parse(argc, argv))
   {
     cmdline.usage(argv[0]);
@@ -376,7 +378,7 @@ int main(int argc, char** argv)
       cv::waitKey(delay);
       if(cmdline._saveDetectedImage)
       {
-          auto saveFilename = bfs::path(myPath.filename().stem().string() + "_detected" + ext);
+          auto saveFilename = bfs::path(myPath.filename().stem().string() + detectedSuffix + ext);
           if(!cmdline._outputFolderName.empty())
           {
               saveFilename = bfs::path(cmdline._outputFolderName) / saveFilename;
@@ -503,11 +505,11 @@ int main(int argc, char** argv)
 
         if((subExt == ".png") || (subExt == ".jpg") || (subExt == ".PNG") || (subExt == ".JPG"))
         {
-
-          std::cerr << "Processing image " << fileInFolder.second.string() << std::endl;
+            const auto inputImageFile = fileInFolder.second;
+          std::cerr << "Processing image " << inputImageFile << std::endl;
 
           cv::Mat src;
-          src = cv::imread(fileInFolder.second.string());
+          src = cv::imread(inputImageFile.string());
 
           cv::Mat imgGray;
           cv::cvtColor(src, imgGray, CV_BGR2GRAY);
@@ -516,10 +518,26 @@ int main(int argc, char** argv)
           int pipeId = (fileInFolder.first & 1);
           boost::ptr_list<CCTag> markers;
 #ifdef PRINT_TO_CERR
-          detection(fileInFolder.first, pipeId, imgGray, params, bank, markers, std::cerr, fileInFolder.second.stem().string());
+          detection(fileInFolder.first, pipeId, imgGray, params, bank, markers, std::cerr, inputImageFile.stem().string());
 #else
           detection(fileInFolder.first, pipeId, imgGray, params, bank, markers, outputFile, fileInFolder.second.stem().string());
 #endif
+            // if the original image is b/w convert it to BGRA so we can draw colors
+            if(src.channels() == 1)
+                cv::cvtColor(imgGray, src, cv::COLOR_GRAY2BGRA);
+
+            drawMarkers(markers, src, cmdline._showUnreliableDetections);
+            if(cmdline._saveDetectedImage)
+            {
+                // get the filename without extension and add the suffix
+                auto saveFilename = bfs::path(inputImageFile.filename().stem().string() + detectedSuffix + subExt);
+                if(!cmdline._outputFolderName.empty())
+                {
+                    saveFilename = bfs::path(cmdline._outputFolderName) / saveFilename;
+                }
+                cv::imwrite(saveFilename.string(), src);
+            }
+
           std::cerr << "Done processing image " << fileInFolder.second.string() << std::endl;
         }
       }
