@@ -29,13 +29,16 @@ CmdLine::CmdLine( )
     , _useCuda( false )
     , _parallel( 1 )
 #endif
-	, _allParams("Program for detecting CCTags in images or in a video")
+	, _allParams("Program for detecting CCTags in one image, in a directory or in a video\n"
+               "For each image or video frame it detects the markers and it shows the image with a graphical overlay"
+               "showing the center of the tag, its ID and the outer ellipse")
 { 
 	using namespace boost::program_options;
 
 	options_description required("Required input parameters");
 	required.add_options()
-		("input,i", value<std::string>(&_filename)->required(), "Path to an image (JPG, PNG) or video (avi, mov) or camera index for live capture (0, 1...)")
+		("input,i", value<std::string>(&_filename)->required(), "Path to an image (JPG, PNG) or video (avi, mov) "
+                     "or camera index for live capture (0, 1...) or to a directory containing the images to process")
 		("nbrings,n", value<std::size_t>(&_nRings)->required(), "Number of rings of the CCTags to detect");
 
 	options_description optional("Optional parameters");
