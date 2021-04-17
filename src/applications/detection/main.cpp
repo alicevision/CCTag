@@ -451,6 +451,17 @@ int main(int argc, char** argv)
       
       drawMarkers(markers, frame, cmdline._showUnreliableDetections);
       cv::imshow(windowName, frame);
+
+        if(cmdline._saveDetectedImage)
+        {
+            auto saveFilename = bfs::path(outputFileName+".png");
+            if(!cmdline._outputFolderName.empty())
+            {
+                saveFilename = bfs::path(cmdline._outputFolderName) / saveFilename;
+            }
+            cv::imwrite(saveFilename.string(), frame);
+        }
+
       if( cv::waitKey(delay) == 27 ) break;
       char key = (char) cv::waitKey(delay);
       // stop capturing by pressing ESC
