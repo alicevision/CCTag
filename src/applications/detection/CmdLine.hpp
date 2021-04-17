@@ -30,9 +30,9 @@ public:
     CmdLine( );
 
     bool parse( int argc, char* argv[] );
-    void print( const char* const argv0 );
+    void print( const char* const argv0 ) const;
 
-    void usage( const char* const argv0 );
+    void usage( const char* const argv0 ) const;
 
 private:
 	boost::program_options::options_description _allParams;

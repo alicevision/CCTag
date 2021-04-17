@@ -75,7 +75,7 @@ bool CmdLine::parse( int argc, char* argv[] )
     return true;
 }
 
-void CmdLine::print( const char* const argv0 )
+void CmdLine::print( const char* const argv0 ) const
 {
     std::cout << "You called " << argv0 << " with:" << std::endl
          << "    --input     " << _filename << std::endl
@@ -95,7 +95,7 @@ void CmdLine::print( const char* const argv0 )
     std::cout << std::endl;
 }
 
-void CmdLine::usage( const char* const argv0 )
+void CmdLine::usage( const char* const argv0 ) const
 {
 	std::cout << _allParams << std::endl;
 }
