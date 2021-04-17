@@ -6,10 +6,12 @@
 Required tools:
 * CMake >= 3.14 to build the code
 * Git
-* C/C++ compiler (gcc >= 4.6 or visual studio or clang)
+* C/C++ compiler with C++14 support
+    * see here: https://en.cppreference.com/w/cpp/compiler_support 
+    * TLDR gcc >= 5, clang >= 3.4, msvc >= 2017
 
 Optional tool:
-* CUDA >= 7.0 (CUDA 7.5 is currently not recommended (see Note 1))
+* CUDA >= 9.0 
 Note: On Windows, there are compatibility issues to build the GPU part due to conflicts between msvc/nvcc/thrust/eigen/boost.
 
 ### Getting the sources:

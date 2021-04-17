@@ -47,7 +47,7 @@ SpaceInEmptyParentheses: false
 SpacesInContainerLiterals: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-Standard: "c++11"
+Standard: "c++14"
 IncludeCategories:
   - Regex:           '^".*"'
     Priority:        1

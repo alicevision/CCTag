@@ -50,10 +50,17 @@ Running
 -------
 
 Once compiled, you might want to run the CCTag detection on a sample image:
+
 ```bash
 $ build/src/detection -n 3 -i sample/01.png
 ```
 For the library interface, see [ICCTag.hpp](src/cctag/ICCTag.hpp).
+
+Documentation
+-------------
+
+The documentation can be found on the [Read the Docs page](https://cctag.readthedocs.io/en/doc-first/index.html)
+
 
 License
 -------

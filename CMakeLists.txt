@@ -65,9 +65,10 @@ if(MSVC AND CMAKE_GENERATOR MATCHES "Ninja")
   list(APPEND CUDA_NVCC_FLAGS   -Xcompiler ${CCTAG_MVSC_LINKER})
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CCTAG_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD ${CCTAG_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD ${CCTAG_CXX_STANDARD})
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 
@@ -93,12 +94,6 @@ endif()
 
 # set the path where we can find the findXXX.cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
-
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  # -Wno-c++11-narrowing to solve "non-type template argument evaluates to -1" error in boost::gil
-  # -Wno-deprecated-register to avoid the noise of some older eigen versions
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-extensions -Wno-c++11-narrowing -Wno-deprecated-register")
-endif()
 
 if(APPLE)
 
@@ -186,7 +181,7 @@ if(CCTAG_WITH_CUDA)
   LIST(APPEND CUDA_NVCC_FLAGS ${ARCH_FLAGS})
 
   if(NOT MSVC)
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++${CCTAG_CXX_STANDARD}")
   endif()
   set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
 
@@ -202,6 +197,12 @@ if(CCTAG_WITH_CUDA)
     if(HAS_NVCC_RELAXED_CONSTEXPR)
       set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};--relaxed-constexpr")
     endif()
+  endif()
+
+  # This is needed on windows for the multi-threaded compilation, typically ninja and vcpkg
+  # it avoids the error C1041: cannot open program database, write to the same .PDB file because of concurrent access
+  if(MSVC)
+    list(APPEND CUDA_NVCC_FLAGS "-Xcompiler" "-FS")
   endif()
 
   if(CCTAG_NVCC_WARNINGS)

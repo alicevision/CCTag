@@ -69,11 +69,11 @@ Required tools:
 
 * CMake >= 3.14 to build the code
 * Git
-* C/C++ compiler supporting the C++11 standard (gcc >= 4.6 or visual studio or clang)
+* C/C++ compiler supporting the C++14 standard (gcc >= 5, clang >= 3.4, msvc >= 2017)
 
 Optional tool:
 
-* CUDA >= 7.0 (CUDA 7.5 is currently not recommended)
+* CUDA >= 9.0
 
 
 .. note::
