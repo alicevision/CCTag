@@ -78,7 +78,6 @@ void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image, bool sho
     {
       const cv::Scalar color = cv::Scalar(0, 255, 0 , 255);
         const auto rescaledOuterEllipse = marker.rescaledOuterEllipse();
-        std::cout << "a " << rescaledOuterEllipse.a() << " b " << rescaledOuterEllipse.b() << " angle " << rescaledOuterEllipse.angle() << std::endl;
       cv::circle(image, center, radius, color, 3);
       cv::putText(image, std::to_string(marker.id()), center, cv::FONT_HERSHEY_SIMPLEX, fontSize, color, 3);
         cv::ellipse(image , center,  cv::Size(rescaledOuterEllipse.a(), rescaledOuterEllipse.b()),
