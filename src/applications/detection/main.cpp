@@ -78,6 +78,7 @@ void drawMarkers(const boost::ptr_list<CCTag> &markers, cv::Mat &image, bool sho
     {
       const cv::Scalar color = cv::Scalar(0, 255, 0 , 255);
         const auto rescaledOuterEllipse = marker.rescaledOuterEllipse();
+
       cv::circle(image, center, radius, color, 3);
       cv::putText(image, std::to_string(marker.id()), center, cv::FONT_HERSHEY_SIMPLEX, fontSize, color, 3);
         cv::ellipse(image , center,  cv::Size(rescaledOuterEllipse.a(), rescaledOuterEllipse.b()),
@@ -519,7 +520,7 @@ int main(int argc, char** argv)
 #ifdef PRINT_TO_CERR
           detection(fileInFolder.first, pipeId, imgGray, params, bank, markers, std::cerr, inputImageFile.stem().string());
 #else
-          detection(fileInFolder.first, pipeId, imgGray, params, bank, markers, outputFile, fileInFolder.second.stem().string());
+          detection(fileInFolder.first, pipeId, imgGray, params, bank, markers, outputFile, inputImageFile.second.stem().string());
 #endif
             // if the original image is b/w convert it to BGRA so we can draw colors
             if(src.channels() == 1)
