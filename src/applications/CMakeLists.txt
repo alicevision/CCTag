@@ -117,9 +117,4 @@ add_executable(simulation ${CCTagSimulation_cpp})
 target_include_directories(simulation PUBLIC ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(simulation PUBLIC ${OpenCV_LIBS})
 
-foreach(_app detection regression simulation)
-  set_target_properties(${_app} PROPERTIES VERSION ${PROJECT_VERSION})
-  set_target_properties(${_app} PROPERTIES DEBUG_POSTFIX "d")
-endforeach()
-
 install(TARGETS detection regression simulation DESTINATION ${CMAKE_INSTALL_BINDIR})
