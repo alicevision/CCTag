@@ -7,38 +7,38 @@
  */
 #pragma once
 
-#include <string>
 #include <boost/program_options.hpp>
+
+#include <string>
 
 namespace cctag {
 
 class CmdLine
 {
-public:
-    std::string _filename;
-    std::string _cctagBankFilename;
-    std::string _paramsFilename;
-    std::size_t _nRings;
-    std::string _outputFolderName;
-    bool _saveDetectedImage;
-    bool _showUnreliableDetections;
+  public:
+    std::string _filename{};
+    std::string _cctagBankFilename{};
+    std::string _paramsFilename{};
+    std::size_t _nRings{3};
+    std::string _outputFolderName{};
+    bool _saveDetectedImage{false};
+    bool _showUnreliableDetections{false};
 #ifdef CCTAG_WITH_CUDA
-    bool        _switchSync;
-    std::string _debugDir;
-    bool        _useCuda;
-    int         _parallel;
+    bool _switchSync{false};
+    std::string _debugDir{};
+    bool _useCuda{false};
+    int _parallel{1};
 #endif
 
-    CmdLine( );
+    CmdLine();
 
-    bool parse( int argc, char* argv[] );
-    void print( const char* const argv0 ) const;
+    bool parse(int argc, char* argv[]);
+    void print(const char* const argv0) const;
 
-    void usage( const char* const argv0 ) const;
+    void usage(const char* const argv0) const;
 
-private:
-	boost::program_options::options_description _allParams;
+  private:
+    boost::program_options::options_description _allParams;
 };
 
 }
-
