@@ -17,7 +17,7 @@ namespace cctag {
 
 void thin( cv::Mat & inout, cv::Mat & temp );
 
-void imageIter( cv::Mat & in, cv::Mat & out, int* lut );
+void imageIter( const cv::Mat & in, cv::Mat & out, const int* lut );
 
 }
 
