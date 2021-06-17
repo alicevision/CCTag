@@ -79,6 +79,11 @@ Parameters::Parameters(std::size_t nCrowns)
     }
 }
 
+Parameters::~Parameters( )
+{
+    /* the default destructor does not prevent an unknown race condition on delete */
+}
+
 void Parameters::setDebugDir(const std::string& debugDir)
 {
     namespace fs = boost::filesystem;

@@ -116,6 +116,8 @@ struct Parameters
      */
     explicit Parameters(std::size_t nCrowns = kDefaultNCrowns);
 
+    ~Parameters( );
+
     ///  canny low threshold
     float _cannyThrLow;
     ///  canny high threshold
