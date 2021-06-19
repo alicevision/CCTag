@@ -134,10 +134,12 @@ void CCTagVisualDebug::drawText(const cctag::Point2d<Eigen::Vector3f> & p, const
   CvFont font1;
   cvInitFont(&font1, CV_FONT_HERSHEY_SIMPLEX, 0.8, 0.8, 0, 2);
 
-  IplImage iplBack = _backImage;
-  cvPutText( &iplBack, text.c_str(),
-          cvPoint((int) p.x(), (int) p.y()),
-          &font1, CV_RGB(color[0] * 255, color[1] * 255, color[2] * 255));
+  auto clr = CV_RGB(color[0] * 255, color[1] * 255, color[2] * 255);
+  cv::Mat iplBack = _backImage;
+  cv::putText( iplBack, text.c_str(),
+               cvPoint((int) p.x(), (int) p.y()),
+               font1.font_face, font1.hscale,
+               clr );
 #endif
 }
 
@@ -262,10 +264,12 @@ void CCTagVisualDebug::drawInfos(const cctag::CCTag& marker, bool drawScaledMark
       y = int (marker.outerEllipse().center().y());
   }
 
-  IplImage iplImg = _backImage;
-  cvPutText( &iplImg, sId.c_str(),
-          cvPoint(x-10, y+10),
-          &font1, CV_RGB(255, 140, 0));
+  auto clr = CV_RGB(255, 140, 0);
+  cv::Mat iplImg = _backImage;
+  cv::putText( iplImg, sId.c_str(),
+               cvPoint(x-10, y+10),
+               font1.font_face, font1.hscale,
+               clr );
 #endif
 }
 
