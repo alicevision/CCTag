@@ -236,7 +236,16 @@ int main(int argc, char** argv)
         // Read the parameter file provided by the user
         std::ifstream ifs(cmdline._paramsFilename);
         boost::archive::xml_iarchive ia(ifs);
-        ia >> boost::serialization::make_nvp("CCTagsParams", params);
+        try
+        {
+            ia >> boost::serialization::make_nvp("CCTagsParams", params);
+        }
+        catch(boost::archive::archive_exception& e)
+        {
+            std::cerr << std::endl << "Exception while reading parameter file: "
+                      << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
         CCTAG_COUT(params._nCrowns);
         CCTAG_COUT(nCrowns);
         if(nCrowns != params._nCrowns)
