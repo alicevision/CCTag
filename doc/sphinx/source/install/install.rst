@@ -53,9 +53,13 @@ vcpkg
 
 `vcpkg <https://github.com/microsoft/vcpkg>`_ is a cross-platform (Windows, Linux and MacOS), open-source package manager created by Microsoft.
 
-We are planning to release a port of the library so that it can be easily built using the package manager.
-Stay tuned!
+Since v1.0.0 of the library it is possible to build and install the library through vcpkg on Linux, Windows and MacOS by running:
 
+.. code:: shell
+
+  vcpkg install cctag[cuda,apps]
+
+where :code:`cuda` and :code:`apps` are the options to build the library with the cuda support and the sample applications, respectively.
 
 ------------
 
