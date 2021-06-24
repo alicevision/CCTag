@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-## [1.0.0] - YYYY-MM-DD
+## [1.0.0] - 2021-06-24
 
  - Support for OpenCV 3.4.9 [PR](https://github.com/alicevision/CCTag/pull/121)
  - Switch to C++14 standard [PR](https://github.com/alicevision/CCTag/pull/155)
