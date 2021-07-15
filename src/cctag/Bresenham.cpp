@@ -9,6 +9,7 @@
 #include <cctag/Bresenham.hpp>
 #include <cctag/utils/FileDebug.hpp>
 
+#include <boost/math/special_functions/sign.hpp>
 
 #include <cmath>
 
