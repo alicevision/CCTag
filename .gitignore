@@ -1,6 +1,6 @@
 # build folder
-build
-build_*/
+build*/
+install*/
 # NetBeans project folder
 nbproject
 # Result of the sample code
