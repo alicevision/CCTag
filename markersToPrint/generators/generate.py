@@ -41,7 +41,7 @@ if __name__ == "__main__":
     height = size + args.margin
 
     # id of the first marker
-    markerId = 1
+    markerId = 0
 
     # font size for the id
     font_size = int(0.037 * height)
