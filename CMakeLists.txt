@@ -147,7 +147,7 @@ if(CCTAG_WITH_CUDA)
     set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
   endif()
 
-  find_package(CUDA 7.0 REQUIRED)
+  find_package(CUDA 9.0 REQUIRED)
 
   include(CheckNvccCompilerFlag)
 
