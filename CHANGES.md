@@ -15,6 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [1.0.1]
+
+### Changed
+
+- Renamed the marker files to be 0-based [PR](https://github.com/alicevision/CCTag/pull/165) 
+
+### Fixed
+
+- Fixed missing math module for boost [PR](https://github.com/alicevision/CCTag/pull/168)
+- Fixed compilation errors for newer version of boost on windows [PR](https://github.com/alicevision/CCTag/pull/166)
+- Removed old legacy defines for cuda and boost no more needed since the switch to c++14 [PR](https://github.com/alicevision/CCTag/pull/174)
+
+
 ## [1.0.0] - 2021-06-24
 
  - Support for OpenCV 3.4.9 [PR](https://github.com/alicevision/CCTag/pull/121)
