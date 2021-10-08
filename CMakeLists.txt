@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.13)
 
 include(ExternalProject)
 
-project(CCTag VERSION 1.0.0 LANGUAGES C CXX)
+project(CCTag VERSION 1.0.1 LANGUAGES C CXX)
 
 # Set build path as a folder named as the platform (linux, windows, darwin...) plus the processor type
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
@@ -147,7 +147,7 @@ if(CCTAG_WITH_CUDA)
     set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
   endif()
 
-  find_package(CUDA 7.0 REQUIRED)
+  find_package(CUDA 9.0 REQUIRED)
 
   include(CheckNvccCompilerFlag)
 
