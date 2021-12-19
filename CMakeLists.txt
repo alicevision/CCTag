@@ -240,6 +240,9 @@ endif()
 # With MVSC, CMAKE_BUILD_TYPE will always be None, so TBB_USE_DEBUG_BUILD will always be false.
 string(COMPARE EQUAL "${CMAKE_BUILD_TYPE}" Debug TBB_USE_DEBUG_BUILD)
 find_package(TBB REQUIRED)
+if(TBB_VERSION VERSION_GREATER 2021.0.0)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
 
 add_subdirectory(src)
 

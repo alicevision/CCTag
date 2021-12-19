@@ -71,7 +71,11 @@ static void constructFlowComponentFromSeed(
         std::vector<CandidatePtr> & vCandidateLoopOne,
         const Parameters & params)
 {
+#if TBB_VERSION_MAJOR > 2020
+  static std::mutex G_SortMutex;
+#else
   static tbb::mutex G_SortMutex;
+#endif
   
   assert( seed );
   // Check if the seed has already been processed, i.e. belongs to an already
@@ -102,7 +106,11 @@ static void constructFlowComponentFromSeed(
     }
     
     {
+#if TBB_VERSION_MAJOR > 2020
+      std::scoped_lock lock(G_SortMutex);
+#else
       tbb::mutex::scoped_lock lock(G_SortMutex);
+#endif
       candidate->_averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
       auto it = std::lower_bound(vCandidateLoopOne.begin(), vCandidateLoopOne.end(), candidate,
         [](const CandidatePtr& c1, const CandidatePtr& c2) { return c1->_averageReceivedVote > c2->_averageReceivedVote; });
@@ -120,7 +128,11 @@ static void completeFlowComponent(
   const Parameters & params)
 {
   static tbb::spin_mutex G_UpdateMutex;
+#if TBB_VERSION_MAJOR > 2020
+  static std::mutex G_InsertMutex;
+#else
   static tbb::mutex G_InsertMutex;
+#endif
   
   try
   {
@@ -239,7 +251,11 @@ static void completeFlowComponent(
     }
 
     {
+#if TBB_VERSION_MAJOR > 2020
+      std::scoped_lock lock(G_InsertMutex);
+#else
       tbb::mutex::scoped_lock lock(G_InsertMutex);
+#endif
       vCandidateLoopTwo.push_back(candidate);
     }
 
@@ -384,7 +400,11 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
   float scale,
   const Parameters& params)
 {
+#if TBB_VERSION_MAJOR > 2020
+    static std::mutex G_InsertMutex;
+#else
     static tbb::mutex G_InsertMutex;
+#endif
     
     const Candidate& candidate = vCandidateLoopTwo[iCandidate];
 
@@ -543,7 +563,11 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
 #endif
       
       {
+#if TBB_VERSION_MAJOR > 2020
+        std::scoped_lock lock(G_InsertMutex);
+#else
         tbb::mutex::scoped_lock lock(G_InsertMutex);
+#endif
         markers.push_back( tag ); // markers takes responsibility for delete
       }
 #ifdef CCTAG_SERIALIZE

@@ -71,7 +71,11 @@ bool orazioDistanceRobust(
 #endif // GRIFF_DEBUG
   
   const size_t cut_count = cuts.size();
+#if TBB_VERSION_MAJOR > 2020
+  static std::mutex vscore_mutex;
+#else
   static tbb::mutex vscore_mutex;
+#endif
 
   tbb::parallel_for(size_t(0), cut_count, [&](size_t i) {
     const cctag::ImageCut& cut = cuts[i];
@@ -183,7 +187,11 @@ bool orazioDistanceRobust(
   #endif // GRIFF_DEBUG
 
       {
+#if TBB_VERSION_MAJOR > 2020
+        std::scoped_lock lock(vscore_mutex);
+#else
         tbb::mutex::scoped_lock lock(vscore_mutex);
+#endif
         vScore[idSet.front().first].push_back(idSet.front().second);
       }
     }

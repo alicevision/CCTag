@@ -97,6 +97,14 @@ if(NOT TBB_FOUND)
   endif()
   
   ##################################
+  # Try TBBConfig.cmake first
+  ##################################
+  find_package(TBB CONFIG)
+  if(TBB_FOUND)
+    return()
+  endif()
+  
+  ##################################
   # Set the TBB search directories
   ##################################
   
