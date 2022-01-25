@@ -199,7 +199,7 @@ void cvRecodedCanny(const cv::Mat& imgGraySrc,
 
                 for(j = 0; j < size.width; j++)
                 {
-                    float* _magf = (float*)_mag;
+                    auto* _magf = (float*)_mag;
                     x = _imgDX[j];
                     y = _imgDY[j];
 #ifdef USE_INTEGER_REP
@@ -401,7 +401,7 @@ void cvRecodedCanny(const cv::Mat& imgGraySrc,
     for(i = 0; i < size.height; i++)
     {
         const uchar* _map = map + mapstep * (i + 1) + 1;
-        uchar* _imgCanny = imgCanny.ptr<uchar>(i);
+        auto* _imgCanny = imgCanny.ptr<uchar>(i);
 
         for(j = 0; j < size.width; j++)
         {
