@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Fixed
+- Fixed potential out of bound in debug mode [PR](https://github.com/alicevision/CCTag/pull/180)
 
 ### Removed
 
