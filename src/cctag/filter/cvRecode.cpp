@@ -178,8 +178,7 @@ void cvRecodedCanny(
   for( i = 0; i <= size.height; i++ )
   {
     int* _mag    = mag_buf[( i > 0 ) + 1] + 1;
-    const short* _imgDX = imgDX.ptr<short>(i);
-    const short* _imgDY = imgDY.ptr<short>(i);
+
     uchar* _map;
     int x, y;
     ptrdiff_t magstep1, magstep2;
@@ -187,6 +186,9 @@ void cvRecodedCanny(
 
     if( i < size.height )
     {
+        const short* _imgDX = imgDX.ptr<short>(i);
+        const short* _imgDY = imgDY.ptr<short>(i);
+
       _mag[-1] = _mag[size.width] = 0;
 
       if( !( flags & CV_CANNY_L2_GRADIENT ) ) {
@@ -240,8 +242,8 @@ void cvRecodedCanny(
     _map[-1] = _map[size.width] = 1;
 
     _mag = mag_buf[1] + 1; // take the central row
-    _imgDX = imgDX.ptr<short>(i - 1);
-    _imgDY = imgDY.ptr<short>(i - 1);
+    const short* _imgDX = imgDX.ptr<short>(i - 1);
+    const short* _imgDY = imgDY.ptr<short>(i - 1);
 
     magstep1 = mag_buf[2] - mag_buf[1];
     magstep2 = mag_buf[0] - mag_buf[1];
