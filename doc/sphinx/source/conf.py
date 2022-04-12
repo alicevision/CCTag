@@ -52,7 +52,7 @@ author = 'AliceVision'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['breathe', 'sphinxcontrib.bibtex']
+extensions = ['breathe', 'sphinxcontrib.bibtex', 'sphinx.ext.autosectionlabel']
 bibtex_bibfiles = ['biblio.bib']
 
 # Add any paths that contain templates here, relative to this directory.
