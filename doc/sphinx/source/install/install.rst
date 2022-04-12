@@ -47,6 +47,7 @@ CCTag depends on the following libraries:
 
 ------------
 
+CCTag can be installed from the following package managers.
 
 vcpkg
 =====
@@ -60,6 +61,22 @@ Since v1.0.0 of the library it is possible to build and install the library thro
   vcpkg install cctag[cuda,apps]
 
 where :code:`cuda` and :code:`apps` are the options to build the library with the cuda support and the sample applications, respectively.
+
+------------
+
+
+conan
+=====
+
+`conan <https://conan.io/>`_ is a decentralized and multi-platform package manager.
+
+Since v1.0.1, you can install CCTag from conan by running:
+
+.. code:: shell
+
+  conan install cctag/1.0.1@
+
+where :code:`1.0.1@` is the version you want to install. See :ref:`CCTag as third party` for how to use CCTag as third party in your project.
 
 ------------
 
@@ -214,7 +231,7 @@ So if you do not want to build the Cuda part, you have to pass :code:`-DCCTAG_WI
 
 ------------
 
-
+.. _how-to-use:
 CCTag as third party
 ====================
 
@@ -241,6 +258,26 @@ Then, in order to build just pass the location of :code:`CCTagConfig.cmake` from
 
     cmake .. -DCCTag_DIR=$CCTAG_INSTALL/lib/cmake/CCTag/
 
+If you are using conan for your project then you need to add cctag to your :code:`conanfile.txt`:
+
+.. code::
+
+    [requires]
+    cctag/1.0.1
+
+    [generators]
+    CMakeToolchain
+    CMakeDeps
+
+and when building you may need to follow these steps:
+
+.. code:: shell
+
+    mkdir build
+    cd build
+    conan install .. -s build_type=Release
+    cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+    cmake --build . --config Release
 
 ------------
 
