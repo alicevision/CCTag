@@ -267,7 +267,7 @@ For example to create the dependency image based on ubuntu 18.04 with cuda 8.0 f
 
     docker build --build-arg CUDA_TAG=8.0 --tag alicevision/cctag-deps:cuda8.0-ubuntu18.04 -f Dockerfile_deps .
 
-The complete list of available tags can be found on the nvidia [dockerhub page](https://hub.docker.com/r/nvidia/cuda/)
+The complete list of available tags can be found on the nvidia `dockerhub page <https://hub.docker.com/r/nvidia/cuda/>`_
 
 
 Building the CCTag image
