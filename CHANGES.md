@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added documentation for conan [PR](https://github.com/alicevision/CCTag/pull/183)
 
 ### Changed
 
