@@ -8,14 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Added documentation for conan [PR](https://github.com/alicevision/CCTag/pull/183)
 
 ### Changed
 
 ### Fixed
-- Fixed potential out of bound in debug mode [PR](https://github.com/alicevision/CCTag/pull/180)
 
 ### Removed
+
+## [1.0.2] - 2022-07-14
+
+### Added
+- Added documentation for conan [PR](https://github.com/alicevision/CCTag/pull/183)
+
+### Fixed
+- Fixed potential out of bound in debug mode [PR](https://github.com/alicevision/CCTag/pull/180)
 
 ## [1.0.1] - 2021-10-08
 
