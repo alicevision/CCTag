@@ -102,12 +102,12 @@ bool Frame::applyExport( cctag::EdgePointCollection& out_edges,
 
         if( pt.descending.after.x != 0 || pt.descending.after.y != 0 ) {
             cctag::EdgePoint* n = out_edges(pt.descending.after.x, pt.descending.after.y);
-            if( n >= 0 )
+            if( n )
                 out_edges.set_after(ep, out_edges(n));
         }
         if( pt.descending.befor.x != 0 || pt.descending.befor.y != 0 ) {
             cctag::EdgePoint* n = out_edges(pt.descending.befor.x, pt.descending.befor.y);
-            if( n >= 0 )
+            if( n )
                 out_edges.set_before(ep, out_edges(n));
         }
 
