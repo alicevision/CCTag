@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Enable -faligned-new when CCTAG_EIGEN_NO_ALIGN is not set on GCC >= 7.1 [PR](https://github.com/alicevision/CCTag/pull/193)
+
 ### Changed
 
 ### Fixed

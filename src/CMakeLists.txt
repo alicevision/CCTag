@@ -255,8 +255,15 @@ if(CCTAG_VISUAL_DEBUG)
 endif(CCTAG_VISUAL_DEBUG)
 if(CCTAG_EIGEN_NO_ALIGN)
   target_compile_definitions(CCTag PUBLIC ${AV_EIGEN_DEFINITIONS})
+else()
+  # If user enabled Eigen alignment assumptions, then allocations should be with appropriate
+  # alignment. Fortunately this is fixed in C++17. While we can't upgrade to C++17 just yet, some
+  # compilers support overaligned allocation feature with a separate flag.
+  # See https://eigen.tuxfamily.org/dox/group__TopicUnalignedArrayAssert.html
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
+    target_compile_options(CCTag PRIVATE "-faligned-new")
+  endif()
 endif()
-
 set_target_properties(CCTag PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(CCTag PROPERTIES DEBUG_POSTFIX "d")
 
