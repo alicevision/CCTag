@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Fixed
+- fix gcc11 ordered pointer comparison [PR](https://github.com/alicevision/CCTag/pull/191)
 
 ### Removed
 
