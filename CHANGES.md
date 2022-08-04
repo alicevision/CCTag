@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Enable -faligned-new when CCTAG_EIGEN_NO_ALIGN is not set on GCC >= 7.1 [PR](https://github.com/alicevision/CCTag/pull/193)
+- Enable -faligned-new when CCTAG_EIGEN_MEMORY_ALIGNMENT is set on GCC >= 7.1 [PR](https://github.com/alicevision/CCTag/pull/193)
 
 ### Changed
+
+- Replaced CCTAG_EIGEN_MEMORY_ALIGNMENT with CCTAG_EIGEN_MEMORY_ALIGNMENT which has the opposite meaning.
 
 ### Fixed
 - fix gcc11 ordered pointer comparison [PR](https://github.com/alicevision/CCTag/pull/191)
