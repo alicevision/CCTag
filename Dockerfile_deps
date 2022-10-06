@@ -39,9 +39,9 @@ ENV DEPS_INSTALL_PATH="/opt"
  
 # Manually install cmake
 WORKDIR /tmp/cmake
-ENV CMAKE_VERSION=3.17
+ENV CMAKE_VERSION=3.24
 ENV CMAKE_VERSION_FULL=${CMAKE_VERSION}.2
-RUN wget https://cmake.org/files/v3.17/cmake-${CMAKE_VERSION_FULL}.tar.gz && \
+RUN wget https://cmake.org/files/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION_FULL}.tar.gz && \
     tar zxf cmake-${CMAKE_VERSION_FULL}.tar.gz && \
     cd cmake-${CMAKE_VERSION_FULL} && \
     ./bootstrap --prefix=/usr/local  -- -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_USE_OPENSSL:BOOL=ON && \
@@ -50,8 +50,8 @@ RUN wget https://cmake.org/files/v3.17/cmake-${CMAKE_VERSION_FULL}.tar.gz && \
     rm -rf cmake
 
 
-ENV BOOST_VERSION="1.70.0"
-ENV BOOST_VERSION_FILENAME="1_70_0"
+ENV BOOST_VERSION="1.76.0"
+ENV BOOST_VERSION_FILENAME="1_76_0"
 WORKDIR /tmp/boost
 RUN wget https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_FILENAME}.tar.gz && \
     tar -xzf boost_${BOOST_VERSION_FILENAME}.tar.gz && \
@@ -62,7 +62,7 @@ RUN wget https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boo
     rm -rf /tmp/boost
 
 WORKDIR /tmp/eigen
-ENV EIGEN_VERSION="3.3.7"
+ENV EIGEN_VERSION="3.4.0"
 RUN wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/${EIGEN_VERSION}.tar.gz && \
     mkdir eigen-${EIGEN_VERSION} && tar xf ${EIGEN_VERSION}.tar.gz -C eigen-${EIGEN_VERSION} --strip-components 1 && \
     cd eigen-${EIGEN_VERSION} && \
@@ -74,7 +74,7 @@ RUN wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/${EIGEN_VE
     rm -rf /tmp/eigen
 
 # install opencv
-ENV OPENCV_VERSION="3.4.10"
+ENV OPENCV_VERSION="4.5.3"
 WORKDIR /tmp/opencv
 RUN  wget https://github.com/opencv/opencv/archive/"${OPENCV_VERSION}".zip && \
      unzip ${OPENCV_VERSION}.zip && \
@@ -83,14 +83,18 @@ RUN  wget https://github.com/opencv/opencv/archive/"${OPENCV_VERSION}".zip && \
      cmake -DBUILD_TIFF:BOOL=ON \
       -DBUILD_opencv_java:BOOL=OFF \
       -DWITH_CUDA:BOOL=OFF \
+      -DINSTALL_C_EXAMPLES=OFF \
+      -DINSTALL_PYTHON_EXAMPLES=OFF \
       -DENABLE_AVX:BOOL=ON \
-      -DWITH_OPENGL:BOOL=ON \
-      -DWITH_IPP:BOOL=ON \
-      -DWITH_TBB:BOOL=ON \
+      -DWITH_OPENGL:BOOL=OFF \
+      -DWITH_TBB:BOOL=OFF \
       -DWITH_EIGEN:BOOL=ON \
       -DWITH_V4L:BOOL=ON \
       -DBUILD_TESTS:BOOL=OFF \
+      -DBUILD_EXAMPLES=OFF \
       -DBUILD_PERF_TESTS:BOOL=OFF \
+      -DDBUILD_SHARED_LIBS=ON \
+      -DBUILD_LIST=core,videoio,imgproc,imgcodecs,highgui \
       -DCMAKE_INSTALL_PREFIX:PATH=${DEPS_INSTALL_PATH} \
       -DCMAKE_BUILD_TYPE=RELEASE  .. && \
     make -j$(nproc) install && \
