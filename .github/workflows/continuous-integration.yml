@@ -20,7 +20,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: alicevision/cctag-deps:cuda10.2-ubuntu18.04
+      image: alicevision/cctag-deps:cuda11.8.0-ubuntu20.04
     env:
       DEPS_INSTALL_DIR: /opt/
       BUILD_TYPE: Release
