@@ -82,7 +82,6 @@ find_package(DevIL COMPONENTS IL ILU) # yields IL_FOUND, IL_LIBRARIES, IL_INCLUD
 
 target_include_directories(detection PUBLIC
   ${OpenCV_INCLUDE_DIRS}
-  ${TBB_INCLUDE_DIRS}
   )
 target_link_libraries(detection PUBLIC
   CCTag::CCTag
