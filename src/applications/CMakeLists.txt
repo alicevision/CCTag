@@ -86,7 +86,7 @@ target_include_directories(detection PUBLIC
   )
 target_link_libraries(detection PUBLIC
   CCTag::CCTag
-  ${TBB_LIBRARIES}
+  TBB::tbb
   ${OpenCV_LIBS}
   Boost::filesystem Boost::program_options Boost::timer
   )

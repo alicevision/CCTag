@@ -40,10 +40,11 @@
 #include <cmath>
 #include <exception>
 #include <fstream>
-#include <sstream>
 #include <list>
-#include <utility>
 #include <memory>
+#include <mutex>
+#include <sstream>
+#include <utility>
 #ifdef CCTAG_WITH_CUDA
 #include <cctag/cuda/cctag_cuda_runtime.h> // only for debugging
 #endif // CCTAG_WITH_CUDA
@@ -71,7 +72,7 @@ static void constructFlowComponentFromSeed(
         std::vector<CandidatePtr> & vCandidateLoopOne,
         const Parameters & params)
 {
-  static tbb::mutex G_SortMutex;
+  static std::mutex G_SortMutex;
   
   assert( seed );
   // Check if the seed has already been processed, i.e. belongs to an already
@@ -102,7 +103,7 @@ static void constructFlowComponentFromSeed(
     }
     
     {
-      tbb::mutex::scoped_lock lock(G_SortMutex);
+      std::lock_guard<std::mutex> lock(G_SortMutex);
       candidate->_averageReceivedVote = (float) (nReceivedVote*nReceivedVote) / (float) nVotedPoints;
       auto it = std::lower_bound(vCandidateLoopOne.begin(), vCandidateLoopOne.end(), candidate,
         [](const CandidatePtr& c1, const CandidatePtr& c2) { return c1->_averageReceivedVote > c2->_averageReceivedVote; });
@@ -119,8 +120,8 @@ static void completeFlowComponent(
   std::size_t runId,
   const Parameters & params)
 {
-  static tbb::spin_mutex G_UpdateMutex;
-  static tbb::mutex G_InsertMutex;
+  static std::mutex G_UpdateMutex;
+  static std::mutex G_InsertMutex;
   
   try
   {
@@ -171,7 +172,7 @@ static void completeFlowComponent(
       if (nSegmentCommon == -1)
       {
         {
-          tbb::spin_mutex::scoped_lock lock(G_UpdateMutex);
+          std::lock_guard<std::mutex> lock(G_UpdateMutex);
           nLabel = nSegmentOut;
           ++nSegmentOut;
         }
@@ -239,7 +240,7 @@ static void completeFlowComponent(
     }
 
     {
-      tbb::mutex::scoped_lock lock(G_InsertMutex);
+      std::lock_guard<std::mutex> lock(G_InsertMutex);
       vCandidateLoopTwo.push_back(candidate);
     }
 
@@ -384,7 +385,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
   float scale,
   const Parameters& params)
 {
-    static tbb::mutex G_InsertMutex;
+    static std::mutex G_InsertMutex;
     
     const Candidate& candidate = vCandidateLoopTwo[iCandidate];
 
@@ -543,7 +544,7 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
 #endif
       
       {
-        tbb::mutex::scoped_lock lock(G_InsertMutex);
+        std::lock_guard<std::mutex> lock(G_InsertMutex);
         markers.push_back( tag ); // markers takes responsibility for delete
       }
 #ifdef CCTAG_SERIALIZE
