@@ -519,8 +519,6 @@ static void cctagDetectionFromEdgesLoopTwoIteration(
         return;
       }
 
-      std::vector< Point2d<Eigen::Vector3i> > vPoint;
-
       float quality2 = 0;
 
       // todo@Lilian: no longer used ?
