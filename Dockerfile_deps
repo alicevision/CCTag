@@ -17,7 +17,7 @@ LABEL maintainer="AliceVision Team alicevision@googlegroups.com"
 # Cuda version (ENV): $CUDA_VERSION
 
 # System update
-RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get clean && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
                 build-essential \
                 wget \
                 unzip \
@@ -33,7 +33,6 @@ RUN apt-get clean && apt-get update && apt-get install -y --no-install-recommend
                 libavformat-dev \
                 libswscale-dev \
                 libavresample-dev \
-                libtbb-dev \
         && rm -rf /var/lib/apt/lists/*
 
 ENV DEPS_INSTALL_PATH="/opt"
@@ -97,3 +96,19 @@ RUN  wget https://github.com/opencv/opencv/archive/"${OPENCV_VERSION}".zip && \
     make -j$(nproc) install && \
     cd /opt && \
     rm -r /tmp/opencv
+
+# install tbb
+ENV TBB_VERSION="2021.5.0"
+WORKDIR /tmp/tbb
+RUN  wget https://github.com/oneapi-src/oneTBB/archive/refs/tags/v"${TBB_VERSION}".zip && \
+     unzip v${TBB_VERSION}.zip && \
+     mkdir -p ./oneTBB-${TBB_VERSION}/build && \
+     cd ./oneTBB-${TBB_VERSION}/build && \
+     cmake -DTBB_TEST:BOOL=OFF \
+      -DTBB_STRICT:BOOL=OFF \
+      -DBUILD_SHARED_LIBS:BOOL=ON \
+      -DCMAKE_INSTALL_PREFIX:PATH=${DEPS_INSTALL_PATH} \
+      -DCMAKE_BUILD_TYPE=RELEASE  .. && \
+    make -j$(nproc) install && \
+    cd /opt && \
+    rm -r /tmp/tbb
