@@ -22,7 +22,7 @@ Most of the dependencies can be installed from the common repositories (apt, yum
 - Eigen3 (libeigen3-dev) >= 3.3.4  (NOTE: in order to have Cuda support on Windows, at least version 3.3.9 is required)
 - Boost >= 1.66 ([accumulators, atomic, chrono, core, date-time, exception, filesystem, math, program-options, ptr-container, system, serialization, stacktrace, timer, thread]-dev)
 - OpenCV >= 3.1
-- TBB >= 4.0
+- TBB >= 2021.5.0
 
 
 ----------

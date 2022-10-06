@@ -38,7 +38,7 @@ CCTag depends on the following libraries:
 
 * OpenCV >= 3.1
 
-* TBB >= 4.0
+* TBB >= 2021.5.0
 
 .. warning::
 
