@@ -5,8 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#ifndef _CCTAG_EXCEPTIONS_HPP_
-#define _CCTAG_EXCEPTIONS_HPP_
+#pragma once
 
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/exception/errinfo_file_name.hpp>
@@ -310,5 +309,3 @@ struct ReadOnlyFile : virtual public File
 
 }
 }
-
-#endif
