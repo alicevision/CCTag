@@ -124,6 +124,7 @@ if(CCTAG_BUILD_TESTS)
 endif()
 
 find_package(Boost 1.66.0 REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+message(STATUS "Found Boost: version ${Boost_VERSION}")
 
 if(BUILD_SHARED_LIBS)
   if(WIN32)
@@ -240,6 +241,7 @@ endif()
 # With MVSC, CMAKE_BUILD_TYPE will always be None, so TBB_USE_DEBUG_BUILD will always be false.
 string(COMPARE EQUAL "${CMAKE_BUILD_TYPE}" Debug TBB_USE_DEBUG_BUILD)
 find_package(TBB 2021.5.0 CONFIG REQUIRED)
+message(STATUS "Found TBB: version ${TBB_VERSION}")
 
 add_subdirectory(src)
 
