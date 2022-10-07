@@ -268,8 +268,7 @@ struct BadConversion : virtual public Value {};
  */
 struct File : virtual public Value
 {
-	File()
-	{}
+	File() = default;
 	explicit File( const std::string& path )
 	{
 		*this << filename(path);
@@ -281,8 +280,7 @@ struct File : virtual public Value
  */
 struct FileNotExist : virtual public File
 {
-	FileNotExist()
-	{}
+	FileNotExist() = default;
 	explicit FileNotExist( const std::string& path )
 	: File( path )
 	{}
@@ -293,8 +291,7 @@ struct FileNotExist : virtual public File
  */
 struct NoDirectory : virtual public File
 {
-	NoDirectory()
-	{}
+	NoDirectory() = default;
 	explicit NoDirectory( const std::string& path )
 	: File( path )
 	{}
@@ -305,8 +302,7 @@ struct NoDirectory : virtual public File
  */
 struct ReadOnlyFile : virtual public File
 {
-	ReadOnlyFile()
-	{}
+	ReadOnlyFile() = default;
 	explicit ReadOnlyFile( const std::string& path )
 	: File( path )
 	{}
