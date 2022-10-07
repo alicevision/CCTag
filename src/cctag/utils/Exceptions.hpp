@@ -75,9 +75,9 @@ public:
 		_value._v << value;
 	}
 
-	virtual ~error_info() throw( )  = default;
+	~error_info() override = default;
 
-	error_info_base * clone() const
+	error_info_base * clone() const override
 	{
 		return new error_info(*this);
 	}
