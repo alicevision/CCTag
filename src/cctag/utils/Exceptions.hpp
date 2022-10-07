@@ -7,6 +7,12 @@
  */
 #pragma once
 
+// This fix is necessary on Apple and on Windows using cygwin to avoid the compilation error
+// #error "Boost.Stacktrace requires `_Unwind_Backtrace` function.
+// see https://github.com/boostorg/stacktrace/issues/88
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/exception/errinfo_file_name.hpp>
 #include <boost/exception/exception.hpp>
