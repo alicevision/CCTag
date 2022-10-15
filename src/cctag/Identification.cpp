@@ -28,6 +28,7 @@
 #include <boost/assert.hpp>
 
 #include <cmath>
+#include <mutex>
 #include <vector>
 
 #include <tbb/tbb.h>
@@ -71,7 +72,7 @@ bool orazioDistanceRobust(
 #endif // GRIFF_DEBUG
   
   const size_t cut_count = cuts.size();
-  static tbb::mutex vscore_mutex;
+  static std::mutex vscore_mutex;
 
   tbb::parallel_for(size_t(0), cut_count, [&](size_t i) {
     const cctag::ImageCut& cut = cuts[i];
@@ -183,7 +184,7 @@ bool orazioDistanceRobust(
   #endif // GRIFF_DEBUG
 
       {
-        tbb::mutex::scoped_lock lock(vscore_mutex);
+        std::lock_guard<std::mutex> lock(vscore_mutex);
         vScore[idSet.front().first].push_back(idSet.front().second);
       }
     }

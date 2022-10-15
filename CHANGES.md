@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Replaced CCTAG_EIGEN_MEMORY_ALIGNMENT with CCTAG_EIGEN_MEMORY_ALIGNMENT which has the opposite meaning.
+- Using the new TBB oneAPI interface, this breaks compatibility with previous versions of TBB [PR](https://github.com/alicevision/CCTag/pull/200)
 
 ### Fixed
 - fix gcc11 ordered pointer comparison [PR](https://github.com/alicevision/CCTag/pull/191)

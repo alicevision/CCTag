@@ -5,9 +5,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-#ifndef _CCTAG_EXCEPTIONS_HPP_
-#define _CCTAG_EXCEPTIONS_HPP_
+#pragma once
 
+// This fix is necessary on Apple and on Windows using cygwin to avoid the compilation error
+// #error "Boost.Stacktrace requires `_Unwind_Backtrace` function.
+// see https://github.com/boostorg/stacktrace/issues/88
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/exception/errinfo_file_name.hpp>
 #include <boost/exception/exception.hpp>
@@ -70,9 +75,9 @@ public:
 		_value._v << value;
 	}
 
-	virtual ~error_info() throw( )  = default;
+	~error_info() override = default;
 
-	error_info_base * clone() const
+	error_info_base * clone() const override
 	{
 		return new error_info(*this);
 	}
@@ -263,8 +268,7 @@ struct BadConversion : virtual public Value {};
  */
 struct File : virtual public Value
 {
-	File()
-	{}
+	File() = default;
 	explicit File( const std::string& path )
 	{
 		*this << filename(path);
@@ -276,8 +280,7 @@ struct File : virtual public Value
  */
 struct FileNotExist : virtual public File
 {
-	FileNotExist()
-	{}
+	FileNotExist() = default;
 	explicit FileNotExist( const std::string& path )
 	: File( path )
 	{}
@@ -288,8 +291,7 @@ struct FileNotExist : virtual public File
  */
 struct NoDirectory : virtual public File
 {
-	NoDirectory()
-	{}
+	NoDirectory() = default;
 	explicit NoDirectory( const std::string& path )
 	: File( path )
 	{}
@@ -300,8 +302,7 @@ struct NoDirectory : virtual public File
  */
 struct ReadOnlyFile : virtual public File
 {
-	ReadOnlyFile()
-	{}
+	ReadOnlyFile() = default;
 	explicit ReadOnlyFile( const std::string& path )
 	: File( path )
 	{}
@@ -310,5 +311,3 @@ struct ReadOnlyFile : virtual public File
 
 }
 }
-
-#endif
