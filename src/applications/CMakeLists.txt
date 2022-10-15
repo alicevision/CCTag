@@ -8,10 +8,8 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
 
   set(CMAKE_CXX_STANDARD 14)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
 
-# if this is used as a stand-alone project we need to tell whether to use PIC
-if(NOT DEFINED BUILD_SHARED_LIBS)
+  # if this is used as a stand-alone project we need to tell whether to use PIC
   option(BUILD_SHARED_LIBS "Build shared libraries" ON)
   set(CMAKE_POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS})
 endif()
