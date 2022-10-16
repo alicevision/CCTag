@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - fix gcc11 ordered pointer comparison [PR](https://github.com/alicevision/CCTag/pull/191)
+- fix handling of BUILD_SHARED_LIBS option [PR](https://github.com/alicevision/CCTag/pull/201)
 
 ### Removed
 
