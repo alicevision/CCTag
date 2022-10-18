@@ -9,18 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Enable -faligned-new when CCTAG_EIGEN_MEMORY_ALIGNMENT is set on GCC >= 7.1 [PR](https://github.com/alicevision/CCTag/pull/193)
+### Changed
+
+### Fixed
+
+### Removed
+
+## [1.0.3] - 2022-10-18
+
+### Added
+
+- Enable `-faligned-new` when `CCTAG_EIGEN_MEMORY_ALIGNMENT` is set on GCC >= 7.1 [PR](https://github.com/alicevision/CCTag/pull/193)
 
 ### Changed
 
-- Replaced CCTAG_EIGEN_MEMORY_ALIGNMENT with CCTAG_EIGEN_MEMORY_ALIGNMENT which has the opposite meaning.
+- Replaced `CCTAG_EIGEN_MEMORY_ALIGNMENT` with `CCTAG_EIGEN_MEMORY_ALIGNMENT` which has the opposite meaning.
 - Using the new TBB oneAPI interface, this breaks compatibility with previous versions of TBB [PR](https://github.com/alicevision/CCTag/pull/200)
 
 ### Fixed
 - fix gcc11 ordered pointer comparison [PR](https://github.com/alicevision/CCTag/pull/191)
-- fix handling of BUILD_SHARED_LIBS option [PR](https://github.com/alicevision/CCTag/pull/201)
-
-### Removed
+- fix handling of `BUILD_SHARED_LIBS` option [PR](https://github.com/alicevision/CCTag/pull/201)
 
 ## [1.0.2] - 2022-07-14
 

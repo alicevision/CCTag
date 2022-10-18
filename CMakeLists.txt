@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.13)
 
 include(ExternalProject)
 
-project(CCTag VERSION 1.0.2 LANGUAGES C CXX)
+project(CCTag VERSION 1.0.3 LANGUAGES C CXX)
 
 # Set build path as a folder named as the platform (linux, windows, darwin...) plus the processor type
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
