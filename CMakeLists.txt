@@ -135,6 +135,7 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 if(CCTAG_WITH_CUDA)
+  set(CCTAG_MIN_CUDA_VERSION 9.0)
   message( STATUS "Try finding CUDA" )
   if(BUILD_SHARED_LIBS)
     message(STATUS "BUILD_SHARED_LIBS ON")
@@ -149,7 +150,7 @@ if(CCTAG_WITH_CUDA)
     set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
   endif()
 
-  find_package(CUDA 9.0 REQUIRED)
+  find_package(CUDA ${CCTAG_MIN_CUDA_VERSION} REQUIRED)
 
   include(CheckNvccCompilerFlag)
 
@@ -177,7 +178,7 @@ if(CCTAG_WITH_CUDA)
       chooseCudaCC(CCTAG_CUDA_CC_LIST_BASIC
                    CCTAG_CUDA_GENCODE_FLAGS
                    MIN_CC 30
-                   MIN_CUDA_VERSION 9.0)
+                   MIN_CUDA_VERSION ${CCTAG_MIN_CUDA_VERSION})
       set(CCTAG_CUDA_CC_LIST ${CCTAG_CUDA_CC_LIST_BASIC} CACHE STRING "CUDA CC versions to compile")
     else()
       getFlagsForCudaCCList(CCTAG_CUDA_CC_LIST CCTAG_CUDA_GENCODE_FLAGS)
