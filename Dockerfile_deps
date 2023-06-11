@@ -50,8 +50,8 @@ RUN wget https://cmake.org/files/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION_FULL}.t
     rm -rf cmake
 
 
-ENV BOOST_VERSION="1.76.0"
-ENV BOOST_VERSION_FILENAME="1_76_0"
+ENV BOOST_VERSION="1.80.0"
+ENV BOOST_VERSION_FILENAME="1_80_0"
 WORKDIR /tmp/boost
 RUN wget https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_FILENAME}.tar.gz && \
     tar -xzf boost_${BOOST_VERSION_FILENAME}.tar.gz && \
