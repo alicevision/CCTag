@@ -74,7 +74,7 @@ RUN wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/${EIGEN_VE
     rm -rf /tmp/eigen
 
 # install opencv
-ENV OPENCV_VERSION="4.5.3"
+ENV OPENCV_VERSION="4.7.0"
 WORKDIR /tmp/opencv
 RUN  wget https://github.com/opencv/opencv/archive/"${OPENCV_VERSION}".zip && \
      unzip ${OPENCV_VERSION}.zip && \
