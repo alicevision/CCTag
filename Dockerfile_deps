@@ -102,7 +102,7 @@ RUN  wget https://github.com/opencv/opencv/archive/"${OPENCV_VERSION}".zip && \
     rm -r /tmp/opencv
 
 # install tbb
-ENV TBB_VERSION="2021.5.0"
+ENV TBB_VERSION="2021.9.0"
 WORKDIR /tmp/tbb
 RUN  wget https://github.com/oneapi-src/oneTBB/archive/refs/tags/v"${TBB_VERSION}".zip && \
      unzip v${TBB_VERSION}.zip && \
