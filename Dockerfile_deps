@@ -50,8 +50,8 @@ RUN wget https://cmake.org/files/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION_FULL}.t
     rm -rf cmake
 
 
-ENV BOOST_VERSION="1.76.0"
-ENV BOOST_VERSION_FILENAME="1_76_0"
+ENV BOOST_VERSION="1.80.0"
+ENV BOOST_VERSION_FILENAME="1_80_0"
 WORKDIR /tmp/boost
 RUN wget https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_FILENAME}.tar.gz && \
     tar -xzf boost_${BOOST_VERSION_FILENAME}.tar.gz && \
@@ -74,7 +74,7 @@ RUN wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/${EIGEN_VE
     rm -rf /tmp/eigen
 
 # install opencv
-ENV OPENCV_VERSION="4.5.3"
+ENV OPENCV_VERSION="4.7.0"
 WORKDIR /tmp/opencv
 RUN  wget https://github.com/opencv/opencv/archive/"${OPENCV_VERSION}".zip && \
      unzip ${OPENCV_VERSION}.zip && \
@@ -102,7 +102,7 @@ RUN  wget https://github.com/opencv/opencv/archive/"${OPENCV_VERSION}".zip && \
     rm -r /tmp/opencv
 
 # install tbb
-ENV TBB_VERSION="2021.5.0"
+ENV TBB_VERSION="2021.9.0"
 WORKDIR /tmp/tbb
 RUN  wget https://github.com/oneapi-src/oneTBB/archive/refs/tags/v"${TBB_VERSION}".zip && \
      unzip v${TBB_VERSION}.zip && \

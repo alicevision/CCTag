@@ -135,6 +135,7 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 if(CCTAG_WITH_CUDA)
+  set(CCTAG_MIN_CUDA_VERSION 9.0)
   message( STATUS "Try finding CUDA" )
   if(BUILD_SHARED_LIBS)
     message(STATUS "BUILD_SHARED_LIBS ON")
@@ -149,7 +150,7 @@ if(CCTAG_WITH_CUDA)
     set(CUDA_USE_STATIC_CUDA_RUNTIME ON)
   endif()
 
-  find_package(CUDA 9.0 REQUIRED)
+  find_package(CUDA ${CCTAG_MIN_CUDA_VERSION} REQUIRED)
 
   include(CheckNvccCompilerFlag)
 
@@ -165,22 +166,26 @@ if(CCTAG_WITH_CUDA)
     message(STATUS "Building in release mode")
   endif()
 
-  set(CCTAG_CUDA_CC_LIST_INIT0 3.5 3.7 5.0 5.2)
-  if( CUDA_VERSION VERSION_GREATER_EQUAL "9.0" )
-    list(APPEND CCTAG_CUDA_CC_LIST_INIT0 6.0 6.1 7.0)
-  endif()
-  if( CUDA_VERSION VERSION_GREATER_EQUAL "10.0" )
-    list(APPEND CCTAG_CUDA_CC_LIST_INIT0 7.5)
-  endif()
-  set(CCTAG_CUDA_CC_LIST_INIT ${CCTAG_CUDA_CC_LIST_INIT0} CACHE STRING "CUDA CCs as compile targets")
-
+  # if CCTAG_CUDA_CC_CURRENT_ONLY is specified only build for the current hardware architecture
   if(CCTAG_CUDA_CC_CURRENT_ONLY)
     set(CCTAG_CUDA_CC_LIST_BASIC Auto)
+    CUDA_SELECT_NVCC_ARCH_FLAGS(CCTAG_CUDA_GENCODE_FLAGS ${CCTAG_CUDA_CC_LIST_BASIC})
   else()
-    set(CCTAG_CUDA_CC_LIST_BASIC ${CCTAG_CUDA_CC_LIST_INIT})
+    # otherwise build for all the architectures that are compatible with the current version of CUDA
+    # or those that are provided by the user setting CCTAG_CUDA_CC_LIST
+    include(ChooseCudaCC)
+    if(NOT DEFINED CCTAG_CUDA_CC_LIST)
+      chooseCudaCC(CCTAG_CUDA_CC_LIST_BASIC
+                   CCTAG_CUDA_GENCODE_FLAGS
+                   MIN_CC 30
+                   MIN_CUDA_VERSION ${CCTAG_MIN_CUDA_VERSION})
+      set(CCTAG_CUDA_CC_LIST ${CCTAG_CUDA_CC_LIST_BASIC} CACHE STRING "CUDA CC versions to compile")
+    else()
+      getFlagsForCudaCCList(CCTAG_CUDA_CC_LIST CCTAG_CUDA_GENCODE_FLAGS)
+    endif()
   endif()
-  CUDA_SELECT_NVCC_ARCH_FLAGS(ARCH_FLAGS ${CCTAG_CUDA_CC_LIST_BASIC})
-  LIST(APPEND CUDA_NVCC_FLAGS ${ARCH_FLAGS})
+
+  list(APPEND CUDA_NVCC_FLAGS "${CCTAG_CUDA_GENCODE_FLAGS}")
 
   if(NOT MSVC)
     set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++${CCTAG_CXX_STANDARD}")
@@ -273,7 +278,7 @@ message(STATUS "Build tests: " ${CCTAG_BUILD_TESTS})
 message(STATUS "Build documentation: " ${CCTAG_BUILD_DOC})
 message(STATUS "Cuda support: " ${CCTAG_WITH_CUDA})
 if(CCTAG_WITH_CUDA)
-  message(STATUS "Compiling for CUDA CCs: ${ARCH_FLAGS}")
+  message(STATUS "Compiling for CUDA CCs: ${CCTAG_CUDA_GENCODE_FLAGS}")
 endif()
 message(STATUS "Enable Eigen alignment: " ${CCTAG_EIGEN_MEMORY_ALIGNMENT})
 message(STATUS "Enable AVX2 optimizations: " ${CCTAG_ENABLE_SIMD_AVX2})

@@ -19,11 +19,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        container: [ "alicevision/cctag-deps:cuda11.8.0-ubuntu20.04", "alicevision/cctag-deps:cuda12.1.0-ubuntu22.04" ]
+        build_type: [ "Release", "Debug" ]
+
     container:
-      image: alicevision/cctag-deps:cuda11.8.0-ubuntu20.04
+      image: ${{ matrix.container }}
+
     env:
       DEPS_INSTALL_DIR: /opt/
-      BUILD_TYPE: Release
+      BUILD_TYPE: ${{ matrix.build_type }}
       CTEST_OUTPUT_ON_FAILURE: 1
     steps:
       - uses: actions/checkout@v2
