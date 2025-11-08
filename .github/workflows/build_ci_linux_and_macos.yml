@@ -1,0 +1,56 @@
+name: CI on linux and macOS no cuda
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "5 8 * * 1"
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Install Linux dependencies with caching
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      if: runner.os == 'Linux'
+      with:
+          packages: libopencv-dev libboost-dev libeigen3-dev libtbb-dev
+          version: 1.0
+
+    - name: Install macOS dependencies with caching
+      uses: tecolicom/actions-use-homebrew-tools@v1
+      if: runner.os == 'macOS'
+      with:
+          # put your list of homebrew packages here for the dependencies you need
+          tools: opencv boost eigen tbb
+
+    - name: Build (Release)
+      uses: lukka/run-cmake@v10
+      with:
+        configurePreset: 'release'
+        configurePresetAdditionalArgs: "['-DWITH_CUDA:BOOL=OFF']"
+        buildPreset: 'release'
+        testPreset: 'release'
+
+    - name: Build (Debug)
+      uses: lukka/run-cmake@v10
+      with:
+        configurePreset: 'debug'
+        configurePresetAdditionalArgs: "['-DWITH_CUDA:BOOL=OFF']"
+        buildPreset: 'debug'
+        testPreset: 'debug'
