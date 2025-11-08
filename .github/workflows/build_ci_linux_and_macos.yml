@@ -29,7 +29,7 @@ jobs:
       uses: awalsh128/cache-apt-pkgs-action@latest
       if: runner.os == 'Linux'
       with:
-          packages: libopencv-dev libboost-dev  libboost-date-time-dev libboost-filesystem-dev libboost-program-options-dev libboost-serialization-dev  libboost-stacktrace-dev libboost-timer-dev libboost-test-dev libeigen3-dev libtbb-dev
+          packages: liblapack-dev libopencv-dev libboost-dev  libboost-date-time-dev libboost-filesystem-dev libboost-program-options-dev libboost-serialization-dev  libboost-stacktrace-dev libboost-timer-dev libboost-test-dev libeigen3-dev libtbb-dev
           version: 1.0
 
     - name: Install macOS dependencies with caching
@@ -37,7 +37,7 @@ jobs:
       if: runner.os == 'macOS'
       with:
           # put your list of homebrew packages here for the dependencies you need
-          tools: opencv boost eigen tbb
+          tools: opencv boost eigen@3 tbb
 
     - name: Build (Release)
       uses: lukka/run-cmake@v10
