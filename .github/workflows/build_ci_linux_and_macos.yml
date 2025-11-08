@@ -43,7 +43,7 @@ jobs:
       uses: lukka/run-cmake@v10
       with:
         configurePreset: 'release'
-        configurePresetAdditionalArgs: "['-DWITH_CUDA:BOOL=OFF']"
+        configurePresetAdditionalArgs: "['-DCCTAG_WITH_CUDA:BOOL=OFF']"
         buildPreset: 'release'
         testPreset: 'release'
 
@@ -51,6 +51,6 @@ jobs:
       uses: lukka/run-cmake@v10
       with:
         configurePreset: 'debug'
-        configurePresetAdditionalArgs: "['-DWITH_CUDA:BOOL=OFF']"
+        configurePresetAdditionalArgs: "['-DCCTAG_WITH_CUDA:BOOL=OFF']"
         buildPreset: 'debug'
         testPreset: 'debug'

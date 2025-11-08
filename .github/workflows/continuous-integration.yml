@@ -51,7 +51,7 @@ jobs:
            -DBUILD_SHARED_LIBS:BOOL=ON \
            -DCMAKE_PREFIX_PATH="${DEPS_INSTALL_DIR}" \
            -DCMAKE_INSTALL_PREFIX:PATH=$PWD/../../cctag_install \
-           -DWITH_CUDA:BOOL=ON
+           -DCCTAG_WITH_CUDA:BOOL=ON
 
       - name: Build
         working-directory: ./build
