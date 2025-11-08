@@ -112,7 +112,7 @@ endif(APPLE)
 
 # FIND BOOST
 #set(BOOST_REQUIRED_COMPONENTS "chrono;date_time;filesystem;program_options;serialization;system;thread;timer;math_c99")
-set(BOOST_REQUIRED_COMPONENTS "chrono;date_time;filesystem;program_options;serialization;thread;timer")
+set(BOOST_REQUIRED_COMPONENTS "date_time;filesystem;program_options;serialization;timer")
 if(WIN32)
   set(BOOST_REQUIRED_COMPONENTS "${BOOST_REQUIRED_COMPONENTS};stacktrace_windbg")
 else()

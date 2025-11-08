@@ -175,12 +175,8 @@ if(CCTAG_WITH_CUDA)
   target_link_libraries(CCTag
                        ${OpenCV_LIBS}
                        Boost::date_time 
-                       Boost::chrono 
-                       Boost::thread 
                        Boost::serialization 
-                       Boost::system 
                        Boost::filesystem 
-                       Boost::program_options 
                        Boost::timer
 #          Boost::math_c99
                        Eigen3::Eigen
@@ -228,12 +224,9 @@ else() # without CUDA
                         PUBLIC
                           ${OpenCV_LIBS}
                           Eigen3::Eigen
-                          Boost::chrono 
                           Boost::date_time
                           Boost::filesystem
                           Boost::serialization 
-                          # Boost::system 
-                          Boost::thread 
                           Boost::timer
 #          Boost::math_c99
                         PRIVATE
