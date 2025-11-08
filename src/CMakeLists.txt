@@ -174,7 +174,15 @@ if(CCTAG_WITH_CUDA)
   # since we used CUDA_ADD_LIBRARY we cannot use PUBLIC or PRIVATE here
   target_link_libraries(CCTag
                        ${OpenCV_LIBS}
-                       Boost::date_time Boost::chrono Boost::thread Boost::serialization Boost::system Boost::filesystem Boost::atomic Boost::program_options Boost::timer Boost::math_c99
+                       Boost::date_time 
+                       Boost::chrono 
+                       Boost::thread 
+                       Boost::serialization 
+                       Boost::system 
+                       Boost::filesystem 
+                       Boost::program_options 
+                       Boost::timer
+#          Boost::math_c99
                        Eigen3::Eigen
                        TBB::tbb
                        ${CUDA_CUDADEVRT_LIBRARY})
@@ -220,7 +228,14 @@ else() # without CUDA
                         PUBLIC
                           ${OpenCV_LIBS}
                           Eigen3::Eigen
-                          Boost::atomic Boost::chrono Boost::date_time Boost::filesystem Boost::serialization Boost::system Boost::thread Boost::timer Boost::math_c99
+                          Boost::chrono 
+                          Boost::date_time
+                          Boost::filesystem
+                          Boost::serialization 
+                          # Boost::system 
+                          Boost::thread 
+                          Boost::timer
+#          Boost::math_c99
                         PRIVATE
                           TBB::tbb)
 
@@ -233,7 +248,7 @@ endif()
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
   target_compile_definitions(CCTag PUBLIC "-DNOMINMAX")
 endif()
-
+target_compile_options(CCTag PUBLIC -Wno-enum-constexpr-conversion)
 # enable serialization
 if(CCTAG_SERIALIZE)
   target_compile_definitions(CCTag PUBLIC "-DCCTAG_SERIALIZE")
