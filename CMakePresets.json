@@ -1,0 +1,134 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 19,
+      "patch": 0
+    },
+    "configurePresets": [
+        {
+          "name": "default",
+          "description": "default preset that disable vcpkg, so that the dependencies are not built automatically",
+          "hidden": true,
+          "binaryDir": "${sourceDir}/build/${presetName}",
+          "cacheVariables": {
+            "CMAKE_TOOLCHAIN_FILE": {
+              "type": "FILEPATH",
+              "value": ""
+            }
+          }
+        },
+        {
+          "name": "debug",
+          "description": "Debug build",
+          "inherits": "default",
+          "binaryDir": "${sourceDir}/build/debug",
+          "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug"
+          }
+        },
+        {
+          "name": "release",
+          "description": "Release build",
+          "inherits": "default",
+          "binaryDir": "${sourceDir}/build/release",
+          "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Release"
+          }
+        },
+        {
+          "name": "vcpkg-default",
+          "hidden": true,
+          "binaryDir": "${sourceDir}/build/${presetName}",
+          "cacheVariables": {
+            "CMAKE_TOOLCHAIN_FILE": {
+              "type": "FILEPATH",
+              "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+            },
+            "VCPKG_INSTALLED_DIR": {
+              "type": "PATH",
+              "value": "${sourceDir}/vcpkg_installed"
+            }
+          }
+        },
+        {
+          "name": "vcpkg-release",
+          "inherits": "vcpkg-default",
+          "displayName": "Release Build",
+          "description": "Release build configuration with vcpkg",
+          "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Release"
+          }
+        },
+        {
+          "name": "vcpkg-debug",
+          "inherits": "vcpkg-default",
+          "displayName": "Debug Build",
+          "description": "Debug build configuration with vcpkg",
+          "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug"
+          }
+        }
+      ],
+      "buildPresets": [
+        {
+          "name": "release",
+          "configurePreset": "release",
+          "description": "Build in Release mode"
+        },
+        {
+          "name": "debug",
+          "configurePreset": "debug",
+          "description": "Build in Debug mode"
+        },
+        {
+          "name": "vcpkg-release",
+          "configurePreset": "vcpkg-release",
+          "displayName": "Release Build",
+          "description": "Build in Release mode with vcpkg",
+          "configuration": "Release"
+        },
+        {
+          "name": "vcpkg-debug",
+          "configurePreset": "vcpkg-debug",
+          "displayName": "Debug Build",
+          "description": "Build in Debug mode with vcpkg",
+          "configuration": "Debug"
+        }
+      ],
+      "testPresets": [
+        {
+          "name": "test-default",
+          "description": "default test",
+          "hidden": true,
+          "output": {"outputOnFailure": true},
+          "execution": {"noTestsAction": "error", "stopOnFailure": true}
+        },
+        {
+          "name": "release",
+          "description": "Test in Release mode",
+          "configurePreset": "release",
+          "inherits": "test-default"
+        },
+        {
+          "name": "debug",
+          "description": "Test in Debug mode",
+          "configurePreset": "debug",
+          "inherits": "test-default"
+        },
+        {
+          "name": "vcpkg-release",
+          "description": "Test in Release mode with vcpkg",
+          "configurePreset": "vcpkg-release",
+          "configuration": "Release",
+          "inherits": "test-default"
+        },
+        {
+          "name": "vcpkg-debug",
+          "description": "Test in Debug mode with vcpkg",
+          "configurePreset": "vcpkg-debug",
+          "configuration": "Debug",
+          "inherits": "test-default"
+        }
+      ]
+  }
