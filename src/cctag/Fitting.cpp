@@ -23,6 +23,7 @@
 #include <cctag/Fitting.hpp>
 #include <cmath>
 #include <cfloat>
+#include <limits>
 #include <fstream>
 #include <cmath>
 #include <cstdio>
@@ -37,50 +38,71 @@ namespace numerical {
 namespace geometry
 {
 
-using Vector6f = Eigen::Matrix<float, 6, 1>;
-using Conic = std::tuple<Vector6f, Eigen::Vector2f>; // 6 coefficients + center offset
+// The direct least-squares ellipse fit (Halir and Flusser) runs in a
+// normalised frame and in double precision: the points are translated to
+// their centroid and divided by their RMS radius, so every scatter-matrix
+// entry is O(n) whatever the pixel scale. In the raw pixel frame the
+// quadratic scatter entries reach 1e12 for an arc a few hundred pixels
+// across, past the 24-bit float mantissa, and whether a candidate ellipse
+// assembles then depends on the rounding regime of the host (fused
+// multiply-add on AArch64, separate multiply and add on baseline x86-64).
+using Vector6d = Eigen::Matrix<double, 6, 1>;
+// 6 conic coefficients in the centred pixel frame + the centroid offset.
+using Conic = std::tuple<Vector6d, Eigen::Vector2d>;
+
+// Relative conditioning floor of the linear scatter block: det / trace^2 of
+// the centred point covariance, which tends to lambda_min / lambda_max for a
+// collapsed arc. 1e-12 keeps four significant digits in double and rejects
+// only point sets that are collinear to within rounding; the geometric
+// coverage gates belong to the callers.
+static constexpr double kScatterConditioningFloor = 1e-12;
 
 template<typename It>
-static Eigen::Vector2f get_offset(It begin, It end)
+static Eigen::Vector2d get_offset(It begin, It end)
 {
-  Eigen::Vector2f center(0, 0);
+  Eigen::Vector2d center(0.0, 0.0);
   const size_t n = end - begin;
   for (; begin != end; ++begin)
-    center += Eigen::Vector2f((*begin)(0), (*begin)(1));
-  return center / n;
+    center += Eigen::Vector2d(static_cast<double>((*begin)(0)), static_cast<double>((*begin)(1)));
+  return center / static_cast<double>(n);
 }
 
 template<typename It>
-static std::tuple<Eigen::Matrix3f,Eigen::Matrix3f,Eigen::Matrix3f>
-get_scatter_matrix(It begin, It end, const Eigen::Vector2f& offset)
+static double get_scale(It begin, It end, const Eigen::Vector2d& offset)
+{
+  double acc = 0.0;
+  size_t n = 0;
+  for (; begin != end; ++begin, ++n)
+  {
+    const Eigen::Vector2d p(static_cast<double>((*begin)(0)), static_cast<double>((*begin)(1)));
+    acc += (p - offset).squaredNorm();
+  }
+  const double scale = n > 0 ? std::sqrt(acc / static_cast<double>(n)) : 0.0;
+  return (std::isfinite(scale) && scale > 0.0) ? scale : 1.0;
+}
+
+template<typename It>
+static std::tuple<Eigen::Matrix3d,Eigen::Matrix3d,Eigen::Matrix3d>
+get_scatter_matrix(It begin, It end, const Eigen::Vector2d& offset, double scale)
 {
   using namespace Eigen;
-  
-  const auto qf = [&](It it) {
-    Vector2f p((*it)(0), (*it)(1));
-    auto pc = p - offset;
-    return Vector3f(pc(0)*pc(0), pc(0)*pc(1), pc(1)*pc(1));
-  };
-  const auto lf = [&](It it) {
-    Vector2f p((*it)(0), (*it)(1));
-    auto pc = p - offset;
-    return Vector3f(pc(0), pc(1), 1);
-  };
-  
+
   const size_t n = end - begin;
-  MatrixX3f D1(n,3), D2(n,3);
-  
-  // Construct the quadratic and linear parts.  Doing it in two loops has better cache locality.
-  // TODO@stian: Make an nx6 matrix and define D1 and D2 as subblocks so that they're as one memory block
-  for (size_t i = 0; begin != end; ++begin, ++i) {
-    D1.row(i) = qf(begin);
-    D2.row(i) = lf(begin);
+  MatrixX3d D1(n,3), D2(n,3);
+
+  // Construct the quadratic and linear parts in the normalised frame.
+  for (size_t i = 0; begin != end; ++begin, ++i)
+  {
+    const Vector2d p(static_cast<double>((*begin)(0)), static_cast<double>((*begin)(1)));
+    const Vector2d pc = (p - offset) / scale;
+    D1.row(i) = Vector3d(pc(0)*pc(0), pc(0)*pc(1), pc(1)*pc(1));
+    D2.row(i) = Vector3d(pc(0), pc(1), 1.0);
   }
-  
+
   // Construct the three parts of the symmetric scatter matrix.
-  Matrix3f S1 = D1.transpose() * D1;
-  Matrix3f S2 = D1.transpose() * D2;
-  Matrix3f S3 = D2.transpose() * D2;
+  Matrix3d S1 = D1.transpose() * D1;
+  Matrix3d S2 = D1.transpose() * D2;
+  Matrix3d S3 = D2.transpose() * D2;
   return std::make_tuple(S1, S2, S3);
 }
 
@@ -89,47 +111,57 @@ static Conic fit_solver(It begin, It end)
 {
   using namespace Eigen;
   using std::get;
-  
+
   static const struct C1_Initializer {
-    Matrix3f matrix;
-    Matrix3f inverse;
+    Matrix3d inverse;
     C1_Initializer()
     {
-      matrix <<
-          0,  0, 2,
-          0, -1, 0,
-          2,  0, 0;
       inverse <<
             0,  0, 0.5,
             0, -1,   0,
-          0.5,  0,   0; 
+          0.5,  0,   0;
     };
   } C1;
-  
-  const auto offset = get_offset(begin, end);
-  const auto St = get_scatter_matrix(begin, end, offset);
-  const auto& S1 = std::get<0>(St);
-  const auto& S2 = std::get<1>(St);
-  const auto& S3 = std::get<2>(St);
-  bool invertible;
-  Matrix3f S3Inv;
-  S3.computeInverseWithCheck(S3Inv, invertible);
-  if(!invertible)
+
+  const Vector2d offset = get_offset(begin, end);
+  const double scale = get_scale(begin, end, offset);
+  const auto St = get_scatter_matrix(begin, end, offset, scale);
+  const Matrix3d& S1 = std::get<0>(St);
+  const Matrix3d& S2 = std::get<1>(St);
+  const Matrix3d& S3 = std::get<2>(St);
+
+  // S3 is the scatter of (x, y, 1); centred, its (x, y) block is n times the
+  // point covariance and its last diagonal entry is n. A relative test on
+  // that block replaces an absolute determinant threshold, which any
+  // pixel-scaled scatter passes even when the arc is a straight segment.
+  const double trace_xy = S3(0,0) + S3(1,1);
+  const double det_xy = S3(0,0) * S3(1,1) - S3(0,1) * S3(1,0);
+  if (!S3.allFinite() || !(S3(2,2) > 0.0) || !(trace_xy > 0.0) ||
+      !(det_xy > kScatterConditioningFloor * trace_xy * trace_xy))
   {
       throw std::domain_error("fit_solver: the input points appear to be linearly dependent");
   }
-  const auto T = -S3.inverse() * S2.transpose();
-  const auto M = C1.inverse * (S1 + S2*T);
-  
-  EigenSolver<Matrix3f> M_ev(M);
-  Vector3f cond;
+  const Matrix3d T = -S3.fullPivLu().solve(S2.transpose());
+  const Matrix3d M = C1.inverse * (S1 + S2*T);
+  if (!M.allFinite())
   {
-    const Array33f evr = M_ev.eigenvectors().real().array();
-    cond = 4*evr.row(0)*evr.row(2) - evr.row(1)*evr.row(1);
+      throw std::domain_error("fit_solver: the reduced scatter matrix is not finite");
   }
 
-  const auto eps = std::numeric_limits<float>::epsilon();
-  float minValue = std::numeric_limits<float>::max();
+  EigenSolver<Matrix3d> M_ev(M);
+  if (M_ev.info() != Success)
+  {
+      throw std::domain_error("fit_solver: the eigensolver did not converge");
+  }
+  const Matrix3d evr = M_ev.eigenvectors().real();
+  const Vector3d cond =
+      (4.0 * evr.row(0).array() * evr.row(2).array() - evr.row(1).array() * evr.row(1).array()).transpose();
+
+  // The ellipse solution is the eigenvector whose constraint value 4ac - b^2
+  // is positive; exactly one exists in exact arithmetic. The float epsilon
+  // stays the positivity margin on the unit-norm eigenvectors.
+  const double eps = std::numeric_limits<float>::epsilon();
+  double minValue = std::numeric_limits<double>::max();
   int imin = -1;
   for (int i = 0; i < 3; ++i)
   {
@@ -139,17 +171,18 @@ static Conic fit_solver(It begin, It end)
           minValue = cond(i);
       }
   }
-  
-  Vector6f ret = Matrix<float, 6, 1>::Zero();
   if (imin == -1)
   {
       throw std::domain_error("fit_solver: degeneracy");
   }
-    Vector3f a1 = M_ev.eigenvectors().real().col(imin);
-    Vector3f a2 = T * a1;
-    ret.block<3, 1>(0, 0) = a1;
-    ret.block<3, 1>(3, 0) = a2;
-    return std::make_tuple(ret, offset);
+  const Vector3d a1 = evr.col(imin);
+  const Vector3d a2 = T * a1;
+  // Back to the centred pixel frame X = x - offset: with x' = X / scale the
+  // conic a x'^2 + b x'y' + c y'^2 + d x' + e y' + f = 0 reads, after
+  // multiplying through by scale^2, (a, b, c, d scale, e scale, f scale^2).
+  Vector6d ret;
+  ret << a1(0), a1(1), a1(2), a2(0) * scale, a2(1) * scale, a2(2) * scale * scale;
+  return std::make_tuple(ret, offset);
 }
 
 // Adapted from OpenCV old code; see
@@ -157,50 +190,59 @@ static Conic fit_solver(It begin, It end)
 void to_ellipse(const Conic& conic, Ellipse& ellipse)
 {
   using namespace Eigen;
-  const auto eps = std::numeric_limits<float>::epsilon();
+  // The float epsilon stays the margin of every degeneracy test below: the
+  // conic coefficients are O(1) in the normalised fit, so the margins keep
+  // the meaning they have on unit-scale data.
+  const double eps = std::numeric_limits<float>::epsilon();
 
-  auto coef = std::get<0>(conic);
+  Vector6d coef = std::get<0>(conic);
 
-  float idet = coef(0)*coef(2) - coef(1)*coef(1)/4; // ac-b^2/4
-  idet = idet > eps ? 1.f/idet : 0;
-  
-  float scale = std::sqrt(idet/4);
-  if (scale < eps)
+  double idet = coef(0)*coef(2) - coef(1)*coef(1)/4; // ac-b^2/4
+  idet = idet > eps ? 1.0/idet : 0.0;
+
+  const double scale = std::sqrt(idet/4);
+  if (!(scale >= eps))
   {
       throw std::domain_error("to_ellipse_2: singularity 1");
   }
-  
+
   coef *= scale;
-  float aa = coef(0), bb = coef(1), cc = coef(2), dd = coef(3), ee = coef(4), ff = coef(5);
-  
-  const Vector2f c = Vector2f(-dd*cc + ee*bb/2, -aa*ee + dd*bb/2) * 2;
-  
+  const double aa = coef(0), bb = coef(1), cc = coef(2), dd = coef(3), ee = coef(4);
+  double ff = coef(5);
+
+  const Vector2d c = Vector2d(-dd*cc + ee*bb/2, -aa*ee + dd*bb/2) * 2;
+
   // offset ellipse to (x0,y0)
   ff += aa*c(0)*c(0) + bb*c(0)*c(1) + cc*c(1)*c(1) + dd*c(0) + ee*c(1);
-  if (std::fabs(ff) < eps)
+  if (!(std::fabs(ff) >= eps))
   {
       throw std::domain_error("to_ellipse_2: singularity 2");
   }
 
-  Matrix2f S;
+  Matrix2d S;
   S << aa, bb/2, bb/2, cc;
   S /= -ff;
 
   // SVs are sorted from largest to smallest
-  JacobiSVD<Matrix2f> svd(S, ComputeFullU);
+  JacobiSVD<Matrix2d> svd(S, ComputeFullU);
   const auto& vals = svd.singularValues();
   const auto& mat_u = svd.matrixU();
 
-  Vector2f center = c + std::get<1>(conic);
-  Vector2f radius = Vector2f(std::sqrt(1.f/vals(0)), std::sqrt(1.f/vals(1)));
-  float angle = boost::math::constants::pi<float>() - std::atan2(mat_u(0,1), mat_u(1,1));
-  
-  if (radius(0) <= 0 || radius(1) <= 0)
+  const Vector2d center = c + std::get<1>(conic);
+  if (!(vals(0) > 0.0) || !(vals(1) > 0.0))
   {
 	  throw std::domain_error("Degenerate ellipse after fitEllipse => line or point.");
   }
-  
-  ellipse.setParameters(Point2d<Eigen::Vector3f>(center(0), center(1)), radius(0), radius(1), angle);
+  const Vector2d radius(std::sqrt(1.0/vals(0)), std::sqrt(1.0/vals(1)));
+  const double angle = boost::math::constants::pi<double>() - std::atan2(mat_u(0,1), mat_u(1,1));
+
+  if (!(radius(0) > 0.0) || !(radius(1) > 0.0) || !radius.allFinite() || !center.allFinite())
+  {
+	  throw std::domain_error("Degenerate ellipse after fitEllipse => line or point.");
+  }
+
+  ellipse.setParameters(Point2d<Eigen::Vector3f>(static_cast<float>(center(0)), static_cast<float>(center(1))),
+                        static_cast<float>(radius(0)), static_cast<float>(radius(1)), static_cast<float>(angle));
 }
 
 template<typename It>
@@ -233,10 +275,9 @@ float innerProdMin(const std::vector<cctag::EdgePoint*>& filteredChildren, float
 
             float distMax = 0.f;
 
-            EdgePoint* p0 = filteredChildren.front();
-
             if (!filteredChildren.empty())
             {
+                EdgePoint* p0 = filteredChildren.front();
 
                 float normGrad = std::sqrt(p0->dX() * p0->dX() + p0->dY() * p0->dY());
 
@@ -333,30 +374,57 @@ void ellipseFitting( cctag::numerical::geometry::Ellipse& e, const std::vector<c
 
 void circleFitting(cctag::numerical::geometry::Ellipse& e, const std::vector<cctag::EdgePoint*>& points) {
 
-  std::size_t nPoints = points.size();
-
-  Eigen::MatrixXf A(nPoints, 4);
-
-  for (int i = 0; i < nPoints; ++i) {
-      A(i, 0) = points[i]->x();
-      A(i, 1) = points[i]->y();
-      A(i, 2) = 1;
-      A(i, 3) = points[i]->x() * points[i]->x() + points[i]->y() * points[i]->y();
-  }
-
-  Eigen::JacobiSVD<Eigen::MatrixXf> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
-  auto V = svd.matrixV();
-
-  float xC = -0.5f * V(0, 3) / V(3, 3);
-  float yC = -0.5f * V(1, 3) / V(3, 3);
-  float radius = sqrt(xC*xC + yC*yC - V(2, 3) / V(3, 3));
-
-  if (radius <= .0f) 
+  const std::size_t nPoints = points.size();
+  if (nPoints < 3)
   {
-	  throw std::domain_error("Degenerate circle in circleFitting, radius is negative: " + std::to_string(radius));
+	  throw std::domain_error("circleFitting: " + std::to_string(nPoints) + " provided, at least 3 are needed to estimate a circle");
   }
 
-  e.setParameters(Point2d<Eigen::Vector3f>(xC, yC), radius, radius, 0);
+  // The algebraic circle fit is the null vector of [x y 1 x^2+y^2]; in the
+  // raw pixel frame its columns differ by the square of the pixel scale, so
+  // the points are centred and divided by their RMS radius first, as in the
+  // ellipse fit, and the solve runs in double precision.
+  Eigen::Vector2d offset(0.0, 0.0);
+  for (std::size_t i = 0; i < nPoints; ++i)
+      offset += Eigen::Vector2d(points[i]->x(), points[i]->y());
+  offset /= static_cast<double>(nPoints);
+  double acc = 0.0;
+  for (std::size_t i = 0; i < nPoints; ++i)
+      acc += (Eigen::Vector2d(points[i]->x(), points[i]->y()) - offset).squaredNorm();
+  double scale = std::sqrt(acc / static_cast<double>(nPoints));
+  if (!(std::isfinite(scale) && scale > 0.0))
+      scale = 1.0;
+
+  Eigen::MatrixXd A(nPoints, 4);
+  for (std::size_t i = 0; i < nPoints; ++i) {
+      const Eigen::Vector2d pc = (Eigen::Vector2d(points[i]->x(), points[i]->y()) - offset) / scale;
+      A(i, 0) = pc(0);
+      A(i, 1) = pc(1);
+      A(i, 2) = 1.0;
+      A(i, 3) = pc.squaredNorm();
+  }
+
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  const auto V = svd.matrixV();
+
+  // A vanishing quadratic coefficient is a line, not a circle.
+  if (!(std::fabs(V(3, 3)) > std::numeric_limits<double>::epsilon()))
+  {
+	  throw std::domain_error("Degenerate circle in circleFitting, the points are collinear");
+  }
+  const double xC = -0.5 * V(0, 3) / V(3, 3);
+  const double yC = -0.5 * V(1, 3) / V(3, 3);
+  const double radius2 = xC*xC + yC*yC - V(2, 3) / V(3, 3);
+
+  if (!(radius2 > 0.0) || !std::isfinite(radius2))
+  {
+	  throw std::domain_error("Degenerate circle in circleFitting, squared radius is not positive or not finite: " + std::to_string(radius2));
+  }
+
+  const double radius = std::sqrt(radius2) * scale;
+  const Eigen::Vector2d center = offset + Eigen::Vector2d(xC, yC) * scale;
+  e.setParameters(Point2d<Eigen::Vector3f>(static_cast<float>(center(0)), static_cast<float>(center(1))),
+                  static_cast<float>(radius), static_cast<float>(radius), 0);
 }
 
 } // namespace numerical
