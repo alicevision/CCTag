@@ -642,11 +642,12 @@ void vote(EdgePointCollection& edgeCollection,
                 continue;
             }
 
-            numerical::geometry::Ellipse eToto;
-            cctag::numerical::geometry::fitEllipse(points, eToto);
-
+            // The fit rejects a degenerate point set by throwing; a segment
+            // whose points do not describe an ellipse is skipped like every
+            // other rejection in this loop instead of unwinding the frame.
             try {
-                
+                numerical::geometry::Ellipse eToto;
+                cctag::numerical::geometry::fitEllipse(points, eToto);
                 numerical::geometry::Ellipse q(eToto.matrix());
 
                 float ratioSemiAxes = q.a() / q.b();
@@ -697,8 +698,14 @@ void vote(EdgePointCollection& edgeCollection,
             outerEllipsePointsTemp.insert(outerEllipsePointsTemp.end(), anotherOuterEllipsePoints.begin(), anotherOuterEllipsePoints.end());
             CCTAG_COUT_VAR_DEBUG(outerEllipsePointsTemp.size());
             
-            // Compute the new ellipse which fits oulierEllipsePoints
-            numerical::ellipseFitting(outerEllipseTemp, outerEllipsePointsTemp);
+            // Compute the new ellipse which fits outerEllipsePointsTemp. A merged
+            // set the fit rejects cannot extend the candidate; it stays as it is.
+            try {
+                numerical::ellipseFitting(outerEllipseTemp, outerEllipsePointsTemp);
+            } catch (...) {
+                CCTAG_COUT_DEBUG("isAnotherSegment : the merged outer ellipse does not fit");
+                return false;
+            }
 
             float quality = (float) outerEllipsePointsTemp.size() / (float) rasterizeEllipsePerimeter(outerEllipseTemp);
 
