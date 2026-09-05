@@ -14,6 +14,14 @@ static const int lutthin2[512] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 
 void thin( cv::Mat & inout, cv::Mat & temp )
 {
+  // imageIter writes only the interior of its output, and the second pass
+  // reads the first pass's output as its input, border included, so the
+  // border of the scratch image must be defined before the first pass or the
+  // thinned edge map depends on whatever the allocation held.
+  temp.row(0).setTo(0);
+  temp.row(temp.rows - 1).setTo(0);
+  temp.col(0).setTo(0);
+  temp.col(temp.cols - 1).setTo(0);
   imageIter( inout, temp, lutthin1 );
   imageIter( temp, inout, lutthin2 );
 }
