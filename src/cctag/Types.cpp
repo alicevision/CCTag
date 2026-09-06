@@ -8,6 +8,9 @@
 
 #include <cctag/Types.hpp>
 
+#include <algorithm>
+#include <cstring>
+
 namespace cctag
 {
 
@@ -27,14 +30,16 @@ EdgePointCollection::EdgePointCollection(size_t w, size_t h) :
   _edgeMapShape[0] = w; _edgeMapShape[1] = h;
   memset(&_edgeMap[0], -1, w*h*sizeof(int));  // XXX@stian: unnecessary for CUDA
   
-  if (w*h/8+4 < MAX_POINTS) {
-    memset(&_processedIn[0], 0, w*h/8+4);     // one bit per pixel + roundoff error
-    memset(&_processedAux[0], 0, w*h/8+4);    // ditto.
-  }
-  else {
-    memset(&_processedIn[0], 0, MAX_POINTS);
-    memset(&_processedAux[0], 0, MAX_POINTS);
-  }
+  // set_bit/test_bit place point index i in word i/4 (bit i&31), so every
+  // point index below point_count() <= w*h owns a word inside the first
+  // w*h/4 + 1 words, i.e. w*h + 4 bytes, of each processed array; the arrays
+  // hold MAX_POINTS bytes. A shorter clear (one bit per pixel, w*h/8 bytes)
+  // leaves the flags of every point past w*h/8 with whatever the allocator
+  // hands back: zero on fresh pages, the previous frame's flags on recycled
+  // heap, so seeds are silently skipped depending on process history.
+  const size_t processed_bytes = std::min<size_t>(MAX_POINTS, w*h + 4);
+  memset(&_processedIn[0], 0, processed_bytes);
+  memset(&_processedAux[0], 0, processed_bytes);
 }
 
 void EdgePointCollection::add_point(int vx, int vy, float vdx, float vdy)
