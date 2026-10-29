@@ -28,6 +28,12 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/archive/text_oarchive.hpp>
+#ifdef _MSC_VER
+// boost/archive leaks "#pragma inline_recursion(on)" and "#pragma inline_depth(255)",
+// which makes the MSVC inliner hang on Eigen expressions (e.g. in Identification.cpp)
+#pragma inline_recursion(off)
+#pragma inline_depth()
+#endif
 
 #ifdef CCTAG_WITH_CUDA
 #include "cctag/cuda/pinned_counters.h"
